@@ -23,8 +23,8 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/debug_location.h"
@@ -42,8 +42,8 @@ int grpc_channel_security_connector::channel_security_connector_cmp(
     const grpc_channel_security_connector* other) const {
   const grpc_channel_security_connector* other_sc =
       static_cast<const grpc_channel_security_connector*>(other);
-  CHECK_NE(channel_creds(), nullptr);
-  CHECK_NE(other_sc->channel_creds(), nullptr);
+  ABSL_CHECK_NE(channel_creds(), nullptr);
+  ABSL_CHECK_NE(other_sc->channel_creds(), nullptr);
   int c = channel_creds()->cmp(other_sc->channel_creds());
   if (c != 0) return c;
   return grpc_core::QsortCompare(request_metadata_creds(),
@@ -64,8 +64,8 @@ int grpc_server_security_connector::server_security_connector_cmp(
     const grpc_server_security_connector* other) const {
   const grpc_server_security_connector* other_sc =
       static_cast<const grpc_server_security_connector*>(other);
-  CHECK_NE(server_creds(), nullptr);
-  CHECK_NE(other_sc->server_creds(), nullptr);
+  ABSL_CHECK_NE(server_creds(), nullptr);
+  ABSL_CHECK_NE(other_sc->server_creds(), nullptr);
   return grpc_core::QsortCompare(server_creds(), other_sc->server_creds());
 }
 
@@ -103,7 +103,7 @@ grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc) {
 grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_ARG_SECURITY_CONNECTOR) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
+    ABSL_LOG(ERROR) << "Invalid type " << arg->type << " for arg "
                << GRPC_ARG_SECURITY_CONNECTOR;
     return nullptr;
   }

@@ -59,7 +59,7 @@ grpc_yodel_simple_test(
     name = "load_balanced_call_destination",
     srcs = ["load_balanced_call_destination_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [
@@ -72,7 +72,7 @@ grpc_yodel_simple_test(
     name = "retry_interceptor",
     srcs = ["retry_interceptor_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [

@@ -34,8 +34,8 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
@@ -129,7 +129,7 @@ class TcpZerocopySendRecord {
   //  sendmsg() failed or when tcp_write() is done.
   bool Unref() {
     const intptr_t prior = ref_.fetch_sub(1, std::memory_order_acq_rel);
-    DCHECK_GT(prior, 0);
+    ABSL_DCHECK_GT(prior, 0);
     if (prior == 1) {
       AllSendsComplete();
       return true;
@@ -144,9 +144,9 @@ class TcpZerocopySendRecord {
   };
 
   void DebugAssertEmpty() {
-    DCHECK_EQ(buf_.Count(), 0u);
-    DCHECK_EQ(buf_.Length(), 0u);
-    DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
+    ABSL_DCHECK_EQ(buf_.Count(), 0u);
+    ABSL_DCHECK_EQ(buf_.Length(), 0u);
+    ABSL_DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
   }
 
   // When all sendmsg() calls associated with this tcp_write() have been
@@ -154,7 +154,7 @@ class TcpZerocopySendRecord {
   // for each sendmsg()) and all reference counts have been dropped, drop our
   // reference to the underlying data since we no longer need it.
   void AllSendsComplete() {
-    DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
+    ABSL_DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
     buf_.Clear();
   }
 
@@ -181,7 +181,7 @@ class TcpZerocopySendCtx {
     if (send_records_ == nullptr || free_send_records_ == nullptr) {
       gpr_free(send_records_);
       gpr_free(free_send_records_);
-      VLOG(2) << "Disabling TCP TX zerocopy due to memory pressure.\n";
+      ABSL_VLOG(2) << "Disabling TCP TX zerocopy due to memory pressure.\n";
       memory_limited_ = true;
       enabled_ = false;
     } else {
@@ -235,7 +235,7 @@ class TcpZerocopySendCtx {
     --last_send_;
     if (ReleaseSendRecord(last_send_)->Unref()) {
       // We should still be holding the ref taken by tcp_write().
-      DCHECK(0);
+      ABSL_DCHECK(0);
     }
   }
 
@@ -273,7 +273,7 @@ class TcpZerocopySendCtx {
   // same time.
   void PutSendRecord(TcpZerocopySendRecord* record) {
     grpc_core::MutexLock lock(&mu_);
-    DCHECK(record >= send_records_ && record < send_records_ + max_sends_);
+    ABSL_DCHECK(record >= send_records_ && record < send_records_ + max_sends_);
     PutSendRecordLocked(record);
   }
 
@@ -330,7 +330,7 @@ class TcpZerocopySendCtx {
       zcopy_enobuf_state_ = OptMemState::kCheck;
       return false;
     }
-    DCHECK(zcopy_enobuf_state_ != OptMemState::kCheck);
+    ABSL_DCHECK(zcopy_enobuf_state_ != OptMemState::kCheck);
     if (zcopy_enobuf_state_ == OptMemState::kFull) {
       // A previous sendmsg attempt was blocked by ENOBUFS. Return true to
       // mark the fd as writable so the next write attempt could be made.
@@ -421,7 +421,7 @@ class TcpZerocopySendCtx {
   TcpZerocopySendRecord* ReleaseSendRecordLocked(uint32_t seq)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     auto iter = ctx_lookup_.find(seq);
-    DCHECK(iter != ctx_lookup_.end());
+    ABSL_DCHECK(iter != ctx_lookup_.end());
     TcpZerocopySendRecord* record = iter->second;
     ctx_lookup_.erase(iter);
     return record;
@@ -441,7 +441,7 @@ class TcpZerocopySendCtx {
 
   void PutSendRecordLocked(TcpZerocopySendRecord* record)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    DCHECK(free_send_records_size_ < max_sends_);
+    ABSL_DCHECK(free_send_records_size_ < max_sends_);
     free_send_records_[free_send_records_size_] = record;
     free_send_records_size_++;
   }

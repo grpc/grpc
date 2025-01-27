@@ -33,8 +33,8 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/host_port.h"
@@ -51,7 +51,7 @@ namespace grpc {
 namespace testing {
 
 static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
-  LOG(INFO) << "Starting client of type "
+  ABSL_LOG(INFO) << "Starting client of type "
             << ClientType_Name(config.client_type()) << " "
             << RpcType_Name(config.rpc_type()) << " "
             << config.payload_config().has_bytebuf_params();
@@ -71,7 +71,7 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
 }
 
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
-  LOG(INFO) << "Starting server of type "
+  ABSL_LOG(INFO) << "Starting server of type "
             << ServerType_Name(config.server_type());
 
   switch (config.server_type()) {
@@ -109,7 +109,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
   Status RunClient(
       ServerContext* ctx,
       ServerReaderWriter<ClientStatus, ClientArgs>* stream) override {
-    LOG(INFO) << "RunClient: Entering";
+    ABSL_LOG(INFO) << "RunClient: Entering";
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Client worker busy");
@@ -117,14 +117,14 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
     ScopedProfile profile("qps_client.prof", false);
     Status ret = RunClientBody(ctx, stream);
-    LOG(INFO) << "RunClient: Returning";
+    ABSL_LOG(INFO) << "RunClient: Returning";
     return ret;
   }
 
   Status RunServer(
       ServerContext* ctx,
       ServerReaderWriter<ServerStatus, ServerArgs>* stream) override {
-    LOG(INFO) << "RunServer: Entering";
+    ABSL_LOG(INFO) << "RunServer: Entering";
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Server worker busy");
@@ -132,7 +132,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
     ScopedProfile profile("qps_server.prof", false);
     Status ret = RunServerBody(ctx, stream);
-    LOG(INFO) << "RunServer: Returning";
+    ABSL_LOG(INFO) << "RunServer: Returning";
     return ret;
   }
 
@@ -180,7 +180,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
   void ReleaseInstance() {
     std::lock_guard<std::mutex> g(mu_);
-    CHECK(acquired_);
+    ABSL_CHECK(acquired_);
     acquired_ = false;
   }
 
@@ -193,34 +193,34 @@ class WorkerServiceImpl final : public WorkerService::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "Invalid setup arg");
     }
-    LOG(INFO) << "RunClientBody: about to create client";
+    ABSL_LOG(INFO) << "RunClientBody: about to create client";
     std::unique_ptr<Client> client = CreateClient(args.setup());
     if (!client) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create client");
     }
-    LOG(INFO) << "RunClientBody: client created";
+    ABSL_LOG(INFO) << "RunClientBody: client created";
     ClientStatus status;
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "Client couldn't report init status");
     }
-    LOG(INFO) << "RunClientBody: creation status reported";
+    ABSL_LOG(INFO) << "RunClientBody: creation status reported";
     while (stream->Read(&args)) {
-      LOG(INFO) << "RunClientBody: Message read";
+      ABSL_LOG(INFO) << "RunClientBody: Message read";
       if (!args.has_mark()) {
-        LOG(INFO) << "RunClientBody: Message is not a mark!";
+        ABSL_LOG(INFO) << "RunClientBody: Message is not a mark!";
         return Status(StatusCode::INVALID_ARGUMENT, "Invalid mark");
       }
       *status.mutable_stats() = client->Mark(args.mark().reset());
       if (!stream->Write(status)) {
         return Status(StatusCode::UNKNOWN, "Client couldn't respond to mark");
       }
-      LOG(INFO) << "RunClientBody: Mark response given";
+      ABSL_LOG(INFO) << "RunClientBody: Mark response given";
     }
 
-    LOG(INFO) << "RunClientBody: Awaiting Threads Completion";
+    ABSL_LOG(INFO) << "RunClientBody: Awaiting Threads Completion";
     client->AwaitThreadsCompletion();
 
-    LOG(INFO) << "RunClientBody: Returning";
+    ABSL_LOG(INFO) << "RunClientBody: Returning";
     return Status::OK;
   }
 
@@ -236,7 +236,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     if (server_port_ > 0 && args.setup().port() == 0) {
       args.mutable_setup()->set_port(server_port_);
     }
-    LOG(INFO) << "RunServerBody: about to create server";
+    ABSL_LOG(INFO) << "RunServerBody: about to create server";
     std::unique_ptr<Server> server = CreateServer(args.setup());
     if (g_inproc_servers != nullptr) {
       g_inproc_servers->push_back(server.get());
@@ -244,28 +244,28 @@ class WorkerServiceImpl final : public WorkerService::Service {
     if (!server) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create server");
     }
-    LOG(INFO) << "RunServerBody: server created";
+    ABSL_LOG(INFO) << "RunServerBody: server created";
     ServerStatus status;
     status.set_port(server->port());
     status.set_cores(server->cores());
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "Server couldn't report init status");
     }
-    LOG(INFO) << "RunServerBody: creation status reported";
+    ABSL_LOG(INFO) << "RunServerBody: creation status reported";
     while (stream->Read(&args)) {
-      LOG(INFO) << "RunServerBody: Message read";
+      ABSL_LOG(INFO) << "RunServerBody: Message read";
       if (!args.has_mark()) {
-        LOG(INFO) << "RunServerBody: Message not a mark!";
+        ABSL_LOG(INFO) << "RunServerBody: Message not a mark!";
         return Status(StatusCode::INVALID_ARGUMENT, "Invalid mark");
       }
       *status.mutable_stats() = server->Mark(args.mark().reset());
       if (!stream->Write(status)) {
         return Status(StatusCode::UNKNOWN, "Server couldn't respond to mark");
       }
-      LOG(INFO) << "RunServerBody: Mark response given";
+      ABSL_LOG(INFO) << "RunServerBody: Mark response given";
     }
 
-    LOG(INFO) << "RunServerBody: Returning";
+    ABSL_LOG(INFO) << "RunServerBody: Returning";
     return Status::OK;
   }
 
@@ -292,10 +292,10 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
 
   server_ = builder->BuildAndStart();
   if (server_ == nullptr) {
-    LOG(ERROR) << "QpsWorker: Fail to BuildAndStart(driver_port=" << driver_port
+    ABSL_LOG(ERROR) << "QpsWorker: Fail to BuildAndStart(driver_port=" << driver_port
                << ", server_port=" << server_port << ")";
   } else {
-    LOG(INFO) << "QpsWorker: BuildAndStart(driver_port=" << driver_port
+    ABSL_LOG(INFO) << "QpsWorker: BuildAndStart(driver_port=" << driver_port
               << ", server_port=" << server_port << ") done";
   }
 }

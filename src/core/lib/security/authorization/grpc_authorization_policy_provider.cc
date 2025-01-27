@@ -25,8 +25,8 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
@@ -79,8 +79,8 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec) {
-  CHECK(!authz_policy_path.empty());
-  CHECK_GT(refresh_interval_sec, 0u);
+  ABSL_CHECK(!authz_policy_path.empty());
+  ABSL_CHECK_GT(refresh_interval_sec, 0u);
   absl::Status status;
   auto provider = MakeRefCounted<FileWatcherAuthorizationPolicyProvider>(
       authz_policy_path, refresh_interval_sec, &status);
@@ -102,7 +102,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
   auto thread_lambda = [](void* arg) {
     WeakRefCountedPtr<FileWatcherAuthorizationPolicyProvider> provider(
         static_cast<FileWatcherAuthorizationPolicyProvider*>(arg));
-    CHECK(provider != nullptr);
+    ABSL_CHECK(provider != nullptr);
     while (true) {
       void* value = gpr_event_wait(
           &provider->shutdown_event_,
@@ -112,7 +112,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       }
       absl::Status status = provider->ForceUpdate();
       if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api) && !status.ok()) {
-        LOG(ERROR) << "authorization policy reload status. code="
+        ABSL_LOG(ERROR) << "authorization policy reload status. code="
                    << static_cast<int>(status.code())
                    << " error_details=" << status.message();
       }
@@ -187,7 +187,7 @@ grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_static_data_create(
     const char* authz_policy, grpc_status_code* code,
     const char** error_details) {
-  CHECK_NE(authz_policy, nullptr);
+  ABSL_CHECK_NE(authz_policy, nullptr);
   auto provider_or =
       grpc_core::StaticDataAuthorizationPolicyProvider::Create(authz_policy);
   if (!provider_or.ok()) {
@@ -203,7 +203,7 @@ grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_file_watcher_create(
     const char* authz_policy_path, unsigned int refresh_interval_sec,
     grpc_status_code* code, const char** error_details) {
-  CHECK_NE(authz_policy_path, nullptr);
+  ABSL_CHECK_NE(authz_policy_path, nullptr);
   auto provider_or = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
       authz_policy_path, refresh_interval_sec);
   if (!provider_or.ok()) {

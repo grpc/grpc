@@ -26,7 +26,7 @@
 #include <memory>
 #include <optional>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/no_destruct.h"
@@ -92,14 +92,14 @@ TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
   int child_pid = fork();
   ASSERT_NE(child_pid, -1);
   if (child_pid == 0) {
-    VLOG(2) << "I am child pid: " << getpid();
+    ABSL_VLOG(2) << "I am child pid: " << getpid();
     forkable->CheckChild();
     exit(testing::Test::HasFailure());
   } else {
-    VLOG(2) << "I am parent pid: " << getpid();
+    ABSL_VLOG(2) << "I am parent pid: " << getpid();
     forkable->CheckParent();
     int status;
-    VLOG(2) << "Waiting for child pid: " << child_pid;
+    ABSL_VLOG(2) << "Waiting for child pid: " << child_pid;
     do {
       // retry on EINTR, and fail otherwise
       if (waitpid(child_pid, &status, 0) != -1) break;

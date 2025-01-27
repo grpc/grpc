@@ -22,8 +22,8 @@
 #include <atomic>
 #include <cstdint>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/orphanable.h"
@@ -92,11 +92,11 @@ class DualRefCounted : public Impl {
 #ifndef NDEBUG
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " unref " << strong_refs << " -> "
+      ABSL_VLOG(2) << trace_ << ":" << this << " unref " << strong_refs << " -> "
               << strong_refs - 1 << ", weak_ref " << weak_refs << " -> "
               << weak_refs + 1;
     }
-    CHECK_GT(strong_refs, 0u);
+    ABSL_CHECK_GT(strong_refs, 0u);
 #endif
     if (GPR_UNLIKELY(strong_refs == 1)) {
       Orphaned();
@@ -111,12 +111,12 @@ class DualRefCounted : public Impl {
 #ifndef NDEBUG
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
+      ABSL_VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
               << location.line() << " unref " << strong_refs << " -> "
               << strong_refs - 1 << ", weak_ref " << weak_refs << " -> "
               << weak_refs + 1 << ") " << reason;
     }
-    CHECK_GT(strong_refs, 0u);
+    ABSL_CHECK_GT(strong_refs, 0u);
 #else
     // Avoid unused-parameter warnings for debug-only parameters
     (void)location;
@@ -136,7 +136,7 @@ class DualRefCounted : public Impl {
 #ifndef NDEBUG
       const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
       if (trace_ != nullptr) {
-        VLOG(2) << trace_ << ":" << this << " ref_if_non_zero " << strong_refs
+        ABSL_VLOG(2) << trace_ << ":" << this << " ref_if_non_zero " << strong_refs
                 << " -> " << strong_refs + 1 << " (weak_refs=" << weak_refs
                 << ")";
       }
@@ -155,7 +155,7 @@ class DualRefCounted : public Impl {
 #ifndef NDEBUG
       const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
       if (trace_ != nullptr) {
-        VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
+        ABSL_VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
                 << location.line() << " ref_if_non_zero " << strong_refs
                 << " -> " << strong_refs + 1 << " (weak_refs=" << weak_refs
                 << ") " << reason;
@@ -213,10 +213,10 @@ class DualRefCounted : public Impl {
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (trace != nullptr) {
-      VLOG(2) << trace << ":" << this << " weak_unref " << weak_refs << " -> "
+      ABSL_VLOG(2) << trace << ":" << this << " weak_unref " << weak_refs << " -> "
               << weak_refs - 1 << " (refs=" << strong_refs << ")";
     }
-    CHECK_GT(weak_refs, 0u);
+    ABSL_CHECK_GT(weak_refs, 0u);
 #endif
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
       unref_behavior_(static_cast<Child*>(this));
@@ -235,11 +235,11 @@ class DualRefCounted : public Impl {
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (trace != nullptr) {
-      VLOG(2) << trace << ":" << this << " " << location.file() << ":"
+      ABSL_VLOG(2) << trace << ":" << this << " " << location.file() << ":"
               << location.line() << " weak_unref " << weak_refs << " -> "
               << weak_refs - 1 << " (refs=" << strong_refs << ") " << reason;
     }
-    CHECK_GT(weak_refs, 0u);
+    ABSL_CHECK_GT(weak_refs, 0u);
 #else
     // Avoid unused-parameter warnings for debug-only parameters
     (void)location;
@@ -298,9 +298,9 @@ class DualRefCounted : public Impl {
         refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
-    CHECK_NE(strong_refs, 0u);
+    ABSL_CHECK_NE(strong_refs, 0u);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " ref " << strong_refs << " -> "
+      ABSL_VLOG(2) << trace_ << ":" << this << " ref " << strong_refs << " -> "
               << strong_refs + 1 << "; (weak_refs=" << weak_refs << ")";
     }
 #else
@@ -313,9 +313,9 @@ class DualRefCounted : public Impl {
         refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
-    CHECK_NE(strong_refs, 0u);
+    ABSL_CHECK_NE(strong_refs, 0u);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
+      ABSL_VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
               << location.line() << " ref " << strong_refs << " -> "
               << strong_refs + 1 << " (weak_refs=" << weak_refs << ") "
               << reason;
@@ -335,10 +335,10 @@ class DualRefCounted : public Impl {
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " weak_ref " << weak_refs << " -> "
+      ABSL_VLOG(2) << trace_ << ":" << this << " weak_ref " << weak_refs << " -> "
               << weak_refs + 1 << "; (refs=" << strong_refs << ")";
     }
-    if (strong_refs == 0) CHECK_NE(weak_refs, 0u);
+    if (strong_refs == 0) ABSL_CHECK_NE(weak_refs, 0u);
 #else
     refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
 #endif
@@ -351,11 +351,11 @@ class DualRefCounted : public Impl {
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
+      ABSL_VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
               << location.line() << " weak_ref " << weak_refs << " -> "
               << weak_refs + 1 << " (refs=" << strong_refs << ") " << reason;
     }
-    if (strong_refs == 0) CHECK_NE(weak_refs, 0u);
+    if (strong_refs == 0) ABSL_CHECK_NE(weak_refs, 0u);
 #else
     // Use conditionally-important parameters
     (void)location;

@@ -51,7 +51,7 @@ TEST(CheckDelayedTest, SeesDelayed) {
 
 TEST(MapError, DoesntMapOk) {
   auto fail_on_call = [](const absl::Status&) {
-    LOG(FATAL) << "should never be called";
+    ABSL_LOG(FATAL) << "should never be called";
     return absl::InternalError("unreachable");
   };
   promise_detail::MapError<decltype(fail_on_call)> map_on_error(

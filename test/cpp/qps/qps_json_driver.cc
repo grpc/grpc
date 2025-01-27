@@ -24,8 +24,8 @@
 #include <set>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
@@ -103,7 +103,7 @@ ConstructPerWorkerCredentialTypesMap() {
     }
     size_t comma = next_entry.find(',');
     if (comma == std::string::npos) {
-      LOG(ERROR)
+      ABSL_LOG(ERROR)
           << "Expected --per_worker_credential_types to be a list of the "
              "form: 'addr1,cred_type1;addr2,cred_type2;...' into.";
       abort();
@@ -183,9 +183,9 @@ static double BinarySearch(
     double mid = low + ((high - low) / 2);
     double current_cpu_load =
         GetCpuLoad(scenario, mid, per_worker_credential_types, success);
-    VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f", mid);
+    ABSL_VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f", mid);
     if (!*success) {
-      LOG(ERROR) << "Client/Server Failure";
+      ABSL_LOG(ERROR) << "Client/Server Failure";
       break;
     }
     if (targeted_cpu_load <= current_cpu_load) {
@@ -207,7 +207,7 @@ static double SearchOfferedLoad(
   double current_cpu_load = GetCpuLoad(scenario, current_offered_load,
                                        per_worker_credential_types, success);
   if (current_cpu_load > targeted_cpu_load) {
-    LOG(ERROR) << "Initial offered load too high";
+    ABSL_LOG(ERROR) << "Initial offered load too high";
     return -1;
   }
 
@@ -215,7 +215,7 @@ static double SearchOfferedLoad(
     current_offered_load *= 2;
     current_cpu_load = GetCpuLoad(scenario, current_offered_load,
                                   per_worker_credential_types, success);
-    VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f",
+    ABSL_VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f",
                                current_offered_load);
   }
 
@@ -243,12 +243,12 @@ static bool QpsDriver() {
   if (scfile) {
     // Read the json data from disk
     FILE* json_file = fopen(absl::GetFlag(FLAGS_scenarios_file).c_str(), "r");
-    CHECK_NE(json_file, nullptr);
+    ABSL_CHECK_NE(json_file, nullptr);
     fseek(json_file, 0, SEEK_END);
     long len = ftell(json_file);
     char* data = new char[len];
     fseek(json_file, 0, SEEK_SET);
-    CHECK_EQ(len, (long)fread(data, 1, len, json_file));
+    ABSL_CHECK_EQ(len, (long)fread(data, 1, len, json_file));
     fclose(json_file);
     json = std::string(data, data + len);
     delete[] data;
@@ -265,7 +265,7 @@ static bool QpsDriver() {
   bool success = true;
 
   // Make sure that there is at least some valid scenario here
-  CHECK_GT(scenarios.scenarios_size(), 0);
+  ABSL_CHECK_GT(scenarios.scenarios_size(), 0);
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     if (absl::GetFlag(FLAGS_search_param).empty()) {
@@ -278,11 +278,11 @@ static bool QpsDriver() {
             SearchOfferedLoad(absl::GetFlag(FLAGS_initial_search_value),
                               absl::GetFlag(FLAGS_targeted_cpu_load), scenario,
                               per_worker_credential_types, &success);
-        LOG(INFO) << "targeted_offered_load " << targeted_offered_load;
+        ABSL_LOG(INFO) << "targeted_offered_load " << targeted_offered_load;
         GetCpuLoad(scenario, targeted_offered_load, per_worker_credential_types,
                    &success);
       } else {
-        LOG(ERROR) << "Unimplemented search param";
+        ABSL_LOG(ERROR) << "Unimplemented search param";
       }
     }
   }

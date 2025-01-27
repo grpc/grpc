@@ -50,8 +50,8 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -155,7 +155,7 @@ class TcpZerocopySendRecord {
   //  sendmsg() failed or when tcp_write() is done.
   bool Unref() {
     const intptr_t prior = ref_.fetch_sub(1, std::memory_order_acq_rel);
-    DCHECK_GT(prior, 0);
+    ABSL_DCHECK_GT(prior, 0);
     if (prior == 1) {
       AllSendsComplete();
       return true;
@@ -170,9 +170,9 @@ class TcpZerocopySendRecord {
   };
 
   void AssertEmpty() {
-    DCHECK_EQ(buf_.count, 0u);
-    DCHECK_EQ(buf_.length, 0u);
-    DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
+    ABSL_DCHECK_EQ(buf_.count, 0u);
+    ABSL_DCHECK_EQ(buf_.length, 0u);
+    ABSL_DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
   }
 
   // When all sendmsg() calls associated with this tcp_write() have been
@@ -180,7 +180,7 @@ class TcpZerocopySendRecord {
   // for each sendmsg()) and all reference counts have been dropped, drop our
   // reference to the underlying data since we no longer need it.
   void AllSendsComplete() {
-    DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
+    ABSL_DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
     grpc_slice_buffer_reset_and_unref(&buf_);
   }
 
@@ -260,7 +260,7 @@ class TcpZerocopySendCtx {
     --last_send_;
     if (ReleaseSendRecord(last_send_)->Unref()) {
       // We should still be holding the ref taken by tcp_write().
-      DCHECK(0);
+      ABSL_DCHECK(0);
     }
   }
 
@@ -296,8 +296,8 @@ class TcpZerocopySendCtx {
   // max_sends_ tcp_write() instances with zerocopy enabled in flight at the
   // same time.
   void PutSendRecord(TcpZerocopySendRecord* record) {
-    DCHECK(record >= send_records_);
-    DCHECK(record < send_records_ + max_sends_);
+    ABSL_DCHECK(record >= send_records_);
+    ABSL_DCHECK(record < send_records_ + max_sends_);
     MutexLock guard(&lock_);
     PutSendRecordLocked(record);
   }
@@ -316,7 +316,7 @@ class TcpZerocopySendCtx {
   bool enabled() const { return enabled_; }
 
   void set_enabled(bool enabled) {
-    DCHECK(!enabled || !memory_limited());
+    ABSL_DCHECK(!enabled || !memory_limited());
     enabled_ = enabled;
   }
 
@@ -354,7 +354,7 @@ class TcpZerocopySendCtx {
       zcopy_enobuf_state_ = OMemState::CHECK;
       return false;
     }
-    DCHECK(zcopy_enobuf_state_ != OMemState::CHECK);
+    ABSL_DCHECK(zcopy_enobuf_state_ != OMemState::CHECK);
     if (zcopy_enobuf_state_ == OMemState::FULL) {
       // A previous sendmsg attempt was blocked by ENOBUFS. Return true to
       // mark the fd as writable so the next write attempt could be made.
@@ -428,7 +428,7 @@ class TcpZerocopySendCtx {
 
   TcpZerocopySendRecord* ReleaseSendRecordLocked(uint32_t seq) {
     auto iter = ctx_lookup_.find(seq);
-    DCHECK(iter != ctx_lookup_.end());
+    ABSL_DCHECK(iter != ctx_lookup_.end());
     TcpZerocopySendRecord* record = iter->second;
     ctx_lookup_.erase(iter);
     return record;
@@ -446,7 +446,7 @@ class TcpZerocopySendCtx {
   }
 
   void PutSendRecordLocked(TcpZerocopySendRecord* record) {
-    DCHECK(free_send_records_size_ < max_sends_);
+    ABSL_DCHECK(free_send_records_size_ < max_sends_);
     free_send_records_[free_send_records_size_] = record;
     free_send_records_size_++;
   }
@@ -591,7 +591,7 @@ void LogCommonIOErrors(absl::string_view prefix, int error_no) {
       return;
     default:
       grpc_core::global_stats().IncrementUncommonIoErrorCount();
-      LOG_EVERY_N_SEC(ERROR, 1)
+      ABSL_LOG_EVERY_N_SEC(ERROR, 1)
           << prefix.data()
           << " encountered uncommon error: " << grpc_core::StrError(error_no);
       return;
@@ -634,7 +634,7 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   g_backup_poller_mu->Lock();
   // last "uncovered" notification is the ref that keeps us polling
   if (g_uncovered_notifications_pending == 1) {
-    CHECK(g_backup_poller == p);
+    ABSL_CHECK(g_backup_poller == p);
     g_backup_poller = nullptr;
     g_uncovered_notifications_pending = 0;
     g_backup_poller_mu->Unlock();
@@ -658,7 +658,7 @@ static void drop_uncovered(grpc_tcp* /*tcp*/) {
   p = g_backup_poller;
   old_count = g_uncovered_notifications_pending--;
   g_backup_poller_mu->Unlock();
-  CHECK_GT(old_count, 1);
+  ABSL_CHECK_GT(old_count, 1);
   GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " uncover cnt "
                             << old_count << "->" << old_count - 1;
 }
@@ -829,16 +829,16 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   grpc_closure* cb = tcp->read_cb;
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "TCP:" << tcp << " call_cb " << cb << " " << cb->cb << ":"
+    ABSL_LOG(INFO) << "TCP:" << tcp << " call_cb " << cb << " " << cb->cb << ":"
               << cb->cb_arg;
     size_t i;
-    LOG(INFO) << "READ " << tcp << " (peer=" << tcp->peer_string
+    ABSL_LOG(INFO) << "READ " << tcp << " (peer=" << tcp->peer_string
               << ") error=" << grpc_core::StatusToString(error);
     if (ABSL_VLOG_IS_ON(2)) {
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        VLOG(2) << "READ DATA: " << dump;
+        ABSL_VLOG(2) << "READ DATA: " << dump;
         gpr_free(dump);
       }
     }
@@ -881,7 +881,7 @@ static void update_rcvlowat(grpc_tcp* tcp)
   }
   if (setsockopt(tcp->fd, SOL_SOCKET, SO_RCVLOWAT, &remaining,
                  sizeof(remaining)) != 0) {
-    LOG(ERROR) << "Cannot set SO_RCVLOWAT on fd=" << tcp->fd
+    ABSL_LOG(ERROR) << "Cannot set SO_RCVLOWAT on fd=" << tcp->fd
                << " err=" << grpc_core::StrError(errno);
     return;
   }
@@ -912,8 +912,8 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     iov[i].iov_len = GRPC_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
   }
 
-  CHECK_NE(tcp->incoming_buffer->length, 0u);
-  DCHECK_GT(tcp->min_progress_size, 0);
+  ABSL_CHECK_NE(tcp->incoming_buffer->length, 0u);
+  ABSL_DCHECK_GT(tcp->min_progress_size, 0);
 
   do {
     // Assume there is something on the queue. If we receive TCP_INQ from
@@ -981,12 +981,12 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
     grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     add_to_estimate(tcp, static_cast<size_t>(read_bytes));
-    DCHECK((size_t)read_bytes <=
+    ABSL_DCHECK((size_t)read_bytes <=
            tcp->incoming_buffer->length - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (tcp->inq_capable) {
-      DCHECK(!(msg.msg_flags & MSG_CTRUNC));
+      ABSL_DCHECK(!(msg.msg_flags & MSG_CTRUNC));
       struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
       for (; cmsg != nullptr; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
         if (cmsg->cmsg_level == SOL_TCP && cmsg->cmsg_type == TCP_CM_INQ &&
@@ -1029,7 +1029,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     finish_estimate(tcp);
   }
 
-  DCHECK_GT(total_read_bytes, 0u);
+  ABSL_DCHECK_GT(total_read_bytes, 0u);
   *error = absl::OkStatus();
   if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
@@ -1147,7 +1147,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
 static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
                      grpc_closure* cb, bool urgent, int min_progress_size) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  CHECK_EQ(tcp->read_cb, nullptr);
+  ABSL_CHECK_EQ(tcp->read_cb, nullptr);
   tcp->read_cb = cb;
   tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
@@ -1229,8 +1229,8 @@ static TcpZerocopySendRecord* tcp_get_send_zerocopy_record(
     }
     if (zerocopy_send_record != nullptr) {
       zerocopy_send_record->PrepareForSends(buf);
-      DCHECK_EQ(buf->count, 0u);
-      DCHECK_EQ(buf->length, 0u);
+      ABSL_DCHECK_EQ(buf->count, 0u);
+      ABSL_DCHECK_EQ(buf->length, 0u);
       tcp->outgoing_byte_idx = 0;
       tcp->outgoing_buffer = nullptr;
     }
@@ -1291,10 +1291,10 @@ static void UnrefMaybePutZerocopySendRecord(grpc_tcp* tcp,
                                             uint32_t seq, const char* tag);
 // Reads \a cmsg to process zerocopy control messages.
 static void process_zerocopy(grpc_tcp* tcp, struct cmsghdr* cmsg) {
-  DCHECK(cmsg);
+  ABSL_DCHECK(cmsg);
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(cmsg));
-  DCHECK_EQ(serr->ee_errno, 0u);
-  DCHECK(serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY);
+  ABSL_DCHECK_EQ(serr->ee_errno, 0u);
+  ABSL_DCHECK(serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY);
   const uint32_t lo = serr->ee_info;
   const uint32_t hi = serr->ee_data;
   for (uint32_t seq = lo; seq <= hi; ++seq) {
@@ -1304,7 +1304,7 @@ static void process_zerocopy(grpc_tcp* tcp, struct cmsghdr* cmsg) {
     // both; if so, batch the unref/put.
     TcpZerocopySendRecord* record =
         tcp->tcp_zerocopy_send_ctx.ReleaseSendRecord(seq);
-    DCHECK(record);
+    ABSL_DCHECK(record);
     UnrefMaybePutZerocopySendRecord(tcp, record, seq, "CALLBACK RCVD");
   }
   if (tcp->tcp_zerocopy_send_ctx.UpdateZeroCopyOMemStateAfterFree()) {
@@ -1365,7 +1365,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(next_cmsg));
   if (serr->ee_errno != ENOMSG ||
       serr->ee_origin != SO_EE_ORIGIN_TIMESTAMPING) {
-    LOG(ERROR) << "Unexpected control message";
+    ABSL_LOG(ERROR) << "Unexpected control message";
     return cmsg;
   }
   tcp->tb_list.ProcessTimestamp(serr, opt_stats, tss);
@@ -1416,7 +1416,7 @@ static bool process_errors(grpc_tcp* tcp) {
       return processed_err;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
-      LOG(ERROR) << "Error message was truncated.";
+      ABSL_LOG(ERROR) << "Error message was truncated.";
     }
 
     if (msg.msg_controllen == 0) {
@@ -1488,15 +1488,15 @@ static bool tcp_write_with_timestamps(grpc_tcp* /*tcp*/, struct msghdr* /*msg*/,
                                       ssize_t* /*sent_length*/,
                                       int* /* saved_errno */,
                                       int /*additional_flags*/) {
-  LOG(ERROR) << "Write with timestamps not supported for this platform";
-  CHECK(0);
+  ABSL_LOG(ERROR) << "Write with timestamps not supported for this platform";
+  ABSL_CHECK(0);
   return false;
 }
 
 static void tcp_handle_error(void* /*arg*/ /* grpc_tcp */,
                              grpc_error_handle /*error*/) {
-  LOG(ERROR) << "Error handling is not supported for this platform";
-  CHECK(0);
+  ABSL_LOG(ERROR) << "Error handling is not supported for this platform";
+  ABSL_CHECK(0);
 }
 #endif  // GRPC_LINUX_ERRQUEUE
 
@@ -1535,7 +1535,7 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
     ++(out_offset_.slice_idx);
     out_offset_.byte_idx = 0;
   }
-  DCHECK_GT(iov_size, 0u);
+  ABSL_DCHECK_GT(iov_size, 0u);
   return iov_size;
 }
 
@@ -1686,7 +1686,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       outgoing_slice_idx++;
       tcp->outgoing_byte_idx = 0;
     }
-    CHECK_GT(iov_size, 0u);
+    ABSL_CHECK_GT(iov_size, 0u);
 
     msg.msg_name = nullptr;
     msg.msg_namelen = 0;
@@ -1734,7 +1734,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       }
     }
 
-    CHECK_EQ(tcp->outgoing_byte_idx, 0u);
+    ABSL_CHECK_EQ(tcp->outgoing_byte_idx, 0u);
     grpc_core::EventLog::Append("tcp-write-outstanding", -sent_length);
     tcp->bytes_counter += sent_length;
     trailing = sending_length - static_cast<size_t>(sent_length);
@@ -1784,7 +1784,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
     GRPC_TRACE_LOG(tcp, INFO) << "write: delayed";
     notify_on_write(tcp);
     // tcp_flush does not populate error if it has returned false.
-    DCHECK(error.ok());
+    ABSL_DCHECK(error.ok());
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
@@ -1808,18 +1808,18 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     size_t i;
 
     for (i = 0; i < buf->count; i++) {
-      LOG(INFO) << "WRITE " << tcp << " (peer=" << tcp->peer_string << ")";
+      ABSL_LOG(INFO) << "WRITE " << tcp << " (peer=" << tcp->peer_string << ")";
       if (ABSL_VLOG_IS_ON(2)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        VLOG(2) << "WRITE DATA: " << data;
+        ABSL_VLOG(2) << "WRITE DATA: " << data;
         gpr_free(data);
       }
     }
   }
 
-  CHECK_EQ(tcp->write_cb, nullptr);
-  DCHECK_EQ(tcp->current_zerocopy_send, nullptr);
+  ABSL_CHECK_EQ(tcp->write_cb, nullptr);
+  ABSL_DCHECK_EQ(tcp->current_zerocopy_send, nullptr);
 
   if (buf->length == 0) {
     grpc_core::Closure::Run(
@@ -1839,7 +1839,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
   }
   tcp->outgoing_buffer_arg = arg;
   if (arg) {
-    CHECK(grpc_event_engine_can_track_errors());
+    ABSL_CHECK(grpc_event_engine_can_track_errors());
   }
 
   bool flush_result =
@@ -1921,7 +1921,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  CHECK(options.resource_quota != nullptr);
+  ABSL_CHECK(options.resource_quota != nullptr);
   tcp->memory_owner =
       options.resource_quota->memory_quota()->CreateMemoryOwner();
   tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));
@@ -1960,7 +1960,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
     if (err == 0) {
       tcp->tcp_zerocopy_send_ctx.set_enabled(true);
     } else {
-      LOG(ERROR) << "Failed to set zerocopy options on the socket.";
+      ABSL_LOG(ERROR) << "Failed to set zerocopy options on the socket.";
     }
 #endif
   }
@@ -1989,7 +1989,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   if (setsockopt(tcp->fd, SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
     tcp->inq_capable = true;
   } else {
-    VLOG(2) << "cannot set inq fd=" << tcp->fd << " errno=" << errno;
+    ABSL_VLOG(2) << "cannot set inq fd=" << tcp->fd << " errno=" << errno;
     tcp->inq_capable = false;
   }
 #else
@@ -2012,7 +2012,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
 
 int grpc_tcp_fd(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  CHECK(ep->vtable == &vtable);
+  ABSL_CHECK(ep->vtable == &vtable);
   return grpc_fd_wrapped_fd(tcp->em_fd);
 }
 
@@ -2023,7 +2023,7 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
         grpc_event_engine_endpoint_destroy_and_release_fd(ep, fd, done);
   }
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  CHECK(ep->vtable == &vtable);
+  ABSL_CHECK(ep->vtable == &vtable);
   tcp->release_fd = fd;
   tcp->release_fd_cb = done;
   grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);

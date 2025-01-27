@@ -23,8 +23,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/no_destruct.h"
 
@@ -59,19 +59,19 @@ GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
     if (process_epoch_seconds > 1) {
       break;
     }
-    LOG(INFO) << "gpr_now(GPR_CLOCK_MONOTONIC) returns a very small number: "
+    ABSL_LOG(INFO) << "gpr_now(GPR_CLOCK_MONOTONIC) returns a very small number: "
                  "sleeping for 100ms";
     gpr_sleep_until(gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN)));
   }
 
   // Check time has increased past 1 second.
-  CHECK_GT(process_epoch_seconds, 1);
+  ABSL_CHECK_GT(process_epoch_seconds, 1);
   // Fake the epoch to always return >=1 second from our monotonic clock (to
   // avoid bugs elsewhere)
   process_epoch_seconds -= 1;
   int64_t expected = 0;
   gpr_cycle_counter process_epoch_cycles = (cycles_start + cycles_end) / 2;
-  CHECK_NE(process_epoch_cycles, 0);
+  ABSL_CHECK_NE(process_epoch_cycles, 0);
   if (!g_process_epoch_seconds.compare_exchange_strong(
           expected, process_epoch_seconds, std::memory_order_relaxed,
           std::memory_order_relaxed)) {
@@ -118,7 +118,7 @@ gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
 }
 
 int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
-  CHECK(ts.clock_type == GPR_TIMESPAN);
+  ABSL_CHECK(ts.clock_type == GPR_TIMESPAN);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              (static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS) +
              (static_cast<double>(GPR_NS_PER_SEC - 1) /
@@ -133,7 +133,7 @@ int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
 }
 
 int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
-  CHECK(ts.clock_type == GPR_TIMESPAN);
+  ABSL_CHECK(ts.clock_type == GPR_TIMESPAN);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              (static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS);
   if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {

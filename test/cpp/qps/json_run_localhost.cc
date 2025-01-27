@@ -28,8 +28,8 @@
 #include <sys/wait.h>
 #endif
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "test/core/test_util/port.h"
@@ -69,13 +69,13 @@ static void register_sighandler() {
 
 static void LogStatus(int status, const char* label) {
   if (WIFEXITED(status)) {
-    LOG(INFO) << label << ": subprocess exited with status "
+    ABSL_LOG(INFO) << label << ": subprocess exited with status "
               << WEXITSTATUS(status);
   } else if (WIFSIGNALED(status)) {
-    LOG(INFO) << label << ": subprocess terminated with signal "
+    ABSL_LOG(INFO) << label << ": subprocess terminated with signal "
               << WTERMSIG(status);
   } else {
-    LOG(INFO) << label << ": unknown subprocess status: " << status;
+    ABSL_LOG(INFO) << label << ": unknown subprocess status: " << status;
   }
 }
 
@@ -134,5 +134,5 @@ int main(int argc, char** argv) {
       delete g_workers[i];
     }
   }
-  CHECK_EQ(driver_join_status, 0);
+  ABSL_CHECK_EQ(driver_join_status, 0);
 }

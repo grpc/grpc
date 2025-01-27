@@ -35,8 +35,8 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
@@ -156,7 +156,7 @@ static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
                                   const char* file, int line) {
   if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
-    VLOG(2).AtLocation(file, line) << "SECENDP unref " << ep << " : " << reason
+    ABSL_VLOG(2).AtLocation(file, line) << "SECENDP unref " << ep << " : " << reason
                                    << " " << val << " -> " << val - 1;
   }
   if (gpr_unref(&ep->ref)) {
@@ -168,7 +168,7 @@ static void secure_endpoint_ref(secure_endpoint* ep, const char* reason,
                                 const char* file, int line) {
   if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
-    VLOG(2).AtLocation(file, line) << "SECENDP   ref " << ep << " : " << reason
+    ABSL_VLOG(2).AtLocation(file, line) << "SECENDP   ref " << ep << " : " << reason
                                    << " " << val << " -> " << val + 1;
   }
   gpr_ref(&ep->ref);
@@ -233,7 +233,7 @@ static void call_read_cb(secure_endpoint* ep, grpc_error_handle error) {
     for (i = 0; i < ep->read_buffer->count; i++) {
       char* data = grpc_dump_slice(ep->read_buffer->slices[i],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      VLOG(2) << "READ " << ep << ": " << data;
+      ABSL_VLOG(2) << "READ " << ep << ": " << data;
       gpr_free(data);
     }
   }
@@ -295,7 +295,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
               &unprotected_buffer_size_written);
           gpr_mu_unlock(&ep->protector_mu);
           if (result != TSI_OK) {
-            LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
+            ABSL_LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
             break;
           }
           message_bytes += processed_message_size;
@@ -361,7 +361,7 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   SECURE_ENDPOINT_REF(ep, "read");
   if (ep->leftover_bytes.count) {
     grpc_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
-    CHECK_EQ(ep->leftover_bytes.count, 0u);
+    ABSL_CHECK_EQ(ep->leftover_bytes.count, 0u);
     on_read(ep, absl::OkStatus());
     return;
   }
@@ -409,7 +409,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
       for (i = 0; i < slices->count; i++) {
         char* data =
             grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        VLOG(2) << "WRITE " << ep << ": " << data;
+        ABSL_VLOG(2) << "WRITE " << ep << ": " << data;
         gpr_free(data);
       }
     }
@@ -450,7 +450,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
                                                &protected_buffer_size_to_send);
           gpr_mu_unlock(&ep->protector_mu);
           if (result != TSI_OK) {
-            LOG(ERROR) << "Encryption error: " << tsi_result_to_string(result);
+            ABSL_LOG(ERROR) << "Encryption error: " << tsi_result_to_string(result);
             break;
           }
           message_bytes += processed_message_size;

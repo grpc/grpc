@@ -39,8 +39,8 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
@@ -271,7 +271,7 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const std::string& json_key, long token_lifetime_seconds) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
   if (token_lifetime_seconds <= 0) {
-    LOG(ERROR) << "Trying to create JWTCredentials with non-positive lifetime";
+    ABSL_LOG(ERROR) << "Trying to create JWTCredentials with non-positive lifetime";
     return WrapCallCredentials(nullptr);
   }
   gpr_timespec lifetime =
@@ -360,7 +360,7 @@ class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
       grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
       size_t* num_creds_md, grpc_status_code* status,
       const char** error_details) {
-    CHECK(wrapper);
+    ABSL_CHECK(wrapper);
     MetadataCredentialsPluginWrapper* w =
         static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
     if (!w->plugin_) {
@@ -391,7 +391,7 @@ class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
   }
 
   static char* DebugString(void* wrapper) {
-    CHECK(wrapper);
+    ABSL_CHECK(wrapper);
     MetadataCredentialsPluginWrapper* w =
         static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
     return gpr_strdup(w->plugin_->DebugString().c_str());

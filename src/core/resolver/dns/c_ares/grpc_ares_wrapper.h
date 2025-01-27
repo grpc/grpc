@@ -26,7 +26,7 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"

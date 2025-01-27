@@ -246,8 +246,8 @@ TEST(SeqTest, SaneSizes) {
           return 2;
         };
       });
-  LOG(INFO) << "sizeof(Big): " << sizeof(Big);  // Was 1024
-  LOG(INFO) << "sizeof(p1): " << sizeof(p1);    // Was 1048
+  ABSL_LOG(INFO) << "sizeof(Big): " << sizeof(Big);  // Was 1024
+  ABSL_LOG(INFO) << "sizeof(p1): " << sizeof(p1);    // Was 1048
   EXPECT_GE(sizeof(p1), sizeof(Big));
   EXPECT_LT(sizeof(p1), 1.05 * sizeof(Big));  // Watchout for size bloat!
 }

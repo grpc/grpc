@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/telemetry/tcp_tracer.h"
 
@@ -86,7 +86,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     explicit DelegatingClientCallAttemptTracer(
         std::vector<CallAttemptTracer*> tracers)
         : tracers_(std::move(tracers)) {
-      DCHECK(!tracers_.empty());
+      ABSL_DCHECK(!tracers_.empty());
     }
     ~DelegatingClientCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
@@ -198,7 +198,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     attempt_tracers.reserve(tracers_.size());
     for (auto* tracer : tracers_) {
       auto* attempt_tracer = tracer->StartNewAttempt(is_transparent_retry);
-      DCHECK_NE(attempt_tracer, nullptr);
+      ABSL_DCHECK_NE(attempt_tracer, nullptr);
       attempt_tracers.push_back(attempt_tracer);
     }
     return GetContext<Arena>()->ManagedNew<DelegatingClientCallAttemptTracer>(
@@ -356,7 +356,7 @@ void AddClientCallTracerToContext(Arena* arena, ClientCallTracer* tracer) {
 }
 
 void AddServerCallTracerToContext(Arena* arena, ServerCallTracer* tracer) {
-  DCHECK_EQ(arena->GetContext<CallTracerInterface>(),
+  ABSL_DCHECK_EQ(arena->GetContext<CallTracerInterface>(),
             arena->GetContext<CallTracerAnnotationInterface>());
   if (arena->GetContext<CallTracerAnnotationInterface>() == nullptr) {
     // This is the first call tracer. Set it directly.

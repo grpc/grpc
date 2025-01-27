@@ -32,8 +32,8 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -85,7 +85,7 @@ std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
 void TestScenario::Log() const {
   std::ostringstream out;
   out << *this;
-  LOG(ERROR) << out.str();
+  ABSL_LOG(ERROR) << out.str();
 }
 
 // Set up a test tcp server which is in charge of accepting connections and
@@ -118,7 +118,7 @@ class TestTcpServer {
 
   void Start() {
     test_tcp_server_start(&tcp_server_, port_);
-    LOG(INFO) << "Test TCP server started at " << address_;
+    ABSL_LOG(INFO) << "Test TCP server started at " << address_;
   }
 
   const std::string& address() { return address_; }
@@ -163,7 +163,7 @@ class TestTcpServer {
   void OnConnect(grpc_endpoint* tcp, grpc_pollset* /*accepting_pollset*/,
                  grpc_tcp_server_acceptor* acceptor) {
     std::string peer(grpc_endpoint_get_peer(tcp));
-    LOG(INFO) << "Got incoming connection! from " << peer;
+    ABSL_LOG(INFO) << "Got incoming connection! from " << peer;
     EXPECT_FALSE(acceptor->external_connection);
     listener_fd_ = grpc_tcp_server_port_fd(
         acceptor->from_server, acceptor->port_index, acceptor->fd_index);
@@ -185,7 +185,7 @@ class TestTcpServer {
       Slice data(buf, read_bytes);
       p.read_buffer = ByteBuffer(&data, 1);
     }
-    LOG(INFO) << "Handing off fd " << fd_ << " with data size "
+    ABSL_LOG(INFO) << "Handing off fd " << fd_ << " with data size "
               << static_cast<int>(p.read_buffer.Length())
               << " from listener fd " << listener_fd_;
     connection_acceptor_->HandleNewConnection(&p);
@@ -228,7 +228,7 @@ class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       auto creds = GetCredentialsProvider()->GetServerCredentials(
           GetParam().credentials_type);
       builder.AddListeningPort(server_address_.str(), creds);
-      LOG(INFO) << "gRPC server listening on " << server_address_.str();
+      ABSL_LOG(INFO) << "gRPC server listening on " << server_address_.str();
     }
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
@@ -330,7 +330,7 @@ std::vector<TestScenario> CreateTestScenarios() {
     credentials_types.push_back(kInsecureCredentialsType);
   }
 
-  CHECK(!credentials_types.empty());
+  ABSL_CHECK(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
     for (auto server_has_port : {true, false}) {
       for (auto queue_pending_data : {true, false}) {

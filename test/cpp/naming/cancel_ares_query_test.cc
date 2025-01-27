@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "src/core/config/config_vars.h"
@@ -297,7 +297,7 @@ void TestCancelDuringActiveQuery(
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, rpc_deadline, nullptr);
-  CHECK(call);
+  ABSL_CHECK(call);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;

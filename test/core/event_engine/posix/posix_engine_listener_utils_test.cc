@@ -31,7 +31,7 @@
 
 #include <ifaddrs.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
@@ -105,7 +105,7 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
   struct ifaddrs* ifa_it;
   if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
     // No ifaddresses available.
-    LOG(INFO) << "Skipping ListenerAddAllLocalAddressesTest because the "
+    ABSL_LOG(INFO) << "Skipping ListenerAddAllLocalAddressesTest because the "
                  "machine does not have interfaces configured for listening.";
     return;
   }
@@ -119,7 +119,7 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
   if (num_ifaddrs == 0 || !result.ok()) {
     // Its possible that the machine may not have any Ipv4/Ipv6 interfaces
     // configured for listening. In that case, dont fail test.
-    LOG(INFO) << "Skipping ListenerAddAllLocalAddressesTest because the "
+    ABSL_LOG(INFO) << "Skipping ListenerAddAllLocalAddressesTest because the "
                  "machine does not have Ipv6/Ipv6 interfaces configured for "
                  "listening.";
     return;

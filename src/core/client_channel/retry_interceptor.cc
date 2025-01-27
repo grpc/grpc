@@ -119,7 +119,7 @@ std::optional<Duration> RetryState::ShouldRetry(
   // We should retry.
   Duration next_attempt_timeout;
   if (server_pushback.has_value()) {
-    CHECK_GE(*server_pushback, Duration::Zero());
+    ABSL_CHECK_GE(*server_pushback, Duration::Zero());
     next_attempt_timeout = *server_pushback;
     retry_backoff_.Reset();
   } else {

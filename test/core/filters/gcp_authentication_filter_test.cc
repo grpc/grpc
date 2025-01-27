@@ -46,7 +46,7 @@ class GcpAuthenticationFilterTest : public FilterTest<GcpAuthenticationFilter> {
         ChannelArgs().Set(GRPC_ARG_PARSE_GCP_AUTHENTICATION_METHOD_CONFIG,
                           true),
         service_config_json);
-    CHECK(service_config.ok()) << service_config.status();
+    ABSL_CHECK(service_config.ok()) << service_config.status();
     return *service_config;
   }
 

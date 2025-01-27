@@ -35,7 +35,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -48,7 +48,7 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
 #ifdef GPR_WINDOWS
   grpc_core::Crash("AF_UNIX socket pairs are not supported on Windows");
 #else
-  CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+  ABSL_CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
 #endif
 }
 

@@ -27,7 +27,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -207,7 +207,7 @@ class Compressor<
   void EncodeWith(MetadataTrait, const typename MetadataTrait::ValueType& value,
                   Encoder* encoder) {
     if (value != known_value) {
-      LOG(ERROR) << "Not encoding bad " << MetadataTrait::key() << " header";
+      ABSL_LOG(ERROR) << "Not encoding bad " << MetadataTrait::key() << " header";
       encoder->NoteEncodingError();
       return;
     }

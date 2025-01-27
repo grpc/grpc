@@ -20,8 +20,8 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -70,7 +70,7 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
   test.Expect(104, true);
   test.Step();
 
-  VLOG(2) << "SEEN_STATUS:" << seen_status;
+  ABSL_VLOG(2) << "SEEN_STATUS:" << seen_status;
 
   // Client keeps reading messages till it gets the status
   int num_messages_received = 0;
@@ -87,7 +87,7 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
     EXPECT_EQ(server_message.payload(), "hello world");
     num_messages_received++;
   }
-  CHECK_EQ(num_messages_received, num_messages);
+  ABSL_CHECK_EQ(num_messages_received, num_messages);
   if (!seen_status) {
     test.Expect(1, true);
     test.Step();

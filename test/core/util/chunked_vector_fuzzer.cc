@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -45,15 +45,15 @@ struct Comparison {
 
   // Check that both chunked and std are equivalent.
   void AssertOk() const {
-    CHECK(std.size() == chunked.size());
+    ABSL_CHECK(std.size() == chunked.size());
     auto it_chunked = chunked.cbegin();
     auto it_std = std.cbegin();
     while (it_std != std.cend()) {
-      CHECK(**it_std == **it_chunked);
+      ABSL_CHECK(**it_std == **it_chunked);
       ++it_chunked;
       ++it_std;
     }
-    CHECK(it_chunked == chunked.cend());
+    ABSL_CHECK(it_chunked == chunked.cend());
   }
 };
 

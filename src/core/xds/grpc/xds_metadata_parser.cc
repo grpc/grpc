@@ -71,7 +71,7 @@ std::unique_ptr<XdsMetadataValue> ParseGcpAuthnAudience(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(proto), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << context.client
+    ABSL_VLOG(2) << "[xds_client " << context.client
             << "] cluster metadata Audience: " << buf;
   }
   absl::string_view url = UpbStringToAbsl(
@@ -105,7 +105,7 @@ std::unique_ptr<XdsMetadataValue> ParseAddress(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(proto), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << context.client
+    ABSL_VLOG(2) << "[xds_client " << context.client
             << "] cluster metadata Address: " << buf;
   }
   auto addr = ParseXdsAddress(proto, errors);

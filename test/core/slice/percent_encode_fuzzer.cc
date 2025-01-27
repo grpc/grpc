@@ -22,7 +22,7 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
@@ -41,7 +41,7 @@ void RoundTrips(std::vector<uint8_t> buffer, PercentEncodingType type) {
   auto permissive_decoded_output =
       PermissivePercentDecodeSlice(std::move(output));
   // decoded output must always match the input
-  CHECK(input == permissive_decoded_output);
+  ABSL_CHECK(input == permissive_decoded_output);
 }
 FUZZ_TEST(MyTestSuite, RoundTrips)
     .WithDomains(VectorOf(Arbitrary<uint8_t>()),

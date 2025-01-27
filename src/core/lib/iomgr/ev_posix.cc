@@ -27,7 +27,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "src/core/config/config_vars.h"

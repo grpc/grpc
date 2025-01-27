@@ -24,7 +24,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -45,7 +45,7 @@ class DNSServiceResolverImpl
   explicit DNSServiceResolverImpl(std::shared_ptr<CFEventEngine> engine)
       : engine_(std::move((engine))) {}
   ~DNSServiceResolverImpl() override {
-    CHECK(requests_.empty());
+    ABSL_CHECK(requests_.empty());
     dispatch_release(queue_);
   }
 

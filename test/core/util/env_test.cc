@@ -18,7 +18,7 @@
 
 #include "src/core/util/env.h"
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 
@@ -26,7 +26,7 @@ TEST(EnvTest, SetenvGetenv) {
   const char* name = "FOO";
   const char* value = "BAR";
 
-  LOG(INFO) << "test_setenv_getenv";
+  ABSL_LOG(INFO) << "test_setenv_getenv";
 
   grpc_core::SetEnv(name, value);
   auto retrieved_value = grpc_core::GetEnv(name);
@@ -37,7 +37,7 @@ TEST(EnvTest, Unsetenv) {
   const char* name = "FOO";
   const char* value = "BAR";
 
-  LOG(INFO) << "test_unsetenv";
+  ABSL_LOG(INFO) << "test_unsetenv";
 
   grpc_core::SetEnv(name, value);
   grpc_core::UnsetEnv(name);

@@ -24,7 +24,7 @@ cc_library(
     deps = [
         "//:grpc++",
         "//examples/protos:route_guide",
-        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:absl_log",
     ],
 )
 
@@ -84,7 +84,7 @@ cc_binary(
         "//:grpc++",
         "//examples/protos:route_guide",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:absl_log",
         "@com_google_absl//absl/log:globals",
         "@com_google_absl//absl/log:initialize",
     ],

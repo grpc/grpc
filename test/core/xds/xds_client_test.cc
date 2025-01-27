@@ -949,7 +949,7 @@ class XdsClientTest : public ::testing::Test {
     std::string client_config_serialized =
         XdsClientTestPeer(xds_client_.get()).TestDumpClientConfig();
     ClientConfig client_config_proto;
-    CHECK(client_config_proto.ParseFromString(client_config_serialized))
+    ABSL_CHECK(client_config_proto.ParseFromString(client_config_serialized))
         << "at " << location.file() << ":" << location.line();
     CheckNode(client_config_proto.node(), location);
     return client_config_proto;

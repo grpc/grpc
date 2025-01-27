@@ -28,8 +28,8 @@
 
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -73,16 +73,16 @@ grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
     memset(&in_dest, 0, sizeof(sockaddr_in));
     in_dest.sin_port = htons(atoi(port.c_str()));
     in_dest.sin_family = AF_INET;
-    CHECK_EQ(inet_pton(AF_INET, host.c_str(), &in_dest.sin_addr), 1);
+    ABSL_CHECK_EQ(inet_pton(AF_INET, host.c_str(), &in_dest.sin_addr), 1);
     memcpy(&resolved_addr.addr, &in_dest, sizeof(sockaddr_in));
     resolved_addr.len = sizeof(sockaddr_in);
   } else {
-    CHECK(test_addr.family == AF_INET6);
+    ABSL_CHECK(test_addr.family == AF_INET6);
     sockaddr_in6 in6_dest;
     memset(&in6_dest, 0, sizeof(sockaddr_in6));
     in6_dest.sin6_port = htons(atoi(port.c_str()));
     in6_dest.sin6_family = AF_INET6;
-    CHECK_EQ(inet_pton(AF_INET6, host.c_str(), &in6_dest.sin6_addr), 1);
+    ABSL_CHECK_EQ(inet_pton(AF_INET6, host.c_str(), &in6_dest.sin6_addr), 1);
     memcpy(&resolved_addr.addr, &in6_dest, sizeof(sockaddr_in6));
     resolved_addr.len = sizeof(sockaddr_in6);
   }
@@ -117,7 +117,7 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
             .value();
     auto it = dest_addr_to_src_addr_.find(ip_addr_str);
     if (it == dest_addr_to_src_addr_.end()) {
-      VLOG(2) << "can't find |" << ip_addr_str << "| in dest to src map";
+      ABSL_VLOG(2) << "can't find |" << ip_addr_str << "| in dest to src map";
       return false;
     }
     grpc_resolved_address source_addr_as_resolved_addr =

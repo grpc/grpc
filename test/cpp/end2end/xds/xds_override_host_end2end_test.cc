@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
@@ -75,7 +75,7 @@ class OverrideHostTest : public XdsEnd2endTest {
     cookie.value = std::string(value);
     std::string decoded;
     EXPECT_TRUE(absl::Base64Unescape(value, &decoded));
-    LOG(INFO) << "set-cookie header: " << header << " (decoded: " << decoded
+    ABSL_LOG(INFO) << "set-cookie header: " << header << " (decoded: " << decoded
               << ")";
     for (absl::string_view attribute : absl::StrSplit(attributes, ';')) {
       cookie.attributes.emplace(absl::StripAsciiWhitespace(attribute));
@@ -485,7 +485,7 @@ TEST_P(OverrideHostTest, UnhealthyEndpoint) {
   // Get a cookie for backends_[0].
   auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
   ASSERT_TRUE(session_cookie.has_value());
-  LOG(INFO) << session_cookie->first << " " << session_cookie->second;
+  ABSL_LOG(INFO) << session_cookie->first << " " << session_cookie->second;
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(
       EdsResourceArgs({{"locality0",
                         {CreateEndpoint(0, HealthStatus::UNHEALTHY),

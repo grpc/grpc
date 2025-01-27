@@ -230,7 +230,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
         << absl::CEscape(payload.JoinIntoString());
-    CHECK_EQ(header.payload_length, payload.Length());
+    ABSL_CHECK_EQ(header.payload_length, payload.Length());
     auto s = frame.Deserialize(header, std::move(payload));
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: DeserializeFrame "

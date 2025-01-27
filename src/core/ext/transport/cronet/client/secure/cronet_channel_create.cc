@@ -21,7 +21,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
@@ -37,7 +37,7 @@
 GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
     void* engine, const char* target, const grpc_channel_args* args,
     void* reserved) {
-  VLOG(2) << "grpc_create_cronet_transport: stream_engine = " << engine
+  ABSL_VLOG(2) << "grpc_create_cronet_transport: stream_engine = " << engine
           << ", target=" << target;
 
   // Disable client authority filter when using Cronet

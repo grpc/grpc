@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -180,7 +180,7 @@ TEST_P(GrpcSliceSizedTest, SliceSplitHeadWorks) {
   grpc_slice head, tail;
   size_t i;
 
-  LOG(INFO) << "length=" << length;
+  ABSL_LOG(INFO) << "length=" << length;
 
   // Create a slice in which each byte is equal to the distance from it to the
   // beginning of the slice.
@@ -209,7 +209,7 @@ TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
   grpc_slice head, tail;
   size_t i;
 
-  LOG(INFO) << "length=" << length;
+  ABSL_LOG(INFO) << "length=" << length;
 
   // Create a slice in which each byte is equal to the distance from it to the
   // beginning of the slice.
@@ -402,7 +402,7 @@ TEST(SliceTest, ExternalAsOwned) {
     ASSERT_DEATH(
         {
           size_t sum = SumSlice(slice);
-          VLOG(2) << sum;
+          ABSL_VLOG(2) << sum;
         },
         "");
   }

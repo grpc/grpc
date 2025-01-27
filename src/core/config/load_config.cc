@@ -20,7 +20,7 @@
 #include <optional>
 
 #include "absl/flags/marshalling.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_join.h"
 #include "src/core/util/env.h"
@@ -35,7 +35,7 @@ std::optional<std::string> LoadEnv(absl::string_view environment_variable) {
 
 std::string LoadConfigFromEnv(absl::string_view environment_variable,
                               const char* default_value) {
-  CHECK(!environment_variable.empty());
+  ABSL_CHECK(!environment_variable.empty());
   return LoadEnv(environment_variable).value_or(default_value);
 }
 

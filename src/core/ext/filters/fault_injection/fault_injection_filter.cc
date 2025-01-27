@@ -28,7 +28,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"

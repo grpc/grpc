@@ -31,7 +31,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -224,7 +224,7 @@ std::shared_ptr<grpc_core::TcpTracerInterface> OpenTelemetryPluginImpl::
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     SetOptionalLabel(OptionalLabelKey key,
                      grpc_core::RefCountedStringValue value) {
-  CHECK(key < OptionalLabelKey::kSize);
+  ABSL_CHECK(key < OptionalLabelKey::kSize);
   optional_labels_[static_cast<size_t>(key)] = std::move(value);
 }
 

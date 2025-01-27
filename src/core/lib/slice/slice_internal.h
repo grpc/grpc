@@ -27,14 +27,14 @@
 #include <string>
 
 #include "absl/hash/hash.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/memory.h"
 
 // Returns a pointer to the first slice in the slice buffer without giving
 // ownership to or a reference count on that slice.
 inline grpc_slice* grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {
-  DCHECK_GT(sb->count, 0u);
+  ABSL_DCHECK_GT(sb->count, 0u);
   return &sb->slices[0];
 }
 

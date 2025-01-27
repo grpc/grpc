@@ -26,7 +26,7 @@
 #include <chrono>
 #include <thread>  // NOLINT
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
@@ -58,10 +58,10 @@ class TestLoggingSink : public grpc_core::LoggingSink {
     grpc::internal::EntryToJsonStructProto(entry, &json);
     std::string output;
     ::google::protobuf::TextFormat::PrintToString(json, &output);
-    LOG(INFO) << output;
-    LOG(INFO) << "trace_id: " << entry.trace_id;
-    LOG(INFO) << "span_id: " << entry.span_id;
-    LOG(INFO) << "is_sampled: " << entry.is_sampled;
+    ABSL_LOG(INFO) << output;
+    ABSL_LOG(INFO) << "trace_id: " << entry.trace_id;
+    ABSL_LOG(INFO) << "span_id: " << entry.span_id;
+    ABSL_LOG(INFO) << "is_sampled: " << entry.is_sampled;
     grpc_core::MutexLock lock(&mu_);
     entries_.push_back(std::move(entry));
     cv_.SignalAll();
@@ -88,7 +88,7 @@ class TestLoggingSink : public grpc_core::LoggingSink {
     grpc_core::MutexLock lock(&mu_);
     while (entries_.size() != num_entries) {
       if (cv_.WaitWithDeadline(&mu_, deadline)) {
-        LOG(ERROR) << "\nDeadline expired while waiting on logging "
+        ABSL_LOG(ERROR) << "\nDeadline expired while waiting on logging "
                       "entries\nExpected number: "
                    << num_entries << "\nActual number: " << entries_.size();
         return false;

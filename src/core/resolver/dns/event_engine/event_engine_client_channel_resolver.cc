@@ -29,8 +29,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -426,7 +426,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     // Make sure field destroys before cleanup.
     ValidationErrors::ScopedField field(&errors_, "txt lookup");
     if (orphaned_) return;
-    CHECK(is_txt_inflight_);
+    ABSL_CHECK(is_txt_inflight_);
     is_txt_inflight_ = false;
     if (!service_config.ok()) {
       errors_.AddError(service_config.status().message());
@@ -560,7 +560,7 @@ std::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
 bool EventEngineClientChannelDNSResolverFactory::IsValidUri(
     const URI& uri) const {
   if (absl::StripPrefix(uri.path(), "/").empty()) {
-    LOG(ERROR) << "no server name supplied in dns URI";
+    ABSL_LOG(ERROR) << "no server name supplied in dns URI";
     return false;
   }
   return true;

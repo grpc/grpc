@@ -27,7 +27,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 
@@ -38,7 +38,7 @@ static pthread_key_t thread_id_key;
 static void init_ncpus() {
   ncpus = sysconf(_SC_NPROCESSORS_CONF);
   if (ncpus < 1 || ncpus > INT32_MAX) {
-    LOG(ERROR) << "Cannot determine number of CPUs: assuming 1";
+    ABSL_LOG(ERROR) << "Cannot determine number of CPUs: assuming 1";
     ncpus = 1;
   }
 }

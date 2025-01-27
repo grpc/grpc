@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "src/core/config/core_configuration.h"
@@ -579,7 +579,7 @@ Duration ScheduleConnection(
                     endpoint) mutable {
               ExecCtx exec_ctx;
               if (!endpoint.ok()) {
-                LOG(ERROR) << "Failed to connect: " << endpoint.status();
+                ABSL_LOG(ERROR) << "Failed to connect: " << endpoint.status();
                 return;
               }
               std::shared_ptr<EventEngine::Endpoint> ep =

@@ -20,8 +20,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
@@ -67,7 +67,7 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
       : LoadBalancingPolicy(std::move(args), /*initial_refcount=*/2) {
     load_report_tracker_ =
         channel_args().GetPointer<LoadReportTracker>(kMetricsTrackerArgument);
-    CHECK_NE(load_report_tracker_, nullptr);
+    ABSL_CHECK_NE(load_report_tracker_, nullptr);
     Args delegate_args;
     delegate_args.work_serializer = work_serializer();
     delegate_args.args = channel_args();
@@ -264,7 +264,7 @@ LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
     auto report = std::move(oob_load_reports_.front());
     oob_load_reports_.pop_front();
     if (predicate(report)) {
-      VLOG(2) << "Report #" << (i + 1) << " matched";
+      ABSL_VLOG(2) << "Report #" << (i + 1) << " matched";
       return report;
     }
   }

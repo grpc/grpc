@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/util/crash.h"
@@ -63,7 +63,7 @@ int test_client(const char* root, const char* host, int port) {
     return 1;
   }
   // wait for client
-  LOG(INFO) << "Waiting for client: " << host;
+  ABSL_LOG(INFO) << "Waiting for client: " << host;
   if (waitpid(cli, &status, 0) == -1) return 2;
   if (!WIFEXITED(status)) return 4;
   if (WEXITSTATUS(status)) return WEXITSTATUS(status);
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
   // concurrently running test binary
   srand(getpid());
   if (!grpc_ipv6_loopback_available()) {
-    LOG(INFO) << "Can't bind to ::1.  Skipping IPv6 tests.";
+    ABSL_LOG(INFO) << "Can't bind to ::1.  Skipping IPv6 tests.";
     do_ipv6 = 0;
   }
   // figure out where we are
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
     if (ret != 0) return ret;
   }
   // wait for server
-  LOG(INFO) << "Waiting for server";
+  ABSL_LOG(INFO) << "Waiting for server";
   kill(svr, SIGINT);
   if (waitpid(svr, &status, 0) == -1) return 2;
   if (!WIFEXITED(status)) return 4;

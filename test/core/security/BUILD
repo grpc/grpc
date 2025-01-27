@@ -23,7 +23,7 @@ grpc_fuzzer(
     name = "alts_credentials_fuzzer",
     srcs = ["alts_credentials_fuzzer.cc"],
     corpus = "corpus/alts_credentials_corpus",
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -42,7 +42,7 @@ grpc_fuzzer(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     tags = ["no_windows"],
     deps = [
         "//:event_engine_base_hdrs",
@@ -58,7 +58,7 @@ grpc_cc_library(
     name = "oauth2_utils",
     srcs = ["oauth2_utils.cc"],
     hdrs = ["oauth2_utils.h"],
-    external_deps = ["absl/log:log"],
+    external_deps = ["absl/log:absl_log"],
     visibility = ["//test/cpp:__subpackages__"],
     deps = ["//:grpc"],
 )
@@ -67,7 +67,7 @@ grpc_cc_test(
     name = "auth_context_test",
     srcs = ["auth_context_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -97,8 +97,8 @@ grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [
@@ -117,7 +117,7 @@ grpc_cc_test(
     name = "aws_request_signer_test",
     srcs = ["aws_request_signer_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -145,7 +145,7 @@ grpc_cc_test(
     name = "json_token_test",
     srcs = ["json_token_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = ["credential_token_tests"],
@@ -179,7 +179,7 @@ grpc_cc_test(
     name = "secure_endpoint_test",
     srcs = ["secure_endpoint_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     flaky = True,
@@ -197,7 +197,7 @@ grpc_cc_test(
     name = "security_connector_test",
     srcs = ["security_connector_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [
@@ -258,8 +258,8 @@ grpc_cc_binary(
     name = "fetch_oauth2",
     srcs = ["fetch_oauth2.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     deps = [
         ":oauth2_utils",
@@ -274,7 +274,7 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "verify_jwt",
     srcs = ["verify_jwt.cc"],
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -323,7 +323,7 @@ grpc_cc_test(
     name = "alts_security_connector_test",
     srcs = ["alts_security_connector_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [
@@ -348,7 +348,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -364,7 +364,7 @@ grpc_cc_test(
     name = "local_security_connector_test",
     srcs = ["local_security_connector_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -413,7 +413,7 @@ grpc_cc_test(
     name = "grpc_tls_certificate_distributor_test",
     srcs = ["grpc_tls_certificate_distributor_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -440,7 +440,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -456,7 +456,7 @@ grpc_cc_test(
     name = "grpc_tls_certificate_verifier_test",
     srcs = ["grpc_tls_certificate_verifier_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [

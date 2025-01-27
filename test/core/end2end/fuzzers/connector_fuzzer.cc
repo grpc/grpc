@@ -54,7 +54,7 @@ class ConnectorFuzzer {
             FuzzingEventEngine::Options(), msg.event_engine_actions())),
         mock_endpoint_controller_(MockEndpointController::Create(engine_)),
         connector_(make_connector()) {
-    CHECK(engine_);
+    ABSL_CHECK(engine_);
     grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
     for (const auto& input : msg.network_input()) {
       network_inputs_.push(input);
@@ -125,10 +125,10 @@ class ConnectorFuzzer {
 
   void Run() {
     grpc_resolved_address addr;
-    CHECK(grpc_parse_uri(URI::Parse("ipv4:127.0.0.1:1234").value(), &addr));
-    CHECK_OK(
+    ABSL_CHECK(grpc_parse_uri(URI::Parse("ipv4:127.0.0.1:1234").value(), &addr));
+    ABSL_CHECK_OK(
         listener_->Bind(URIToResolvedAddress("ipv4:127.0.0.1:1234").value()));
-    CHECK_OK(listener_->Start());
+    ABSL_CHECK_OK(listener_->Start());
     OrphanablePtr<grpc_endpoint> endpoint(
         mock_endpoint_controller_->TakeCEndpoint());
     SubchannelConnector::Result result;
@@ -179,7 +179,7 @@ void RunConnectorFuzzer(
     ForceEnableExperiment("event_engine_listener", true);
     return 42;
   }();
-  CHECK_EQ(once, 42);  // avoid unused variable warning
+  ABSL_CHECK_EQ(once, 42);  // avoid unused variable warning
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();
   ConnectorFuzzer(msg, make_security_connector, make_connector).Run();

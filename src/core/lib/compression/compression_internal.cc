@@ -25,7 +25,7 @@
 #include <string>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
@@ -118,7 +118,7 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
     return GRPC_COMPRESS_NONE;
   }
 
-  CHECK_GT(level, 0);
+  ABSL_CHECK_GT(level, 0);
 
   // Establish a "ranking" or compression algorithms in increasing order of
   // compression.

@@ -26,8 +26,8 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -93,7 +93,7 @@ int GetIntValueFromMetadataHelper(
   if (metadata.find(key) != metadata.end()) {
     std::istringstream iss(ToString(metadata.find(key)->second));
     iss >> default_value;
-    LOG(INFO) << key << " : " << default_value;
+    ABSL_LOG(INFO) << key << " : " << default_value;
   }
 
   return default_value;
@@ -109,7 +109,7 @@ int GetIntValueFromMetadata(
 void ServerTryCancel(ServerContext* context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
-  LOG(INFO) << "Server called TryCancel() to cancel the request";
+  ABSL_LOG(INFO) << "Server called TryCancel() to cancel the request";
   // Now wait until it's really canceled
   while (!context->IsCancelled()) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -120,7 +120,7 @@ void ServerTryCancel(ServerContext* context) {
 void ServerTryCancelNonblocking(CallbackServerContext* context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
-  LOG(INFO) << "Server called TryCancelNonblocking() to cancel the request";
+  ABSL_LOG(INFO) << "Server called TryCancelNonblocking() to cancel the request";
 }
 
 }  // namespace internal
@@ -207,8 +207,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         return;
       }
       if (req_->has_param() && req_->param().server_die()) {
-        LOG(ERROR) << "The request should not reach application handler.";
-        CHECK(0);
+        ABSL_LOG(ERROR) << "The request should not reach application handler.";
+        ABSL_CHECK(0);
       }
       if (req_->has_param() && req_->param().has_expected_error()) {
         const auto& error = req_->param().expected_error();
@@ -225,7 +225,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         // RPC as long as server_try_cancel is not DO_NOT_CANCEL
         EXPECT_FALSE(ctx_->IsCancelled());
         ctx_->TryCancel();
-        LOG(INFO) << "Server called TryCancel() to cancel the request";
+        ABSL_LOG(INFO) << "Server called TryCancel() to cancel the request";
         FinishWhenCancelledAsync();
         return;
       }
@@ -392,7 +392,7 @@ ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
         num_msgs_read_++;
         StartRead(&request_);
       } else {
-        LOG(INFO) << "Read: " << num_msgs_read_ << " messages";
+        ABSL_LOG(INFO) << "Read: " << num_msgs_read_ << " messages";
 
         if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
           // Let OnCancel recover this

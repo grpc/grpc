@@ -21,7 +21,7 @@ grpc_cc_test(
     timeout = "short",
     srcs = ["iocp_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -88,8 +88,8 @@ grpc_cc_library(
     srcs = ["create_sockpair.cc"],
     hdrs = ["create_sockpair.h"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status",
     ],
     tags = [

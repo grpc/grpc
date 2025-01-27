@@ -23,7 +23,7 @@
 #include <variant>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 #include "src/core/util/json/json.h"
@@ -98,10 +98,10 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
 
 void XdsHttpFilterRegistry::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {
-  CHECK(registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
+  ABSL_CHECK(registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
   auto override_proto_name = filter->OverrideConfigProtoName();
   if (!override_proto_name.empty()) {
-    CHECK(registry_map_.emplace(override_proto_name, filter.get()).second);
+    ABSL_CHECK(registry_map_.emplace(override_proto_name, filter.get()).second);
   }
   owning_list_.push_back(std::move(filter));
 }

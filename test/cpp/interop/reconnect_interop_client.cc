@@ -25,8 +25,8 @@
 #include <sstream>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -57,8 +57,8 @@ using grpc::testing::TLS;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  CHECK(absl::GetFlag(FLAGS_server_control_port));
-  CHECK(absl::GetFlag(FLAGS_server_retry_port));
+  ABSL_CHECK(absl::GetFlag(FLAGS_server_control_port));
+  ABSL_CHECK(absl::GetFlag(FLAGS_server_retry_port));
 
   std::ostringstream server_address;
   server_address << absl::GetFlag(FLAGS_server_host) << ':'
@@ -73,9 +73,9 @@ int main(int argc, char** argv) {
   Empty empty_response;
   Status start_status =
       control_stub->Start(&start_context, reconnect_params, &empty_response);
-  CHECK(start_status.ok());
+  ABSL_CHECK(start_status.ok());
 
-  LOG(INFO) << "Starting connections with retries.";
+  ABSL_LOG(INFO) << "Starting connections with retries.";
   server_address.str("");
   server_address << absl::GetFlag(FLAGS_server_host) << ':'
                  << absl::GetFlag(FLAGS_server_retry_port);
@@ -98,14 +98,14 @@ int main(int argc, char** argv) {
                              std::chrono::seconds(kDeadlineSeconds));
   Status retry_status =
       retry_stub->Start(&retry_context, reconnect_params, &empty_response);
-  CHECK(retry_status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED);
-  LOG(INFO) << "Done retrying, getting final data from server";
+  ABSL_CHECK(retry_status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED);
+  ABSL_LOG(INFO) << "Done retrying, getting final data from server";
 
   ClientContext stop_context;
   ReconnectInfo response;
   Status stop_status = control_stub->Stop(&stop_context, Empty(), &response);
-  CHECK(stop_status.ok());
-  CHECK(response.passed() == true);
-  LOG(INFO) << "Passed";
+  ABSL_CHECK(stop_status.ok());
+  ABSL_CHECK(response.passed() == true);
+  ABSL_LOG(INFO) << "Passed";
   return 0;
 }

@@ -20,7 +20,7 @@
 
 #include <set>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
@@ -37,9 +37,9 @@ namespace {
 
 grpc_resolved_address MakeAddress(absl::string_view address_uri) {
   auto uri = URI::Parse(address_uri);
-  CHECK(uri.ok());
+  ABSL_CHECK(uri.ok());
   grpc_resolved_address address;
-  CHECK(grpc_parse_uri(*uri, &address));
+  ABSL_CHECK(grpc_parse_uri(*uri, &address));
   return address;
 }
 

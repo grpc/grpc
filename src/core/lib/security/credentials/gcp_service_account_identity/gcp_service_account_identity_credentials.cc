@@ -182,7 +182,7 @@ GcpServiceAccountIdentityCallCredentials::StartHttpRequest(
       "http", "metadata.google.internal.",
       "/computeMetadata/v1/instance/service-accounts/default/identity",
       {{"audience", audience_}}, /*fragment=*/"");
-  CHECK_OK(uri);  // params are hardcoded
+  ABSL_CHECK_OK(uri);  // params are hardcoded
   auto http_request =
       HttpRequest::Get(std::move(*uri), /*args=*/nullptr, pollent, &request,
                        deadline, on_complete, response,

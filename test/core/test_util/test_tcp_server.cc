@@ -27,8 +27,8 @@
 
 #include <algorithm>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -82,14 +82,14 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
       &server->shutdown_complete,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
       server->on_connect, server->cb_data, &server->tcp_server);
-  CHECK_OK(error);
+  ABSL_CHECK_OK(error);
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
-  CHECK_OK(error);
-  CHECK(port_added == port);
+  ABSL_CHECK_OK(error);
+  ABSL_CHECK(port_added == port);
 
   grpc_tcp_server_start(server->tcp_server, &server->pollset);
-  LOG(INFO) << "test tcp server listening on 0.0.0.0:" << port;
+  ABSL_LOG(INFO) << "test tcp server listening on 0.0.0.0:" << port;
 }
 
 void test_tcp_server_poll(test_tcp_server* server, int milliseconds) {

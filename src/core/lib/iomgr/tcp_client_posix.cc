@@ -31,8 +31,8 @@
 #include <unistd.h>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
@@ -99,7 +99,7 @@ static grpc_error_handle prepare_socket(
     const grpc_core::PosixTcpOptions& options) {
   grpc_error_handle err;
 
-  CHECK_GE(fd, 0);
+  ABSL_CHECK_GE(fd, 0);
 
   err = grpc_set_socket_nonblocking(fd, 1);
   if (!err.ok()) goto error;
@@ -182,7 +182,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
       << ": on_writable: error=" << grpc_core::StatusToString(error);
 
   gpr_mu_lock(&ac->mu);
-  CHECK(ac->fd);
+  ABSL_CHECK(ac->fd);
   fd = ac->fd;
   ac->fd = nullptr;
   bool connect_cancelled = ac->connect_cancelled;
@@ -233,7 +233,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
       // your program or another program on the same computer
       // opened too many network connections.  The "easy" fix:
       // don't do that!
-      LOG(ERROR) << "kernel out of buffers";
+      ABSL_LOG(ERROR) << "kernel out of buffers";
       gpr_mu_unlock(&ac->mu);
       grpc_fd_notify_on_write(fd, &ac->write_closure);
       return;
@@ -268,7 +268,7 @@ finish:
     std::string str;
     bool ret = grpc_error_get_str(
         error, grpc_core::StatusStrProperty::kDescription, &str);
-    CHECK(ret);
+    ABSL_CHECK(ret);
     std::string description =
         absl::StrCat("Failed to connect to remote host: ", str);
     error = grpc_error_set_str(
@@ -434,7 +434,7 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
     auto it = shard->pending_connections.find(connection_handle);
     if (it != shard->pending_connections.end()) {
       ac = it->second;
-      CHECK_NE(ac, nullptr);
+      ABSL_CHECK_NE(ac, nullptr);
       // Trying to acquire ac->mu here would could cause a deadlock because
       // the on_writable method tries to acquire the two mutexes used
       // here in the reverse order. But we dont need to acquire ac->mu before

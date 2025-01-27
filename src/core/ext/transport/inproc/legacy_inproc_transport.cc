@@ -35,8 +35,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -309,7 +309,7 @@ void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
   std::string prefix = absl::StrCat(
       "INPROC:", is_initial ? "HDR:" : "TRL:", is_client ? "CLI:" : "SVR:");
   md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
-    LOG(INFO) << absl::StrCat(prefix, key, ": ", value);
+    ABSL_LOG(INFO) << absl::StrCat(prefix, key, ": ", value);
   });
 }
 
@@ -1266,8 +1266,8 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
     auto new_channel = grpc_core::ChannelCreate(
         "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
     if (!new_channel.ok()) {
-      CHECK(!channel);
-      LOG(ERROR) << "Failed to create client channel: "
+      ABSL_CHECK(!channel);
+      ABSL_LOG(ERROR) << "Failed to create client channel: "
                  << grpc_core::StatusToString(error);
       intptr_t integer;
       grpc_status_code status = GRPC_STATUS_INTERNAL;
@@ -1284,8 +1284,8 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       channel = new_channel->release()->c_ptr();
     }
   } else {
-    CHECK(!channel);
-    LOG(ERROR) << "Failed to create server channel: "
+    ABSL_CHECK(!channel);
+    ABSL_LOG(ERROR) << "Failed to create server channel: "
                << grpc_core::StatusToString(error);
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;

@@ -24,8 +24,8 @@ grpc_cc_binary(
         "close_fd_test.cc",
     ],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     tags = ["no_windows"],
     deps = [

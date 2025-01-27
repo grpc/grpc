@@ -25,7 +25,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
@@ -241,7 +241,7 @@ class StaticSlice : public slice_detail::BaseSlice,
   StaticSlice() = default;
   explicit StaticSlice(const grpc_slice& slice)
       : slice_detail::BaseSlice(slice) {
-    DCHECK(slice.refcount == grpc_slice_refcount::NoopRefcount());
+    ABSL_DCHECK(slice.refcount == grpc_slice_refcount::NoopRefcount());
   }
 
   StaticSlice(const StaticSlice& other)
@@ -265,7 +265,7 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
   MutableSlice() = default;
   explicit MutableSlice(const grpc_slice& slice)
       : slice_detail::BaseSlice(slice) {
-    DCHECK(slice.refcount == nullptr || slice.refcount->IsUnique());
+    ABSL_DCHECK(slice.refcount == nullptr || slice.refcount->IsUnique());
   }
   ~MutableSlice() { CSliceUnref(c_slice()); }
 

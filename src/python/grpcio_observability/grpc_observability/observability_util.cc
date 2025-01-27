@@ -125,7 +125,7 @@ void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms) {
 void AddCensusDataToBuffer(const CensusData& data) {
   std::unique_lock<std::mutex> lk(g_census_data_buffer_mutex);
   if (g_census_data_buffer->size() >= GetMaxExportBufferSize()) {
-    VLOG(2) << "Reached maximum census data buffer size, discarding this "
+    ABSL_VLOG(2) << "Reached maximum census data buffer size, discarding this "
                "CensusData entry";
   } else {
     g_census_data_buffer->push(data);

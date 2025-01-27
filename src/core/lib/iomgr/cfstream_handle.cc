@@ -27,7 +27,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/debug/trace.h"
 #import "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -174,7 +174,7 @@ void CFStreamHandle::Shutdown(grpc_error_handle error) {
 void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
-    VLOG(2).AtLocation(file, line) << "CFStream Handle ref " << this << " : "
+    ABSL_VLOG(2).AtLocation(file, line) << "CFStream Handle ref " << this << " : "
                                    << reason << " " << val << " -> " << val + 1;
   }
   gpr_ref(&refcount_);
@@ -183,7 +183,7 @@ void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
 void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
-    VLOG(2).AtLocation(file, line) << "CFStream Handle unref " << this << " : "
+    ABSL_VLOG(2).AtLocation(file, line) << "CFStream Handle unref " << this << " : "
                                    << reason << " " << val << " -> " << val - 1;
   }
   if (gpr_unref(&refcount_)) {

@@ -22,7 +22,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/qps_server_builder.h"
@@ -115,9 +115,9 @@ class CallbackServer final : public grpc::testing::Server {
 
     impl_ = builder->BuildAndStart();
     if (impl_ == nullptr) {
-      LOG(ERROR) << "Server: Fail to BuildAndStart(port=" << port_num << ")";
+      ABSL_LOG(ERROR) << "Server: Fail to BuildAndStart(port=" << port_num << ")";
     } else {
-      LOG(INFO) << "Server: BuildAndStart(port=" << port_num << ")";
+      ABSL_LOG(INFO) << "Server: BuildAndStart(port=" << port_num << ")";
     }
   }
 

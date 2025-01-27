@@ -31,7 +31,7 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 #include <gtest/gtest.h>
 #include <signal.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/util/fork.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -50,10 +50,10 @@ class ServiceImpl final : public EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      LOG(INFO) << "recv msg " << request.message();
+      ABSL_LOG(INFO) << "recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
-      LOG(INFO) << "wrote msg " << response.message();
+      ABSL_LOG(INFO) << "wrote msg " << response.message();
     }
     return Status::OK;
   }
@@ -111,7 +111,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       GTEST_FAIL() << "fork failed";
     case 0:  // post-fork child
     {
-      VLOG(2) << "In post-fork child";
+      ABSL_VLOG(2) << "In post-fork child";
       EchoRequest request;
       EchoResponse response;
       ClientContext context;
@@ -128,7 +128,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
     }
     default:  // post-fork parent
     {
-      VLOG(2) << "In post-fork parent";
+      ABSL_VLOG(2) << "In post-fork parent";
       EchoRequest request;
       EchoResponse response;
       ClientContext context;

@@ -38,8 +38,8 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -323,7 +323,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
     void set_connections(
         std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>>
             connections) {
-      CHECK(connections_.empty());
+      ABSL_CHECK(connections_.empty());
       connections_ = std::move(connections);
     }
 
@@ -345,10 +345,10 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
   grpc_error_handle error = grpc_tcp_server_add_port(
       listener_->tcp_server_, &listener_->resolved_address_, &port_temp);
   if (!error.ok()) {
-    LOG(ERROR) << "Error adding port to server: " << StatusToString(error);
+    ABSL_LOG(ERROR) << "Error adding port to server: " << StatusToString(error);
     // TODO(yashykt): We wouldn't need to assert here if we bound to the
     // port earlier during AddPort.
-    CHECK(0);
+    ABSL_CHECK(0);
   }
   listener_->StartListening();
   {
@@ -538,7 +538,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
               });
         } else {
           // Failed to create channel from transport. Clean up.
-          LOG(ERROR) << "Failed to create channel: "
+          ABSL_LOG(ERROR) << "Failed to create channel: "
                      << StatusToString(channel_init_err);
           transport->Orphan();
           cleanup_connection = true;
@@ -937,7 +937,7 @@ void Chttp2ServerListener::Orphan() {
   // Cancel the watch before shutting down so as to avoid holding a ref to the
   // listener in the watcher.
   if (config_fetcher_watcher_ != nullptr) {
-    CHECK_NE(config_fetcher_, nullptr);
+    ABSL_CHECK_NE(config_fetcher_, nullptr);
     config_fetcher_->CancelWatch(config_fetcher_watcher_);
   }
   std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>> connections;
@@ -1106,7 +1106,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
           });
     } else {
       // Failed to create channel from transport. Clean up.
-      LOG(ERROR) << "Failed to create channel: "
+      ABSL_LOG(ERROR) << "Failed to create channel: "
                  << StatusToString(channel_init_err);
       transport->Orphan();
     }
@@ -1363,10 +1363,10 @@ void NewChttp2ServerListener::Start() {
     grpc_error_handle error =
         grpc_tcp_server_add_port(tcp_server_, resolved_address(), &port_temp);
     if (!error.ok()) {
-      LOG(ERROR) << "Error adding port to server: " << StatusToString(error);
+      ABSL_LOG(ERROR) << "Error adding port to server: " << StatusToString(error);
       // TODO(yashykt): We wouldn't need to assert here if we bound to the
       // port earlier during AddPort.
-      CHECK(0);
+      ABSL_CHECK(0);
     }
   }
   if (tcp_server != nullptr) {
@@ -1544,7 +1544,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         if (*port_num == -1) {
           *port_num = port_temp;
         } else {
-          CHECK(*port_num == port_temp);
+          ABSL_CHECK(*port_num == port_temp);
         }
       }
     }
@@ -1561,7 +1561,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                           results->size() - error_list.size(), results->size());
       error = GRPC_ERROR_CREATE_REFERENCING(msg.c_str(), error_list.data(),
                                             error_list.size());
-      LOG(INFO) << "WARNING: " << StatusToString(error);
+      ABSL_LOG(INFO) << "WARNING: " << StatusToString(error);
       // we managed to bind some addresses: continue without error
     }
     return absl::OkStatus();
@@ -1576,7 +1576,7 @@ namespace experimental {
 
 absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
-  CHECK_NE(server_.get(), nullptr);
+  ABSL_CHECK_NE(server_.get(), nullptr);
   if (IsServerListenerEnabled()) {
     RefCountedPtr<NewChttp2ServerListener> new_listener;
     {
@@ -1615,7 +1615,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
 }
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
-  CHECK_NE(server_.get(), nullptr);
+  ABSL_CHECK_NE(server_.get(), nullptr);
   ExecCtx exec_ctx;
   auto& args = server_->channel_args();
   auto* supports_fd = QueryExtension<EventEngineSupportsFdExtension>(
@@ -1682,7 +1682,7 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
 done:
   sc.reset(DEBUG_LOCATION, "server");
   if (!err.ok()) {
-    LOG(ERROR) << grpc_core::StatusToString(err);
+    ABSL_LOG(ERROR) << grpc_core::StatusToString(err);
   }
   return port_num;
 }
@@ -1693,7 +1693,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   // For now, we only support insecure server credentials
   if (creds == nullptr ||
       creds->type() != grpc_core::InsecureServerCredentials::Type()) {
-    LOG(ERROR) << "Failed to create channel due to invalid creds";
+    ABSL_LOG(ERROR) << "Failed to create channel due to invalid creds";
     return;
   }
   grpc_core::ExecCtx exec_ctx;
@@ -1721,7 +1721,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                         nullptr);
   } else {
-    LOG(ERROR) << "Failed to create channel: "
+    ABSL_LOG(ERROR) << "Failed to create channel: "
                << grpc_core::StatusToString(error);
     transport->Orphan();
   }
@@ -1731,7 +1731,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
 
 void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
                                      grpc_server_credentials* /* creds */) {
-  CHECK(0);
+  ABSL_CHECK(0);
 }
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD

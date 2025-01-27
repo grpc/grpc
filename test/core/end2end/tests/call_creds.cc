@@ -24,7 +24,7 @@
 #include <memory>
 #include <optional>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -46,17 +46,17 @@ const char overridden_fake_md_value[] = "overridden_fake_value";
 void PrintAuthContext(bool is_client, const grpc_auth_context* ctx) {
   const grpc_auth_property* p;
   grpc_auth_property_iterator it;
-  LOG(INFO) << (is_client ? "client" : "server") << " peer:";
-  LOG(INFO) << "\tauthenticated: "
+  ABSL_LOG(INFO) << (is_client ? "client" : "server") << " peer:";
+  ABSL_LOG(INFO) << "\tauthenticated: "
             << (grpc_auth_context_peer_is_authenticated(ctx) ? "YES" : "NO");
   it = grpc_auth_context_peer_identity(ctx);
   while ((p = grpc_auth_property_iterator_next(&it)) != nullptr) {
-    LOG(INFO) << "\t\t" << p->name << ": " << p->value;
+    ABSL_LOG(INFO) << "\t\t" << p->name << ": " << p->value;
   }
-  LOG(INFO) << "\tall properties:";
+  ABSL_LOG(INFO) << "\tall properties:";
   it = grpc_auth_context_property_iterator(ctx);
   while ((p = grpc_auth_property_iterator_next(&it)) != nullptr) {
-    LOG(INFO) << "\t\t" << p->name << ": " << p->value;
+    ABSL_LOG(INFO) << "\t\t" << p->name << ": " << p->value;
   }
 }
 

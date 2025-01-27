@@ -40,8 +40,8 @@
 #include <set>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/error.h"
@@ -111,7 +111,7 @@ class FakeHandshakeServer {
     // TODO(apolcyn): when removing the global concurrent handshake limiting
     // queue, set MAX_CONCURRENT_STREAMS on this server.
     server_ = builder.BuildAndStart();
-    LOG(INFO) << "Fake handshaker server listening on " << address_;
+    ABSL_LOG(INFO) << "Fake handshaker server listening on " << address_;
   }
 
   ~FakeHandshakeServer() {
@@ -141,16 +141,16 @@ class TestServer {
     grpc_server_register_completion_queue(server_, server_cq_, nullptr);
     int port = grpc_pick_unused_port_or_die();
     server_addr_ = grpc_core::JoinHostPort("localhost", port);
-    CHECK(grpc_server_add_http2_port(server_, server_addr_.c_str(),
+    ABSL_CHECK(grpc_server_add_http2_port(server_, server_addr_.c_str(),
                                      server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
-    VLOG(2) << "Start TestServer " << this << ". listen on " << server_addr_;
+    ABSL_VLOG(2) << "Start TestServer " << this << ". listen on " << server_addr_;
     server_thd_ = std::make_unique<std::thread>(PollUntilShutdown, this);
   }
 
   ~TestServer() {
-    VLOG(2) << "Begin dtor of TestServer " << this;
+    ABSL_VLOG(2) << "Begin dtor of TestServer " << this;
     grpc_server_shutdown_and_notify(server_, server_cq_, this);
     server_thd_->join();
     grpc_server_destroy(server_);
@@ -164,9 +164,9 @@ class TestServer {
   static void PollUntilShutdown(const TestServer* self) {
     grpc_event ev = grpc_completion_queue_next(
         self->server_cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    CHECK(ev.type == GRPC_OP_COMPLETE);
-    CHECK(ev.tag == self);
-    VLOG(2) << "TestServer " << self << " stop polling";
+    ABSL_CHECK(ev.type == GRPC_OP_COMPLETE);
+    ABSL_CHECK(ev.tag == self);
+    ABSL_VLOG(2) << "TestServer " << self << " stop polling";
   }
 
  private:
@@ -206,7 +206,7 @@ class ConnectLoopRunner {
 
   static void ConnectLoop(const ConnectLoopRunner* self) {
     for (size_t i = 0; i < self->loops_; i++) {
-      VLOG(2) << "runner:" << self << " connect_loop begin loop " << i;
+      ABSL_VLOG(2) << "runner:" << self << " connect_loop begin loop " << i;
       grpc_completion_queue* cq =
           grpc_completion_queue_create_for_next(nullptr);
       grpc_channel* channel = create_secure_channel_for_test(
@@ -255,7 +255,7 @@ class ConnectLoopRunner {
       grpc_completion_queue_shutdown(cq);
       drain_cq(cq);
       grpc_completion_queue_destroy(cq);
-      VLOG(2) << "runner:" << self << " connect_loop finished loop " << i;
+      ABSL_VLOG(2) << "runner:" << self << " connect_loop finished loop " << i;
     }
   }
 
@@ -295,7 +295,7 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
       num_concurrent_connects = 25;
     }
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
-    VLOG(2) << "start performing concurrent expected-to-succeed connects";
+    ABSL_VLOG(2) << "start performing concurrent expected-to-succeed connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           test_server.address(), fake_handshake_server.address(),
@@ -304,7 +304,7 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
-    VLOG(2) << "done performing concurrent expected-to-succeed connects";
+    ABSL_VLOG(2) << "done performing concurrent expected-to-succeed connects";
   }
 }
 
@@ -333,7 +333,7 @@ TEST(AltsConcurrentConnectivityTest,
   {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     size_t num_concurrent_connects = 100;
-    VLOG(2) << "start performing concurrent expected-to-fail connects";
+    ABSL_VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
@@ -343,7 +343,7 @@ TEST(AltsConcurrentConnectivityTest,
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
-    VLOG(2) << "done performing concurrent expected-to-fail connects";
+    ABSL_VLOG(2) << "done performing concurrent expected-to-fail connects";
   }
 }
 
@@ -366,7 +366,7 @@ TEST(AltsConcurrentConnectivityTest,
   {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     size_t num_concurrent_connects = 100;
-    VLOG(2) << "start performing concurrent expected-to-fail connects";
+    ABSL_VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
@@ -376,7 +376,7 @@ TEST(AltsConcurrentConnectivityTest,
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
-    VLOG(2) << "done performing concurrent expected-to-fail connects";
+    ABSL_VLOG(2) << "done performing concurrent expected-to-fail connects";
   }
 }
 
@@ -399,7 +399,7 @@ TEST(AltsConcurrentConnectivityTest,
   {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     size_t num_concurrent_connects = 100;
-    VLOG(2) << "start performing concurrent expected-to-fail connects";
+    ABSL_VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
@@ -409,7 +409,7 @@ TEST(AltsConcurrentConnectivityTest,
           100 /* reconnect_backoff_ms */));
     }
     connect_loop_runners.clear();
-    VLOG(2) << "done performing concurrent expected-to-fail connects";
+    ABSL_VLOG(2) << "done performing concurrent expected-to-fail connects";
   }
 }
 

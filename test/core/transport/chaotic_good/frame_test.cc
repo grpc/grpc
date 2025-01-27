@@ -16,7 +16,7 @@
 
 #include <cstdint>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -40,8 +40,8 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   EXPECT_EQ(hdr.payload_length, output_buffer.Length());
   T output;
   auto deser = output.Deserialize(hdr, std::move(output_buffer));
-  CHECK_OK(deser);
-  CHECK_EQ(output.ToString(), input.ToString());
+  ABSL_CHECK_OK(deser);
+  ABSL_CHECK_EQ(output.ToString(), input.ToString());
 }
 
 TEST(FrameTest, SettingsFrameRoundTrips) {

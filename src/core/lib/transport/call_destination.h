@@ -38,7 +38,7 @@ class UnstartedCallDestination
   // and started.
   // Must be called from the party owned by the call, eg the following must
   // hold:
-  // CHECK(GetContext<Activity>() == unstarted_call_handler.party());
+  // ABSL_CHECK(GetContext<Activity>() == unstarted_call_handler.party());
   virtual void StartCall(UnstartedCallHandler unstarted_call_handler) = 0;
 };
 

@@ -18,8 +18,8 @@
 
 #include <set>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_join.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
@@ -661,7 +661,7 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
     std::set<absl::string_view>* eds_resources_seen,
     std::set<absl::string_view>* dns_names_seen,
     absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters) {
-  if (depth > 0) CHECK_NE(leaf_clusters, nullptr);
+  if (depth > 0) ABSL_CHECK_NE(leaf_clusters, nullptr);
   if (depth == kMaxXdsAggregateClusterRecursionDepth) {
     *leaf_clusters =
         absl::UnavailableError("aggregate cluster graph exceeds max depth");

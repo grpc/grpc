@@ -28,7 +28,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "upb/mem/arena.hpp"
@@ -39,25 +39,25 @@ namespace experimental {
 std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
     const std::shared_ptr<const AuthContext>& auth_context) {
   if (auth_context == nullptr) {
-    LOG(ERROR) << "auth_context is nullptr.";
+    ABSL_LOG(ERROR) << "auth_context is nullptr.";
     return nullptr;
   }
   std::vector<string_ref> ctx_vector =
       auth_context->FindPropertyValues(TSI_ALTS_CONTEXT);
   if (ctx_vector.size() != 1) {
-    LOG(ERROR) << "contains zero or more than one ALTS context.";
+    ABSL_LOG(ERROR) << "contains zero or more than one ALTS context.";
     return nullptr;
   }
   upb::Arena context_arena;
   grpc_gcp_AltsContext* ctx = grpc_gcp_AltsContext_parse(
       ctx_vector[0].data(), ctx_vector[0].size(), context_arena.ptr());
   if (ctx == nullptr) {
-    LOG(ERROR) << "fails to parse ALTS context.";
+    ABSL_LOG(ERROR) << "fails to parse ALTS context.";
     return nullptr;
   }
   if (grpc_gcp_AltsContext_security_level(ctx) < GRPC_SECURITY_MIN ||
       grpc_gcp_AltsContext_security_level(ctx) > GRPC_SECURITY_MAX) {
-    LOG(ERROR) << "security_level is invalid.";
+    ABSL_LOG(ERROR) << "security_level is invalid.";
     return nullptr;
   }
   return std::make_unique<AltsContext>(AltsContext(ctx));

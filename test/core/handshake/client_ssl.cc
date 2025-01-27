@@ -49,7 +49,7 @@
 
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
@@ -112,7 +112,7 @@ static int create_socket(int* out_port) {
 
   if (bind(s, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
     perror("Unable to bind");
-    LOG(ERROR) << "Unable to bind to any port";
+    ABSL_LOG(ERROR) << "Unable to bind to any port";
     close(s);
     return -1;
   }
@@ -128,7 +128,7 @@ static int create_socket(int* out_port) {
           0 ||
       addr_len > sizeof(addr)) {
     perror("getsockname");
-    LOG(ERROR) << "Unable to get socket local address";
+    ABSL_LOG(ERROR) << "Unable to get socket local address";
     close(s);
     return -1;
   }
@@ -176,7 +176,7 @@ static void ssl_log_where_info(const SSL* ssl, int where, int flag,
 
 static void ssl_server_info_callback(const SSL* ssl, int where, int ret) {
   if (ret == 0) {
-    LOG(ERROR) << "ssl_server_info_callback: error occurred.\n";
+    ABSL_LOG(ERROR) << "ssl_server_info_callback: error occurred.\n";
     return;
   }
 
@@ -244,7 +244,7 @@ static void server_thread(void* arg) {
 
   // bind/listen/accept at TCP layer.
   const int sock = args->socket;
-  LOG(INFO) << "Server listening";
+  ABSL_LOG(INFO) << "Server listening";
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
   const int client =
@@ -261,9 +261,9 @@ static void server_thread(void* arg) {
   SSL_set_fd(ssl, client);
   if (SSL_accept(ssl) <= 0) {
     ERR_print_errors_fp(stderr);
-    LOG(ERROR) << "Handshake failed.";
+    ABSL_LOG(ERROR) << "Handshake failed.";
   } else {
-    LOG(INFO) << "Handshake successful.";
+    ABSL_LOG(INFO) << "Handshake successful.";
   }
 
   // Send out the settings frame.

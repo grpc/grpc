@@ -26,7 +26,7 @@
 
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -313,7 +313,7 @@ TEST(TransportSecurityTest, TestPeerMatchesName) {
     tsi_peer peer = peer_from_cert_name_test_entry(entry);
     int result = tsi_ssl_peer_matches_name(&peer, entry->host_name);
     if (result != entry->expected) {
-      LOG(ERROR) << cert_name_test_entry_to_string(entry);
+      ABSL_LOG(ERROR) << cert_name_test_entry_to_string(entry);
       ASSERT_TRUE(0);  // Unexpected result.
     }
     tsi_peer_destruct(&peer);

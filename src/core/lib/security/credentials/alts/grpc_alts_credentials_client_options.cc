@@ -21,7 +21,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
@@ -44,7 +44,7 @@ static target_service_account* target_service_account_create(
 void grpc_alts_credentials_client_options_add_target_service_account(
     grpc_alts_credentials_options* options, const char* service_account) {
   if (options == nullptr || service_account == nullptr) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "Invalid nullptr arguments to "
            "grpc_alts_credentials_client_options_add_target_service_account()";
     return;

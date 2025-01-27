@@ -23,8 +23,8 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -74,21 +74,21 @@ SubchannelStreamClient::SubchannelStreamClient(
                   SUBCHANNEL_STREAM_RECONNECT_MAX_BACKOFF_SECONDS))),
       event_engine_(connected_subchannel_->args().GetObject<EventEngine>()) {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    LOG(INFO) << tracer_ << " " << this << ": created SubchannelStreamClient";
+    ABSL_LOG(INFO) << tracer_ << " " << this << ": created SubchannelStreamClient";
   }
   StartCall();
 }
 
 SubchannelStreamClient::~SubchannelStreamClient() {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    LOG(INFO) << tracer_ << " " << this
+    ABSL_LOG(INFO) << tracer_ << " " << this
               << ": destroying SubchannelStreamClient";
   }
 }
 
 void SubchannelStreamClient::Orphan() {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    LOG(INFO) << tracer_ << " " << this
+    ABSL_LOG(INFO) << tracer_ << " " << this
               << ": SubchannelStreamClient shutting down";
   }
   {
@@ -110,13 +110,13 @@ void SubchannelStreamClient::StartCall() {
 
 void SubchannelStreamClient::StartCallLocked() {
   if (event_handler_ == nullptr) return;
-  CHECK(call_state_ == nullptr);
+  ABSL_CHECK(call_state_ == nullptr);
   if (event_handler_ != nullptr) {
     event_handler_->OnCallStartLocked(this);
   }
   call_state_ = MakeOrphanable<CallState>(Ref(), interested_parties_);
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    LOG(INFO) << tracer_ << " " << this
+    ABSL_LOG(INFO) << tracer_ << " " << this
               << ": SubchannelStreamClient created CallState "
               << call_state_.get();
   }
@@ -129,13 +129,13 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
   }
   const Duration timeout = retry_backoff_.NextAttemptDelay();
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    LOG(INFO) << tracer_ << " " << this
+    ABSL_LOG(INFO) << tracer_ << " " << this
               << ": SubchannelStreamClient health check call lost...";
     if (timeout > Duration::Zero()) {
-      LOG(INFO) << tracer_ << " " << this << ": ... will retry in "
+      ABSL_LOG(INFO) << tracer_ << " " << this << ": ... will retry in "
                 << timeout.millis() << "ms.";
     } else {
-      LOG(INFO) << tracer_ << " " << this << ": ... retrying immediately.";
+      ABSL_LOG(INFO) << tracer_ << " " << this << ": ... retrying immediately.";
     }
   }
   retry_timer_handle_ = event_engine_->RunAfter(
@@ -152,7 +152,7 @@ void SubchannelStreamClient::OnRetryTimer() {
   if (event_handler_ != nullptr && retry_timer_handle_.has_value() &&
       call_state_ == nullptr) {
     if (GPR_UNLIKELY(tracer_ != nullptr)) {
-      LOG(INFO) << tracer_ << " " << this
+      ABSL_LOG(INFO) << tracer_ << " " << this
                 << ": SubchannelStreamClient restarting health check call";
     }
     StartCallLocked();
@@ -173,7 +173,7 @@ SubchannelStreamClient::CallState::CallState(
 
 SubchannelStreamClient::CallState::~CallState() {
   if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {
-    LOG(INFO) << subchannel_stream_client_->tracer_ << " "
+    ABSL_LOG(INFO) << subchannel_stream_client_->tracer_ << " "
               << subchannel_stream_client_.get()
               << ": SubchannelStreamClient destroying CallState " << this;
   }
@@ -207,7 +207,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   call_->SetAfterCallStackDestroy(&after_call_stack_destruction_);
   // Check if creation failed.
   if (!error.ok() || subchannel_stream_client_->event_handler_ == nullptr) {
-    LOG(ERROR) << "SubchannelStreamClient " << subchannel_stream_client_.get()
+    ABSL_LOG(ERROR) << "SubchannelStreamClient " << subchannel_stream_client_.get()
                << " CallState " << this << ": error creating "
                << "stream on subchannel (" << StatusToString(error)
                << "); will retry";
@@ -224,7 +224,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   send_initial_metadata_.Set(
       HttpPathMetadata(),
       subchannel_stream_client_->event_handler_->GetPathLocked());
-  CHECK(error.ok());
+  ABSL_CHECK(error.ok());
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
   batch_.send_initial_metadata = true;
@@ -358,7 +358,7 @@ void SubchannelStreamClient::CallState::RecvMessageReady() {
               subchannel_stream_client_.get(), recv_message_->JoinIntoString());
       if (!status.ok()) {
         if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {
-          LOG(INFO) << subchannel_stream_client_->tracer_ << " "
+          ABSL_LOG(INFO) << subchannel_stream_client_->tracer_ << " "
                     << subchannel_stream_client_.get()
                     << ": SubchannelStreamClient CallState " << this
                     << ": failed to parse response message: " << status;
@@ -404,7 +404,7 @@ void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
                           nullptr /* error_string */);
   }
   if (GPR_UNLIKELY(self->subchannel_stream_client_->tracer_ != nullptr)) {
-    LOG(INFO) << self->subchannel_stream_client_->tracer_ << " "
+    ABSL_LOG(INFO) << self->subchannel_stream_client_->tracer_ << " "
               << self->subchannel_stream_client_.get()
               << ": SubchannelStreamClient CallState " << self
               << ": health watch failed with status " << status;
@@ -430,7 +430,7 @@ void SubchannelStreamClient::CallState::CallEndedLocked(bool retry) {
   if (this == subchannel_stream_client_->call_state_.get()) {
     subchannel_stream_client_->call_state_.reset();
     if (retry) {
-      CHECK(subchannel_stream_client_->event_handler_ != nullptr);
+      ABSL_CHECK(subchannel_stream_client_->event_handler_ != nullptr);
       if (seen_response_.load(std::memory_order_acquire)) {
         // If the call fails after we've gotten a successful response, reset
         // the backoff and restart the call immediately.

@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -94,7 +94,7 @@ class DefaultConfigSelector final : public ConfigSelector {
     // The client channel code ensures that this will never be null.
     // If neither the resolver nor the client application provide a
     // config, a default empty config will be used.
-    DCHECK(service_config_ != nullptr);
+    ABSL_DCHECK(service_config_ != nullptr);
   }
 
   UniqueTypeName name() const override {
@@ -104,7 +104,7 @@ class DefaultConfigSelector final : public ConfigSelector {
 
   absl::Status GetCallConfig(GetCallConfigArgs args) override {
     Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
-    CHECK_NE(path, nullptr);
+    ABSL_CHECK_NE(path, nullptr);
     auto* parsed_method_configs =
         service_config_->GetMethodParsedConfigVector(path->c_slice());
     args.service_config_call_data->SetServiceConfig(service_config_,

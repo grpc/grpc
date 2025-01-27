@@ -19,7 +19,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -256,7 +256,7 @@ class InterceptionChainTest : public ::testing::Test {
     Poll<ServerMetadataHandle> trailing_md;
     call.initiator.SpawnInfallible(
         "run_call", [destination, &call, &trailing_md]() mutable {
-          LOG(INFO) << "👊 start call";
+          ABSL_LOG(INFO) << "👊 start call";
           destination->StartCall(std::move(call.handler));
           return Map(call.initiator.PullServerTrailingMetadata(),
                      [&trailing_md](ServerMetadataHandle md) {
@@ -272,7 +272,7 @@ class InterceptionChainTest : public ::testing::Test {
   class Destination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      LOG(INFO) << "👊 started call: metadata="
+      ABSL_LOG(INFO) << "👊 started call: metadata="
                 << unstarted_call_handler.UnprocessedClientInitialMetadata()
                        .DebugString();
       EXPECT_EQ(metadata_.get(), nullptr);

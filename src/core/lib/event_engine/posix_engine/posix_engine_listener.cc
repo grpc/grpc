@@ -34,8 +34,8 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
@@ -77,7 +77,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = ResolvedAddressGetPort(res_addr);
-  CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
+  ABSL_CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
   UnlinkIfUnixDomainSocket(addr);
 
   /// Check if this is a wildcard port, and if so, try to keep the port the same
@@ -152,7 +152,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
           // nothing to accept. This is not a performant code path, but if an fd
           // limit has been reached, the system is likely in an unhappy state
           // regardless.
-          LOG_EVERY_N_SEC(ERROR, 1)
+          ABSL_LOG_EVERY_N_SEC(ERROR, 1)
               << "File descriptor limit reached. Retrying.";
           handle_->NotifyOnRead(notify_on_accept_);
           // Do not schedule another timer if one is already armed.
@@ -174,7 +174,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
           handle_->NotifyOnRead(notify_on_accept_);
           return;
         default:
-          LOG(ERROR) << "Closing acceptor. Failed accept4: "
+          ABSL_LOG(ERROR) << "Closing acceptor. Failed accept4: "
                      << grpc_core::StrError(errno);
           // Shutting down the acceptor. Unref the ref grabbed in
           // AsyncConnectionAcceptor::Start().
@@ -189,7 +189,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
       if (getpeername(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
         auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
-        LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
+        ABSL_LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
                    << ". Dropping the connection, and continuing "
                       "to listen on "
                    << (listener_addr_uri.ok() ? *listener_addr_uri
@@ -207,7 +207,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     auto result = sock.ApplySocketMutatorInOptions(
         GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
     if (!result.ok()) {
-      LOG(ERROR) << "Closing acceptor. Failed to apply socket mutator: "
+      ABSL_LOG(ERROR) << "Closing acceptor. Failed to apply socket mutator: "
                  << result;
       // Shutting down the acceptor. Unref the ref grabbed in
       // AsyncConnectionAcceptor::Start().
@@ -218,7 +218,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     // Create an Endpoint here.
     auto peer_name = ResolvedAddressToURI(addr);
     if (!peer_name.ok()) {
-      LOG(ERROR) << "Invalid address: " << peer_name.status();
+      ABSL_LOG(ERROR) << "Invalid address: " << peer_name.status();
       // Shutting down the acceptor. Unref the ref grabbed in
       // AsyncConnectionAcceptor::Start().
       Unref();
@@ -299,7 +299,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {
 absl::Status PosixEngineListenerImpl::Start() {
   grpc_core::MutexLock lock(&this->mu_);
   // Start each asynchronous acceptor.
-  CHECK(!this->started_);
+  ABSL_CHECK(!this->started_);
   this->started_ = true;
   for (auto it = acceptors_.begin(); it != acceptors_.end(); it++) {
     (*it)->Start();

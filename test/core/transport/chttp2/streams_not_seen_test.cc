@@ -40,7 +40,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -264,7 +264,7 @@ class StreamsNotSeenTest : public ::testing::Test {
       state = grpc_channel_check_connectivity_state(channel_, false);
     }
     ExecCtx::Get()->Flush();
-    CHECK(
+    ABSL_CHECK(
         connect_notification_.WaitForNotificationWithTimeout(absl::Seconds(1)));
   }
 
@@ -280,7 +280,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     grpc_channel_destroy(channel_);
     if (tcp_ != nullptr) grpc_endpoint_destroy(tcp_);
     ExecCtx::Get()->Flush();
-    CHECK(read_end_notification_.WaitForNotificationWithTimeout(
+    ABSL_CHECK(read_end_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
     shutdown_ = true;
     server_poll_thread_->join();
@@ -360,12 +360,12 @@ class StreamsNotSeenTest : public ::testing::Test {
       }
     }
     ExecCtx::Get()->Flush();
-    CHECK(on_write_done_notification_.WaitForNotificationWithTimeout(
+    ABSL_CHECK(on_write_done_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    CHECK_OK(error);
+    ABSL_CHECK_OK(error);
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
@@ -414,7 +414,7 @@ class StreamsNotSeenTest : public ::testing::Test {
       while (!done) {
         grpc_event ev = grpc_completion_queue_next(
             cq_, grpc_timeout_milliseconds_to_deadline(10), nullptr);
-        CHECK(ev.type == GRPC_QUEUE_TIMEOUT);
+        ABSL_CHECK(ev.type == GRPC_QUEUE_TIMEOUT);
       }
     });
     {
@@ -461,7 +461,7 @@ TEST_F(StreamsNotSeenTest, StartStreamBeforeGoaway) {
       grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                grpc_timeout_seconds_to_deadline(1), nullptr);
-  CHECK(c);
+  ABSL_CHECK(c);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -508,7 +508,7 @@ TEST_F(StreamsNotSeenTest, StartStreamBeforeGoaway) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(102),
                                 nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(102), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -535,7 +535,7 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
       grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                grpc_timeout_seconds_to_deadline(1), nullptr);
-  CHECK(c);
+  ABSL_CHECK(c);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -581,7 +581,7 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(102),
                                 nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(102), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -609,7 +609,7 @@ TEST_F(StreamsNotSeenTest, StartStreamAfterGoaway) {
       grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                grpc_timeout_seconds_to_deadline(1), nullptr);
-  CHECK(c);
+  ABSL_CHECK(c);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -646,7 +646,7 @@ TEST_F(StreamsNotSeenTest, StartStreamAfterGoaway) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -682,7 +682,7 @@ TEST_F(ZeroConcurrencyTest, StartStreamBeforeGoaway) {
       grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                grpc_timeout_seconds_to_deadline(5), nullptr);
-  CHECK(c);
+  ABSL_CHECK(c);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -724,7 +724,7 @@ TEST_F(ZeroConcurrencyTest, StartStreamBeforeGoaway) {
   // the transport. If that no longer holds true, we might need to drive the cq
   // for some time to make sure that the RPC reaches the HTTP2 layer.
   SendGoaway(0);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -750,7 +750,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
       grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                grpc_timeout_seconds_to_deadline(5), nullptr);
-  CHECK(c);
+  ABSL_CHECK(c);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -789,7 +789,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
   CloseServerConnection();
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata

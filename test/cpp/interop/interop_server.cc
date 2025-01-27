@@ -32,8 +32,8 @@
 #include <thread>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
@@ -75,8 +75,8 @@ const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
 
 void MaybeEchoMetadata(ServerContext* context) {
   const auto& client_metadata = context->client_metadata();
-  CHECK_LE(client_metadata.count(kEchoInitialMetadataKey), 1u);
-  CHECK_LE(client_metadata.count(kEchoTrailingBinMetadataKey), 1u);
+  ABSL_CHECK_LE(client_metadata.count(kEchoInitialMetadataKey), 1u);
+  ABSL_CHECK_LE(client_metadata.count(kEchoTrailingBinMetadataKey), 1u);
 
   auto iter = client_metadata.find(kEchoInitialMetadataKey);
   if (iter != client_metadata.end()) {
@@ -118,19 +118,19 @@ bool CheckExpectedCompression(const ServerContext& context,
   if (compression_expected) {
     if (received_compression == GRPC_COMPRESS_NONE) {
       // Expected some compression, got NONE. This is an error.
-      LOG(ERROR)
+      ABSL_LOG(ERROR)
           << "Expected compression but got uncompressed request from client.";
       return false;
     }
     if (!(inspector.WasCompressed())) {
-      LOG(ERROR) << "Failure: Requested compression in a compressable request, "
+      ABSL_LOG(ERROR) << "Failure: Requested compression in a compressable request, "
                     "but compression bit in message flags not set.";
       return false;
     }
   } else {
     // Didn't expect compression -> make sure the request is uncompressed
     if (inspector.WasCompressed()) {
-      LOG(ERROR) << "Failure: Didn't requested compression, but compression "
+      ABSL_LOG(ERROR) << "Failure: Didn't requested compression, but compression "
                     "bit in message flags set.";
       return false;
     }
@@ -194,7 +194,7 @@ class TestServiceImpl : public TestService::Service {
     MaybeEchoMetadata(context);
     if (request->has_response_compressed()) {
       const bool compression_requested = request->response_compressed().value();
-      VLOG(2) << "Request for compression ("
+      ABSL_VLOG(2) << "Request for compression ("
               << (compression_requested ? "enabled" : "disabled")
               << ") present for " << __func__;
       if (compression_requested) {
@@ -245,7 +245,7 @@ class TestServiceImpl : public TestService::Service {
         context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
         const bool compression_requested =
             request->response_parameters(i).compressed().value();
-        VLOG(2) << "Request for compression ("
+        ABSL_VLOG(2) << "Request for compression ("
                 << (compression_requested ? "enabled" : "disabled")
                 << ") present for " << __func__;
         if (!compression_requested) {
@@ -419,7 +419,7 @@ void grpc::testing::interop::RunServer(
     ServerStartedCondition* server_started_condition,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
-  CHECK_NE(port, 0);
+  ABSL_CHECK_NE(port, 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
   auto server_metric_recorder =
@@ -444,7 +444,7 @@ void grpc::testing::interop::RunServer(
   grpc::ServerBuilder::experimental_type(&builder).EnableCallMetricRecording(
       nullptr);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  LOG(INFO) << "Server listening on " << server_address.str();
+  ABSL_LOG(INFO) << "Server listening on " << server_address.str();
 
   // Signal that the server has started.
   if (server_started_condition) {

@@ -33,8 +33,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -407,7 +407,7 @@ static void execute_from_storage(stream_obj* s) {
   for (struct op_and_state* curr = s->storage.head; curr != nullptr;) {
     GRPC_TRACE_VLOG(cronet, 2)
         << "calling op at " << curr << ". done = " << curr->done;
-    CHECK(!curr->done);
+    ABSL_CHECK(!curr->done);
     enum e_op_result result = execute_stream_op(curr);
     GRPC_TRACE_VLOG(cronet, 2) << "execute_stream_op[" << curr << "] returns "
                                << op_result_string(result);
@@ -442,7 +442,7 @@ static void convert_cronet_array_to_metadata(
     }
     mds->Append(header_array->headers[i].key, grpc_core::Slice(value),
                 [&](absl::string_view error, const grpc_core::Slice& value) {
-                  VLOG(2) << "Failed to parse metadata: key="
+                  ABSL_VLOG(2) << "Failed to parse metadata: key="
                           << header_array->headers[i].key << " error=" << error
                           << " value=" << value.as_string_view();
                 });
@@ -453,7 +453,7 @@ static void convert_cronet_array_to_metadata(
 // Cronet callback
 //
 static void on_failed(bidirectional_stream* stream, int net_error) {
-  LOG(ERROR) << "on_failed(" << stream << ", " << net_error << ")";
+  ABSL_LOG(ERROR) << "on_failed(" << stream << ", " << net_error << ")";
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
@@ -587,7 +587,7 @@ static void on_response_headers_received(
         s->state.state_callback_received[OP_FAILED])) {
     // Do an extra read to trigger on_succeeded() callback in case connection
     // is closed
-    CHECK(s->state.rs.length_field_received == false);
+    ABSL_CHECK(s->state.rs.length_field_received == false);
     read_grpc_header(s);
   }
   gpr_mu_unlock(&s->mu);
@@ -793,7 +793,7 @@ class CronetMetadataEncoder {
       value = grpc_slice_to_c_string(value_slice.c_slice());
     }
     GRPC_TRACE_VLOG(cronet, 2) << "header " << key << " = " << value;
-    CHECK_LT(count_, capacity_);
+    ABSL_CHECK_LT(count_, capacity_);
     headers_[count_].key = key;
     headers_[count_].value = value;
     ++count_;
@@ -1052,8 +1052,8 @@ static enum e_op_result execute_stream_op_send_initial_metadata(
       << "running: " << oas << " OP_SEND_INITIAL_METADATA";
   // Start new cronet stream. It is destroyed in on_succeeded, on_canceled,
   // on_failed
-  CHECK_EQ(s->cbs, nullptr);
-  CHECK(!stream_state->state_op_done[OP_SEND_INITIAL_METADATA]);
+  ABSL_CHECK_EQ(s->cbs, nullptr);
+  ABSL_CHECK(!stream_state->state_op_done[OP_SEND_INITIAL_METADATA]);
   s->cbs =
       bidirectional_stream_create(t->engine, s->curr_gs, &cronet_callbacks);
   GRPC_TRACE_VLOG(cronet, 2) << s->cbs << " = bidirectional_stream_create()";
@@ -1257,7 +1257,7 @@ static enum e_op_result execute_stream_op_recv_message(
       if (stream_state->rs.length_field > 0) {
         stream_state->rs.read_buffer = static_cast<char*>(
             gpr_malloc(static_cast<size_t>(stream_state->rs.length_field)));
-        CHECK(stream_state->rs.read_buffer);
+        ABSL_CHECK(stream_state->rs.read_buffer);
         stream_state->rs.remaining_bytes = stream_state->rs.length_field;
         stream_state->rs.received_bytes = 0;
         GRPC_TRACE_VLOG(cronet, 2)
@@ -1574,7 +1574,7 @@ grpc_core::Transport* grpc_create_cronet_transport(
       if (0 ==
           strcmp(args->args[i].key, GRPC_ARG_USE_CRONET_PACKET_COALESCING)) {
         if (GPR_UNLIKELY(args->args[i].type != GRPC_ARG_INTEGER)) {
-          LOG(ERROR) << GRPC_ARG_USE_CRONET_PACKET_COALESCING
+          ABSL_LOG(ERROR) << GRPC_ARG_USE_CRONET_PACKET_COALESCING
                      << " ignored: it must be an integer";
         } else {
           ct->use_packet_coalescing = (args->args[i].value.integer != 0);

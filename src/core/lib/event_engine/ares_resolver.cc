@@ -54,8 +54,8 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -204,7 +204,7 @@ AresResolver::CreateAresResolver(
   ares_channel channel;
   int status = ares_init_options(&channel, &opts, ARES_OPT_FLAGS);
   if (status != ARES_SUCCESS) {
-    LOG(ERROR) << "ares_init_options failed, status: " << status;
+    ABSL_LOG(ERROR) << "ares_init_options failed, status: " << status;
     return AresStatusToAbslStatus(
         status,
         absl::StrCat("Failed to init c-ares channel: ", ares_strerror(status)));
@@ -233,8 +233,8 @@ AresResolver::AresResolver(
 }
 
 AresResolver::~AresResolver() {
-  CHECK(fd_node_list_.empty());
-  CHECK(callback_map_.empty());
+  ABSL_CHECK(fd_node_list_.empty());
+  ABSL_CHECK(callback_map_.empty());
   ares_destroy(channel_);
 }
 
@@ -251,7 +251,7 @@ void AresResolver::Orphan() {
         GRPC_TRACE_LOG(cares_resolver, INFO)
             << "(EventEngine c-ares resolver) resolver: " << this
             << " shutdown fd: " << fd_node->polled_fd->GetName();
-        CHECK(fd_node->polled_fd->ShutdownLocked(
+        ABSL_CHECK(fd_node->polled_fd->ShutdownLocked(
             absl::CancelledError("AresResolver::Orphan")));
         fd_node->already_shutdown = true;
       }
@@ -525,7 +525,7 @@ void AresResolver::MaybeStartTimerLocked() {
 
 void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mutex_);
-  CHECK(fd_node->readable_registered);
+  ABSL_CHECK(fd_node->readable_registered);
   fd_node->readable_registered = false;
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) OnReadable: fd: " << fd_node->as
@@ -545,7 +545,7 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
 
 void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mutex_);
-  CHECK(fd_node->writable_registered);
+  ABSL_CHECK(fd_node->writable_registered);
   fd_node->writable_registered = false;
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) OnWritable: fd: " << fd_node->as
@@ -597,7 +597,7 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
                                           int /*timeouts*/,
                                           struct hostent* hostent) {
   auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
-  CHECK_GT(hostname_qa->pending_requests--, 0);
+  ABSL_CHECK_GT(hostname_qa->pending_requests--, 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
   if (status != ARES_SUCCESS) {
     std::string error_msg =
@@ -614,7 +614,7 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
         << " ARES_SUCCESS";
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
       if (hostname_qa->result.size() == kMaxRecordSize) {
-        LOG(ERROR) << "A/AAAA response exceeds maximum record size of 65536";
+        ABSL_LOG(ERROR) << "A/AAAA response exceeds maximum record size of 65536";
         break;
       }
       switch (hostent->h_addrtype) {
@@ -665,8 +665,8 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
   if (hostname_qa->pending_requests == 0) {
     auto nh =
         ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
-    CHECK(!nh.empty());
-    CHECK(std::holds_alternative<
+    ABSL_CHECK(!nh.empty());
+    ABSL_CHECK(std::holds_alternative<
           EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
     auto callback = std::get<EventEngine::DNSResolver::LookupHostnameCallback>(
         std::move(nh.mapped()));
@@ -692,8 +692,8 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
-  CHECK(!nh.empty());
-  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
+  ABSL_CHECK(!nh.empty());
+  ABSL_CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
       nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupSRVCallback>(
       std::move(nh.mapped()));
@@ -729,7 +729,7 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
        srv_it = srv_it->next) {
     if (result.size() == kMaxRecordSize) {
-      LOG(ERROR) << "SRV response exceeds maximum record size of 65536";
+      ABSL_LOG(ERROR) << "SRV response exceeds maximum record size of 65536";
       break;
     }
     EventEngine::DNSResolver::SRVRecord record;
@@ -753,8 +753,8 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
-  CHECK(!nh.empty());
-  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
+  ABSL_CHECK(!nh.empty());
+  ABSL_CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
       nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupTXTCallback>(
       std::move(nh.mapped()));
@@ -798,7 +798,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
       << result.size() << " TXT records";
   if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {
     for (const auto& record : result) {
-      LOG(INFO) << record;
+      ABSL_LOG(INFO) << record;
     }
   }
   // Clean up.

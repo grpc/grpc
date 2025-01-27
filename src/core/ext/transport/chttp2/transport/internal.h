@@ -798,7 +798,7 @@ void grpc_chttp2_settings_timeout(
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
 #define GRPC_CHTTP2_IF_TRACING(severity) \
-  LOG_IF(severity, GRPC_TRACE_FLAG_ENABLED(http))
+  ABSL_LOG_IF(severity, GRPC_TRACE_FLAG_ENABLED(http))
 
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,
                              grpc_chttp2_stream* stream,

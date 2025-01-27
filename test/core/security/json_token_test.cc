@@ -26,7 +26,7 @@
 #include <openssl/evp.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/escaping.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -217,7 +217,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   EXPECT_FALSE(decoded.empty());
   auto json = grpc_core::JsonParse(decoded);
   if (!json.ok()) {
-    LOG(ERROR) << "JSON parse error: " << json.status().ToString();
+    ABSL_LOG(ERROR) << "JSON parse error: " << json.status().ToString();
     return Json();
   }
   return std::move(*json);

@@ -34,8 +34,8 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -97,7 +97,7 @@ class ServerThread {
     grpc_completion_queue* shutdown_cq =
         grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
-    CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
+    ABSL_CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
                                       grpc_timeout_seconds_to_deadline(1),
                                       nullptr)
               .type == GRPC_OP_COMPLETE);
@@ -172,7 +172,7 @@ class Client {
         break;
       }
       if (state.error() != absl::OkStatus()) break;
-      LOG(INFO) << "client read " << read_buffer.length << " bytes";
+      ABSL_LOG(INFO) << "client read " << read_buffer.length << " bytes";
       grpc_slice_buffer_reset_and_unref(&read_buffer);
     }
     grpc_endpoint_destroy(endpoint_);
@@ -209,7 +209,7 @@ class Client {
 
    private:
     static void OnEventDone(void* arg, grpc_error_handle error) {
-      LOG(INFO) << "OnEventDone(): " << StatusToString(error);
+      ABSL_LOG(INFO) << "OnEventDone(): " << StatusToString(error);
       EventState* state = static_cast<EventState*>(arg);
       state->error_ = error;
       gpr_atm_rel_store(&state->done_atm_, 1);
@@ -254,21 +254,21 @@ TEST(SettingsTimeout, Basic) {
   const int server_port = grpc_pick_unused_port_or_die();
   std::string server_address_string = absl::StrCat("localhost:", server_port);
   // Start server.
-  LOG(INFO) << "starting server on " << server_address_string;
+  ABSL_LOG(INFO) << "starting server on " << server_address_string;
   ServerThread server_thread(server_address_string.c_str());
   server_thread.Start();
   // Create client and connect to server.
-  LOG(INFO) << "starting client connect";
+  ABSL_LOG(INFO) << "starting client connect";
   Client client(server_address_string.c_str());
   client.Connect();
   // Client read.  Should fail due to server dropping connection.
-  LOG(INFO) << "starting client read";
+  ABSL_LOG(INFO) << "starting client read";
   EXPECT_TRUE(client.ReadUntilError());
   // Shut down client.
-  LOG(INFO) << "shutting down client";
+  ABSL_LOG(INFO) << "shutting down client";
   client.Shutdown();
   // Shut down server.
-  LOG(INFO) << "shutting down server";
+  ABSL_LOG(INFO) << "shutting down server";
   server_thread.Shutdown();
   // Clean up.
 }

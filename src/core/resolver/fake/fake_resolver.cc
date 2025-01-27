@@ -25,7 +25,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -94,7 +94,7 @@ void FakeResolver::StartLocked() {
 
 void FakeResolver::RequestReresolutionLocked() {
   // Re-resolution can't happen until after we return an initial result.
-  CHECK(response_generator_ != nullptr);
+  ABSL_CHECK(response_generator_ != nullptr);
   response_generator_->ReresolutionRequested();
 }
 

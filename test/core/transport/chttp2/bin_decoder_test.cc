@@ -23,7 +23,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -38,7 +38,7 @@ static void expect_slice_eq(grpc_slice expected, grpc_slice slice,
   if (!grpc_slice_eq(slice, expected)) {
     char* hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char* he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    LOG(ERROR) << "FAILED:" << line << ": " << debug << "\ngot:  " << hs
+    ABSL_LOG(ERROR) << "FAILED:" << line << ": " << debug << "\ngot:  " << hs
                << "\nwant: " << he;
     gpr_free(hs);
     gpr_free(he);

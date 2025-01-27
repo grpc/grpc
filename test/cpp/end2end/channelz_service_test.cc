@@ -31,7 +31,7 @@
 #include <grpcpp/server_context.h>
 #include <gtest/gtest.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/memory/memory.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
@@ -94,7 +94,7 @@ class Proxy : public grpc::testing::EchoTestService::Service {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     size_t idx = request->param().backend_channel_idx();
-    CHECK_LT(idx, stubs_.size());
+    ABSL_CHECK_LT(idx, stubs_.size());
     return stubs_[idx]->Echo(client_context.get(), *request, response);
   }
 

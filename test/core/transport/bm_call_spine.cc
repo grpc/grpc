@@ -71,7 +71,7 @@ class ForwardCallFixture {
       return Map(
           p1_handler.PullClientInitialMetadata(),
           [p1_handler, &p2](ValueOrFailure<ClientMetadataHandle> md) mutable {
-            CHECK(md.ok());
+            ABSL_CHECK(md.ok());
             ForwardCall(std::move(p1_handler), std::move(p2.initiator));
           });
     });

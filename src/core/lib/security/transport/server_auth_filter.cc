@@ -30,8 +30,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -151,7 +151,7 @@ void ServerAuthFilter::RunApplicationCode::OnMdProcessingDone(
 
   // TODO(ZhenLian): Implement support for response_md.
   if (response_md != nullptr && num_response_md > 0) {
-    LOG(ERROR) << "response_md in auth metadata processing not supported for "
+    ABSL_LOG(ERROR) << "response_md in auth metadata processing not supported for "
                   "now. Ignoring...";
   }
 
@@ -199,7 +199,7 @@ ServerAuthFilter::ServerAuthFilter(
 absl::StatusOr<std::unique_ptr<ServerAuthFilter>> ServerAuthFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   auto auth_context = args.GetObjectRef<grpc_auth_context>();
-  CHECK(auth_context != nullptr);
+  ABSL_CHECK(auth_context != nullptr);
   auto creds = args.GetObjectRef<grpc_server_credentials>();
   return std::make_unique<ServerAuthFilter>(std::move(creds),
                                             std::move(auth_context));

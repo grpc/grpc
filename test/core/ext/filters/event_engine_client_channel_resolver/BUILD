@@ -24,7 +24,7 @@ grpc_proto_fuzzer(
     size = "enormous",
     srcs = ["resolver_fuzzer.cc"],
     corpus = "resolver_fuzzer_corpus",
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     proto = "resolver_fuzzer.proto",
     proto_deps = [
         "//test/core/test_util:fuzz_config_vars_proto",

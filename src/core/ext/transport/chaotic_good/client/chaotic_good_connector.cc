@@ -21,8 +21,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -221,7 +221,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
   arena->SetContext(event_engine.get());
   auto resolved_addr = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args.address->addr), args.address->len);
-  CHECK_NE(resolved_addr.address(), nullptr);
+  ABSL_CHECK_NE(resolved_addr.address(), nullptr);
   auto* result_notifier_ptr = result_notifier.get();
   auto activity = MakeActivity(
       [result_notifier_ptr, resolved_addr]() mutable {
@@ -318,7 +318,7 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
   if (r.ok()) {
     return r->release()->c_ptr();
   }
-  LOG(ERROR) << "Failed to create chaotic good client channel: " << r.status();
+  ABSL_LOG(ERROR) << "Failed to create chaotic good client channel: " << r.status();
   error = absl_status_to_grpc_error(r.status());
   intptr_t integer;
   grpc_status_code status = GRPC_STATUS_INTERNAL;

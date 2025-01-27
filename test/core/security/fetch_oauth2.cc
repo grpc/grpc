@@ -26,8 +26,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/util/json_util.h"
@@ -42,7 +42,7 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
   if (strlen(json_file_path) == 0) {
     auto status = grpc::experimental::StsCredentialsOptionsFromEnv(&options);
     if (!status.ok()) {
-      LOG(ERROR) << status.error_message();
+      ABSL_LOG(ERROR) << status.error_message();
       return nullptr;
     }
   } else {
@@ -51,7 +51,7 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
     auto status = grpc::experimental::StsCredentialsOptionsFromJson(sts_options,
                                                                     &options);
     if (!status.ok()) {
-      LOG(ERROR) << status.error_message();
+      ABSL_LOG(ERROR) << status.error_message();
       return nullptr;
     }
   }
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
 
   if (json_sts_options_file_path != nullptr &&
       json_refresh_token_file_path != nullptr) {
-    LOG(ERROR) << "--json_sts_options and --json_refresh_token are mutually "
+    ABSL_LOG(ERROR) << "--json_sts_options and --json_refresh_token are mutually "
                   "exclusive.";
     exit(1);
   }
@@ -103,19 +103,19 @@ int main(int argc, char** argv) {
   if (use_gce) {
     if (json_sts_options_file_path != nullptr ||
         json_refresh_token_file_path != nullptr) {
-      LOG(INFO)
+      ABSL_LOG(INFO)
           << "Ignoring json refresh token or sts options to get a token from "
              "the GCE metadata server.";
     }
     creds = grpc_google_compute_engine_credentials_create(nullptr);
     if (creds == nullptr) {
-      LOG(ERROR) << "Could not create gce credentials.";
+      ABSL_LOG(ERROR) << "Could not create gce credentials.";
       exit(1);
     }
   } else if (json_refresh_token_file_path != nullptr) {
     creds = create_refresh_token_creds(json_refresh_token_file_path);
     if (creds == nullptr) {
-      LOG(ERROR) << "Could not create refresh token creds. "
+      ABSL_LOG(ERROR) << "Could not create refresh token creds. "
                  << json_refresh_token_file_path
                  << " does probably not contain a valid json refresh token.";
       exit(1);
@@ -123,16 +123,16 @@ int main(int argc, char** argv) {
   } else if (json_sts_options_file_path != nullptr) {
     creds = create_sts_creds(json_sts_options_file_path);
     if (creds == nullptr) {
-      LOG(ERROR) << "Could not create sts creds. " << json_sts_options_file_path
+      ABSL_LOG(ERROR) << "Could not create sts creds. " << json_sts_options_file_path
                  << " does probably not contain a valid json for sts options.";
       exit(1);
     }
   } else {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "Missing --gce, --json_sts_options, or --json_refresh_token option.";
     exit(1);
   }
-  CHECK_NE(creds, nullptr);
+  ABSL_CHECK_NE(creds, nullptr);
 
   token = grpc_test_fetch_oauth2_token_with_credentials(creds);
   if (token != nullptr) {

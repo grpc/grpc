@@ -35,8 +35,8 @@
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -79,10 +79,10 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
           "Failure: Requested compression but got uncompressed response "
           "from server.");
     }
-    CHECK(inspector.WasCompressed());
+    ABSL_CHECK(inspector.WasCompressed());
   } else {
     // Didn't request compression -> make sure the response is uncompressed
-    CHECK(!(inspector.WasCompressed()));
+    ABSL_CHECK(!(inspector.WasCompressed()));
   }
 }
 
@@ -204,7 +204,7 @@ bool InteropClient::AssertStatusCode(const Status& s, StatusCode expected_code,
     return true;
   }
 
-  LOG(ERROR) << "Error status code: " << s.error_code()
+  ABSL_LOG(ERROR) << "Error status code: " << s.error_code()
              << " (expected: " << expected_code
              << "), message: " << s.error_message()
              << ", debug string: " << optional_debug_string;
@@ -219,7 +219,7 @@ bool InteropClient::AssertStatusCode(const Status& s, StatusCode expected_code,
 }
 
 bool InteropClient::DoEmpty() {
-  VLOG(2) << "Sending an empty rpc...";
+  ABSL_VLOG(2) << "Sending an empty rpc...";
 
   Empty request;
   Empty response;
@@ -231,7 +231,7 @@ bool InteropClient::DoEmpty() {
     return false;
   }
 
-  VLOG(2) << "Empty rpc done.";
+  ABSL_VLOG(2) << "Empty rpc done.";
   return true;
 }
 
@@ -264,14 +264,14 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
   custom_checks_fn(inspector, request, response);
 
   // Payload related checks.
-  CHECK(response->payload().body() == std::string(kLargeResponseSize, '\0'));
+  ABSL_CHECK(response->payload().body() == std::string(kLargeResponseSize, '\0'));
   return true;
 }
 
 bool InteropClient::DoComputeEngineCreds(
     const std::string& default_service_account,
     const std::string& oauth_scope) {
-  VLOG(2) << "Sending a large unary rpc with compute engine credentials ...";
+  ABSL_VLOG(2) << "Sending a large unary rpc with compute engine credentials ...";
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
@@ -281,20 +281,20 @@ bool InteropClient::DoComputeEngineCreds(
     return false;
   }
 
-  VLOG(2) << "Got username " << response.username();
-  VLOG(2) << "Got oauth_scope " << response.oauth_scope();
-  CHECK(!response.username().empty());
-  CHECK(response.username() == default_service_account);
-  CHECK(!response.oauth_scope().empty());
+  ABSL_VLOG(2) << "Got username " << response.username();
+  ABSL_VLOG(2) << "Got oauth_scope " << response.oauth_scope();
+  ABSL_CHECK(!response.username().empty());
+  ABSL_CHECK(response.username() == default_service_account);
+  ABSL_CHECK(!response.oauth_scope().empty());
   const char* oauth_scope_str = response.oauth_scope().c_str();
-  CHECK(absl::StrContains(oauth_scope, oauth_scope_str));
-  VLOG(2) << "Large unary with compute engine creds done.";
+  ABSL_CHECK(absl::StrContains(oauth_scope, oauth_scope_str));
+  ABSL_VLOG(2) << "Large unary with compute engine creds done.";
   return true;
 }
 
 bool InteropClient::DoOauth2AuthToken(const std::string& username,
                                       const std::string& oauth_scope) {
-  VLOG(2) << "Sending a unary rpc with raw oauth2 access token credentials ...";
+  ABSL_VLOG(2) << "Sending a unary rpc with raw oauth2 access token credentials ...";
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
@@ -308,17 +308,17 @@ bool InteropClient::DoOauth2AuthToken(const std::string& username,
     return false;
   }
 
-  CHECK(!response.username().empty());
-  CHECK(!response.oauth_scope().empty());
-  CHECK(username == response.username());
+  ABSL_CHECK(!response.username().empty());
+  ABSL_CHECK(!response.oauth_scope().empty());
+  ABSL_CHECK(username == response.username());
   const char* oauth_scope_str = response.oauth_scope().c_str();
-  CHECK(absl::StrContains(oauth_scope, oauth_scope_str));
-  VLOG(2) << "Unary with oauth2 access token credentials done.";
+  ABSL_CHECK(absl::StrContains(oauth_scope, oauth_scope_str));
+  ABSL_VLOG(2) << "Unary with oauth2 access token credentials done.";
   return true;
 }
 
 bool InteropClient::DoPerRpcCreds(const std::string& json_key) {
-  VLOG(2) << "Sending a unary rpc with per-rpc JWT access token ...";
+  ABSL_VLOG(2) << "Sending a unary rpc with per-rpc JWT access token ...";
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
@@ -336,14 +336,14 @@ bool InteropClient::DoPerRpcCreds(const std::string& json_key) {
     return false;
   }
 
-  CHECK(!response.username().empty());
-  CHECK(json_key.find(response.username()) != std::string::npos);
-  VLOG(2) << "Unary with per-rpc JWT access token done.";
+  ABSL_CHECK(!response.username().empty());
+  ABSL_CHECK(json_key.find(response.username()) != std::string::npos);
+  ABSL_VLOG(2) << "Unary with per-rpc JWT access token done.";
   return true;
 }
 
 bool InteropClient::DoJwtTokenCreds(const std::string& username) {
-  VLOG(2) << "Sending a large unary rpc with JWT token credentials ...";
+  ABSL_VLOG(2) << "Sending a large unary rpc with JWT token credentials ...";
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
@@ -352,15 +352,15 @@ bool InteropClient::DoJwtTokenCreds(const std::string& username) {
     return false;
   }
 
-  CHECK(!response.username().empty());
-  CHECK(username.find(response.username()) != std::string::npos);
-  VLOG(2) << "Large unary with JWT token creds done.";
+  ABSL_CHECK(!response.username().empty());
+  ABSL_CHECK(username.find(response.username()) != std::string::npos);
+  ABSL_VLOG(2) << "Large unary with JWT token creds done.";
   return true;
 }
 
 bool InteropClient::DoGoogleDefaultCredentials(
     const std::string& default_service_account) {
-  VLOG(2) << "Sending a large unary rpc with GoogleDefaultCredentials...";
+  ABSL_VLOG(2) << "Sending a large unary rpc with GoogleDefaultCredentials...";
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
@@ -369,21 +369,21 @@ bool InteropClient::DoGoogleDefaultCredentials(
     return false;
   }
 
-  VLOG(2) << "Got username " << response.username();
-  CHECK(!response.username().empty());
-  CHECK(response.username() == default_service_account);
-  VLOG(2) << "Large unary rpc with GoogleDefaultCredentials done.";
+  ABSL_VLOG(2) << "Got username " << response.username();
+  ABSL_CHECK(!response.username().empty());
+  ABSL_CHECK(response.username() == default_service_account);
+  ABSL_VLOG(2) << "Large unary rpc with GoogleDefaultCredentials done.";
   return true;
 }
 
 bool InteropClient::DoLargeUnary() {
-  VLOG(2) << "Sending a large unary rpc...";
+  ABSL_VLOG(2) << "Sending a large unary rpc...";
   SimpleRequest request;
   SimpleResponse response;
   if (!PerformLargeUnary(&request, &response)) {
     return false;
   }
-  VLOG(2) << "Large unary done.";
+  ABSL_VLOG(2) << "Large unary done.";
   return true;
 }
 
@@ -399,32 +399,32 @@ bool InteropClient::DoClientCompressedUnary() {
   probe_req.set_response_size(kLargeResponseSize);
   probe_req.mutable_payload()->set_body(std::string(kLargeRequestSize, '\0'));
 
-  VLOG(2) << "Sending probe for compressed unary request.";
+  ABSL_VLOG(2) << "Sending probe for compressed unary request.";
   const Status s =
       serviceStub_.Get()->UnaryCall(&probe_context, probe_req, &probe_res);
   if (s.error_code() != grpc::StatusCode::INVALID_ARGUMENT) {
     // The server isn't able to evaluate incoming compression, making the rest
     // of this test moot.
-    VLOG(2) << "Compressed unary request probe failed";
+    ABSL_VLOG(2) << "Compressed unary request probe failed";
     return false;
   }
-  VLOG(2) << "Compressed unary request probe succeeded. Proceeding.";
+  ABSL_VLOG(2) << "Compressed unary request probe succeeded. Proceeding.";
 
   const std::vector<bool> compressions = {true, false};
   for (size_t i = 0; i < compressions.size(); i++) {
     std::string log_suffix =
         absl::StrFormat("(compression=%s)", compressions[i] ? "true" : "false");
 
-    VLOG(2) << "Sending compressed unary request " << log_suffix;
+    ABSL_VLOG(2) << "Sending compressed unary request " << log_suffix;
     SimpleRequest request;
     SimpleResponse response;
     request.mutable_expect_compressed()->set_value(compressions[i]);
     if (!PerformLargeUnary(&request, &response, UnaryCompressionChecks)) {
-      LOG(ERROR) << "Compressed unary request failed " << log_suffix;
+      ABSL_LOG(ERROR) << "Compressed unary request failed " << log_suffix;
       return false;
     }
 
-    VLOG(2) << "Compressed unary request failed " << log_suffix;
+    ABSL_VLOG(2) << "Compressed unary request failed " << log_suffix;
   }
 
   return true;
@@ -436,17 +436,17 @@ bool InteropClient::DoServerCompressedUnary() {
     std::string log_suffix =
         absl::StrFormat("(compression=%s)", compressions[i] ? "true" : "false");
 
-    VLOG(2) << "Sending unary request for compressed response " << log_suffix;
+    ABSL_VLOG(2) << "Sending unary request for compressed response " << log_suffix;
     SimpleRequest request;
     SimpleResponse response;
     request.mutable_response_compressed()->set_value(compressions[i]);
 
     if (!PerformLargeUnary(&request, &response, UnaryCompressionChecks)) {
-      LOG(ERROR) << "Request for compressed unary failed " << log_suffix;
+      ABSL_LOG(ERROR) << "Request for compressed unary failed " << log_suffix;
       return false;
     }
 
-    VLOG(2) << "Request for compressed unary failed " << log_suffix;
+    ABSL_VLOG(2) << "Request for compressed unary failed " << log_suffix;
   }
 
   return true;
@@ -463,7 +463,7 @@ bool InteropClient::TransientFailureOrAbort() {
 }
 
 bool InteropClient::DoRequestStreaming() {
-  VLOG(2) << "Sending request steaming rpc ...";
+  ABSL_VLOG(2) << "Sending request steaming rpc ...";
 
   ClientContext context;
   StreamingInputCallRequest request;
@@ -477,24 +477,24 @@ bool InteropClient::DoRequestStreaming() {
     Payload* payload = request.mutable_payload();
     payload->set_body(std::string(request_stream_sizes[i], '\0'));
     if (!stream->Write(request)) {
-      LOG(ERROR) << "DoRequestStreaming(): stream->Write() failed.";
+      ABSL_LOG(ERROR) << "DoRequestStreaming(): stream->Write() failed.";
       return TransientFailureOrAbort();
     }
     aggregated_payload_size += request_stream_sizes[i];
   }
-  CHECK(stream->WritesDone());
+  ABSL_CHECK(stream->WritesDone());
 
   Status s = stream->Finish();
   if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
-  CHECK(response.aggregated_payload_size() == aggregated_payload_size);
+  ABSL_CHECK(response.aggregated_payload_size() == aggregated_payload_size);
   return true;
 }
 
 bool InteropClient::DoResponseStreaming() {
-  VLOG(2) << "Receiving response streaming rpc ...";
+  ABSL_VLOG(2) << "Receiving response streaming rpc ...";
 
   ClientContext context;
   StreamingOutputCallRequest request;
@@ -508,7 +508,7 @@ bool InteropClient::DoResponseStreaming() {
 
   unsigned int i = 0;
   while (stream->Read(&response)) {
-    CHECK(response.payload().body() ==
+    ABSL_CHECK(response.payload().body() ==
           std::string(response_stream_sizes[i], '\0'));
     ++i;
   }
@@ -516,7 +516,7 @@ bool InteropClient::DoResponseStreaming() {
   if (i < response_stream_sizes.size()) {
     // stream->Read() failed before reading all the expected messages. This is
     // most likely due to connection failure.
-    LOG(ERROR) << "DoResponseStreaming(): Read fewer streams (" << i
+    ABSL_LOG(ERROR) << "DoResponseStreaming(): Read fewer streams (" << i
                << ") than response_stream_sizes.size() ("
                << response_stream_sizes.size() << ")";
     return TransientFailureOrAbort();
@@ -527,7 +527,7 @@ bool InteropClient::DoResponseStreaming() {
     return false;
   }
 
-  VLOG(2) << "Response streaming done.";
+  ABSL_VLOG(2) << "Response streaming done.";
   return true;
 }
 
@@ -541,23 +541,23 @@ bool InteropClient::DoClientCompressedStreaming() {
   probe_req.mutable_expect_compressed()->set_value(true);  // lies!
   probe_req.mutable_payload()->set_body(std::string(27182, '\0'));
 
-  VLOG(2) << "Sending probe for compressed streaming request.";
+  ABSL_VLOG(2) << "Sending probe for compressed streaming request.";
 
   std::unique_ptr<ClientWriter<StreamingInputCallRequest>> probe_stream(
       serviceStub_.Get()->StreamingInputCall(&probe_context, &probe_res));
 
   if (!probe_stream->Write(probe_req)) {
-    LOG(ERROR) << __func__ << "(): stream->Write() failed";
+    ABSL_LOG(ERROR) << __func__ << "(): stream->Write() failed";
     return TransientFailureOrAbort();
   }
   Status s = probe_stream->Finish();
   if (s.error_code() != grpc::StatusCode::INVALID_ARGUMENT) {
     // The server isn't able to evaluate incoming compression, making the rest
     // of this test moot.
-    VLOG(2) << "Compressed streaming request probe failed";
+    ABSL_VLOG(2) << "Compressed streaming request probe failed";
     return false;
   }
-  VLOG(2) << "Compressed streaming request probe succeeded. Proceeding.";
+  ABSL_VLOG(2) << "Compressed streaming request probe succeeded. Proceeding.";
 
   ClientContext context;
   StreamingInputCallRequest request;
@@ -569,9 +569,9 @@ bool InteropClient::DoClientCompressedStreaming() {
 
   request.mutable_payload()->set_body(std::string(27182, '\0'));
   request.mutable_expect_compressed()->set_value(true);
-  VLOG(2) << "Sending streaming request with compression enabled";
+  ABSL_VLOG(2) << "Sending streaming request with compression enabled";
   if (!stream->Write(request)) {
-    LOG(ERROR) << __func__ << "(): stream->Write() failed.";
+    ABSL_LOG(ERROR) << __func__ << "(): stream->Write() failed.";
     return TransientFailureOrAbort();
   }
 
@@ -579,12 +579,12 @@ bool InteropClient::DoClientCompressedStreaming() {
   wopts.set_no_compression();
   request.mutable_payload()->set_body(std::string(45904, '\0'));
   request.mutable_expect_compressed()->set_value(false);
-  VLOG(2) << "Sending streaming request with compression disabled";
+  ABSL_VLOG(2) << "Sending streaming request with compression disabled";
   if (!stream->Write(request, wopts)) {
-    LOG(ERROR) << __func__ << "(): stream->Write() failed";
+    ABSL_LOG(ERROR) << __func__ << "(): stream->Write() failed";
     return TransientFailureOrAbort();
   }
-  CHECK(stream->WritesDone());
+  ABSL_CHECK(stream->WritesDone());
 
   s = stream->Finish();
   return AssertStatusOk(s, context.debug_error_string());
@@ -598,13 +598,13 @@ bool InteropClient::DoServerCompressedStreaming() {
   InteropClientContextInspector inspector(context);
   StreamingOutputCallRequest request;
 
-  CHECK(compressions.size() == sizes.size());
+  ABSL_CHECK(compressions.size() == sizes.size());
   for (size_t i = 0; i < sizes.size(); i++) {
     std::string log_suffix =
         absl::StrFormat("(compression=%s; size=%d)",
                         compressions[i] ? "true" : "false", sizes[i]);
 
-    VLOG(2) << "Sending request streaming rpc " << log_suffix;
+    ABSL_VLOG(2) << "Sending request streaming rpc " << log_suffix;
 
     ResponseParameters* const response_parameter =
         request.add_response_parameters();
@@ -618,17 +618,17 @@ bool InteropClient::DoServerCompressedStreaming() {
   StreamingOutputCallResponse response;
   while (stream->Read(&response)) {
     // Payload size checks.
-    CHECK(response.payload().body() ==
+    ABSL_CHECK(response.payload().body() ==
           std::string(request.response_parameters(k).size(), '\0'));
 
     // Compression checks.
-    CHECK(request.response_parameters(k).has_compressed());
+    ABSL_CHECK(request.response_parameters(k).has_compressed());
     if (request.response_parameters(k).compressed().value()) {
-      CHECK(inspector.GetCallCompressionAlgorithm() > GRPC_COMPRESS_NONE);
-      CHECK(inspector.WasCompressed());
+      ABSL_CHECK(inspector.GetCallCompressionAlgorithm() > GRPC_COMPRESS_NONE);
+      ABSL_CHECK(inspector.WasCompressed());
     } else {
       // requested *no* compression.
-      CHECK(!(inspector.WasCompressed()));
+      ABSL_CHECK(!(inspector.WasCompressed()));
     }
     ++k;
   }
@@ -636,7 +636,7 @@ bool InteropClient::DoServerCompressedStreaming() {
   if (k < sizes.size()) {
     // stream->Read() failed before reading all the expected messages. This
     // is most likely due to a connection failure.
-    LOG(ERROR) << __func__ << "(): Responses read (k=" << k
+    ABSL_LOG(ERROR) << __func__ << "(): Responses read (k=" << k
                << ") is less than the expected number of  messages ("
                << sizes.size() << ").";
     return TransientFailureOrAbort();
@@ -647,7 +647,7 @@ bool InteropClient::DoServerCompressedStreaming() {
 }
 
 bool InteropClient::DoResponseStreamingWithSlowConsumer() {
-  VLOG(2) << "Receiving response streaming rpc with slow consumer ...";
+  ABSL_VLOG(2) << "Receiving response streaming rpc with slow consumer ...";
 
   ClientContext context;
   StreamingOutputCallRequest request;
@@ -662,8 +662,8 @@ bool InteropClient::DoResponseStreamingWithSlowConsumer() {
 
   int i = 0;
   while (stream->Read(&response)) {
-    CHECK(response.payload().body() == std::string(kResponseMessageSize, '\0'));
-    VLOG(2) << "received message " << i;
+    ABSL_CHECK(response.payload().body() == std::string(kResponseMessageSize, '\0'));
+    ABSL_VLOG(2) << "received message " << i;
     gpr_sleep_until(gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME),
         gpr_time_from_millis(kReceiveDelayMilliSeconds, GPR_TIMESPAN)));
@@ -671,7 +671,7 @@ bool InteropClient::DoResponseStreamingWithSlowConsumer() {
   }
 
   if (i < kNumResponseMessages) {
-    LOG(ERROR) << "DoResponseStreamingWithSlowConsumer(): Responses read (i="
+    ABSL_LOG(ERROR) << "DoResponseStreamingWithSlowConsumer(): Responses read (i="
                << i
                << ") is less than the expected messages (i.e "
                   "kNumResponseMessages = "
@@ -685,12 +685,12 @@ bool InteropClient::DoResponseStreamingWithSlowConsumer() {
     return false;
   }
 
-  VLOG(2) << "Response streaming done.";
+  ABSL_VLOG(2) << "Response streaming done.";
   return true;
 }
 
 bool InteropClient::DoHalfDuplex() {
-  VLOG(2) << "Sending half-duplex streaming rpc ...";
+  ABSL_VLOG(2) << "Sending half-duplex streaming rpc ...";
 
   ClientContext context;
   std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
@@ -703,7 +703,7 @@ bool InteropClient::DoHalfDuplex() {
     response_parameter->set_size(response_stream_sizes[i]);
 
     if (!stream->Write(request)) {
-      LOG(ERROR) << "DoHalfDuplex(): stream->Write() failed. i=" << i;
+      ABSL_LOG(ERROR) << "DoHalfDuplex(): stream->Write() failed. i=" << i;
       return TransientFailureOrAbort();
     }
   }
@@ -712,7 +712,7 @@ bool InteropClient::DoHalfDuplex() {
   unsigned int i = 0;
   StreamingOutputCallResponse response;
   while (stream->Read(&response)) {
-    CHECK(response.payload().body() ==
+    ABSL_CHECK(response.payload().body() ==
           std::string(response_stream_sizes[i], '\0'));
     ++i;
   }
@@ -720,7 +720,7 @@ bool InteropClient::DoHalfDuplex() {
   if (i < response_stream_sizes.size()) {
     // stream->Read() failed before reading all the expected messages. This is
     // most likely due to a connection failure
-    LOG(ERROR) << "DoHalfDuplex(): Responses read (i=" << i
+    ABSL_LOG(ERROR) << "DoHalfDuplex(): Responses read (i=" << i
                << ") are less than the expected number of messages "
                   "response_stream_sizes.size() ("
                << response_stream_sizes.size() << ").";
@@ -732,12 +732,12 @@ bool InteropClient::DoHalfDuplex() {
     return false;
   }
 
-  VLOG(2) << "Half-duplex streaming rpc done.";
+  ABSL_VLOG(2) << "Half-duplex streaming rpc done.";
   return true;
 }
 
 bool InteropClient::DoPingPong() {
-  VLOG(2) << "Sending Ping Pong streaming rpc ...";
+  ABSL_VLOG(2) << "Sending Ping Pong streaming rpc ...";
 
   ClientContext context;
   std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
@@ -754,34 +754,34 @@ bool InteropClient::DoPingPong() {
     payload->set_body(std::string(request_stream_sizes[i], '\0'));
 
     if (!stream->Write(request)) {
-      LOG(ERROR) << "DoPingPong(): stream->Write() failed. i: " << i;
+      ABSL_LOG(ERROR) << "DoPingPong(): stream->Write() failed. i: " << i;
       return TransientFailureOrAbort();
     }
 
     if (!stream->Read(&response)) {
-      LOG(ERROR) << "DoPingPong(): stream->Read() failed. i:" << i;
+      ABSL_LOG(ERROR) << "DoPingPong(): stream->Read() failed. i:" << i;
       return TransientFailureOrAbort();
     }
 
-    CHECK(response.payload().body() ==
+    ABSL_CHECK(response.payload().body() ==
           std::string(response_stream_sizes[i], '\0'));
   }
 
   stream->WritesDone();
 
-  CHECK(!stream->Read(&response));
+  ABSL_CHECK(!stream->Read(&response));
 
   Status s = stream->Finish();
   if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
-  VLOG(2) << "Ping pong streaming done.";
+  ABSL_VLOG(2) << "Ping pong streaming done.";
   return true;
 }
 
 bool InteropClient::DoCancelAfterBegin() {
-  VLOG(2) << "Sending request streaming rpc ...";
+  ABSL_VLOG(2) << "Sending request streaming rpc ...";
 
   ClientContext context;
   StreamingInputCallRequest request;
@@ -790,7 +790,7 @@ bool InteropClient::DoCancelAfterBegin() {
   std::unique_ptr<ClientWriter<StreamingInputCallRequest>> stream(
       serviceStub_.Get()->StreamingInputCall(&context, &response));
 
-  VLOG(2) << "Trying to cancel...";
+  ABSL_VLOG(2) << "Trying to cancel...";
   context.TryCancel();
   Status s = stream->Finish();
 
@@ -799,12 +799,12 @@ bool InteropClient::DoCancelAfterBegin() {
     return false;
   }
 
-  VLOG(2) << "Canceling streaming done.";
+  ABSL_VLOG(2) << "Canceling streaming done.";
   return true;
 }
 
 bool InteropClient::DoCancelAfterFirstResponse() {
-  VLOG(2) << "Sending Ping Pong streaming rpc ...";
+  ABSL_VLOG(2) << "Sending Ping Pong streaming rpc ...";
 
   ClientContext context;
   std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
@@ -818,26 +818,26 @@ bool InteropClient::DoCancelAfterFirstResponse() {
   StreamingOutputCallResponse response;
 
   if (!stream->Write(request)) {
-    LOG(ERROR) << "DoCancelAfterFirstResponse(): stream->Write() failed";
+    ABSL_LOG(ERROR) << "DoCancelAfterFirstResponse(): stream->Write() failed";
     return TransientFailureOrAbort();
   }
 
   if (!stream->Read(&response)) {
-    LOG(ERROR) << "DoCancelAfterFirstResponse(): stream->Read failed";
+    ABSL_LOG(ERROR) << "DoCancelAfterFirstResponse(): stream->Read failed";
     return TransientFailureOrAbort();
   }
-  CHECK(response.payload().body() == std::string(31415, '\0'));
+  ABSL_CHECK(response.payload().body() == std::string(31415, '\0'));
 
-  VLOG(2) << "Trying to cancel...";
+  ABSL_VLOG(2) << "Trying to cancel...";
   context.TryCancel();
 
   Status s = stream->Finish();
-  VLOG(2) << "Canceling pingpong streaming done.";
+  ABSL_VLOG(2) << "Canceling pingpong streaming done.";
   return true;
 }
 
 bool InteropClient::DoTimeoutOnSleepingServer() {
-  VLOG(2) << "Sending Ping Pong streaming rpc with a short deadline...";
+  ABSL_VLOG(2) << "Sending Ping Pong streaming rpc with a short deadline...";
 
   ClientContext context;
   std::chrono::system_clock::time_point deadline =
@@ -857,12 +857,12 @@ bool InteropClient::DoTimeoutOnSleepingServer() {
     return false;
   }
 
-  VLOG(2) << "Pingpong streaming timeout done.";
+  ABSL_VLOG(2) << "Pingpong streaming timeout done.";
   return true;
 }
 
 bool InteropClient::DoEmptyStream() {
-  VLOG(2) << "Starting empty_stream.";
+  ABSL_VLOG(2) << "Starting empty_stream.";
 
   ClientContext context;
   std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
@@ -870,19 +870,19 @@ bool InteropClient::DoEmptyStream() {
       stream(serviceStub_.Get()->FullDuplexCall(&context));
   stream->WritesDone();
   StreamingOutputCallResponse response;
-  CHECK(stream->Read(&response) == false);
+  ABSL_CHECK(stream->Read(&response) == false);
 
   Status s = stream->Finish();
   if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
-  VLOG(2) << "empty_stream done.";
+  ABSL_VLOG(2) << "empty_stream done.";
   return true;
 }
 
 bool InteropClient::DoStatusWithMessage() {
-  VLOG(2) << "Sending RPC with a request for status code 2 and message";
+  ABSL_VLOG(2) << "Sending RPC with a request for status code 2 and message";
 
   const grpc::StatusCode test_code = grpc::StatusCode::UNKNOWN;
   const std::string test_msg = "This is a test message";
@@ -899,7 +899,7 @@ bool InteropClient::DoStatusWithMessage() {
                         context.debug_error_string())) {
     return false;
   }
-  CHECK(s.error_message() == test_msg);
+  ABSL_CHECK(s.error_message() == test_msg);
 
   // Test FullDuplexCall.
   ClientContext stream_context;
@@ -920,14 +920,14 @@ bool InteropClient::DoStatusWithMessage() {
                         context.debug_error_string())) {
     return false;
   }
-  CHECK(s.error_message() == test_msg);
+  ABSL_CHECK(s.error_message() == test_msg);
 
-  VLOG(2) << "Done testing Status and Message";
+  ABSL_VLOG(2) << "Done testing Status and Message";
   return true;
 }
 
 bool InteropClient::DoSpecialStatusMessage() {
-  VLOG(2) << "Sending RPC with a request for status code 2 and message - "
+  ABSL_VLOG(2) << "Sending RPC with a request for status code 2 and message - "
              "\\t\\ntest "
              "with whitespace\\r\\nand Unicode BMP ☺ and non-BMP 😈\\t\\n";
   const grpc::StatusCode test_code = grpc::StatusCode::UNKNOWN;
@@ -944,8 +944,8 @@ bool InteropClient::DoSpecialStatusMessage() {
                         context.debug_error_string())) {
     return false;
   }
-  CHECK(s.error_message() == test_msg);
-  VLOG(2) << "Done testing Special Status Message";
+  ABSL_CHECK(s.error_message() == test_msg);
+  ABSL_VLOG(2) << "Done testing Special Status Message";
   return true;
 }
 
@@ -966,19 +966,19 @@ bool InteropClient::DoPickFirstUnary() {
       continue;
     }
     if (response.server_id() != server_id) {
-      LOG(ERROR) << "#" << i << " rpc hits server_id " << response.server_id()
+      ABSL_LOG(ERROR) << "#" << i << " rpc hits server_id " << response.server_id()
                  << ", expect server_id " << server_id;
       return false;
     }
   }
-  VLOG(2) << "pick first unary successfully finished";
+  ABSL_VLOG(2) << "pick first unary successfully finished";
   return true;
 }
 
 bool InteropClient::DoOrcaPerRpc() {
   load_report_tracker_.ResetCollectedLoadReports();
   grpc_core::CoreConfiguration::RegisterBuilder(RegisterBackendMetricsLbPolicy);
-  VLOG(2) << "testing orca per rpc";
+  ABSL_VLOG(2) << "testing orca per rpc";
   SimpleRequest request;
   SimpleResponse response;
   ClientContext context;
@@ -992,18 +992,18 @@ bool InteropClient::DoOrcaPerRpc() {
     return false;
   }
   auto report = load_report_tracker_.GetNextLoadReport();
-  CHECK(report.has_value());
-  CHECK(report->has_value());
+  ABSL_CHECK(report.has_value());
+  ABSL_CHECK(report->has_value());
   auto comparison_result = OrcaLoadReportsDiff(report->value(), *orca_report);
-  LOG_IF(FATAL, comparison_result.has_value()) << comparison_result->c_str();
-  CHECK(!load_report_tracker_.GetNextLoadReport().has_value());
-  VLOG(2) << "orca per rpc successfully finished";
+  ABSL_LOG_IF(FATAL, comparison_result.has_value()) << comparison_result->c_str();
+  ABSL_CHECK(!load_report_tracker_.GetNextLoadReport().has_value());
+  ABSL_VLOG(2) << "orca per rpc successfully finished";
   return true;
 }
 
 bool InteropClient::DoOrcaOob() {
   static constexpr auto kTimeout = absl::Seconds(10);
-  LOG(INFO) << "testing orca oob";
+  ABSL_LOG(INFO) << "testing orca oob";
   load_report_tracker_.ResetCollectedLoadReports();
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
@@ -1016,8 +1016,8 @@ bool InteropClient::DoOrcaOob() {
                                      StreamingOutputCallResponse>>
       stream(serviceStub_.Get()->FullDuplexCall(&context));
   auto stream_cleanup = absl::MakeCleanup([&]() {
-    CHECK(stream->WritesDone());
-    CHECK(stream->Finish().ok());
+    ABSL_CHECK(stream->WritesDone());
+    ABSL_CHECK(stream->Finish().ok());
   });
   {
     StreamingOutputCallRequest request;
@@ -1028,19 +1028,19 @@ bool InteropClient::DoOrcaOob() {
     orca_report->mutable_utilization()->emplace("util", 0.30499);
     StreamingOutputCallResponse response;
     if (!stream->Write(request)) {
-      LOG(ERROR) << "DoOrcaOob(): stream->Write() failed";
+      ABSL_LOG(ERROR) << "DoOrcaOob(): stream->Write() failed";
       return TransientFailureOrAbort();
     }
     if (!stream->Read(&response)) {
-      LOG(ERROR) << "DoOrcaOob(): stream->Read failed";
+      ABSL_LOG(ERROR) << "DoOrcaOob(): stream->Read failed";
       return TransientFailureOrAbort();
     }
-    CHECK(load_report_tracker_
+    ABSL_CHECK(load_report_tracker_
               .WaitForOobLoadReport(
                   [orca_report](const auto& actual) {
                     auto value = OrcaLoadReportsDiff(*orca_report, actual);
                     if (value.has_value()) {
-                      VLOG(2) << "Reports mismatch: " << value->c_str();
+                      ABSL_VLOG(2) << "Reports mismatch: " << value->c_str();
                       return false;
                     }
                     return true;
@@ -1057,14 +1057,14 @@ bool InteropClient::DoOrcaOob() {
     orca_report->mutable_utilization()->emplace("util", 0.2039);
     StreamingOutputCallResponse response;
     if (!stream->Write(request)) {
-      LOG(ERROR) << "DoOrcaOob(): stream->Write() failed";
+      ABSL_LOG(ERROR) << "DoOrcaOob(): stream->Write() failed";
       return TransientFailureOrAbort();
     }
     if (!stream->Read(&response)) {
-      LOG(ERROR) << "DoOrcaOob(): stream->Read failed";
+      ABSL_LOG(ERROR) << "DoOrcaOob(): stream->Read failed";
       return TransientFailureOrAbort();
     }
-    CHECK(
+    ABSL_CHECK(
         load_report_tracker_
             .WaitForOobLoadReport(
                 [orca_report](const auto& report) {
@@ -1073,7 +1073,7 @@ bool InteropClient::DoOrcaOob() {
                 kTimeout, 10)
             .has_value());
   }
-  LOG(INFO) << "orca oob successfully finished";
+  ABSL_LOG(INFO) << "orca oob successfully finished";
   return true;
 }
 
@@ -1085,7 +1085,7 @@ bool InteropClient::DoCustomMetadata() {
   const std::string kTrailingBinValue("\x0a\x0b\x0a\x0b\x0a\x0b");
 
   {
-    VLOG(2) << "Sending RPC with custom metadata";
+    ABSL_VLOG(2) << "Sending RPC with custom metadata";
     ClientContext context;
     context.AddMetadata(kEchoInitialMetadataKey, kInitialMetadataValue);
     context.AddMetadata(kEchoTrailingBinMetadataKey, kTrailingBinValue);
@@ -1102,19 +1102,19 @@ bool InteropClient::DoCustomMetadata() {
 
     const auto& server_initial_metadata = context.GetServerInitialMetadata();
     auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
-    CHECK(iter != server_initial_metadata.end());
-    CHECK(iter->second == kInitialMetadataValue);
+    ABSL_CHECK(iter != server_initial_metadata.end());
+    ABSL_CHECK(iter->second == kInitialMetadataValue);
     const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
-    CHECK(iter != server_trailing_metadata.end());
-    CHECK(std::string(iter->second.begin(), iter->second.end()) ==
+    ABSL_CHECK(iter != server_trailing_metadata.end());
+    ABSL_CHECK(std::string(iter->second.begin(), iter->second.end()) ==
           kTrailingBinValue);
 
-    VLOG(2) << "Done testing RPC with custom metadata";
+    ABSL_VLOG(2) << "Done testing RPC with custom metadata";
   }
 
   {
-    VLOG(2) << "Sending stream with custom metadata";
+    ABSL_VLOG(2) << "Sending stream with custom metadata";
     ClientContext context;
     context.AddMetadata(kEchoInitialMetadataKey, kInitialMetadataValue);
     context.AddMetadata(kEchoTrailingBinMetadataKey, kTrailingBinValue);
@@ -1130,20 +1130,20 @@ bool InteropClient::DoCustomMetadata() {
     StreamingOutputCallResponse response;
 
     if (!stream->Write(request)) {
-      LOG(ERROR) << "DoCustomMetadata(): stream->Write() failed";
+      ABSL_LOG(ERROR) << "DoCustomMetadata(): stream->Write() failed";
       return TransientFailureOrAbort();
     }
 
     stream->WritesDone();
 
     if (!stream->Read(&response)) {
-      LOG(ERROR) << "DoCustomMetadata(): stream->Read() failed";
+      ABSL_LOG(ERROR) << "DoCustomMetadata(): stream->Read() failed";
       return TransientFailureOrAbort();
     }
 
-    CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+    ABSL_CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
 
-    CHECK(!stream->Read(&response));
+    ABSL_CHECK(!stream->Read(&response));
 
     Status s = stream->Finish();
     if (!AssertStatusOk(s, context.debug_error_string())) {
@@ -1152,15 +1152,15 @@ bool InteropClient::DoCustomMetadata() {
 
     const auto& server_initial_metadata = context.GetServerInitialMetadata();
     auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
-    CHECK(iter != server_initial_metadata.end());
-    CHECK(iter->second == kInitialMetadataValue);
+    ABSL_CHECK(iter != server_initial_metadata.end());
+    ABSL_CHECK(iter->second == kInitialMetadataValue);
     const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
-    CHECK(iter != server_trailing_metadata.end());
-    CHECK(std::string(iter->second.begin(), iter->second.end()) ==
+    ABSL_CHECK(iter != server_trailing_metadata.end());
+    ABSL_CHECK(std::string(iter->second.begin(), iter->second.end()) ==
           kTrailingBinValue);
 
-    VLOG(2) << "Done testing stream with custom metadata";
+    ABSL_VLOG(2) << "Done testing stream with custom metadata";
   }
 
   return true;
@@ -1234,12 +1234,12 @@ void InteropClient::PerformSoakTest(
     std::string peer = std::get<3>(result);
     results.push_back(result);
     if (!success) {
-      LOG(INFO) << "soak iteration: " << i << " elapsed_ms: " << elapsed_ms
+      ABSL_LOG(INFO) << "soak iteration: " << i << " elapsed_ms: " << elapsed_ms
                 << " peer: " << peer << " server_uri: " << server_uri
                 << " failed: " << debug_string;
       total_failures++;
     } else {
-      LOG(INFO) << "soak iteration: " << i << " elapsed_ms: " << elapsed_ms
+      ABSL_LOG(INFO) << "soak iteration: " << i << " elapsed_ms: " << elapsed_ms
                 << " peer: " << peer << " server_uri: " << server_uri
                 << " succeeded";
     }
@@ -1254,7 +1254,7 @@ void InteropClient::PerformSoakTest(
   double latency_ms_worst = grpc_histogram_maximum(latencies_ms_histogram);
   grpc_histogram_destroy(latencies_ms_histogram);
   if (iterations_ran < soak_iterations) {
-    LOG(ERROR) << "(server_uri: " << server_uri << ") soak test consumed all "
+    ABSL_LOG(ERROR) << "(server_uri: " << server_uri << ") soak test consumed all "
                << overall_timeout_seconds
                << " seconds of time and quit early, only having ran "
                << iterations_ran << " out of desired " << soak_iterations
@@ -1266,9 +1266,9 @@ void InteropClient::PerformSoakTest(
                << " ms. Some or all of the iterations that did run were "
                   "unexpectedly slow. See breakdown above for which iterations "
                   "succeeded, failed, and why for more info.";
-    CHECK(0);
+    ABSL_CHECK(0);
   } else if (total_failures > max_failures) {
-    LOG(ERROR) << "(server_uri: " << server_uri
+    ABSL_LOG(ERROR) << "(server_uri: " << server_uri
                << ") soak test ran: " << soak_iterations
                << " iterations. total_failures: " << total_failures
                << " exceeds max_failures_threshold: " << max_failures
@@ -1277,9 +1277,9 @@ void InteropClient::PerformSoakTest(
                << " ms. worst_soak_iteration_latency: " << latency_ms_worst
                << " ms. See breakdown above for which iterations succeeded, "
                   "failed, and why for more info.";
-    CHECK(0);
+    ABSL_CHECK(0);
   } else {
-    LOG(INFO) << "(server_uri: " << server_uri
+    ABSL_LOG(INFO) << "(server_uri: " << server_uri
               << ") soak test ran: " << soak_iterations
               << " iterations. total_failures: " << total_failures
               << " is within max_failures_threshold: " << max_failures
@@ -1296,14 +1296,14 @@ bool InteropClient::DoRpcSoakTest(
     int32_t max_failures, int64_t max_acceptable_per_iteration_latency_ms,
     int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds,
     int32_t request_size, int32_t response_size) {
-  VLOG(2) << "Sending " << soak_iterations << " RPCs...";
-  CHECK_GT(soak_iterations, 0);
+  ABSL_VLOG(2) << "Sending " << soak_iterations << " RPCs...";
+  ABSL_CHECK_GT(soak_iterations, 0);
   PerformSoakTest(server_uri, false /* reset channel per iteration */,
                   soak_iterations, max_failures,
                   max_acceptable_per_iteration_latency_ms,
                   soak_min_time_ms_between_rpcs, overall_timeout_seconds,
                   request_size, response_size);
-  VLOG(2) << "rpc_soak test done.";
+  ABSL_VLOG(2) << "rpc_soak test done.";
   return true;
 }
 
@@ -1312,30 +1312,30 @@ bool InteropClient::DoChannelSoakTest(
     int32_t max_failures, int64_t max_acceptable_per_iteration_latency_ms,
     int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds,
     int32_t request_size, int32_t response_size) {
-  VLOG(2) << "Sending " << soak_iterations
+  ABSL_VLOG(2) << "Sending " << soak_iterations
           << " RPCs, tearing down the channel each time...";
-  CHECK_GT(soak_iterations, 0);
+  ABSL_CHECK_GT(soak_iterations, 0);
   PerformSoakTest(server_uri, true /* reset channel per iteration */,
                   soak_iterations, max_failures,
                   max_acceptable_per_iteration_latency_ms,
                   soak_min_time_ms_between_rpcs, overall_timeout_seconds,
                   request_size, response_size);
-  VLOG(2) << "channel_soak test done.";
+  ABSL_VLOG(2) << "channel_soak test done.";
   return true;
 }
 
 bool InteropClient::DoLongLivedChannelTest(int32_t soak_iterations,
                                            int32_t iteration_interval) {
-  VLOG(2) << "Sending " << soak_iterations << " RPCs...";
-  CHECK_GT(soak_iterations, 0);
-  CHECK_GT(iteration_interval, 0);
+  ABSL_VLOG(2) << "Sending " << soak_iterations << " RPCs...";
+  ABSL_CHECK_GT(soak_iterations, 0);
+  ABSL_CHECK_GT(iteration_interval, 0);
   SimpleRequest request;
   SimpleResponse response;
   int num_failures = 0;
   for (int i = 0; i < soak_iterations; ++i) {
-    VLOG(2) << "Sending RPC number " << i << "...";
+    ABSL_VLOG(2) << "Sending RPC number " << i << "...";
     if (!PerformLargeUnary(&request, &response)) {
-      LOG(ERROR) << "Iteration " << i << " failed.";
+      ABSL_LOG(ERROR) << "Iteration " << i << " failed.";
       num_failures++;
     }
     gpr_sleep_until(
@@ -1343,17 +1343,17 @@ bool InteropClient::DoLongLivedChannelTest(int32_t soak_iterations,
                      gpr_time_from_seconds(iteration_interval, GPR_TIMESPAN)));
   }
   if (num_failures == 0) {
-    VLOG(2) << "long_lived_channel test done.";
+    ABSL_VLOG(2) << "long_lived_channel test done.";
     return true;
   } else {
-    VLOG(2) << "long_lived_channel test failed with " << num_failures
+    ABSL_VLOG(2) << "long_lived_channel test failed with " << num_failures
             << " rpc failures.";
     return false;
   }
 }
 
 bool InteropClient::DoUnimplementedService() {
-  VLOG(2) << "Sending a request for an unimplemented service...";
+  ABSL_VLOG(2) << "Sending a request for an unimplemented service...";
 
   Empty request;
   Empty response;
@@ -1368,12 +1368,12 @@ bool InteropClient::DoUnimplementedService() {
     return false;
   }
 
-  VLOG(2) << "unimplemented service done.";
+  ABSL_VLOG(2) << "unimplemented service done.";
   return true;
 }
 
 bool InteropClient::DoUnimplementedMethod() {
-  VLOG(2) << "Sending a request for an unimplemented rpc...";
+  ABSL_VLOG(2) << "Sending a request for an unimplemented rpc...";
 
   Empty request;
   Empty response;
@@ -1387,7 +1387,7 @@ bool InteropClient::DoUnimplementedMethod() {
     return false;
   }
 
-  VLOG(2) << "unimplemented rpc done.";
+  ABSL_VLOG(2) << "unimplemented rpc done.";
   return true;
 }
 

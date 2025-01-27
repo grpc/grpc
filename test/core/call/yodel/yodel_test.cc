@@ -56,7 +56,7 @@ absl::string_view ActionState::StateString(State state) {
 }
 
 void ActionState::Set(State state, SourceLocation whence) {
-  LOG(INFO) << StateString(state) << " " << name() << " [" << step()
+  ABSL_LOG(INFO) << StateString(state) << " " << name() << " [" << step()
             << "] t=" << Timestamp::Now() << " " << file() << ":" << line()
             << " @ " << whence.file() << ":" << whence.line();
   state_ = state;
@@ -180,7 +180,7 @@ void YodelTest::RunTest() {
   WaitForSingleOwner(std::move(state_->event_engine));
   grpc_shutdown_blocking();
   if (!grpc_wait_until_shutdown(10)) {
-    LOG(FATAL) << "Timeout in waiting for gRPC shutdown";
+    ABSL_LOG(FATAL) << "Timeout in waiting for gRPC shutdown";
   }
   state_.reset();
   AsanAssertNoLeaks();

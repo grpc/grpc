@@ -25,8 +25,8 @@
 #include <cassert>
 #include <cinttypes>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/atomic_utils.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
@@ -72,7 +72,7 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.fetch_add(n, std::memory_order_relaxed);
     if (trace_ != nullptr) {
-      LOG(INFO) << trace_ << ":" << this << " ref " << prior << " -> "
+      ABSL_LOG(INFO) << trace_ << ":" << this << " ref " << prior << " -> "
                 << prior + n;
     }
 #else
@@ -83,7 +83,7 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.fetch_add(n, std::memory_order_relaxed);
     if (trace_ != nullptr) {
-      LOG(INFO) << trace_ << ":" << this << " " << location.file() << ":"
+      ABSL_LOG(INFO) << trace_ << ":" << this << " " << location.file() << ":"
                 << location.line() << " ref " << prior << " -> " << prior + n
                 << " " << reason;
     }
@@ -100,7 +100,7 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.fetch_add(1, std::memory_order_relaxed);
     if (trace_ != nullptr) {
-      LOG(INFO) << trace_ << ":" << this << " ref " << prior << " -> "
+      ABSL_LOG(INFO) << trace_ << ":" << this << " ref " << prior << " -> "
                 << prior + 1;
     }
     assert(prior > 0);
@@ -112,7 +112,7 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.fetch_add(1, std::memory_order_relaxed);
     if (trace_ != nullptr) {
-      LOG(INFO) << trace_ << ":" << this << " " << location.file() << ":"
+      ABSL_LOG(INFO) << trace_ << ":" << this << " " << location.file() << ":"
                 << location.line() << " ref " << prior << " -> " << prior + 1
                 << " " << reason;
     }
@@ -129,7 +129,7 @@ class RefCount {
 #ifndef NDEBUG
     if (trace_ != nullptr) {
       const Value prior = get();
-      LOG(INFO) << trace_ << ":" << this << " ref_if_non_zero " << prior
+      ABSL_LOG(INFO) << trace_ << ":" << this << " ref_if_non_zero " << prior
                 << " -> " << prior + 1;
     }
 #endif
@@ -139,7 +139,7 @@ class RefCount {
 #ifndef NDEBUG
     if (trace_ != nullptr) {
       const Value prior = get();
-      LOG(INFO) << trace_ << ":" << this << " " << location.file() << ":"
+      ABSL_LOG(INFO) << trace_ << ":" << this << " " << location.file() << ":"
                 << location.line() << " ref_if_non_zero " << prior << " -> "
                 << prior + 1 << " " << reason;
     }
@@ -161,10 +161,10 @@ class RefCount {
     const Value prior = value_.fetch_sub(1, std::memory_order_acq_rel);
 #ifndef NDEBUG
     if (trace != nullptr) {
-      LOG(INFO) << trace << ":" << this << " unref " << prior << " -> "
+      ABSL_LOG(INFO) << trace << ":" << this << " unref " << prior << " -> "
                 << prior - 1;
     }
-    DCHECK_GT(prior, 0);
+    ABSL_DCHECK_GT(prior, 0);
 #endif
     return prior == 1;
   }
@@ -178,11 +178,11 @@ class RefCount {
     const Value prior = value_.fetch_sub(1, std::memory_order_acq_rel);
 #ifndef NDEBUG
     if (trace != nullptr) {
-      LOG(INFO) << trace << ":" << this << " " << location.file() << ":"
+      ABSL_LOG(INFO) << trace << ":" << this << " " << location.file() << ":"
                 << location.line() << " unref " << prior << " -> " << prior - 1
                 << " " << reason;
     }
-    DCHECK_GT(prior, 0);
+    ABSL_DCHECK_GT(prior, 0);
 #else
     // Avoid unused-parameter warnings for debug-only parameters
     (void)location;

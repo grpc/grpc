@@ -24,7 +24,7 @@
 #include <gtest/gtest.h>
 #include <sys/types.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -279,7 +279,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_core::ExecCtx exec_ctx;
   int n = 0;
   grpc_closure done_closure;
-  LOG(INFO) << "Start test left over";
+  ABSL_LOG(INFO) << "Start test left over";
 
   grpc_slice_buffer_init(&incoming);
   GRPC_CLOSURE_INIT(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);

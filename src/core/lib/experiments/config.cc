@@ -25,8 +25,8 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -134,7 +134,7 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariableInner() {
     // If not found log an error, but don't take any other action.
     // Allows us an easy path to disabling experiments.
     if (!found) {
-      LOG(ERROR) << "Unknown experiment: " << experiment;
+      ABSL_LOG(ERROR) << "Unknown experiment: " << experiment;
     }
   }
   for (size_t i = 0; i < kNumExperiments; i++) {
@@ -143,7 +143,7 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariableInner() {
          j++) {
       // Require that we can check dependent requirements with a linear sweep
       // (implies the experiments generator must DAG sort the experiments)
-      CHECK(g_experiment_metadata[i].required_experiments[j] < i);
+      ABSL_CHECK(g_experiment_metadata[i].required_experiments[j] < i);
       if (!experiments
                .enabled[g_experiment_metadata[i].required_experiments[j]]) {
         experiments.enabled[i] = false;
@@ -217,7 +217,7 @@ bool IsTestExperimentEnabled(size_t experiment_id) {
   return (*g_test_experiments)[experiment_id];
 }
 
-#define GRPC_EXPERIMENT_LOG VLOG(2)
+#define GRPC_EXPERIMENT_LOG ABSL_VLOG(2)
 
 void PrintExperimentsList() {
   std::map<std::string, std::string> experiment_status;
@@ -272,18 +272,18 @@ void PrintExperimentsList() {
 }
 
 void ForceEnableExperiment(absl::string_view experiment, bool enable) {
-  CHECK(Loaded()->load(std::memory_order_relaxed) == false);
+  ABSL_CHECK(Loaded()->load(std::memory_order_relaxed) == false);
   for (size_t i = 0; i < kNumExperiments; i++) {
     if (g_experiment_metadata[i].name != experiment) continue;
     if (ForcedExperiments()[i].forced) {
-      CHECK(ForcedExperiments()[i].value == enable);
+      ABSL_CHECK(ForcedExperiments()[i].value == enable);
     } else {
       ForcedExperiments()[i].forced = true;
       ForcedExperiments()[i].value = enable;
     }
     return;
   }
-  LOG(INFO) << "gRPC EXPERIMENT " << experiment << " not found to force "
+  ABSL_LOG(INFO) << "gRPC EXPERIMENT " << experiment << " not found to force "
             << (enable ? "enable" : "disable");
 }
 

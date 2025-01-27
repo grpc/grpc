@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -227,7 +227,7 @@ class StressTest {
 
 TEST(MemoryQuotaStressTest, MainTest) {
   if (sizeof(void*) != 8) {
-    LOG(ERROR) << "This test assumes 64-bit processors in the values it uses "
+    ABSL_LOG(ERROR) << "This test assumes 64-bit processors in the values it uses "
                   "for sizes. Since this test is mostly aimed at TSAN "
                   "coverage, and that's mostly platform independent, we simply "
                   "skip this test in 32-bit builds.";

@@ -303,7 +303,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
       ArenaContextType<T>::Destroy(static_cast<T*>(slot));
     }
     slot = context;
-    DCHECK_EQ(GetContext<T>(), context);
+    ABSL_DCHECK_EQ(GetContext<T>(), context);
   }
 
   static size_t ArenaOverhead() {

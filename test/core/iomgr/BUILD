@@ -27,8 +27,8 @@ grpc_cc_library(
     srcs = ["endpoint_tests.cc"],
     hdrs = ["endpoint_tests.h"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     visibility = [
         "//test:__subpackages__",
@@ -62,8 +62,8 @@ grpc_cc_test(
     name = "endpoint_pair_test",
     srcs = ["endpoint_pair_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -83,7 +83,7 @@ grpc_cc_test(
     name = "error_test",
     srcs = ["error_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -100,7 +100,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.cc"],
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -114,7 +114,7 @@ grpc_cc_test(
     name = "fd_posix_test",
     srcs = ["fd_posix_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = ["no_windows"],
@@ -147,7 +147,7 @@ grpc_cc_test(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
-        "absl/log:log",
+        "absl/log:absl_log",
         "absl/strings",
         "gtest",
     ],
@@ -169,7 +169,7 @@ grpc_cc_test(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
-        "absl/log:log",
+        "absl/log:absl_log",
         "absl/strings",
         "gtest",
     ],
@@ -186,8 +186,8 @@ grpc_cc_test(
     name = "resolve_address_using_ares_resolver_test",
     srcs = ["resolve_address_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/strings",
         "gtest",
     ],
@@ -205,8 +205,8 @@ grpc_cc_test(
     name = "resolve_address_using_native_resolver_test",
     srcs = ["resolve_address_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/strings",
         "gtest",
     ],
@@ -224,7 +224,7 @@ grpc_cc_test(
     name = "socket_utils_test",
     srcs = ["socket_utils_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     tags = ["no_windows"],
@@ -240,7 +240,7 @@ grpc_cc_test(
     name = "tcp_client_posix_test",
     srcs = ["tcp_client_posix_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -261,8 +261,8 @@ grpc_cc_test(
     name = "tcp_posix_test",
     srcs = ["tcp_posix_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -286,7 +286,7 @@ grpc_cc_test(
     name = "buffer_list_test",
     srcs = ["buffer_list_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -315,7 +315,7 @@ grpc_cc_test(
     name = "tcp_server_posix_test",
     srcs = ["tcp_server_posix_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -334,7 +334,7 @@ grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,

@@ -30,8 +30,8 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/env.h"
@@ -80,7 +80,7 @@ class ExampleGenerator
       }
       if (!absl::GetFlag(FLAGS_directory).empty()) {
         auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
-        VLOG(2) << "test_srcdir=\""
+        ABSL_VLOG(2) << "test_srcdir=\""
                 << (test_srcdir.has_value() ? test_srcdir->c_str() : "(null)")
                 << "\"";
         std::string directory = absl::GetFlag(FLAGS_directory);
@@ -88,7 +88,7 @@ class ExampleGenerator
           directory =
               *test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
         }
-        VLOG(2) << "Using corpus directory: " << directory;
+        ABSL_VLOG(2) << "Using corpus directory: " << directory;
         DIR* dp;
         struct dirent* ep;
         dp = opendir(directory.c_str());
@@ -109,7 +109,7 @@ class ExampleGenerator
     }
     // Make sure we don't succeed without doing anything, which caused
     // us to be blind to our fuzzers not running for 9 months.
-    CHECK(!examples_.empty());
+    ABSL_CHECK(!examples_.empty());
     // Get a consistent ordering of examples so problems don't just show up on
     // CI
     std::sort(examples_.begin(), examples_.end());

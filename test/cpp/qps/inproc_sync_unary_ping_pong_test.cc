@@ -18,7 +18,7 @@
 
 #include <set>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
@@ -35,7 +35,7 @@ static const int WARMUP = 1;
 static const int BENCHMARK = 3;
 
 static void RunSynchronousUnaryPingPong() {
-  LOG(INFO) << "Running Synchronous Unary Ping Pong";
+  ABSL_LOG(INFO) << "Running Synchronous Unary Ping Pong";
 
   ClientConfig client_config;
   client_config.set_client_type(SYNC_CLIENT);

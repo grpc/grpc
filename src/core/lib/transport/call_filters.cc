@@ -16,8 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/util/crash.h"
 
@@ -30,7 +30,7 @@ char CallFilters::g_empty_call_data_;
 // CallFilters
 
 void CallFilters::Start() {
-  CHECK_EQ(call_data_, nullptr);
+  ABSL_CHECK_EQ(call_data_, nullptr);
   size_t call_data_alignment = 1;
   for (const auto& stack : stacks_) {
     call_data_alignment =
@@ -83,11 +83,11 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
-  CHECK(md != nullptr);
+  ABSL_CHECK(md != nullptr);
   GRPC_TRACE_LOG(call, INFO)
       << GetContext<Activity>()->DebugTag() << " PushServerTrailingMetadata["
       << this << "]: " << md->DebugString() << " into " << DebugString();
-  CHECK(md != nullptr);
+  ABSL_CHECK(md != nullptr);
   if (call_state_.PushServerTrailingMetadata(
           md->get(GrpcCallWasCancelled()).value_or(false))) {
     push_server_trailing_metadata_ = std::move(md);

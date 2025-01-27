@@ -35,8 +35,8 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -396,7 +396,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
           watcher) override {
-    CHECK(watcher_ == nullptr);
+    ABSL_CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     if (!static_resource_.ok()) {
       return static_resource_.status();
@@ -504,7 +504,7 @@ XdsServerConfigFetcher::XdsServerConfigFetcher(
     RefCountedPtr<GrpcXdsClient> xds_client,
     grpc_server_xds_status_notifier notifier)
     : xds_client_(std::move(xds_client)), serving_status_notifier_(notifier) {
-  CHECK(xds_client_ != nullptr);
+  ABSL_CHECK(xds_client_ != nullptr);
 }
 
 std::string ListenerResourceName(absl::string_view resource_name_template,
@@ -614,7 +614,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
 
 void XdsServerConfigFetcher::ListenerWatcher::OnAmbientError(
     absl::Status status, RefCountedPtr<ReadDelayHandle> /*read_delay_handle*/) {
-  LOG(ERROR) << "ListenerWatcher:" << this
+  ABSL_LOG(ERROR) << "ListenerWatcher:" << this
              << " XdsClient reports ambient error: " << status << " for "
              << listening_address_
              << "; ignoring in favor of existing resource";
@@ -635,7 +635,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnFatalError(
         {static_cast<grpc_status_code>(status.raw_code()),
          std::string(status.message()).c_str()});
   } else {
-    LOG(ERROR) << "ListenerWatcher:" << this << " Encountered fatal error "
+    ABSL_LOG(ERROR) << "ListenerWatcher:" << this << " Encountered fatal error "
                << status << "; not serving on " << listening_address_;
   }
 }
@@ -664,7 +664,7 @@ void XdsServerConfigFetcher::ListenerWatcher::
           serving_status_notifier_.user_data, listening_address_.c_str(),
           {GRPC_STATUS_OK, ""});
     } else {
-      LOG(INFO) << "xDS Listener resource obtained; will start serving on "
+      ABSL_LOG(INFO) << "xDS Listener resource obtained; will start serving on "
                 << listening_address_;
     }
   }
@@ -844,7 +844,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     OnAmbientError(const std::string& resource_name, absl::Status status) {
-  LOG(ERROR) << "RouteConfigWatcher:" << this
+  ABSL_LOG(ERROR) << "RouteConfigWatcher:" << this
              << " XdsClient reports ambient error: " << status << " for "
              << resource_name << "; ignoring in favor of existing resource";
 }
@@ -928,7 +928,7 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForSourceType(
   }
   auto source_addr = StringToSockaddr(host, 0);  // Port doesn't matter here.
   if (!source_addr.ok()) {
-    VLOG(2) << "Could not parse \"" << host
+    ABSL_VLOG(2) << "Could not parse \"" << host
             << "\" as socket address: " << source_addr.status();
     return nullptr;
   }
@@ -977,7 +977,7 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForDestinationIp(
   auto destination_addr =
       StringToSockaddr(host, 0);  // Port doesn't matter here.
   if (!destination_addr.ok()) {
-    VLOG(2) << "Could not parse \"" << host
+    ABSL_VLOG(2) << "Could not parse \"" << host
             << "\" as socket address: " << destination_addr.status();
     return nullptr;
   }
@@ -1035,7 +1035,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     const XdsHttpFilterImpl* filter_impl =
         http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
-    CHECK_NE(filter_impl, nullptr);
+    ABSL_CHECK_NE(filter_impl, nullptr);
     // Some filters like the router filter are no-op filters and do not have
     // an implementation.
     if (filter_impl->channel_filter() != nullptr) {
@@ -1084,7 +1084,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
       return result.status();
     }
     xds_certificate_provider = std::move(*result);
-    CHECK(xds_certificate_provider != nullptr);
+    ABSL_CHECK(xds_certificate_provider != nullptr);
     args = args.SetObject(xds_certificate_provider);
   }
   return args;
@@ -1202,7 +1202,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       resource_name_(std::move(resource_name)),
       http_filters_(std::move(http_filters)),
       resource_(std::move(initial_resource)) {
-  CHECK(!resource_name_.empty());
+  ABSL_CHECK(!resource_name_.empty());
   // RouteConfigWatcher is being created here instead of in Watch() to avoid
   // deadlocks from invoking XdsRouteConfigResourceType::StartWatch whilst in a
   // critical region.
@@ -1229,7 +1229,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource;
   {
     MutexLock lock(&mu_);
-    CHECK(watcher_ == nullptr);
+    ABSL_CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     resource = resource_;
   }
@@ -1278,7 +1278,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::OnAmbientError(
         absl::Status status) {
-  LOG(ERROR) << "RouteConfigWatcher:" << this
+  ABSL_LOG(ERROR) << "RouteConfigWatcher:" << this
              << " XdsClient reports ambient error: " << status << " for "
              << resource_name_ << "; ignoring in favor of existing resource";
 }
@@ -1302,14 +1302,14 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
       grpc_core::GrpcXdsClient::kServerKey, channel_args,
       "XdsServerConfigFetcher");
   if (!xds_client.ok()) {
-    LOG(ERROR) << "Failed to create xds client: " << xds_client.status();
+    ABSL_LOG(ERROR) << "Failed to create xds client: " << xds_client.status();
     return nullptr;
   }
   if (static_cast<const grpc_core::GrpcXdsBootstrap&>(
           (*xds_client)->bootstrap())
           .server_listener_resource_name_template()
           .empty()) {
-    LOG(ERROR) << "server_listener_resource_name_template not provided in "
+    ABSL_LOG(ERROR) << "server_listener_resource_name_template not provided in "
                   "bootstrap file.";
     return nullptr;
   }

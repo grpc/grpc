@@ -29,8 +29,8 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -96,7 +96,7 @@ void HandshakeManager::DoHandshake(
   // last ref to this object.
   auto self = Ref();
   MutexLock lock(&mu_);
-  CHECK_EQ(index_, 0u);
+  ABSL_CHECK_EQ(index_, 0u);
   on_handshake_done_ = std::move(on_handshake_done);
   // Construct handshaker args.  These will be passed through all
   // handshakers and eventually be freed by the on_handshake_done callback.
@@ -153,7 +153,7 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
       << "handshake_manager " << this << ": error=" << error
       << " shutdown=" << is_shutdown_ << " index=" << index_
       << ", args=" << HandshakerArgsString(&args_);
-  CHECK(index_ <= handshakers_.size());
+  ABSL_CHECK(index_ <= handshakers_.size());
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
   // callback.

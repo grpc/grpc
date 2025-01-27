@@ -45,7 +45,7 @@ grpc_cc_library(
     name = "call_checker",
     testonly = True,
     hdrs = ["call_checker.h"],
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     deps = ["//:gpr"],
 )
 
@@ -111,7 +111,7 @@ grpc_cc_test(
     srcs = ["memory_quota_stress_test.cc"],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:log",
+        "absl/log:absl_log",
         "absl/strings",
         "gtest",
     ],

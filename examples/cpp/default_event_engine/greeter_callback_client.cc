@@ -26,7 +26,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "wrapping_event_engine.h"
 
 #ifdef BAZEL_BUILD
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
     std::string reply = greeter.SayHello(user);
     std::cout << "Greeter received: " << reply << std::endl;
   }
-  LOG(INFO) << "My EventEngine ran " << custom_engine->get_run_count()
+  ABSL_LOG(INFO) << "My EventEngine ran " << custom_engine->get_run_count()
             << " closures";
   // Release the application's ownership of the EventEngine. Now gRPC solely
   // owns the engine.

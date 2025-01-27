@@ -25,7 +25,7 @@
 #include <string>
 
 #include "absl/base/attributes.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -186,7 +186,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
               parser->incoming_settings->initial_window_size();
           if (GRPC_TRACE_FLAG_ENABLED(http) ||
               GRPC_TRACE_FLAG_ENABLED(flowctl)) {
-            LOG(INFO) << t << "[" << (t->is_client ? "cli" : "svr")
+            ABSL_LOG(INFO) << t << "[" << (t->is_client ? "cli" : "svr")
                       << "] adding " << t->initial_window_update
                       << " for initial_window change";
           }

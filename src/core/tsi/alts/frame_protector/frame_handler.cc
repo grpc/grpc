@@ -26,7 +26,7 @@
 
 #include <algorithm>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/memory.h"
 
@@ -56,7 +56,7 @@ bool alts_reset_frame_writer(alts_frame_writer* writer,
   if (buffer == nullptr) return false;
   size_t max_input_size = SIZE_MAX - kFrameLengthFieldSize;
   if (length > max_input_size) {
-    LOG(ERROR) << "length must be at most " << max_input_size;
+    ABSL_LOG(ERROR) << "length must be at most " << max_input_size;
     return false;
   }
   writer->input_buffer = buffer;
@@ -180,7 +180,7 @@ bool alts_read_frame_bytes(alts_frame_reader* reader,
     size_t frame_length = load_32_le(reader->header_buffer);
     if (frame_length < kFrameMessageTypeFieldSize ||
         frame_length > kFrameMaxSize) {
-      LOG(ERROR) << "Bad frame length (should be at least "
+      ABSL_LOG(ERROR) << "Bad frame length (should be at least "
                  << kFrameMessageTypeFieldSize << ", and at most "
                  << kFrameMaxSize << ")";
       *bytes_size = 0;
@@ -189,7 +189,7 @@ bool alts_read_frame_bytes(alts_frame_reader* reader,
     size_t message_type =
         load_32_le(reader->header_buffer + kFrameLengthFieldSize);
     if (message_type != kFrameMessageType) {
-      LOG(ERROR) << "Unsupported message type " << message_type
+      ABSL_LOG(ERROR) << "Unsupported message type " << message_type
                  << " (should be " << kFrameMessageType << ")";
       *bytes_size = 0;
       return false;

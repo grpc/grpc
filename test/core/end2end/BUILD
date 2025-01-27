@@ -27,8 +27,8 @@ grpc_cc_library(
     external_deps = [
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/strings",
         "absl/strings:str_format",
         "gtest",
@@ -61,8 +61,8 @@ grpc_cc_library(
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -96,8 +96,8 @@ grpc_cc_library(
     srcs = ["fixtures/proxy.cc"],
     hdrs = ["fixtures/proxy.h"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     deps = [
         "//:channel_arg_names",
@@ -120,8 +120,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/random",
@@ -164,7 +164,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
+        "absl/log:absl_check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -202,7 +202,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
-        "absl/log:check",
+        "absl/log:absl_check",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -265,7 +265,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
+        "absl/log:absl_check",
         "absl/strings",
         "gtest",
     ],
@@ -500,8 +500,8 @@ grpc_cc_test(
     name = "bad_server_response_test",
     srcs = ["bad_server_response_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     deps = [
         "cq_verifier",
@@ -525,8 +525,8 @@ grpc_cc_test(
     name = "connection_refused_test",
     srcs = ["connection_refused_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     deps = [
         "cq_verifier",
@@ -543,8 +543,8 @@ grpc_cc_test(
     name = "dualstack_socket_test",
     srcs = ["dualstack_socket_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
@@ -567,8 +567,8 @@ grpc_cc_test(
     name = "goaway_server_test",
     srcs = ["goaway_server_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -600,8 +600,8 @@ grpc_cc_test(
     name = "invalid_call_argument_test",
     srcs = ["invalid_call_argument_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     deps = [
         "cq_verifier",
@@ -626,8 +626,8 @@ grpc_cc_test(
     name = "no_server_test",
     srcs = ["no_server_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status",
         "absl/status:statusor",
         "absl/time",
@@ -655,8 +655,8 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/strings",
@@ -695,7 +695,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -724,7 +724,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [

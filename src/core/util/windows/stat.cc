@@ -22,8 +22,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/stat.h"
 #include "src/core/util/strerror.h"
@@ -31,12 +31,12 @@
 namespace grpc_core {
 
 absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
-  CHECK_NE(filename, nullptr);
-  CHECK_NE(timestamp, nullptr);
+  ABSL_CHECK_NE(filename, nullptr);
+  ABSL_CHECK_NE(timestamp, nullptr);
   struct _stat buf;
   if (_stat(filename, &buf) != 0) {
     std::string error_msg = StrError(errno);
-    LOG(ERROR) << "_stat failed for filename " << filename << " with error "
+    ABSL_LOG(ERROR) << "_stat failed for filename " << filename << " with error "
                << error_msg;
     return absl::Status(absl::StatusCode::kInternal, error_msg);
   }

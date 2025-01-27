@@ -37,7 +37,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -284,7 +284,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
           }
         }
       } else {
-        LOG(ERROR) << "client_channel="
+        ABSL_LOG(ERROR) << "client_channel="
                    << subchannel_wrapper_->client_channel_.get()
                    << ": Illegal keepalive throttling value "
                    << std::string(keepalive_throttling.value());
@@ -317,7 +317,7 @@ ClientChannel::SubchannelWrapper::SubchannelWrapper(
       << ": creating subchannel wrapper " << this << " for subchannel "
       << subchannel_.get();
 #ifndef NDEBUG
-  DCHECK(client_channel_->work_serializer_->RunningInWorkSerializer());
+  ABSL_DCHECK(client_channel_->work_serializer_->RunningInWorkSerializer());
 #endif
   if (client_channel_->channelz_node_ != nullptr) {
     auto* subchannel_node = subchannel_->channelz_node();
@@ -358,7 +358,7 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
           if (subchannel_node != nullptr) {
             auto it = self->client_channel_->subchannel_refcount_map_.find(
                 self->subchannel_.get());
-            CHECK(it != self->client_channel_->subchannel_refcount_map_.end());
+            ABSL_CHECK(it != self->client_channel_->subchannel_refcount_map_.end());
             --it->second;
             if (it->second == 0) {
               self->client_channel_->channelz_node_->RemoveChildSubchannel(
@@ -374,7 +374,7 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
 void ClientChannel::SubchannelWrapper::WatchConnectivityState(
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
   auto& watcher_wrapper = watcher_map_[watcher.get()];
-  CHECK(watcher_wrapper == nullptr);
+  ABSL_CHECK(watcher_wrapper == nullptr);
   watcher_wrapper = new WatcherWrapper(
       std::move(watcher),
       RefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
@@ -386,7 +386,7 @@ void ClientChannel::SubchannelWrapper::WatchConnectivityState(
 void ClientChannel::SubchannelWrapper::CancelConnectivityStateWatch(
     ConnectivityStateWatcherInterface* watcher) {
   auto it = watcher_map_.find(watcher);
-  CHECK(it != watcher_map_.end());
+  ABSL_CHECK(it != watcher_map_.end());
   subchannel_->CancelConnectivityStateWatch(it->second);
   watcher_map_.erase(it);
 }
@@ -395,7 +395,7 @@ void ClientChannel::SubchannelWrapper::AddDataWatcher(
     std::unique_ptr<DataWatcherInterface> watcher) {
   static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get())
       ->SetSubchannel(subchannel_.get());
-  CHECK(data_watchers_.insert(std::move(watcher)).second);
+  ABSL_CHECK(data_watchers_.insert(std::move(watcher)).second);
 }
 
 void ClientChannel::SubchannelWrapper::CancelDataWatcher(
@@ -454,7 +454,7 @@ class ClientChannel::ClientChannelControlHelper
       const char* extra = client_channel_->disconnect_error_.ok()
                               ? ""
                               : " (ignoring -- channel shutting down)";
-      LOG(INFO) << "client_channel=" << client_channel_.get()
+      ABSL_LOG(INFO) << "client_channel=" << client_channel_.get()
                 << ": update: state=" << ConnectivityStateName(state)
                 << " status=(" << status << ") picker=" << picker.get()
                 << extra;
@@ -626,7 +626,7 @@ ClientChannel::ClientChannel(
       work_serializer_(std::make_shared<WorkSerializer>(event_engine_)),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(channel_args_)) {
-  CHECK(event_engine_.get() != nullptr);
+  ABSL_CHECK(event_engine_.get() != nullptr);
   GRPC_TRACE_LOG(client_channel, INFO)
       << "client_channel=" << this << ": creating client_channel";
   // Set initial keepalive time.
@@ -934,7 +934,7 @@ void ClientChannel::CreateResolverLocked() {
           WeakRefAsSubclass<ClientChannel>()));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
-  CHECK(resolver_ != nullptr);
+  ABSL_CHECK(resolver_ != nullptr);
   UpdateStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status(),
                     "started resolving");
   resolver_->StartLocked();
@@ -996,11 +996,11 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
               .LoadBalancingPolicyExists(*policy_name, &requires_config) ||
          requires_config)) {
       if (requires_config) {
-        LOG(ERROR) << "LB policy: " << *policy_name
+        ABSL_LOG(ERROR) << "LB policy: " << *policy_name
                    << " passed through channel_args must not "
                       "require a config. Using pick_first instead.";
       } else {
-        LOG(ERROR) << "LB policy: " << *policy_name
+        ABSL_LOG(ERROR) << "LB policy: " << *policy_name
                    << " passed through channel_args does not exist. "
                       "Using pick_first instead.";
       }
@@ -1026,7 +1026,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   // - A channel arg, in which case we check that the specified policy exists
   //   and accepts an empty config. If not, we revert to using pick_first
   //   lb_policy
-  CHECK_OK(lb_policy_config);
+  ABSL_CHECK_OK(lb_policy_config);
   return std::move(*lb_policy_config);
 }
 

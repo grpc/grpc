@@ -22,8 +22,8 @@
 #include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/util/crash.h"
@@ -80,7 +80,7 @@ static void gc_completed_threads(void) {
 }
 
 static void start_timer_thread_and_unlock(void) {
-  CHECK(g_threaded);
+  ABSL_CHECK(g_threaded);
   ++g_waiter_count;
   ++g_thread_count;
   gpr_mu_unlock(&g_mu);
@@ -179,7 +179,7 @@ static bool wait_until(grpc_core::Timestamp next) {
 
         if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
           grpc_core::Duration wait_time = next - grpc_core::Timestamp::Now();
-          LOG(INFO) << "sleep for a " << wait_time.millis() << " milliseconds";
+          ABSL_LOG(INFO) << "sleep for a " << wait_time.millis() << " milliseconds";
         }
       } else {  // g_timed_waiter == true && next >= g_timed_waiter_deadline
         next = grpc_core::Timestamp::InfFuture();
@@ -188,7 +188,7 @@ static bool wait_until(grpc_core::Timestamp next) {
 
     if (GRPC_TRACE_FLAG_ENABLED(timer_check) &&
         next == grpc_core::Timestamp::InfFuture()) {
-      LOG(INFO) << "sleep until kicked";
+      ABSL_LOG(INFO) << "sleep until kicked";
     }
 
     gpr_cv_wait(&g_cv_wait, &g_mu, next.as_timespec(GPR_CLOCK_MONOTONIC));

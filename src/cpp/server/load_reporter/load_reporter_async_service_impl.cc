@@ -24,8 +24,8 @@
 #include <grpcpp/support/status.h>
 #include <inttypes.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/cpp/server/load_reporter/constants.h"
 
 // IWYU pragma: no_include "google/protobuf/duration.pb.h"
@@ -34,8 +34,8 @@ namespace grpc {
 namespace load_reporter {
 
 void LoadReporterAsyncServiceImpl::CallableTag::Run(bool ok) {
-  CHECK(handler_function_ != nullptr);
-  CHECK_NE(handler_, nullptr);
+  ABSL_CHECK(handler_function_ != nullptr);
+  ABSL_CHECK_NE(handler_, nullptr);
   handler_function_(std::move(handler_), ok);
 }
 
@@ -81,15 +81,15 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
     next_fetch_and_sample_alarm_->Set(cq_.get(), next_fetch_and_sample_time,
                                       this);
   }
-  VLOG(2) << "[LRS " << this << "] Next fetch-and-sample scheduled.";
+  ABSL_VLOG(2) << "[LRS " << this << "] Next fetch-and-sample scheduled.";
 }
 
 void LoadReporterAsyncServiceImpl::FetchAndSample(bool ok) {
   if (!ok) {
-    LOG(INFO) << "[LRS " << this << "] Fetch-and-sample is stopped.";
+    ABSL_LOG(INFO) << "[LRS " << this << "] Fetch-and-sample is stopped.";
     return;
   }
-  VLOG(2) << "[LRS " << this << "] Starting a fetch-and-sample...";
+  ABSL_VLOG(2) << "[LRS " << this << "] Starting a fetch-and-sample...";
   load_reporter_->FetchAndSample();
   ScheduleNextFetchAndSample();
 }
@@ -109,7 +109,7 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
   while (true) {
     if (!service->cq_->Next(&tag, &ok)) {
       // The completion queue is shutting down.
-      CHECK(service->shutdown_);
+      ABSL_CHECK(service->shutdown_);
       break;
     }
     if (tag == service) {
@@ -164,7 +164,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
     // tag will not pop out if the call never starts (
     // https://github.com/grpc/grpc/issues/10136). So we need to manually
     // release the ownership of the handler in this case.
-    CHECK_NE(on_done_notified_.ReleaseHandler(), nullptr);
+    ABSL_CHECK_NE(on_done_notified_.ReleaseHandler(), nullptr);
   }
   if (!ok || shutdown_) {
     // The value of ok being false means that the server is shutting down.
@@ -189,7 +189,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   }
   // LB ID is unique for each load reporting stream.
   lb_id_ = load_reporter_->GenerateLbId();
-  LOG(INFO) << "[LRS " << service_
+  ABSL_LOG(INFO) << "[LRS " << service_
             << "] Call request delivered (lb_id_: " << lb_id_
             << ", handler: " << this
             << "). Start reading the initial request...";
@@ -200,7 +200,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
   if (!ok || shutdown_) {
     if (!ok && call_status_ < INITIAL_REQUEST_RECEIVED) {
       // The client may have half-closed the stream or the stream is broken.
-      LOG(INFO) << "[LRS " << service_
+      ABSL_LOG(INFO) << "[LRS " << service_
                 << "] Failed reading the initial request from the stream "
                    "(lb_id_: "
                 << lb_id_ << ", handler: " << this
@@ -225,7 +225,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
       load_report_interval_ms_ =
           static_cast<unsigned long>((load_report_interval.seconds() * 1000) +
                                      (load_report_interval.nanos() / 1000));
-      LOG(INFO) << "[LRS " << service_
+      ABSL_LOG(INFO) << "[LRS " << service_
                 << "] Initial request received. Start load reporting (load "
                    "balanced host: "
                 << load_balanced_hostname_
@@ -249,7 +249,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
     }
   } else {
     // Another request received! This violates the spec.
-    LOG(ERROR) << "[LRS " << service_
+    ABSL_LOG(ERROR) << "[LRS " << service_
                << "] Another request received (lb_id_: " << lb_id_
                << ", handler: " << this << ").";
     Shutdown(std::move(self), "OnReadDone+second_request");
@@ -281,7 +281,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
     next_report_alarm_ = std::make_unique<Alarm>();
     next_report_alarm_->Set(cq_, next_report_time, &next_outbound_);
   }
-  VLOG(2) << "[LRS " << service_
+  ABSL_VLOG(2) << "[LRS " << service_
           << "] Next load report scheduled (lb_id_: " << lb_id_
           << ", handler: " << this << ").";
 }
@@ -317,7 +317,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
                               std::placeholders::_1, std::placeholders::_2),
                     std::move(self));
     stream_.Write(response, &next_outbound_);
-    LOG(INFO) << "[LRS " << service_
+    ABSL_LOG(INFO) << "[LRS " << service_
               << "] Sending load report (lb_id_: " << lb_id_
               << ", handler: " << this
               << ", loads count: " << response.load().size() << ")...";
@@ -326,12 +326,12 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(
     std::shared_ptr<ReportLoadHandler> self, bool ok) {
-  CHECK(ok);
+  ABSL_CHECK(ok);
   done_notified_ = true;
   if (ctx_.IsCancelled()) {
     is_cancelled_ = true;
   }
-  LOG(INFO) << "[LRS " << service_
+  ABSL_LOG(INFO) << "[LRS " << service_
             << "] Load reporting call is notified done (handler: " << this
             << ", is_cancelled: " << is_cancelled_ << ").";
   Shutdown(std::move(self), "OnDoneNotified");
@@ -340,7 +340,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
     std::shared_ptr<ReportLoadHandler> self, const char* reason) {
   if (!shutdown_) {
-    LOG(INFO) << "[LRS " << service_
+    ABSL_LOG(INFO) << "[LRS " << service_
               << "] Shutting down the handler (lb_id_: " << lb_id_
               << ", handler: " << this << ", reason: " << reason << ").";
     shutdown_ = true;
@@ -371,7 +371,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::shared_ptr<ReportLoadHandler> /*self*/, bool ok) {
   if (ok) {
-    LOG(INFO) << "[LRS " << service_
+    ABSL_LOG(INFO) << "[LRS " << service_
               << "] Load reporting finished (lb_id_: " << lb_id_
               << ", handler: " << this << ").";
   }

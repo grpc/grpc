@@ -25,8 +25,8 @@
 #include <grpc/support/alloc.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/notification.h"
@@ -253,14 +253,14 @@ TEST(GrpcChannelArgsTest, Create) {
                                              const_cast<char*>("str value"));
   ch_args = grpc_channel_args_copy_and_add(nullptr, to_add, 2);
 
-  CHECK_EQ(ch_args->num_args, 2);
-  CHECK_EQ(strcmp(ch_args->args[0].key, to_add[0].key), 0);
-  CHECK(ch_args->args[0].type == to_add[0].type);
-  CHECK(ch_args->args[0].value.integer == to_add[0].value.integer);
+  ABSL_CHECK_EQ(ch_args->num_args, 2);
+  ABSL_CHECK_EQ(strcmp(ch_args->args[0].key, to_add[0].key), 0);
+  ABSL_CHECK(ch_args->args[0].type == to_add[0].type);
+  ABSL_CHECK(ch_args->args[0].value.integer == to_add[0].value.integer);
 
-  CHECK_EQ(strcmp(ch_args->args[1].key, to_add[1].key), 0);
-  CHECK(ch_args->args[1].type == to_add[1].type);
-  CHECK(strcmp(ch_args->args[1].value.string, to_add[1].value.string) == 0);
+  ABSL_CHECK_EQ(strcmp(ch_args->args[1].key, to_add[1].key), 0);
+  ABSL_CHECK(ch_args->args[1].type == to_add[1].type);
+  ABSL_CHECK(strcmp(ch_args->args[1].value.string, to_add[1].value.string) == 0);
 
   grpc_channel_args_destroy(ch_args);
 }
@@ -270,7 +270,7 @@ struct fake_class {
 };
 
 static void* fake_pointer_arg_copy(void* arg) {
-  VLOG(2) << "fake_pointer_arg_copy";
+  ABSL_VLOG(2) << "fake_pointer_arg_copy";
   fake_class* fc = static_cast<fake_class*>(arg);
   fake_class* new_fc = static_cast<fake_class*>(gpr_malloc(sizeof(fake_class)));
   new_fc->foo = fc->foo;
@@ -278,7 +278,7 @@ static void* fake_pointer_arg_copy(void* arg) {
 }
 
 static void fake_pointer_arg_destroy(void* arg) {
-  VLOG(2) << "fake_pointer_arg_destroy";
+  ABSL_VLOG(2) << "fake_pointer_arg_destroy";
   fake_class* fc = static_cast<fake_class*>(arg);
   gpr_free(fc);
 }
@@ -316,18 +316,18 @@ TEST(GrpcChannelArgsTest, ChannelCreateWithArgs) {
 grpc_channel_args* mutate_channel_args(const char* target,
                                        grpc_channel_args* old_args,
                                        grpc_channel_stack_type /*type*/) {
-  CHECK_NE(old_args, nullptr);
-  CHECK_EQ(grpc_channel_args_find(old_args, "arg_int")->value.integer, 0);
-  CHECK(strcmp(grpc_channel_args_find(old_args, "arg_str")->value.string,
+  ABSL_CHECK_NE(old_args, nullptr);
+  ABSL_CHECK_EQ(grpc_channel_args_find(old_args, "arg_int")->value.integer, 0);
+  ABSL_CHECK(strcmp(grpc_channel_args_find(old_args, "arg_str")->value.string,
                "arg_str_val") == 0);
-  CHECK(grpc_channel_args_find(old_args, "arg_pointer")->value.pointer.vtable ==
+  ABSL_CHECK(grpc_channel_args_find(old_args, "arg_pointer")->value.pointer.vtable ==
         &fake_pointer_arg_vtable);
 
   if (strcmp(target, "no_op_mutator") == 0) {
     return old_args;
   }
 
-  CHECK_EQ(strcmp(target, "minimal_stack_mutator"), 0);
+  ABSL_CHECK_EQ(strcmp(target, "minimal_stack_mutator"), 0);
   const char* args_to_remove[] = {"arg_int", "arg_str", "arg_pointer"};
 
   grpc_arg no_deadline_filter_arg = grpc_channel_arg_integer_create(

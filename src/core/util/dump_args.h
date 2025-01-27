@@ -105,7 +105,7 @@ class DumpArgs {
 // Usage:
 //   int a = 1;
 //   int b = 2;
-//   LOG(INFO) << GRPC_DUMP_ARGS(a, b)
+//   ABSL_LOG(INFO) << GRPC_DUMP_ARGS(a, b)
 // Output:
 //   a = 1, b = 2
 #define GRPC_DUMP_ARGS(...) \

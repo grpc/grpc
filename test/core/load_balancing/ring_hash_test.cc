@@ -298,7 +298,7 @@ TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
   for (; index < kAddresses.size(); ++index) {
     subchannel = FindSubchannel(kAddresses[index]);
     if (subchannel != nullptr) {
-      LOG(INFO) << "Randomly picked subchannel index " << index;
+      ABSL_LOG(INFO) << "Randomly picked subchannel index " << index;
       break;
     }
   }

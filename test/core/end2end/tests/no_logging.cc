@@ -26,9 +26,9 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/log/globals.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/log/log_entry.h"
 #include "absl/log/log_sink.h"
 #include "absl/log/log_sink_registry.h"
@@ -55,10 +55,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   }
 
   ~VerifyLogNoiseLogSink() override {
-    CHECK(log_noise_absent_)
+    ABSL_CHECK(log_noise_absent_)
         << "Unwanted logs present. This will cause log noise. Either user a "
            "tracer (example GRPC_TRACE_LOG or GRPC_TRACE_VLOG) or convert the "
-           "statement to VLOG(2).";
+           "statement to ABSL_VLOG(2).";
     //  Reverse everything done in the constructor.
     absl::RemoveLogSink(this);
     saved_trace_flags_.Restore();
@@ -84,7 +84,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // becoming flaky. Right now all entries in this list get a free pass to log
     // infinitely - That may create log noise issues in the future.
     //
-    // This list is an allow list of all LOG(INFO), LOG(WARNING), and LOG(ERROR)
+    // This list is an allow list of all ABSL_LOG(INFO), ABSL_LOG(WARNING), and ABSL_LOG(ERROR)
     // logs which will appear. For now we have decided to allow these instances.
     // We should be very conservative while adding new entries to this list,
     // because this has potential to cause massive log noise. Several users are
@@ -121,7 +121,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // If we reach here means we have log noise. log_noise_absent_ will make the
     // test fail.
     log_noise_absent_ = false;
-    LOG(ERROR) << "🛑 Unwanted log at location : " << entry.source_filename()
+    ABSL_LOG(ERROR) << "🛑 Unwanted log at location : " << entry.source_filename()
                << ":" << entry.source_line() << " " << entry.text_message();
   }
 

@@ -39,7 +39,7 @@ grpc_cc_test(
     name = "cancel_ares_query_test",
     srcs = ["cancel_ares_query_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     tags = ["cancel_ares_query_test"],

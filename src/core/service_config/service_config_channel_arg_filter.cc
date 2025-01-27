@@ -26,7 +26,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/config/core_configuration.h"
@@ -70,7 +70,7 @@ class ServiceConfigChannelArgFilter final
       auto service_config =
           ServiceConfigImpl::Create(args, *service_config_str);
       if (!service_config.ok()) {
-        LOG(ERROR) << service_config.status().ToString();
+        ABSL_LOG(ERROR) << service_config.status().ToString();
       } else {
         service_config_ = std::move(*service_config);
       }

@@ -41,8 +41,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status:statusor",
         "absl/strings",
         "google_cloud_cpp:opentelemetry",

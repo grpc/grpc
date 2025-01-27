@@ -24,8 +24,8 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -55,7 +55,7 @@ grpc_core::Combiner* grpc_combiner_create(
 
 static void really_destroy(grpc_core::Combiner* lock) {
   GRPC_TRACE_LOG(combiner, INFO) << "C:" << lock << " really_destroy";
-  CHECK_EQ(gpr_atm_no_barrier_load(&lock->state), 0);
+  ABSL_CHECK_EQ(gpr_atm_no_barrier_load(&lock->state), 0);
   delete lock;
 }
 
@@ -137,7 +137,7 @@ static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
       gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 0);
     }
   }
-  CHECK(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
+  ABSL_CHECK(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
   assert(cl->cb);
   cl->error_data.error = grpc_core::internal::StatusAllocHeapPtr(error);
   lock->queue.Push(cl->next_data.mpscq_node.get());
@@ -217,7 +217,7 @@ bool grpc_combiner_continue_exec_ctx() {
     cl->cb(cl->cb_arg, std::move(cl_err));
   } else {
     grpc_closure* c = lock->final_list.head;
-    CHECK_NE(c, nullptr);
+    ABSL_CHECK_NE(c, nullptr);
     grpc_closure_list_init(&lock->final_list);
     int loops = 0;
     while (c != nullptr) {
@@ -280,7 +280,7 @@ static void enqueue_finally(void* closure, grpc_error_handle error);
 static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error) {
-  CHECK_NE(lock, nullptr);
+  ABSL_CHECK_NE(lock, nullptr);
   GRPC_TRACE_LOG(combiner, INFO)
       << "C:" << lock << " grpc_combiner_execute_finally c=" << closure
       << "; ac=" << grpc_core::ExecCtx::Get()->combiner_data()->active_combiner;

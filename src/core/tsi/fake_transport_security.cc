@@ -23,8 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -89,7 +89,7 @@ static const char* tsi_fake_handshake_message_strings[] = {
 
 static const char* tsi_fake_handshake_message_to_string(int msg) {
   if (msg < 0 || msg >= TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
-    LOG(ERROR) << "Invalid message " << msg;
+    ABSL_LOG(ERROR) << "Invalid message " << msg;
     return "UNKNOWN";
   }
   return tsi_fake_handshake_message_strings[msg];
@@ -105,7 +105,7 @@ static tsi_result tsi_fake_handshake_message_from_string(
       return TSI_OK;
     }
   }
-  LOG(ERROR) << "Invalid handshake message.";
+  ABSL_LOG(ERROR) << "Invalid handshake message.";
   if (error != nullptr) *error = "invalid handshake message";
   return TSI_DATA_CORRUPTED;
 }
@@ -124,8 +124,8 @@ static void store32_little_endian(uint32_t value, unsigned char* buf) {
 }
 
 static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
-  CHECK(sb != nullptr);
-  CHECK(sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
+  ABSL_CHECK(sb != nullptr);
+  ABSL_CHECK(sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
   uint8_t frame_size_buffer[TSI_FAKE_FRAME_HEADER_SIZE];
   uint8_t* buf = frame_size_buffer;
   // Copies the first 4 bytes to a temporary buffer.
@@ -142,7 +142,7 @@ static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
       remaining -= slice_length;
     }
   }
-  CHECK_EQ(remaining, 0u);
+  ABSL_CHECK_EQ(remaining, 0u);
   return load32_little_endian(frame_size_buffer);
 }
 
@@ -317,7 +317,7 @@ static tsi_result fake_protector_protect(tsi_frame_protector* self,
     result = tsi_fake_frame_decode(frame_header, &written_in_frame_size, frame,
                                    /*error=*/nullptr);
     if (result != TSI_INCOMPLETE_DATA) {
-      LOG(ERROR) << "tsi_fake_frame_decode returned "
+      ABSL_LOG(ERROR) << "tsi_fake_frame_decode returned "
                  << tsi_result_to_string(result);
       return result;
     }
@@ -474,7 +474,7 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
     if (impl->parsed_frame_size == 0) {
       impl->parsed_frame_size = read_frame_size(&impl->protected_sb);
       if (impl->parsed_frame_size <= 4) {
-        LOG(ERROR) << "Invalid frame size.";
+        ABSL_LOG(ERROR) << "Invalid frame size.";
         return TSI_DATA_CORRUPTED;
       }
     }
@@ -690,7 +690,7 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
     return result;
   }
   if (received_msg != expected_msg) {
-    LOG(ERROR) << "Invalid received message ("
+    ABSL_LOG(ERROR) << "Invalid received message ("
                << tsi_fake_handshake_message_to_string(received_msg)
                << " instead of "
                << tsi_fake_handshake_message_to_string(expected_msg) << ")";

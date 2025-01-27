@@ -37,8 +37,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix.h"
@@ -78,11 +78,11 @@ static constexpr int64_t kDeadlineMillis = 20000;
 
 static void create_sockets(int sv[2]) {
   int flags;
-  CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+  ABSL_CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
   flags = fcntl(sv[0], F_GETFL, 0);
-  CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
+  ABSL_CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
   flags = fcntl(sv[1], F_GETFL, 0);
-  CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
+  ABSL_CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
 }
 
 static ssize_t fill_socket(int fd) {
@@ -99,7 +99,7 @@ static ssize_t fill_socket(int fd) {
       total_bytes += write_bytes;
     }
   } while (write_bytes >= 0 || errno == EINTR);
-  CHECK(errno == EAGAIN);
+  ABSL_CHECK(errno == EAGAIN);
   return total_bytes;
 }
 
@@ -141,7 +141,7 @@ static size_t count_slices(grpc_slice* slices, size_t nslices,
   for (i = 0; i < nslices; ++i) {
     buf = GRPC_SLICE_START_PTR(slices[i]);
     for (j = 0; j < GRPC_SLICE_LENGTH(slices[i]); ++j) {
-      CHECK(buf[j] == *current_data);
+      ABSL_CHECK(buf[j] == *current_data);
       *current_data = (*current_data + 1) % 256;
     }
     num_bytes += GRPC_SLICE_LENGTH(slices[i]);
@@ -155,22 +155,22 @@ static void read_cb(void* user_data, grpc_error_handle error) {
   size_t read_bytes;
   int current_data;
 
-  CHECK_OK(error);
+  ABSL_CHECK_OK(error);
 
   gpr_mu_lock(g_mu);
   current_data = state->read_bytes % 256;
   // The number of bytes read each time this callback is invoked must be >=
   // the min_progress_size.
   if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
-    CHECK(state->min_progress_size <= state->incoming.length);
+    ABSL_CHECK(state->min_progress_size <= state->incoming.length);
   }
   read_bytes = count_slices(state->incoming.slices, state->incoming.count,
                             &current_data);
   state->read_bytes += read_bytes;
-  LOG(INFO) << "Read " << read_bytes << " bytes of "
+  ABSL_LOG(INFO) << "Read " << read_bytes << " bytes of "
             << state->target_read_bytes;
   if (state->read_bytes >= state->target_read_bytes) {
-    CHECK(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
+    ABSL_CHECK(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
     gpr_mu_unlock(g_mu);
   } else {
     gpr_mu_unlock(g_mu);
@@ -191,7 +191,7 @@ static void read_test(size_t num_bytes, size_t slice_size,
       grpc_timeout_milliseconds_to_deadline(kDeadlineMillis));
   grpc_core::ExecCtx exec_ctx;
 
-  LOG(INFO) << "Read test of size " << num_bytes << ", slice size "
+  ABSL_LOG(INFO) << "Read test of size " << num_bytes << ", slice size "
             << slice_size;
 
   create_sockets(sv);
@@ -214,7 +214,7 @@ static void read_test(size_t num_bytes, size_t slice_size,
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
-  LOG(INFO) << "Wrote " << written_bytes << " bytes";
+  ABSL_LOG(INFO) << "Wrote " << written_bytes << " bytes";
 
   state.ep = ep;
   state.read_bytes = 0;
@@ -230,13 +230,13 @@ static void read_test(size_t num_bytes, size_t slice_size,
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+    ABSL_CHECK(GRPC_LOG_IF_ERROR("pollset_work",
                             grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
-  CHECK(state.read_bytes == state.target_read_bytes);
+  ABSL_CHECK(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
   grpc_slice_buffer_destroy(&state.incoming);
@@ -256,7 +256,7 @@ static void large_read_test(size_t slice_size, int min_progress_size) {
       grpc_timeout_milliseconds_to_deadline(kDeadlineMillis));
   grpc_core::ExecCtx exec_ctx;
 
-  LOG(INFO) << "Start large read test, slice size " << slice_size;
+  ABSL_LOG(INFO) << "Start large read test, slice size " << slice_size;
 
   create_sockets(sv);
 
@@ -278,7 +278,7 @@ static void large_read_test(size_t slice_size, int min_progress_size) {
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   written_bytes = fill_socket(sv[0]);
-  LOG(INFO) << "Wrote " << written_bytes << " bytes";
+  ABSL_LOG(INFO) << "Wrote " << written_bytes << " bytes";
 
   state.ep = ep;
   state.read_bytes = 0;
@@ -294,13 +294,13 @@ static void large_read_test(size_t slice_size, int min_progress_size) {
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+    ABSL_CHECK(GRPC_LOG_IF_ERROR("pollset_work",
                             grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
-  CHECK(state.read_bytes == state.target_read_bytes);
+  ABSL_CHECK(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
   grpc_slice_buffer_destroy(&state.incoming);
@@ -335,18 +335,18 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
       (*current_data)++;
     }
   }
-  CHECK_EQ(num_bytes_left, 0);
+  ABSL_CHECK_EQ(num_bytes_left, 0);
   return slices;
 }
 
 static void write_done(void* user_data /* write_socket_state */,
                        grpc_error_handle error) {
-  CHECK_OK(error);
+  ABSL_CHECK_OK(error);
   struct write_socket_state* state =
       static_cast<struct write_socket_state*>(user_data);
   gpr_mu_lock(g_mu);
   state->write_done = 1;
-  CHECK(
+  ABSL_CHECK(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
@@ -361,12 +361,12 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
   grpc_core::ExecCtx exec_ctx;
 
   flags = fcntl(fd, F_GETFL, 0);
-  CHECK_EQ(fcntl(fd, F_SETFL, flags & ~O_NONBLOCK), 0);
+  ABSL_CHECK_EQ(fcntl(fd, F_SETFL, flags & ~O_NONBLOCK), 0);
 
   for (;;) {
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(g_mu);
-    CHECK(GRPC_LOG_IF_ERROR(
+    ABSL_CHECK(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker,
                           grpc_core::Timestamp::FromTimespecRoundUp(
@@ -377,16 +377,16 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
       bytes_read =
           read(fd, buf, bytes_left > read_size ? read_size : bytes_left);
     } while (bytes_read < 0 && errno == EINTR);
-    CHECK_GE(bytes_read, 0);
+    ABSL_CHECK_GE(bytes_read, 0);
     for (i = 0; i < bytes_read; ++i) {
-      CHECK(buf[i] == current);
+      ABSL_CHECK(buf[i] == current);
       current = (current + 1) % 256;
     }
     bytes_left -= static_cast<size_t>(bytes_read);
     if (bytes_left == 0) break;
   }
   flags = fcntl(fd, F_GETFL, 0);
-  CHECK_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
+  ABSL_CHECK_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
 
   gpr_free(buf);
 }
@@ -408,7 +408,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
       grpc_timeout_milliseconds_to_deadline(kDeadlineMillis));
   grpc_core::ExecCtx exec_ctx;
 
-  LOG(INFO) << "Start write test with " << num_bytes << " bytes, slice size "
+  ABSL_LOG(INFO) << "Start write test with " << num_bytes << " bytes, slice size "
             << slice_size;
 
   create_sockets(sv);
@@ -450,7 +450,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
     if (state.write_done) {
       break;
     }
-    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+    ABSL_CHECK(GRPC_LOG_IF_ERROR("pollset_work",
                             grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     exec_ctx.Flush();
@@ -492,7 +492,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   GRPC_CLOSURE_INIT(&fd_released_cb, &on_fd_released, &rel_fd,
                     grpc_schedule_on_exec_ctx);
 
-  LOG(INFO) << "Release fd read_test of size " << num_bytes << ", slice size "
+  ABSL_LOG(INFO) << "Release fd read_test of size " << num_bytes << ", slice size "
             << slice_size;
 
   create_sockets(sv);
@@ -527,13 +527,13 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
             grpc_event_engine::experimental::ChannelArgsEndpointConfig(
                 grpc_core::ChannelArgs::FromC(&args))),
         "test");
-    CHECK(grpc_tcp_fd(ep) == sv[1]);
-    CHECK_GE(sv[1], 0);
+    ABSL_CHECK(grpc_tcp_fd(ep) == sv[1]);
+    ABSL_CHECK_GE(sv[1], 0);
   }
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
-  LOG(INFO) << "Wrote " << written_bytes << " bytes";
+  ABSL_LOG(INFO) << "Wrote " << written_bytes << " bytes";
 
   state.ep = ep;
   state.read_bytes = 0;
@@ -548,23 +548,23 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+    ABSL_CHECK(GRPC_LOG_IF_ERROR("pollset_work",
                             grpc_pollset_work(g_pollset, &worker, deadline)));
-    VLOG(2) << "wakeup: read=" << state.read_bytes
+    ABSL_VLOG(2) << "wakeup: read=" << state.read_bytes
             << " target=" << state.target_read_bytes;
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
-  CHECK(state.read_bytes == state.target_read_bytes);
+  ABSL_CHECK(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
   grpc_slice_buffer_destroy(&state.incoming);
   grpc_tcp_destroy_and_release_fd(ep, &fd, &fd_released_cb);
   grpc_core::ExecCtx::Get()->Flush();
   rel_fd.notify.WaitForNotificationWithTimeout(absl::Seconds(20));
-  CHECK_EQ(rel_fd.fd_released_done, 1);
-  CHECK(fd == sv[1]);
+  ABSL_CHECK_EQ(rel_fd.fd_released_done, 1);
+  ABSL_CHECK(fd == sv[1]);
   written_bytes = fill_socket_partial(sv[0], num_bytes);
   drain_socket_blocking(fd, written_bytes, written_bytes);
   written_bytes = fill_socket_partial(fd, num_bytes);

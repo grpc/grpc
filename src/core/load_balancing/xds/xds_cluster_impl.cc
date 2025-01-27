@@ -29,8 +29,8 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -333,7 +333,7 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
     locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
     call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
 #ifndef NDEBUG
-    DCHECK(!started_);
+    ABSL_DCHECK(!started_);
 #endif
   }
 
@@ -559,7 +559,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // different priority child name if that happens, which means that this
   // policy instance will get replaced instead of being updated.
   if (config_ != nullptr) {
-    CHECK(config_->cluster_name() == new_config->cluster_name());
+    ABSL_CHECK(config_->cluster_name() == new_config->cluster_name());
   }
   // Get xDS config.
   auto new_xds_config = args.args.GetObjectRef<XdsConfig>();
@@ -622,7 +622,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
         new_cluster_config.cluster->lrs_load_reporting_server,
         new_config->cluster_name(), new_eds_service_name);
     if (drop_stats_ == nullptr) {
-      LOG(ERROR)
+      ABSL_LOG(ERROR)
           << "[xds_cluster_impl_lb " << this
           << "] Failed to get cluster drop stats for LRS server "
           << new_cluster_config.cluster->lrs_load_reporting_server->server_uri()
@@ -822,7 +822,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
             GetEdsResourceName(*parent()->cluster_resource_), locality_name,
             parent()->cluster_resource_->lrs_backend_metric_propagation);
     if (locality_stats == nullptr) {
-      LOG(ERROR)
+      ABSL_LOG(ERROR)
           << "[xds_cluster_impl_lb " << parent()
           << "] Failed to get locality stats object for LRS server "
           << parent()
@@ -901,7 +901,7 @@ class XdsClusterImplLbFactory final : public LoadBalancingPolicyFactory {
     auto xds_client = args.args.GetObjectRef<GrpcXdsClient>(DEBUG_LOCATION,
                                                             "XdsClusterImplLb");
     if (xds_client == nullptr) {
-      LOG(ERROR) << "XdsClient not present in channel args -- cannot "
+      ABSL_LOG(ERROR) << "XdsClient not present in channel args -- cannot "
                     "instantiate xds_cluster_impl LB policy";
       return nullptr;
     }

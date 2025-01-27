@@ -20,7 +20,7 @@
 #include <atomic>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
@@ -128,9 +128,9 @@ class GRPC_DLL CoreConfiguration {
     ~WithSubstituteBuilder() {
       // Reset and restore.
       Reset();
-      CHECK(CoreConfiguration::config_.exchange(
+      ABSL_CHECK(CoreConfiguration::config_.exchange(
                 config_restore_, std::memory_order_acquire) == nullptr);
-      CHECK(CoreConfiguration::builders_.exchange(
+      ABSL_CHECK(CoreConfiguration::builders_.exchange(
                 builders_restore_, std::memory_order_acquire) == nullptr);
     }
 

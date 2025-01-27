@@ -23,7 +23,7 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -121,7 +121,7 @@ std::vector<absl::Status> ParseChildren(absl::Cord children) {
   while (buf.size() - cur >= sizeof(uint32_t)) {
     size_t msg_size = DecodeUInt32FromBytes(buf.data() + cur);
     cur += sizeof(uint32_t);
-    CHECK(buf.size() - cur >= msg_size);
+    ABSL_CHECK(buf.size() - cur >= msg_size);
     google_rpc_Status* msg =
         google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
     cur += msg_size;

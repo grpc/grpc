@@ -21,7 +21,7 @@
 #include <limits>
 #include <variant>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/numeric/bits.h"
 #include "absl/strings/string_view.h"
 

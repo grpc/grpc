@@ -22,7 +22,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
@@ -34,7 +34,7 @@ static void test_varint(uint32_t value, uint8_t prefix_or,
   grpc_slice expect =
       grpc_slice_from_copied_buffer(expect_bytes, expect_length);
   grpc_slice slice;
-  VLOG(2) << absl::StrFormat("Test: 0x%08x", value);
+  ABSL_VLOG(2) << absl::StrFormat("Test: 0x%08x", value);
   ASSERT_EQ(w.length(), expect_length);
   slice = grpc_slice_malloc(w.length());
   w.Write(prefix_or, GRPC_SLICE_START_PTR(slice));

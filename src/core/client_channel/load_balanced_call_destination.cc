@@ -14,7 +14,7 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/lb_metadata.h"
@@ -78,7 +78,7 @@ T HandlePickResult(
   }
   auto* drop_pick =
       std::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
-  CHECK(drop_pick != nullptr);
+  ABSL_CHECK(drop_pick != nullptr);
   return drop_func(drop_pick);
 }
 
@@ -97,7 +97,7 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
       unstarted_handler.UnprocessedClientInitialMetadata();
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = client_initial_metadata.get_pointer(HttpPathMetadata());
-  CHECK(path != nullptr);
+  ABSL_CHECK(path != nullptr);
   pick_args.path = path->as_string_view();
   LbCallState lb_call_state;
   pick_args.call_state = &lb_call_state;
@@ -115,7 +115,7 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
             << "client_channel: " << GetContext<Activity>()->DebugTag()
             << " pick succeeded: subchannel="
             << complete_pick->subchannel.get();
-        CHECK(complete_pick->subchannel != nullptr);
+        ABSL_CHECK(complete_pick->subchannel != nullptr);
         // Grab a ref to the call destination while we're still
         // holding the data plane mutex.
         auto call_destination =
@@ -212,7 +212,7 @@ void LoadBalancedCallDestination::StartCall(
                       [unstarted_handler, &last_picker](
                           RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
                               picker) mutable {
-                        CHECK_NE(picker.get(), nullptr);
+                        ABSL_CHECK_NE(picker.get(), nullptr);
                         last_picker = std::move(picker);
                         // Returns 3 possible things:
                         // - Continue to queue the pick

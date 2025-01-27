@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
@@ -189,7 +189,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
 
   // First round, no server
   {
-    VLOG(2) << "Wave 1";
+    ABSL_VLOG(2) << "Wave 1";
     grpc_core::Thread threads[NUM_THREADS];
     args.addr = "localhost:54321";
     for (auto& th : threads) {
@@ -204,7 +204,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
 
   // Second round, actual grpc server
   {
-    VLOG(2) << "Wave 2";
+    ABSL_VLOG(2) << "Wave 2";
     int port = grpc_pick_unused_port_or_die();
     args.addr = absl::StrCat("localhost:", port);
     args.server = grpc_server_create(nullptr, nullptr);
@@ -236,7 +236,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
 
   // Third round, bogus tcp server
   {
-    VLOG(2) << "Wave 3";
+    ABSL_VLOG(2) << "Wave 3";
     auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset, &args.mu);
     args.pollset.push_back(pollset);

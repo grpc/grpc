@@ -29,7 +29,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 namespace grpc_core {
 namespace internal {
@@ -123,7 +123,7 @@ class Thread {
   Thread& operator=(Thread&& other) noexcept {
     if (this != &other) {
       // TODO(vjpai): if we can be sure that all Thread's are actually
-      // constructed, then we should assert CHECK(impl_ == nullptr) here.
+      // constructed, then we should assert ABSL_CHECK(impl_ == nullptr) here.
       // However, as long as threads come in structures that are
       // allocated via gpr_malloc, this will not be the case, so we cannot
       // assert it for the time being.
@@ -142,11 +142,11 @@ class Thread {
   /// the Join function kills it, or it was detached (non-joinable) and it has
   /// run to completion and is now killing itself. The destructor shouldn't have
   /// to do anything.
-  ~Thread() { CHECK(!options_.joinable() || impl_ == nullptr); }
+  ~Thread() { ABSL_CHECK(!options_.joinable() || impl_ == nullptr); }
 
   void Start() {
     if (impl_ != nullptr) {
-      CHECK(state_ == ALIVE);
+      ABSL_CHECK(state_ == ALIVE);
       state_ = STARTED;
       impl_->Start();
       // If the Thread is not joinable, then the impl_ will cause the deletion
@@ -155,7 +155,7 @@ class Thread {
       // no need to change the value of the impl_ or state_ . The next operation
       // on this object will be the deletion, which will trigger the destructor.
     } else {
-      CHECK(state_ == FAILED);
+      ABSL_CHECK(state_ == FAILED);
     }
   }
 
@@ -167,7 +167,7 @@ class Thread {
       state_ = DONE;
       impl_ = nullptr;
     } else {
-      CHECK(state_ == FAILED);
+      ABSL_CHECK(state_ == FAILED);
     }
   }
 

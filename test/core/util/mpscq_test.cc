@@ -25,7 +25,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
@@ -47,7 +47,7 @@ static test_node* new_node(size_t i, size_t* ctr) {
 }
 
 TEST(MpscqTest, Serial) {
-  VLOG(2) << "test_serial";
+  ABSL_VLOG(2) << "test_serial";
   MultiProducerSingleConsumerQueue q;
   for (size_t i = 0; i < 10000000; i++) {
     q.Push(&new_node(i, nullptr)->node);
@@ -77,7 +77,7 @@ static void test_thread(void* args) {
 }
 
 TEST(MpscqTest, Mt) {
-  VLOG(2) << "test_mt";
+  ABSL_VLOG(2) << "test_mt";
   gpr_event start;
   gpr_event_init(&start);
   grpc_core::Thread thds[100];
@@ -104,7 +104,7 @@ TEST(MpscqTest, Mt) {
     if (tn->i == THREAD_ITERATIONS) num_done++;
     delete tn;
   }
-  VLOG(2) << "spins: " << spins;
+  ABSL_VLOG(2) << "spins: " << spins;
   for (auto& th : thds) {
     th.Join();
   }
@@ -144,7 +144,7 @@ static void pull_thread(void* arg) {
 }
 
 TEST(MpscqTest, MtMultipop) {
-  VLOG(2) << "test_mt_multipop";
+  ABSL_VLOG(2) << "test_mt_multipop";
   gpr_event start;
   gpr_event_init(&start);
   grpc_core::Thread thds[50];
@@ -174,7 +174,7 @@ TEST(MpscqTest, MtMultipop) {
   for (auto& pth : pull_thds) {
     pth.Join();
   }
-  VLOG(2) << "spins: " << pa.spins;
+  ABSL_VLOG(2) << "spins: " << pa.spins;
   for (auto& th : thds) {
     th.Join();
   }

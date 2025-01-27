@@ -20,14 +20,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "upb/mem/arena.hpp"
 
 bool grpc_gcp_rpc_protocol_versions_set_max(
     grpc_gcp_rpc_protocol_versions* versions, uint32_t max_major,
     uint32_t max_minor) {
   if (versions == nullptr) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "versions is nullptr in grpc_gcp_rpc_protocol_versions_set_max().";
     return false;
   }
@@ -40,7 +40,7 @@ bool grpc_gcp_rpc_protocol_versions_set_min(
     grpc_gcp_rpc_protocol_versions* versions, uint32_t min_major,
     uint32_t min_minor) {
   if (versions == nullptr) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "versions is nullptr in grpc_gcp_rpc_protocol_versions_set_min().";
     return false;
   }
@@ -52,7 +52,7 @@ bool grpc_gcp_rpc_protocol_versions_set_min(
 bool grpc_gcp_rpc_protocol_versions_encode(
     const grpc_gcp_rpc_protocol_versions* versions, grpc_slice* slice) {
   if (versions == nullptr || slice == nullptr) {
-    LOG(ERROR) << "Invalid nullptr arguments to "
+    ABSL_LOG(ERROR) << "Invalid nullptr arguments to "
                   "grpc_gcp_rpc_protocol_versions_encode().";
     return false;
   }
@@ -69,7 +69,7 @@ bool grpc_gcp_rpc_protocol_versions_encode(
     const grpc_gcp_RpcProtocolVersions* versions, upb_Arena* arena,
     grpc_slice* slice) {
   if (versions == nullptr || arena == nullptr || slice == nullptr) {
-    LOG(ERROR) << "Invalid nullptr arguments to "
+    ABSL_LOG(ERROR) << "Invalid nullptr arguments to "
                   "grpc_gcp_rpc_protocol_versions_encode().";
     return false;
   }
@@ -86,7 +86,7 @@ bool grpc_gcp_rpc_protocol_versions_encode(
 bool grpc_gcp_rpc_protocol_versions_decode(
     const grpc_slice& slice, grpc_gcp_rpc_protocol_versions* versions) {
   if (versions == nullptr) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "version is nullptr in grpc_gcp_rpc_protocol_versions_decode().";
     return false;
   }
@@ -96,7 +96,7 @@ bool grpc_gcp_rpc_protocol_versions_decode(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
           GRPC_SLICE_LENGTH(slice), arena.ptr());
   if (versions_msg == nullptr) {
-    LOG(ERROR) << "cannot deserialize RpcProtocolVersions message";
+    ABSL_LOG(ERROR) << "cannot deserialize RpcProtocolVersions message";
     return false;
   }
   grpc_gcp_rpc_protocol_versions_assign_from_upb(versions, versions_msg);
@@ -152,7 +152,7 @@ bool grpc_gcp_rpc_protocol_versions_copy(
     grpc_gcp_rpc_protocol_versions* dst) {
   if ((src == nullptr && dst != nullptr) ||
       (src != nullptr && dst == nullptr)) {
-    LOG(ERROR) << "Invalid arguments to grpc_gcp_rpc_protocol_versions_copy().";
+    ABSL_LOG(ERROR) << "Invalid arguments to grpc_gcp_rpc_protocol_versions_copy().";
     return false;
   }
   if (src == nullptr) {
@@ -190,7 +190,7 @@ bool grpc_gcp_rpc_protocol_versions_check(
     const grpc_gcp_rpc_protocol_versions* peer_versions,
     grpc_gcp_rpc_protocol_versions_version* highest_common_version) {
   if (local_versions == nullptr || peer_versions == nullptr) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "Invalid arguments to grpc_gcp_rpc_protocol_versions_check().";
     return false;
   }

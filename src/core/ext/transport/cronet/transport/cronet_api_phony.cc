@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 #ifdef GRPC_COMPILE_WITH_CRONET
@@ -31,12 +31,12 @@
 bidirectional_stream* bidirectional_stream_create(
     stream_engine* /*engine*/, void* /*annotation*/,
     bidirectional_stream_callback* /*callback*/) {
-  CHECK(0);
+  ABSL_CHECK(0);
   return nullptr;
 }
 
 int bidirectional_stream_destroy(bidirectional_stream* /*stream*/) {
-  CHECK(0);
+  ABSL_CHECK(0);
   return 0;
 }
 
@@ -45,35 +45,35 @@ int bidirectional_stream_start(
     const char* /*method*/,
     const bidirectional_stream_header_array* /*headers*/,
     bool /*end_of_stream*/) {
-  CHECK(0);
+  ABSL_CHECK(0);
   return 0;
 }
 
 int bidirectional_stream_read(bidirectional_stream* /*stream*/,
                               char* /*buffer*/, int /*capacity*/) {
-  CHECK(0);
+  ABSL_CHECK(0);
   return 0;
 }
 
 int bidirectional_stream_write(bidirectional_stream* /*stream*/,
                                const char* /*buffer*/, int /*count*/,
                                bool /*end_of_stream*/) {
-  CHECK(0);
+  ABSL_CHECK(0);
   return 0;
 }
 
-void bidirectional_stream_cancel(bidirectional_stream* /*stream*/) { CHECK(0); }
+void bidirectional_stream_cancel(bidirectional_stream* /*stream*/) { ABSL_CHECK(0); }
 
 void bidirectional_stream_disable_auto_flush(bidirectional_stream* /*stream*/,
                                              bool /*disable_auto_flush*/) {
-  CHECK(0);
+  ABSL_CHECK(0);
 }
 
 void bidirectional_stream_delay_request_headers_until_flush(
     bidirectional_stream* /*stream*/, bool /*delay_headers_until_flush*/) {
-  CHECK(0);
+  ABSL_CHECK(0);
 }
 
-void bidirectional_stream_flush(bidirectional_stream* /*stream*/) { CHECK(0); }
+void bidirectional_stream_flush(bidirectional_stream* /*stream*/) { ABSL_CHECK(0); }
 
 #endif  // GRPC_COMPILE_WITH_CRONET

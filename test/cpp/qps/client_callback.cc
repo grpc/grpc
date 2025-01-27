@@ -31,7 +31,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
@@ -125,7 +125,7 @@ class CallbackClient
     int num_threads = config.async_client_threads();
     if (num_threads <= 0) {  // Use dynamic sizing
       num_threads = cores_;
-      LOG(INFO) << "Sizing callback client to " << num_threads << " threads";
+      ABSL_LOG(INFO) << "Sizing callback client to " << num_threads << " threads";
     }
     return num_threads;
   }
@@ -267,7 +267,7 @@ class CallbackStreamingPingPongReactor final
 
   void OnWriteDone(bool ok) override {
     if (!ok) {
-      LOG(ERROR) << "Error writing RPC";
+      ABSL_LOG(ERROR) << "Error writing RPC";
     }
     if ((!ok || client_->ThreadCompleted()) &&
         !writes_done_started_.test_and_set()) {
@@ -283,7 +283,7 @@ class CallbackStreamingPingPongReactor final
         (client_->messages_per_stream() != 0 &&
          ++messages_issued_ >= client_->messages_per_stream())) {
       if (!ok) {
-        LOG(ERROR) << "Error reading RPC";
+        ABSL_LOG(ERROR) << "Error reading RPC";
       }
       if (!writes_done_started_.test_and_set()) {
         StartWritesDone();

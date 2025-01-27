@@ -20,13 +20,13 @@
 
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
 void Crash(absl::string_view message, SourceLocation location) {
-  LOG(ERROR).AtLocation(location.file(), location.line()) << message;
+  ABSL_LOG(ERROR).AtLocation(location.file(), location.line()) << message;
   abort();
 }
 

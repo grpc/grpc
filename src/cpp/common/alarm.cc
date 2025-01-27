@@ -29,7 +29,7 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/error.h"
@@ -64,10 +64,10 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
     tag_ = tag;
-    CHECK(grpc_cq_begin_op(cq_, this));
+    ABSL_CHECK(grpc_cq_begin_op(cq_, this));
     Ref();
-    CHECK(cq_armed_.exchange(true) == false);
-    CHECK(!callback_armed_.load());
+    ABSL_CHECK(cq_armed_.exchange(true) == false);
+    ABSL_CHECK(!callback_armed_.load());
     cq_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
@@ -78,8 +78,8 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
     Ref();
-    CHECK(callback_armed_.exchange(true) == false);
-    CHECK(!cq_armed_.load());
+    ABSL_CHECK(callback_armed_.exchange(true) == false);
+    ABSL_CHECK(!cq_armed_.load());
     callback_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),

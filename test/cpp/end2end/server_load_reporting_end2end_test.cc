@@ -27,7 +27,7 @@
 
 #include <thread>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/crash.h"
@@ -137,11 +137,11 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
       ->mutable_load_report_interval()
       ->set_seconds(5);
   stream->Write(request);
-  LOG(INFO) << "Initial request sent.";
+  ABSL_LOG(INFO) << "Initial request sent.";
   grpc::lb::v1::LoadReportResponse response;
   stream->Read(&response);
   const std::string& lb_id = response.initial_response().load_balancer_id();
-  LOG(INFO) << "Initial response received (lb_id: " << lb_id << ").";
+  ABSL_LOG(INFO) << "Initial response received (lb_id: " << lb_id << ").";
   ClientMakeEchoCalls(lb_id, "LB_TAG", kOkMessage, 1);
 
   unsigned load_count = 0;

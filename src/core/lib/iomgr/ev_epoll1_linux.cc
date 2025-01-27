@@ -40,8 +40,8 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -97,14 +97,14 @@ static int epoll_create_and_cloexec() {
 #ifdef GRPC_LINUX_EPOLL_CREATE1
   int fd = epoll_create1(EPOLL_CLOEXEC);
   if (fd < 0) {
-    LOG(ERROR) << "epoll_create1 unavailable";
+    ABSL_LOG(ERROR) << "epoll_create1 unavailable";
   }
 #else
   int fd = epoll_create(MAX_EPOLL_EVENTS);
   if (fd < 0) {
-    LOG(ERROR) << "epoll_create unavailable";
+    ABSL_LOG(ERROR) << "epoll_create unavailable";
   } else if (fcntl(fd, F_SETFD, FD_CLOEXEC) != 0) {
-    LOG(ERROR) << "fcntl following epoll_create failed";
+    ABSL_LOG(ERROR) << "fcntl following epoll_create failed";
     return -1;
   }
 #endif
@@ -372,7 +372,7 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   ev.data.ptr = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(new_fd) |
                                         (track_err ? 1 : 0));
   if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
-    LOG(ERROR) << "epoll_ctl failed: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "epoll_ctl failed: " << grpc_core::StrError(errno);
   }
 
   return new_fd;
@@ -395,7 +395,7 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error_handle why,
       epoll_event phony_event;
       if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_DEL, fd->fd, &phony_event) !=
           0) {
-        LOG(ERROR) << "epoll_ctl failed: " << grpc_core::StrError(errno);
+        ABSL_LOG(ERROR) << "epoll_ctl failed: " << grpc_core::StrError(errno);
       }
     }
     fd->write_closure->SetShutdown(why);
@@ -630,8 +630,8 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
 }
 
 static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
-  CHECK_EQ(pollset->shutdown_closure, nullptr);
-  CHECK(!pollset->shutting_down);
+  ABSL_CHECK_EQ(pollset->shutdown_closure, nullptr);
+  ABSL_CHECK(!pollset->shutting_down);
   pollset->shutdown_closure = closure;
   pollset->shutting_down = true;
   GRPC_LOG_IF_ERROR("pollset_shutdown", pollset_kick_all(pollset));
@@ -799,7 +799,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
       }
     }
     if (is_reassigning) {
-      CHECK(pollset->reassigning_neighborhood);
+      ABSL_CHECK(pollset->reassigning_neighborhood);
       pollset->reassigning_neighborhood = false;
     }
     gpr_mu_unlock(&neighborhood->mu);
@@ -808,7 +808,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
   worker_insert(pollset, worker);
   pollset->begin_refs--;
   if (worker->state == UNKICKED && !pollset->kicked_without_poller) {
-    CHECK(gpr_atm_no_barrier_load(&g_active_poller) != (gpr_atm)worker);
+    ABSL_CHECK(gpr_atm_no_barrier_load(&g_active_poller) != (gpr_atm)worker);
     worker->initialized_cv = true;
     gpr_cv_init(&worker->cv);
     while (worker->state == UNKICKED && !pollset->shutting_down) {
@@ -860,7 +860,7 @@ static bool check_neighborhood_for_available_poller(
       break;
     }
     gpr_mu_lock(&inspect->mu);
-    CHECK(!inspect->seen_inactive);
+    ABSL_CHECK(!inspect->seen_inactive);
     grpc_pollset_worker* inspect_worker = inspect->root_worker;
     if (inspect_worker != nullptr) {
       do {
@@ -922,7 +922,7 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
     if (worker->next != worker && worker->next->state == UNKICKED) {
       GRPC_TRACE_LOG(polling, INFO)
           << " .. choose next poller to be peer " << worker;
-      CHECK(worker->next->initialized_cv);
+      ABSL_CHECK(worker->next->initialized_cv);
       gpr_atm_no_barrier_store(&g_active_poller, (gpr_atm)worker->next);
       SET_KICK_STATE(worker->next, DESIGNATED_POLLER);
       gpr_cv_signal(&worker->next->cv);
@@ -974,7 +974,7 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
   if (EMPTIED == worker_remove(pollset, worker)) {
     pollset_maybe_finish_shutdown(pollset);
   }
-  CHECK(gpr_atm_no_barrier_load(&g_active_poller) != (gpr_atm)worker);
+  ABSL_CHECK(gpr_atm_no_barrier_load(&g_active_poller) != (gpr_atm)worker);
 }
 
 // pollset->po.mu lock must be held by the caller before calling this.
@@ -995,8 +995,8 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
   if (begin_worker(ps, &worker, worker_hdl, deadline)) {
     g_current_thread_pollset = ps;
     g_current_thread_worker = &worker;
-    CHECK(!ps->shutting_down);
-    CHECK(!ps->seen_inactive);
+    ABSL_CHECK(!ps->shutting_down);
+    ABSL_CHECK(!ps->seen_inactive);
 
     gpr_mu_unlock(&ps->mu);  // unlock
     // This is the designated polling thread at this point and should ideally do
@@ -1051,7 +1051,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* pollset,
       log.push_back(absl::StrFormat(" worker_kick_state=%s",
                                     kick_state_string(specific_worker->state)));
     }
-    VLOG(2) << absl::StrJoin(log, "");
+    ABSL_VLOG(2) << absl::StrJoin(log, "");
   }
 
   if (specific_worker == nullptr) {
@@ -1082,7 +1082,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* pollset,
         goto done;
       } else if (next_worker->state == UNKICKED) {
         GRPC_TRACE_LOG(polling, INFO) << " .. kicked " << next_worker;
-        CHECK(next_worker->initialized_cv);
+        ABSL_CHECK(next_worker->initialized_cv);
         SET_KICK_STATE(next_worker, KICKED);
         gpr_cv_signal(&next_worker->cv);
         goto done;
@@ -1105,7 +1105,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* pollset,
           goto done;
         }
       } else {
-        CHECK(next_worker->state == KICKED);
+        ABSL_CHECK(next_worker->state == KICKED);
         SET_KICK_STATE(next_worker, KICKED);
         goto done;
       }
@@ -1234,7 +1234,7 @@ const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
     /* check_engine_available = */
     [](bool) { return init_epoll1_linux(); },
     /* init_engine = */
-    []() { CHECK(init_epoll1_linux()); },
+    []() { ABSL_CHECK(init_epoll1_linux()); },
     shutdown_background_closure,
     /* shutdown_engine = */
     []() { shutdown_engine(); },
@@ -1265,7 +1265,7 @@ static void reset_event_manager_on_fork() {
 static bool init_epoll1_linux() {
   if (!g_is_shutdown) return true;
   if (!grpc_has_wakeup_fd()) {
-    LOG(ERROR) << "Skipping epoll1 because of no wakeup fd.";
+    ABSL_LOG(ERROR) << "Skipping epoll1 because of no wakeup fd.";
     return false;
   }
 

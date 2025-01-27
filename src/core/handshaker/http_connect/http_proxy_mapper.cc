@@ -29,8 +29,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -105,7 +105,7 @@ bool AddressIncluded(const std::optional<grpc_resolved_address>& target_address,
 ///
 std::optional<std::string> GetHttpProxyServer(
     const ChannelArgs& args, std::optional<std::string>* user_cred) {
-  CHECK_NE(user_cred, nullptr);
+  ABSL_CHECK_NE(user_cred, nullptr);
   absl::StatusOr<URI> uri;
   // We check the following places to determine the HTTP proxy to use, stopping
   // at the first one that is set:
@@ -124,12 +124,12 @@ std::optional<std::string> GetHttpProxyServer(
   if (uri_str->empty()) return std::nullopt;
   uri = URI::Parse(*uri_str);
   if (!uri.ok() || uri->authority().empty()) {
-    LOG(ERROR) << "cannot parse value of 'http_proxy' env var. Error: "
+    ABSL_LOG(ERROR) << "cannot parse value of 'http_proxy' env var. Error: "
                << uri.status();
     return std::nullopt;
   }
   if (uri->scheme() != "http") {
-    LOG(ERROR) << "'" << uri->scheme() << "' scheme not supported in proxy URI";
+    ABSL_LOG(ERROR) << "'" << uri->scheme() << "' scheme not supported in proxy URI";
     return std::nullopt;
   }
   // Split on '@' to separate user credentials from host
@@ -137,7 +137,7 @@ std::optional<std::string> GetHttpProxyServer(
   size_t authority_nstrs;
   gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
                    &authority_nstrs);
-  CHECK_NE(authority_nstrs, 0u);  // should have at least 1 string
+  ABSL_CHECK_NE(authority_nstrs, 0u);  // should have at least 1 string
   std::optional<std::string> proxy_name;
   if (authority_nstrs == 1) {
     // User cred not present in authority
@@ -146,7 +146,7 @@ std::optional<std::string> GetHttpProxyServer(
     // User cred found
     *user_cred = authority_strs[0];
     proxy_name = authority_strs[1];
-    VLOG(2) << "userinfo found in proxy URI";
+    ABSL_VLOG(2) << "userinfo found in proxy URI";
   } else {
     // Bad authority
     proxy_name = std::nullopt;
@@ -188,7 +188,7 @@ std::optional<grpc_resolved_address> GetAddressProxyServer(
   }
   auto address = StringToSockaddr(*address_value);
   if (!address.ok()) {
-    LOG(ERROR) << "cannot parse value of '"
+    ABSL_LOG(ERROR) << "cannot parse value of '"
                << std::string(HttpProxyMapper::kAddressProxyEnvVar)
                << "' env var. Error: " << address.status().ToString();
     return std::nullopt;
@@ -208,17 +208,17 @@ std::optional<std::string> HttpProxyMapper::MapName(
   if (!name_to_resolve.has_value()) return name_to_resolve;
   absl::StatusOr<URI> uri = URI::Parse(server_uri);
   if (!uri.ok() || uri->path().empty()) {
-    LOG(ERROR) << "'http_proxy' environment variable set, but cannot "
+    ABSL_LOG(ERROR) << "'http_proxy' environment variable set, but cannot "
                   "parse server URI '"
                << server_uri << "' -- not using proxy. Error: " << uri.status();
     return std::nullopt;
   }
   if (uri->scheme() == "unix") {
-    VLOG(2) << "not using proxy for Unix domain socket '" << server_uri << "'";
+    ABSL_VLOG(2) << "not using proxy for Unix domain socket '" << server_uri << "'";
     return std::nullopt;
   }
   if (uri->scheme() == "vsock") {
-    VLOG(2) << "not using proxy for VSock '" << server_uri << "'";
+    ABSL_VLOG(2) << "not using proxy for VSock '" << server_uri << "'";
     return std::nullopt;
   }
   // Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set.
@@ -231,7 +231,7 @@ std::optional<std::string> HttpProxyMapper::MapName(
     std::string server_port;
     if (!SplitHostPort(absl::StripPrefix(uri->path(), "/"), &server_host,
                        &server_port)) {
-      VLOG(2) << "unable to split host and port, not checking no_proxy list "
+      ABSL_VLOG(2) << "unable to split host and port, not checking no_proxy list "
                  "for host '"
               << server_uri << "'";
     } else {
@@ -240,7 +240,7 @@ std::optional<std::string> HttpProxyMapper::MapName(
                               ? std::optional<grpc_resolved_address>(*address)
                               : std::nullopt,
                           server_host, *no_proxy_str)) {
-        VLOG(2) << "not using proxy for host in no_proxy list '" << server_uri
+        ABSL_VLOG(2) << "not using proxy for host in no_proxy list '" << server_uri
                 << "'";
         return std::nullopt;
       }
@@ -266,13 +266,13 @@ std::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
   }
   auto address_string = grpc_sockaddr_to_string(&address, true);
   if (!address_string.ok()) {
-    LOG(ERROR) << "Unable to convert address to string: "
+    ABSL_LOG(ERROR) << "Unable to convert address to string: "
                << address_string.status();
     return std::nullopt;
   }
   std::string host_name, port;
   if (!SplitHostPort(*address_string, &host_name, &port)) {
-    LOG(ERROR) << "Address " << *address_string
+    ABSL_LOG(ERROR) << "Address " << *address_string
                << " cannot be split in host and port";
     return std::nullopt;
   }

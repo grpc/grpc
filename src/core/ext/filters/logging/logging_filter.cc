@@ -34,7 +34,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/numeric/int128.h"
 #include "absl/random/random.h"
 #include "absl/random/uniform_int_distribution.h"
@@ -100,7 +100,7 @@ class MetadataEncoder {
     }
     uint64_t mdentry_len = key.length() + value.length();
     if (mdentry_len > log_len_) {
-      VLOG(2) << "Skipped metadata key because of max metadata logging bytes "
+      ABSL_VLOG(2) << "Skipped metadata key because of max metadata logging bytes "
               << mdentry_len << " (current) vs " << log_len_
               << " (max less already accounted metadata)";
       truncated_ = true;
@@ -152,7 +152,7 @@ LoggingSink::Entry::Address PeerStringToAddress(const Slice& peer_string) {
   LoggingSink::Entry::Address address;
   absl::StatusOr<URI> uri = URI::Parse(peer_string.as_string_view());
   if (!uri.ok()) {
-    VLOG(2) << "peer_string is in invalid format and cannot be logged";
+    ABSL_VLOG(2) << "peer_string is in invalid format and cannot be logged";
     return address;
   }
 

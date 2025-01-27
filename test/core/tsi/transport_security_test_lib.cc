@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
@@ -66,8 +66,8 @@ typedef struct handshaker_args {
 
 static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
                                                bool is_client) {
-  CHECK_NE(fixture, nullptr);
-  CHECK_NE(fixture->config, nullptr);
+  ABSL_CHECK_NE(fixture, nullptr);
+  ABSL_CHECK_NE(fixture->config, nullptr);
   handshaker_args* args = new handshaker_args();
   args->fixture = fixture;
   args->handshake_buffer_size = fixture->handshake_buffer_size;
@@ -86,9 +86,9 @@ static void handshaker_args_destroy(handshaker_args* args) {
 static void do_handshaker_next(handshaker_args* args);
 
 static void setup_handshakers(tsi_test_fixture* fixture) {
-  CHECK_NE(fixture, nullptr);
-  CHECK_NE(fixture->vtable, nullptr);
-  CHECK_NE(fixture->vtable->setup_handshakers, nullptr);
+  ABSL_CHECK_NE(fixture, nullptr);
+  ABSL_CHECK_NE(fixture->vtable, nullptr);
+  ABSL_CHECK_NE(fixture->vtable->setup_handshakers, nullptr);
   fixture->vtable->setup_handshakers(fixture);
 }
 
@@ -101,20 +101,20 @@ static void check_unused_bytes(tsi_test_fixture* fixture) {
                                          : fixture->server_result;
   const unsigned char* bytes = nullptr;
   size_t bytes_size = 0;
-  CHECK(tsi_handshaker_result_get_unused_bytes(result_with_unused_bytes, &bytes,
+  ABSL_CHECK(tsi_handshaker_result_get_unused_bytes(result_with_unused_bytes, &bytes,
                                                &bytes_size) == TSI_OK);
-  CHECK_EQ(bytes_size, strlen(TSI_TEST_UNUSED_BYTES));
-  CHECK_EQ(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size), 0);
-  CHECK(tsi_handshaker_result_get_unused_bytes(result_without_unused_bytes,
+  ABSL_CHECK_EQ(bytes_size, strlen(TSI_TEST_UNUSED_BYTES));
+  ABSL_CHECK_EQ(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size), 0);
+  ABSL_CHECK(tsi_handshaker_result_get_unused_bytes(result_without_unused_bytes,
                                                &bytes, &bytes_size) == TSI_OK);
-  CHECK_EQ(bytes_size, 0u);
-  CHECK_EQ(bytes, nullptr);
+  ABSL_CHECK_EQ(bytes_size, 0u);
+  ABSL_CHECK_EQ(bytes, nullptr);
 }
 
 static void check_handshake_results(tsi_test_fixture* fixture) {
-  CHECK_NE(fixture, nullptr);
-  CHECK_NE(fixture->vtable, nullptr);
-  CHECK_NE(fixture->vtable->check_handshaker_peers, nullptr);
+  ABSL_CHECK_NE(fixture, nullptr);
+  ABSL_CHECK_NE(fixture->vtable, nullptr);
+  ABSL_CHECK_NE(fixture->vtable->check_handshaker_peers, nullptr);
   // Check handshaker peers.
   fixture->vtable->check_handshaker_peers(fixture);
   // Check unused bytes.
@@ -134,16 +134,16 @@ static void check_handshake_results(tsi_test_fixture* fixture) {
 static void send_bytes_to_peer(tsi_test_channel* test_channel,
                                const unsigned char* buf, size_t buf_size,
                                bool is_client) {
-  CHECK_NE(test_channel, nullptr);
-  CHECK_NE(buf, nullptr);
+  ABSL_CHECK_NE(test_channel, nullptr);
+  ABSL_CHECK_NE(buf, nullptr);
   uint8_t* channel =
       is_client ? test_channel->server_channel : test_channel->client_channel;
-  CHECK_NE(channel, nullptr);
+  ABSL_CHECK_NE(channel, nullptr);
   size_t* bytes_written = is_client
                               ? &test_channel->bytes_written_to_server_channel
                               : &test_channel->bytes_written_to_client_channel;
-  CHECK_NE(bytes_written, nullptr);
-  CHECK_LE(*bytes_written + buf_size,
+  ABSL_CHECK_NE(bytes_written, nullptr);
+  ABSL_CHECK_LE(*bytes_written + buf_size,
            static_cast<size_t>(TSI_TEST_DEFAULT_CHANNEL_SIZE));
   // Write data to channel.
   memcpy(channel + *bytes_written, buf, buf_size);
@@ -151,8 +151,8 @@ static void send_bytes_to_peer(tsi_test_channel* test_channel,
 }
 
 static void maybe_append_unused_bytes(handshaker_args* args) {
-  CHECK_NE(args, nullptr);
-  CHECK_NE(args->fixture, nullptr);
+  ABSL_CHECK_NE(args, nullptr);
+  ABSL_CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   if (fixture->test_unused_bytes && !args->appended_unused_bytes) {
     args->appended_unused_bytes = true;
@@ -170,20 +170,20 @@ static void maybe_append_unused_bytes(handshaker_args* args) {
 static void receive_bytes_from_peer(tsi_test_channel* test_channel,
                                     unsigned char** buf, size_t* buf_size,
                                     bool is_client) {
-  CHECK_NE(test_channel, nullptr);
-  CHECK_NE(*buf, nullptr);
-  CHECK_NE(buf_size, nullptr);
+  ABSL_CHECK_NE(test_channel, nullptr);
+  ABSL_CHECK_NE(*buf, nullptr);
+  ABSL_CHECK_NE(buf_size, nullptr);
   uint8_t* channel =
       is_client ? test_channel->client_channel : test_channel->server_channel;
-  CHECK_NE(channel, nullptr);
+  ABSL_CHECK_NE(channel, nullptr);
   size_t* bytes_read = is_client
                            ? &test_channel->bytes_read_from_client_channel
                            : &test_channel->bytes_read_from_server_channel;
   size_t* bytes_written = is_client
                               ? &test_channel->bytes_written_to_client_channel
                               : &test_channel->bytes_written_to_server_channel;
-  CHECK_NE(bytes_read, nullptr);
-  CHECK_NE(bytes_written, nullptr);
+  ABSL_CHECK_NE(bytes_read, nullptr);
+  ABSL_CHECK_NE(bytes_written, nullptr);
   size_t to_read = *buf_size < *bytes_written - *bytes_read
                        ? *buf_size
                        : *bytes_written - *bytes_read;
@@ -197,16 +197,16 @@ void tsi_test_frame_protector_send_message_to_peer(
     tsi_test_frame_protector_config* config, tsi_test_channel* channel,
     tsi_frame_protector* protector, bool is_client) {
   // Initialization.
-  CHECK_NE(config, nullptr);
-  CHECK_NE(channel, nullptr);
-  CHECK_NE(protector, nullptr);
+  ABSL_CHECK_NE(config, nullptr);
+  ABSL_CHECK_NE(channel, nullptr);
+  ABSL_CHECK_NE(protector, nullptr);
   unsigned char* protected_buffer =
       static_cast<unsigned char*>(gpr_zalloc(config->protected_buffer_size));
   size_t message_size =
       is_client ? config->client_message_size : config->server_message_size;
   uint8_t* message =
       is_client ? config->client_message : config->server_message;
-  CHECK_NE(message, nullptr);
+  ABSL_CHECK_NE(message, nullptr);
   const unsigned char* message_bytes =
       reinterpret_cast<unsigned char*>(message);
   tsi_result result = TSI_OK;
@@ -218,7 +218,7 @@ void tsi_test_frame_protector_send_message_to_peer(
     result = tsi_frame_protector_protect(
         protector, message_bytes, &processed_message_size, protected_buffer,
         &protected_buffer_size_to_send);
-    CHECK(result == TSI_OK);
+    ABSL_CHECK(result == TSI_OK);
     // Send protected data to peer.
     send_bytes_to_peer(channel, protected_buffer, protected_buffer_size_to_send,
                        is_client);
@@ -232,14 +232,14 @@ void tsi_test_frame_protector_send_message_to_peer(
         result = tsi_frame_protector_protect_flush(
             protector, protected_buffer, &protected_buffer_size_to_send,
             &still_pending_size);
-        CHECK(result == TSI_OK);
+        ABSL_CHECK(result == TSI_OK);
         send_bytes_to_peer(channel, protected_buffer,
                            protected_buffer_size_to_send, is_client);
       } while (still_pending_size > 0 && result == TSI_OK);
-      CHECK(result == TSI_OK);
+      ABSL_CHECK(result == TSI_OK);
     }
   }
-  CHECK(result == TSI_OK);
+  ABSL_CHECK(result == TSI_OK);
   gpr_free(protected_buffer);
 }
 
@@ -248,11 +248,11 @@ void tsi_test_frame_protector_receive_message_from_peer(
     tsi_frame_protector* protector, unsigned char* message,
     size_t* bytes_received, bool is_client) {
   // Initialization.
-  CHECK_NE(config, nullptr);
-  CHECK_NE(channel, nullptr);
-  CHECK_NE(protector, nullptr);
-  CHECK_NE(message, nullptr);
-  CHECK_NE(bytes_received, nullptr);
+  ABSL_CHECK_NE(config, nullptr);
+  ABSL_CHECK_NE(channel, nullptr);
+  ABSL_CHECK_NE(protector, nullptr);
+  ABSL_CHECK_NE(message, nullptr);
+  ABSL_CHECK_NE(bytes_received, nullptr);
   size_t read_offset = 0;
   size_t message_offset = 0;
   size_t read_from_peer_size = 0;
@@ -282,7 +282,7 @@ void tsi_test_frame_protector_receive_message_from_peer(
       result = tsi_frame_protector_unprotect(
           protector, read_buffer + read_offset, &processed_size, message_buffer,
           &message_buffer_size);
-      CHECK(result == TSI_OK);
+      ABSL_CHECK(result == TSI_OK);
       if (message_buffer_size > 0) {
         memcpy(message + message_offset, message_buffer, message_buffer_size);
         message_offset += message_buffer_size;
@@ -291,9 +291,9 @@ void tsi_test_frame_protector_receive_message_from_peer(
       read_from_peer_size -= processed_size;
     } while ((read_from_peer_size > 0 || message_buffer_size > 0) &&
              result == TSI_OK);
-    CHECK(result == TSI_OK);
+    ABSL_CHECK(result == TSI_OK);
   }
-  CHECK(result == TSI_OK);
+  ABSL_CHECK(result == TSI_OK);
   *bytes_received = message_offset;
   gpr_free(read_buffer);
   gpr_free(message_buffer);
@@ -303,13 +303,13 @@ grpc_error_handle on_handshake_next_done(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
   handshaker_args* args = static_cast<handshaker_args*>(user_data);
-  CHECK_NE(args, nullptr);
-  CHECK_NE(args->fixture, nullptr);
+  ABSL_CHECK_NE(args, nullptr);
+  ABSL_CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   grpc_error_handle error;
   // Read more data if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
-    CHECK_EQ(bytes_to_send_size, 0u);
+    ABSL_CHECK_EQ(bytes_to_send_size, 0u);
     notification_signal(fixture);
     return error;
   }
@@ -322,7 +322,7 @@ grpc_error_handle on_handshake_next_done(
   if (handshaker_result != nullptr) {
     tsi_handshaker_result** result_to_write =
         args->is_client ? &fixture->client_result : &fixture->server_result;
-    CHECK_EQ(*result_to_write, nullptr);
+    ABSL_CHECK_EQ(*result_to_write, nullptr);
     *result_to_write = handshaker_result;
   }
   // Send data to peer, if needed.
@@ -347,8 +347,8 @@ static void on_handshake_next_done_wrapper(
 }
 
 static bool is_handshake_finished_properly(handshaker_args* args) {
-  CHECK_NE(args, nullptr);
-  CHECK_NE(args->fixture, nullptr);
+  ABSL_CHECK_NE(args, nullptr);
+  ABSL_CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   return (args->is_client && fixture->client_result != nullptr) ||
          (!args->is_client && fixture->server_result != nullptr);
@@ -356,8 +356,8 @@ static bool is_handshake_finished_properly(handshaker_args* args) {
 
 static void do_handshaker_next(handshaker_args* args) {
   // Initialization.
-  CHECK_NE(args, nullptr);
-  CHECK_NE(args->fixture, nullptr);
+  ABSL_CHECK_NE(args, nullptr);
+  ABSL_CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   tsi_handshaker* handshaker =
       args->is_client ? fixture->client_handshaker : fixture->server_handshaker;
@@ -416,7 +416,7 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
     // responsible for sending the next chunk of bytes to the other. This can
     // happen e.g. when a bug in the handshaker code results in some bytes being
     // dropped instead of passed to the BIO or SSL objects.
-    CHECK(client_args->transferred_data || server_args->transferred_data);
+    ABSL_CHECK(client_args->transferred_data || server_args->transferred_data);
   } while (fixture->client_result == nullptr ||
            fixture->server_result == nullptr);
   // Verify handshake results.
@@ -430,10 +430,10 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
                                   tsi_test_channel* channel,
                                   tsi_frame_protector* client_frame_protector,
                                   tsi_frame_protector* server_frame_protector) {
-  CHECK_NE(config, nullptr);
-  CHECK_NE(channel, nullptr);
-  CHECK_NE(client_frame_protector, nullptr);
-  CHECK_NE(server_frame_protector, nullptr);
+  ABSL_CHECK_NE(config, nullptr);
+  ABSL_CHECK_NE(channel, nullptr);
+  ABSL_CHECK_NE(client_frame_protector, nullptr);
+  ABSL_CHECK_NE(server_frame_protector, nullptr);
   // Client sends a message to server.
   tsi_test_frame_protector_send_message_to_peer(
       config, channel, client_frame_protector, true /* is_client */);
@@ -443,8 +443,8 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
   tsi_test_frame_protector_receive_message_from_peer(
       config, channel, server_frame_protector, server_received_message,
       &server_received_message_size, false /* is_client */);
-  CHECK(config->client_message_size == server_received_message_size);
-  CHECK_EQ(memcmp(config->client_message, server_received_message,
+  ABSL_CHECK(config->client_message_size == server_received_message_size);
+  ABSL_CHECK_EQ(memcmp(config->client_message, server_received_message,
                   server_received_message_size),
            0);
   // Server sends a message to client.
@@ -456,8 +456,8 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
   tsi_test_frame_protector_receive_message_from_peer(
       config, channel, client_frame_protector, client_received_message,
       &client_received_message_size, true /* is_client */);
-  CHECK_EQ(config->server_message_size, client_received_message_size);
-  CHECK_EQ(memcmp(config->server_message, client_received_message,
+  ABSL_CHECK_EQ(config->server_message_size, client_received_message_size);
+  ABSL_CHECK_EQ(memcmp(config->server_message, client_received_message,
                   client_received_message_size),
            0);
   gpr_free(server_received_message);
@@ -466,7 +466,7 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
 
 void tsi_test_frame_protector_do_round_trip_no_handshake(
     tsi_test_frame_protector_fixture* fixture) {
-  CHECK_NE(fixture, nullptr);
+  ABSL_CHECK_NE(fixture, nullptr);
   tsi_test_do_ping_pong(fixture->config, fixture->channel,
                         fixture->client_frame_protector,
                         fixture->server_frame_protector);
@@ -474,8 +474,8 @@ void tsi_test_frame_protector_do_round_trip_no_handshake(
 
 void tsi_test_do_round_trip(tsi_test_fixture* fixture) {
   // Initialization.
-  CHECK_NE(fixture, nullptr);
-  CHECK_NE(fixture->config, nullptr);
+  ABSL_CHECK_NE(fixture, nullptr);
+  ABSL_CHECK_NE(fixture->config, nullptr);
   tsi_test_frame_protector_config* config = fixture->config;
   tsi_frame_protector* client_frame_protector = nullptr;
   tsi_frame_protector* server_frame_protector = nullptr;
@@ -484,7 +484,7 @@ void tsi_test_do_round_trip(tsi_test_fixture* fixture) {
   // Create frame protectors.
   size_t client_max_output_protected_frame_size =
       config->client_max_output_protected_frame_size;
-  CHECK(tsi_handshaker_result_create_frame_protector(
+  ABSL_CHECK(tsi_handshaker_result_create_frame_protector(
             fixture->client_result,
             client_max_output_protected_frame_size == 0
                 ? nullptr
@@ -492,7 +492,7 @@ void tsi_test_do_round_trip(tsi_test_fixture* fixture) {
             &client_frame_protector) == TSI_OK);
   size_t server_max_output_protected_frame_size =
       config->server_max_output_protected_frame_size;
-  CHECK(tsi_handshaker_result_create_frame_protector(
+  ABSL_CHECK(tsi_handshaker_result_create_frame_protector(
             fixture->server_result,
             server_max_output_protected_frame_size == 0
                 ? nullptr
@@ -578,7 +578,7 @@ void tsi_test_frame_protector_config_set_buffer_size(
     size_t message_buffer_allocated_size, size_t protected_buffer_size,
     size_t client_max_output_protected_frame_size,
     size_t server_max_output_protected_frame_size) {
-  CHECK_NE(config, nullptr);
+  ABSL_CHECK_NE(config, nullptr);
   config->read_buffer_allocated_size = read_buffer_allocated_size;
   config->message_buffer_allocated_size = message_buffer_allocated_size;
   config->protected_buffer_size = protected_buffer_size;
@@ -643,8 +643,8 @@ void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
   tsi_handshaker_result_destroy(fixture->client_result);
   tsi_handshaker_result_destroy(fixture->server_result);
   tsi_test_channel_destroy(fixture->channel);
-  CHECK_NE(fixture->vtable, nullptr);
-  CHECK_NE(fixture->vtable->destruct, nullptr);
+  ABSL_CHECK_NE(fixture->vtable, nullptr);
+  ABSL_CHECK_NE(fixture->vtable->destruct, nullptr);
   gpr_mu_destroy(&fixture->mu);
   gpr_cv_destroy(&fixture->cv);
   fixture->vtable->destruct(fixture);
@@ -664,7 +664,7 @@ void tsi_test_frame_protector_fixture_init(
     tsi_test_frame_protector_fixture* fixture,
     tsi_frame_protector* client_frame_protector,
     tsi_frame_protector* server_frame_protector) {
-  CHECK_NE(fixture, nullptr);
+  ABSL_CHECK_NE(fixture, nullptr);
   fixture->client_frame_protector = client_frame_protector;
   fixture->server_frame_protector = server_frame_protector;
 }
@@ -685,70 +685,70 @@ std::string GenerateSelfSignedCertificate(
     const SelfSignedCertificateOptions& options) {
   // Generate an RSA keypair.
   BIGNUM* bignum = BN_new();
-  CHECK(BN_set_word(bignum, RSA_F4));
+  ABSL_CHECK(BN_set_word(bignum, RSA_F4));
   BIGNUM* n = BN_new();
-  CHECK(BN_set_word(n, 2048));
+  ABSL_CHECK(BN_set_word(n, 2048));
   EVP_PKEY* key = EVP_PKEY_new();
   // Create the X509 object.
   X509* x509 = X509_new();
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
   RSA* rsa = RSA_new();
-  CHECK(RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
-  CHECK(EVP_PKEY_assign_RSA(key, rsa));
-  CHECK(X509_set_version(x509, 2));  // TODO(gtcooke94) make a const
+  ABSL_CHECK(RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
+  ABSL_CHECK(EVP_PKEY_assign_RSA(key, rsa));
+  ABSL_CHECK(X509_set_version(x509, 2));  // TODO(gtcooke94) make a const
 #else
   key = EVP_RSA_gen(2048);
-  CHECK(X509_set_version(x509, X509_VERSION_3));
+  ABSL_CHECK(X509_set_version(x509, X509_VERSION_3));
 #endif
   // Set the not_before/after fields to infinite past/future. The value for
   // infinite future is from RFC 5280 Section 4.1.2.5.1.
   ASN1_UTCTIME* infinite_past = ASN1_UTCTIME_new();
-  CHECK(ASN1_UTCTIME_set(infinite_past, /*posix_time=*/0));
+  ABSL_CHECK(ASN1_UTCTIME_set(infinite_past, /*posix_time=*/0));
 #if OPENSSL_VERSION_NUMBER < 0x10100000
-  CHECK(X509_set_notBefore(x509, infinite_past));
+  ABSL_CHECK(X509_set_notBefore(x509, infinite_past));
 #else
-  CHECK(X509_set1_notBefore(x509, infinite_past));
+  ABSL_CHECK(X509_set1_notBefore(x509, infinite_past));
 #endif
   ASN1_UTCTIME_free(infinite_past);
   ASN1_GENERALIZEDTIME* infinite_future = ASN1_GENERALIZEDTIME_new();
-  CHECK(ASN1_GENERALIZEDTIME_set_string(infinite_future, "99991231235959Z"));
+  ABSL_CHECK(ASN1_GENERALIZEDTIME_set_string(infinite_future, "99991231235959Z"));
 #if OPENSSL_VERSION_NUMBER < 0x10100000
-  CHECK(X509_set_notAfter(x509, infinite_future));
+  ABSL_CHECK(X509_set_notAfter(x509, infinite_future));
 #else
-  CHECK(X509_set1_notAfter(x509, infinite_future));
+  ABSL_CHECK(X509_set1_notAfter(x509, infinite_future));
 #endif
   ASN1_GENERALIZEDTIME_free(infinite_future);
   // Set the subject DN.
   X509_NAME* subject_name = X509_NAME_new();
-  CHECK(X509_NAME_add_entry_by_txt(
+  ABSL_CHECK(X509_NAME_add_entry_by_txt(
       subject_name, /*field=*/"CN", MBSTRING_ASC,
       reinterpret_cast<const unsigned char*>(options.common_name.c_str()),
       /*len=*/-1, /*loc=*/-1,
       /*set=*/0));
-  CHECK(X509_NAME_add_entry_by_txt(
+  ABSL_CHECK(X509_NAME_add_entry_by_txt(
       subject_name, /*field=*/"O", MBSTRING_ASC,
       reinterpret_cast<const unsigned char*>(options.organization.c_str()),
       /*len=*/-1, /*loc=*/-1,
       /*set=*/0));
-  CHECK(X509_NAME_add_entry_by_txt(subject_name, /*field=*/"OU", MBSTRING_ASC,
+  ABSL_CHECK(X509_NAME_add_entry_by_txt(subject_name, /*field=*/"OU", MBSTRING_ASC,
                                    reinterpret_cast<const unsigned char*>(
                                        options.organizational_unit.c_str()),
                                    /*len=*/-1, /*loc=*/-1,
                                    /*set=*/0));
-  CHECK(X509_set_subject_name(x509, subject_name));
+  ABSL_CHECK(X509_set_subject_name(x509, subject_name));
   X509_NAME_free(subject_name);
   // Set the public key and sign the certificate.
-  CHECK(X509_set_pubkey(x509, key));
-  CHECK(X509_sign(x509, key, EVP_sha256()));
+  ABSL_CHECK(X509_set_pubkey(x509, key));
+  ABSL_CHECK(X509_sign(x509, key, EVP_sha256()));
   // Convert to PEM.
   BIO* bio = BIO_new(BIO_s_mem());
-  CHECK(PEM_write_bio_X509(bio, x509));
+  ABSL_CHECK(PEM_write_bio_X509(bio, x509));
   const uint8_t* data = nullptr;
   size_t len = 0;
 
 #ifdef OPENSSL_IS_BORINGSSL
-  CHECK(BIO_mem_contents(bio, &data, &len));
+  ABSL_CHECK(BIO_mem_contents(bio, &data, &len));
 #else
   len = BIO_get_mem_data(bio, &data);
 #endif

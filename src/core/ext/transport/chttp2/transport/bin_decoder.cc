@@ -22,8 +22,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/base/attributes.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/slice/slice.h"
 
 static uint8_t decode_table[] = {
@@ -57,7 +57,7 @@ static bool input_is_valid(const uint8_t* input_ptr, size_t length) {
 
   for (i = 0; i < length; ++i) {
     if (GPR_UNLIKELY((decode_table[input_ptr[i]] & 0xC0) != 0)) {
-      LOG(ERROR) << "Base64 decoding failed, invalid character '"
+      ABSL_LOG(ERROR) << "Base64 decoding failed, invalid character '"
                  << static_cast<char>(*input_ptr) << "' in base64 input.\n";
       return false;
     }
@@ -86,13 +86,13 @@ size_t grpc_chttp2_base64_infer_length_after_decode(const grpc_slice& slice) {
     len--;
   }
   if (GPR_UNLIKELY(GRPC_SLICE_LENGTH(slice) - len > 2)) {
-    LOG(ERROR) << "Base64 decoding failed. Input has more than 2 paddings.";
+    ABSL_LOG(ERROR) << "Base64 decoding failed. Input has more than 2 paddings.";
     return 0;
   }
   size_t tuples = len / 4;
   size_t tail_case = len % 4;
   if (GPR_UNLIKELY(tail_case == 1)) {
-    LOG(ERROR) << "Base64 decoding failed. Input has a length of " << len
+    ABSL_LOG(ERROR) << "Base64 decoding failed. Input has a length of " << len
                << " (without padding), which is invalid.\n";
     return 0;
   }
@@ -161,7 +161,7 @@ grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
   grpc_slice output;
 
   if (GPR_UNLIKELY(input_length % 4 != 0)) {
-    LOG(ERROR) << "Base64 decoding failed, input of "
+    ABSL_LOG(ERROR) << "Base64 decoding failed, input of "
                   "grpc_chttp2_base64_decode has a length of "
                << input_length << ", which is not a multiple of 4.\n";
     return grpc_empty_slice();
@@ -186,13 +186,13 @@ grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
 
   if (GPR_UNLIKELY(!grpc_base64_decode_partial(&ctx))) {
     char* s = grpc_slice_to_c_string(input);
-    LOG(ERROR) << "Base64 decoding failed, input string:\n" << s << "\n";
+    ABSL_LOG(ERROR) << "Base64 decoding failed, input string:\n" << s << "\n";
     gpr_free(s);
     grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
-  CHECK(ctx.output_cur == GRPC_SLICE_END_PTR(output));
-  CHECK(ctx.input_cur == GRPC_SLICE_END_PTR(input));
+  ABSL_CHECK(ctx.output_cur == GRPC_SLICE_END_PTR(output));
+  ABSL_CHECK(ctx.input_cur == GRPC_SLICE_END_PTR(input));
   return output;
 }
 
@@ -204,7 +204,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
 
   // The length of a base64 string cannot be 4 * n + 1
   if (GPR_UNLIKELY(input_length % 4 == 1)) {
-    LOG(ERROR) << "Base64 decoding failed, input of "
+    ABSL_LOG(ERROR) << "Base64 decoding failed, input of "
                   "grpc_chttp2_base64_decode_with_length has a length of "
                << input_length << ", which has a tail of 1 byte.\n";
     grpc_core::CSliceUnref(output);
@@ -213,7 +213,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
 
   if (GPR_UNLIKELY(output_length >
                    input_length / 4 * 3 + tail_xtra[input_length % 4])) {
-    LOG(ERROR) << "Base64 decoding failed, output_length " << output_length
+    ABSL_LOG(ERROR) << "Base64 decoding failed, output_length " << output_length
                << " is longer than the max possible output length "
                << ((input_length / 4 * 3) + tail_xtra[input_length % 4])
                << ".\n";
@@ -229,12 +229,12 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
 
   if (GPR_UNLIKELY(!grpc_base64_decode_partial(&ctx))) {
     char* s = grpc_slice_to_c_string(input);
-    LOG(ERROR) << "Base64 decoding failed, input string:\n" << s << "\n";
+    ABSL_LOG(ERROR) << "Base64 decoding failed, input string:\n" << s << "\n";
     gpr_free(s);
     grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
-  CHECK(ctx.output_cur == GRPC_SLICE_END_PTR(output));
-  CHECK(ctx.input_cur <= GRPC_SLICE_END_PTR(input));
+  ABSL_CHECK(ctx.output_cur == GRPC_SLICE_END_PTR(output));
+  ABSL_CHECK(ctx.input_cur <= GRPC_SLICE_END_PTR(input));
   return output;
 }

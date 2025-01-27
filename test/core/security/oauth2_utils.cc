@@ -27,7 +27,7 @@
 #include <grpc/support/sync.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/map.h"
@@ -69,7 +69,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
       [&is_done, &done, &token, &initial_metadata](absl::Status result) {
         is_done = true;
         if (!result.ok()) {
-          LOG(ERROR) << "Fetching token failed: " << result;
+          ABSL_LOG(ERROR) << "Fetching token failed: " << result;
         } else {
           std::string buffer;
           token = gpr_strdup(

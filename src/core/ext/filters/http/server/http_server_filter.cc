@@ -28,7 +28,7 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"

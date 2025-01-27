@@ -25,7 +25,7 @@ grpc_cc_library(
     srcs = ["parse_json.cc"],
     hdrs = ["parse_json.h"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "protobuf",
     ],
     deps = ["//:grpc++"],
@@ -49,7 +49,7 @@ grpc_cc_library(
         "qps_worker.h",
         "server.h",
     ],
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     deps = [
         ":histogram",
         ":interarrival",
@@ -78,8 +78,8 @@ grpc_cc_library(
         "report.h",
     ],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     deps = [
         ":histogram",
@@ -105,7 +105,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     deps = [
         ":driver_impl",
@@ -132,7 +132,7 @@ grpc_cc_binary(
     srcs = ["qps_json_driver.cc"],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     deps = [
         ":benchmark_config",

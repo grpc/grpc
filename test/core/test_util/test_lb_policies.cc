@@ -24,8 +24,8 @@
 #include <string>
 #include <variant>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/client_channel/lb_metadata.h"
@@ -84,7 +84,7 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             Json::FromArray({Json::FromObject(
                 {{std::string(delegate_->name()), Json::FromObject({})}})}));
-    CHECK_OK(config);
+    ABSL_CHECK_OK(config);
     args.config = *config;
     return delegate_->UpdateLocked(std::move(args));
   }
@@ -413,17 +413,17 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 
   absl::Status UpdateLocked(UpdateArgs args) override {
     auto* config = static_cast<FixedAddressConfig*>(args.config.get());
-    LOG(INFO) << kFixedAddressLbPolicyName
+    ABSL_LOG(INFO) << kFixedAddressLbPolicyName
               << ": update URI: " << config->address();
     auto uri = URI::Parse(config->address());
     args.config.reset();
     EndpointAddressesList addresses;
     if (uri.ok()) {
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*uri, &address));
+      ABSL_CHECK(grpc_parse_uri(*uri, &address));
       addresses.emplace_back(address, ChannelArgs());
     } else {
-      LOG(ERROR) << kFixedAddressLbPolicyName << ": could not parse URI ("
+      ABSL_LOG(ERROR) << kFixedAddressLbPolicyName << ": could not parse URI ("
                  << uri.status().ToString() << "), using empty address list";
       args.resolution_note = "no address in fixed_address_lb policy";
     }

@@ -19,7 +19,7 @@
 
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -38,7 +38,7 @@ void ValidationErrors::PopField() { fields_.pop_back(); }
 void ValidationErrors::AddError(absl::string_view error) {
   auto key = absl::StrJoin(fields_, "");
   if (field_errors_[key].size() >= max_error_count_) {
-    VLOG(2) << "Ignoring validation error: too many errors found ("
+    ABSL_VLOG(2) << "Ignoring validation error: too many errors found ("
             << max_error_count_ << ")";
     return;
   }

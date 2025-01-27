@@ -36,7 +36,7 @@
 
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "gtest/gtest.h"
@@ -52,7 +52,7 @@ static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    LOG(ERROR) << uri.status();
+    ABSL_LOG(ERROR) << uri.status();
     ASSERT_TRUE(uri.ok());
   }
   grpc_resolved_address addr;
@@ -69,7 +69,7 @@ static void test_grpc_parse_unix_abstract(const char* uri_text,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    LOG(ERROR) << uri.status();
+    ABSL_LOG(ERROR) << uri.status();
     ASSERT_TRUE(uri.ok());
   }
   grpc_resolved_address addr;
@@ -97,7 +97,7 @@ static void test_grpc_parse_vsock(const char* uri_text, uint32_t cid,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    LOG(ERROR) << uri.status();
+    ABSL_LOG(ERROR) << uri.status();
     ASSERT_TRUE(uri.ok());
   }
   grpc_resolved_address addr;
@@ -121,7 +121,7 @@ static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    LOG(ERROR) << uri.status();
+    ABSL_LOG(ERROR) << uri.status();
     ASSERT_TRUE(uri.ok());
   }
   grpc_resolved_address addr;
@@ -141,7 +141,7 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    LOG(ERROR) << uri.status();
+    ABSL_LOG(ERROR) << uri.status();
     ASSERT_TRUE(uri.ok());
   }
   grpc_resolved_address addr;
@@ -161,7 +161,7 @@ static void test_grpc_parse_ipv6_invalid(const char* uri_text) {
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    LOG(ERROR) << uri.status();
+    ABSL_LOG(ERROR) << uri.status();
     ASSERT_TRUE(uri.ok());
   }
   grpc_resolved_address addr;

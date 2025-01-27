@@ -32,7 +32,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
@@ -80,8 +80,8 @@ class LoadReporterAsyncServiceImpl
     CallableTag(HandlerFunction func,
                 std::shared_ptr<ReportLoadHandler> handler)
         : handler_function_(std::move(func)), handler_(std::move(handler)) {
-      CHECK(handler_function_ != nullptr);
-      CHECK_NE(handler_, nullptr);
+      ABSL_CHECK(handler_function_ != nullptr);
+      ABSL_CHECK_NE(handler_, nullptr);
     }
 
     // Runs the tag. This should be called only once. The handler is no longer

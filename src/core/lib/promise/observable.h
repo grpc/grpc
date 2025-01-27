@@ -19,7 +19,7 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/sync.h"
@@ -123,9 +123,9 @@ class Observable {
     Observer(const Observer&) = delete;
     Observer& operator=(const Observer&) = delete;
     Observer(Observer&& other) noexcept : state_(std::move(other.state_)) {
-      CHECK(other.waker_.is_unwakeable());
-      DCHECK(waker_.is_unwakeable());
-      CHECK(!other.saw_pending_);
+      ABSL_CHECK(other.waker_.is_unwakeable());
+      ABSL_DCHECK(waker_.is_unwakeable());
+      ABSL_CHECK(!other.saw_pending_);
     }
     Observer& operator=(Observer&& other) noexcept = delete;
 

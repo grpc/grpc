@@ -20,7 +20,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/util/crash.h"
@@ -36,11 +36,11 @@ static void thread_worker(void* /*arg*/) {
     grpc_event event =
         grpc_completion_queue_next(g_alts_resource_dedicated.cq,
                                    gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    CHECK(event.type != GRPC_QUEUE_TIMEOUT);
+    ABSL_CHECK(event.type != GRPC_QUEUE_TIMEOUT);
     if (event.type == GRPC_QUEUE_SHUTDOWN) {
       break;
     }
-    CHECK(event.type == GRPC_OP_COMPLETE);
+    ABSL_CHECK(event.type == GRPC_OP_COMPLETE);
     alts_handshaker_client* client =
         static_cast<alts_handshaker_client*>(event.tag);
     alts_handshaker_client_handle_response(client, event.success);

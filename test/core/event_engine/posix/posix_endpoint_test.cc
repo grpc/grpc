@@ -27,8 +27,8 @@
 #include <type_traits>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -82,7 +82,7 @@ std::list<Connection> CreateConnectedEndpoints(
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  CHECK_OK(resolved_addr);
+  ABSL_CHECK_OK(resolved_addr);
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification* server_signal = new grpc_core::Notification();
 
@@ -106,7 +106,7 @@ std::list<Connection> CreateConnectedEndpoints(
       std::move(accept_cb),
       [](absl::Status status) { ASSERT_TRUE(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  CHECK_OK(listener);
+  ABSL_CHECK_OK(listener);
 
   EXPECT_TRUE((*listener)->Bind(*resolved_addr).ok());
   EXPECT_TRUE((*listener)->Start().ok());
@@ -204,7 +204,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
     EXPECT_NE(posix_ee_, nullptr);
     scheduler_->ChangeCurrentEventEngine(posix_ee_.get());
     if (poller_ != nullptr) {
-      LOG(INFO) << "Using poller: " << poller_->Name();
+      ABSL_LOG(INFO) << "Using poller: " << poller_->Name();
     }
   }
 

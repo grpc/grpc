@@ -28,7 +28,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
@@ -213,14 +213,14 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kAddresses);
   ASSERT_NE(picker, nullptr);
-  LOG(INFO) << "### RR startup complete";
+  ABSL_LOG(INFO) << "### RR startup complete";
   // Do a pick and report a failed call.
   auto address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(address.has_value());
-  LOG(INFO) << "### failed RPC on " << *address;
+  ABSL_LOG(INFO) << "### failed RPC on " << *address;
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  LOG(INFO) << "### ejection complete";
+  ABSL_LOG(INFO) << "### ejection complete";
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {
@@ -229,7 +229,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   WaitForRoundRobinListChange(kAddresses, remaining_addresses);
   // Advance time and run the timer callback to trigger un-ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  LOG(INFO) << "### un-ejection complete";
+  ABSL_LOG(INFO) << "### un-ejection complete";
   // Expect a picker update.
   WaitForRoundRobinListChange(remaining_addresses, kAddresses);
 }
@@ -263,11 +263,11 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kEndpoints);
   ASSERT_NE(picker, nullptr);
-  LOG(INFO) << "### RR startup complete";
+  ABSL_LOG(INFO) << "### RR startup complete";
   // Do a pick and report a failed call.
   auto address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(address.has_value());
-  LOG(INFO) << "### failed RPC on " << *address;
+  ABSL_LOG(INFO) << "### failed RPC on " << *address;
   // Based on the address that the failed call went to, we determine
   // which addresses to use in the subsequent steps.
   absl::Span<const absl::string_view> ejected_endpoint_addresses;
@@ -295,12 +295,12 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   }
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  LOG(INFO) << "### ejection complete";
+  ABSL_LOG(INFO) << "### ejection complete";
   // Expect a picker that removes the ejected address.
   WaitForRoundRobinListChange(
       {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
       {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
-  LOG(INFO) << "### ejected endpoint removed";
+  ABSL_LOG(INFO) << "### ejected endpoint removed";
   // Cause the connection to the ejected endpoint to fail, and then
   // have it reconnect to a different address.  The endpoint is still
   // ejected, so the new address should not be used.
@@ -310,7 +310,7 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // re-resolution request in the queue.
   DrainRoundRobinPickerUpdates(
       {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
-  LOG(INFO) << "### done changing address of ejected endpoint";
+  ABSL_LOG(INFO) << "### done changing address of ejected endpoint";
   // Do the same thing for the sentinel endpoint, so that we
   // know that the LB policy has seen the address change for the ejected
   // endpoint.
@@ -322,10 +322,10 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   WaitForRoundRobinListChange(
       {unmodified_endpoint_address},
       {sentinel_endpoint_addresses[1], unmodified_endpoint_address});
-  LOG(INFO) << "### done changing address of ejected endpoint";
+  ABSL_LOG(INFO) << "### done changing address of ejected endpoint";
   // Advance time and run the timer callback to trigger un-ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  LOG(INFO) << "### un-ejection complete";
+  ABSL_LOG(INFO) << "### un-ejection complete";
   // The ejected endpoint should come back using the new address.
   WaitForRoundRobinListChange(
       {sentinel_endpoint_addresses[1], unmodified_endpoint_address},
@@ -361,11 +361,11 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kEndpoints);
   ASSERT_NE(picker, nullptr);
-  LOG(INFO) << "### RR startup complete";
+  ABSL_LOG(INFO) << "### RR startup complete";
   // Do a pick and report a failed call.
   auto ejected_address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(ejected_address.has_value());
-  LOG(INFO) << "### failed RPC on " << *ejected_address;
+  ABSL_LOG(INFO) << "### failed RPC on " << *ejected_address;
   // Based on the address that the failed call went to, we determine
   // which addresses to use in the subsequent steps.
   std::vector<absl::string_view> expected_round_robin_while_ejected;
@@ -391,12 +391,12 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
   }
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  LOG(INFO) << "### ejection complete";
+  ABSL_LOG(INFO) << "### ejection complete";
   // Expect a picker that removes the ejected address.
   WaitForRoundRobinListChange(
       {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
       expected_round_robin_while_ejected);
-  LOG(INFO) << "### ejected endpoint removed";
+  ABSL_LOG(INFO) << "### ejected endpoint removed";
   // Send an update that removes the other address from the ejected endpoint.
   status = ApplyUpdate(BuildUpdate(new_endpoints, kConfig), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
@@ -445,14 +445,14 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
   }
-  LOG(INFO) << "### PF startup complete";
+  ABSL_LOG(INFO) << "### PF startup complete";
   // Now have an RPC to that subchannel fail.
   auto address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(address.has_value());
-  LOG(INFO) << "### failed RPC on " << *address;
+  ABSL_LOG(INFO) << "### failed RPC on " << *address;
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  LOG(INFO) << "### ejection timer pass complete";
+  ABSL_LOG(INFO) << "### ejection timer pass complete";
   // Subchannel should not be ejected.
   ExpectQueueEmpty();
   // Subchannel should not see a reconnection request.

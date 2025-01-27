@@ -29,8 +29,8 @@
 #include <string>
 #include <type_traits>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -152,7 +152,7 @@ class ChannelInit::DependencyTracker {
 
   FilterRegistration* Next() {
     if (ready_dependencies_.empty()) {
-      CHECK_EQ(nodes_taken_, nodes_.size()) << "Unresolvable graph of channel "
+      ABSL_CHECK_EQ(nodes_taken_, nodes_.size()) << "Unresolvable graph of channel "
                                                "filters:\n"
                                             << GraphString();
       return nullptr;
@@ -164,13 +164,13 @@ class ChannelInit::DependencyTracker {
       // Constraint: if we use ordering other than default, then we must have an
       // unambiguous pick. If there is ambiguity, we must fix it by adding
       // explicit ordering constraints.
-      CHECK_NE(next.node->ordering(),
+      ABSL_CHECK_NE(next.node->ordering(),
                ready_dependencies_.top().node->ordering())
           << "Ambiguous ordering between " << next.node->name() << " and "
           << ready_dependencies_.top().node->name();
     }
     for (Node* dependent : next.node->dependents) {
-      CHECK_GT(dependent->waiting_dependencies, 0u);
+      ABSL_CHECK_GT(dependent->waiting_dependencies, 0u);
       --dependent->waiting_dependencies;
       if (dependent->waiting_dependencies == 0) {
         ready_dependencies_.emplace(dependent);
@@ -195,7 +195,7 @@ class ChannelInit::DependencyTracker {
 
   absl::Span<const UniqueTypeName> DependenciesFor(UniqueTypeName name) const {
     auto it = nodes_.find(name);
-    CHECK(it != nodes_.end()) << "Filter " << name.name() << " not found";
+    ABSL_CHECK(it != nodes_.end()) << "Filter " << name.name() << " not found";
     return it->second.all_dependencies;
   }
 
@@ -246,10 +246,10 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   std::vector<Filter> terminal_filters;
   for (const auto& registration : registrations) {
     if (registration->terminal_) {
-      CHECK(registration->after_.empty());
-      CHECK(registration->before_.empty());
-      CHECK(!registration->before_all_);
-      CHECK_EQ(registration->ordering_, Ordering::kDefault);
+      ABSL_CHECK(registration->after_.empty());
+      ABSL_CHECK(registration->before_.empty());
+      ABSL_CHECK(!registration->before_all_);
+      ABSL_CHECK_EQ(registration->ordering_, Ordering::kDefault);
       terminal_filters.emplace_back(
           registration->name_, registration->filter_, nullptr,
           std::move(registration->predicates_), registration->version_,
@@ -308,7 +308,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   // Right now it forces too many tests to know about channel initialization,
   // either by supplying a valid configuration or by including an opt-out flag.
   if (terminal_filters.empty() && type != GRPC_CLIENT_DYNAMIC) {
-    LOG(ERROR) << "No terminal filters registered for channel stack type "
+    ABSL_LOG(ERROR) << "No terminal filters registered for channel stack type "
                << grpc_channel_stack_type_string(type)
                << "; this is common for unit tests messing with "
                   "CoreConfiguration, but will result in a "
@@ -333,7 +333,7 @@ void ChannelInit::PrintChannelStackTrace(
   MutexLock lock(m);
   // List the channel stack type (since we'll be repeatedly printing graphs in
   // this loop).
-  LOG(INFO) << "ORDERED CHANNEL STACK " << grpc_channel_stack_type_string(type)
+  ABSL_LOG(INFO) << "ORDERED CHANNEL STACK " << grpc_channel_stack_type_string(type)
             << ":";
   // First build up a map of filter -> file:line: strings, because it helps
   // the readability of this log to get later fields aligned vertically.
@@ -392,7 +392,7 @@ void ChannelInit::PrintChannelStackTrace(
       after_str =
           std::string(max_filter_name_len - filter.name.name().length(), ' ');
     }
-    LOG(INFO) << "  " << loc_strs[filter.name] << filter.name << after_str
+    ABSL_LOG(INFO) << "  " << loc_strs[filter.name] << filter.name << after_str
               << " [" << filter.ordering << "/" << filter.version << "]";
   }
   // Finally list out the terminal filters and where they were registered
@@ -403,7 +403,7 @@ void ChannelInit::PrintChannelStackTrace(
         std::string(max_filter_name_len + 1 - terminal.name.name().length(),
                     ' '),
         "[terminal]");
-    LOG(INFO) << filter_str;
+    ABSL_LOG(INFO) << filter_str;
   }
 }
 
@@ -458,7 +458,7 @@ bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
                         "\n");
       }
     }
-    LOG(ERROR) << error;
+    ABSL_LOG(ERROR) << error;
     return false;
   }
   for (const auto& post_processor : stack_config.post_processors) {

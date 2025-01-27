@@ -32,7 +32,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"

@@ -28,8 +28,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
@@ -108,7 +108,7 @@ void DefaultHealthCheckService::UnregisterWatch(
 
 DefaultHealthCheckService::HealthCheckServiceImpl*
 DefaultHealthCheckService::GetHealthCheckService() {
-  CHECK(impl_ == nullptr);
+  ABSL_CHECK(impl_ == nullptr);
   impl_ = std::make_unique<HealthCheckServiceImpl>(this);
   return impl_.get();
 }
@@ -257,7 +257,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::WatchReactor(
     ++service_->num_watches_;
   }
   bool success = DecodeRequest(*request, &service_name_);
-  VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
+  ABSL_VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
           << service_name_ << "\": watch call started";
   if (!success) {
     MaybeFinishLocked(Status(StatusCode::INTERNAL, "could not parse request"));
@@ -269,13 +269,13 @@ DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::WatchReactor(
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     SendHealth(ServingStatus status) {
-  VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
+  ABSL_VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
           << service_name_ << "\": SendHealth() for ServingStatus " << status;
   grpc::internal::MutexLock lock(&mu_);
   // If there's already a send in flight, cache the new status, and
   // we'll start a new send for it when the one in flight completes.
   if (write_pending_) {
-    VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
+    ABSL_VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
             << service_name_ << "\": queuing write";
     pending_status_ = status;
     return;
@@ -304,7 +304,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
         Status(StatusCode::INTERNAL, "could not encode response"));
     return;
   }
-  VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
+  ABSL_VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
           << service_name_ << "\": starting write for ServingStatus " << status;
   write_pending_ = true;
   StartWrite(&response_);
@@ -312,7 +312,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     OnWriteDone(bool ok) {
-  VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
+  ABSL_VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
           << service_name_ << "\": OnWriteDone(): ok=" << ok;
   response_.Clear();
   grpc::internal::MutexLock lock(&mu_);
@@ -337,7 +337,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::OnDone() {
-  VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
+  ABSL_VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
           << service_name_ << "\": OnDone()";
   service_->database_->UnregisterWatch(service_name_, this);
   {
@@ -352,12 +352,12 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::OnDone() {
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     MaybeFinishLocked(Status status) {
-  VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
+  ABSL_VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
           << service_name_
           << "\": MaybeFinishLocked() with code=" << status.error_code()
           << " msg=" << status.error_message();
   if (!finish_called_) {
-    VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
+    ABSL_VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
             << service_name_ << "\": actually calling Finish()";
     finish_called_ = true;
     Finish(status);

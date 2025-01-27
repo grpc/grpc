@@ -44,8 +44,8 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/time:time",
     ],
     tags = ["no_windows"],
@@ -66,7 +66,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     deps = [
         ":interop_server_lib",
@@ -81,7 +81,7 @@ grpc_cc_library(
         "interop_server.cc",
     ],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     deps = [
         ":server_helper_lib",
@@ -105,8 +105,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     deps = [
         ":backend_metrics_lb_policy",
@@ -134,7 +134,7 @@ grpc_cc_library(
 
 grpc_cc_binary(
     name = "interop_client",
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     deps = [
         ":interop_client_main",
         "//:grpc++",
@@ -163,7 +163,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     deps = [
         ":client_helper_lib",
@@ -179,7 +179,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     deps = [
         ":interop_server_lib",
@@ -197,9 +197,9 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
+        "absl/log:absl_check",
         "absl/log:globals",
-        "absl/log:log",
+        "absl/log:absl_log",
     ],
     deps = [
         ":client_helper_lib",
@@ -246,7 +246,7 @@ grpc_cc_library(
     srcs = ["xds_stats_watcher.cc"],
     hdrs = ["xds_stats_watcher.h"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     deps = [
         ":rpc_behavior_lb_policy",
@@ -277,7 +277,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
+        "absl/log:absl_check",
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
     ],
@@ -423,8 +423,8 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     deps = [
         "//:grpc++",
@@ -444,7 +444,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     deps = [
         ":client_helper_lib",
@@ -531,7 +531,7 @@ grpc_cc_library(
         "backend_metrics_lb_policy.h",
     ],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     tags = ["nobuilder"],
     deps = [
@@ -566,7 +566,7 @@ grpc_cc_library(
         "rpc_behavior_lb_policy.h",
     ],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     tags = ["nobuilder"],
     deps = [

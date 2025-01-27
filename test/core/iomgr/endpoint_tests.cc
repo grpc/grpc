@@ -25,8 +25,8 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
@@ -61,7 +61,7 @@ size_t count_slices(grpc_slice* slices, size_t nslices, int* current_data) {
   for (i = 0; i < nslices; ++i) {
     buf = GRPC_SLICE_START_PTR(slices[i]);
     for (j = 0; j < GRPC_SLICE_LENGTH(slices[i]); ++j) {
-      CHECK(buf[j] == *current_data);
+      ABSL_CHECK(buf[j] == *current_data);
       *current_data = (*current_data + 1) % 256;
     }
     num_bytes += GRPC_SLICE_LENGTH(slices[i]);
@@ -72,7 +72,7 @@ size_t count_slices(grpc_slice* slices, size_t nslices, int* current_data) {
 static grpc_endpoint_test_fixture begin_test(grpc_endpoint_test_config config,
                                              const char* test_name,
                                              size_t slice_size) {
-  LOG(INFO) << test_name << "/" << config.name;
+  ABSL_LOG(INFO) << test_name << "/" << config.name;
   return config.create_fixture(slice_size);
 }
 
@@ -99,7 +99,7 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
       (*current_data)++;
     }
   }
-  CHECK_EQ(num_bytes_left, 0u);
+  ABSL_CHECK_EQ(num_bytes_left, 0u);
   return slices;
 }
 
@@ -135,7 +135,7 @@ static void read_scheduler(void* data, grpc_error_handle error) {
       return;
     }
   }
-  VLOG(2) << "Read handler done";
+  ABSL_VLOG(2) << "Read handler done";
   gpr_mu_lock(g_mu);
   state->read_done = 1 + error.ok();
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
@@ -170,7 +170,7 @@ static void write_scheduler(void* data, grpc_error_handle error) {
       return;
     }
   }
-  VLOG(2) << "Write handler done";
+  ABSL_VLOG(2) << "Write handler done";
   gpr_mu_lock(g_mu);
   state->write_done = 1 + error.ok();
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
@@ -218,13 +218,13 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_core::ExecCtx exec_ctx;
   auto deadline = grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_seconds_to_deadline(300));
-  VLOG(2) << "num_bytes=" << num_bytes << " write_size=" << write_size
+  ABSL_VLOG(2) << "num_bytes=" << num_bytes << " write_size=" << write_size
           << " slice_size=" << slice_size << " shutdown=" << shutdown;
 
   if (shutdown) {
-    LOG(INFO) << "Start read and write shutdown test";
+    ABSL_LOG(INFO) << "Start read and write shutdown test";
   } else {
-    LOG(INFO) << "Start read and write test with " << num_bytes
+    ABSL_LOG(INFO) << "Start read and write test with " << num_bytes
               << " bytes, slice size " << slice_size;
   }
 
@@ -262,10 +262,10 @@ static void read_and_write_test(grpc_endpoint_test_config config,
                      /*urgent=*/false, /*min_progress_size=*/1);
   if (shutdown) {
     grpc_core::MutexLock lock(&state.ep_mu);
-    VLOG(2) << "shutdown read";
+    ABSL_VLOG(2) << "shutdown read";
     grpc_endpoint_destroy(state.read_ep);
     state.read_ep = nullptr;
-    VLOG(2) << "shutdown write";
+    ABSL_VLOG(2) << "shutdown write";
     grpc_endpoint_destroy(state.write_ep);
     state.write_ep = nullptr;
   }
@@ -274,8 +274,8 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   gpr_mu_lock(g_mu);
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(grpc_core::Timestamp::Now() < deadline);
-    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+    ABSL_CHECK(grpc_core::Timestamp::Now() < deadline);
+    ABSL_CHECK(GRPC_LOG_IF_ERROR("pollset_work",
                             grpc_pollset_work(g_pollset, &worker, deadline)));
   }
   gpr_mu_unlock(g_mu);
@@ -293,7 +293,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 static void inc_on_failure(void* arg, grpc_error_handle error) {
   gpr_mu_lock(g_mu);
   *static_cast<int*>(arg) += (!error.ok());
-  CHECK(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
+  ABSL_CHECK(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -305,13 +305,13 @@ static void wait_for_fail_count(int* fail_count, int want_fail_count) {
   while (grpc_core::Timestamp::Now() < deadline &&
          *fail_count < want_fail_count) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+    ABSL_CHECK(GRPC_LOG_IF_ERROR("pollset_work",
                             grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
-  CHECK(*fail_count == want_fail_count);
+  ABSL_CHECK(*fail_count == want_fail_count);
   gpr_mu_unlock(g_mu);
 }
 

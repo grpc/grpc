@@ -19,7 +19,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/server/server.h"
@@ -86,7 +86,7 @@
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    CHECK(grpc_completion_queue_next(
+    ABSL_CHECK(grpc_completion_queue_next(
               cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
               .type == GRPC_QUEUE_TIMEOUT);
   }
@@ -108,12 +108,12 @@ static void single_request_verifier(grpc_server* server,
     error = grpc_server_request_call(server, &s, &call_details,
                                      &request_metadata_recv, cq, cq,
                                      grpc_core::CqVerifier::tag(101));
-    CHECK_EQ(error, GRPC_CALL_OK);
+    ABSL_CHECK_EQ(error, GRPC_CALL_OK);
     cqv.Expect(grpc_core::CqVerifier::tag(101), true);
     cqv.Verify();
 
-    CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
-    CHECK_EQ(grpc_slice_str_cmp(call_details.method,
+    ABSL_CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
+    ABSL_CHECK_EQ(grpc_slice_str_cmp(call_details.method,
                                 absl::StrCat("/foo/bar", i).c_str()),
              0);
 

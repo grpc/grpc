@@ -14,7 +14,7 @@
 
 #include "src/core/client_channel/lb_metadata.h"
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 
 namespace grpc_core {
 
@@ -92,7 +92,7 @@ void MetadataMutationHandler::Apply(
     }
     metadata->Append(key, std::move(value),
                      [key = key](absl::string_view error, const Slice& value) {
-                       LOG(ERROR) << error << " key:" << key
+                       ABSL_LOG(ERROR) << error << " key:" << key
                                   << " value:" << value.as_string_view();
                      });
   }

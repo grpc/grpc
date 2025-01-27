@@ -29,8 +29,8 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "src/core/lib/debug/trace.h"
@@ -153,10 +153,10 @@ std::atomic<size_t> g_reported_dump_count{0};
 void DumpSignalHandler(int /* sig */) {
   const auto trace = grpc_core::GetCurrentStackTrace();
   if (!trace.has_value()) {
-    LOG(ERROR) << "DumpStack::" << gpr_thd_currentid()
+    ABSL_LOG(ERROR) << "DumpStack::" << gpr_thd_currentid()
                << ": Stack trace not available";
   } else {
-    LOG(ERROR) << "DumpStack::" << gpr_thd_currentid() << ": " << trace.value();
+    ABSL_LOG(ERROR) << "DumpStack::" << gpr_thd_currentid() << ": " << trace.value();
   }
   g_reported_dump_count.fetch_add(1);
   grpc_core::Thread::Kill(gpr_thd_currentid());
@@ -180,7 +180,7 @@ WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads)
 void WorkStealingThreadPool::Quiesce() { pool_->Quiesce(); }
 
 WorkStealingThreadPool::~WorkStealingThreadPool() {
-  CHECK(pool_->IsQuiesced());
+  ABSL_CHECK(pool_->IsQuiesced());
 }
 
 void WorkStealingThreadPool::Run(absl::AnyInvocable<void()> callback) {
@@ -235,7 +235,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
     EventEngine::Closure* closure) {
-  CHECK(!IsQuiesced());
+  ABSL_CHECK(!IsQuiesced());
   if (g_local_queue != nullptr && g_local_queue->owner() == this) {
     g_local_queue->Add(closure);
   } else {
@@ -277,7 +277,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   if (!threads_were_shut_down.ok() && g_log_verbose_failures) {
     DumpStacksAndCrash();
   }
-  CHECK(queue_.Empty());
+  ABSL_CHECK(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
   grpc_core::MutexLock lock(&lifeguard_ptr_mu_);
   lifeguard_.reset();
@@ -291,14 +291,14 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetThrottled(
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetShutdown(
     bool is_shutdown) {
   auto was_shutdown = shutdown_.exchange(is_shutdown);
-  CHECK(is_shutdown != was_shutdown);
+  ABSL_CHECK(is_shutdown != was_shutdown);
   work_signal_.SignalAll();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetForking(
     bool is_forking) {
   auto was_forking = forking_.exchange(is_forking);
-  CHECK(is_forking != was_forking);
+  ABSL_CHECK(is_forking != was_forking);
 }
 
 bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsForking() {
@@ -346,7 +346,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::UntrackThread(
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::DumpStacksAndCrash() {
   grpc_core::MutexLock lock(&thd_set_mu_);
-  LOG(ERROR) << "Pool did not quiesce in time, gRPC will not shut down "
+  ABSL_LOG(ERROR) << "Pool did not quiesce in time, gRPC will not shut down "
                 "cleanly. Dumping all "
              << thds_.size() << " thread stacks.";
   for (const auto tid : thds_) {
@@ -500,7 +500,7 @@ void WorkStealingThreadPool::ThreadState::ThreadBody() {
   } else if (pool_->IsShutdown()) {
     FinishDraining();
   }
-  CHECK(g_local_queue->Empty());
+  ABSL_CHECK(g_local_queue->Empty());
   pool_->theft_registry()->Unenroll(g_local_queue);
   delete g_local_queue;
   if (g_log_verbose_failures) {

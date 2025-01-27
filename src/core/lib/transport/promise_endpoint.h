@@ -31,7 +31,7 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
@@ -74,7 +74,7 @@ class PromiseEndpoint {
     // Start write and assert previous write finishes.
     auto prev = write_state_->state.exchange(WriteState::kWriting,
                                              std::memory_order_relaxed);
-    CHECK(prev == WriteState::kIdle);
+    ABSL_CHECK(prev == WriteState::kIdle);
     bool completed;
     if (data.Length() == 0) {
       completed = true;
@@ -101,7 +101,7 @@ class PromiseEndpoint {
           return [write_state = write_state_]() {
             auto prev = write_state->state.exchange(WriteState::kIdle,
                                                     std::memory_order_relaxed);
-            CHECK(prev == WriteState::kWriting);
+            ABSL_CHECK(prev == WriteState::kWriting);
             return absl::OkStatus();
           };
         },
@@ -120,7 +120,7 @@ class PromiseEndpoint {
                 }
                 // State was not Written; since we're polling it must be
                 // Writing. Assert that and return Pending.
-                CHECK(expected == WriteState::kWriting);
+                ABSL_CHECK(expected == WriteState::kWriting);
                 return Pending();
               };
             })));
@@ -135,9 +135,9 @@ class PromiseEndpoint {
   auto Read(size_t num_bytes) {
     GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Read");
     // Assert previous read finishes.
-    CHECK(!read_state_->complete.load(std::memory_order_relaxed));
+    ABSL_CHECK(!read_state_->complete.load(std::memory_order_relaxed));
     // Should not have pending reads.
-    CHECK(read_state_->pending_buffer.Count() == 0u);
+    ABSL_CHECK(read_state_->pending_buffer.Count() == 0u);
     bool complete = true;
     while (read_state_->buffer.Length() < num_bytes) {
       // Set read args with hinted bytes.
@@ -157,7 +157,7 @@ class PromiseEndpoint {
         read_state_->waker = Waker();
         read_state_->pending_buffer.MoveFirstNBytesIntoSliceBuffer(
             read_state_->pending_buffer.Length(), read_state_->buffer);
-        DCHECK(read_state_->pending_buffer.Count() == 0u);
+        ABSL_DCHECK(read_state_->pending_buffer.Count() == 0u);
       } else {
         complete = false;
         break;
@@ -236,7 +236,7 @@ class PromiseEndpoint {
       // Copy everything from read_state_->buffer into a single slice and
       // replace the contents of read_state_->buffer with that slice.
       grpc_slice slice = grpc_slice_malloc_large(read_state_->buffer.Length());
-      CHECK(reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0);
+      ABSL_CHECK(reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0);
       size_t ofs = 0;
       for (size_t i = 0; i < read_state_->buffer.Count(); i++) {
         memcpy(
@@ -251,7 +251,7 @@ class PromiseEndpoint {
       read_state_->buffer.Clear();
       read_state_->buffer.AppendIndexed(
           grpc_event_engine::experimental::Slice(slice));
-      DCHECK(read_state_->buffer.Length() == ofs);
+      ABSL_DCHECK(read_state_->buffer.Length() == ofs);
     }
   }
 
@@ -312,7 +312,7 @@ class PromiseEndpoint {
       auto prev = state.exchange(kWritten, std::memory_order_release);
       // Previous state should be Writing. If we got anything else we've entered
       // the callback path twice.
-      CHECK(prev == kWriting);
+      ABSL_CHECK(prev == kWriting);
       w.Wakeup();
     }
   };

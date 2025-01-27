@@ -24,8 +24,8 @@
 #include <grpc/support/sync.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -137,7 +137,7 @@ void Executor::SetThreading(bool threading) {
       return;
     }
 
-    CHECK_EQ(num_threads_, 0);
+    ABSL_CHECK_EQ(num_threads_, 0);
     gpr_atm_rel_store(&num_threads_, 1);
     thd_state_ = static_cast<ThreadState*>(
         gpr_zalloc(sizeof(ThreadState) * max_threads_));
@@ -372,7 +372,7 @@ void Executor::InitAll() {
 
   // Return if Executor::InitAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] != nullptr) {
-    CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] != nullptr);
+    ABSL_CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] != nullptr);
     return;
   }
 
@@ -398,7 +398,7 @@ void Executor::ShutdownAll() {
 
   // Return if Executor:SshutdownAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] == nullptr) {
-    CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] == nullptr);
+    ABSL_CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] == nullptr);
     return;
   }
 
@@ -426,7 +426,7 @@ void Executor::ShutdownAll() {
 }
 
 bool Executor::IsThreaded(ExecutorType executor_type) {
-  CHECK(executor_type < ExecutorType::NUM_EXECUTORS);
+  ABSL_CHECK(executor_type < ExecutorType::NUM_EXECUTORS);
   return executors[static_cast<size_t>(executor_type)]->IsThreaded();
 }
 

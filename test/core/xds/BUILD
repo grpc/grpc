@@ -44,7 +44,7 @@ grpc_cc_test(
     name = "certificate_provider_store_test",
     srcs = ["certificate_provider_store_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     uses_event_engine = False,
@@ -130,8 +130,8 @@ grpc_cc_library(
     srcs = ["xds_transport_fake.cc"],
     hdrs = ["xds_transport_fake.h"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/strings",
     ],
     deps = [
@@ -180,7 +180,7 @@ grpc_proto_fuzzer(
     name = "xds_client_fuzzer",
     srcs = ["xds_client_fuzzer.cc"],
     corpus = "xds_client_corpora",
-    external_deps = ["absl/log:log"],
+    external_deps = ["absl/log:absl_log"],
     proto = "xds_client_fuzzer.proto",
     proto_deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
@@ -249,7 +249,7 @@ grpc_cc_test(
     name = "xds_http_filters_test",
     srcs = ["xds_http_filters_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     uses_event_engine = False,

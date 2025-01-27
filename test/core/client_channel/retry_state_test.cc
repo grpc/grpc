@@ -196,9 +196,9 @@ std::string FuzzerDebugTag() { return "fuzzer"; }
 // Construct a policy from json text
 internal::RetryMethodConfig MakePolicy(absl::string_view json) {
   auto json_obj = JsonParse(json);
-  CHECK_OK(json_obj) << json;
+  ABSL_CHECK_OK(json_obj) << json;
   auto obj = LoadFromJson<internal::RetryMethodConfig>(*json_obj);
-  CHECK_OK(obj) << json;
+  ABSL_CHECK_OK(obj) << json;
   return std::move(*obj);
 }
 

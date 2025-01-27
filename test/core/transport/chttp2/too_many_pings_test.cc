@@ -34,8 +34,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -126,7 +126,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
-  CHECK(c);
+  ABSL_CHECK(c);
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
@@ -152,12 +152,12 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   // Request a call on the server
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
   grpc_call_cancel_with_status(s, GRPC_STATUS_PERMISSION_DENIED, "test status",
@@ -186,7 +186,7 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
-  CHECK(
+  ABSL_CHECK(
       grpc_server_add_http2_port(server, server_address.c_str(), server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
@@ -198,7 +198,7 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   std::map<grpc_status_code, int> statuses_and_counts;
   const int kNumTotalRpcs = 100;
   // perform an RPC
-  LOG(INFO) << "Performing " << kNumTotalRpcs
+  ABSL_LOG(INFO) << "Performing " << kNumTotalRpcs
             << " total RPCs and expecting them all to receive status "
                "PERMISSION_DENIED ("
             << GRPC_STATUS_PERMISSION_DENIED << ")";
@@ -212,11 +212,11 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
     if (itr->first != GRPC_STATUS_PERMISSION_DENIED) {
       num_not_cancelled += itr->second;
     }
-    LOG(INFO) << itr->second << " / " << kNumTotalRpcs
+    ABSL_LOG(INFO) << itr->second << " / " << kNumTotalRpcs
               << " RPCs received status code: " << itr->first;
   }
   if (num_not_cancelled > 0) {
-    LOG(ERROR) << "Expected all RPCs to receive status PERMISSION_DENIED ("
+    ABSL_LOG(ERROR) << "Expected all RPCs to receive status PERMISSION_DENIED ("
                << GRPC_STATUS_PERMISSION_DENIED << ") but " << num_not_cancelled
                << " received other status codes";
     FAIL();
@@ -255,7 +255,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
-  CHECK(c);
+  ABSL_CHECK(c);
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
@@ -281,12 +281,12 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   // Request a call on the server
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
   // Since the server is configured to allow only a single ping strike, it would
@@ -340,9 +340,9 @@ void VerifyChannelDisconnected(grpc_channel* channel,
   grpc_channel_ping(channel, cq, reinterpret_cast<void*>(2000), nullptr);
   grpc_event ev = grpc_completion_queue_next(
       cq, grpc_timeout_seconds_to_deadline(5), nullptr);
-  CHECK(ev.type == GRPC_OP_COMPLETE);
-  CHECK(ev.tag == reinterpret_cast<void*>(2000));
-  CHECK_EQ(ev.success, 0);
+  ABSL_CHECK(ev.type == GRPC_OP_COMPLETE);
+  ABSL_CHECK(ev.tag == reinterpret_cast<void*>(2000));
+  ABSL_CHECK_EQ(ev.success, 0);
   // We are intentionally not checking the connectivity state since it is
   // propagated in an asynchronous manner which means that we might see an older
   // state. We would eventually get the correct state, but since we have already
@@ -370,7 +370,7 @@ class KeepaliveThrottlingTest : public ::testing::Test {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    CHECK(grpc_server_add_http2_port(server, addr, server_creds));
+    ABSL_CHECK(grpc_server_add_http2_port(server, addr, server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server);
     return server;
@@ -402,17 +402,17 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
   // We need 3 GOAWAY frames to throttle the keepalive time from 1 second to 8
   // seconds (> 5sec).
   for (int i = 0; i < 3; i++) {
-    LOG(INFO) << "Expected keepalive time : " << expected_keepalive_time_sec;
+    ABSL_LOG(INFO) << "Expected keepalive time : " << expected_keepalive_time_sec;
     EXPECT_EQ(PerformWaitingCall(channel, server, cq), GRPC_STATUS_UNAVAILABLE);
     expected_keepalive_time_sec *= 2;
   }
-  LOG(INFO) << "Client keepalive time " << expected_keepalive_time_sec
+  ABSL_LOG(INFO) << "Client keepalive time " << expected_keepalive_time_sec
             << " should now be in sync with the server settings";
   EXPECT_EQ(PerformWaitingCall(channel, server, cq),
             GRPC_STATUS_DEADLINE_EXCEEDED);
   // Since the subchannel is shared, the second channel should also have
   // keepalive settings in sync with the server.
-  LOG(INFO) << "Now testing second channel sharing the same subchannel";
+  ABSL_LOG(INFO) << "Now testing second channel sharing the same subchannel";
   EXPECT_EQ(PerformWaitingCall(channel_dup, server, cq),
             GRPC_STATUS_DEADLINE_EXCEEDED);
   // shutdown and destroy the client and server
@@ -434,11 +434,11 @@ grpc_core::Resolver::Result BuildResolverResult(
   for (const auto& address_str : addresses) {
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
     if (!uri.ok()) {
-      LOG(ERROR) << "Failed to parse uri. Error: " << uri.status();
-      CHECK_OK(uri);
+      ABSL_LOG(ERROR) << "Failed to parse uri. Error: " << uri.status();
+      ABSL_CHECK_OK(uri);
     }
     grpc_resolved_address address;
-    CHECK(grpc_parse_uri(*uri, &address));
+    ABSL_CHECK(grpc_parse_uri(*uri, &address));
     result.addresses->emplace_back(address, grpc_core::ChannelArgs());
   }
   return result;
@@ -480,7 +480,7 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
   // (even those from a different subchannel).
   int expected_keepalive_time_sec = 1;
   for (int i = 0; i < 3; i++) {
-    LOG(INFO) << "Expected keepalive time : " << expected_keepalive_time_sec;
+    ABSL_LOG(INFO) << "Expected keepalive time : " << expected_keepalive_time_sec;
     response_generator->SetResponseSynchronously(
         BuildResolverResult({absl::StrCat(
             "ipv4:", i % 2 == 0 ? server_address1 : server_address2)}));
@@ -492,7 +492,7 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
               GRPC_STATUS_UNAVAILABLE);
     expected_keepalive_time_sec *= 2;
   }
-  LOG(INFO) << "Client keepalive time " << expected_keepalive_time_sec
+  ABSL_LOG(INFO) << "Client keepalive time " << expected_keepalive_time_sec
             << " should now be in sync with the server settings";
   response_generator->SetResponseSynchronously(
       BuildResolverResult({absl::StrCat("ipv4:", server_address2)}));
@@ -547,7 +547,7 @@ TEST_F(KeepaliveThrottlingTest,
   // (even those from a different subchannel).
   int expected_keepalive_time_sec = 1;
   for (int i = 0; i < 3; i++) {
-    LOG(ERROR) << "Expected keepalive time : " << expected_keepalive_time_sec;
+    ABSL_LOG(ERROR) << "Expected keepalive time : " << expected_keepalive_time_sec;
     grpc_server* server = ServerStart(
         i % 2 == 0 ? server_address1.c_str() : server_address2.c_str(), cq);
     VerifyChannelReady(channel, cq);
@@ -556,7 +556,7 @@ TEST_F(KeepaliveThrottlingTest,
     VerifyChannelDisconnected(channel, cq);
     expected_keepalive_time_sec *= 2;
   }
-  LOG(INFO) << "Client keepalive time " << expected_keepalive_time_sec
+  ABSL_LOG(INFO) << "Client keepalive time " << expected_keepalive_time_sec
             << " should now be in sync with the server settings";
   grpc_server* server = ServerStart(server_address1.c_str(), cq);
   VerifyChannelReady(channel, cq);
@@ -600,7 +600,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
-  CHECK(c);
+  ABSL_CHECK(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -637,12 +637,12 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
 
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
@@ -655,7 +655,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(102), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(102), true);
   cqv.Verify();
@@ -682,17 +682,17 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(103), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
-  CHECK(status == GRPC_STATUS_OK);
-  CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
-  CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
-  CHECK_EQ(was_cancelled, 0);
-  CHECK(byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
+  ABSL_CHECK(status == GRPC_STATUS_OK);
+  ABSL_CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
+  ABSL_CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
+  ABSL_CHECK_EQ(was_cancelled, 0);
+  ABSL_CHECK(byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -726,7 +726,7 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
-  CHECK(
+  ABSL_CHECK(
       grpc_server_add_http2_port(server, server_address.c_str(), server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
@@ -802,7 +802,7 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
-  CHECK(
+  ABSL_CHECK(
       grpc_server_add_http2_port(server, server_address.c_str(), server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(server);

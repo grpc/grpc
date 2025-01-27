@@ -31,7 +31,7 @@
 
 #include <string>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/util/env.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/subprocess.h"
@@ -100,12 +100,12 @@ static void run_test(const char* target, size_t nops) {
   op++;
   error = grpc_call_start_batch(c, ops, nops, grpc_core::CqVerifier::tag(1),
                                 nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
-  CHECK(status != GRPC_STATUS_OK);
+  ABSL_CHECK(status != GRPC_STATUS_OK);
 
   grpc_call_unref(c);
   grpc_slice_unref(details);

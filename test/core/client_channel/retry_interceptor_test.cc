@@ -39,7 +39,7 @@ class RetryInterceptorTest : public YodelTest {
   using YodelTest::YodelTest;
 
   void InitInterceptor(const ChannelArgs& args) {
-    CHECK(destination_under_test_ == nullptr);
+    ABSL_CHECK(destination_under_test_ == nullptr);
     InterceptionChainBuilder builder(args, nullptr, nullptr);
     builder.Add<RetryInterceptor>();
     destination_under_test_ = builder.Build(call_destination_).value();
@@ -70,7 +70,7 @@ class RetryInterceptorTest : public YodelTest {
   }
 
   UnstartedCallDestination& destination_under_test() {
-    CHECK(destination_under_test_ != nullptr);
+    ABSL_CHECK(destination_under_test_ != nullptr);
     return *destination_under_test_;
   }
 

@@ -22,8 +22,8 @@
 #include <set>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -143,7 +143,7 @@ void MaybeLogHttpConnectionManager(
     upb_TextEncode(
         reinterpret_cast<const upb_Message*>(http_connection_manager_config),
         msg_type, nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << context.client
+    ABSL_VLOG(2) << "[xds_client " << context.client
             << "] HttpConnectionManager: " << buf;
   }
 }
@@ -739,7 +739,7 @@ void AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip,
     ValidationErrors* errors) {
-  CHECK(static_cast<unsigned int>(filter_chain.filter_chain_match.source_type) <
+  ABSL_CHECK(static_cast<unsigned int>(filter_chain.filter_chain_match.source_type) <
         3u);
   AddFilterChainDataForSourceIpRange(
       filter_chain,
@@ -958,7 +958,7 @@ void MaybeLogListener(const XdsResourceType::DecodeContext& context,
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(listener), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << context.client << "] Listener: " << buf;
+    ABSL_VLOG(2) << "[xds_client " << context.client << "] Listener: " << buf;
   }
 }
 
@@ -983,13 +983,13 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
   auto listener = LdsResourceParse(context, resource);
   if (!listener.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      LOG(ERROR) << "[xds_client " << context.client << "] invalid Listener "
+      ABSL_LOG(ERROR) << "[xds_client " << context.client << "] invalid Listener "
                  << *result.name << ": " << listener.status();
     }
     result.resource = listener.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      LOG(INFO) << "[xds_client " << context.client << "] parsed Listener "
+      ABSL_LOG(INFO) << "[xds_client " << context.client << "] parsed Listener "
                 << *result.name << ": " << (*listener)->ToString();
     }
     result.resource = std::move(*listener);

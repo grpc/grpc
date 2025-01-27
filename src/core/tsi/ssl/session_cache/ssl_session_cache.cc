@@ -21,8 +21,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
 #include "src/core/util/crash.h"
@@ -63,7 +63,7 @@ class SslSessionLRUCache::Node {
 
 SslSessionLRUCache::SslSessionLRUCache(size_t capacity) : capacity_(capacity) {
   if (capacity == 0) {
-    LOG(ERROR) << "SslSessionLRUCache capacity is zero. SSL sessions cannot be "
+    ABSL_LOG(ERROR) << "SslSessionLRUCache capacity is zero. SSL sessions cannot be "
                   "resumed.";
   }
 }
@@ -98,7 +98,7 @@ SslSessionLRUCache::Node* SslSessionLRUCache::FindLocked(
 
 void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
   if (session == nullptr) {
-    LOG(ERROR) << "Attempted to put null SSL session in session cache.";
+    ABSL_LOG(ERROR) << "Attempted to put null SSL session in session cache.";
     return;
   }
   grpc_core::MutexLock lock(&lock_);
@@ -112,7 +112,7 @@ void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
   entry_by_key_.emplace(key, node);
   AssertInvariants();
   if (use_order_list_size_ > capacity_) {
-    CHECK(use_order_list_tail_);
+    ABSL_CHECK(use_order_list_tail_);
     node = use_order_list_tail_;
     Remove(node);
     // Order matters, key is destroyed after deleting node.
@@ -143,7 +143,7 @@ void SslSessionLRUCache::Remove(SslSessionLRUCache::Node* node) {
   } else {
     node->next_->prev_ = node->prev_;
   }
-  CHECK_GE(use_order_list_size_, 1u);
+  ABSL_CHECK_GE(use_order_list_size_, 1u);
   use_order_list_size_--;
 }
 
@@ -169,16 +169,16 @@ void SslSessionLRUCache::AssertInvariants() {
   Node* current = use_order_list_head_;
   while (current != nullptr) {
     size++;
-    CHECK(current->prev_ == prev);
+    ABSL_CHECK(current->prev_ == prev);
     auto it = entry_by_key_.find(current->key());
-    CHECK(it != entry_by_key_.end());
-    CHECK(it->second == current);
+    ABSL_CHECK(it != entry_by_key_.end());
+    ABSL_CHECK(it->second == current);
     prev = current;
     current = current->next_;
   }
-  CHECK(prev == use_order_list_tail_);
-  CHECK(size == use_order_list_size_);
-  CHECK(entry_by_key_.size() == use_order_list_size_);
+  ABSL_CHECK(prev == use_order_list_tail_);
+  ABSL_CHECK(size == use_order_list_size_);
+  ABSL_CHECK(entry_by_key_.size() == use_order_list_size_);
 }
 #else
 void SslSessionLRUCache::AssertInvariants() {}

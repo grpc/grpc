@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "absl/functional/bind_front.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -141,11 +141,11 @@ class NativeClientChannelDNSResolverFactory final : public ResolverFactory {
 
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
-      LOG(ERROR) << "authority based dns uri's not supported";
+      ABSL_LOG(ERROR) << "authority based dns uri's not supported";
       return false;
     }
     if (absl::StripPrefix(uri.path(), "/").empty()) {
-      LOG(ERROR) << "no server name supplied in dns URI";
+      ABSL_LOG(ERROR) << "no server name supplied in dns URI";
       return false;
     }
     return true;

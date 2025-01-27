@@ -27,7 +27,7 @@
 
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -133,7 +133,7 @@ class Server {
                                       channel_arg.int_value());
           break;
         case ChannelArg::VALUE_NOT_SET:
-          LOG(ERROR) << "Channel arg '" << channel_arg.name()
+          ABSL_LOG(ERROR) << "Channel arg '" << channel_arg.name()
                      << "' does not have a value";
           break;
       }

@@ -41,8 +41,8 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
@@ -170,7 +170,7 @@ void Server::ListenerState::Stop() {
       is_serving_ = false;
     }
     if (config_fetcher_watcher_ != nullptr) {
-      CHECK_NE(server_->config_fetcher(), nullptr);
+      ABSL_CHECK_NE(server_->config_fetcher(), nullptr);
       server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
     }
   }
@@ -503,7 +503,7 @@ struct Server::RequestedCall {
         md.get(GrpcTimeoutMetadata()).value_or(Timestamp::InfFuture());
     switch (type) {
       case RequestedCall::Type::BATCH_CALL:
-        CHECK(!payload.has_value());
+        ABSL_CHECK(!payload.has_value());
         data.batch.details->host =
             CSliceRef(md.get_pointer(HttpAuthorityMetadata())->c_slice());
         data.batch.details->method =
@@ -560,10 +560,10 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
 
   ~RealRequestMatcher() override {
     for (LockedMultiProducerSingleConsumerQueue& queue : requests_per_cq_) {
-      CHECK_EQ(queue.Pop(), nullptr);
+      ABSL_CHECK_EQ(queue.Pop(), nullptr);
     }
-    CHECK(pending_filter_stack_.empty());
-    CHECK(pending_promises_.empty());
+    ABSL_CHECK(pending_filter_stack_.empty());
+    ABSL_CHECK(pending_promises_.empty());
   }
 
   void ZombifyPending() override {
@@ -787,7 +787,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       if (!result.compare_exchange_strong(expected, new_value,
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
-        CHECK(new_value->value().TakeCall() == requested_call);
+        ABSL_CHECK(new_value->value().TakeCall() == requested_call);
         delete new_value;
         return false;
       }
@@ -822,7 +822,7 @@ class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
         break;
       }
     }
-    CHECK(idx < server->cqs_.size());
+    ABSL_CHECK(idx < server->cqs_.size());
     cq_idx_ = idx;
   }
 
@@ -868,7 +868,7 @@ class Server::AllocatingRequestMatcherBatch
         absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
     if (still_running) {
       BatchCallAllocation call_info = allocator_();
-      CHECK(server()->ValidateServerRequest(cq(),
+      ABSL_CHECK(server()->ValidateServerRequest(cq(),
                                             static_cast<void*>(call_info.tag),
                                             nullptr, nullptr) == GRPC_CALL_OK);
       RequestedCall* rc = new RequestedCall(
@@ -884,7 +884,7 @@ class Server::AllocatingRequestMatcherBatch
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
     BatchCallAllocation call_info = allocator_();
-    CHECK(server()->ValidateServerRequest(cq(),
+    ABSL_CHECK(server()->ValidateServerRequest(cq(),
                                           static_cast<void*>(call_info.tag),
                                           nullptr, nullptr) == GRPC_CALL_OK);
     RequestedCall* rc = new RequestedCall(
@@ -914,7 +914,7 @@ class Server::AllocatingRequestMatcherRegistered
         absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
     if (server()->ShutdownRefOnRequest()) {
       RegisteredCallAllocation call_info = allocator_();
-      CHECK(server()->ValidateServerRequest(
+      ABSL_CHECK(server()->ValidateServerRequest(
                 cq(), call_info.tag, call_info.optional_payload,
                 registered_method_) == GRPC_CALL_OK);
       RequestedCall* rc =
@@ -931,7 +931,7 @@ class Server::AllocatingRequestMatcherRegistered
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
     RegisteredCallAllocation call_info = allocator_();
-    CHECK(server()->ValidateServerRequest(cq(), call_info.tag,
+    ABSL_CHECK(server()->ValidateServerRequest(cq(), call_info.tag,
                                           call_info.optional_payload,
                                           registered_method_) == GRPC_CALL_OK);
     RequestedCall* rc = new RequestedCall(
@@ -958,7 +958,7 @@ class ChannelBroadcaster {
 
   // Copies over the channels from the locked server.
   void FillChannelsLocked(std::vector<RefCountedPtr<Channel>> channels) {
-    DCHECK(channels_.empty());
+    ABSL_DCHECK(channels_.empty());
     channels_ = std::move(channels);
   }
 
@@ -1270,15 +1270,15 @@ grpc_error_handle Server::SetupTransport(
     connections_.emplace(std::move(t));
     ++connections_open_;
   } else {
-    CHECK(transport->filter_stack_transport() != nullptr);
+    ABSL_CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "", args.SetObject(transport), GRPC_SERVER_CHANNEL);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }
-    CHECK(*channel != nullptr);
+    ABSL_CHECK(*channel != nullptr);
     auto* channel_stack = (*channel)->channel_stack();
-    CHECK(channel_stack != nullptr);
+    ABSL_CHECK(channel_stack != nullptr);
     ChannelData* chand = static_cast<ChannelData*>(
         grpc_channel_stack_element(channel_stack, 0)->channel_data);
     // Set up CQs.
@@ -1317,7 +1317,7 @@ void Server::SetRegisteredMethodAllocator(
 
 void Server::SetBatchMethodAllocator(
     grpc_completion_queue* cq, std::function<BatchCallAllocation()> allocator) {
-  DCHECK(unregistered_request_matcher_ == nullptr);
+  ABSL_DCHECK(unregistered_request_matcher_ == nullptr);
   unregistered_request_matcher_ =
       std::make_unique<AllocatingRequestMatcherBatch>(this, cq,
                                                       std::move(allocator));
@@ -1340,17 +1340,17 @@ Server::RegisteredMethod* Server::RegisterMethod(
   }
 
   if (!method) {
-    LOG(ERROR) << "grpc_server_register_method method string cannot be NULL";
+    ABSL_LOG(ERROR) << "grpc_server_register_method method string cannot be NULL";
     return nullptr;
   }
   auto key = std::make_pair(host ? host : "", method);
   if (registered_methods_.find(key) != registered_methods_.end()) {
-    LOG(ERROR) << "duplicate registration for " << method << "@"
+    ABSL_LOG(ERROR) << "duplicate registration for " << method << "@"
                << (host ? host : "*");
     return nullptr;
   }
   if (flags != 0) {
-    LOG(ERROR) << "grpc_server_register_method invalid flags "
+    ABSL_LOG(ERROR) << "grpc_server_register_method invalid flags "
                << absl::StrFormat("0x%08x", flags);
     return nullptr;
   }
@@ -1368,7 +1368,7 @@ void Server::FailCall(size_t cq_idx, RequestedCall* rc,
                       grpc_error_handle error) {
   *rc->call = nullptr;
   rc->initial_metadata->count = 0;
-  CHECK(!error.ok());
+  ABSL_CHECK(!error.ok());
   grpc_cq_end_op(cqs_[cq_idx], rc->tag, error, DoneRequestEvent, rc,
                  &rc->completion);
 }
@@ -1389,7 +1389,7 @@ void Server::MaybeFinishShutdown() {
                                   last_shutdown_message_time_),
                      gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
       last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
-      VLOG(2) << "Waiting for " << channels_.size() << " channels "
+      ABSL_VLOG(2) << "Waiting for " << channels_.size() << " channels "
               << connections_open_ << " connections and "
               << listener_states_.size() - listeners_destroyed_ << "/"
               << listener_states_.size()
@@ -1464,7 +1464,7 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
       starting_cv_.Wait(&mu_global_);
     }
     // Stay locked, and gather up some stuff to do.
-    CHECK(grpc_cq_begin_op(cq, tag));
+    ABSL_CHECK(grpc_cq_begin_op(cq, tag));
     if (shutdown_published_) {
       grpc_cq_end_op(cq, tag, absl::OkStatus(), DonePublishedShutdown, nullptr,
                      new grpc_cq_completion);
@@ -1523,8 +1523,8 @@ void Server::SendGoaways() {
 void Server::Orphan() {
   {
     MutexLock lock(&mu_global_);
-    CHECK(ShutdownCalled() || listener_states_.empty());
-    CHECK(listeners_destroyed_ == listener_states_.size());
+    ABSL_CHECK(ShutdownCalled() || listener_states_.empty());
+    ABSL_CHECK(listeners_destroyed_ == listener_states_.size());
   }
   listener_states_.clear();
   Unref();
@@ -1677,7 +1677,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   }
   // Start accept_stream transport op.
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  CHECK(transport->filter_stack_transport() != nullptr);
+  ABSL_CHECK(transport->filter_stack_transport() != nullptr);
   op->set_accept_stream = true;
   op->set_accept_stream_fn = AcceptStream;
   op->set_registered_method_matcher_fn = [](void* arg,
@@ -1745,7 +1745,7 @@ void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);
   grpc_call_stack* call_stack = grpc_call_get_call_stack(call);
-  CHECK_NE(call_stack, nullptr);
+  ABSL_CHECK_NE(call_stack, nullptr);
   grpc_call_element* elem = grpc_call_stack_element(call_stack, 0);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
   if (!error.ok()) {
@@ -1767,7 +1767,7 @@ void Server::ChannelData::FinishDestroy(void* arg,
 
 void Server::ChannelData::Destroy() {
   if (!list_position_.has_value()) return;
-  CHECK(server_ != nullptr);
+  ABSL_CHECK(server_ != nullptr);
   server_->channels_.erase(*list_position_);
   list_position_.reset();
   server_->Ref().release();
@@ -1787,8 +1787,8 @@ void Server::ChannelData::Destroy() {
 
 grpc_error_handle Server::ChannelData::InitChannelElement(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
-  CHECK(args->is_first);
-  CHECK(!args->is_last);
+  ABSL_CHECK(args->is_first);
+  ABSL_CHECK(!args->is_last);
   new (elem->channel_data) ChannelData();
   return absl::OkStatus();
 }
@@ -1815,7 +1815,7 @@ Server::CallData::CallData(grpc_call_element* elem,
 }
 
 Server::CallData::~CallData() {
-  CHECK(state_.load(std::memory_order_relaxed) != CallState::PENDING);
+  ABSL_CHECK(state_.load(std::memory_order_relaxed) != CallState::PENDING);
   grpc_metadata_array_destroy(&initial_metadata_);
   grpc_byte_buffer_destroy(payload_);
 }
@@ -1866,8 +1866,8 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
   std::swap(*rc->initial_metadata, initial_metadata_);
   switch (rc->type) {
     case RequestedCall::Type::BATCH_CALL:
-      CHECK(host_.has_value());
-      CHECK(path_.has_value());
+      ABSL_CHECK(host_.has_value());
+      ABSL_CHECK(path_.has_value());
       rc->data.batch.details->host = CSliceRef(host_->c_slice());
       rc->data.batch.details->method = CSliceRef(path_->c_slice());
       rc->data.batch.details->deadline =
@@ -1959,7 +1959,7 @@ void Server::CallData::RecvInitialMetadataBatchComplete(
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
   if (!error.ok()) {
-    VLOG(2) << "Failed call creation: " << StatusToString(error);
+    ABSL_VLOG(2) << "Failed call creation: " << StatusToString(error);
     calld->FailCallCreation();
     return;
   }
@@ -2081,10 +2081,10 @@ void grpc_server_register_completion_queue(grpc_server* server,
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_register_completion_queue(server=" << server
       << ", cq=" << cq << ", reserved=" << reserved << ")";
-  CHECK(!reserved);
+  ABSL_CHECK(!reserved);
   auto cq_type = grpc_get_cq_completion_type(cq);
   if (cq_type != GRPC_CQ_NEXT && cq_type != GRPC_CQ_CALLBACK) {
-    VLOG(2) << "Completion queue of type " << static_cast<int>(cq_type)
+    ABSL_VLOG(2) << "Completion queue of type " << static_cast<int>(cq_type)
             << " is being registered as a server-completion-queue";
     // Ideally we should log an error and abort but ruby-wrapped-language API
     // calls grpc_completion_queue_pluck() on server completion queues

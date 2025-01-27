@@ -26,7 +26,7 @@ grpc_cc_library(
     ],
     hdrs = ["memstats.h"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     tags = [
         "bazel_only",
@@ -44,8 +44,8 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     tags = [
         "bazel_only",
@@ -69,8 +69,8 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     tags = [
         "bazel_only",
@@ -96,8 +96,8 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/time",
     ],
     tags = [
@@ -123,9 +123,9 @@ grpc_cc_binary(
     srcs = ["callback_server.cc"],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:log",
+        "absl/log:absl_log",
         "absl/flags:parse",
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     tags = [
         "bazel_only",
@@ -166,7 +166,7 @@ grpc_cc_test(
         "absl/algorithm:container",
         "absl/flags:flag",
         "absl/flags:parse",
-        "absl/log:log",
+        "absl/log:absl_log",
     ],
     tags = MEMORY_USAGE_TAGS,
     deps = [

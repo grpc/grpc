@@ -30,8 +30,8 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -68,24 +68,24 @@ void LogSslErrorStack(void) {
   while ((err = ERR_get_error()) != 0) {
     char details[256];
     ERR_error_string_n(static_cast<uint32_t>(err), details, sizeof(details));
-    LOG(ERROR) << details;
+    ABSL_LOG(ERROR) << details;
   }
 }
 
 tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
                       size_t unprotected_bytes_size) {
-  CHECK_LE(unprotected_bytes_size, static_cast<size_t>(INT_MAX));
+  ABSL_CHECK_LE(unprotected_bytes_size, static_cast<size_t>(INT_MAX));
   ERR_clear_error();
   int ssl_write_result = SSL_write(ssl, unprotected_bytes,
                                    static_cast<int>(unprotected_bytes_size));
   if (ssl_write_result < 0) {
     ssl_write_result = SSL_get_error(ssl, ssl_write_result);
     if (ssl_write_result == SSL_ERROR_WANT_READ) {
-      LOG(ERROR)
+      ABSL_LOG(ERROR)
           << "Peer tried to renegotiate SSL connection. This is unsupported.";
       return TSI_UNIMPLEMENTED;
     } else {
-      LOG(ERROR) << "SSL_write failed with error "
+      ABSL_LOG(ERROR) << "SSL_write failed with error "
                  << SslErrorString(ssl_write_result);
       return TSI_INTERNAL_ERROR;
     }
@@ -95,7 +95,7 @@ tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
 
 tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
                      size_t* unprotected_bytes_size) {
-  CHECK_LE(*unprotected_bytes_size, static_cast<size_t>(INT_MAX));
+  ABSL_CHECK_LE(*unprotected_bytes_size, static_cast<size_t>(INT_MAX));
   ERR_clear_error();
   int read_from_ssl = SSL_read(ssl, unprotected_bytes,
                                static_cast<int>(*unprotected_bytes_size));
@@ -107,15 +107,15 @@ tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
         *unprotected_bytes_size = 0;
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:
-        LOG(ERROR)
+        ABSL_LOG(ERROR)
             << "Peer tried to renegotiate SSL connection. This is unsupported.";
         return TSI_UNIMPLEMENTED;
       case SSL_ERROR_SSL:
-        LOG(ERROR) << "Corruption detected.";
+        ABSL_LOG(ERROR) << "Corruption detected.";
         LogSslErrorStack();
         return TSI_DATA_CORRUPTED;
       default:
-        LOG(ERROR) << "SSL_read failed with error "
+        ABSL_LOG(ERROR) << "SSL_read failed with error "
                    << SslErrorString(read_from_ssl);
         return TSI_PROTOCOL_FAILURE;
     }
@@ -139,11 +139,11 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   int pending_in_ssl = static_cast<int>(BIO_pending(network_io));
   if (pending_in_ssl > 0) {
     *unprotected_bytes_size = 0;
-    CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
+    ABSL_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
     read_from_ssl = BIO_read(network_io, protected_output_frames,
                              static_cast<int>(*protected_output_frames_size));
     if (read_from_ssl < 0) {
-      LOG(ERROR) << "Could not read from BIO even though some data is pending";
+      ABSL_LOG(ERROR) << "Could not read from BIO even though some data is pending";
       return TSI_INTERNAL_ERROR;
     }
     *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
@@ -165,11 +165,11 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   result = DoSslWrite(ssl, buffer, buffer_size);
   if (result != TSI_OK) return result;
 
-  CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
+  ABSL_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl < 0) {
-    LOG(ERROR) << "Could not read from BIO after SSL_write.";
+    ABSL_LOG(ERROR) << "Could not read from BIO after SSL_write.";
     return TSI_INTERNAL_ERROR;
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
@@ -195,20 +195,20 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   }
 
   pending = static_cast<int>(BIO_pending(network_io));
-  CHECK_GE(pending, 0);
+  ABSL_CHECK_GE(pending, 0);
   *still_pending_size = static_cast<size_t>(pending);
   if (*still_pending_size == 0) return TSI_OK;
 
-  CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
+  ABSL_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl <= 0) {
-    LOG(ERROR) << "Could not read from BIO after SSL_write.";
+    ABSL_LOG(ERROR) << "Could not read from BIO after SSL_write.";
     return TSI_INTERNAL_ERROR;
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   pending = static_cast<int>(BIO_pending(network_io));
-  CHECK_GE(pending, 0);
+  ABSL_CHECK_GE(pending, 0);
   *still_pending_size = static_cast<size_t>(pending);
   return TSI_OK;
 }
@@ -236,11 +236,11 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   *unprotected_bytes_size = output_bytes_size - output_bytes_offset;
 
   // Then, try to write some data to ssl.
-  CHECK_LE(*protected_frames_bytes_size, static_cast<size_t>(INT_MAX));
+  ABSL_CHECK_LE(*protected_frames_bytes_size, static_cast<size_t>(INT_MAX));
   written_into_ssl = BIO_write(network_io, protected_frames_bytes,
                                static_cast<int>(*protected_frames_bytes_size));
   if (written_into_ssl < 0) {
-    LOG(ERROR) << "Sending protected frame to ssl failed with "
+    ABSL_LOG(ERROR) << "Sending protected frame to ssl failed with "
                << written_into_ssl;
     return TSI_INTERNAL_ERROR;
   }
@@ -263,15 +263,15 @@ bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
   if (ikey == nullptr) {
     // Can't verify signature because we couldn't get the pubkey, fail the
     // check.
-    VLOG(2) << "Could not get public key from certificate.";
+    ABSL_VLOG(2) << "Could not get public key from certificate.";
     EVP_PKEY_free(ikey);
     return false;
   }
   int ret = X509_CRL_verify(crl, ikey);
   if (ret < 0) {
-    VLOG(2) << "There was an unexpected problem checking the CRL signature.";
+    ABSL_VLOG(2) << "There was an unexpected problem checking the CRL signature.";
   } else if (ret == 0) {
-    VLOG(2) << "CRL failed verification.";
+    ABSL_VLOG(2) << "CRL failed verification.";
   }
   EVP_PKEY_free(ikey);
   return ret == 1;

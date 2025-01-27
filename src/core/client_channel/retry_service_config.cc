@@ -27,7 +27,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/config/core_configuration.h"
@@ -140,7 +140,7 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
       if (max_attempts_ <= 1) {
         errors->AddError("must be at least 2");
       } else if (max_attempts_ > MAX_MAX_RETRY_ATTEMPTS) {
-        LOG(ERROR) << "service config: clamped retryPolicy.maxAttempts at "
+        ABSL_LOG(ERROR) << "service config: clamped retryPolicy.maxAttempts at "
                    << MAX_MAX_RETRY_ATTEMPTS;
         max_attempts_ = MAX_MAX_RETRY_ATTEMPTS;
       }

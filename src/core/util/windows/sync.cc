@@ -26,7 +26,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/util/crash.h"
 
 void gpr_mu_init(gpr_mu* mu) {
@@ -38,7 +38,7 @@ void gpr_mu_destroy(gpr_mu* mu) { DeleteCriticalSection(&mu->cs); }
 
 void gpr_mu_lock(gpr_mu* mu) {
   EnterCriticalSection(&mu->cs);
-  CHECK(!mu->locked);
+  ABSL_CHECK(!mu->locked);
   mu->locked = 1;
 }
 

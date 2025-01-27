@@ -28,7 +28,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/synchronization/notification.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -113,7 +113,7 @@ void DoRpc(const std::string& server_addr,
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok());
   if (!result.ok()) {
-    LOG(ERROR) << "Echo failed: " << result.error_code() << ", "
+    ABSL_LOG(ERROR) << "Echo failed: " << result.error_code() << ", "
                << result.error_message() << ", " << result.error_details();
   }
   EXPECT_EQ(response.message(), kMessage);

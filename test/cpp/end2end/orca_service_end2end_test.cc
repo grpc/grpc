@@ -33,7 +33,7 @@
 #include <memory>
 #include <optional>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "src/core/util/notification.h"
@@ -83,7 +83,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
             grpc_core::Duration::Milliseconds(750) *
             grpc_test_slowdown_factor();
         auto elapsed = now - *last_response_time_;
-        LOG(INFO) << "received ORCA response after " << elapsed;
+        ABSL_LOG(INFO) << "received ORCA response after " << elapsed;
         EXPECT_GE(elapsed, requested_interval_ - fudge_factor)
             << elapsed.ToString();
         EXPECT_LE(elapsed, requested_interval_ + fudge_factor)
@@ -139,7 +139,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
     builder.AddListeningPort(server_address, InsecureServerCredentials());
     builder.RegisterService(&orca_service_);
     server_ = builder.BuildAndStart();
-    LOG(INFO) << "server started on " << server_address;
+    ABSL_LOG(INFO) << "server started on " << server_address;
     channel_ = CreateChannel(server_address, InsecureChannelCredentials());
   }
 
@@ -163,13 +163,13 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
   Stream stream1(stub.get(), grpc_core::Duration::Milliseconds(5000));
   Stream stream2(stub.get(), grpc_core::Duration::Milliseconds(2500));
   auto ReadResponses = [&](std::function<void(const OrcaLoadReport&)> checker) {
-    LOG(INFO) << "reading response from stream1";
+    ABSL_LOG(INFO) << "reading response from stream1";
     OrcaLoadReport response = stream1.ReadResponse();
     checker(response);
-    LOG(INFO) << "reading response from stream2";
+    ABSL_LOG(INFO) << "reading response from stream2";
     response = stream2.ReadResponse();
     checker(response);
-    LOG(INFO) << "reading response from stream2";
+    ABSL_LOG(INFO) << "reading response from stream2";
     response = stream2.ReadResponse();
     checker(response);
   };

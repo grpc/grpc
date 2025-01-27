@@ -35,8 +35,8 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -110,13 +110,13 @@ static grpc_closure on_write;
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void done_write(void* /*arg*/, grpc_error_handle error) {
-  CHECK_OK(error);
+  ABSL_CHECK_OK(error);
   gpr_atm_rel_store(&state.done_atm, 1);
 }
 
 static void done_writing_settings_frame(void* /* arg */,
                                         grpc_error_handle error) {
-  CHECK_OK(error);
+  ABSL_CHECK_OK(error);
   grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
                      /*urgent=*/false, /*min_progress_size=*/1);
 }
@@ -133,7 +133,7 @@ static void handle_write() {
 
 static void handle_read(void* /*arg*/, grpc_error_handle error) {
   if (!error.ok()) {
-    LOG(ERROR) << "handle_read error: " << grpc_core::StatusToString(error);
+    ABSL_LOG(ERROR) << "handle_read error: " << grpc_core::StatusToString(error);
     return;
   }
   state.incoming_data_length += state.temp_incoming_buffer.length;
@@ -142,11 +142,11 @@ static void handle_read(void* /*arg*/, grpc_error_handle error) {
   for (i = 0; i < state.temp_incoming_buffer.count; i++) {
     char* dump = grpc_dump_slice(state.temp_incoming_buffer.slices[i],
                                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    VLOG(2) << "Server received: " << dump;
+    ABSL_VLOG(2) << "Server received: " << dump;
     gpr_free(dump);
   }
 
-  VLOG(2) << "got " << state.incoming_data_length << " bytes, expected "
+  ABSL_VLOG(2) << "got " << state.incoming_data_length << " bytes, expected "
           << SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD
           << " bytes or a non-HTTP2 response to be sent";
   if (state.incoming_data_length >=
@@ -252,14 +252,14 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   error = grpc_call_start_batch(state.call, ops, static_cast<size_t>(op - ops),
                                 tag(1), nullptr);
 
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(tag(1), true);
   cqv.Verify();
 
-  CHECK_EQ(status, expected_status);
+  ABSL_CHECK_EQ(status, expected_status);
   if (expected_detail != nullptr) {
-    CHECK_NE(-1, grpc_slice_slice(
+    ABSL_CHECK_NE(-1, grpc_slice_slice(
                      details, grpc_slice_from_static_string(expected_detail)));
   }
 
@@ -294,7 +294,7 @@ static void actually_poll_server(void* arg) {
     bool done = gpr_atm_acq_load(&state.done_atm) != 0;
     gpr_timespec time_left =
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
-    VLOG(2) << "done=" << done << ", time_left=" << time_left.tv_sec << "."
+    ABSL_VLOG(2) << "done=" << done << ", time_left=" << time_left.tv_sec << "."
             << time_left.tv_nsec;
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
@@ -350,7 +350,7 @@ static void run_test(bool http2_response, bool send_settings,
   thdptr->Join();
   state.on_connect_done->WaitForNotification();
   // Proof that the server accepted the TCP connection.
-  CHECK_EQ(state.connection_attempt_made, true);
+  ABSL_CHECK_EQ(state.connection_attempt_made, true);
   // clean up
   grpc_endpoint_destroy(state.tcp);
   cleanup_rpc();

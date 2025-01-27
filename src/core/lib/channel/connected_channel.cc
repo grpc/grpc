@@ -31,7 +31,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/config/core_configuration.h"
@@ -220,7 +220,7 @@ static void connected_channel_destroy_call_elem(
 static grpc_error_handle connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
-  CHECK(args->is_last);
+  ABSL_CHECK(args->is_last);
   cd->transport = args->channel_args.GetObject<grpc_core::Transport>();
   return absl::OkStatus();
 }

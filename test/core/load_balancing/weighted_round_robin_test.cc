@@ -30,7 +30,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -96,7 +96,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
       Json config = Json::FromArray({Json::FromObject(
           {{"weighted_round_robin", Json::FromObject(json_)}})});
-      LOG(INFO) << "CONFIG: " << JsonDump(config);
+      ABSL_LOG(INFO) << "CONFIG: " << JsonDump(config);
       return MakeConfig(config);
     }
 
@@ -245,10 +245,10 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     auto picks = GetCompletePicks(picker, NumPicksNeeded(expected), {},
                                   &subchannel_call_trackers, location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
-    LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
+    ABSL_LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
     ReportBackendMetrics(*picks, subchannel_call_trackers, backend_metrics);
     auto actual = MakePickMap(*picks);
-    LOG(INFO) << "Pick map: " << PickMapString(actual);
+    ABSL_LOG(INFO) << "Pick map: " << PickMapString(actual);
     EXPECT_EQ(expected, actual)
         << "Expected: " << PickMapString(expected)
         << "\nActual: " << PickMapString(actual) << "\nat " << location.file()
@@ -263,17 +263,17 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       absl::Duration timeout = absl::Seconds(5),
       bool run_timer_callbacks = true,
       SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "==> WaitForWeightedRoundRobinPicks(): Expecting "
+    ABSL_LOG(INFO) << "==> WaitForWeightedRoundRobinPicks(): Expecting "
               << PickMapString(expected);
     size_t num_picks = NumPicksNeeded(expected);
     absl::Time deadline = absl::Now() + timeout;
     while (true) {
-      LOG(INFO) << "TOP OF LOOP";
+      ABSL_LOG(INFO) << "TOP OF LOOP";
       // We need to see the expected weights for 3 consecutive passes, just
       // to make sure we're consistently returning the right weights.
       size_t num_passes = 0;
       for (; num_passes < 3; ++num_passes) {
-        LOG(INFO) << "PASS " << num_passes << ": DOING PICKS";
+        ABSL_LOG(INFO) << "PASS " << num_passes << ": DOING PICKS";
         std::vector<std::unique_ptr<
             LoadBalancingPolicy::SubchannelCallTrackerInterface>>
             subchannel_call_trackers;
@@ -282,12 +282,12 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
         EXPECT_TRUE(picks.has_value())
             << location.file() << ":" << location.line();
         if (!picks.has_value()) return false;
-        LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
+        ABSL_LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
         // Report backend metrics to the LB policy.
         ReportBackendMetrics(*picks, subchannel_call_trackers, backend_metrics);
         // Check the observed weights.
         auto actual = MakePickMap(*picks);
-        LOG(INFO) << "Pick map:\nExpected: " << PickMapString(expected)
+        ABSL_LOG(INFO) << "Pick map:\nExpected: " << PickMapString(expected)
                   << "\n  Actual: " << PickMapString(actual);
         if (expected != actual) {
           // Make sure each address is one of the expected addresses,
@@ -319,7 +319,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
             << location.file() << ":" << location.line();
         if (*picker == nullptr) return false;
       } else if (run_timer_callbacks) {
-        LOG(INFO) << "running timer callback...";
+        ABSL_LOG(INFO) << "running timer callback...";
         // Increment time and run any timer callbacks.
         IncrementTimeBy(Duration::Seconds(1));
       }
@@ -1148,7 +1148,7 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
               ::testing::Optional(0));
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
-  LOG(INFO) << "advancing time to trigger staleness...";
+  ABSL_LOG(INFO) << "advancing time to trigger staleness...";
   IncrementTimeBy(Duration::Seconds(2));
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(

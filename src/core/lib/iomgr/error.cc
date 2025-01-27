@@ -24,8 +24,8 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
@@ -218,8 +218,8 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line) {
-  DCHECK(!error.ok());
-  LOG(ERROR).AtLocation(file, line)
+  ABSL_DCHECK(!error.ok());
+  ABSL_LOG(ERROR).AtLocation(file, line)
       << what << ": " << grpc_core::StatusToString(error);
   return false;
 }

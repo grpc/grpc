@@ -27,7 +27,7 @@ grpc_cc_library(
     testonly = True,
     srcs = ["posix_engine_test_utils.cc"],
     hdrs = ["posix_engine_test_utils.h"],
-    external_deps = ["absl/log:log"],
+    external_deps = ["absl/log:absl_log"],
     tags = [
         "no_windows",
     ],
@@ -43,7 +43,7 @@ grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     uses_event_engine = False,
@@ -69,7 +69,7 @@ grpc_cc_test(
     name = "timer_manager_test",
     srcs = ["timer_manager_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -86,7 +86,7 @@ grpc_cc_test(
     name = "event_poller_posix_test",
     srcs = ["event_poller_posix_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -142,7 +142,7 @@ grpc_cc_test(
     name = "traced_buffer_list_test",
     srcs = ["traced_buffer_list_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     tags = [
@@ -177,8 +177,8 @@ grpc_cc_test(
     name = "posix_endpoint_test",
     srcs = ["posix_endpoint_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -206,7 +206,7 @@ grpc_cc_test(
     name = "posix_engine_listener_utils_test",
     srcs = ["posix_engine_listener_utils_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -227,8 +227,8 @@ grpc_cc_test(
     name = "posix_event_engine_connect_test",
     srcs = ["posix_event_engine_connect_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [

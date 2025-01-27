@@ -25,14 +25,14 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 
-#define LOG_TEST(x) LOG(INFO) << x
+#define LOG_TEST(x) ABSL_LOG(INFO) << x
 
 static void* create_test_tag(void) {
   static intptr_t i = 0;
@@ -63,7 +63,7 @@ static void shutdown_and_destroy(grpc_completion_queue* cc) {
       break;
     }
     default: {
-      LOG(ERROR) << "Unknown completion type";
+      ABSL_LOG(ERROR) << "Unknown completion type";
       break;
     }
   }

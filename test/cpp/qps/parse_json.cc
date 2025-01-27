@@ -20,8 +20,8 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
 
@@ -38,11 +38,11 @@ void ParseJson(const std::string& json, const std::string& type,
       type_resolver.get(), "type.googleapis.com/" + type, json, &binary);
   if (!status.ok()) {
     std::string errmsg(status.message());
-    LOG(ERROR) << "Failed to convert json to binary: errcode=" << status.code()
+    ABSL_LOG(ERROR) << "Failed to convert json to binary: errcode=" << status.code()
                << " msg=" << errmsg;
     grpc_core::Crash(absl::StrFormat("JSON: %s", json.c_str()));
   }
-  CHECK(msg->ParseFromString(binary));
+  ABSL_CHECK(msg->ParseFromString(binary));
 }
 
 std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
@@ -55,7 +55,7 @@ std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
   msg.SerializeToString(&binary);
   auto status =
       BinaryToJsonString(type_resolver.get(), type, binary, &json_string);
-  CHECK_OK(status);
+  ABSL_CHECK_OK(status);
   return json_string;
 }
 

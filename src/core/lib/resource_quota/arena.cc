@@ -24,7 +24,7 @@
 #include <atomic>
 #include <new>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/alloc.h"
 namespace grpc_core {
@@ -82,7 +82,7 @@ Arena::Arena(size_t initial_size, RefCountedPtr<ArenaFactory> arena_factory)
        ++i) {
     contexts()[i] = nullptr;
   }
-  CHECK_GE(initial_size, arena_detail::BaseArenaContextTraits::ContextSize());
+  ABSL_CHECK_GE(initial_size, arena_detail::BaseArenaContextTraits::ContextSize());
   arena_factory_->allocator().Reserve(initial_size);
 }
 

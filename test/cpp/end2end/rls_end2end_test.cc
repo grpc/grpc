@@ -36,8 +36,8 @@
 #include <optional>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "src/core/client_channel/backup_poller.h"
@@ -417,8 +417,8 @@ class RlsEnd2endTest : public ::testing::Test {
           service_(std::forward<Args>(args)...) {}
 
     void Start() {
-      LOG(INFO) << "starting " << type_ << " server on port " << port_;
-      CHECK(!running_);
+      ABSL_LOG(INFO) << "starting " << type_ << " server on port " << port_;
+      ABSL_CHECK(!running_);
       running_ = true;
       service_.Start();
       grpc::internal::Mutex mu;
@@ -429,7 +429,7 @@ class RlsEnd2endTest : public ::testing::Test {
       thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Serve, this, &mu, &cond));
       cond.Wait(&mu);
-      LOG(INFO) << type_ << " server startup complete";
+      ABSL_LOG(INFO) << type_ << " server startup complete";
     }
 
     void Serve(grpc::internal::Mutex* mu, grpc::internal::CondVar* cond) {
@@ -448,11 +448,11 @@ class RlsEnd2endTest : public ::testing::Test {
 
     void Shutdown() {
       if (!running_) return;
-      LOG(INFO) << type_ << " about to shutdown";
+      ABSL_LOG(INFO) << type_ << " about to shutdown";
       service_.Shutdown();
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
-      LOG(INFO) << type_ << " shutdown completed";
+      ABSL_LOG(INFO) << type_ << " shutdown completed";
       running_ = false;
     }
 

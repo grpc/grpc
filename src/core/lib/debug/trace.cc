@@ -25,7 +25,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -39,9 +39,9 @@ int grpc_tracer_set_enabled(const char* name, int enabled);
 namespace grpc_core {
 namespace {
 void LogAllTracers() {
-  VLOG(2) << "available tracers:";
+  ABSL_VLOG(2) << "available tracers:";
   for (const auto& name : GetAllTraceFlags()) {
-    LOG(INFO) << "  " << name.first;
+    ABSL_LOG(INFO) << "  " << name.first;
   }
 }
 
@@ -86,12 +86,12 @@ bool ParseTracers(absl::string_view tracers) {
         some_trace_was_found = true;
       }
     }
-    if (!found) LOG(ERROR) << "Unknown tracer: " << trace_glob;
+    if (!found) ABSL_LOG(ERROR) << "Unknown tracer: " << trace_glob;
   }
   if (!enabled_tracers.empty()) {
     absl::string_view enabled_tracers_view(enabled_tracers);
     absl::ConsumeSuffix(&enabled_tracers_view, ", ");
-    LOG(INFO) << "gRPC Tracers: " << enabled_tracers_view;
+    ABSL_LOG(INFO) << "gRPC Tracers: " << enabled_tracers_view;
   }
   return some_trace_was_found;
 }

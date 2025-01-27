@@ -68,7 +68,7 @@ TEST(CallArenaAllocatorTest, SettlesWithAllocation) {
   for (int i = 0; i < 10000; i++) {
     allocator->MakeArena()->Alloc(10000);
   }
-  LOG(INFO) << estimate;
+  ABSL_LOG(INFO) << estimate;
 }
 
 }  // namespace grpc_core

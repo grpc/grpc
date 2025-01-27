@@ -83,9 +83,9 @@ grpc_event_engine::experimental::Slice Zeros(uint32_t length);
 template <typename T>
 grpc_event_engine::experimental::Slice EncodeProto(const std::string& fields) {
   T msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(fields, &msg));
+  ABSL_CHECK(google::protobuf::TextFormat::ParseFromString(fields, &msg));
   std::string out;
-  CHECK(msg.SerializeToString(&out));
+  ABSL_CHECK(msg.SerializeToString(&out));
   return grpc_event_engine::experimental::Slice::FromCopiedString(out);
 }
 

@@ -25,7 +25,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -171,7 +171,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
         auto [it, inserted] = locality_weights.emplace(
             locality_name->human_readable_string(), weight);
         if (!inserted && it->second != weight) {
-          LOG(ERROR) << "INTERNAL ERROR: xds_wrr_locality found different "
+          ABSL_LOG(ERROR) << "INTERNAL ERROR: xds_wrr_locality found different "
                         "weights for locality "
                      << it->first.as_string_view() << " (" << it->second
                      << " vs " << weight << "); using first value";
@@ -206,7 +206,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   if (!child_config.ok()) {
     // This should never happen, but if it does, we basically have no
     // way to fix it, so we put the channel in TRANSIENT_FAILURE.
-    LOG(ERROR) << "[xds_wrr_locality " << this
+    ABSL_LOG(ERROR) << "[xds_wrr_locality " << this
                << "] error parsing generated child policy config -- putting "
                   "channel in TRANSIENT_FAILURE: "
                << child_config.status();

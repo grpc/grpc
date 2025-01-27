@@ -26,7 +26,7 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
@@ -91,37 +91,37 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
 
     // Verifications
     if (first_frame && type != GRPC_CHTTP2_FRAME_HEADER) {
-      LOG(ERROR) << "expected first frame to be of type header";
-      LOG(ERROR) << "EXPECT: " << GRPC_CHTTP2_FRAME_HEADER;
-      LOG(ERROR) << "GOT:    " << type;
+      ABSL_LOG(ERROR) << "expected first frame to be of type header";
+      ABSL_LOG(ERROR) << "EXPECT: " << GRPC_CHTTP2_FRAME_HEADER;
+      ABSL_LOG(ERROR) << "GOT:    " << type;
       EXPECT_TRUE(false);
     } else if (first_frame && header_is_eof &&
                !(flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM)) {
-      LOG(ERROR) << "missing END_STREAM flag in HEADER frame";
+      ABSL_LOG(ERROR) << "missing END_STREAM flag in HEADER frame";
       EXPECT_TRUE(false);
     }
     if (is_closed &&
         (type == GRPC_CHTTP2_FRAME_DATA || type == GRPC_CHTTP2_FRAME_HEADER)) {
-      LOG(ERROR)
+      ABSL_LOG(ERROR)
           << "stream is closed; new frame headers and data are not allowed";
       EXPECT_TRUE(false);
     }
     if (end_header && (type == GRPC_CHTTP2_FRAME_HEADER ||
                        type == GRPC_CHTTP2_FRAME_CONTINUATION)) {
-      LOG(ERROR)
+      ABSL_LOG(ERROR)
           << "frame header is ended; new headers and continuations are not "
              "allowed";
       EXPECT_TRUE(false);
     }
     if (in_header &&
         (type == GRPC_CHTTP2_FRAME_DATA || type == GRPC_CHTTP2_FRAME_HEADER)) {
-      LOG(ERROR)
+      ABSL_LOG(ERROR)
           << "parsing frame header; new headers and data are not allowed";
       EXPECT_TRUE(false);
     }
     if (flags & ~(GRPC_CHTTP2_DATA_FLAG_END_STREAM |
                   GRPC_CHTTP2_DATA_FLAG_END_HEADERS)) {
-      LOG(ERROR) << "unexpected frame flags: " << flags;
+      ABSL_LOG(ERROR) << "unexpected frame flags: " << flags;
       EXPECT_TRUE(false);
     }
 
@@ -135,7 +135,7 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
     if (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
       is_closed = true;
       if (type == GRPC_CHTTP2_FRAME_CONTINUATION) {
-        LOG(ERROR) << "unexpected END_STREAM flag in CONTINUATION frame";
+        ABSL_LOG(ERROR) << "unexpected END_STREAM flag in CONTINUATION frame";
         EXPECT_TRUE(false);
       }
     }

@@ -21,8 +21,8 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <grpc/support/cpu.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
@@ -62,12 +62,12 @@ CFEventEngine::~CFEventEngine() {
     grpc_core::MutexLock lock(&task_mu_);
     if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
       for (auto handle : known_handles_) {
-        LOG(ERROR) << "CFEventEngine:" << this
+        ABSL_LOG(ERROR) << "CFEventEngine:" << this
                    << " uncleared TaskHandle at shutdown:"
                    << HandleToString(handle);
       }
     }
-    CHECK(GPR_LIKELY(known_handles_.empty()));
+    ABSL_CHECK(GPR_LIKELY(known_handles_.empty()));
     timer_manager_.Shutdown();
   }
   thread_pool_->Quiesce();

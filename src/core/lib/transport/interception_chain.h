@@ -211,7 +211,7 @@ class InterceptionChainBuilder final {
   }
 
   void Fail(absl::Status status) {
-    CHECK(!status.ok()) << status;
+    ABSL_CHECK(!status.ok()) << status;
     if (status_.ok()) status_ = std::move(status);
   }
 

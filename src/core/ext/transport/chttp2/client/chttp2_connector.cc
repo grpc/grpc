@@ -32,8 +32,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -96,7 +96,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
   {
     MutexLock lock(&mu_);
-    CHECK_EQ(notify_, nullptr);
+    ABSL_CHECK_EQ(notify_, nullptr);
     args_ = args;
     result_ = result;
     notify_ = notify;
@@ -144,7 +144,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   } else if ((*result)->endpoint != nullptr) {
     result_->transport = grpc_create_chttp2_transport(
         (*result)->args, std::move((*result)->endpoint), true);
-    CHECK_NE(result_->transport, nullptr);
+    ABSL_CHECK_NE(result_->transport, nullptr);
     result_->socket_node =
         grpc_chttp2_transport_get_socket_node(result_->transport);
     result_->channel_args = std::move((*result)->args);
@@ -167,7 +167,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
     // code. Just verify that exit_early flag is set.
-    DCHECK((*result)->exit_early);
+    ABSL_DCHECK((*result)->exit_early);
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
   }
   handshake_mgr_.reset();
@@ -234,7 +234,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
       const grpc_resolved_address& address, const ChannelArgs& args) override {
     absl::StatusOr<ChannelArgs> new_args = GetSecureNamingChannelArgs(args);
     if (!new_args.ok()) {
-      LOG(ERROR) << "Failed to create channel args during subchannel creation: "
+      ABSL_LOG(ERROR) << "Failed to create channel args during subchannel creation: "
                  << new_args.status() << "; Got args: " << args.ToString();
       return nullptr;
     }
@@ -277,7 +277,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
 absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(const char* target,
                                                      const ChannelArgs& args) {
   if (target == nullptr) {
-    LOG(ERROR) << "cannot create channel with NULL target name";
+    ABSL_LOG(ERROR) << "cannot create channel with NULL target name";
     return absl::InvalidArgumentError("channel target is NULL");
   }
   return ChannelCreate(target, args, GRPC_CLIENT_CHANNEL, nullptr);
@@ -364,14 +364,14 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
           .SetObject(creds->Ref());
 
   int flags = fcntl(fd, F_GETFL, 0);
-  CHECK_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
+  ABSL_CHECK_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
   grpc_core::OrphanablePtr<grpc_endpoint> client(grpc_tcp_create_from_fd(
       grpc_fd_create(fd, "client", true),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(final_args),
       "fd-client"));
   grpc_core::Transport* transport =
       grpc_create_chttp2_transport(final_args, std::move(client), true);
-  CHECK(transport);
+  ABSL_CHECK(transport);
   auto channel = grpc_core::ChannelCreate(
       target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
   if (channel.ok()) {
@@ -393,7 +393,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* /* target */,
                                           int /* fd */,
                                           grpc_channel_credentials* /* creds*/,
                                           const grpc_channel_args* /* args */) {
-  CHECK(0);
+  ABSL_CHECK(0);
   return nullptr;
 }
 

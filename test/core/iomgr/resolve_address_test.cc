@@ -28,8 +28,8 @@
 #include <string.h>
 
 #include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/match.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -99,7 +99,7 @@ class ResolveAddressTest : public ::testing::Test {
           break;
         }
         grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
-        VLOG(2) << "done=" << done_ << ", time_left=" << time_left.millis();
+        ABSL_VLOG(2) << "done=" << done_ << ", time_left=" << time_left.millis();
         ASSERT_GE(time_left, grpc_core::Duration::Zero());
         grpc_pollset_worker* worker = nullptr;
         GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(pollset_, &worker,
@@ -388,7 +388,7 @@ namespace {
 int g_fake_non_responsive_dns_server_port;
 
 void InjectNonResponsiveDNSServer(ares_channel* channel) {
-  VLOG(2) << "Injecting broken nameserver list. Bad server address:|[::1]:"
+  ABSL_VLOG(2) << "Injecting broken nameserver list. Bad server address:|[::1]:"
           << g_fake_non_responsive_dns_server_port << "|.";
   // Configure a non-responsive DNS server at the front of c-ares's nameserver
   // list.
@@ -445,7 +445,7 @@ class PollsetSetWrapper {
     grpc_core::ExecCtx::Get()->Flush();
     grpc_pollset_destroy(ps_);
     gpr_free(ps_);
-    VLOG(2) << "PollsetSetWrapper:" << this << " deleted";
+    ABSL_VLOG(2) << "PollsetSetWrapper:" << this << " deleted";
   }
 
   grpc_pollset_set* pollset_set() { return pss_; }
@@ -456,7 +456,7 @@ class PollsetSetWrapper {
     grpc_pollset_init(ps_, &mu_);
     pss_ = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pss_, ps_);
-    VLOG(2) << "PollsetSetWrapper:" << this << " created";
+    ABSL_VLOG(2) << "PollsetSetWrapper:" << this << " created";
   }
 
   gpr_mu* mu_;
@@ -542,7 +542,7 @@ int main(int argc, char** argv) {
   } else if (absl::StrContains(std::string(argv[0]), "using_ares_resolver")) {
     g_resolver_type = "ares";
   } else {
-    CHECK(0);
+    ABSL_CHECK(0);
   }
   grpc_core::ConfigVars::Overrides overrides;
   overrides.dns_resolver = g_resolver_type;

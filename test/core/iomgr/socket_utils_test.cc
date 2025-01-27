@@ -29,7 +29,7 @@
 #include <netinet/ip.h>
 #include <string.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/util/crash.h"
@@ -196,7 +196,7 @@ TEST(SocketUtilsTest, MainTest) {
 
   if (grpc_ipv6_loopback_available()) {
     sock = socket(AF_INET6, SOCK_STREAM, 0);
-    CHECK_GT(sock, 0);
+    ABSL_CHECK_GT(sock, 0);
 
     test_set_socket_dscp_ipv6(sock, 8 /*CS1*/);
     test_set_socket_dscp_ipv6(sock, 16 /*CS2*/);

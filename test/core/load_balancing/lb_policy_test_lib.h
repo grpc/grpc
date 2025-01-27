@@ -41,8 +41,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -159,7 +159,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
         void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                        const absl::Status& status) override {
-          LOG(INFO) << "notifying watcher: state="
+          ABSL_LOG(INFO) << "notifying watcher: state="
                     << ConnectivityStateName(new_state) << " status=" << status;
           watcher_->OnConnectivityStateChange(new_state, status);
         }
@@ -203,14 +203,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         auto* w =
             static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get());
         if (w->type() == OrcaProducer::Type()) {
-          CHECK(orca_watcher_ == nullptr);
+          ABSL_CHECK(orca_watcher_ == nullptr);
           orca_watcher_.reset(static_cast<OrcaWatcher*>(watcher.release()));
           state_->orca_watchers_.insert(orca_watcher_.get());
         } else if (w->type() == HealthProducer::Type()) {
           // TODO(roth): Support health checking in test framework.
           // For now, we just hard-code this to the raw connectivity state.
-          CHECK(health_watcher_ == nullptr);
-          CHECK_EQ(health_watcher_wrapper_, nullptr);
+          ABSL_CHECK(health_watcher_ == nullptr);
+          ABSL_CHECK_EQ(health_watcher_wrapper_, nullptr);
           health_watcher_.reset(static_cast<HealthWatcher*>(watcher.release()));
           auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();
@@ -219,7 +219,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           health_watcher_wrapper_ = watcher_wrapper.get();
           state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                             std::move(watcher_wrapper));
-          LOG(INFO) << "AddDataWatcher(): added HealthWatch="
+          ABSL_LOG(INFO) << "AddDataWatcher(): added HealthWatch="
                     << health_watcher_.get()
                     << " connectivity_watcher=" << connectivity_watcher_ptr
                     << " watcher_wrapper=" << health_watcher_wrapper_;
@@ -238,7 +238,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           if (health_watcher_.get() != static_cast<HealthWatcher*>(watcher)) {
             return;
           }
-          LOG(INFO) << "CancelDataWatcher(): cancelling HealthWatch="
+          ABSL_LOG(INFO) << "CancelDataWatcher(): cancelling HealthWatch="
                     << health_watcher_.get()
                     << " watcher_wrapper=" << health_watcher_wrapper_;
           state_->state_tracker_.RemoveWatcher(health_watcher_wrapper_);
@@ -334,16 +334,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               AssertValidConnectivityStateTransition(state_tracker_.state(),
                                                      state, location);
             }
-            LOG(INFO) << "Setting state on tracker";
+            ABSL_LOG(INFO) << "Setting state on tracker";
             state_tracker_.SetState(state, status, "set from test");
             // SetState() enqueued the connectivity state notifications for
             // the subchannel, so we add another callback to the queue to be
             // executed after that state notifications has been delivered.
             if (run_before_flush != nullptr) run_before_flush();
-            LOG(INFO) << "Waiting for state notifications to be delivered";
+            ABSL_LOG(INFO) << "Waiting for state notifications to be delivered";
             test_->work_serializer_->Run(
                 [&]() {
-                  LOG(INFO) << "State notifications delivered, waiting for "
+                  ABSL_LOG(INFO) << "State notifications delivered, waiting for "
                                "health notifications";
                   // Now the connectivity state notifications has been
                   // delivered. If the state reported was READY, then the
@@ -359,7 +359,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       while (!notification.HasBeenNotified()) {
         test_->fuzzing_ee_->Tick();
       }
-      LOG(INFO) << "Health notifications delivered";
+      ABSL_LOG(INFO) << "Health notifications delivered";
     }
 
     // Indicates if any of the associated SubchannelInterface objects
@@ -482,7 +482,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           << location.file() << ":" << location.line();
       if (update == nullptr) return std::nullopt;
       StateUpdate result = std::move(*update);
-      LOG(INFO) << "dequeued next state update: " << result.ToString();
+      ABSL_LOG(INFO) << "dequeued next state update: " << result.ToString();
       queue_.pop_front();
       return std::move(result);
     }
@@ -515,7 +515,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       PickerWrapper(LoadBalancingPolicyTest* test,
                     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
           : test_(test), picker_(std::move(picker)) {
-        LOG(INFO) << "creating wrapper " << this << " for picker "
+        ABSL_LOG(INFO) << "creating wrapper " << this << " for picker "
                   << picker_.get();
       }
 
@@ -574,7 +574,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
         auto address_uri = grpc_sockaddr_to_uri(&address);
-        CHECK(address_uri.ok());
+        ABSL_CHECK(address_uri.ok());
         it = test_->subchannel_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
                           std::forward_as_tuple(std::move(*address_uri), test_))
@@ -592,7 +592,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           IsWorkSerializerDispatchEnabled()
               ? std::move(picker)
               : MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
-      LOG(INFO) << "enqueuing state update from LB policy: "
+      ABSL_LOG(INFO) << "enqueuing state update from LB policy: "
                 << update.ToString();
       queue_.push_back(std::move(update));
     }
@@ -725,7 +725,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     lb_policy_ =
         CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
             lb_policy_name_, std::move(args));
-    CHECK(lb_policy_ != nullptr);
+    ABSL_CHECK(lb_policy_ != nullptr);
   }
 
   void TearDown() override {
@@ -752,7 +752,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   LoadBalancingPolicy* lb_policy() const {
-    CHECK(lb_policy_ != nullptr);
+    ABSL_CHECK(lb_policy_ != nullptr);
     return lb_policy_.get();
   }
 
@@ -771,9 +771,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Converts an address URI into a grpc_resolved_address.
   static grpc_resolved_address MakeAddress(absl::string_view address_uri) {
     auto uri = URI::Parse(address_uri);
-    CHECK(uri.ok());
+    ABSL_CHECK(uri.ok());
     grpc_resolved_address address;
-    CHECK(grpc_parse_uri(*uri, &address));
+    ABSL_CHECK(grpc_parse_uri(*uri, &address));
     return address;
   }
 
@@ -841,11 +841,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           // notifications for the subchannels, so we add another
           // callback to the queue to be executed after those initial
           // state notifications have been delivered.
-          LOG(INFO) << "Applied update, waiting for initial connectivity state "
+          ABSL_LOG(INFO) << "Applied update, waiting for initial connectivity state "
                        "notifications";
           work_serializer_->Run(
               [&]() {
-                LOG(INFO) << "Initial connectivity state notifications "
+                ABSL_LOG(INFO) << "Initial connectivity state notifications "
                              "delivered; waiting for health notifications";
                 // Now that the initial state notifications have been
                 // delivered, the queue will contain the health watch
@@ -862,7 +862,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }
-    LOG(INFO) << "health notifications delivered";
+    ABSL_LOG(INFO) << "health notifications delivered";
     return status;
   }
 
@@ -896,15 +896,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   bool WaitForStateUpdate(
       std::function<bool(FakeHelper::StateUpdate update)> continue_predicate,
       SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "==> WaitForStateUpdate()";
+    ABSL_LOG(INFO) << "==> WaitForStateUpdate()";
     while (true) {
       auto update = helper_->GetNextStateUpdate(location);
       if (!update.has_value()) {
-        LOG(INFO) << "WaitForStateUpdate() returning false";
+        ABSL_LOG(INFO) << "WaitForStateUpdate() returning false";
         return false;
       }
       if (!continue_predicate(std::move(*update))) {
-        LOG(INFO) << "WaitForStateUpdate() returning true";
+        ABSL_LOG(INFO) << "WaitForStateUpdate() returning true";
         return true;
       }
     }
@@ -941,7 +941,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // update for state READY, whose picker is returned.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
       SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "==> WaitForConnected()";
+    ABSL_LOG(INFO) << "==> WaitForConnected()";
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> final_picker;
     WaitForStateUpdate(
         [&](FakeHelper::StateUpdate update) {
@@ -1018,7 +1018,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                               const CallAttributes& call_attributes = {},
                               size_t num_iterations = 3,
                               SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "Waiting for expected RR addresses...";
+    ABSL_LOG(INFO) << "Waiting for expected RR addresses...";
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> retval;
     size_t num_picks =
         std::max(new_addresses.size(), old_addresses.size()) * num_iterations;
@@ -1034,7 +1034,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           EXPECT_TRUE(picks.has_value())
               << location.file() << ":" << location.line();
           if (!picks.has_value()) return false;
-          LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
+          ABSL_LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
           // If the picks still match the old list, then keep going.
           if (PicksAreRoundRobin(old_addresses, *picks)) return true;
           // Otherwise, the picks should match the new list.
@@ -1049,7 +1049,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           return false;  // Stop.
         },
         location);
-    LOG(INFO) << "done waiting for expected RR addresses";
+    ABSL_LOG(INFO) << "done waiting for expected RR addresses";
     return retval;
   }
 
@@ -1223,7 +1223,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
       absl::Span<const EndpointAddresses> endpoints,
       SourceLocation location = SourceLocation()) {
-    CHECK(!endpoints.empty());
+    ABSL_CHECK(!endpoints.empty());
     // There should be a subchannel for every address.
     // We will wind up connecting to the first address for every endpoint.
     std::vector<std::vector<SubchannelState*>> endpoint_subchannels;
@@ -1307,7 +1307,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
   DrainRoundRobinPickerUpdates(absl::Span<const absl::string_view> addresses,
                                SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "Draining RR picker updates...";
+    ABSL_LOG(INFO) << "Draining RR picker updates...";
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     while (!helper_->QueueEmpty()) {
       auto update = helper_->GetNextStateUpdate(location);
@@ -1322,17 +1322,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                             location);
       picker = std::move(update->picker);
     }
-    LOG(INFO) << "Done draining RR picker updates";
+    ABSL_LOG(INFO) << "Done draining RR picker updates";
     return picker;
   }
 
   // Expects zero or more CONNECTING updates.
   void DrainConnectingUpdates(SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "Draining CONNECTING updates...";
+    ABSL_LOG(INFO) << "Draining CONNECTING updates...";
     while (!helper_->QueueEmpty()) {
       ASSERT_TRUE(ExpectConnectingUpdate(location));
     }
-    LOG(INFO) << "Done draining CONNECTING updates";
+    ABSL_LOG(INFO) << "Done draining CONNECTING updates";
   }
 
   // Triggers a connection failure for the current address for an
@@ -1341,7 +1341,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const absl::string_view> addresses, size_t current_index,
       size_t new_index, absl::AnyInvocable<void()> expect_after_disconnect,
       SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "Expecting endpoint address change: addresses={"
+    ABSL_LOG(INFO) << "Expecting endpoint address change: addresses={"
               << absl::StrJoin(addresses, ", ")
               << "}, current_index=" << current_index
               << ", new_index=" << new_index;
@@ -1385,7 +1385,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       // interacts with it again.
       subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
     }
-    LOG(INFO) << "Done with endpoint address change";
+    ABSL_LOG(INFO) << "Done with endpoint address change";
   }
 
   // Requests a picker on picker and expects a Fail result.
@@ -1451,20 +1451,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void WaitForWorkSerializerToFlush() {
     ExecCtx exec_ctx;
-    LOG(INFO) << "waiting for WorkSerializer to flush...";
+    ABSL_LOG(INFO) << "waiting for WorkSerializer to flush...";
     absl::Notification notification;
     work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }
-    LOG(INFO) << "WorkSerializer flush complete";
+    ABSL_LOG(INFO) << "WorkSerializer flush complete";
   }
 
   void IncrementTimeBy(Duration duration, bool flush_work_serializer = true) {
     ExecCtx exec_ctx;
-    LOG(INFO) << "Incrementing time by " << duration;
+    ABSL_LOG(INFO) << "Incrementing time by " << duration;
     fuzzing_ee_->TickForDuration(duration);
-    LOG(INFO) << "Done incrementing time";
+    ABSL_LOG(INFO) << "Done incrementing time";
     // Flush WorkSerializer, in case the timer callback enqueued anything.
     if (flush_work_serializer) WaitForWorkSerializerToFlush();
   }

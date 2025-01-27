@@ -19,7 +19,7 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/statusor.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/config/core_configuration.h"
@@ -78,7 +78,7 @@ class ClientFuzzer final : public BasicFuzzer {
                    ->c_ptr();
   }
 
-  ~ClientFuzzer() { CHECK_EQ(channel_, nullptr); }
+  ~ClientFuzzer() { ABSL_CHECK_EQ(channel_, nullptr); }
 
  private:
   Result CreateChannel(const api_fuzzer::CreateChannel&) override {

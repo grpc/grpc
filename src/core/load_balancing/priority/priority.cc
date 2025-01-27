@@ -30,8 +30,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -401,7 +401,7 @@ void PriorityLb::ChoosePriorityLocked() {
           RefAsSubclass<PriorityLb>(DEBUG_LOCATION, "ChildPriority"),
           child_name);
       auto child_config = config_->children().find(child_name);
-      DCHECK(child_config != config_->children().end());
+      ABSL_DCHECK(child_config != config_->children().end());
       // If the child policy returns a non-OK status, request re-resolution.
       // Note that this will initially cause fixed backoff delay in the
       // resolver instead of exponential delay.  However, once the
@@ -451,7 +451,7 @@ void PriorityLb::ChoosePriorityLocked() {
         << "[priority_lb " << this << "] trying priority " << priority
         << ", child " << child_name;
     auto& child = children_[child_name];
-    CHECK(child != nullptr);
+    ABSL_CHECK(child != nullptr);
     if (child->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
       SetCurrentPriorityLocked(priority, /*deactivate_lower_priorities=*/false,
                                "CONNECTING (pass 2)");
@@ -480,7 +480,7 @@ void PriorityLb::SetCurrentPriorityLocked(int32_t priority,
     }
   }
   auto& child = children_[config_->priorities()[priority]];
-  CHECK(child != nullptr);
+  ABSL_CHECK(child != nullptr);
   channel_control_helper()->UpdateState(child->connectivity_state(),
                                         child->connectivity_status(),
                                         child->GetPicker());

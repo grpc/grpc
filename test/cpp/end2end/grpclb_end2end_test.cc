@@ -35,8 +35,8 @@
 #include <thread>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -162,13 +162,13 @@ class BackendServiceImpl : public BackendService {
 
 std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
-  CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
+  ABSL_CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
   return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
 std::string Ip6ToPackedString(const char* ip_str) {
   struct in6_addr ip6;
-  CHECK_EQ(inet_pton(AF_INET6, ip_str, &ip6), 1);
+  ABSL_CHECK_EQ(inet_pton(AF_INET6, ip_str, &ip6), 1);
   return std::string(reinterpret_cast<const char*>(&ip6), sizeof(ip6));
 }
 
@@ -223,7 +223,7 @@ class BalancerServiceImpl : public BalancerService {
       shutdown_ = true;
     }
     ShutdownStream();
-    LOG(INFO) << "LB[" << this << "]: shut down";
+    ABSL_LOG(INFO) << "LB[" << this << "]: shut down";
   }
 
   void set_client_load_reporting_interval_seconds(int seconds) {
@@ -283,11 +283,11 @@ class BalancerServiceImpl : public BalancerService {
  private:
   // Request handler.
   Status BalanceLoad(ServerContext* context, Stream* stream) override {
-    LOG(INFO) << "LB[" << this << "]: BalanceLoad";
+    ABSL_LOG(INFO) << "LB[" << this << "]: BalanceLoad";
     {
       grpc_core::MutexLock lock(&mu_);
       if (shutdown_) {
-        LOG(INFO) << "LB[" << this << "]: shutdown at stream start";
+        ABSL_LOG(INFO) << "LB[" << this << "]: shutdown at stream start";
         return Status::OK;
       }
     }
@@ -308,7 +308,7 @@ class BalancerServiceImpl : public BalancerService {
     // Read initial request.
     LoadBalanceRequest request;
     if (!stream->Read(&request)) {
-      LOG(INFO) << "LB[" << this << "]: stream read returned false";
+      ABSL_LOG(INFO) << "LB[" << this << "]: stream read returned false";
       return Status::OK;
     }
     EXPECT_TRUE(request.has_initial_request());
@@ -317,7 +317,7 @@ class BalancerServiceImpl : public BalancerService {
       service_names_.push_back(request.initial_request().name());
     }
     IncreaseRequestCount();
-    LOG(INFO) << "LB[" << this << "]: received initial message '"
+    ABSL_LOG(INFO) << "LB[" << this << "]: received initial message '"
               << request.DebugString() << "'";
     // Send initial response.
     LoadBalanceResponse response;
@@ -332,11 +332,11 @@ class BalancerServiceImpl : public BalancerService {
     std::thread reader(std::bind(&BalancerServiceImpl::ReadThread, this, stream,
                                  &reader_shutdown));
     auto thread_cleanup = absl::MakeCleanup([&]() {
-      LOG(INFO) << "shutting down reader thread";
+      ABSL_LOG(INFO) << "shutting down reader thread";
       reader_shutdown.Notify();
-      LOG(INFO) << "joining reader thread";
+      ABSL_LOG(INFO) << "joining reader thread";
       reader.join();
-      LOG(INFO) << "joining reader thread complete";
+      ABSL_LOG(INFO) << "joining reader thread complete";
     });
     // Send responses as instructed by the test.
     while (true) {
@@ -345,12 +345,12 @@ class BalancerServiceImpl : public BalancerService {
         context->TryCancel();
         break;
       }
-      LOG(INFO) << "LB[" << this
+      ABSL_LOG(INFO) << "LB[" << this
                 << "]: Sending response: " << response->DebugString();
       IncreaseResponseCount();
       stream->Write(*response);
     }
-    LOG(INFO) << "LB[" << this << "]: done";
+    ABSL_LOG(INFO) << "LB[" << this << "]: done";
     return Status::OK;
   }
 
@@ -358,7 +358,7 @@ class BalancerServiceImpl : public BalancerService {
   void ReadThread(Stream* stream, absl::Notification* shutdown) {
     LoadBalanceRequest request;
     while (!shutdown->HasBeenNotified() && stream->Read(&request)) {
-      LOG(INFO) << "LB[" << this << "]: received client load report message '"
+      ABSL_LOG(INFO) << "LB[" << this << "]: received client load report message '"
                 << request.DebugString() << "'";
       EXPECT_GT(client_load_reporting_interval_seconds_, 0);
       EXPECT_TRUE(request.has_client_stats());
@@ -449,8 +449,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     ~ServerThread() { Shutdown(); }
 
     void Start() {
-      LOG(INFO) << "starting " << type_ << " server on port " << port_;
-      CHECK(!running_);
+      ABSL_LOG(INFO) << "starting " << type_ << " server on port " << port_;
+      ABSL_CHECK(!running_);
       running_ = true;
       service_.Start();
       grpc_core::Mutex mu;
@@ -461,7 +461,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Serve, this, &mu, &cond));
       cond.Wait(&mu);
-      LOG(INFO) << type_ << " server startup complete";
+      ABSL_LOG(INFO) << type_ << " server startup complete";
     }
 
     void Serve(grpc_core::Mutex* mu, grpc_core::CondVar* cond) {
@@ -479,11 +479,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
     void Shutdown() {
       if (!running_) return;
-      LOG(INFO) << type_ << " about to shutdown";
+      ABSL_LOG(INFO) << type_ << " about to shutdown";
       service_.Shutdown();
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
-      LOG(INFO) << type_ << " shutdown completed";
+      ABSL_LOG(INFO) << type_ << " shutdown completed";
       running_ = false;
     }
 
@@ -665,7 +665,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       size_t start_index = 0, size_t stop_index = 0,
       WaitForBackendOptions options = WaitForBackendOptions(),
       SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "Waiting for backends [" << start_index << ", " << stop_index
+    ABSL_LOG(INFO) << "Waiting for backends [" << start_index << ", " << stop_index
               << ")";
     const absl::Time deadline =
         absl::Now() +
@@ -687,7 +687,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops);
     }
     ResetBackendCounters();
-    LOG(INFO) << "Performed " << num_total
+    ABSL_LOG(INFO) << "Performed " << num_total
               << " warm up requests (a multiple of "
               << options.num_requests_multiple_of << ") against the backends. "
               << num_ok << " succeeded, " << num_failure << " failed, "
@@ -707,9 +707,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK_OK(lb_uri);
+      ABSL_CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*lb_uri, &address));
+      ABSL_CHECK(grpc_parse_uri(*lb_uri, &address));
       grpc_core::ChannelArgs args;
       if (!balancer_name.empty()) {
         args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, balancer_name);
@@ -728,7 +728,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     result.addresses = std::move(backends);
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         grpc_core::ChannelArgs(), service_config_json);
-    CHECK_OK(result.service_config);
+    ABSL_CHECK_OK(result.service_config);
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
         grpc_core::ChannelArgs(), std::move(balancers));
     response_generator_->SetResponseSynchronously(std::move(result));
@@ -955,7 +955,7 @@ TEST_F(GrpclbEnd2endTest, UsePickFirstChildPolicy) {
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->service().request_count() > 0) {
-      LOG(INFO) << "backend " << i << " saw traffic";
+      ABSL_LOG(INFO) << "backend " << i << " saw traffic";
       EXPECT_EQ(backends_[i]->service().request_count(), kNumRpcs)
           << "backend " << i;
       EXPECT_FALSE(found) << "multiple backends saw traffic";
@@ -992,7 +992,7 @@ TEST_F(GrpclbEnd2endTest, SwapChildPolicy) {
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->service().request_count() > 0) {
-      LOG(INFO) << "backend " << i << " saw traffic";
+      ABSL_LOG(INFO) << "backend " << i << " saw traffic";
       EXPECT_EQ(backends_[i]->service().request_count(), kNumRpcs)
           << "backend " << i;
       EXPECT_FALSE(found) << "multiple backends saw traffic";
@@ -1307,9 +1307,9 @@ TEST_F(GrpclbEnd2endTest,
   SetNextResolutionDefaultBalancer();
   WaitForBackend(0);
   // Send 10 requests.
-  LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
+  ABSL_LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
   CheckRpcSendOk(10);
-  LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
+  ABSL_LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->service().request_count());
   EXPECT_EQ(0U, backends_[1]->service().request_count());
@@ -1322,9 +1322,9 @@ TEST_F(GrpclbEnd2endTest,
   // Now tell the channel to use balancer 2.  However, the stream to the
   // default balancer is not terminated, so the client will continue to
   // use it.
-  LOG(INFO) << "========= ABOUT TO UPDATE 1 ==========";
+  ABSL_LOG(INFO) << "========= ABOUT TO UPDATE 1 ==========";
   SetNextResolution({balancer2->port()});
-  LOG(INFO) << "========= UPDATE 1 DONE ==========";
+  ABSL_LOG(INFO) << "========= UPDATE 1 DONE ==========";
   // Now the default balancer sends backend 2.
   SendBalancerResponse(BuildResponseForBackends({backends_[2]->port()}, {}));
   WaitForBackend(2);
@@ -1347,9 +1347,9 @@ TEST_F(GrpclbEnd2endTest,
   // Wait until the first backend is ready.
   WaitForBackend(0);
   // Send 10 requests.
-  LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
+  ABSL_LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
   CheckRpcSendOk(10);
-  LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
+  ABSL_LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->service().request_count());
   EXPECT_EQ(0U, backends_[1]->service().request_count());
@@ -1359,15 +1359,15 @@ TEST_F(GrpclbEnd2endTest,
   EXPECT_EQ(0U, balancer2->service().request_count());
   EXPECT_EQ(0U, balancer2->service().response_count());
   // Send another address list with the same list of balancers.
-  LOG(INFO) << "========= ABOUT TO UPDATE 1 ==========";
+  ABSL_LOG(INFO) << "========= ABOUT TO UPDATE 1 ==========";
   SetNextResolution({balancer_->port(), balancer2->port()});
-  LOG(INFO) << "========= UPDATE 1 DONE ==========";
+  ABSL_LOG(INFO) << "========= UPDATE 1 DONE ==========";
   // Shut down the balancer stream to force the client to create a new one.
   // The new stream should go to the default balancer, since the
   // underlying connection should not have been broken.
-  LOG(INFO) << "========= SHUTTING DOWN BALANCER CALL ==========";
+  ABSL_LOG(INFO) << "========= SHUTTING DOWN BALANCER CALL ==========";
   balancer_->service().ShutdownStream();
-  LOG(INFO) << "========= DONE SHUTTING DOWN BALANCER CALL ==========";
+  ABSL_LOG(INFO) << "========= DONE SHUTTING DOWN BALANCER CALL ==========";
   // Wait until client has created a new balancer stream.
   EXPECT_TRUE(balancer_->service().WaitForNewStream(1));
   // Make sure there was only one client connection seen by the balancer.
@@ -1391,34 +1391,34 @@ TEST_F(GrpclbEnd2endTest, BalancerDiesThenSwitchToNewBalancer) {
   EXPECT_EQ(0U, balancer2->service().request_count());
   EXPECT_EQ(0U, balancer2->service().response_count());
   // Send 10 RPCs.
-  LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
+  ABSL_LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
   CheckRpcSendOk(10);
-  LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
+  ABSL_LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->service().request_count());
   EXPECT_EQ(0U, backends_[1]->service().request_count());
   // Kill default balancer.
-  LOG(INFO) << "********** ABOUT TO KILL BALANCER *************";
+  ABSL_LOG(INFO) << "********** ABOUT TO KILL BALANCER *************";
   balancer_->Shutdown();
-  LOG(INFO) << "********** KILLED BALANCER *************";
+  ABSL_LOG(INFO) << "********** KILLED BALANCER *************";
   // Channel should continue using the last backend it saw from the
   // balancer before the balancer died.
-  LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
+  ABSL_LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
   CheckRpcSendOk(10);
-  LOG(INFO) << "========= DONE WITH SECOND BATCH ==========";
+  ABSL_LOG(INFO) << "========= DONE WITH SECOND BATCH ==========";
   // All 10 requests should again have gone to the first backend.
   EXPECT_EQ(20U, backends_[0]->service().request_count());
   EXPECT_EQ(0U, backends_[1]->service().request_count());
   // Tell channel to start using balancer 2.
-  LOG(INFO) << "========= ABOUT TO UPDATE 1 ==========";
+  ABSL_LOG(INFO) << "========= ABOUT TO UPDATE 1 ==========";
   SetNextResolution({balancer2->port()});
-  LOG(INFO) << "========= UPDATE 1 DONE ==========";
+  ABSL_LOG(INFO) << "========= UPDATE 1 DONE ==========";
   // Channel should start using backend 1.
   WaitForBackend(1);
   // This is serviced by the updated RR policy
-  LOG(INFO) << "========= BEFORE THIRD BATCH ==========";
+  ABSL_LOG(INFO) << "========= BEFORE THIRD BATCH ==========";
   CheckRpcSendOk(10);
-  LOG(INFO) << "========= DONE WITH THIRD BATCH ==========";
+  ABSL_LOG(INFO) << "========= DONE WITH THIRD BATCH ==========";
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(0U, backends_[0]->service().request_count());
   EXPECT_EQ(10U, backends_[1]->service().request_count());
@@ -1436,15 +1436,15 @@ TEST_F(GrpclbEnd2endTest, ReresolveDeadBackendWhileInFallback) {
   // responds, and a fallback backend.
   SetNextResolution({balancer_->port()}, {backends_[0]->port()});
   // Start servers and send 10 RPCs per server.
-  LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
+  ABSL_LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
   CheckRpcSendOk(10);
-  LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
+  ABSL_LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
   // All 10 requests should have gone to the fallback backend.
   EXPECT_EQ(10U, backends_[0]->service().request_count());
   // Kill backend 0.
-  LOG(INFO) << "********** ABOUT TO KILL BACKEND 0 *************";
+  ABSL_LOG(INFO) << "********** ABOUT TO KILL BACKEND 0 *************";
   backends_[0]->Shutdown();
-  LOG(INFO) << "********** KILLED BACKEND 0 *************";
+  ABSL_LOG(INFO) << "********** KILLED BACKEND 0 *************";
   // This should trigger re-resolution.
   EXPECT_TRUE(response_generator_->WaitForReresolutionRequest(
       absl::Seconds(5 * grpc_test_slowdown_factor())));
@@ -1454,9 +1454,9 @@ TEST_F(GrpclbEnd2endTest, ReresolveDeadBackendWhileInFallback) {
   // Wait until re-resolution has been seen, as signaled by the second backend
   // receiving a request.
   WaitForBackend(1);
-  LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
+  ABSL_LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
   CheckRpcSendOk(10);
-  LOG(INFO) << "========= DONE WITH SECOND BATCH ==========";
+  ABSL_LOG(INFO) << "========= DONE WITH SECOND BATCH ==========";
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(10U, backends_[1]->service().request_count());
   EXPECT_EQ(1U, balancer_->service().request_count());
@@ -1475,9 +1475,9 @@ TEST_F(GrpclbEnd2endTest, ReresolveWhenBalancerCallFails) {
   SetNextResolutionDefaultBalancer();
   WaitForBackend(0);
   // Send 10 RPCs.
-  LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
+  ABSL_LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
   CheckRpcSendOk(10);
-  LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
+  ABSL_LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->service().request_count());
   // Balancer 0 got a single request and sent a single request.
@@ -1486,13 +1486,13 @@ TEST_F(GrpclbEnd2endTest, ReresolveWhenBalancerCallFails) {
   EXPECT_EQ(0U, balancer2->service().request_count());
   EXPECT_EQ(0U, balancer2->service().response_count());
   // Kill balancer 0.
-  LOG(INFO) << "********** ABOUT TO KILL BALANCER 0 *************";
+  ABSL_LOG(INFO) << "********** ABOUT TO KILL BALANCER 0 *************";
   balancer_->Shutdown();
-  LOG(INFO) << "********** KILLED BALANCER 0 *************";
+  ABSL_LOG(INFO) << "********** KILLED BALANCER 0 *************";
   // This should trigger a re-resolution.
   EXPECT_TRUE(response_generator_->WaitForReresolutionRequest(
       absl::Seconds(5 * grpc_test_slowdown_factor())));
-  LOG(INFO) << "********** SAW RE-RESOLUTION REQUEST *************";
+  ABSL_LOG(INFO) << "********** SAW RE-RESOLUTION REQUEST *************";
   // Re-resolution result switches to balancer 2.
   SetNextResolution({balancer2->port()});
   // Client should start using backend 1.

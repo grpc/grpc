@@ -20,7 +20,7 @@
 #include <cstdint>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/util/crash.h"
@@ -58,7 +58,7 @@ uint16_t Read2b(const uint8_t* input) {
 }
 
 void Write3b(uint32_t x, uint8_t* output) {
-  CHECK_LT(x, 16777216u);
+  ABSL_CHECK_LT(x, 16777216u);
   output[0] = static_cast<uint8_t>(x >> 16);
   output[1] = static_cast<uint8_t>(x >> 8);
   output[2] = static_cast<uint8_t>(x);
@@ -491,7 +491,7 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
 
 absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
                                              SliceBuffer payload) {
-  CHECK(payload.Length() == hdr.length);
+  ABSL_CHECK(payload.Length() == hdr.length);
   switch (hdr.type) {
     case kFrameTypeData:
       return ParseDataFrame(hdr, payload);

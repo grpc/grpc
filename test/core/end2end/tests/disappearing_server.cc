@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -29,13 +29,13 @@
 namespace grpc_core {
 
 static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
-  LOG(ERROR) << "Create client side call";
+  ABSL_LOG(ERROR) << "Create client side call";
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(30))
                .Create();
   IncomingMetadata server_initial_md;
   IncomingStatusOnClient server_status;
-  LOG(ERROR) << "Start initial batch";
+  ABSL_LOG(ERROR) << "Start initial batch";
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()

@@ -24,7 +24,7 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/match.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -89,7 +89,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
     expected_calls *= 2;
   }
   auto after = global_stats().Collect();
-  VLOG(2) << StatsAsJson(after.get());
+  ABSL_VLOG(2) << StatsAsJson(after.get());
   EXPECT_EQ(after->client_calls_created - before->client_calls_created,
             expected_calls);
   EXPECT_EQ(after->server_calls_created - before->server_calls_created,

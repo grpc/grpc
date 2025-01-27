@@ -23,7 +23,7 @@
 
 #include <atomic>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_core {
@@ -40,8 +40,8 @@ class MultiProducerSingleConsumerQueue {
 
   MultiProducerSingleConsumerQueue() : head_{&stub_}, tail_(&stub_) {}
   ~MultiProducerSingleConsumerQueue() {
-    CHECK(head_.load(std::memory_order_relaxed) == &stub_);
-    CHECK(tail_ == &stub_);
+    ABSL_CHECK(head_.load(std::memory_order_relaxed) == &stub_);
+    ABSL_CHECK(tail_ == &stub_);
   }
 
   // Push a node

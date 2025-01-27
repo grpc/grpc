@@ -20,7 +20,7 @@
 #include <map>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 
@@ -58,7 +58,7 @@ GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
   for (auto& logger_config : policy.logger_configs) {
     auto logger =
         AuditLoggerRegistry::CreateAuditLogger(std::move(logger_config));
-    CHECK(logger != nullptr);
+    ABSL_CHECK(logger != nullptr);
     audit_loggers_.push_back(std::move(logger));
   }
 }

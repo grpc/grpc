@@ -29,8 +29,8 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
@@ -255,7 +255,7 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
   if (GPR_UNLIKELY(!error->ok())) {
-    LOG(ERROR) << "error: " << StatusToString(*error);
+    ABSL_LOG(ERROR) << "error: " << StatusToString(*error);
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
@@ -281,8 +281,8 @@ grpc_call_stack* SubchannelCall::GetCallStack() {
 }
 
 void SubchannelCall::SetAfterCallStackDestroy(grpc_closure* closure) {
-  CHECK_EQ(after_call_stack_destroy_, nullptr);
-  CHECK_NE(closure, nullptr);
+  ABSL_CHECK_EQ(after_call_stack_destroy_, nullptr);
+  ABSL_CHECK_NE(closure, nullptr);
   after_call_stack_destroy_ = closure;
 }
 
@@ -333,7 +333,7 @@ void SubchannelCall::MaybeInterceptRecvTrailingMetadata(
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
                     this, grpc_schedule_on_exec_ctx);
   // save some state needed for the interception callback.
-  CHECK_EQ(recv_trailing_metadata_, nullptr);
+  ABSL_CHECK_EQ(recv_trailing_metadata_, nullptr);
   recv_trailing_metadata_ =
       batch->payload->recv_trailing_metadata.recv_trailing_metadata;
   original_recv_trailing_metadata_ =
@@ -359,12 +359,12 @@ void GetCallStatus(grpc_status_code* status, Timestamp deadline,
 void SubchannelCall::RecvTrailingMetadataReady(void* arg,
                                                grpc_error_handle error) {
   SubchannelCall* call = static_cast<SubchannelCall*>(arg);
-  CHECK_NE(call->recv_trailing_metadata_, nullptr);
+  ABSL_CHECK_NE(call->recv_trailing_metadata_, nullptr);
   grpc_status_code status = GRPC_STATUS_OK;
   GetCallStatus(&status, call->deadline_, call->recv_trailing_metadata_, error);
   channelz::SubchannelNode* channelz_node =
       call->connected_subchannel_->channelz_node();
-  CHECK_NE(channelz_node, nullptr);
+  ABSL_CHECK_NE(channelz_node, nullptr);
   if (status == GRPC_STATUS_OK) {
     channelz_node->RecordCallSucceeded();
   } else {
@@ -577,7 +577,7 @@ RefCountedPtr<Subchannel> Subchannel::Create(
     const grpc_resolved_address& address, const ChannelArgs& args) {
   SubchannelKey key(address, args);
   auto* subchannel_pool = args.GetObject<SubchannelPoolInterface>();
-  CHECK_NE(subchannel_pool, nullptr);
+  ABSL_CHECK_NE(subchannel_pool, nullptr);
   RefCountedPtr<Subchannel> c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
     return c;
@@ -685,7 +685,7 @@ void Subchannel::Orphaned() {
   }
   {
     MutexLock lock(&mu_);
-    CHECK(!shutdown_);
+    ABSL_CHECK(!shutdown_);
     shutdown_ = true;
     connector_.reset();
     connected_subchannel_.reset();
@@ -840,7 +840,7 @@ bool Subchannel::PublishTransportLocked() {
     absl::StatusOr<RefCountedPtr<grpc_channel_stack>> stack = builder.Build();
     if (!stack.ok()) {
       connecting_result_.Reset();
-      LOG(ERROR) << "subchannel " << this << " " << key_.ToString()
+      ABSL_LOG(ERROR) << "subchannel " << this << " " << key_.ToString()
                  << ": error initializing subchannel stack: " << stack.status();
       return false;
     }
@@ -878,7 +878,7 @@ bool Subchannel::PublishTransportLocked() {
     auto call_destination = builder.Build(transport_destination);
     if (!call_destination.ok()) {
       connecting_result_.Reset();
-      LOG(ERROR) << "subchannel " << this << " " << key_.ToString()
+      ABSL_LOG(ERROR) << "subchannel " << this << " " << key_.ToString()
                  << ": error initializing subchannel stack: "
                  << call_destination.status();
       return false;

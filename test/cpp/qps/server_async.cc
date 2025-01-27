@@ -33,7 +33,7 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/host_port.h"
@@ -91,7 +91,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     int num_threads = config.async_server_threads();
     if (num_threads <= 0) {  // dynamic sizing
       num_threads = std::min(64, cores());
-      LOG(INFO) << "Sizing async server to " << num_threads
+      ABSL_LOG(INFO) << "Sizing async server to " << num_threads
                 << " threads. Defaults to number of cores in machine or 64 "
                    "threads if machine has more than 64 cores to avoid OOMs.";
     }
@@ -109,9 +109,9 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
     server_ = builder->BuildAndStart();
     if (server_ == nullptr) {
-      LOG(ERROR) << "Server: Fail to BuildAndStart(port=" << port_num << ")";
+      ABSL_LOG(ERROR) << "Server: Fail to BuildAndStart(port=" << port_num << ")";
     } else {
-      LOG(INFO) << "Server: BuildAndStart(port=" << port_num << ")";
+      ABSL_LOG(INFO) << "Server: BuildAndStart(port=" << port_num << ")";
     }
 
     auto process_rpc_bound =

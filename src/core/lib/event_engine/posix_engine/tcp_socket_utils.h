@@ -25,7 +25,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/iomgr/port.h"
@@ -159,7 +159,7 @@ void UnlinkIfUnixDomainSocket(
 
 class PosixSocketWrapper {
  public:
-  explicit PosixSocketWrapper(int fd) : fd_(fd) { CHECK_GT(fd_, 0); }
+  explicit PosixSocketWrapper(int fd) : fd_(fd) { ABSL_CHECK_GT(fd_, 0); }
 
   PosixSocketWrapper() : fd_(-1) {};
 

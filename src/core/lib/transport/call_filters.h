@@ -23,7 +23,7 @@
 #include <ostream>
 #include <type_traits>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -146,9 +146,9 @@ class NextMessage {
   NextMessage() = default;
   explicit NextMessage(Failure) : message_(error()), call_state_(nullptr) {}
   NextMessage(MessageHandle message, CallState* call_state) {
-    DCHECK_NE(call_state, nullptr);
-    DCHECK_NE(message.get(), nullptr);
-    DCHECK(message.get_deleter().has_freelist());
+    ABSL_DCHECK_NE(call_state, nullptr);
+    ABSL_DCHECK_NE(message.get(), nullptr);
+    ABSL_DCHECK(message.get_deleter().has_freelist());
     message_ = message.release();
     call_state_ = call_state;
   }
@@ -171,31 +171,31 @@ class NextMessage {
   }
 
   bool ok() const {
-    DCHECK_NE(message_, taken());
+    ABSL_DCHECK_NE(message_, taken());
     return message_ != error();
   }
   bool has_value() const {
-    DCHECK_NE(message_, taken());
-    DCHECK(ok());
+    ABSL_DCHECK_NE(message_, taken());
+    ABSL_DCHECK(ok());
     return message_ != end_of_stream();
   }
   StatusFlag status() const { return StatusFlag(ok()); }
   Message& value() {
-    DCHECK_NE(message_, taken());
-    DCHECK(ok());
-    DCHECK(has_value());
+    ABSL_DCHECK_NE(message_, taken());
+    ABSL_DCHECK(ok());
+    ABSL_DCHECK(has_value());
     return *message_;
   }
   MessageHandle TakeValue() {
-    DCHECK_NE(message_, taken());
-    DCHECK(ok());
-    DCHECK(has_value());
+    ABSL_DCHECK_NE(message_, taken());
+    ABSL_DCHECK(ok());
+    ABSL_DCHECK(has_value());
     return MessageHandle(std::exchange(message_, taken()),
                          Arena::PooledDeleter());
   }
   bool progressed() const { return call_state_ == nullptr; }
   void Progress() {
-    DCHECK(!progressed());
+    ABSL_DCHECK(!progressed());
     (call_state_->*on_progress)();
     call_state_ = nullptr;
   }
@@ -264,7 +264,7 @@ template <typename T>
 struct ResultOr {
   ResultOr(T ok, ServerMetadataHandle error)
       : ok(std::move(ok)), error(std::move(error)) {
-    CHECK((this->ok == nullptr) ^ (this->error == nullptr));
+    ABSL_CHECK((this->ok == nullptr) ^ (this->error == nullptr));
   }
   T ok;
   ServerMetadataHandle error;
@@ -1177,13 +1177,13 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType*, size_t, const NoInterceptor* p) {
-    DCHECK(p == &FilterType::Call::OnFinalize);
+    ABSL_DCHECK(p == &FilterType::Call::OnFinalize);
   }
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
                     void (FilterType::Call::*p)(const grpc_call_final_info*)) {
-    DCHECK(p == &FilterType::Call::OnFinalize);
+    ABSL_DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
@@ -1198,7 +1198,7 @@ struct StackData {
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
                     void (FilterType::Call::*p)(const grpc_call_final_info*,
                                                 FilterType*)) {
-    DCHECK(p == &FilterType::Call::OnFinalize);
+    ABSL_DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
@@ -1228,11 +1228,11 @@ class OperationExecutor {
   OperationExecutor(OperationExecutor&& other) noexcept
       : ops_(other.ops_), end_ops_(other.end_ops_) {
     // Movable iff we're not running.
-    DCHECK_EQ(other.promise_data_, nullptr);
+    ABSL_DCHECK_EQ(other.promise_data_, nullptr);
   }
   OperationExecutor& operator=(OperationExecutor&& other) noexcept {
-    DCHECK_EQ(other.promise_data_, nullptr);
-    DCHECK_EQ(promise_data_, nullptr);
+    ABSL_DCHECK_EQ(other.promise_data_, nullptr);
+    ABSL_DCHECK_EQ(promise_data_, nullptr);
     ops_ = other.ops_;
     end_ops_ = other.end_ops_;
     return *this;
@@ -1285,7 +1285,7 @@ OperationExecutor<T>::Start(const Layout<T>* layout, T input, void* call_data) {
   if (layout->promise_size == 0) {
     // No call state ==> instantaneously ready
     auto r = InitStep(std::move(input), call_data);
-    CHECK(r.ready());
+    ABSL_CHECK(r.ready());
     return r;
   }
   promise_data_ =
@@ -1296,7 +1296,7 @@ OperationExecutor<T>::Start(const Layout<T>* layout, T input, void* call_data) {
 template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
 OperationExecutor<T>::InitStep(T input, void* call_data) {
-  CHECK(input != nullptr);
+  ABSL_CHECK(input != nullptr);
   while (true) {
     if (ops_ == end_ops_) {
       return ResultOr<T>{std::move(input), nullptr};
@@ -1317,7 +1317,7 @@ OperationExecutor<T>::InitStep(T input, void* call_data) {
 template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
 OperationExecutor<T>::Step(void* call_data) {
-  DCHECK_NE(promise_data_, nullptr);
+  ABSL_DCHECK_NE(promise_data_, nullptr);
   auto p = ContinueStep(call_data);
   if (p.ready()) {
     gpr_free_aligned(promise_data_);
@@ -1412,7 +1412,7 @@ struct FailureStatusCastImpl<filters_detail::NextMessage<on_progress>,
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static filters_detail::NextMessage<
       on_progress>
   Cast(StatusFlag flag) {
-    DCHECK_EQ(flag, Failure{});
+    ABSL_DCHECK_EQ(flag, Failure{});
     return filters_detail::NextMessage<on_progress>(Failure{});
   }
 };
@@ -1432,12 +1432,12 @@ struct TrySeqTraitsWithSfinae<filters_detail::NextMessage<on_progress>> {
     return value.ok();
   }
   static const char* ErrorString(const WrappedType& status) {
-    DCHECK(!status.ok());
+    ABSL_DCHECK(!status.ok());
     return "failed";
   }
   template <typename R>
   static R ReturnValue(WrappedType&& status) {
-    DCHECK(!status.ok());
+    ABSL_DCHECK(!status.ok());
     return WrappedType(Failure{});
   }
   template <typename F, typename Elem>
@@ -1581,13 +1581,13 @@ class CallFilters {
         : stack_current_(stack_begin),
           stack_end_(stack_end),
           filters_(filters) {
-      DCHECK_NE((filters_->*input_location).get(), nullptr);
+      ABSL_DCHECK_NE((filters_->*input_location).get(), nullptr);
     }
 
     Poll<ValueOrFailure<Output>> operator()() {
       if ((filters_->*input_location) != nullptr) {
         if (stack_current_ == stack_end_) {
-          DCHECK_NE((filters_->*input_location).get(), nullptr);
+          ABSL_DCHECK_NE((filters_->*input_location).get(), nullptr);
           (filters_->call_state_.*on_done)();
           return Output(std::move(filters_->*input_location));
         }
@@ -1638,13 +1638,13 @@ class CallFilters {
         : stack_current_(stack_begin),
           stack_end_(stack_end),
           filters_(filters) {
-      DCHECK_NE((filters_->*input_location).get(), nullptr);
+      ABSL_DCHECK_NE((filters_->*input_location).get(), nullptr);
     }
 
     Poll<NextMsg> operator()() {
       if ((filters_->*input_location) != nullptr) {
         if (stack_current_ == stack_end_) {
-          DCHECK_NE((filters_->*input_location).get(), nullptr);
+          ABSL_DCHECK_NE((filters_->*input_location).get(), nullptr);
           return NextMsg(std::move(filters_->*input_location),
                          &filters_->call_state_);
         }
@@ -1732,8 +1732,8 @@ class CallFilters {
   // Returns a promise that resolves to a StatusFlag indicating success
   GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message) {
     call_state_.BeginPushClientToServerMessage();
-    DCHECK_NE(message.get(), nullptr);
-    DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
+    ABSL_DCHECK_NE(message.get(), nullptr);
+    ABSL_DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
     push_client_to_server_message_ = std::move(message);
     return [this]() { return call_state_.PollPushClientToServerMessage(); };
   }

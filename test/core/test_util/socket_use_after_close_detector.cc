@@ -34,7 +34,7 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/test_util/port.h"
@@ -49,7 +49,7 @@ void OpenAndCloseSocketsStressLoop(int port, gpr_event* done_ev) {
   // Previously, this was causing test flakes for a while b/c bind calls
   // would fail with WSAEACCESS. Not clear if we were just making windows
   // unhappy.
-  LOG(INFO) << "OpenAndCloseSocketsStressLoop is a no-op for windows";
+  ABSL_LOG(INFO) << "OpenAndCloseSocketsStressLoop is a no-op for windows";
   return;
 }
 #else

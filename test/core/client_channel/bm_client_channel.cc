@@ -43,7 +43,7 @@ class ClientChannelTraits {
             .Set(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, true)
             // TODO(ctiller): remove once v3 supports retries
             .Set(GRPC_ARG_ENABLE_RETRIES, 0));
-    CHECK_OK(channel);
+    ABSL_CHECK_OK(channel);
     return std::move(*channel);
   }
 
@@ -68,7 +68,7 @@ class ClientChannelTraits {
   class TestConnector final : public SubchannelConnector {
    public:
     void Connect(const Args&, Result*, grpc_closure* notify) override {
-      CHECK_EQ(notify_, nullptr);
+      ABSL_CHECK_EQ(notify_, nullptr);
       notify_ = notify;
     }
 
@@ -136,7 +136,7 @@ class TestResolver final : public Resolver {
     Resolver::Result result;
     result.args = args_;
     grpc_resolved_address address;
-    CHECK(grpc_parse_uri(URI::Parse(endpoint_address).value(), &address));
+    ABSL_CHECK(grpc_parse_uri(URI::Parse(endpoint_address).value(), &address));
     result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
     return result;
   }

@@ -22,7 +22,7 @@ grpc_cc_test(
     name = "endpoint_addresses_test",
     srcs = ["endpoint_addresses_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     uses_event_engine = False,
@@ -39,7 +39,7 @@ grpc_cc_test(
     name = "dns_resolver_test",
     srcs = ["dns_resolver_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [
@@ -53,7 +53,7 @@ grpc_cc_test(
     name = "dns_resolver_cooldown_test",
     srcs = ["dns_resolver_cooldown_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [
@@ -69,7 +69,7 @@ grpc_cc_test(
     name = "sockaddr_resolver_test",
     srcs = ["sockaddr_resolver_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [

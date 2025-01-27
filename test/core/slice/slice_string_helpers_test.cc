@@ -22,7 +22,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/util/string.h"
 
@@ -43,7 +43,7 @@ TEST(SliceStringHelpersTest, DumpSlice) {
       "Victory Mansions, though not quickly enough to prevent a swirl of "
       "gritty dust from entering along with him.";
 
-  LOG(INFO) << "test_dump_slice";
+  ABSL_LOG(INFO) << "test_dump_slice";
 
   expect_slice_dump(grpc_slice_from_copied_string(text), GPR_DUMP_ASCII, text);
   expect_slice_dump(grpc_slice_from_copied_string(long_text), GPR_DUMP_ASCII,

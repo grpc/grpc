@@ -26,7 +26,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/useful.h"
@@ -55,7 +55,7 @@ static void assert_passthrough(grpc_slice value,
   const char* algorithm_name;
 
   ASSERT_NE(grpc_compression_algorithm_name(algorithm, &algorithm_name), 0);
-  LOG(INFO) << "assert_passthrough: value_length=" << GRPC_SLICE_LENGTH(value)
+  ABSL_LOG(INFO) << "assert_passthrough: value_length=" << GRPC_SLICE_LENGTH(value)
             << " algorithm='" << algorithm_name << "' uncompressed_split='"
             << grpc_slice_split_mode_name(uncompressed_split_mode)
             << "' compressed_split='"

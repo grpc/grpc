@@ -19,7 +19,7 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
@@ -47,7 +47,7 @@ class ClientChannelTest : public YodelTest {
 
   ClientChannel& InitChannel(const ChannelArgs& args) {
     auto channel = ClientChannel::Create(TestTarget(), CompleteArgs(args));
-    CHECK_OK(channel);
+    ABSL_CHECK_OK(channel);
     channel_ = RefCountedPtr<ClientChannel>(
         DownCast<ClientChannel*>(channel->release()));
     return *channel_;
@@ -85,13 +85,13 @@ class ClientChannelTest : public YodelTest {
       RefCountedPtr<ConfigSelector> config_selector = nullptr) {
     Resolver::Result result;
     grpc_resolved_address address;
-    CHECK(grpc_parse_uri(URI::Parse(endpoint_address).value(), &address));
+    ABSL_CHECK(grpc_parse_uri(URI::Parse(endpoint_address).value(), &address));
     result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
     result.service_config = std::move(service_config);
     if (config_selector != nullptr) {
-      CHECK(result.service_config.ok())
+      ABSL_CHECK(result.service_config.ok())
           << "channel does not use ConfigSelector without service config";
-      CHECK(*result.service_config != nullptr)
+      ABSL_CHECK(*result.service_config != nullptr)
           << "channel does not use ConfigSelector without service config";
       result.args = ChannelArgs().SetObject(std::move(config_selector));
     }
@@ -102,7 +102,7 @@ class ClientChannelTest : public YodelTest {
   class TestConnector final : public SubchannelConnector {
    public:
     void Connect(const Args&, Result*, grpc_closure* notify) override {
-      CHECK_EQ(notify_, nullptr);
+      ABSL_CHECK_EQ(notify_, nullptr);
       notify_ = notify;
     }
 
@@ -119,7 +119,7 @@ class ClientChannelTest : public YodelTest {
     RefCountedPtr<Subchannel> CreateSubchannel(
         const grpc_resolved_address& address,
         const ChannelArgs& args) override {
-      LOG(INFO) << "CreateSubchannel: args=" << args.ToString();
+      ABSL_LOG(INFO) << "CreateSubchannel: args=" << args.ToString();
       return Subchannel::Create(MakeOrphanable<TestConnector>(), address, args);
     }
   };
@@ -151,7 +151,7 @@ class ClientChannelTest : public YodelTest {
 
     RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
         ClientChannel::PickerObservable picker) override {
-      CHECK(!test_->picker_.has_value());
+      ABSL_CHECK(!test_->picker_.has_value());
       test_->picker_ = std::move(picker);
       return test_->call_destination_;
     }
@@ -170,12 +170,12 @@ class ClientChannelTest : public YodelTest {
           args_(std::move(args)),
           result_handler_(std::move(result_handler)),
           work_serializer_(std::move(work_serializer)) {
-      CHECK(test_->resolver_ == nullptr);
+      ABSL_CHECK(test_->resolver_ == nullptr);
       test_->resolver_ = this;
     }
 
     ~TestResolver() override {
-      CHECK_EQ(test_->resolver_, this);
+      ABSL_CHECK_EQ(test_->resolver_, this);
       test_->resolver_ = nullptr;
     }
 
@@ -210,8 +210,8 @@ class ClientChannelTest : public YodelTest {
     explicit TestResolverFactory(ClientChannelTest* test) : test_(test) {}
 
     OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-      CHECK_EQ(args.uri.scheme(), kTestScheme);
-      CHECK_EQ(args.uri.path(), kTestTarget);
+      ABSL_CHECK_EQ(args.uri.scheme(), kTestScheme);
+      ABSL_CHECK_EQ(args.uri.path(), kTestTarget);
       return MakeOrphanable<TestResolver>(test_, std::move(args.args),
                                           std::move(args.result_handler),
                                           std::move(args.work_serializer));

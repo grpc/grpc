@@ -22,8 +22,8 @@
 #include <regex>
 #include <tuple>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
 
@@ -97,11 +97,11 @@ void CoreEnd2endTest::TearDown() {
     // This will wait until gRPC shutdown has actually happened to make sure
     // no gRPC resources (such as thread) are active. (timeout = 10s)
     if (!grpc_wait_until_shutdown(10)) {
-      LOG(ERROR) << "Timeout in waiting for gRPC shutdown";
+      ABSL_LOG(ERROR) << "Timeout in waiting for gRPC shutdown";
     }
   }
-  CHECK_EQ(client_, nullptr);
-  CHECK_EQ(server_, nullptr);
+  ABSL_CHECK_EQ(client_, nullptr);
+  ABSL_CHECK_EQ(server_, nullptr);
   initialized_ = false;
 }
 
@@ -127,7 +127,7 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
 CoreEnd2endTest::ServerRegisteredMethod::ServerRegisteredMethod(
     CoreEnd2endTest* test, absl::string_view name,
     grpc_server_register_method_payload_handling payload_handling) {
-  CHECK_EQ(test->server_, nullptr);
+  ABSL_CHECK_EQ(test->server_, nullptr);
   test->pre_server_start_ = [old = std::move(test->pre_server_start_),
                              handle = handle_, name = std::string(name),
                              payload_handling](grpc_server* server) mutable {
@@ -179,14 +179,14 @@ void CoreEnd2endTestRegistry::RegisterTest(absl::string_view suite,
                                            SourceLocation) {
   if (absl::StartsWith(name, "DISABLED_")) return;
   auto& tests = tests_by_suite_[suite];
-  CHECK_EQ(tests.count(name), 0u);
+  ABSL_CHECK_EQ(tests.count(name), 0u);
   tests[name] = std::move(make_test);
 }
 
 void CoreEnd2endTestRegistry::RegisterSuite(
     absl::string_view suite, std::vector<const CoreTestConfiguration*> configs,
     SourceLocation) {
-  CHECK_EQ(suites_.count(suite), 0u);
+  ABSL_CHECK_EQ(suites_.count(suite), 0u);
   suites_[suite] = std::move(configs);
 }
 

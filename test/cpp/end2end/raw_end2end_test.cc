@@ -31,7 +31,7 @@
 #include <memory>
 #include <thread>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
@@ -76,7 +76,7 @@ class Verifier {
   // Verify keeps calling Next until all currently set
   // expected tags are complete
   void Verify(CompletionQueue* cq) {
-    CHECK(!expectations_.empty());
+    ABSL_CHECK(!expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, false);
     }

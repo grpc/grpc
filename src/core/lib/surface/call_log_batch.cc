@@ -106,7 +106,7 @@ static std::string grpc_op_string(const grpc_op* op) {
 void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
                          size_t nops) {
   for (size_t i = 0; i < nops; i++) {
-    LOG(INFO).AtLocation(file, line)
+    ABSL_LOG(INFO).AtLocation(file, line)
         << "ops[" << i << "]: " << grpc_op_string(&ops[i]);
   }
 }

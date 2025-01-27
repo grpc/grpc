@@ -25,8 +25,8 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
@@ -400,9 +400,9 @@ LrsClient::LrsChannel::LrsChannel(
       << " for server " << server_->server_uri();
   absl::Status status;
   transport_ = lrs_client_->transport_factory_->GetTransport(*server_, &status);
-  CHECK(transport_ != nullptr);
+  ABSL_CHECK(transport_ != nullptr);
   if (!status.ok()) {
-    LOG(ERROR) << "Error creating LRS channel to " << server_->server_uri()
+    ABSL_LOG(ERROR) << "Error creating LRS channel to " << server_->server_uri()
                << ": " << status;
   }
 }
@@ -484,8 +484,8 @@ void LrsClient::LrsChannel::RetryableCall<T>::OnCallFinishedLocked() {
 template <typename T>
 void LrsClient::LrsChannel::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
-  CHECK(lrs_channel_->transport_ != nullptr);
-  CHECK(call_ == nullptr);
+  ABSL_CHECK(lrs_channel_->transport_ != nullptr);
+  ABSL_CHECK(call_ == nullptr);
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_channel()->lrs_client() << "] lrs server "
       << lrs_channel()->server_->server_uri()
@@ -571,7 +571,7 @@ LrsClient::LrsChannel::LrsCall::LrsCall(
   // Init the LRS call. Note that the call will progress every time there's
   // activity in lrs_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
-  CHECK_NE(lrs_client(), nullptr);
+  ABSL_CHECK_NE(lrs_client(), nullptr);
   const char* method =
       "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats";
   streaming_call_ = lrs_channel()->transport_->CreateStreamingCall(
@@ -579,7 +579,7 @@ LrsClient::LrsChannel::LrsCall::LrsCall(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<LrsCall>(this)));
-  CHECK(streaming_call_ != nullptr);
+  ABSL_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_client() << "] lrs server "
@@ -679,14 +679,14 @@ void LrsClient::LrsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
       payload, &send_all_clusters, &new_cluster_names,
       &new_load_reporting_interval);
   if (!status.ok()) {
-    LOG(ERROR) << "[lrs_client " << lrs_client() << "] lrs server "
+    ABSL_LOG(ERROR) << "[lrs_client " << lrs_client() << "] lrs server "
                << lrs_channel()->server_->server_uri()
                << ": LRS response parsing failed: " << status;
     return;
   }
   seen_response_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[lrs_client " << lrs_client() << "] lrs server "
+    ABSL_LOG(INFO) << "[lrs_client " << lrs_client() << "] lrs server "
               << lrs_channel()->server_->server_uri()
               << ": LRS response received, " << new_cluster_names.size()
               << " cluster names, send_all_clusters=" << send_all_clusters
@@ -694,7 +694,7 @@ void LrsClient::LrsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
               << new_load_reporting_interval.millis() << "ms";
     size_t i = 0;
     for (const auto& name : new_cluster_names) {
-      LOG(INFO) << "[lrs_client " << lrs_client() << "] cluster_name " << i++
+      ABSL_LOG(INFO) << "[lrs_client " << lrs_client() << "] cluster_name " << i++
                 << ": " << name;
     }
   }
@@ -1054,7 +1054,7 @@ void MaybeLogLrsRequest(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[lrs_client " << context.client
+    ABSL_VLOG(2) << "[lrs_client " << context.client
             << "] constructed LRS request: " << buf;
   }
 }
@@ -1233,7 +1233,7 @@ void MaybeLogLrsResponse(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(response), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[lrs_client " << context.client
+    ABSL_VLOG(2) << "[lrs_client " << context.client
             << "] received LRS response: " << buf;
   }
 }

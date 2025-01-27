@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
@@ -75,7 +75,7 @@ static void test1(void) {
   grpc_timer* test_elements = create_test_elements(num_test_elements);
   uint8_t* inpq = static_cast<uint8_t*>(gpr_malloc(num_test_elements));
 
-  LOG(INFO) << "test1";
+  ABSL_LOG(INFO) << "test1";
 
   grpc_timer_heap_init(&pq);
   memset(inpq, 0, num_test_elements);
@@ -154,7 +154,7 @@ static elem_struct* search_elems(elem_struct* elems, size_t count,
 }
 
 static void test2(void) {
-  LOG(INFO) << "test2";
+  ABSL_LOG(INFO) << "test2";
 
   grpc_timer_heap pq;
 
@@ -225,7 +225,7 @@ static void test2(void) {
 }
 
 static void shrink_test(void) {
-  LOG(INFO) << "shrink_test";
+  ABSL_LOG(INFO) << "shrink_test";
 
   grpc_timer_heap pq;
   size_t i;

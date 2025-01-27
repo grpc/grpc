@@ -27,7 +27,7 @@
 
 #include <algorithm>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/time_precise.h"
 
@@ -72,7 +72,7 @@ static bool is_fake_clock() {
 }
 
 void gpr_precise_clock_init(void) {
-  VLOG(2) << "Calibrating timers";
+  ABSL_VLOG(2) << "Calibrating timers";
 
 #if GPR_LINUX
   if (read_freq_from_kernel(&cycles_per_second)) {
@@ -110,7 +110,7 @@ void gpr_precise_clock_init(void) {
     last_freq = freq;
   }
   cycles_per_second = last_freq;
-  VLOG(2) << "... cycles_per_second = " << cycles_per_second << "\n";
+  ABSL_VLOG(2) << "... cycles_per_second = " << cycles_per_second << "\n";
 }
 
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {

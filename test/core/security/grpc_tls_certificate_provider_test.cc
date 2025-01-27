@@ -24,7 +24,7 @@
 #include <deque>
 #include <list>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
@@ -136,15 +136,15 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override {
       MutexLock lock(&state_->mu);
-      CHECK(!root_cert_error.ok() || !identity_cert_error.ok());
+      ABSL_CHECK(!root_cert_error.ok() || !identity_cert_error.ok());
       std::string root_error_str;
       std::string identity_error_str;
       if (!root_cert_error.ok()) {
-        CHECK(grpc_error_get_str(
+        ABSL_CHECK(grpc_error_get_str(
             root_cert_error, StatusStrProperty::kDescription, &root_error_str));
       }
       if (!identity_cert_error.ok()) {
-        CHECK(grpc_error_get_str(identity_cert_error,
+        ABSL_CHECK(grpc_error_get_str(identity_cert_error,
                                  StatusStrProperty::kDescription,
                                  &identity_error_str));
       }

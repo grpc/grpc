@@ -57,7 +57,7 @@ grpc_cc_library(
     srcs = ["fake_handshaker_server.cc"],
     hdrs = ["fake_handshaker_server.h"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     deps = [
         "handshaker_cc_grpc",
@@ -72,8 +72,8 @@ grpc_cc_binary(
     srcs = ["fake_handshaker_server_main.cc"],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     deps = [
         "fake_handshaker_lib",

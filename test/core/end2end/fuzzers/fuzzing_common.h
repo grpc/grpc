@@ -29,7 +29,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/types/span.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -62,7 +62,7 @@ inline Validator* MakeValidator(std::function<void(bool)> impl) {
 
 inline Validator* AssertSuccessAndDecrement(int* counter) {
   return MakeValidator([counter](bool success) {
-    CHECK(success);
+    ABSL_CHECK(success);
     --*counter;
   });
 }
@@ -98,7 +98,7 @@ class BasicFuzzer {
   void ShutdownCalls();
   void ResetServerState() {
     server_shutdown_ = false;
-    CHECK_EQ(pending_server_shutdowns_, 0);
+    ABSL_CHECK_EQ(pending_server_shutdowns_, 0);
   }
 
   // Poll any created completion queue to drive the RPC forward.

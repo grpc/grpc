@@ -31,8 +31,8 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -208,7 +208,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error);
 static void proxy_connection_failed(proxy_connection* conn,
                                     failure_type failure, const char* prefix,
                                     grpc_error_handle error) {
-  LOG(INFO) << prefix << ": " << grpc_core::StatusToString(error);
+  ABSL_LOG(INFO) << prefix << ": " << grpc_core::StatusToString(error);
   // Decide whether we should shut down the client and server.
   bool shutdown_client = false;
   bool shutdown_server = false;
@@ -524,7 +524,7 @@ static bool proxy_auth_header_matches(absl::string_view proxy_auth_header_val,
 // which will cause the client connection to be dropped.
 static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  VLOG(2) << "on_read_request_done: " << conn << " "
+  ABSL_VLOG(2) << "on_read_request_done: " << conn << " "
           << grpc_core::StatusToString(error);
   if (!error.ok()) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
@@ -583,7 +583,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
     }
   }
   // Resolve address.
-  VLOG(2) << "proxy connecting to backend: " << conn->http_request.path;
+  ABSL_VLOG(2) << "proxy connecting to backend: " << conn->http_request.path;
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
       grpc_core::GetDNSResolver()->LookupHostnameBlocking(
           conn->http_request.path, "80");
@@ -591,7 +591,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup", error);
     return;
   }
-  CHECK(!addresses_or->empty());
+  ABSL_CHECK(!addresses_or->empty());
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
   const grpc_core::Timestamp deadline =
@@ -684,7 +684,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   // Construct proxy address.
   proxy->port = grpc_pick_unused_port_or_die();
   proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy->port);
-  VLOG(2) << "Proxy address: " << proxy->proxy_name;
+  ABSL_VLOG(2) << "Proxy address: " << proxy->proxy_name;
   // Create TCP server.
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()
@@ -694,7 +694,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
       nullptr,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
       on_accept, proxy, &proxy->server);
-  CHECK_OK(error);
+  ABSL_CHECK_OK(error);
   // Bind to port.
   grpc_resolved_address resolved_addr;
   grpc_sockaddr_in* addr =
@@ -705,8 +705,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_sockaddr_set_port(&resolved_addr, proxy->port);
   int port;
   error = grpc_tcp_server_add_port(proxy->server, &resolved_addr, &port);
-  CHECK_OK(error);
-  CHECK(port == proxy->port);
+  ABSL_CHECK_OK(error);
+  ABSL_CHECK(port == proxy->port);
   // Start server.
   auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &proxy->mu);

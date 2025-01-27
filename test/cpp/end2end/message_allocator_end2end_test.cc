@@ -36,8 +36,8 @@
 #include <sstream>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
@@ -97,7 +97,7 @@ std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
 void TestScenario::Log() const {
   std::ostringstream out;
   out << *this;
-  LOG(INFO) << out.str();
+  ABSL_LOG(INFO) << out.str();
 }
 
 class MessageAllocatorEnd2endTestBase
@@ -173,7 +173,7 @@ class MessageAllocatorEnd2endTestBase
       stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
-            CHECK(s.ok());
+            ABSL_CHECK(s.ok());
 
             EXPECT_EQ(request.message(), response.message());
             std::lock_guard<std::mutex> l(mu);
@@ -328,7 +328,7 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
         set_response(google::protobuf::Arena::Create<EchoResponse>(&arena_));
       }
       void Release() override { delete this; }
-      void FreeRequest() override { CHECK(0); }
+      void FreeRequest() override { ABSL_CHECK(0); }
 
      private:
       google::protobuf::Arena arena_;
@@ -363,7 +363,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
-  CHECK(!credentials_types.empty());
+  ABSL_CHECK(!credentials_types.empty());
 
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};
   for (Protocol p : parr) {

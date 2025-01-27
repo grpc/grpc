@@ -21,7 +21,7 @@
 #include <random>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
@@ -65,7 +65,7 @@ TEST(TimerManagerTest, StressTest) {
                << called.load(std::memory_order_relaxed) << "/" << kTimerCount
                << " callbacks executed";
       }
-      VLOG(2) << "Processed " << called.load(std::memory_order_relaxed) << "/"
+      ABSL_VLOG(2) << "Processed " << called.load(std::memory_order_relaxed) << "/"
               << kTimerCount << " callbacks";
       absl::SleepFor(absl::Milliseconds(333));
     }

@@ -29,8 +29,8 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["lb_policy_test_lib.h"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [
@@ -103,7 +103,7 @@ grpc_cc_test(
     name = "outlier_detection_test",
     srcs = ["outlier_detection_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -140,7 +140,7 @@ grpc_cc_test(
     name = "xds_override_host_test",
     srcs = ["xds_override_host_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -192,7 +192,7 @@ grpc_cc_benchmark(
     srcs = ["static_stride_scheduler_benchmark.cc"],
     external_deps = [
         "absl/algorithm:container",
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     monitoring = HISTORY,
     uses_event_engine = False,
@@ -224,7 +224,7 @@ grpc_cc_test(
     name = "weighted_round_robin_test",
     srcs = ["weighted_round_robin_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [

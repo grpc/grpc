@@ -44,8 +44,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 #include "src/core/server/server.h"
 #include "src/core/util/string.h"
@@ -137,7 +137,7 @@ ServerBuilder& ServerBuilder::RegisterService(const std::string& host,
 ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
     AsyncGenericService* service) {
   if (generic_service_ || callback_generic_service_) {
-    LOG(ERROR) << "Adding multiple generic services is unsupported for now. "
+    ABSL_LOG(ERROR) << "Adding multiple generic services is unsupported for now. "
                   "Dropping the service "
                << service;
   } else {
@@ -149,7 +149,7 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
 ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
     CallbackGenericService* service) {
   if (generic_service_ || callback_generic_service_) {
-    LOG(ERROR) << "Adding multiple generic services is unsupported for now. "
+    ABSL_LOG(ERROR) << "Adding multiple generic services is unsupported for now. "
                   "Dropping the service "
                << service;
   } else {
@@ -186,7 +186,7 @@ void ServerBuilder::experimental_type::SetAuthorizationPolicyProvider(
 void ServerBuilder::experimental_type::EnableCallMetricRecording(
     experimental::ServerMetricRecorder* server_metric_recorder) {
   builder_->AddChannelArgument(GRPC_ARG_SERVER_CALL_METRIC_RECORDING, 1);
-  CHECK_EQ(builder_->server_metric_recorder_, nullptr);
+  ABSL_CHECK_EQ(builder_->server_metric_recorder_, nullptr);
   builder_->server_metric_recorder_ = server_metric_recorder;
 }
 
@@ -387,14 +387,14 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
 
   if (has_sync_methods) {
     // This is a Sync server
-    VLOG(2) << "Synchronous server. Num CQs: " << sync_server_settings_.num_cqs
+    ABSL_VLOG(2) << "Synchronous server. Num CQs: " << sync_server_settings_.num_cqs
             << ", Min pollers: " << sync_server_settings_.min_pollers
             << ", Max Pollers: " << sync_server_settings_.max_pollers
             << ", CQ timeout (msec): " << sync_server_settings_.cq_timeout_msec;
   }
 
   if (has_callback_methods) {
-    VLOG(2) << "Callback server.";
+    ABSL_VLOG(2) << "Callback server.";
   }
 
   std::unique_ptr<grpc::Server> server(new grpc::Server(
@@ -439,13 +439,13 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     if (passive_listener != nullptr) {
       auto* creds = unstarted_listener.credentials->c_creds();
       if (creds == nullptr) {
-        LOG(ERROR) << "Credentials missing for PassiveListener";
+        ABSL_LOG(ERROR) << "Credentials missing for PassiveListener";
         return nullptr;
       }
       auto success = grpc_server_add_passive_listener(
           core_server, creds, std::move(passive_listener));
       if (!success.ok()) {
-        LOG(ERROR) << "Failed to create a passive listener: "
+        ABSL_LOG(ERROR) << "Failed to create a passive listener: "
                    << success.ToString();
         return nullptr;
       }
@@ -453,7 +453,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   if (!has_frequently_polled_cqs) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "At least one of the completion queues must be frequently polled";
     return nullptr;
   }
@@ -477,7 +477,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   } else {
     for (const auto& value : services_) {
       if (value->service->has_generic_methods()) {
-        LOG(ERROR) << "Some methods were marked generic but there is no "
+        ABSL_LOG(ERROR) << "Some methods were marked generic but there is no "
                       "generic service registered.";
         return nullptr;
       }
@@ -518,7 +518,7 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
     case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
       return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION, 1);
     default:
-      LOG(ERROR) << "Workaround " << id << " does not exist or is obsolete.";
+      ABSL_LOG(ERROR) << "Workaround " << id << " does not exist or is obsolete.";
       return *this;
   }
 }

@@ -25,7 +25,7 @@
 #include <cmath>
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -41,7 +41,7 @@ void AddLoadReportingCost(grpc::ServerContext* ctx,
            cost_name.size());
     ctx->AddTrailingMetadata(GRPC_LB_COST_MD_KEY, buf);
   } else {
-    LOG(ERROR) << "Call metric value is not normal.";
+    ABSL_LOG(ERROR) << "Call metric value is not normal.";
   }
 }
 

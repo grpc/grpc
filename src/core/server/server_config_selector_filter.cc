@@ -22,7 +22,7 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -123,7 +123,7 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
     : server_config_selector_provider_(
           std::move(server_config_selector_provider)) {
-  CHECK(server_config_selector_provider_ != nullptr);
+  ABSL_CHECK(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
       std::make_unique<ServerConfigSelectorWatcher>(Ref());
   auto config_selector = server_config_selector_provider_->Watch(

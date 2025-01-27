@@ -40,7 +40,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -428,7 +428,7 @@ class MessageReceiver {
 
   template <typename Puller>
   auto MakeBatchOp(const grpc_op& op, Puller* puller) {
-    CHECK_EQ(recv_message_, nullptr);
+    ABSL_CHECK_EQ(recv_message_, nullptr);
     recv_message_ = op.data.recv_message.recv_message;
     return [this, puller]() mutable {
       return Map(puller->PullMessage(),

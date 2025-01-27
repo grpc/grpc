@@ -30,8 +30,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -140,7 +140,7 @@ class grpc_fake_channel_security_connector final
 
  private:
   bool fake_check_target(const char* target, const char* set_str) const {
-    CHECK_NE(target, nullptr);
+    ABSL_CHECK_NE(target, nullptr);
     char** set = nullptr;
     size_t set_size = 0;
     gpr_string_split(set_str, ",", &set, &set_size);
@@ -163,20 +163,20 @@ class grpc_fake_channel_security_connector final
     gpr_string_split(expected_targets_->c_str(), ";", &lbs_and_backends,
                      &lbs_and_backends_size);
     if (lbs_and_backends_size > 2 || lbs_and_backends_size == 0) {
-      LOG(ERROR) << "Invalid expected targets arg value: '"
+      ABSL_LOG(ERROR) << "Invalid expected targets arg value: '"
                  << expected_targets_->c_str() << "'";
       goto done;
     }
     if (is_lb_channel_) {
       if (lbs_and_backends_size != 2) {
-        LOG(ERROR) << "Invalid expected targets arg value: '"
+        ABSL_LOG(ERROR) << "Invalid expected targets arg value: '"
                    << expected_targets_->c_str()
                    << "'. Expectations for LB channels must be of the form "
                       "'be1,be2,be3,...;lb1,lb2,...";
         goto done;
       }
       if (!fake_check_target(target_, lbs_and_backends[1])) {
-        LOG(ERROR) << "LB target '" << target_
+        ABSL_LOG(ERROR) << "LB target '" << target_
                    << "' not found in expected set '" << lbs_and_backends[1]
                    << "'";
         goto done;
@@ -184,7 +184,7 @@ class grpc_fake_channel_security_connector final
       success = true;
     } else {
       if (!fake_check_target(target_, lbs_and_backends[0])) {
-        LOG(ERROR) << "Backend target '" << target_
+        ABSL_LOG(ERROR) << "Backend target '" << target_
                    << "' not found in expected set '" << lbs_and_backends[0]
                    << "'";
         goto done;

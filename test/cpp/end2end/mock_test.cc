@@ -33,7 +33,7 @@
 #include <iostream>
 #include <optional>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -251,7 +251,7 @@ class TestServiceImpl : public EchoTestService::Service {
     EchoRequest request;
     std::string resp;
     while (reader->Read(&request)) {
-      LOG(INFO) << "recv msg " << request.message();
+      ABSL_LOG(INFO) << "recv msg " << request.message();
       resp.append(request.message());
     }
     response->set_message(resp);
@@ -275,7 +275,7 @@ class TestServiceImpl : public EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      LOG(INFO) << "recv msg " << request.message();
+      ABSL_LOG(INFO) << "recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
     }

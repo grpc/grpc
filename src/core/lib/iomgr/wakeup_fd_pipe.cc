@@ -26,7 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
@@ -37,7 +37,7 @@ static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
-    LOG(ERROR) << "pipe creation failed (" << errno
+    ABSL_LOG(ERROR) << "pipe creation failed (" << errno
                << "): " << grpc_core::StrError(errno);
     return GRPC_OS_ERROR(errno, "pipe");
   }

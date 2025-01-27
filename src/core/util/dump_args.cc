@@ -14,7 +14,7 @@
 
 #include "src/core/util/dump_args.h"
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/string_view.h"
 
@@ -41,7 +41,7 @@ void DumpArgs::Stringify(CustomSink& sink) const {
     }
   }
   keys.push_back(start);
-  CHECK_EQ(keys.size(), arg_dumpers_.size());
+  ABSL_CHECK_EQ(keys.size(), arg_dumpers_.size());
   for (size_t i = 0; i < keys.size(); i++) {
     if (i != 0) sink.Append(", ");
     sink.Append(absl::StripAsciiWhitespace(keys[i]));

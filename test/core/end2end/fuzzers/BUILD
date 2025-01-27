@@ -39,8 +39,8 @@ grpc_cc_library(
     srcs = ["fuzzing_common.cc"],
     hdrs = ["fuzzing_common.h"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/strings",
     ],
     deps = [
@@ -55,7 +55,7 @@ grpc_fuzz_test(
     name = "api_fuzzer",
     srcs = ["api_fuzzer.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "fuzztest",
         "fuzztest_main",
     ],
@@ -101,7 +101,7 @@ grpc_cc_library(
     name = "network_input",
     srcs = ["network_input.cc"],
     hdrs = ["network_input.h"],
-    external_deps = ["absl/log:log"],
+    external_deps = ["absl/log:absl_log"],
     deps = [
         "fuzzer_input_cc_proto",
         "//:chttp2_frame",
@@ -116,7 +116,7 @@ grpc_fuzz_test(
     name = "client_fuzzer",
     srcs = ["client_fuzzer.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "fuzztest",
         "fuzztest_main",
     ],
@@ -139,7 +139,7 @@ grpc_fuzz_test(
     name = "server_fuzzer",
     srcs = ["server_fuzzer.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "fuzztest",
         "fuzztest_main",
         "gtest",
@@ -163,7 +163,7 @@ grpc_fuzz_test(
     name = "connector_fuzzer",
     srcs = ["connector_fuzzer.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "fuzztest",
         "fuzztest_main",
     ],

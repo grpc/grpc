@@ -34,8 +34,8 @@
 
 #include "absl/base/attributes.h"
 #include "absl/container/inlined_vector.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -599,7 +599,7 @@ void RingHash::RingHashEndpoint::RequestConnectionLocked() {
 }
 
 void RingHash::RingHashEndpoint::CreateChildPolicy() {
-  CHECK(child_policy_ == nullptr);
+  ABSL_CHECK(child_policy_ == nullptr);
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = ring_hash_->work_serializer();
   lb_policy_args.args =
@@ -613,7 +613,7 @@ void RingHash::RingHashEndpoint::CreateChildPolicy() {
           "pick_first", std::move(lb_policy_args));
   if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
     const EndpointAddresses& endpoint = ring_hash_->endpoints_[index_];
-    LOG(INFO) << "[RH " << ring_hash_.get() << "] endpoint " << this
+    ABSL_LOG(INFO) << "[RH " << ring_hash_.get() << "] endpoint " << this
               << " (index " << index_ << " of " << ring_hash_->endpoints_.size()
               << ", " << endpoint.ToString() << "): created child policy "
               << child_policy_.get();
@@ -641,7 +641,7 @@ absl::Status RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           Json::FromArray(
               {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
-  CHECK(config.ok());
+  ABSL_CHECK(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses =
@@ -903,7 +903,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
     for (size_t i = 0; i < endpoints_.size(); ++i) {
       auto it =
           endpoint_map_.find(EndpointAddressSet(endpoints_[i].addresses()));
-      CHECK(it != endpoint_map_.end());
+      ABSL_CHECK(it != endpoint_map_.end());
       auto& endpoint = it->second;
       if (endpoint->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
         first_idle_index = endpoints_.size();
@@ -917,7 +917,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
     if (first_idle_index != endpoints_.size()) {
       auto it = endpoint_map_.find(
           EndpointAddressSet(endpoints_[first_idle_index].addresses()));
-      CHECK(it != endpoint_map_.end());
+      ABSL_CHECK(it != endpoint_map_.end());
       auto& endpoint = it->second;
       GRPC_TRACE_LOG(ring_hash_lb, INFO)
           << "[RH " << this

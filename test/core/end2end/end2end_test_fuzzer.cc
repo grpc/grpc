@@ -26,7 +26,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
@@ -127,7 +127,7 @@ void RunEnd2endFuzzer(const core_end2end_test_fuzzer::Msg& msg) {
   test->SetUp();
   test->RunTest();
   test->TearDown();
-  CHECK(!::testing::Test::HasFailure());
+  ABSL_CHECK(!::testing::Test::HasFailure());
 }
 
 }  // namespace grpc_core

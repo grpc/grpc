@@ -26,7 +26,7 @@ grpc_cc_test(
     name = "sockaddr_utils_test",
     srcs = ["sockaddr_utils_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -40,7 +40,7 @@ grpc_cc_test(
     name = "parse_address_test",
     srcs = ["parse_address_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "absl/strings",
         "gtest",
     ],
@@ -55,7 +55,7 @@ grpc_fuzzer(
     name = "sockaddr_utils_fuzzer_test",
     srcs = ["sockaddr_utils_fuzzer_test.cc"],
     corpus = "sockaddr_uri_corpus",
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
@@ -69,7 +69,7 @@ grpc_cc_test(
     name = "parse_address_with_named_scope_id_test",
     srcs = ["parse_address_with_named_scope_id_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = ["no_windows"],

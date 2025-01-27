@@ -25,9 +25,9 @@ int main(int argc, char** argv) {
   static grpc_core::NoDestruct<
       std::vector<grpc_core::yodel_detail::TestRegistry::Test>>
       tests{grpc_core::yodel_detail::TestRegistry::AllTests()};
-  CHECK(!tests->empty());
+  ABSL_CHECK(!tests->empty());
   for (const auto& test : *tests) {
-    CHECK(test.make != nullptr) << "test:" << test.name;
+    ABSL_CHECK(test.make != nullptr) << "test:" << test.name;
     ::testing::RegisterTest(
         test.test_type.c_str(), test.name.c_str(), nullptr, nullptr, __FILE__,
         __LINE__, [test = &test, &bitgen]() -> grpc_core::YodelTest* {

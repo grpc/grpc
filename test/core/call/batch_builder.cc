@@ -62,20 +62,20 @@ std::string IncomingMessage::payload() const {
   if (payload_->data.raw.compression > GRPC_COMPRESS_NONE) {
     grpc_slice_buffer decompressed_buffer;
     grpc_slice_buffer_init(&decompressed_buffer);
-    CHECK(grpc_msg_decompress(payload_->data.raw.compression,
+    ABSL_CHECK(grpc_msg_decompress(payload_->data.raw.compression,
                               &payload_->data.raw.slice_buffer,
                               &decompressed_buffer));
     grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
         decompressed_buffer.slices, decompressed_buffer.count);
     grpc_byte_buffer_reader reader;
-    CHECK(grpc_byte_buffer_reader_init(&reader, rbb));
+    ABSL_CHECK(grpc_byte_buffer_reader_init(&reader, rbb));
     out = Slice(grpc_byte_buffer_reader_readall(&reader));
     grpc_byte_buffer_reader_destroy(&reader);
     grpc_byte_buffer_destroy(rbb);
     grpc_slice_buffer_destroy(&decompressed_buffer);
   } else {
     grpc_byte_buffer_reader reader;
-    CHECK(grpc_byte_buffer_reader_init(&reader, payload_));
+    ABSL_CHECK(grpc_byte_buffer_reader_init(&reader, payload_));
     out = Slice(grpc_byte_buffer_reader_readall(&reader));
     grpc_byte_buffer_reader_destroy(&reader);
   }

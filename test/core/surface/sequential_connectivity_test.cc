@@ -28,7 +28,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
@@ -92,7 +92,7 @@ static grpc_channel* create_test_channel(const char* addr,
 }
 
 static void run_test(const test_fixture* fixture, bool share_subchannel) {
-  LOG(INFO) << "TEST: " << fixture->name
+  ABSL_LOG(INFO) << "TEST: " << fixture->name
             << " sharing subchannel: " << share_subchannel;
 
   std::string addr =

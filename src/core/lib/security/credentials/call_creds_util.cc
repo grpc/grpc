@@ -20,8 +20,8 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -41,13 +41,13 @@ struct ServiceUrlAndMethod {
 ServiceUrlAndMethod MakeServiceUrlAndMethod(
     const ClientMetadataHandle& initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
-  DCHECK(initial_metadata->get_pointer(HttpPathMetadata()) != nullptr);
+  ABSL_DCHECK(initial_metadata->get_pointer(HttpPathMetadata()) != nullptr);
   auto service =
       initial_metadata->get_pointer(HttpPathMetadata())->as_string_view();
   auto last_slash = service.find_last_of('/');
   absl::string_view method_name;
   if (last_slash == absl::string_view::npos) {
-    LOG(ERROR) << "No '/' found in fully qualified method name";
+    ABSL_LOG(ERROR) << "No '/' found in fully qualified method name";
     service = "";
     method_name = "";
   } else if (last_slash == 0) {
@@ -56,7 +56,7 @@ ServiceUrlAndMethod MakeServiceUrlAndMethod(
     method_name = service.substr(last_slash + 1);
     service = service.substr(0, last_slash);
   }
-  DCHECK(initial_metadata->get_pointer(HttpAuthorityMetadata()) != nullptr);
+  ABSL_DCHECK(initial_metadata->get_pointer(HttpAuthorityMetadata()) != nullptr);
   auto host_and_port =
       initial_metadata->get_pointer(HttpAuthorityMetadata())->as_string_view();
   absl::string_view url_scheme = args->security_connector->url_scheme();

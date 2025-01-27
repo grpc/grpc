@@ -30,8 +30,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -129,7 +129,7 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
       state_ = GRPC_CHANNEL_CONNECTING;
       status_ = absl::OkStatus();
     } else {
-      CHECK(state_ == GRPC_CHANNEL_CONNECTING);
+      ABSL_CHECK(state_ == GRPC_CHANNEL_CONNECTING);
     }
     // Start the health watch stream.
     StartHealthStreamLocked();
@@ -248,7 +248,7 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler final
       static const char kErrorMessage[] =
           "health checking Watch method returned UNIMPLEMENTED; "
           "disabling health checks but assuming server is healthy";
-      LOG(ERROR) << kErrorMessage;
+      ABSL_LOG(ERROR) << kErrorMessage;
       auto* channelz_node =
           health_checker_->producer_->subchannel_->channelz_node();
       if (channelz_node != nullptr) {

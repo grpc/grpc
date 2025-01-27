@@ -34,7 +34,7 @@
 #include <openssl/x509.h>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -127,7 +127,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
     }
     bool inserted = crl_map.emplace((*crl)->Issuer(), std::move(*crl)).second;
     if (!inserted) {
-      LOG(ERROR) << "StaticCrlProvider received multiple CRLs with the same "
+      ABSL_LOG(ERROR) << "StaticCrlProvider received multiple CRLs with the same "
                     "issuer. The first one in the span will be used.";
     }
   }

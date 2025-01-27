@@ -30,8 +30,8 @@
 #include <sstream>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -165,7 +165,7 @@ void RunServer() {
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  LOG(INFO) << "Server listening on " << server_address.str();
+  ABSL_LOG(INFO) << "Server listening on " << server_address.str();
   while (!got_sigint) {
     service.Poll(5);
   }
@@ -178,8 +178,8 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 
-  CHECK_NE(absl::GetFlag(FLAGS_control_port), 0);
-  CHECK_NE(absl::GetFlag(FLAGS_retry_port), 0);
+  ABSL_CHECK_NE(absl::GetFlag(FLAGS_control_port), 0);
+  ABSL_CHECK_NE(absl::GetFlag(FLAGS_retry_port), 0);
   RunServer();
 
   return 0;

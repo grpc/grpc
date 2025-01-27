@@ -27,8 +27,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
@@ -42,17 +42,17 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
   if (tmp_filename != nullptr) *tmp_filename = nullptr;
 
   gpr_asprintf(&filename_template, "/tmp/%s_XXXXXX", prefix);
-  CHECK_NE(filename_template, nullptr);
+  ABSL_CHECK_NE(filename_template, nullptr);
 
   fd = mkstemp(filename_template);
   if (fd == -1) {
-    LOG(ERROR) << "mkstemp failed for filename_template " << filename_template
+    ABSL_LOG(ERROR) << "mkstemp failed for filename_template " << filename_template
                << " with error " << grpc_core::StrError(errno);
     goto end;
   }
   result = fdopen(fd, "w+");
   if (result == nullptr) {
-    LOG(ERROR) << "Could not open file " << filename_template << " from fd "
+    ABSL_LOG(ERROR) << "Could not open file " << filename_template << " from fd "
                << fd << " (error = " << grpc_core::StrError(errno) << ").";
     unlink(filename_template);
     close(fd);

@@ -30,8 +30,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
@@ -113,7 +113,7 @@ grpc_service_account_jwt_access_credentials::
     : key_(key) {
   gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
   if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
-    VLOG(2) << "Cropping token lifetime to maximum allowed value ("
+    ABSL_VLOG(2) << "Cropping token lifetime to maximum allowed value ("
             << max_token_lifetime.tv_sec << " secs).";
     token_lifetime = grpc_max_auth_token_lifetime();
   }
@@ -130,7 +130,7 @@ grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime) {
   if (!grpc_auth_json_key_is_valid(&key)) {
-    LOG(ERROR) << "Invalid input for jwt credentials creation";
+    ABSL_LOG(ERROR) << "Invalid input for jwt credentials creation";
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_service_account_jwt_access_credentials>(
@@ -153,7 +153,7 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
     const char* json_key, gpr_timespec token_lifetime, void* reserved) {
   if (GRPC_TRACE_FLAG_ENABLED(api)) {
     char* clean_json = redact_private_key(json_key);
-    VLOG(2) << "grpc_service_account_jwt_access_credentials_create("
+    ABSL_VLOG(2) << "grpc_service_account_jwt_access_credentials_create("
             << "json_key=" << clean_json
             << ", token_lifetime=gpr_timespec { tv_sec: "
             << token_lifetime.tv_sec << ", tv_nsec: " << token_lifetime.tv_nsec
@@ -161,7 +161,7 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
             << " }, reserved=" << reserved << ")";
     gpr_free(clean_json);
   }
-  CHECK_EQ(reserved, nullptr);
+  ABSL_CHECK_EQ(reserved, nullptr);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(

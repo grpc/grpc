@@ -23,16 +23,16 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 
 namespace grpc_core {
 
 void CertificateProviderRegistry::Builder::RegisterCertificateProviderFactory(
     std::unique_ptr<CertificateProviderFactory> factory) {
   absl::string_view name = factory->name();
-  VLOG(2) << "registering certificate provider factory for \"" << name << "\"";
-  CHECK(factories_.emplace(name, std::move(factory)).second);
+  ABSL_VLOG(2) << "registering certificate provider factory for \"" << name << "\"";
+  ABSL_CHECK(factories_.emplace(name, std::move(factory)).second);
 }
 
 CertificateProviderRegistry CertificateProviderRegistry::Builder::Build() {

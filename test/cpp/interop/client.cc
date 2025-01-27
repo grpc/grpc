@@ -26,7 +26,7 @@
 #include <unordered_map>
 
 #include "absl/flags/flag.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
@@ -185,7 +185,7 @@ ParseAdditionalMetadataFlag(const std::string& flag) {
       }
     }
 
-    LOG(INFO) << "Adding additional metadata with key " << key << " and value "
+    ABSL_LOG(INFO) << "Adding additional metadata with key " << key << " and value "
               << value;
     additional_metadata.insert({key, value});
 
@@ -204,14 +204,14 @@ ParseAdditionalMetadataFlag(const std::string& flag) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
+  ABSL_LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
   int ret = 0;
 
   std::string test_case = absl::GetFlag(FLAGS_test_case);
   auto additional_metadata =
       ParseAdditionalMetadataFlag(absl::GetFlag(FLAGS_additional_metadata));
   if (!additional_metadata.ok()) {
-    LOG(ERROR) << additional_metadata.status().message();
+    ABSL_LOG(ERROR) << additional_metadata.status().message();
     return 1;
   }
   grpc::testing::ChannelCreationFunc channel_creation_func =
@@ -348,7 +348,7 @@ int main(int argc, char** argv) {
       if (!test_cases.empty()) test_cases += "\n";
       test_cases += action.first;
     }
-    LOG(ERROR) << "Unsupported test case " << absl::GetFlag(FLAGS_test_case)
+    ABSL_LOG(ERROR) << "Unsupported test case " << absl::GetFlag(FLAGS_test_case)
                << ". Valid options are\n"
                << test_cases;
     ret = 1;

@@ -22,7 +22,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -163,7 +163,7 @@ TEST(Sleep, StressTest) {
   std::vector<std::shared_ptr<Notification>> notifications;
   std::vector<ActivityPtr> activities;
   auto engine = GetDefaultEventEngine();
-  LOG(INFO) << "Starting " << kNumActivities << " sleeps for 1sec";
+  ABSL_LOG(INFO) << "Starting " << kNumActivities << " sleeps for 1sec";
   for (int i = 0; i < kNumActivities; i++) {
     auto notification = std::make_shared<Notification>();
     auto activity = MakeActivity(
@@ -174,7 +174,7 @@ TEST(Sleep, StressTest) {
     notifications.push_back(std::move(notification));
     activities.push_back(std::move(activity));
   }
-  LOG(INFO) << "Waiting for the first " << (kNumActivities / 2)
+  ABSL_LOG(INFO) << "Waiting for the first " << (kNumActivities / 2)
             << " sleeps, whilst cancelling the other half";
   for (size_t i = 0; i < kNumActivities / 2; i++) {
     notifications[i]->WaitForNotification();

@@ -17,7 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/for_each.h"

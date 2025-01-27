@@ -31,7 +31,7 @@
 #include "absl/flags/parse.h"
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "examples/cpp/otel/util.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"

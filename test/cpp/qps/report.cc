@@ -22,7 +22,7 @@
 
 #include <fstream>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h"
 #include "test/cpp/qps/driver.h"
@@ -79,22 +79,22 @@ void CompositeReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
 }
 
 void GprLogReporter::ReportQPS(const ScenarioResult& result) {
-  LOG(INFO) << "QPS: " << result.summary().qps();
+  ABSL_LOG(INFO) << "QPS: " << result.summary().qps();
   if (result.summary().failed_requests_per_second() > 0) {
-    LOG(INFO) << "failed requests/second: "
+    ABSL_LOG(INFO) << "failed requests/second: "
               << result.summary().failed_requests_per_second();
-    LOG(INFO) << "successful requests/second: "
+    ABSL_LOG(INFO) << "successful requests/second: "
               << result.summary().successful_requests_per_second();
   }
 }
 
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  LOG(INFO) << "QPS: " << result.summary().qps() << " ("
+  ABSL_LOG(INFO) << "QPS: " << result.summary().qps() << " ("
             << result.summary().qps_per_server_core() << "/server core)";
 }
 
 void GprLogReporter::ReportLatency(const ScenarioResult& result) {
-  LOG(INFO) << "Latencies (50/90/95/99/99.9%-ile): "
+  ABSL_LOG(INFO) << "Latencies (50/90/95/99/99.9%-ile): "
             << result.summary().latency_50() / 1000 << "/"
             << result.summary().latency_90() / 1000 << "/"
             << result.summary().latency_95() / 1000 << "/"
@@ -103,27 +103,27 @@ void GprLogReporter::ReportLatency(const ScenarioResult& result) {
 }
 
 void GprLogReporter::ReportTimes(const ScenarioResult& result) {
-  LOG(INFO) << "Server system time: " << result.summary().server_system_time();
-  LOG(INFO) << "Server user time:   " << result.summary().server_user_time();
-  LOG(INFO) << "Client system time: " << result.summary().client_system_time();
-  LOG(INFO) << "Client user time:   " << result.summary().client_user_time();
+  ABSL_LOG(INFO) << "Server system time: " << result.summary().server_system_time();
+  ABSL_LOG(INFO) << "Server user time:   " << result.summary().server_user_time();
+  ABSL_LOG(INFO) << "Client system time: " << result.summary().client_system_time();
+  ABSL_LOG(INFO) << "Client user time:   " << result.summary().client_user_time();
 }
 
 void GprLogReporter::ReportCpuUsage(const ScenarioResult& result) {
-  LOG(INFO) << "Server CPU usage: " << result.summary().server_cpu_usage();
+  ABSL_LOG(INFO) << "Server CPU usage: " << result.summary().server_cpu_usage();
 }
 
 void GprLogReporter::ReportPollCount(const ScenarioResult& result) {
-  LOG(INFO) << "Client Polls per Request: "
+  ABSL_LOG(INFO) << "Client Polls per Request: "
             << result.summary().client_polls_per_request();
-  LOG(INFO) << "Server Polls per Request: "
+  ABSL_LOG(INFO) << "Server Polls per Request: "
             << result.summary().server_polls_per_request();
 }
 
 void GprLogReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
-  LOG(INFO) << "Server Queries/CPU-sec: "
+  ABSL_LOG(INFO) << "Server Queries/CPU-sec: "
             << result.summary().server_queries_per_cpu_sec();
-  LOG(INFO) << "Client Queries/CPU-sec: "
+  ABSL_LOG(INFO) << "Client Queries/CPU-sec: "
             << result.summary().client_queries_per_cpu_sec();
 }
 
@@ -164,13 +164,13 @@ void RpcReporter::ReportQPS(const ScenarioResult& result) {
   grpc::Status status;
   Void phony;
 
-  LOG(INFO) << "RPC reporter sending scenario result to server";
+  ABSL_LOG(INFO) << "RPC reporter sending scenario result to server";
   status = stub_->ReportScenario(&context, result, &phony);
 
   if (status.ok()) {
-    LOG(INFO) << "RpcReporter report RPC success!";
+    ABSL_LOG(INFO) << "RpcReporter report RPC success!";
   } else {
-    LOG(ERROR) << "RpcReporter report RPC: code: " << status.error_code()
+    ABSL_LOG(ERROR) << "RpcReporter report RPC: code: " << status.error_code()
                << ". message: " << status.error_message();
   }
 }

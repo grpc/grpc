@@ -28,9 +28,9 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/log/globals.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
@@ -172,7 +172,7 @@ bool ParseTestCasesString(const std::string& test_cases,
     // Token is in the form <test_name>:<test_weight>
     size_t colon_pos = it->find(':');
     if (colon_pos == std::string::npos) {
-      LOG(ERROR) << "Error in parsing test case string: " << it->c_str();
+      ABSL_LOG(ERROR) << "Error in parsing test case string: " << it->c_str();
       is_success = false;
       break;
     }
@@ -181,7 +181,7 @@ bool ParseTestCasesString(const std::string& test_cases,
     int weight = std::stoi(it->substr(colon_pos + 1));
     TestCaseType test_case = GetTestTypeFromName(test_name);
     if (test_case == UNKNOWN_TEST) {
-      LOG(ERROR) << "Unknown test case: " << test_name;
+      ABSL_LOG(ERROR) << "Unknown test case: " << test_name;
       is_success = false;
       break;
     }
@@ -195,47 +195,47 @@ bool ParseTestCasesString(const std::string& test_cases,
 // For debugging purposes
 void LogParameterInfo(const std::vector<std::string>& addresses,
                       const std::vector<std::pair<TestCaseType, int>>& tests) {
-  LOG(INFO) << "server_addresses: " << absl::GetFlag(FLAGS_server_addresses);
-  LOG(INFO) << "test_cases : " << absl::GetFlag(FLAGS_test_cases);
-  LOG(INFO) << "sleep_duration_ms: " << absl::GetFlag(FLAGS_sleep_duration_ms);
-  LOG(INFO) << "test_duration_secs: "
+  ABSL_LOG(INFO) << "server_addresses: " << absl::GetFlag(FLAGS_server_addresses);
+  ABSL_LOG(INFO) << "test_cases : " << absl::GetFlag(FLAGS_test_cases);
+  ABSL_LOG(INFO) << "sleep_duration_ms: " << absl::GetFlag(FLAGS_sleep_duration_ms);
+  ABSL_LOG(INFO) << "test_duration_secs: "
             << absl::GetFlag(FLAGS_test_duration_secs);
-  LOG(INFO) << "num_channels_per_server: "
+  ABSL_LOG(INFO) << "num_channels_per_server: "
             << absl::GetFlag(FLAGS_num_channels_per_server);
-  LOG(INFO) << "num_stubs_per_channel: "
+  ABSL_LOG(INFO) << "num_stubs_per_channel: "
             << absl::GetFlag(FLAGS_num_stubs_per_channel);
-  LOG(INFO) << "absl_vlog_level: " << absl::GetFlag(FLAGS_absl_vlog_level);
-  LOG(INFO) << "absl_min_log_level: "
+  ABSL_LOG(INFO) << "absl_vlog_level: " << absl::GetFlag(FLAGS_absl_vlog_level);
+  ABSL_LOG(INFO) << "absl_min_log_level: "
             << absl::GetFlag(FLAGS_absl_min_log_level);
-  LOG(INFO) << "do_not_abort_on_transient_failures: "
+  ABSL_LOG(INFO) << "do_not_abort_on_transient_failures: "
             << (absl::GetFlag(FLAGS_do_not_abort_on_transient_failures)
                     ? "true"
                     : "false");
 
   int num = 0;
   for (auto it = addresses.begin(); it != addresses.end(); it++) {
-    LOG(INFO) << ++num << ":" << it->c_str();
+    ABSL_LOG(INFO) << ++num << ":" << it->c_str();
   }
 
   num = 0;
   for (auto it = tests.begin(); it != tests.end(); it++) {
     TestCaseType test_case = it->first;
     int weight = it->second;
-    LOG(INFO) << ++num << ". TestCaseType: " << test_case
+    ABSL_LOG(INFO) << ++num << ". TestCaseType: " << test_case
               << ", Weight: " << weight;
   }
 }
 
 void SetLogLevels() {
   absl_vlog_level = absl::GetFlag(FLAGS_absl_vlog_level);
-  CHECK_LE(-1, absl_vlog_level);
-  CHECK_LE(absl_vlog_level, (INT_MAX - 1));
+  ABSL_CHECK_LE(-1, absl_vlog_level);
+  ABSL_CHECK_LE(absl_vlog_level, (INT_MAX - 1));
   absl::SetVLogLevel("*grpc*/*", absl_vlog_level);
 
   absl_min_log_level = static_cast<absl::LogSeverityAtLeast>(
       absl::GetFlag(FLAGS_absl_min_log_level));
-  CHECK_LE(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
-  CHECK_LE(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
+  ABSL_CHECK_LE(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
+  ABSL_CHECK_LE(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
   absl::SetMinLogLevel(absl_min_log_level);
 }
 
@@ -252,13 +252,13 @@ int main(int argc, char** argv) {
 
   // Parse test cases and weights
   if (absl::GetFlag(FLAGS_test_cases).empty()) {
-    LOG(ERROR) << "No test cases supplied";
+    ABSL_LOG(ERROR) << "No test cases supplied";
     return 1;
   }
 
   std::vector<std::pair<TestCaseType, int>> tests;
   if (!ParseTestCasesString(absl::GetFlag(FLAGS_test_cases), tests)) {
-    LOG(ERROR) << "Error in parsing test cases string "
+    ABSL_LOG(ERROR) << "Error in parsing test cases string "
                << absl::GetFlag(FLAGS_test_cases);
     return 1;
   }
@@ -268,7 +268,7 @@ int main(int argc, char** argv) {
   WeightedRandomTestSelector test_selector(tests);
   MetricsServiceImpl metrics_service;
 
-  LOG(INFO) << "Starting test(s)..";
+  ABSL_LOG(INFO) << "Starting test(s)..";
 
   std::vector<std::thread> test_threads;
   std::vector<std::unique_ptr<StressTestInteropClient>> clients;
@@ -294,7 +294,7 @@ int main(int argc, char** argv) {
     for (int channel_idx = 0;
          channel_idx < absl::GetFlag(FLAGS_num_channels_per_server);
          channel_idx++) {
-      LOG(INFO) << "Starting test with " << it->c_str()
+      ABSL_LOG(INFO) << "Starting test with " << it->c_str()
                 << " channel_idx=" << channel_idx << "..";
       grpc::testing::ChannelCreationFunc channel_creation_func =
           std::bind(static_cast<std::shared_ptr<grpc::Channel> (*)(
@@ -324,7 +324,7 @@ int main(int argc, char** argv) {
             metrics_service.CreateQpsGauge(buffer, &is_already_created)));
 
         // The QpsGauge should not have been already created
-        CHECK(!is_already_created);
+        ABSL_CHECK(!is_already_created);
       }
     }
   }
