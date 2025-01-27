@@ -62,7 +62,6 @@ def grpc_core_end2end_test(name, shard_count = 10, enable_fuzzing = True, tags =
         ),
         tags = tags + [
             "grpc-fuzzer",
-            "grpc-fuzztest",
             "bazel_only",
         ],
         deps = [
