@@ -101,7 +101,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
               "it is safe to ignore this message.|Unknown log verbosity:.*")},
          {"chttp2_server.cc",
           std::regex(
-              "Only [0-9]+ addresses added out of total [0-9]+ resolved")}});
+              "Only [0-9]+ addresses added out of total [0-9]+ resolved")},
+         {"trace.cc", std::regex("Unknown tracer:.*")}});
 
     if (IsVlogWithVerbosityMoreThan1(entry)) {
       return;
@@ -188,6 +189,19 @@ TEST(Fuzzers, NoLoggingTests_NoLoggingTestRegression1) {
                             dns_resolver: ""
                             trace: ""
                             experiments: 9223372036854775807
+                          })pb"));
+}
+
+TEST(Fuzzers, NoLoggingTests_NoLoggingTestRegression2) {
+  NoLoggingTests_NoLoggingTest(
+      CoreTestConfigurationNamed("Chttp2Fullstack"),
+      ParseTestProto(R"pb(event_engine_actions {
+                            run_delay: 18446744073709551615
+                          }
+                          config_vars {
+                            verbosity: ""
+                            dns_resolver: ""
+                            trace: "\177"
                           })pb"));
 }
 
