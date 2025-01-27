@@ -15469,12 +15469,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/prioritized_race.h
   src:
   - test/core/promise/prioritized_race_test.cc
   deps:
   - gtest
+  - absl/meta:type_traits
   - gpr
   uses_polling: false
 - name: promise_endpoint_test

@@ -19,6 +19,8 @@
 
 #include <utility>
 
+#include "src/core/lib/promise/detail/promise_like.h"
+
 namespace grpc_core {
 
 template <typename A, typename B>
@@ -34,21 +36,20 @@ class TwoPartyPrioritizedRace {
     auto p = a_();
     if (p.ready()) return p;
     // Check the other promise.
-    p = b_();
-    if (p.ready()) {
-      // re-poll a to see if it's also completed.
-      auto q = a_();
-      if (q.ready()) {
-        // both are ready, but a is prioritized
-        return q;
-      }
+    auto q = b_();
+    if (!q.ready()) return q;
+    // re-poll a to see if it's also completed.
+    auto r = a_();
+    if (r.ready()) {
+      // both are ready, but a is prioritized
+      return r;
     }
-    return p;
+    return q;
   }
 
  private:
-  A a_;
-  B b_;
+  promise_detail::PromiseLike<A> a_;
+  promise_detail::PromiseLike<B> b_;
 };
 
 /// Run all the promises until one is non-pending.

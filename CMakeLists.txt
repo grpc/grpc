@@ -24993,6 +24993,7 @@ target_include_directories(prioritized_race_test
 target_link_libraries(prioritized_race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::type_traits
   gpr
 )
 
