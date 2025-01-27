@@ -113,45 +113,12 @@ grpc_cc_library(
     name = "end2end_test_lib",
     testonly = 1,
     srcs = [
+        "end2end_test_suites.cc",
         "end2end_tests.cc",
+        "fixtures/local_util.cc",
     ],
     hdrs = [
         "end2end_tests.h",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/log:log",
-        "absl/memory",
-        "absl/meta:type_traits",
-        "absl/random",
-        "absl/strings",
-        "gtest",
-    ],
-    deps = [
-        "cq_verifier",
-        "//:config",
-        "//:debug_location",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_public_hdrs",
-        "//src/core:bitset",
-        "//src/core:channel_args",
-        "//src/core:default_event_engine",
-        "//src/core:no_destruct",
-        "//src/core:slice",
-        "//src/core:time",
-        "//test/core/call:batch_builder",
-        "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "fixture_support",
-    testonly = 1,
-    srcs = ["fixtures/local_util.cc"],
-    hdrs = [
         "fixtures/h2_oauth2_common.h",
         "fixtures/h2_ssl_cred_reload_fixture.h",
         "fixtures/h2_ssl_tls_common.h",
@@ -165,117 +132,34 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log:check",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "gtest",
-    ],
-    deps = [
-        "end2end_test_lib",
-        "//:channel_arg_names",
-        "//:config",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_public_hdrs",
-        "//:grpc_security_base",
-        "//:grpc_transport_chttp2",
-        "//:ref_counted_ptr",
-        "//src/core:channel_args",
-        "//src/core:channel_args_preconditioning",
-        "//src/core:channel_stack_type",
-        "//src/core:error",
-        "//src/core:grpc_ssl_credentials",
-        "//src/core:grpc_tls_credentials",
-        "//src/core:grpc_transport_inproc",
-        "//src/core:slice",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "end2end_test_suites",
-    testonly = 1,
-    srcs = [
-        "end2end_test_suites.cc",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/functional:any_invocable",
-        "absl/log:check",
+        "absl/log:log",
+        "absl/memory",
         "absl/meta:type_traits",
         "absl/random",
-        "absl/status",
-        "absl/strings:str_format",
+        "absl/strings",
         "gtest",
+        "fuzztest",
     ],
     deps = [
-        "end2end_test_lib",
-        "fixture_support",
+        "cq_verifier",
+        "end2end_test_fuzzer_cc_proto",
         "http_proxy",
         "proxy",
-        "//:channel_arg_names",
-        "//:exec_ctx",
+        "//:config",
+        "//:debug_location",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:grpc_trace",
+        "//src/core:bitset",
         "//src/core:channel_args",
         "//src/core:chaotic_good_connector",
         "//src/core:chaotic_good_server",
-        "//src/core:env",
-        "//src/core:error",
-        "//src/core:grpc_fake_credentials",
-        "//src/core:iomgr_port",
+        "//src/core:default_event_engine",
         "//src/core:no_destruct",
-        "//test/core/test_util:grpc_test_util",
-    ],
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "end2end_test_main",
-    testonly = 1,
-    srcs = [
-        "end2end_test_main.cc",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "end2end_test_lib",
-        "end2end_test_suites",
-        "fixture_support",
-        "//:config_vars",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "end2end_test_fuzzer",
-    testonly = 1,
-    srcs = [
-        "end2end_test_fuzzer.cc",
-    ],
-    hdrs = [
-        "end2end_test_fuzzer.h",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "end2end_test_fuzzer_cc_proto",
-        "end2end_test_lib",
-        "end2end_test_suites",
-        "fixture_support",
-        "//:config_vars",
+        "//src/core:slice",
+        "//src/core:time",
+        "//test/core/call:batch_builder",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzz_config_vars",
         "//test/core/test_util:grpc_test_util",
@@ -292,23 +176,23 @@ grpc_core_end2end_test(name = "call_host_override")
 
 grpc_core_end2end_test(
     name = "cancel_after_accept",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "cancel_after_client_done",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "cancel_after_invoke",
     flaky = True,
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "cancel_after_round_trip",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(name = "cancel_before_invoke")
@@ -349,12 +233,12 @@ grpc_core_end2end_test(name = "grpc_authz")
 
 grpc_core_end2end_test(
     name = "high_initial_seqno",
-    shard_count = 20,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "hpack_size",
-    shard_count = 50,
+    shard_count = 10,
 )
 
 grpc_core_end2end_test(name = "http2_stats")
@@ -365,7 +249,7 @@ grpc_core_end2end_test(name = "keepalive_timeout")
 
 grpc_core_end2end_test(
     name = "large_metadata",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(name = "max_concurrent_streams")
@@ -388,13 +272,16 @@ grpc_core_end2end_test(name = "ping")
 
 grpc_core_end2end_test(name = "ping_pong_streaming")
 
-grpc_core_end2end_test(name = "proxy_auth")
+grpc_core_end2end_test(
+    name = "proxy_auth",
+    enable_fuzzing = False,
+)
 
 grpc_core_end2end_test(name = "registered_call")
 
 grpc_core_end2end_test(
     name = "request_with_flags",
-    shard_count = 50,
+    shard_count = 10,
 )
 
 grpc_core_end2end_test(name = "request_with_payload")
@@ -666,7 +553,6 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "end2end_test_lib",
-        "fixture_support",
         "ssl_test_data",
         "//:channel_arg_names",
         "//:config_vars",
