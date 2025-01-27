@@ -104,18 +104,19 @@ def grpc_core_end2end_test(name, shard_count = 10, enable_fuzzing = True, tags =
         tags = tags,
     )
 
-    grpc_fuzz_test(
-        name = name + "_fuzzer",
-        srcs = [
-            "tests/%s.cc" % name,
-        ],
-        external_deps = [
-            "absl/log:log",
-            "gtest",
-            "fuzztest",
-            "fuzztest_main",
-        ],
-        deps = _DEPS,
-        data = _DATA,
-        defines = ["GRPC_END2END_TEST_NO_GTEST"],
-    )
+    if enable_fuzzing:
+        grpc_fuzz_test(
+            name = name + "_fuzzer",
+            srcs = [
+                "tests/%s.cc" % name,
+            ],
+            external_deps = [
+                "absl/log:log",
+                "gtest",
+                "fuzztest",
+                "fuzztest_main",
+            ],
+            deps = _DEPS,
+            data = _DATA,
+            defines = ["GRPC_END2END_TEST_NO_GTEST"],
+        )
