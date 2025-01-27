@@ -80,6 +80,7 @@ grpc_fuzz_test(
         "absl/status:statusor",
         "absl/status",
         "absl/random:mocking_bit_gen",
+        "gtest",
         "fuzztest",
         "fuzztest_main"
     ],
@@ -96,6 +97,7 @@ grpc_fuzz_test(
     srcs = ["huff_fuzzer.cc"],
     external_deps = [
         "absl/strings",
+        "gtest",
         "fuzztest",
         "fuzztest_main"
     ],
