@@ -96,7 +96,7 @@ def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = 
             "gtest",
             "gtest_main",
         ],
-        deps = _DEPS + ["end2end_test_lib"],
+        deps = _DEPS + ["end2end_test_lib_no_fuzztest_gtest"],
         data = _DATA,
         shard_count = shard_count,
         tags = tags,
@@ -114,7 +114,6 @@ def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = 
                 "fuzztest",
                 "fuzztest_main",
             ],
-            deps = _DEPS + ["end2end_test_lib_fuzzing"],
+            deps = _DEPS + ["end2end_test_lib_fuzztest_no_gtest"],
             data = _DATA,
-            defines = ["GRPC_END2END_TEST_NO_GTEST"],
         )
