@@ -889,7 +889,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "prioritized_race",
     public_hdrs = ["lib/promise/prioritized_race.h"],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "promise_like",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
