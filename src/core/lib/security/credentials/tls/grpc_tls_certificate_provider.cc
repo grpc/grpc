@@ -50,7 +50,10 @@ absl::Status ValidateRootCertificates(absl::string_view root_certificates) {
   absl::StatusOr<std::vector<X509*>> parsed_roots =
       ParsePemCertificateChain(root_certificates);
   if (!parsed_roots.ok()) {
-    return parsed_roots.status();
+    return absl::Status(
+        parsed_roots.status().code(),
+        absl::StrCat("Failed to parse root certificates as PEM: ",
+                     parsed_roots.status().message()));
   }
   for (X509* x509 : *parsed_roots) {
     X509_free(x509);
@@ -65,7 +68,10 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   absl::StatusOr<std::vector<X509*>> parsed_certs =
       ParsePemCertificateChain(cert_chain);
   if (!parsed_certs.ok()) {
-    return parsed_certs.status();
+    return absl::Status(
+        parsed_certs.status().code(),
+        absl::StrCat("Failed to parse certificate chain as PEM: ",
+                     parsed_certs.status().message()));
   }
   for (X509* x509 : *parsed_certs) {
     X509_free(x509);
@@ -74,7 +80,9 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   absl::StatusOr<EVP_PKEY*> parsed_private_key =
       ParsePemPrivateKey(private_key);
   if (!parsed_private_key.ok()) {
-    return parsed_private_key.status();
+    return absl::Status(parsed_private_key.status().code(),
+                        absl::StrCat("Failed to parse private key as PEM: ",
+                                     parsed_private_key.status().message()));
   }
   EVP_PKEY_free(*parsed_private_key);
   return absl::OkStatus();
