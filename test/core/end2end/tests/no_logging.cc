@@ -95,9 +95,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
          {"chaotic_good_server.cc",
           std::regex("Failed to bind some addresses for.*")},
          {"log.cc",
-          std::regex("Prefer WARNING or ERROR. However if you see this "
-                     "message in a debug environment or test environment "
-                     "it is safe to ignore this message.")},
+          std::regex(
+              "Prefer WARNING or ERROR. However if you see this "
+              "message in a debug environment or test environment "
+              "it is safe to ignore this message.|Unknown log verbosity:.*")},
          {"chttp2_server.cc",
           std::regex(
               "Only [0-9]+ addresses added out of total [0-9]+ resolved")}});
@@ -177,6 +178,17 @@ CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
   for (int i = 0; i < 10; i++) {
     SimpleRequest(*this);
   }
+}
+
+TEST(Fuzzers, NoLoggingTests_NoLoggingTestRegression1) {
+  NoLoggingTests_NoLoggingTest(
+      CoreTestConfigurationNamed("Chttp2FullstackCompression"),
+      ParseTestProto(R"pb(config_vars {
+                            verbosity: "\000"
+                            dns_resolver: ""
+                            trace: ""
+                            experiments: 9223372036854775807
+                          })pb"));
 }
 
 }  // namespace grpc_core

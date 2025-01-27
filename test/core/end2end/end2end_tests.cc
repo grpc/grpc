@@ -19,6 +19,7 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <google/protobuf/text_format.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
@@ -37,6 +38,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/no_destruct.h"
+#include "src/google/protobuf/_virtual_includes/protobuf/google/protobuf/text_format.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/fuzz_config_vars.h"
@@ -216,6 +218,12 @@ void CoreEnd2endTest::ForceInitialized() {
     InitServer(ChannelArgs());
     InitClient(ChannelArgs());
   }
+}
+
+core_end2end_test_fuzzer::Msg ParseTestProto(std::string text) {
+  core_end2end_test_fuzzer::Msg msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(text, &msg));
+  return msg;
 }
 
 }  // namespace grpc_core
