@@ -671,9 +671,9 @@ DECLARE_SUITE(ProxyAuthTests);
                    ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>());
 #endif
 
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#if defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION) || \
+    defined(GRPC_END2END_TEST_NO_GTEST)
 #define CORE_END2END_TEST_P(suite, name)
-#define CORE_END2END_INSTANTIATE_TEST_SUITE_P(suite)
 #else
 #define CORE_END2END_TEST_P(suite, name)                             \
   TEST_P(suite, name) {                                              \
@@ -683,6 +683,11 @@ DECLARE_SUITE(ProxyAuthTests);
     }                                                                \
     CoreEnd2endTest_##suite##_##name(GetParam(), nullptr).RunTest(); \
   }
+#endif
+
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#define CORE_END2END_INSTANTIATE_TEST_SUITE_P(suite)
+#else
 #define CORE_END2END_INSTANTIATE_TEST_SUITE_P(suite)                           \
   INSTANTIATE_TEST_SUITE_P(, suite,                                            \
                            ::testing::ValuesIn(suite::AllSuiteConfigs(false)), \

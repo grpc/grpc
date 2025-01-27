@@ -17,20 +17,62 @@ Generate one e2e test & associated fuzzer
 """
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load(
+    "//test/core/test_util:grpc_fuzzer.bzl",
+    "grpc_fuzz_test",
+)
 
-END2END_TEST_DATA = [
+_DATA = [
     "//src/core/tsi/test_creds:ca.pem",
     "//src/core/tsi/test_creds:server1.key",
     "//src/core/tsi/test_creds:server1.pem",
 ]
 
-def if_fuzztest_supported(true_value, false_value):
-    return select({
-        "//:windows": false_value,
-        "//:windows_msvc": false_value,
-        "//:windows_clang": false_value,
-        "//conditions:default": true_value,
-    })
+_DEPS = [
+    "cq_verifier",
+    "end2end_test_lib",
+    "http_proxy",
+    "proxy",
+    "//:channel_stack_builder",
+    "//:config",
+    "//:config_vars",
+    "//:debug_location",
+    "//:exec_ctx",
+    "//:gpr",
+    "//:grpc_authorization_provider",
+    "//:grpc_public_hdrs",
+    "//:grpc_security_base",
+    "//:grpc_trace",
+    "//:grpc_unsecure",
+    "//:orphanable",
+    "//:promise",
+    "//:ref_counted_ptr",
+    "//:stats",
+    "//src/core:arena_promise",
+    "//src/core:bitset",
+    "//src/core:channel_args",
+    "//src/core:channel_fwd",
+    "//src/core:channel_init",
+    "//src/core:channel_stack_type",
+    "//src/core:closure",
+    "//src/core:error",
+    "//src/core:experiments",
+    "//src/core:grpc_authorization_base",
+    "//src/core:grpc_fake_credentials",
+    "//src/core:iomgr_port",
+    "//src/core:json",
+    "//src/core:lb_policy",
+    "//src/core:lb_policy_factory",
+    "//src/core:no_destruct",
+    "//src/core:notification",
+    "//src/core:slice",
+    "//src/core:stats_data",
+    "//src/core:status_helper",
+    "//src/core:time",
+    "//test/core/test_util:fake_stats_plugin",
+    "//test/core/test_util:grpc_test_util",
+    "//test/core/test_util:test_lb_policies",
+]
 
 def grpc_core_end2end_test(name, shard_count = 10, enable_fuzzing = True, tags = [], flaky = False):
     """Generate one core end2end test
@@ -53,63 +95,27 @@ def grpc_core_end2end_test(name, shard_count = 10, enable_fuzzing = True, tags =
         external_deps = [
             "absl/log:log",
             "gtest",
+            "gtest_main",
         ],
-        data = END2END_TEST_DATA,
+        deps = _DEPS,
+        data = _DATA,
         shard_count = shard_count,
-        defines = if_fuzztest_supported(
-            [] if enable_fuzzing else ["GRPC_END2END_TEST_NO_FUZZER"],
-            [],
-        ),
-        tags = tags + [
-            "grpc-fuzzer",
-            "bazel_only",
+        defines = ["GRPC_END2END_TEST_NO_FUZZER"],
+        tags = tags,
+    )
+
+    grpc_fuzz_test(
+        name = name + "_fuzzer",
+        srcs = [
+            "tests/%s.cc" % name,
         ],
-        deps = [
-            "cq_verifier",
-            "end2end_test_lib",
-            "http_proxy",
-            "proxy",
-            "//:channel_stack_builder",
-            "//:config",
-            "//:config_vars",
-            "//:debug_location",
-            "//:exec_ctx",
-            "//:gpr",
-            "//:grpc_authorization_provider",
-            "//:grpc_public_hdrs",
-            "//:grpc_security_base",
-            "//:grpc_trace",
-            "//:grpc_unsecure",
-            "//:orphanable",
-            "//:promise",
-            "//:ref_counted_ptr",
-            "//:stats",
-            "//src/core:arena_promise",
-            "//src/core:bitset",
-            "//src/core:channel_args",
-            "//src/core:channel_fwd",
-            "//src/core:channel_init",
-            "//src/core:channel_stack_type",
-            "//src/core:closure",
-            "//src/core:error",
-            "//src/core:experiments",
-            "//src/core:grpc_authorization_base",
-            "//src/core:grpc_fake_credentials",
-            "//src/core:iomgr_port",
-            "//src/core:json",
-            "//src/core:lb_policy",
-            "//src/core:lb_policy_factory",
-            "//src/core:no_destruct",
-            "//src/core:notification",
-            "//src/core:slice",
-            "//src/core:stats_data",
-            "//src/core:status_helper",
-            "//src/core:time",
-            "//test/core/test_util:fake_stats_plugin",
-            "//test/core/test_util:grpc_test_util",
-            "//test/core/test_util:test_lb_policies",
-        ] + if_fuzztest_supported(
-            ["//third_party:fuzztest", "//third_party:fuzztest_main"],
-            [],
-        ),
+        external_deps = [
+            "absl/log:log",
+            "gtest",
+            "fuzztest",
+            "fuzztest_main",
+        ],
+        deps = _DEPS,
+        data = _DATA,
+        defines = ["GRPC_END2END_TEST_NO_GTEST"],
     )
