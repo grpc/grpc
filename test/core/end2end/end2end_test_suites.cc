@@ -414,6 +414,8 @@ class SslProxyFixture : public CoreTestFixture {
     grpc_server* s = grpc_server_create(server_args, nullptr);
     std::string server_cert = testing::GetFileContents(SERVER_CERT_PATH);
     std::string server_key = testing::GetFileContents(SERVER_KEY_PATH);
+    LOG(INFO) << GRPC_DUMP_ARGS(SERVER_CERT_PATH, SERVER_KEY_PATH, server_cert,
+                                server_key);
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
                                                     server_cert.c_str()};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
@@ -766,8 +768,6 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           [](const ChannelArgs& client_args, const ChannelArgs&) {
             return std::make_unique<HttpProxyFilter>(client_args);
           }},
-#if 0
-          // TODO(ctiller): why is this not working??
       CoreTestConfiguration{
           "Chttp2SslProxy",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_SECURE |
@@ -778,7 +778,6 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           [](const ChannelArgs& client_args, const ChannelArgs& server_args) {
             return std::make_unique<SslProxyFixture>(client_args, server_args);
           }},
-#endif
       CoreTestConfiguration{
           "Chttp2InsecureCredentials",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
