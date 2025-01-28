@@ -207,6 +207,9 @@ def _generate_jobs(
                             timeout_seconds=timeout_seconds,
                         )
                     else:
+                        if platform == "windows" and language == "python":
+                            timeout_seconds = _DEFAULT_RUNTESTS_TIMEOUT * 2
+
                         job = _workspace_jobspec(
                             name=name,
                             runtests_args=runtests_args,
