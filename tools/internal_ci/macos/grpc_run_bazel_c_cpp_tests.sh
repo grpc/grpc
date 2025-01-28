@@ -40,7 +40,13 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
+# Test build
+tools/bazel :grpc++
+
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_c_cpp_tests
+
+# Test
+cat bazel_c_cpp_tests/bazel_wrapper
 
 # run all C/C++ tests
 bazel_c_cpp_tests/bazel_wrapper \
