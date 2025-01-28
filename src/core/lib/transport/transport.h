@@ -74,7 +74,7 @@
  NOTE: This is an experimental feature. It is not fully implemented and is not
  currently functional.
  TODO(gtcooke94) - update with specific details when implementing. */
-#define GRPC_ARG_TRANSPORT_PROTOCOLS "grpc.internal.transport_protocols"
+#define GRPC_ARG_TRANSPORT_PROTOCOLS "grpc.transport_protocols"
 
 namespace grpc_core {
 
