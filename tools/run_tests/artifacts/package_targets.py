@@ -154,7 +154,6 @@ class PythonPackage:
             self.labels.append(arch)
             self.name += "_" + arch
 
-
     def pre_build_jobspecs(self):
         return []
 
@@ -163,9 +162,13 @@ class PythonPackage:
         # since the python package build does very little, we can use virtually
         # any image that has new-enough python, so reusing one of the images used
         # for artifact building seems natural.
-        dockerfile_dir = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64"
+        dockerfile_dir = (
+            "tools/dockerfile/grpc_artifact_python_manylinux2014_x64"
+        )
         if "musllinux_1_1" in self.platform and "aarch64" in self.arch:
-            dockerfile_dir = "tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64"
+            dockerfile_dir = (
+                "tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64"
+            )
         return create_docker_jobspec(
             self.name,
             dockerfile_dir,
