@@ -41,7 +41,7 @@ BAZEL_REMOTE_CACHE_ARGS=(
 )
 
 # Test build
-tools/bazel :grpc++
+tools/bazel build :grpc++
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_c_cpp_tests
 
