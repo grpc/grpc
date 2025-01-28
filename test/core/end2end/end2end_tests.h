@@ -63,7 +63,7 @@
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"
 
-#ifndef GRPC_END2END_TEST_NO_FUZZER
+#ifdef GRPC_END2END_TEST_INCLUDE_FUZZER
 #include "fuzztest/fuzztest.h"
 #endif
 
@@ -676,7 +676,7 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
   }
 
-#ifdef GRPC_END2END_TEST_NO_FUZZER
+#ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
 #define CORE_END2END_FUZZER(suite, name)
 #else
 #define CORE_END2END_FUZZER(suite, name)                                \

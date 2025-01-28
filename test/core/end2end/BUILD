@@ -109,6 +109,22 @@ grpc_cc_library(
     ],
 )
 
+# Notes:
+# - We have several platforms on which fuzzers do not work,
+#   but we want to fuzz on Linux to find all the nice bugs that it finds.
+# - We also don't want to keep our own test running infrastructure
+#   to make all this work.
+# - We have an expectation that fuzztest will work as far as running
+#   tests (maybe without fuzzing) soon.
+# - We can't customize the defines that cmake pulls in
+# - fuzztest isn't yet integrated with our cmake infrastructure
+# So:
+# - For now, define a library for fuzz testing, and one for gtest
+#   (and one for both to keep ensuring that works)
+# - Build tests on all platforms, exclude fuzzers from platforms
+#   where we don't work
+# - Choose defines carefully so that the defaults are what we want
+#   on cmake (basically, gtest - and no fuzztest)
 [
     grpc_cc_library(
         name = "end2end_test_lib" +
@@ -133,7 +149,7 @@ grpc_cc_library(
             "tests/cancel_test_helpers.h",
         ],
         defines =
-            ([] if fuzz else ["GRPC_END2END_TEST_NO_FUZZER"]) +
+            (["GRPC_END2END_TEST_INCLUDE_FUZZER"] if fuzz else []) +
             ([] if gtest else ["GRPC_END2END_TEST_NO_GTEST"]),
         external_deps = [
             "absl/functional:any_invocable",
