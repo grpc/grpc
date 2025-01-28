@@ -347,7 +347,7 @@ class Fuzzer {
   std::map<std::string, std::set<EndpointWatcher*>> endpoint_watchers_;
 };
 
-static const char* assert_entry_is_null = R"pb(
+static const char* kAssertEntryIsNull = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions { start_watch { resource_type { route_config {} } } }
   actions { stop_watch { resource_type { route_config {} } } }
@@ -359,7 +359,7 @@ static const char* assert_entry_is_null = R"pb(
   }
 )pb";
 
-static const char* basic_cluster = R"pb(
+static const char* kBasicCluster = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions {
     start_watch {
@@ -395,7 +395,7 @@ static const char* basic_cluster = R"pb(
   }
 )pb";
 
-static const char* basic_endpoint = R"pb(
+static const char* kBasicEndpoint = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions {
     start_watch {
@@ -438,7 +438,7 @@ static const char* basic_endpoint = R"pb(
   }
 )pb";
 
-static const char* basic_listener = R"pb(
+static const char* kBasicListener = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions {
     start_watch {
@@ -487,7 +487,7 @@ static const char* basic_listener = R"pb(
   }
 )pb";
 
-static const char* basic_route_config = R"pb(
+static const char* kBasicRouteConfig = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions {
     start_watch {
@@ -525,7 +525,7 @@ static const char* basic_route_config = R"pb(
   }
 )pb";
 
-static const char* basic_xds_servers_empty = R"pb(
+static const char* kBasicXdsServersEmpty = R"pb(
   bootstrap: "{\"xds_servers\": []}"
   actions {
     start_watch {
@@ -535,7 +535,7 @@ static const char* basic_xds_servers_empty = R"pb(
   }
 )pb";
 
-static const char* resource_wrapper_empty = R"pb(
+static const char* kResourceWrapperEmpty = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions { start_watch { resource_type { cluster {} } } }
   actions {
@@ -552,7 +552,7 @@ static const char* resource_wrapper_empty = R"pb(
   }
 )pb";
 
-static const char* rls_missing_typed_extension_config = R"pb(
+static const char* kRlsMissingTypedExtensionConfig = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:-257\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions { start_watch { resource_type { route_config {} } } }
   actions {
@@ -571,7 +571,7 @@ static const char* rls_missing_typed_extension_config = R"pb(
   }
 )pb";
 
-static const char* send_message_to_client_before_stream_created = R"pb(
+static const char* kSendMessageToClientBeforeStreamCreated = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions { send_message_to_client { stream_id { ads {} } } }
 )pb";
@@ -590,12 +590,12 @@ void Fuzz(const xds_client_fuzzer::Msg& message) {
 }
 FUZZ_TEST(XdsClientFuzzer, Fuzz)
     .WithDomains(::fuzztest::Arbitrary<xds_client_fuzzer::Msg>().WithSeeds(
-        {ParseTestProto(assert_entry_is_null), ParseTestProto(basic_cluster),
-         ParseTestProto(basic_endpoint), ParseTestProto(basic_listener),
-         ParseTestProto(basic_route_config),
-         ParseTestProto(basic_xds_servers_empty),
-         ParseTestProto(resource_wrapper_empty),
-         ParseTestProto(rls_missing_typed_extension_config),
-         ParseTestProto(send_message_to_client_before_stream_created)}));
+        {ParseTestProto(kAssertEntryIsNull), ParseTestProto(kBasicCluster),
+         ParseTestProto(kBasicEndpoint), ParseTestProto(kBasicListener),
+         ParseTestProto(kBasicRouteConfig),
+         ParseTestProto(kBasicXdsServersEmpty),
+         ParseTestProto(kResourceWrapperEmpty),
+         ParseTestProto(kRlsMissingTypedExtensionConfig),
+         ParseTestProto(kSendMessageToClientBeforeStreamCreated)}));
 
 }  // namespace grpc_core
