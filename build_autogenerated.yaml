@@ -6003,7 +6003,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: bad_server_response_test
@@ -6246,7 +6245,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: bitset_test
@@ -6457,7 +6455,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: call_filters_test
@@ -6708,7 +6705,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: call_spine_test
@@ -7448,7 +7444,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_after_client_done_test
@@ -7532,7 +7527,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_after_invoke_test
@@ -7616,7 +7610,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_after_round_trip_test
@@ -7700,7 +7693,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_ares_query_test
@@ -7801,7 +7793,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_callback_test
@@ -7989,7 +7980,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_with_status_test
@@ -8073,7 +8063,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cel_authorization_engine_test
@@ -9230,7 +9219,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cmdline_test
@@ -9422,7 +9410,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: compression_test
@@ -9631,7 +9618,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: context_allocator_end2end_test
@@ -9831,7 +9817,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: delegating_channel_test
@@ -9956,7 +9941,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: dns_resolver_cooldown_test
@@ -10128,7 +10112,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: end2end_test
@@ -10677,7 +10660,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: filter_init_fails_test
@@ -10761,7 +10743,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: filter_test_test
@@ -10863,7 +10844,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: flaky_network_test
@@ -11431,7 +11411,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: graceful_shutdown_test
@@ -11645,7 +11624,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: grpc_byte_buffer_reader_test
@@ -12274,7 +12252,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: histogram_test
@@ -12481,7 +12458,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: http2_client
@@ -12657,7 +12633,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: http_proxy_mapper_test
@@ -13180,7 +13155,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: iocp_test
@@ -13405,7 +13379,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: lame_client_test
@@ -13501,7 +13474,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: latch_test
@@ -13979,7 +13951,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: max_connection_age_test
@@ -14063,7 +14034,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: max_connection_idle_test
@@ -14147,7 +14117,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: max_message_length_test
@@ -14231,7 +14200,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: memory_quota_stress_test
@@ -14560,7 +14528,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: no_destruct_test
@@ -14656,7 +14623,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: no_op_test
@@ -14740,7 +14706,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: no_server_test
@@ -15169,7 +15134,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: percent_encoding_test
@@ -15423,7 +15387,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: ping_rate_policy_test
@@ -15535,7 +15498,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: pipe_test
@@ -16122,7 +16084,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: qps_json_driver
@@ -16402,7 +16363,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: remove_stream_from_stalled_lists_test
@@ -16669,7 +16629,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: request_with_payload_test
@@ -16753,7 +16712,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: resolve_address_using_ares_resolver_posix_test
@@ -16981,7 +16939,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: resource_quota_test
@@ -17076,7 +17033,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_cancel_during_delay_test
@@ -17160,7 +17116,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_cancel_with_multiple_send_batches_test
@@ -17244,7 +17199,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_cancellation_test
@@ -17328,7 +17282,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_disabled_test
@@ -17412,7 +17365,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_exceeds_buffer_size_in_delay_test
@@ -17496,7 +17448,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_exceeds_buffer_size_in_initial_batch_test
@@ -17580,7 +17531,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_exceeds_buffer_size_in_subsequent_batch_test
@@ -17664,7 +17614,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_interceptor_test
@@ -17771,7 +17720,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_lb_fail_test
@@ -17855,7 +17803,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_non_retriable_status_before_trailers_test
@@ -17939,7 +17886,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_non_retriable_status_test
@@ -18023,7 +17969,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_per_attempt_recv_timeout_on_last_attempt_test
@@ -18107,7 +18052,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_per_attempt_recv_timeout_test
@@ -18191,7 +18135,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_recv_initial_metadata_test
@@ -18275,7 +18218,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_recv_message_replay_test
@@ -18359,7 +18301,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_recv_message_test
@@ -18443,7 +18384,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_recv_trailing_metadata_error_test
@@ -18527,7 +18467,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_send_initial_metadata_refs_test
@@ -18611,7 +18550,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_send_op_fails_test
@@ -18695,7 +18633,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_send_recv_batch_test
@@ -18779,7 +18716,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_server_pushback_delay_test
@@ -18863,7 +18799,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_server_pushback_disabled_test
@@ -18947,7 +18882,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_service_config_test
@@ -19042,7 +18976,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_streaming_succeeds_before_replay_finished_test
@@ -19126,7 +19059,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_streaming_test
@@ -19210,7 +19142,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_test
@@ -19294,7 +19225,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_throttle_test
@@ -19389,7 +19319,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_too_many_attempts_test
@@ -19473,7 +19402,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_transparent_goaway_test
@@ -19557,7 +19485,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_transparent_max_concurrent_streams_test
@@ -19641,7 +19568,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_transparent_not_sent_on_wire_test
@@ -19725,7 +19651,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_unref_before_finish_test
@@ -19809,7 +19734,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_unref_before_recv_test
@@ -19893,7 +19817,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: ring_buffer_test
@@ -20373,7 +20296,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: server_interceptors_end2end_test
@@ -20549,7 +20471,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: server_test
@@ -20701,7 +20622,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: shutdown_finishes_tags_test
@@ -20785,7 +20705,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: shutdown_test
@@ -20888,7 +20807,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: simple_metadata_test
@@ -20972,7 +20890,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: simple_request_bad_client_test
@@ -21070,7 +20987,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: single_set_ptr_test
@@ -21437,7 +21353,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: streaming_throughput_test
@@ -21837,7 +21752,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: test_core_event_engine_posix_timer_heap_test
@@ -22410,7 +22324,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: timeout_encoding_test
@@ -22683,7 +22596,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: transport_security_common_api_test
@@ -23130,7 +23042,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: write_buffering_test
@@ -23214,7 +23125,6 @@ targets:
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: write_size_policy_test
