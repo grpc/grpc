@@ -450,6 +450,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // If balancer_credentials is null, it defaults to fake credentials.
   explicit XdsEnd2endTest(
       std::shared_ptr<ServerCredentials> balancer_credentials = nullptr);
+  ~XdsEnd2endTest();
 
   void SetUp() override { InitClient(); }
   void TearDown() override;
