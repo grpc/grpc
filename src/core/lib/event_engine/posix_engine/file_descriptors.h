@@ -199,7 +199,7 @@ class FileDescriptors {
   absl::StatusOr<FileDescriptor> CreateDualStackSocket(
       std::function<int(int, int, int)> socket_factory,
       const experimental::EventEngine::ResolvedAddress& addr, int type,
-      int protocol, PosixSocketWrapper::DSMode& dsmode);
+      int protocol, DSMode& dsmode);
 
   FileDescriptor Adopt(int fd);
 

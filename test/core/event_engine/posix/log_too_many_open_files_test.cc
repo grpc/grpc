@@ -27,9 +27,9 @@
 #include "src/core/util/strerror.h"
 #include "test/core/test_util/test_config.h"
 
+using ::grpc_event_engine::experimental::DSMode;
 using ::grpc_event_engine::experimental::FileDescriptor;
 using ::grpc_event_engine::experimental::FileDescriptors;
-using ::grpc_event_engine::experimental::PosixSocketWrapper;
 
 // There is a special code path in create_socket to log errors upon EMFILE.
 // Goal of this test is just to exercise that code path and also make sure
@@ -43,7 +43,7 @@ TEST(LogTooManyOpenFilesTest, MainTest) {
   auto addr = grpc_event_engine::experimental::URIToResolvedAddress(
       "ipv4:127.0.0.1:80");
   ASSERT_TRUE(addr.ok());
-  PosixSocketWrapper::DSMode dsmode;
+  DSMode dsmode;
   absl::StatusOr<FileDescriptor> result = fds.CreateDualStackSocket(
       mock_socket_factory, *addr, SOCK_STREAM, AF_INET, dsmode);
   EXPECT_FALSE(result.ok());

@@ -57,11 +57,11 @@ using ListenerSocket = ListenerSocketsContainer::ListenerSocket;
 // Bind to "::" to get a port number not used by any address.
 absl::StatusOr<int> GetUnusedPort(FileDescriptors* fds) {
   ResolvedAddress wild = ResolvedAddressMakeWild6(0);
-  PosixSocketWrapper::DSMode dsmode;
+  DSMode dsmode;
   auto sock = fds->CreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
   GRPC_RETURN_IF_ERROR(sock.status());
   int fd = sock->fd();
-  if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
+  if (dsmode == DSMode::DSMODE_IPV4) {
     wild = ResolvedAddressMakeWild4(0);
   }
   if (bind(fd, wild.address(), wild.size()) != 0) {
@@ -129,7 +129,7 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
     return result.status();
   }
   socket.sock = *result;
-  if (socket.dsmode == PosixSocketWrapper::DSMODE_IPV4 &&
+  if (socket.dsmode == DSMODE_IPV4 &&
       ResolvedAddressIsV4Mapped(addr, &addr4_copy)) {
     socket.addr = addr4_copy;
   } else {
@@ -242,8 +242,7 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     listener_sockets.Append(*v6_sock);
     requested_port = v6_sock->port;
     assigned_port = v6_sock->port;
-    if (v6_sock->dsmode == PosixSocketWrapper::DSMODE_DUALSTACK ||
-        v6_sock->dsmode == PosixSocketWrapper::DSMODE_IPV4) {
+    if (v6_sock->dsmode == DSMODE_DUALSTACK || v6_sock->dsmode == DSMODE_IPV4) {
       return v6_sock->port;
     }
   }

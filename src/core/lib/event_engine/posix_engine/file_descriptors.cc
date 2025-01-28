@@ -314,11 +314,10 @@ absl::Status SetSocketDscp(int fdesc, int dscp) {
 }
 
 // Set a socket to use zerocopy
-absl::Status SetSocketZeroCopy(const FileDescriptor& fd) {
+absl::Status SetSocketZeroCopy(int fd) {
 #ifdef GRPC_LINUX_ERRQUEUE
   const int enable = 1;
-  auto err =
-      setsockopt(fd.fd(), SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
+  auto err = setsockopt(fd, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
   if (err != 0) {
     return absl::Status(
         absl::StatusCode::kInternal,
@@ -388,6 +387,17 @@ void TrySetSocketTcpUserTimeout(int fd, const PosixTcpOptions& options,
     }
   }
 }
+
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
+
+bool SetSocketDualStack(int fd) {
+  const int off = 0;
+  return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+}
+
+#endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 }  // namespace
 
@@ -521,13 +531,13 @@ IF_POSIX_SOCKET(
     absl::StatusOr<FileDescriptor> FileDescriptors::CreateDualStackSocket(
         std::function<int(int, int, int)> socket_factory,
         const experimental::EventEngine::ResolvedAddress& addr, int type,
-        int protocol, PosixSocketWrapper::DSMode& dsmode),
+        int protocol, DSMode& dsmode),
     {
       const sockaddr* sock_addr = addr.address();
       int family = sock_addr->sa_family;
       int newfd;
       if (family == AF_INET6) {
-        if (PosixSocketWrapper::IsIpv6LoopbackAvailable()) {
+        if (IsIpv6LoopbackAvailable()) {
           newfd = CreateSocket(socket_factory, family, type, protocol);
         } else {
           newfd = -1;
@@ -535,7 +545,7 @@ IF_POSIX_SOCKET(
         }
         // Check if we've got a valid dualstack socket.
         if (newfd > 0 && SetSocketDualStack(newfd)) {
-          dsmode = PosixSocketWrapper::DSMode::DSMODE_DUALSTACK;
+          dsmode = DSMode::DSMODE_DUALSTACK;
           return Adopt(newfd);
         }
         // If this isn't an IPv4 address, then return whatever we've got.
@@ -543,7 +553,7 @@ IF_POSIX_SOCKET(
           if (newfd < 0) {
             return ErrorForFd(newfd, addr);
           }
-          dsmode = PosixSocketWrapper::DSMode::DSMODE_IPV6;
+          dsmode = DSMode::DSMODE_IPV6;
           return Adopt(newfd);
         }
         // Fall back to AF_INET.
@@ -552,8 +562,7 @@ IF_POSIX_SOCKET(
         }
         family = AF_INET;
       }
-      dsmode = family == AF_INET ? PosixSocketWrapper::DSMode::DSMODE_IPV4
-                                 : PosixSocketWrapper::DSMode::DSMODE_NONE;
+      dsmode = family == AF_INET ? DSMode::DSMODE_IPV4 : DSMode::DSMODE_NONE;
       newfd = CreateSocket(socket_factory, family, type, protocol);
       if (newfd < 0) {
         return ErrorForFd(newfd, addr);
@@ -762,7 +771,7 @@ absl::StatusOr<FileDescriptors::PosixSocketCreateResult>
 FileDescriptors::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& target_addr) {
-  PosixSocketWrapper::DSMode dsmode;
+  DSMode dsmode;
   EventEngine::ResolvedAddress mapped_target_addr;
 
   // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
@@ -777,7 +786,7 @@ FileDescriptors::CreateAndPrepareTcpClientSocket(
     return posix_socket_wrapper.status();
   }
 
-  if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
+  if (dsmode == DSMode::DSMODE_IPV4) {
     // Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4.
     if (!ResolvedAddressIsV4Mapped(target_addr, &mapped_target_addr)) {
       mapped_target_addr = target_addr;
@@ -858,7 +867,7 @@ IF_POSIX_SOCKET(
           fd, GRPC_FD_SERVER_LISTENER_USAGE, options));
 
 #ifdef GRPC_LINUX_ERRQUEUE
-      if (!SetSocketZeroCopy(fd).ok()) {
+      if (!SetSocketZeroCopy(f).ok()) {
         // it's not fatal, so just log it.
         VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
       }

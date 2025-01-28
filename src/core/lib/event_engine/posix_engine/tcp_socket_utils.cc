@@ -70,17 +70,6 @@ int AdjustValue(int default_value, int min_value, int max_value,
 
 }  // namespace
 
-#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
-#ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
-
-bool SetSocketDualStack(int fd) {
-  const int off = 0;
-  return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
-}
-
-#endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
-#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
-
 PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   void* value;
   PosixTcpOptions options;
@@ -175,7 +164,7 @@ void UnlinkIfUnixDomainSocket(
 #endif
 }
 
-bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
+bool IsIpv6LoopbackAvailable() {
   static bool kIpv6LoopbackAvailable = []() -> bool {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
     bool loopback_available = false;

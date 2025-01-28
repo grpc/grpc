@@ -140,58 +140,39 @@ struct PosixTcpOptions {
   }
 };
 
+// An enum to keep track of IPv4/IPv6 socket modes.
+//
+// Currently, this information is only used when a socket is first created,
+// but in the future we may wish to store it alongside the fd.  This would let
+// calls like sendto() know which family to use without asking the kernel
+// first.
+enum DSMode {
+  // Uninitialized, or a non-IP socket.
+  DSMODE_NONE,
+  // AF_INET only.
+  DSMODE_IPV4,
+  // AF_INET6 only, because IPV6_V6ONLY could not be cleared.
+  DSMODE_IPV6,
+  // AF_INET6, which also supports ::ffff-mapped IPv4 addresses.
+  DSMODE_DUALSTACK
+};
+
 PosixTcpOptions TcpOptionsFromEndpointConfig(
     const grpc_event_engine::experimental::EndpointConfig& config);
-
-// a wrapper for accept or accept4
-int Accept4(int sockfd,
-            grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-            int nonblock, int cloexec);
 
 // Unlink the path pointed to by the given address if it refers to UDS path.
 void UnlinkIfUnixDomainSocket(
     const EventEngine::ResolvedAddress& resolved_addr);
 
-class PosixSocketWrapper {
- public:
-  // An enum to keep track of IPv4/IPv6 socket modes.
-  //
-  // Currently, this information is only used when a socket is first created,
-  // but in the future we may wish to store it alongside the fd.  This would let
-  // calls like sendto() know which family to use without asking the kernel
-  // first.
-  enum DSMode {
-    // Uninitialized, or a non-IP socket.
-    DSMODE_NONE,
-    // AF_INET only.
-    DSMODE_IPV4,
-    // AF_INET6 only, because IPV6_V6ONLY could not be cleared.
-    DSMODE_IPV6,
-    // AF_INET6, which also supports ::ffff-mapped IPv4 addresses.
-    DSMODE_DUALSTACK
-  };
+// Returns true if this system can create AF_INET6 sockets bound to ::1.
+// The value is probed once, and cached for the life of the process.
 
-  // Static methods
-
-  // Configure default values for tcp user timeout to be used by client
-  // and server side sockets.
-  static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
-                                             bool is_client);
-
-  // Returns true if this system can create AF_INET6 sockets bound to ::1.
-  // The value is probed once, and cached for the life of the process.
-
-  // This is more restrictive than checking for socket(AF_INET6) to succeed,
-  // because Linux with "net.ipv6.conf.all.disable_ipv6 = 1" is able to create
-  // and bind IPv6 sockets, but cannot connect to a getsockname() of [::]:port
-  // without a valid loopback interface.  Rather than expose this half-broken
-  // state to library users, we turn off IPv6 sockets.
-  static bool IsIpv6LoopbackAvailable();
-
-  struct PosixSocketCreateResult;
-};
-
-bool SetSocketDualStack(int fd);
+// This is more restrictive than checking for socket(AF_INET6) to succeed,
+// because Linux with "net.ipv6.conf.all.disable_ipv6 = 1" is able to create
+// and bind IPv6 sockets, but cannot connect to a getsockname() of [::]:port
+// without a valid loopback interface.  Rather than expose this half-broken
+// state to library users, we turn off IPv6 sockets.
+bool IsIpv6LoopbackAvailable();
 
 // Return true if SO_REUSEPORT is supported
 bool IsSocketReusePortSupported();
