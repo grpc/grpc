@@ -627,7 +627,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           "Chttp2FakeSecurityFullstack",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE |
-              FEATURE_MASK_IS_HTTP2,
+              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_GTEST,
           nullptr,
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<FakesecFixture>();
@@ -639,12 +639,14 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
              const ChannelArgs& /*server_args*/) {
             return std::make_unique<InsecureFixture>();
           }},
-      CoreTestConfiguration{
-          "Chttp2FullstackCompression",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<CompressionFixture>();
-          }},
+      CoreTestConfiguration{"Chttp2FullstackCompression",
+                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                FEATURE_MASK_IS_HTTP2 |
+                                FEATURE_MASK_DO_NOT_GTEST,
+                            nullptr,
+                            [](const ChannelArgs&, const ChannelArgs&) {
+                              return std::make_unique<CompressionFixture>();
+                            }},
 #ifdef GPR_LINUX
       CoreTestConfiguration{
           "Chttp2FullstackLocalAbstractUdsPercentEncoded",
@@ -860,7 +862,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           }},
       CoreTestConfiguration{
           "Inproc",
-          FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
+          FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_DO_NOT_GTEST,
           nullptr,
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<InprocFixture>(false);
@@ -869,7 +872,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
       CoreTestConfiguration{
           "InprocWithPromises",
           FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3,
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
           nullptr,
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<InprocFixture>(true);
@@ -879,7 +882,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           "Chttp2SslCredReloadTls12",
           FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+              FEATURE_MASK_DO_NOT_GTEST,
           "foo.test.google.fr",
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<SslCredReloadFixture>(TLS1_2);
@@ -889,7 +893,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           FEATURE_MASK_IS_SECURE | FEATURE_MASK_IS_HTTP2 |
               FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST,
+              FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST |
+              FEATURE_MASK_DO_NOT_GTEST,
           "foo.test.google.fr",
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<SslCredReloadFixture>(TLS1_3);
@@ -1047,7 +1052,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
               FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3,
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
           nullptr,
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
@@ -1058,7 +1063,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_1BYTE_AT_A_TIME |
               FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
               FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3,
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
           nullptr,
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
