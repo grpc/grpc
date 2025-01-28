@@ -143,7 +143,7 @@ task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = ['3.3.0', '3.2.0', '3.1.0', '3.0.0'].join(':')
+  target_ruby_minor_versions = ['3.4', '3.3', '3.2', '3.1', '3.0']
   selected_plat = "#{args[:plat]}"
 
   # use env variable to set artifact build paralellism
@@ -177,6 +177,8 @@ task 'gem:native', [:plat] do |t, args|
     end
   end
 
+  require 'rake_compiler_dock'
+
   # Create the windows dlls or create the empty placeholders
   Rake::Task['dlls'].execute(plat: windows_platforms)
 
@@ -187,7 +189,7 @@ task 'gem:native', [:plat] do |t, args|
       bundle update && \
       bundle exec rake clean && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
-        RUBY_CC_VERSION=#{ruby_cc_versions} \
+        RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
         GRPC_RUBY_BUILD_PROCS=#{nproc_override}
@@ -220,7 +222,7 @@ task 'gem:native', [:plat] do |t, args|
       bundle exec rake clean && \
       export GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR=#{debug_symbols_dir} && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
-        RUBY_CC_VERSION=#{ruby_cc_versions} \
+        RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
         GRPC_RUBY_BUILD_PROCS=#{nproc_override}
