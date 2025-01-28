@@ -538,16 +538,12 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
   if (!address_with_no_subchannel.empty()) {
     GRPC_TRACE_LOG(xds_override_host_lb, INFO)
         << "Picker override found entry with no subchannel";
-    if (!IsWorkSerializerDispatchEnabled()) {
-      new SubchannelCreationRequester(policy_, address_with_no_subchannel);
-    } else {
-      policy_->work_serializer()->Run(
-          [policy = policy_,
-           address = std::string(address_with_no_subchannel)]() {
-            policy->CreateSubchannelForAddress(address);
-          },
-          DEBUG_LOCATION);
-    }
+    policy_->work_serializer()->Run(
+        [policy = policy_,
+         address = std::string(address_with_no_subchannel)]() {
+          policy->CreateSubchannelForAddress(address);
+        },
+        DEBUG_LOCATION);
     return PickResult::Queue();
   }
   // No entry found that was not in TRANSIENT_FAILURE.
@@ -1060,15 +1056,6 @@ void XdsOverrideHostLb::SubchannelWrapper::Orphaned() {
   GRPC_TRACE_LOG(xds_override_host_lb, INFO)
       << "[xds_override_host_lb " << policy_.get() << "] subchannel wrapper "
       << this << " orphaned";
-  if (!IsWorkSerializerDispatchEnabled()) {
-    wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
-    if (subchannel_entry_ != nullptr) {
-      MutexLock lock(&policy()->mu_);
-      subchannel_entry_->OnSubchannelWrapperOrphan(
-          this, policy()->connection_idle_timeout_);
-    }
-    return;
-  }
   policy()->work_serializer()->Run(
       [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
         self->wrapped_subchannel()->CancelConnectivityStateWatch(
