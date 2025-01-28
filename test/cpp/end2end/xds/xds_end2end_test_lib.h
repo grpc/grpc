@@ -41,6 +41,7 @@
 #include "envoy/config/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -450,7 +451,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // If balancer_credentials is null, it defaults to fake credentials.
   explicit XdsEnd2endTest(
       std::shared_ptr<ServerCredentials> balancer_credentials = nullptr);
-  ~XdsEnd2endTest();
 
   void SetUp() override { InitClient(); }
   void TearDown() override;
@@ -1035,6 +1035,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   static std::shared_ptr<ServerCredentials> CreateFakeServerCredentials();
   static std::shared_ptr<ServerCredentials> CreateMtlsServerCredentials();
   static std::shared_ptr<ServerCredentials> CreateTlsServerCredentials();
+
+  // event_engine_scope_ always has to be at the top of the list to make sure
+  // that all other objects are destroyed before this and other event engine
+  // refs are released.
+  // We are using DefaultEventEngineScope to make sure that all work from the
+  // current test is done before the next test starts. Without this, we run into
+  // errors such as https://github.com/grpc/grpc/issues/38588. Note that we are
+  // using all refs to current event engine going down to 0 as a proxy for
+  // checking that all work from the current test is done, but this is not a
+  // guaranteed way since there might still be threads that are not using event
+  // engine but are still accessing/modifying the system state.
+  grpc_event_engine::experimental::DefaultEventEngineScope event_engine_scope_;
 
   std::unique_ptr<BalancerServerThread> balancer_;
 

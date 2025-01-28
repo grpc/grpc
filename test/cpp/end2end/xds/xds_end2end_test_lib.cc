@@ -381,7 +381,8 @@ const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
 XdsEnd2endTest::XdsEnd2endTest(
     std::shared_ptr<ServerCredentials> balancer_credentials)
-    : balancer_(CreateAndStartBalancer("Default Balancer",
+    : event_engine_scope_(grpc_event_engine::experimental::CreateEventEngine()),
+      balancer_(CreateAndStartBalancer("Default Balancer",
                                        std::move(balancer_credentials))) {
   // Initialize default client-side xDS resources.
   default_listener_ = XdsResourceUtils::DefaultListener();
@@ -399,17 +400,6 @@ XdsEnd2endTest::XdsEnd2endTest(
   default_server_listener_ = XdsResourceUtils::DefaultServerListener();
 }
 
-XdsEnd2endTest::~XdsEnd2endTest() {
-  // We need to make sure that all work from the current test is done before the
-  // next test starts. Without this, we run into errors such as
-  // https://github.com/grpc/grpc/issues/38588. Note that we are using all refs
-  // to current event engine going down to 0 as a proxy for checking that all
-  // work from the current test is done, but this is not a guaranteed way
-  // since there might still be threads that are not using event engine but are
-  // still accessing/modifying the system state.
-  grpc_event_engine::experimental::ShutdownDefaultEventEngine();
-}
-
 void XdsEnd2endTest::TearDown() {
   ShutdownAllBackends();
   balancer_->Shutdown();
@@ -422,13 +412,6 @@ void XdsEnd2endTest::TearDown() {
     remove(bootstrap_file_);
     gpr_free(bootstrap_file_);
   }
-  // Destruct members so that we can make sure no EventEngine ref is being held
-  backends_.clear();
-  stub2_.reset();
-  stub1_.reset();
-  stub_.reset();
-  channel_.reset();
-  balancer_.reset();
 }
 
 std::unique_ptr<XdsEnd2endTest::BalancerServerThread>
