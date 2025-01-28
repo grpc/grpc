@@ -177,6 +177,8 @@ if EXTRA_ENV_LINK_ARGS is None:
         EXTRA_ENV_LINK_ARGS += " -lpthread"
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += " -latomic"
+    if "linux" in sys.platform:
+        EXTRA_ENV_LINK_ARGS += " -static-libgcc"
 
 # This enables the standard link-time optimizer, which help us prevent some undefined symbol errors by
 # remove some unused symbols from .so file.
