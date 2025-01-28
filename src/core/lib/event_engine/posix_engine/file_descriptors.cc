@@ -94,10 +94,12 @@ int kDefaultServerUserTimeoutMs = 20000;
 bool kDefaultClientUserTimeoutEnabled = false;
 bool kDefaultServerUserTimeoutEnabled = true;
 
+#ifdef GRPC_POSIX_SOCKET
 // Whether the socket supports TCP_USER_TIMEOUT option.
 // (0: don't know, 1: support, -1: not support)
 std::atomic<int> g_socket_supports_tcp_user_timeout(
     SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT);
+#endif  // GRPC_POSIX_SOCKET
 
 PosixResult PosixResultSuccess() {
   return PosixResult(OperationResultKind::kSuccess, 0);
