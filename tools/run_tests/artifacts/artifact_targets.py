@@ -220,7 +220,7 @@ class PythonArtifact:
                 % (self.platform, self.arch),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 10,
+                timeout_seconds=60 * 60 * 4,
             )
         elif self.platform == "windows":
             environ["EXT_COMPILER"] = "msvc"

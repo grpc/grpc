@@ -33,9 +33,6 @@ _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 # C/C++ tests can take long time
 _CPP_RUNTESTS_TIMEOUT = 6 * 60 * 60
 
-# Python tests can take long time
-_PYTHON_RUNTESTS_TIMEOUT = 2 * 60 * 60
-
 # Set timeout high for ObjC for Cocoapods to install pods
 _OBJC_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
@@ -281,7 +278,6 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         labels=["basictests", "multilang"],
         extra_args=extra_args + ["--report_multi_target"],
         inner_jobs=inner_jobs,
-        timeout_seconds=_PYTHON_RUNTESTS_TIMEOUT,
     )
 
     # ARM64 Linux Python tests
