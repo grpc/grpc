@@ -1,6 +1,3 @@
-
-//
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
 #include "test/core/end2end/end2end_tests.h"
 
@@ -38,7 +33,6 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/no_destruct.h"
-#include "src/google/protobuf/_virtual_includes/protobuf/google/protobuf/text_format.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/fuzz_config_vars.h"
