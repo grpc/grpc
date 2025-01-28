@@ -22,14 +22,21 @@
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/load_balancing/rls/rls.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
+
+using internal::ClientChannelGlobalParsedConfig;
+using internal::ClientChannelServiceConfigParser;
 
 class RlsConfigParsingTest : public ::testing::Test {
  public:
@@ -68,7 +75,42 @@ TEST_F(RlsConfigParsingTest, ValidConfig) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_NE(*service_config, nullptr);
+  ASSERT_NE(*service_config, nullptr);
+  auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), RlsLbConfig::Name());
+  auto* rls_lb_config = DownCast<RlsLbConfig*>(lb_config.get());
+  EXPECT_THAT(
+      rls_lb_config->key_builder_map(),
+      ::testing::ElementsAre(::testing::Pair(
+          "/foo/", ::testing::AllOf(
+                       ::testing::Field(&RlsLbConfig::KeyBuilder::header_keys,
+                                        ::testing::ElementsAre()),
+                       ::testing::Field(&RlsLbConfig::KeyBuilder::host_key,
+                                        ::testing::Eq("")),
+                       ::testing::Field(&RlsLbConfig::KeyBuilder::service_key,
+                                        ::testing::Eq("")),
+                       ::testing::Field(&RlsLbConfig::KeyBuilder::method_key,
+                                        ::testing::Eq("")),
+                       ::testing::Field(&RlsLbConfig::KeyBuilder::constant_keys,
+                                        ::testing::ElementsAre())))));
+  EXPECT_EQ(rls_lb_config->lookup_service(), "rls.example.com:80");
+  EXPECT_EQ(rls_lb_config->lookup_service_timeout(), Duration::Seconds(10));
+  EXPECT_EQ(rls_lb_config->max_age(), rls_lb_config->kMaxMaxAge);
+  EXPECT_EQ(rls_lb_config->stale_age(), rls_lb_config->kMaxMaxAge);
+  EXPECT_EQ(rls_lb_config->cache_size_bytes(), 1);
+  EXPECT_EQ(rls_lb_config->default_target(), "");
+  EXPECT_EQ(rls_lb_config->rls_channel_service_config(),
+            "{\"loadBalancingPolicy\":\"ROUND_ROBIN\"}");
+  EXPECT_EQ(JsonDump(rls_lb_config->child_policy_config()),
+            "[{\"grpclb\":{\"target\":\"fake_target_field_value\"}}]");
+  EXPECT_EQ(rls_lb_config->child_policy_config_target_field_name(), "target");
+  EXPECT_EQ(rls_lb_config->default_child_policy_parsed_config(), nullptr);
 }
 
 //
