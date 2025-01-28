@@ -132,7 +132,6 @@ grpc_cc_library(
             "fixtures/sockpair_fixture.h",
             "tests/cancel_test_helpers.h",
         ],
-        tags = ["no_windows"] if fuzz else [],
         defines =
             ([] if fuzz else ["GRPC_END2END_TEST_NO_FUZZER"]) +
             ([] if gtest else ["GRPC_END2END_TEST_NO_GTEST"]),
@@ -146,6 +145,7 @@ grpc_cc_library(
             "absl/strings",
             "gtest",
         ] + (["fuzztest"] if fuzz else []),
+        tags = ["no_windows"] if fuzz else [],
         deps = [
             "cq_verifier",
             "end2end_test_fuzzer_cc_proto",
