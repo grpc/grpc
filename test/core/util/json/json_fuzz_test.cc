@@ -21,22 +21,29 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
+#include "src/core/util/dump_args.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 
-bool squelch = true;
-bool leak_check = true;
+namespace grpc_core {
+namespace {
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  auto json = grpc_core::JsonParse(
-      absl::string_view(reinterpret_cast<const char*>(data), size));
+void ParseRoundTrips(std::string input) {
+  auto json = JsonParse(input);
   if (json.ok()) {
-    auto text2 = grpc_core::JsonDump(*json);
-    auto json2 = grpc_core::JsonParse(text2);
-    CHECK(json2.ok());
-    CHECK(*json == *json2);
+    auto text2 = JsonDump(*json);
+    auto json2 = JsonParse(text2);
+    CHECK_OK(json2);
+    EXPECT_EQ(*json, *json2)
+        << GRPC_DUMP_ARGS(absl::CEscape(input), absl::CEscape(text2));
   }
-  return 0;
 }
+FUZZ_TEST(JsonTest, ParseRoundTrips);
+
+}  // namespace
+}  // namespace grpc_core
