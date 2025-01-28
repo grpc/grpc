@@ -229,6 +229,15 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         FinishWhenCancelledAsync();
         return;
       }
+      if (req_->has_param() &&
+          req_->param().compression_algorithm() != RequestParams::NONE) {
+        if (req_->param().compression_algorithm() == RequestParams::DEFLATE) {
+          ctx_->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
+        } else if (req_->param().compression_algorithm() ==
+                   RequestParams::GZIP) {
+          ctx_->set_compression_algorithm(GRPC_COMPRESS_GZIP);
+        }
+      }
       resp_->set_message(req_->message());
       internal::MaybeEchoDeadline(ctx_, req_, resp_);
       if (service_->host_) {
