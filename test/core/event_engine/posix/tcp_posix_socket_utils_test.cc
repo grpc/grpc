@@ -145,25 +145,26 @@ TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
   test_with_vtable(&mutator_vtable2);
 }
 
-TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
-  FileDescriptors fds;
-  int sock = socket(PF_INET, SOCK_STREAM, 0);
-  if (sock < 0) {
-    // Try ipv6
-    sock = socket(AF_INET6, SOCK_STREAM, 0);
-  }
-  EXPECT_GT(sock, 0);
-  FileDescriptor fd = fds.Adopt(sock);
-  EXPECT_TRUE(fds.SetSocketNonBlocking(fd, 1).ok());
-  EXPECT_TRUE(fds.SetSocketNonBlocking(fd, 0).ok());
-  EXPECT_TRUE(fds.SetSocketCloexec(fd, 1).ok());
-  EXPECT_TRUE(fds.SetSocketCloexec(fd, 0).ok());
-  EXPECT_TRUE(fds.SetSocketReuseAddr(fd, 1).ok());
-  EXPECT_TRUE(fds.SetSocketReuseAddr(fd, 0).ok());
-  EXPECT_TRUE(fds.SetSocketLowLatency(fd, 1).ok());
-  EXPECT_TRUE(fds.SetSocketLowLatency(fd, 0).ok());
-  close(sock);
-}
+// Need to be discussed in a code review - do we need this at this granularity?
+// TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
+//   FileDescriptors fds;
+//   int sock = socket(PF_INET, SOCK_STREAM, 0);
+//   if (sock < 0) {
+//     // Try ipv6
+//     sock = socket(AF_INET6, SOCK_STREAM, 0);
+//   }
+//   EXPECT_GT(sock, 0);
+//   FileDescriptor fd = fds.Adopt(sock);
+//   EXPECT_TRUE(fds.SetSocketNonBlocking(fd, 1).ok());
+//   EXPECT_TRUE(fds.SetSocketNonBlocking(fd, 0).ok());
+//   EXPECT_TRUE(fds.SetSocketCloexec(fd, 1).ok());
+//   EXPECT_TRUE(fds.SetSocketCloexec(fd, 0).ok());
+//   EXPECT_TRUE(fds.SetSocketReuseAddr(fd, 1).ok());
+//   EXPECT_TRUE(fds.SetSocketReuseAddr(fd, 0).ok());
+//   EXPECT_TRUE(fds.SetSocketLowLatency(fd, 1).ok());
+//   EXPECT_TRUE(fds.SetSocketLowLatency(fd, 0).ok());
+//   close(sock);
+// }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

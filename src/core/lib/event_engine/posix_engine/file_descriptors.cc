@@ -19,11 +19,14 @@
 #include <sys/types.h>
 
 #include <cerrno>
+#include <cstddef>
 #include <cstdint>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
@@ -81,6 +84,8 @@
 #define SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT -1
 #endif  // TCP_USER_TIMEOUT
 #endif  // GPR_LINUX == 1
+
+#define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
 namespace grpc_event_engine::experimental {
 
@@ -153,6 +158,237 @@ IF_POSIX_SOCKET(
       return res;
     })
 
+// Tries to set the socket's receive buffer to given size.
+absl::Status SetSocketRcvBuf(int fd, int buffer_size_bytes) {
+  return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
+                         sizeof(buffer_size_bytes))
+             ? absl::OkStatus()
+             : absl::Status(absl::StatusCode::kInternal,
+                            absl::StrCat("setsockopt(SO_RCVBUF): ",
+                                         grpc_core::StrError(errno)));
+}
+
+// get max listen queue size on linux
+int InitMaxAcceptQueueSize() {
+  int n = SOMAXCONN;
+  char buf[64];
+  FILE* fp = fopen("/proc/sys/net/core/somaxconn", "r");
+  int max_accept_queue_size;
+  if (fp == nullptr) {
+    // 2.4 kernel.
+    return SOMAXCONN;
+  }
+  if (fgets(buf, sizeof buf, fp)) {
+    char* end;
+    long i = strtol(buf, &end, 10);
+    if (i > 0 && i <= INT_MAX && end && *end == '\n') {
+      n = static_cast<int>(i);
+    }
+  }
+  fclose(fp);
+  max_accept_queue_size = n;
+
+  if (max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
+    LOG(INFO) << "Suspiciously small accept queue (" << max_accept_queue_size
+              << ") will probably lead to connection drops";
+  }
+  return max_accept_queue_size;
+}
+
+int GetMaxAcceptQueueSize() {
+  static const int kMaxAcceptQueueSize = InitMaxAcceptQueueSize();
+  return kMaxAcceptQueueSize;
+}
+
+// Set a socket to non blocking mode
+absl::Status SetSocketNonBlocking(int fd, int non_blocking) {
+  int oldflags = fcntl(fd, F_GETFL, 0);
+  if (oldflags < 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+
+  if (non_blocking) {
+    oldflags |= O_NONBLOCK;
+  } else {
+    oldflags &= ~O_NONBLOCK;
+  }
+
+  if (fcntl(fd, F_SETFL, oldflags) != 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+
+  return absl::OkStatus();
+}
+
+// Set a socket to close on exec
+absl::Status SetSocketCloexec(int fd, int close_on_exec) {
+  int oldflags = fcntl(fd, F_GETFD, 0);
+  if (oldflags < 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+
+  if (close_on_exec) {
+    oldflags |= FD_CLOEXEC;
+  } else {
+    oldflags &= ~FD_CLOEXEC;
+  }
+
+  if (fcntl(fd, F_SETFD, oldflags) != 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+
+  return absl::OkStatus();
+}
+
+// set a socket to reuse old addresses
+IF_POSIX_SOCKET(
+    absl::Status SetSocketOption(int fd, int level, int optname, int reuse,
+                                 absl::string_view debug_label),
+    {
+      int val = (reuse != 0);
+      int newval;
+      socklen_t intlen = sizeof(newval);
+      if (0 != setsockopt(fd, level, optname, &val, sizeof(val))) {
+        return absl::Status(absl::StatusCode::kInternal,
+                            absl::StrCat("setsockopt(", debug_label,
+                                         "): ", grpc_core::StrError(errno)));
+      }
+      if (0 != getsockopt(fd, level, optname, &newval, &intlen)) {
+        return absl::Status(absl::StatusCode::kInternal,
+                            absl::StrCat("setsockopt(", debug_label,
+                                         "): ", grpc_core::StrError(errno)));
+      }
+      if ((newval != 0) != val) {
+        return absl::Status(absl::StatusCode::kInternal,
+                            absl::StrCat("Failed to set ", debug_label));
+      }
+
+      return absl::OkStatus();
+    })
+
+// set a socket to reuse old ports
+absl::Status SetSocketReusePort(int fd, int reuse) {
+#ifndef SO_REUSEPORT
+  return absl::Status(absl::StatusCode::kInternal,
+                      "SO_REUSEPORT unavailable on compiling system");
+#else
+  return SetSocketOption(fd, SOL_SOCKET, SO_REUSEPORT, 1, "SO_REUSEPORT");
+#endif
+}
+
+// Set Differentiated Services Code Point (DSCP)
+absl::Status SetSocketDscp(int fdesc, int dscp) {
+  if (dscp == PosixTcpOptions::kDscpNotSet) {
+    return absl::OkStatus();
+  }
+  // The TOS/TrafficClass byte consists of following bits:
+  // | 7 6 5 4 3 2 | 1 0 |
+  // |    DSCP     | ECN |
+  int newval = dscp << 2;
+  int val;
+  socklen_t intlen = sizeof(val);
+  // Get ECN bits from current IP_TOS value unless IPv6 only
+  if (0 == getsockopt(fdesc, IPPROTO_IP, IP_TOS, &val, &intlen)) {
+    newval |= (val & 0x3);
+    if (0 != setsockopt(fdesc, IPPROTO_IP, IP_TOS, &newval, sizeof(newval))) {
+      return absl::Status(
+          absl::StatusCode::kInternal,
+          absl::StrCat("setsockopt(IP_TOS): ", grpc_core::StrError(errno)));
+    }
+  }
+  // Get ECN from current Traffic Class value if IPv6 is available
+  if (0 == getsockopt(fdesc, IPPROTO_IPV6, IPV6_TCLASS, &val, &intlen)) {
+    newval |= (val & 0x3);
+    if (0 !=
+        setsockopt(fdesc, IPPROTO_IPV6, IPV6_TCLASS, &newval, sizeof(newval))) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrCat("setsockopt(IPV6_TCLASS): ",
+                                       grpc_core::StrError(errno)));
+    }
+  }
+  return absl::OkStatus();
+}
+
+// Set a socket to use zerocopy
+absl::Status SetSocketZeroCopy(const FileDescriptor& fd) {
+#ifdef GRPC_LINUX_ERRQUEUE
+  const int enable = 1;
+  auto err =
+      setsockopt(fd.fd(), SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
+  if (err != 0) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("setsockopt(SO_ZEROCOPY): ", grpc_core::StrError(errno)));
+  }
+  return absl::OkStatus();
+#else
+  return absl::Status(absl::StatusCode::kInternal,
+                      absl::StrCat("setsockopt(SO_ZEROCOPY): ",
+                                   grpc_core::StrError(ENOSYS).c_str()));
+#endif
+}
+
+// Set TCP_USER_TIMEOUT
+void TrySetSocketTcpUserTimeout(int fd, const PosixTcpOptions& options,
+                                bool is_client) {
+  if (g_socket_supports_tcp_user_timeout.load() < 0) {
+    return;
+  }
+  bool enable = is_client ? kDefaultClientUserTimeoutEnabled
+                          : kDefaultServerUserTimeoutEnabled;
+  int timeout =
+      is_client ? kDefaultClientUserTimeoutMs : kDefaultServerUserTimeoutMs;
+  if (options.keep_alive_time_ms > 0) {
+    enable = options.keep_alive_time_ms != INT_MAX;
+  }
+  if (options.keep_alive_timeout_ms > 0) {
+    timeout = options.keep_alive_timeout_ms;
+  }
+  if (enable) {
+    int newval;
+    socklen_t len = sizeof(newval);
+    // If this is the first time to use TCP_USER_TIMEOUT, try to check
+    // if it is available.
+    if (g_socket_supports_tcp_user_timeout.load() == 0) {
+      if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+        // This log is intentionally not protected behind a flag, so that users
+        // know that TCP_USER_TIMEOUT is not being used.
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
+               "won't be used thereafter";
+        g_socket_supports_tcp_user_timeout.store(-1);
+      } else {
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
+               "used thereafter";
+        g_socket_supports_tcp_user_timeout.store(1);
+      }
+    }
+    if (g_socket_supports_tcp_user_timeout.load() > 0) {
+      if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
+                          sizeof(timeout))) {
+        LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
+                   << grpc_core::StrError(errno);
+        return;
+      }
+      if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+        LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
+                   << grpc_core::StrError(errno);
+        return;
+      }
+      if (newval != timeout) {
+        // Do not fail on failing to set TCP_USER_TIMEOUT
+        LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
+        return;
+      }
+    }
+  }
+}
+
 }  // namespace
 
 bool IsSocketReusePortSupported() {
@@ -166,7 +402,7 @@ bool IsSocketReusePortSupported() {
       s = fds.Socket(AF_INET6, SOCK_STREAM, 0);
     }
     if (s.ok()) {
-      bool result = fds.SetSocketReusePort(*s, 1).ok();
+      bool result = SetSocketReusePort(s->fd(), 1).ok();
       fds.Close(*s);
       return result;
     } else {
@@ -496,19 +732,22 @@ IF_POSIX_SOCKET(
           Close(fd);
         }
       });
-      GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(fd, 1));
-      GRPC_RETURN_IF_ERROR(SetSocketCloexec(fd, 1));
+      int f = fd.fd();
+      GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
+      GRPC_RETURN_IF_ERROR(SetSocketCloexec(f, 1));
       if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
         GRPC_RETURN_IF_ERROR(
-            SetSocketRcvBuf(fd, options.tcp_receive_buffer_size));
+            SetSocketRcvBuf(fd.fd(), options.tcp_receive_buffer_size));
       }
       if (addr.address()->sa_family != AF_UNIX &&
           !ResolvedAddressIsVSock(addr)) {
         // If its not a unix socket or vsock address.
-        GRPC_RETURN_IF_ERROR(SetSocketLowLatency(fd, 1));
-        GRPC_RETURN_IF_ERROR(SetSocketReuseAddr(fd, 1));
-        GRPC_RETURN_IF_ERROR(SetSocketDscp(fd, options.dscp));
-        TrySetSocketTcpUserTimeout(fd, options, true);
+        GRPC_RETURN_IF_ERROR(
+            SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
+        GRPC_RETURN_IF_ERROR(
+            SetSocketOption(f, SOL_SOCKET, SO_REUSEADDR, 1, "SO_REUSEADDR"));
+        GRPC_RETURN_IF_ERROR(SetSocketDscp(f, options.dscp));
+        TrySetSocketTcpUserTimeout(f, options, true);
       }
       GRPC_RETURN_IF_ERROR(SetSocketNoSigpipeIfPossible(fd));
       GRPC_RETURN_IF_ERROR(ApplySocketMutatorInOptions(
@@ -574,327 +813,80 @@ absl::Status FileDescriptors::ApplySocketMutatorInOptions(
   return SetSocketMutator(fd, usage, options.socket_mutator);
 }
 
-// Set a socket to use zerocopy
-absl::Status FileDescriptors::SetSocketZeroCopy(const FileDescriptor& fd) {
-#ifdef GRPC_LINUX_ERRQUEUE
-  const int enable = 1;
-  auto err =
-      setsockopt(fd.fd(), SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
-  if (err != 0) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_ZEROCOPY): ", grpc_core::StrError(errno)));
-  }
-  return absl::OkStatus();
-#else
-  return absl::Status(absl::StatusCode::kInternal,
-                      absl::StrCat("setsockopt(SO_ZEROCOPY): ",
-                                   grpc_core::StrError(ENOSYS).c_str()));
-#endif
-}
-
-// Set a socket to non blocking mode
-IF_POSIX_SOCKET(absl::Status FileDescriptors::SetSocketNonBlocking(
-                    const FileDescriptor& fd, int non_blocking),
-                {
-                  int oldflags = fcntl(fd.fd(), F_GETFL, 0);
-                  if (oldflags < 0) {
-                    return absl::Status(
-                        absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-                  }
-
-                  if (non_blocking) {
-                    oldflags |= O_NONBLOCK;
-                  } else {
-                    oldflags &= ~O_NONBLOCK;
-                  }
-
-                  if (fcntl(fd.fd(), F_SETFL, oldflags) != 0) {
-                    return absl::Status(
-                        absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-                  }
-
-                  return absl::OkStatus();
-                })
-
-// Set a socket to close on exec
-IF_POSIX_SOCKET(absl::Status FileDescriptors::SetSocketCloexec(
-                    const FileDescriptor& fd, int close_on_exec),
-                {
-                  int oldflags = fcntl(fd.fd(), F_GETFD, 0);
-                  if (oldflags < 0) {
-                    return absl::Status(
-                        absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-                  }
-
-                  if (close_on_exec) {
-                    oldflags |= FD_CLOEXEC;
-                  } else {
-                    oldflags &= ~FD_CLOEXEC;
-                  }
-
-                  if (fcntl(fd.fd(), F_SETFD, oldflags) != 0) {
-                    return absl::Status(
-                        absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-                  }
-
-                  return absl::OkStatus();
-                })
-
-// set a socket to reuse old addresses
-IF_POSIX_SOCKET(
-    absl::Status FileDescriptors::SetSocketReuseAddr(const FileDescriptor& fd,
-                                                     int reuse),
-    {
-      int val = (reuse != 0);
-      int newval;
-      socklen_t intlen = sizeof(newval);
-      if (0 !=
-          setsockopt(fd.fd(), SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val))) {
-        return absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("setsockopt(SO_REUSEADDR): ",
-                                         grpc_core::StrError(errno)));
-      }
-      if (0 !=
-          getsockopt(fd.fd(), SOL_SOCKET, SO_REUSEADDR, &newval, &intlen)) {
-        return absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("getsockopt(SO_REUSEADDR): ",
-                                         grpc_core::StrError(errno)));
-      }
-      if ((newval != 0) != val) {
-        return absl::Status(absl::StatusCode::kInternal,
-                            "Failed to set SO_REUSEADDR");
-      }
-
-      return absl::OkStatus();
-    })
-
-// Disable nagle algorithm
-IF_POSIX_SOCKET(
-    absl::Status FileDescriptors::SetSocketLowLatency(const FileDescriptor& fd,
-                                                      int low_latency),
-    {
-      int val = (low_latency != 0);
-      int newval;
-      socklen_t intlen = sizeof(newval);
-      int unwrapped = fd.fd();
-      if (0 !=
-          setsockopt(unwrapped, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
-        return absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("setsockopt(TCP_NODELAY): ",
-                                         grpc_core::StrError(errno)));
-      }
-      if (0 !=
-          getsockopt(unwrapped, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen)) {
-        return absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("getsockopt(TCP_NODELAY): ",
-                                         grpc_core::StrError(errno)));
-      }
-      if ((newval != 0) != val) {
-        return absl::Status(absl::StatusCode::kInternal,
-                            "Failed to set TCP_NODELAY");
-      }
-      return absl::OkStatus();
-    })
-
 int FileDescriptors::ConfigureSocket(const FileDescriptor& fd, int type) {
   // clang-format off
 #define RETURN_IF_ERROR(expr) if (!(expr).ok()) { return -1; }
+  int f = fd.fd();
   // clang-format on
-  RETURN_IF_ERROR(SetSocketNonBlocking(fd, 1));
-  RETURN_IF_ERROR(SetSocketCloexec(fd, 1));
+  RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
+  RETURN_IF_ERROR(SetSocketCloexec(f, 1));
   if (type == SOCK_STREAM) {
-    RETURN_IF_ERROR(SetSocketLowLatency(fd, 1));
+    RETURN_IF_ERROR(
+        SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
   }
   return 0;
 }
 
-// Set Differentiated Services Code Point (DSCP)
 IF_POSIX_SOCKET(
-    absl::Status FileDescriptors::SetSocketDscp(const FileDescriptor& fd,
-                                                int dscp),
-    {
-      if (dscp == PosixTcpOptions::kDscpNotSet) {
-        return absl::OkStatus();
-      }
-      // The TOS/TrafficClass byte consists of following bits:
-      // | 7 6 5 4 3 2 | 1 0 |
-      // |    DSCP     | ECN |
-      int newval = dscp << 2;
-      int val;
-      socklen_t intlen = sizeof(val);
-      int fdesc = fd.fd();
-      // Get ECN bits from current IP_TOS value unless IPv6 only
-      if (0 == getsockopt(fdesc, IPPROTO_IP, IP_TOS, &val, &intlen)) {
-        newval |= (val & 0x3);
-        if (0 !=
-            setsockopt(fdesc, IPPROTO_IP, IP_TOS, &newval, sizeof(newval))) {
-          return absl::Status(
-              absl::StatusCode::kInternal,
-              absl::StrCat("setsockopt(IP_TOS): ", grpc_core::StrError(errno)));
-        }
-      }
-      // Get ECN from current Traffic Class value if IPv6 is available
-      if (0 == getsockopt(fdesc, IPPROTO_IPV6, IPV6_TCLASS, &val, &intlen)) {
-        newval |= (val & 0x3);
-        if (0 != setsockopt(fdesc, IPPROTO_IPV6, IPV6_TCLASS, &newval,
-                            sizeof(newval))) {
-          return absl::Status(absl::StatusCode::kInternal,
-                              absl::StrCat("setsockopt(IPV6_TCLASS): ",
-                                           grpc_core::StrError(errno)));
-        }
-      }
-      return absl::OkStatus();
-    })
-
-// set a socket to reuse old ports
-absl::Status FileDescriptors::SetSocketReusePort(const FileDescriptor& fd,
-                                                 int reuse) {
-#ifndef SO_REUSEPORT
-  return absl::Status(absl::StatusCode::kInternal,
-                      "SO_REUSEPORT unavailable on compiling system");
-#else
-  int val = (reuse != 0);
-  int newval;
-  socklen_t intlen = sizeof(newval);
-  int fdesc = fd.fd();
-  if (0 != setsockopt(fdesc, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val))) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_REUSEPORT): ", grpc_core::StrError(errno)));
-  }
-  if (0 != getsockopt(fdesc, SOL_SOCKET, SO_REUSEPORT, &newval, &intlen)) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(SO_REUSEPORT): ", grpc_core::StrError(errno)));
-  }
-  if ((newval != 0) != val) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        "Failed to set SO_REUSEPORT");
-  }
-
-  return absl::OkStatus();
-#endif
-}
-
-absl::Status FileDescriptors::SetSocketIpPktInfoIfPossible(
-    const FileDescriptor& fd) {
-#ifdef GRPC_HAVE_IP_PKTINFO
-  auto result = SetSockOpt(fd, IPPROTO_IP, IP_PKTINFO, 1);
-  if (!result.ok()) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(IP_PKTINFO): ",
-                     grpc_core::StrError(result.errno_value())));
-  }
-#endif
-  return absl::OkStatus();
-}
-
-absl::Status FileDescriptors::SetSocketIpv6RecvPktInfoIfPossible(
-    const FileDescriptor& fd) {
-#ifdef GRPC_HAVE_IPV6_RECVPKTINFO
-  auto result = SetSockOpt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, 1);
-  if (!result.ok()) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("setsockopt(IPV6_RECVPKTINFO): ",
-                                     grpc_core::StrError(result.ok())));
-  }
-#endif
-  return absl::OkStatus();
-}
-
-IF_POSIX_SOCKET(
-    absl::Status FileDescriptors::SetSocketSndBuf(const FileDescriptor& fd,
-                                                  int buffer_size_bytes),
+    absl::StatusOr<EventEngine::ResolvedAddress>
+        FileDescriptors::PrepareListenerSocket(
+            const FileDescriptor& fd, const PosixTcpOptions& options,
+            const EventEngine::ResolvedAddress& address),
     {
       int f = fd.fd();
-      return 0 == setsockopt(f, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
-                             sizeof(buffer_size_bytes))
-                 ? absl::OkStatus()
-                 : absl::Status(absl::StatusCode::kInternal,
-                                absl::StrCat("setsockopt(SO_SNDBUF): ",
-                                             grpc_core::StrError(errno)));
-    })
 
-IF_POSIX_SOCKET(
-    absl::Status FileDescriptors::SetSocketRcvBuf(const FileDescriptor& fd,
-                                                  int buffer_size_bytes),
-    {
-      int f = fd.fd();
-      return 0 == setsockopt(f, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
-                             sizeof(buffer_size_bytes))
-                 ? absl::OkStatus()
-                 : absl::Status(absl::StatusCode::kInternal,
-                                absl::StrCat("setsockopt(SO_RCVBUF): ",
-                                             grpc_core::StrError(errno)));
-    })
+      if (IsSocketReusePortSupported() && options.allow_reuse_port &&
+          address.address()->sa_family != AF_UNIX &&
+          !ResolvedAddressIsVSock(address)) {
+        GRPC_RETURN_IF_ERROR(SetSocketReusePort(f, 1));
+      }
 
-// Set TCP_USER_TIMEOUT
-IF_POSIX_SOCKET(
-    void FileDescriptors::TrySetSocketTcpUserTimeout(
-        const FileDescriptor& fd, const PosixTcpOptions& options,
-        bool is_client),
-    {
-      if (g_socket_supports_tcp_user_timeout.load() < 0) {
-        return;
+      GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
+      GRPC_RETURN_IF_ERROR(SetSocketCloexec(f, 1));
+
+      if (address.address()->sa_family != AF_UNIX &&
+          !ResolvedAddressIsVSock(address)) {
+        GRPC_RETURN_IF_ERROR(
+            SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
+        GRPC_RETURN_IF_ERROR(
+            SetSocketOption(f, SOL_SOCKET, SO_REUSEADDR, 1, "SO_REUSEADDR"));
+        GRPC_RETURN_IF_ERROR(SetSocketDscp(f, options.dscp));
+        TrySetSocketTcpUserTimeout(f, options, false);
       }
-      bool enable = is_client ? kDefaultClientUserTimeoutEnabled
-                              : kDefaultServerUserTimeoutEnabled;
-      int timeout =
-          is_client ? kDefaultClientUserTimeoutMs : kDefaultServerUserTimeoutMs;
-      if (options.keep_alive_time_ms > 0) {
-        enable = options.keep_alive_time_ms != INT_MAX;
+      GRPC_RETURN_IF_ERROR(SetSocketNoSigpipeIfPossible(fd));
+      GRPC_RETURN_IF_ERROR(ApplySocketMutatorInOptions(
+          fd, GRPC_FD_SERVER_LISTENER_USAGE, options));
+
+#ifdef GRPC_LINUX_ERRQUEUE
+      if (!SetSocketZeroCopy(fd).ok()) {
+        // it's not fatal, so just log it.
+        VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
       }
-      if (options.keep_alive_timeout_ms > 0) {
-        timeout = options.keep_alive_timeout_ms;
-      }
-      if (enable) {
-        int newval;
-        socklen_t len = sizeof(newval);
-        int f = fd.fd();
-        // If this is the first time to use TCP_USER_TIMEOUT, try to check
-        // if it is available.
-        if (g_socket_supports_tcp_user_timeout.load() == 0) {
-          if (0 !=
-              getsockopt(f, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-            // This log is intentionally not protected behind a flag, so that
-            // users know that TCP_USER_TIMEOUT is not being used.
-            GRPC_TRACE_LOG(tcp, INFO)
-                << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
-                   "won't be used thereafter";
-            g_socket_supports_tcp_user_timeout.store(-1);
-          } else {
-            GRPC_TRACE_LOG(tcp, INFO)
-                << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
-                   "used thereafter";
-            g_socket_supports_tcp_user_timeout.store(1);
-          }
+#endif
+      if (bind(f, address.address(), address.size()) < 0) {
+        auto sockaddr_str = ResolvedAddressToString(address);
+        if (!sockaddr_str.ok()) {
+          LOG(ERROR) << "Could not convert sockaddr to string: "
+                     << sockaddr_str.status();
+          sockaddr_str = "<unparsable>";
         }
-        if (g_socket_supports_tcp_user_timeout.load() > 0) {
-          if (0 != setsockopt(f, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
-                              sizeof(timeout))) {
-            LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
-                       << grpc_core::StrError(errno);
-            return;
-          }
-          if (0 !=
-              getsockopt(f, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-            LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
-                       << grpc_core::StrError(errno);
-            return;
-          }
-          if (newval != timeout) {
-            // Do not fail on failing to set TCP_USER_TIMEOUT
-            LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
-            return;
-          }
-        }
+        sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
+        return absl::FailedPreconditionError(
+            absl::StrCat("Error in bind for address '", *sockaddr_str,
+                         "': ", std::strerror(errno)));
       }
+      if (listen(f, GetMaxAcceptQueueSize()) < 0) {
+        return absl::FailedPreconditionError(
+            absl::StrCat("Error in listen: ", std::strerror(errno)));
+      }
+      socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+      EventEngine::ResolvedAddress sockname_temp;
+      if (getsockname(f, const_cast<sockaddr*>(sockname_temp.address()), &len) <
+          0) {
+        return absl::FailedPreconditionError(
+            absl::StrCat("Error in getsockname: ", std::strerror(errno)));
+      }
+      return sockname_temp;
     })
 
 }  // namespace grpc_event_engine::experimental

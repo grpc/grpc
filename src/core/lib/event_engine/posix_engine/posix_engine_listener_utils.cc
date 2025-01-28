@@ -17,7 +17,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 #include <limits.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <cstring>
@@ -28,16 +27,12 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_replace.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/util/status_helper.h"
-
-#define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <errno.h>       // IWYU pragma: keep
@@ -96,108 +91,26 @@ bool SystemHasIfAddrs() { return false; }
 
 #endif  // GRPC_HAVE_IFADDRS
 
-// get max listen queue size on linux
-int InitMaxAcceptQueueSize() {
-  int n = SOMAXCONN;
-  char buf[64];
-  FILE* fp = fopen("/proc/sys/net/core/somaxconn", "r");
-  int max_accept_queue_size;
-  if (fp == nullptr) {
-    // 2.4 kernel.
-    return SOMAXCONN;
-  }
-  if (fgets(buf, sizeof buf, fp)) {
-    char* end;
-    long i = strtol(buf, &end, 10);
-    if (i > 0 && i <= INT_MAX && end && *end == '\n') {
-      n = static_cast<int>(i);
-    }
-  }
-  fclose(fp);
-  max_accept_queue_size = n;
-
-  if (max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
-    LOG(INFO) << "Suspiciously small accept queue (" << max_accept_queue_size
-              << ") will probably lead to connection drops";
-  }
-  return max_accept_queue_size;
-}
-
-int GetMaxAcceptQueueSize() {
-  static const int kMaxAcceptQueueSize = InitMaxAcceptQueueSize();
-  return kMaxAcceptQueueSize;
-}
-
 // Prepare a recently-created socket for listening.
 absl::Status PrepareSocket(FileDescriptors* fds, const PosixTcpOptions& options,
                            ListenerSocket& socket) {
-  ResolvedAddress sockname_temp;
-  int fd = socket.sock.fd();
-  CHECK_GE(fd, 0);
+  FileDescriptor fd = socket.sock;
+  CHECK(fd.ready());
   bool close_fd = true;
-  socket.zero_copy_enabled = false;
   socket.port = 0;
-  auto sock_cleanup = absl::MakeCleanup([&close_fd, fd]() -> void {
-    if (close_fd && fd >= 0) {
-      close(fd);
+  auto sock_cleanup = absl::MakeCleanup([&close_fd, fd, fds]() -> void {
+    if (close_fd && fd.ready()) {
+      fds->Close(fd);
     }
   });
-  FileDescriptor wrapped = fds->Adopt(fd);
-  if (IsSocketReusePortSupported() && options.allow_reuse_port &&
-      socket.addr.address()->sa_family != AF_UNIX &&
-      !ResolvedAddressIsVSock(socket.addr)) {
-    GRPC_RETURN_IF_ERROR(fds->SetSocketReusePort(wrapped, 1));
-  }
-#ifdef GRPC_LINUX_ERRQUEUE
-  if (!fds->SetSocketZeroCopy(wrapped).ok()) {
-    // it's not fatal, so just log it.
-    VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
-  } else {
-    socket.zero_copy_enabled = true;
-  }
-#endif
-
-  GRPC_RETURN_IF_ERROR(fds->SetSocketNonBlocking(wrapped, 1));
-  GRPC_RETURN_IF_ERROR(fds->SetSocketCloexec(wrapped, 1));
-
-  if (socket.addr.address()->sa_family != AF_UNIX &&
-      !ResolvedAddressIsVSock(socket.addr)) {
-    GRPC_RETURN_IF_ERROR(fds->SetSocketLowLatency(wrapped, 1));
-    GRPC_RETURN_IF_ERROR(fds->SetSocketReuseAddr(wrapped, 1));
-    GRPC_RETURN_IF_ERROR(fds->SetSocketDscp(wrapped, options.dscp));
-    fds->TrySetSocketTcpUserTimeout(wrapped, options, false);
-  }
-  GRPC_RETURN_IF_ERROR(fds->SetSocketNoSigpipeIfPossible(wrapped));
-  GRPC_RETURN_IF_ERROR(fds->ApplySocketMutatorInOptions(
-      wrapped, GRPC_FD_SERVER_LISTENER_USAGE, options));
-
-  if (bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
-    auto sockaddr_str = ResolvedAddressToString(socket.addr);
-    if (!sockaddr_str.ok()) {
-      LOG(ERROR) << "Could not convert sockaddr to string: "
-                 << sockaddr_str.status();
-      sockaddr_str = "<unparsable>";
-    }
-    sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
-    return absl::FailedPreconditionError(
-        absl::StrCat("Error in bind for address '", *sockaddr_str,
-                     "': ", std::strerror(errno)));
-  }
-
-  if (listen(fd, GetMaxAcceptQueueSize()) < 0) {
-    return absl::FailedPreconditionError(
-        absl::StrCat("Error in listen: ", std::strerror(errno)));
+  auto listen_address =
+      fds->PrepareListenerSocket(socket.sock, options, socket.addr);
+  if (!listen_address.ok()) {
+    return std::move(listen_address).status();
   }
   socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-
-  if (getsockname(fd, const_cast<sockaddr*>(sockname_temp.address()), &len) <
-      0) {
-    return absl::FailedPreconditionError(
-        absl::StrCat("Error in getsockname: ", std::strerror(errno)));
-  }
-
   socket.port =
-      ResolvedAddressGetPort(ResolvedAddress(sockname_temp.address(), len));
+      ResolvedAddressGetPort(ResolvedAddress(listen_address->address(), len));
   // No errors. Set close_fd to false to ensure the socket is not closed.
   close_fd = false;
   return absl::OkStatus();

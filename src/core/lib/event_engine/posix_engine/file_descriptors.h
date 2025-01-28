@@ -115,6 +115,11 @@ class FileDescriptorResult final : public PosixResult {
     return fd_;
   }
 
+  const FileDescriptor* operator->() const {
+    CHECK_OK(status());
+    return &fd_;
+  }
+
   int fd() const {
     CHECK_OK(status());
     return fd_.fd();
@@ -261,51 +266,15 @@ class FileDescriptors {
                                            grpc_fd_usage usage,
                                            const PosixTcpOptions& options);
 
-  // Set socket to close on exec
-  absl::Status SetSocketCloexec(const FileDescriptor& fd, int close_on_exec);
-
-  // Disable nagle algorithm
-  absl::Status SetSocketLowLatency(const FileDescriptor& fd, int low_latency);
-
   // Tries to set the socket using a grpc_socket_mutator
   absl::Status SetSocketMutator(const FileDescriptor& fd, grpc_fd_usage usage,
                                 grpc_socket_mutator* mutator);
 
-  // Set socket to non blocking mode
-  absl::Status SetSocketNonBlocking(const FileDescriptor& fd, int non_blocking);
-
-  // Set socket to reuse old addresses
-  absl::Status SetSocketReuseAddr(const FileDescriptor& fd, int reuse);
-
-  // Set socket to use zerocopy
-  absl::Status SetSocketZeroCopy(const FileDescriptor& fd);
-
-  // Set SO_REUSEPORT
-  absl::Status SetSocketReusePort(const FileDescriptor& fd, int reuse);
-
-  // Set Differentiated Services Code Point (DSCP)
-  absl::Status SetSocketDscp(const FileDescriptor& fd, int dscp);
+  absl::StatusOr<EventEngine::ResolvedAddress> PrepareListenerSocket(
+      const FileDescriptor& fd, const PosixTcpOptions& options,
+      const EventEngine::ResolvedAddress& address);
 
   int ConfigureSocket(const FileDescriptor& fd, int type);
-
-  // Tries to set IP_PKTINFO if available on this platform. If IP_PKTINFO is not
-  // available, returns not OK status.
-  absl::Status SetSocketIpPktInfoIfPossible(const FileDescriptor& fd);
-
-  // Tries to set IPV6_RECVPKTINFO if available on this platform. If
-  // IPV6_RECVPKTINFO is not available, returns not OK status.
-  absl::Status SetSocketIpv6RecvPktInfoIfPossible(const FileDescriptor& fd);
-
-  // Tries to set the socket's send buffer to given size.
-  absl::Status SetSocketSndBuf(const FileDescriptor& fd, int buffer_size_bytes);
-
-  // Tries to set the socket's receive buffer to given size.
-  absl::Status SetSocketRcvBuf(const FileDescriptor& fd, int buffer_size_bytes);
-
-  // Override default Tcp user timeout values if necessary.
-  void TrySetSocketTcpUserTimeout(const FileDescriptor& fd,
-                                  const PosixTcpOptions& options,
-                                  bool is_client);
 
  private:
   absl::Status PrepareTcpClientSocket(const FileDescriptor& fd,

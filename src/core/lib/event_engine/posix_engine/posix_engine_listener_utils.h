@@ -34,8 +34,6 @@ class ListenerSocketsContainer {
     FileDescriptor sock;
     // Assigned/chosen listening port
     int port;
-    // Socket configuration
-    bool zero_copy_enabled;
     // Address at which the socket is listening for connections
     grpc_event_engine::experimental::EventEngine::ResolvedAddress addr;
     // Dual stack mode.

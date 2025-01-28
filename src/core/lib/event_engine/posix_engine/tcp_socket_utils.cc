@@ -14,7 +14,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
-#include <errno.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -23,7 +22,6 @@
 
 #include <optional>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/util/useful.h"
@@ -41,13 +39,9 @@
 #include <unistd.h>
 #endif  //  GRPC_POSIX_SOCKET_UTILS_COMMON
 
-#include <atomic>
 #include <cstring>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "src/core/util/strerror.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
@@ -155,53 +149,6 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   }
   return options;
 }
-
-#ifdef GRPC_POSIX_SOCKETUTILS
-
-int Accept4(int sockfd,
-            grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-            int nonblock, int cloexec) {
-  int fd, flags;
-  EventEngine::ResolvedAddress peer_addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  fd = accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
-  if (fd >= 0) {
-    if (nonblock) {
-      flags = fcntl(fd, F_GETFL, 0);
-      if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) goto close_and_error;
-    }
-    if (cloexec) {
-      flags = fcntl(fd, F_GETFD, 0);
-      if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
-    }
-  }
-  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
-  return fd;
-
-close_and_error:
-  close(fd);
-  return -1;
-}
-
-#elif GRPC_LINUX_SOCKETUTILS
-
-int Accept4(int sockfd,
-            grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-            int nonblock, int cloexec) {
-  int flags = 0;
-  flags |= nonblock ? SOCK_NONBLOCK : 0;
-  flags |= cloexec ? SOCK_CLOEXEC : 0;
-  EventEngine::ResolvedAddress peer_addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  int ret =
-      accept4(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len, flags);
-  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
-  return ret;
-}
-
-#endif  // GRPC_LINUX_SOCKETUTILS
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
