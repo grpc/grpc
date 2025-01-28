@@ -170,6 +170,7 @@ grpc_cc_library(
             "//test/core/test_util:fuzz_config_vars",
             "//test/core/test_util:grpc_test_util",
         ],
+        alwayslink = 1,
     )
     for (fuzz, gtest) in [
         (True, False),
