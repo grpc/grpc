@@ -159,14 +159,14 @@ IF_POSIX_SOCKET(
     })
 
 // Tries to set the socket's receive buffer to given size.
-absl::Status SetSocketRcvBuf(int fd, int buffer_size_bytes) {
+IF_POSIX_SOCKET(absl::Status SetSocketRcvBuf(int fd, int buffer_size_bytes), {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? absl::OkStatus()
              : absl::Status(absl::StatusCode::kInternal,
                             absl::StrCat("setsockopt(SO_RCVBUF): ",
                                          grpc_core::StrError(errno)));
-}
+})
 
 // get max listen queue size on linux
 int InitMaxAcceptQueueSize() {
@@ -201,7 +201,7 @@ int GetMaxAcceptQueueSize() {
 }
 
 // Set a socket to non blocking mode
-absl::Status SetSocketNonBlocking(int fd, int non_blocking) {
+IF_POSIX_SOCKET(absl::Status SetSocketNonBlocking(int fd, int non_blocking), {
   int oldflags = fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -220,10 +220,10 @@ absl::Status SetSocketNonBlocking(int fd, int non_blocking) {
   }
 
   return absl::OkStatus();
-}
+})
 
 // Set a socket to close on exec
-absl::Status SetSocketCloexec(int fd, int close_on_exec) {
+IF_POSIX_SOCKET(absl::Status SetSocketCloexec(int fd, int close_on_exec), {
   int oldflags = fcntl(fd, F_GETFD, 0);
   if (oldflags < 0) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -242,7 +242,7 @@ absl::Status SetSocketCloexec(int fd, int close_on_exec) {
   }
 
   return absl::OkStatus();
-}
+})
 
 // set a socket to reuse old addresses
 IF_POSIX_SOCKET(
@@ -281,7 +281,7 @@ absl::Status SetSocketReusePort(int fd, int reuse) {
 }
 
 // Set Differentiated Services Code Point (DSCP)
-absl::Status SetSocketDscp(int fdesc, int dscp) {
+IF_POSIX_SOCKET(absl::Status SetSocketDscp(int fdesc, int dscp), {
   if (dscp == PosixTcpOptions::kDscpNotSet) {
     return absl::OkStatus();
   }
@@ -311,7 +311,7 @@ absl::Status SetSocketDscp(int fdesc, int dscp) {
     }
   }
   return absl::OkStatus();
-}
+})
 
 // Set a socket to use zerocopy
 absl::Status SetSocketZeroCopy(int fd) {
@@ -332,61 +332,65 @@ absl::Status SetSocketZeroCopy(int fd) {
 }
 
 // Set TCP_USER_TIMEOUT
-void TrySetSocketTcpUserTimeout(int fd, const PosixTcpOptions& options,
-                                bool is_client) {
-  if (g_socket_supports_tcp_user_timeout.load() < 0) {
-    return;
-  }
-  bool enable = is_client ? kDefaultClientUserTimeoutEnabled
-                          : kDefaultServerUserTimeoutEnabled;
-  int timeout =
-      is_client ? kDefaultClientUserTimeoutMs : kDefaultServerUserTimeoutMs;
-  if (options.keep_alive_time_ms > 0) {
-    enable = options.keep_alive_time_ms != INT_MAX;
-  }
-  if (options.keep_alive_timeout_ms > 0) {
-    timeout = options.keep_alive_timeout_ms;
-  }
-  if (enable) {
-    int newval;
-    socklen_t len = sizeof(newval);
-    // If this is the first time to use TCP_USER_TIMEOUT, try to check
-    // if it is available.
-    if (g_socket_supports_tcp_user_timeout.load() == 0) {
-      if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-        // This log is intentionally not protected behind a flag, so that users
-        // know that TCP_USER_TIMEOUT is not being used.
-        GRPC_TRACE_LOG(tcp, INFO)
-            << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
-               "won't be used thereafter";
-        g_socket_supports_tcp_user_timeout.store(-1);
-      } else {
-        GRPC_TRACE_LOG(tcp, INFO)
-            << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
-               "used thereafter";
-        g_socket_supports_tcp_user_timeout.store(1);
-      }
-    }
-    if (g_socket_supports_tcp_user_timeout.load() > 0) {
-      if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
-                          sizeof(timeout))) {
-        LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
-                   << grpc_core::StrError(errno);
+IF_POSIX_SOCKET(
+    void TrySetSocketTcpUserTimeout(int fd, const PosixTcpOptions& options,
+                                    bool is_client),
+    {
+      if (g_socket_supports_tcp_user_timeout.load() < 0) {
         return;
       }
-      if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-        LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
-                   << grpc_core::StrError(errno);
-        return;
+      bool enable = is_client ? kDefaultClientUserTimeoutEnabled
+                              : kDefaultServerUserTimeoutEnabled;
+      int timeout =
+          is_client ? kDefaultClientUserTimeoutMs : kDefaultServerUserTimeoutMs;
+      if (options.keep_alive_time_ms > 0) {
+        enable = options.keep_alive_time_ms != INT_MAX;
       }
-      if (newval != timeout) {
-        // Do not fail on failing to set TCP_USER_TIMEOUT
-        LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
-        return;
+      if (options.keep_alive_timeout_ms > 0) {
+        timeout = options.keep_alive_timeout_ms;
       }
-    }
-  }
-}
+      if (enable) {
+        int newval;
+        socklen_t len = sizeof(newval);
+        // If this is the first time to use TCP_USER_TIMEOUT, try to check
+        // if it is available.
+        if (g_socket_supports_tcp_user_timeout.load() == 0) {
+          if (0 !=
+              getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+            // This log is intentionally not protected behind a flag, so that
+            // users know that TCP_USER_TIMEOUT is not being used.
+            GRPC_TRACE_LOG(tcp, INFO)
+                << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
+                   "won't be used thereafter";
+            g_socket_supports_tcp_user_timeout.store(-1);
+          } else {
+            GRPC_TRACE_LOG(tcp, INFO)
+                << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
+                   "used thereafter";
+            g_socket_supports_tcp_user_timeout.store(1);
+          }
+        }
+        if (g_socket_supports_tcp_user_timeout.load() > 0) {
+          if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
+                              sizeof(timeout))) {
+            LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
+                       << grpc_core::StrError(errno);
+            return;
+          }
+          if (0 !=
+              getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+            LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
+                       << grpc_core::StrError(errno);
+            return;
+          }
+          if (newval != timeout) {
+            // Do not fail on failing to set TCP_USER_TIMEOUT
+            LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
+            return;
+          }
+        }
+      }
+    })
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
