@@ -42,6 +42,7 @@ _ERROR_IN_STREAM_UNARY = "/test/ErrorInStreamUnary"
 _ERROR_WITHOUT_RAISE_IN_UNARY_UNARY = "/test/ErrorWithoutRaiseInUnaryUnary"
 _ERROR_WITHOUT_RAISE_IN_STREAM_STREAM = "/test/ErrorWithoutRaiseInStreamStream"
 _INVALID_TRAILING_METADATA = "/test/InvalidTrailingMetadata"
+_ABORT_AND_SLOW_FINALIZATION = "/test/AbortAndSlowFinalization"
 
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x01\x01\x01"
@@ -53,6 +54,7 @@ _MAXIMUM_CONCURRENT_RPCS = 5
 class _GenericHandler(grpc.GenericRpcHandler):
     def __init__(self):
         self._called = asyncio.get_event_loop().create_future()
+        self.abort_and_slow_finalization_finished = False
         self._routing_table = {
             _SIMPLE_UNARY_UNARY: grpc.unary_unary_rpc_method_handler(
                 self._unary_unary
@@ -104,6 +106,9 @@ class _GenericHandler(grpc.GenericRpcHandler):
             ),
             _INVALID_TRAILING_METADATA: grpc.unary_unary_rpc_method_handler(
                 self._invalid_trailing_metadata
+            ),
+            _ABORT_AND_SLOW_FINALIZATION: grpc.unary_unary_rpc_method_handler(
+                self._abort_and_slow_finalization
             ),
         }
 
@@ -229,6 +234,18 @@ class _GenericHandler(grpc.GenericRpcHandler):
             details="invalid abort",
             trailing_metadata=({"error": ("error1", "error2")}),
         )
+
+    async def _abort_and_slow_finalization(self, request, context):
+        try:
+            try:
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT)
+            finally:
+                # server.stop() should either wait for this to complete (graceful),
+                # or cancel this and finish execution
+                await asyncio.sleep(test_constants.SHORT_TIMEOUT)
+        finally:
+            self.abort_and_slow_finalization_finished = True
+
 
     def service(self, handler_details):
         if not self._called.done():
@@ -415,6 +432,13 @@ class TestServer(AioTestBase):
 
         await self._server.stop(None)
 
+    async def test_shutdown_success_aborted_request(self):
+        call = self._channel.unary_unary(_ABORT_AND_SLOW_FINALIZATION)(_REQUEST)
+        with self.assertRaises(aio.AioRpcError):
+            await call
+        await self._server.stop(None)
+        self.assertTrue(self._generic_handler.abort_and_slow_finalization_finished)
+
     async def test_graceful_shutdown_success(self):
         call = self._channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST)
         await self._generic_handler.wait_for_call()
@@ -429,6 +453,13 @@ class TestServer(AioTestBase):
         # Validates the states.
         self.assertEqual(_RESPONSE, await call)
         self.assertTrue(call.done())
+
+    async def test_graceful_shutdown_success_aborted_request(self):
+        call = self._channel.unary_unary(_ABORT_AND_SLOW_FINALIZATION)(_REQUEST)
+        with self.assertRaises(aio.AioRpcError):
+            await call
+        await self._server.stop(test_constants.LONG_TIMEOUT)
+        self.assertTrue(self._generic_handler.abort_and_slow_finalization_finished)
 
     async def test_graceful_shutdown_failed(self):
         call = self._channel.unary_unary(_BLOCK_FOREVER)(_REQUEST)
