@@ -181,6 +181,8 @@ class Server : public ServerInterface,
     // tracking systems, without increasing memory utilization.
     class LogicalConnection : public InternallyRefCounted<LogicalConnection> {
      public:
+      explicit LogicalConnection(const char* trace = nullptr)
+          : InternallyRefCounted(trace) {}
       ~LogicalConnection() override = default;
 
       // The following two methods are called in the context of a server config
@@ -189,6 +191,8 @@ class Server : public ServerInterface,
       virtual void DisconnectImmediately() = 0;
     };
 
+    explicit ListenerInterface(const char* trace = nullptr)
+        : InternallyRefCounted(trace) {}
     ~ListenerInterface() override = default;
 
     /// Starts listening.
@@ -629,6 +633,13 @@ class Server : public ServerInterface,
     return shutdown_refs_.load(std::memory_order_acquire) == 0;
   }
 
+  // Returns a promise that resolves to
+  // tuple<
+  //     optional<MessageHandle>,
+  //     RequestMatcherInterface::MatchResult,
+  //     ClientMetadataHandle>
+  auto MatchRequestAndMaybeReadFirstMessage(CallHandler call_handler,
+                                            ClientMetadataHandle md);
   auto MatchAndPublishCall(CallHandler call_handler);
   absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> MakeCallDestination(
       const ChannelArgs& args);

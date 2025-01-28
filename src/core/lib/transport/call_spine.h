@@ -373,6 +373,11 @@ class CallInitiator {
     return spine_->OnDone(std::move(fn));
   }
 
+  template <typename Promise>
+  auto UntilCallCompletes(Promise promise) {
+    return spine_->UntilCallCompletes(std::move(promise));
+  }
+
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnGuarded(name, std::move(promise_factory));
@@ -456,6 +461,11 @@ class CallHandler {
 
   bool WasCancelledPushed() const {
     return spine_->call_filters().WasCancelledPushed();
+  }
+
+  template <typename Promise>
+  auto UntilCallCompletes(Promise promise) {
+    return spine_->UntilCallCompletes(std::move(promise));
   }
 
   template <typename PromiseFactory>

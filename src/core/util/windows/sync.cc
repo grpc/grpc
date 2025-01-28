@@ -27,7 +27,6 @@
 #include <grpc/support/time.h>
 
 #include "absl/log/check.h"
-#include "src/core/util/crash.h"
 
 void gpr_mu_init(gpr_mu* mu) {
   InitializeCriticalSection(&mu->cs);

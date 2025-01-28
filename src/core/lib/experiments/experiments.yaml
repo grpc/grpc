@@ -47,7 +47,7 @@
   test_tags: []
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
-  expiry: 2025/02/01
+  expiry: 2025/06/01
   owner: roth@google.com
   test_tags: []
 - name: callv3_client_auth_filter
@@ -112,7 +112,7 @@
   test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2025/01/30
+  expiry: 2025/04/30
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_pings_wo_data_throttle
