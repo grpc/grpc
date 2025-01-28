@@ -27,6 +27,8 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
+#include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/error.h"
@@ -37,7 +39,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
@@ -45,30 +46,25 @@
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
-bool squelch = true;
-bool leak_check = true;
-
-DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
-  if (squelch) {
-    grpc_disable_all_absl_logs();
-  }
-  grpc_core::ProtoBitGen proto_bit_src(msg.random_numbers());
-  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
+namespace grpc_core {
+void HpackParserFuzzer(const hpack_parser_fuzzer::Msg& msg) {
+  ProtoBitGen proto_bit_src(msg.random_numbers());
+  ApplyFuzzConfigVars(msg.config_vars());
+  TestOnlyReloadExperimentsFromConfigVariables();
   grpc_init();
   auto cleanup = absl::MakeCleanup(grpc_shutdown);
-  auto memory_allocator = grpc_core::ResourceQuota::Default()
-                              ->memory_quota()
-                              ->CreateMemoryAllocator("test-allocator");
+  auto memory_allocator =
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "test-allocator");
   {
-    std::unique_ptr<grpc_core::HPackParser> parser(new grpc_core::HPackParser);
+    std::unique_ptr<HPackParser> parser(new HPackParser);
     int max_length = 1024;
     int absolute_max_length = 1024;
     bool can_update_max_length = true;
     bool can_add_priority = true;
     for (int i = 0; i < msg.frames_size(); i++) {
-      auto arena = grpc_core::SimpleArenaAllocator()->MakeArena();
-      grpc_core::ExecCtx exec_ctx;
+      auto arena = SimpleArenaAllocator()->MakeArena();
+      ExecCtx exec_ctx;
       grpc_metadata_batch b;
       const auto& frame = msg.frames(i);
       if (frame.parse_size() == 0) continue;
@@ -88,29 +84,26 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
         }
       }
       // priority only makes sense on the first frame of a stream
-      grpc_core::HPackParser::Priority priority =
-          grpc_core::HPackParser::Priority::None;
+      HPackParser::Priority priority = HPackParser::Priority::None;
       if (can_add_priority && frame.priority()) {
-        priority = grpc_core::HPackParser::Priority::Included;
+        priority = HPackParser::Priority::Included;
       }
-      grpc_core::HPackParser::Boundary boundary =
-          grpc_core::HPackParser::Boundary::None;
+      HPackParser::Boundary boundary = HPackParser::Boundary::None;
       can_update_max_length = false;
       can_add_priority = false;
       if (frame.end_of_headers()) {
-        boundary = grpc_core::HPackParser::Boundary::EndOfHeaders;
+        boundary = HPackParser::Boundary::EndOfHeaders;
         can_update_max_length = true;
       }
       if (frame.end_of_stream()) {
-        boundary = grpc_core::HPackParser::Boundary::EndOfStream;
+        boundary = HPackParser::Boundary::EndOfStream;
         can_update_max_length = true;
         can_add_priority = true;
       }
 
       parser->BeginFrame(
           &b, max_length, absolute_max_length, boundary, priority,
-          grpc_core::HPackParser::LogInfo{
-              1, grpc_core::HPackParser::LogInfo::kHeaders, false});
+          HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
       int stop_buffering_ctr =
           std::max(-1, frame.stop_buffering_after_segments());
       for (int idx = 0; idx < frame.parse_size(); idx++) {
@@ -132,8 +125,7 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
               std::max(1024, absolute_max_length));
         if (!err.ok()) {
           intptr_t unused;
-          if (grpc_error_get_int(err, grpc_core::StatusIntProperty::kStreamId,
-                                 &unused)) {
+          if (grpc_error_get_int(err, StatusIntProperty::kStreamId, &unused)) {
             // This is a stream error, we ignore it
           } else {
             // This is a connection error, we don't try to parse anymore
@@ -145,3 +137,5 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
     }
   }
 }
+FUZZ_TEST(HpackParser, HpackParserFuzzer);
+}  // namespace grpc_core

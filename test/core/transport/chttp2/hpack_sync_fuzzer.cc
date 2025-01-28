@@ -26,6 +26,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
+#include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -41,14 +43,10 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
-
-bool squelch = true;
-bool leak_check = true;
 
 namespace grpc_core {
 namespace {
@@ -59,6 +57,8 @@ bool IsStreamError(const absl::Status& status) {
 }
 
 void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
+  ApplyFuzzConfigVars(msg.config_vars());
+  TestOnlyReloadExperimentsFromConfigVariables();
   ProtoBitGen proto_bit_src(msg.random_numbers());
 
   // STAGE 1: Encode the fuzzing input into a buffer (encode_output)
@@ -223,15 +223,7 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
     }
   }
 }
+FUZZ_TEST(HpackSyncFuzzer, FuzzOneInput);
 
 }  // namespace
 }  // namespace grpc_core
-
-DEFINE_PROTO_FUZZER(const hpack_sync_fuzzer::Msg& msg) {
-  if (squelch) {
-    grpc_disable_all_absl_logs();
-  }
-  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_core::FuzzOneInput(msg);
-}
