@@ -34,6 +34,7 @@
 #include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
@@ -68,7 +69,7 @@ using Events = absl::InlinedVector<PollEventHandle*, 5>;
 
 class PollEventHandle : public EventHandle {
  public:
-  PollEventHandle(int fd, std::shared_ptr<PollPoller> poller)
+  PollEventHandle(FileDescriptor fd, std::shared_ptr<PollPoller> poller)
       : fd_(fd),
         pending_actions_(0),
         fork_fd_list_(this),
@@ -108,14 +109,14 @@ class PollEventHandle : public EventHandle {
     grpc_core::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListRemoveHandle(this);
   }
-  int WrappedFd() override { return fd_; }
+  FileDescriptor WrappedFd() override { return fd_; }
   bool IsOrphaned() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return is_orphaned_;
   }
   void CloseFd() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (!released_ && !closed_) {
       closed_ = true;
-      close(fd_);
+      poller_->GetFileDescriptors().Close(fd_);
     }
   }
   bool IsPollhup() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return pollhup_; }
@@ -132,7 +133,7 @@ class PollEventHandle : public EventHandle {
   void SetWatched(int watch_mask) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     watch_mask_ = watch_mask;
   }
-  void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
+  void OrphanHandle(PosixEngineClosure* on_done, FileDescriptor* release_fd,
                     absl::string_view reason) override;
   void ShutdownHandle(absl::Status why) override;
   void NotifyOnRead(PosixEngineClosure* on_read) override;
@@ -199,7 +200,7 @@ class PollEventHandle : public EventHandle {
   // required.
   grpc_core::Mutex mu_;
   std::atomic<int> ref_count_{1};
-  int fd_;
+  FileDescriptor fd_;
   int pending_actions_;
   PollPoller::HandlesList fork_fd_list_;
   PollPoller::HandlesList poller_handles_list_;
@@ -290,7 +291,8 @@ bool InitPollPollerPosix() {
 
 }  // namespace
 
-EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
+EventHandle* PollPoller::CreateHandle(FileDescriptor fd,
+                                      absl::string_view /*name*/,
                                       bool track_err) {
   // Avoid unused-parameter warning for debug-only parameter
   (void)track_err;
@@ -302,7 +304,8 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
   return handle;
 }
 
-void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
+void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done,
+                                   FileDescriptor* release_fd,
                                    absl::string_view /*reason*/) {
   ForceRemoveHandleFromPoller();
   {
@@ -327,7 +330,7 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
     }
     // signal read/write closed to OS so that future operations fail.
     if (!released_) {
-      shutdown(fd_, SHUT_RDWR);
+      poller_->GetFileDescriptors().Shutdown(fd_, SHUT_RDWR);
     }
     if (!IsWatched()) {
       CloseFd();
@@ -640,7 +643,7 @@ Poller::WorkResult PollPoller::Work(
         // poll handle list for the poller under the poller lock.
         CHECK(!head->IsOrphaned());
         if (!head->IsPollhup()) {
-          pfds[pfd_count].fd = head->WrappedFd();
+          pfds[pfd_count].fd = head->WrappedFd().fd();
           watchers[pfd_count] = head;
           // BeginPollLocked takes a ref of the handle. It also marks the
           // fd as Watched with an appropriate watch_mask. The watch_mask
@@ -816,7 +819,8 @@ void PollPoller::Shutdown() { grpc_core::Crash("unimplemented"); }
 
 PollPoller::~PollPoller() { grpc_core::Crash("unimplemented"); }
 
-EventHandle* PollPoller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
+EventHandle* PollPoller::CreateHandle(FileDescriptor /*fd*/,
+                                      absl::string_view /*name*/,
                                       bool /*track_err*/) {
   grpc_core::Crash("unimplemented");
 }

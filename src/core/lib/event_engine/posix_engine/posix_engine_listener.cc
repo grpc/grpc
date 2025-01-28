@@ -30,7 +30,6 @@
 #include <optional>
 #include <string>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -40,6 +39,7 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
@@ -98,20 +98,22 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     }
   }
 
+  FileDescriptors& fds = poller_->GetFileDescriptors();
+
   auto used_port = MaybeGetWildcardPortFromAddress(res_addr);
   // Update the callback. Any subsequent new sockets created and added to
   // acceptors_ in this function will invoke the new callback.
   acceptors_.UpdateOnAppendCallback(std::move(on_bind_new_fd));
   if (used_port.has_value()) {
     requested_port = *used_port;
-    return ListenerContainerAddWildcardAddresses(acceptors_, options_,
+    return ListenerContainerAddWildcardAddresses(&fds, acceptors_, options_,
                                                  requested_port);
   }
   if (ResolvedAddressToV4Mapped(res_addr, &addr6_v4mapped)) {
     res_addr = addr6_v4mapped;
   }
 
-  auto result = CreateAndPrepareListenerSocket(options_, res_addr);
+  auto result = CreateAndPrepareListenerSocket(&fds, options_, res_addr);
   GRPC_RETURN_IF_ERROR(result.status());
   acceptors_.Append(*result);
   return result->port;
@@ -136,11 +138,20 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
   for (;;) {
     EventEngine::ResolvedAddress addr;
     memset(const_cast<sockaddr*>(addr.address()), 0, addr.size());
+    auto& fds = handle_->Poller()->GetFileDescriptors();
     // Note: If we ever decide to return this address to the user, remember to
     // strip off the ::ffff:0.0.0.0/96 prefix first.
-    int fd = Accept4(handle_->WrappedFd(), addr, 1, 1);
-    if (fd < 0) {
-      switch (errno) {
+    FileDescriptorResult fd = fds.Accept4(handle_->WrappedFd(), addr, 1, 1);
+    if (fd.kind() == OperationResultKind::kWrongGeneration) {
+      LOG(ERROR) << "Closing acceptor. accept4 was called with fd from a wrong "
+                    "generation";
+      // Shutting down the acceptor. Unref the ref grabbed in
+      // AsyncConnectionAcceptor::Start().
+      Unref();
+      return;
+    }
+    if (fd.kind() == OperationResultKind::kError) {
+      switch (fd.errno_value()) {
         case EINTR:
           continue;
         case EMFILE:
@@ -187,7 +198,8 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     // sun_path of sockaddr_un, so explicitly call getpeername to get it.
     if (addr.address()->sa_family == AF_UNIX) {
       socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-      if (getpeername(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+      if (getpeername(fd.fd(), const_cast<sockaddr*>(addr.address()), &len) <
+          0) {
         auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
         LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
                    << ". Dropping the connection, and continuing "
@@ -195,17 +207,16 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
                    << (listener_addr_uri.ok() ? *listener_addr_uri
                                               : "<unknown>")
                    << ":" << socket_.port;
-        close(fd);
+        fds.Close(*fd);
         handle_->NotifyOnRead(notify_on_accept_);
         return;
       }
       addr = EventEngine::ResolvedAddress(addr.address(), len);
     }
 
-    PosixSocketWrapper sock(fd);
-    (void)sock.SetSocketNoSigpipeIfPossible();
-    auto result = sock.ApplySocketMutatorInOptions(
-        GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
+    (void)fds.SetSocketNoSigpipeIfPossible(*fd);
+    auto result = fds.ApplySocketMutatorInOptions(
+        *fd, GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
     if (!result.ok()) {
       LOG(ERROR) << "Closing acceptor. Failed to apply socket mutator: "
                  << result;
@@ -226,7 +237,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
     auto endpoint = CreatePosixEndpoint(
         /*handle=*/listener_->poller_->CreateHandle(
-            fd, *peer_name, listener_->poller_->CanTrackErrors()),
+            *fd, *peer_name, listener_->poller_->CanTrackErrors()),
         /*on_shutdown=*/nullptr, /*engine=*/listener_->engine_,
         // allocator=
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
@@ -238,7 +249,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       // Call on_accept_ and then resume accepting new connections
       // by continuing the parent for-loop.
       listener_->on_accept_(
-          /*listener_fd=*/handle_->WrappedFd(),
+          /*listener_fd=*/handle_->WrappedFd().fd(),
           /*endpoint=*/std::move(endpoint),
           /*is_external=*/false,
           /*memory_allocator=*/
@@ -260,18 +271,20 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: Invalid peer socket: ", fd));
   }
+  auto& fds = poller_->GetFileDescriptors();
+  FileDescriptor wrapped = fds.Adopt(fd);
   PosixSocketWrapper sock(fd);
-  (void)sock.SetSocketNoSigpipeIfPossible();
-  auto peer_name = sock.PeerAddressString();
+  (void)fds.SetSocketNoSigpipeIfPossible(wrapped);
+  auto peer_name = poller_->GetFileDescriptors().PeerAddressString(wrapped);
   if (!peer_name.ok()) {
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: peer not connected: ",
                      peer_name.status().ToString()));
   }
   grpc_core::EnsureRunInExecCtx([this, peer_name = std::move(*peer_name),
-                                 pending_data, listener_fd, fd]() mutable {
+                                 pending_data, listener_fd, wrapped]() mutable {
     auto endpoint = CreatePosixEndpoint(
-        /*handle=*/poller_->CreateHandle(fd, peer_name,
+        /*handle=*/poller_->CreateHandle(wrapped, peer_name,
                                          poller_->CanTrackErrors()),
         /*on_shutdown=*/nullptr, /*engine=*/engine_,
         /*allocator=*/

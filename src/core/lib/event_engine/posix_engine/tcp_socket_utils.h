@@ -21,13 +21,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include <functional>
-#include <string>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -165,12 +162,6 @@ class PosixSocketWrapper {
 
   ~PosixSocketWrapper() = default;
 
-  // Instruct the kernel to wait for specified number of bytes to be received on
-  // the socket before generating an interrupt for packet receive. If the call
-  // succeeds, it returns the number of bytes (wait threshold) that was actually
-  // set.
-  absl::StatusOr<int> SetSocketRcvLowat(int bytes);
-
   // Set socket to use zerocopy
   absl::Status SetSocketZeroCopy();
 
@@ -196,10 +187,6 @@ class PosixSocketWrapper {
   void TrySetSocketTcpUserTimeout(const PosixTcpOptions& options,
                                   bool is_client);
 
-  // Tries to set SO_NOSIGPIPE if available on this platform.
-  // If SO_NO_SIGPIPE is not available, returns not OK status.
-  absl::Status SetSocketNoSigpipeIfPossible();
-
   // Tries to set IP_PKTINFO if available on this platform. If IP_PKTINFO is not
   // available, returns not OK status.
   absl::Status SetSocketIpPktInfoIfPossible();
@@ -214,28 +201,8 @@ class PosixSocketWrapper {
   // Tries to set the socket's receive buffer to given size.
   absl::Status SetSocketRcvBuf(int buffer_size_bytes);
 
-  // Tries to set the socket using a grpc_socket_mutator
-  absl::Status SetSocketMutator(grpc_fd_usage usage,
-                                grpc_socket_mutator* mutator);
-
-  // Extracts the first socket mutator from config if any and applies on the fd.
-  absl::Status ApplySocketMutatorInOptions(grpc_fd_usage usage,
-                                           const PosixTcpOptions& options);
-
-  // Return LocalAddress as EventEngine::ResolvedAddress
-  absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress();
-
-  // Return PeerAddress as EventEngine::ResolvedAddress
-  absl::StatusOr<EventEngine::ResolvedAddress> PeerAddress();
-
-  // Return LocalAddress as string
-  absl::StatusOr<std::string> LocalAddressString();
-
-  // Return PeerAddress as string
-  absl::StatusOr<std::string> PeerAddressString();
-
   // An enum to keep track of IPv4/IPv6 socket modes.
-
+  //
   // Currently, this information is only used when a socket is first created,
   // but in the future we may wish to store it alongside the fd.  This would let
   // calls like sendto() know which family to use without asking the kernel
@@ -274,42 +241,7 @@ class PosixSocketWrapper {
   // state to library users, we turn off IPv6 sockets.
   static bool IsIpv6LoopbackAvailable();
 
-  // Creates a new socket for connecting to (or listening on) an address.
-
-  // If addr is AF_INET6, this creates an IPv6 socket first.  If that fails,
-  // and addr is within ::ffff:0.0.0.0/96, then it automatically falls back to
-  // an IPv4 socket.
-
-  // If addr is AF_INET, AF_UNIX, or anything else, then this is similar to
-  // calling socket() directly.
-
-  // Returns an PosixSocketWrapper on success, otherwise returns a not-OK
-  // absl::Status
-
-  // The dsmode output indicates which address family was actually created.
-  static absl::StatusOr<PosixSocketWrapper> CreateDualStackSocket(
-      std::function<int(int /*domain*/, int /*type*/, int /*protocol*/)>
-          socket_factory,
-      const experimental::EventEngine::ResolvedAddress& addr, int type,
-      int protocol, DSMode& dsmode);
-
   struct PosixSocketCreateResult;
-  // Return a PosixSocketCreateResult which manages a configured, unbound,
-  // unconnected TCP client fd.
-  //  options: may contain custom tcp settings for the fd.
-  //  target_addr: the destination address.
-  //
-  // Returns: Not-OK status on error. Otherwise it returns a
-  // PosixSocketWrapper::PosixSocketCreateResult type which includes a sock
-  // of type PosixSocketWrapper and a mapped_target_addr which is
-  // target_addr mapped to an address appropriate to the type of socket FD
-  // created. For example, if target_addr is IPv4 and dual stack sockets are
-  // available, mapped_target_addr will be an IPv4-mapped IPv6 address.
-  //
-  static absl::StatusOr<PosixSocketCreateResult>
-  CreateAndPrepareTcpClientSocket(
-      const PosixTcpOptions& options,
-      const EventEngine::ResolvedAddress& target_addr);
 
  private:
   int fd_;
