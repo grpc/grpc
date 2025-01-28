@@ -23,8 +23,6 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -156,51 +154,6 @@ void UnlinkIfUnixDomainSocket(
 
 class PosixSocketWrapper {
  public:
-  explicit PosixSocketWrapper(int fd) : fd_(fd) { CHECK_GT(fd_, 0); }
-
-  PosixSocketWrapper() : fd_(-1) {};
-
-  ~PosixSocketWrapper() = default;
-
-  // Set socket to use zerocopy
-  absl::Status SetSocketZeroCopy();
-
-  // Set socket to non blocking mode
-  absl::Status SetSocketNonBlocking(int non_blocking);
-
-  // Set socket to close on exec
-  absl::Status SetSocketCloexec(int close_on_exec);
-
-  // Set socket to reuse old addresses
-  absl::Status SetSocketReuseAddr(int reuse);
-
-  // Disable nagle algorithm
-  absl::Status SetSocketLowLatency(int low_latency);
-
-  // Set SO_REUSEPORT
-  absl::Status SetSocketReusePort(int reuse);
-
-  // Set Differentiated Services Code Point (DSCP)
-  absl::Status SetSocketDscp(int dscp);
-
-  // Override default Tcp user timeout values if necessary.
-  void TrySetSocketTcpUserTimeout(const PosixTcpOptions& options,
-                                  bool is_client);
-
-  // Tries to set IP_PKTINFO if available on this platform. If IP_PKTINFO is not
-  // available, returns not OK status.
-  absl::Status SetSocketIpPktInfoIfPossible();
-
-  // Tries to set IPV6_RECVPKTINFO if available on this platform. If
-  // IPV6_RECVPKTINFO is not available, returns not OK status.
-  absl::Status SetSocketIpv6RecvPktInfoIfPossible();
-
-  // Tries to set the socket's send buffer to given size.
-  absl::Status SetSocketSndBuf(int buffer_size_bytes);
-
-  // Tries to set the socket's receive buffer to given size.
-  absl::Status SetSocketRcvBuf(int buffer_size_bytes);
-
   // An enum to keep track of IPv4/IPv6 socket modes.
   //
   // Currently, this information is only used when a socket is first created,
@@ -218,18 +171,12 @@ class PosixSocketWrapper {
     DSMODE_DUALSTACK
   };
 
-  // Returns the underlying file-descriptor.
-  int Fd() const { return fd_; }
-
   // Static methods
 
   // Configure default values for tcp user timeout to be used by client
   // and server side sockets.
   static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
                                              bool is_client);
-
-  // Return true if SO_REUSEPORT is supported
-  static bool IsSocketReusePortSupported();
 
   // Returns true if this system can create AF_INET6 sockets bound to ::1.
   // The value is probed once, and cached for the life of the process.
@@ -242,17 +189,12 @@ class PosixSocketWrapper {
   static bool IsIpv6LoopbackAvailable();
 
   struct PosixSocketCreateResult;
-
- private:
-  int fd_;
-};
-
-struct PosixSocketWrapper::PosixSocketCreateResult {
-  PosixSocketWrapper sock;
-  EventEngine::ResolvedAddress mapped_target_addr;
 };
 
 bool SetSocketDualStack(int fd);
+
+// Return true if SO_REUSEPORT is supported
+bool IsSocketReusePortSupported();
 
 }  // namespace grpc_event_engine::experimental
 

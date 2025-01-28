@@ -19,6 +19,7 @@
 
 #include <cerrno>
 #include <cstdint>
+#include <utility>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
@@ -78,6 +79,8 @@ class PosixResult {
       case OperationResultKind::kWrongGeneration:
         return absl::InternalError(
             "File descriptor is from the wrong generation");
+      default:
+        return absl::InvalidArgumentError("Unexpected kind_");
     }
   }
 
@@ -119,6 +122,15 @@ class FileDescriptorResult final : public PosixResult {
 
   bool ok() const override { return PosixResult::ok() && fd_.fd() > 0; }
 
+  template <typename R, typename Fn>
+  R if_ok(R if_bad, const Fn& fn) {
+    if (ok()) {
+      return fn(fd_);
+    } else {
+      return std::move(if_bad);
+    }
+  }
+
  private:
   // gRPC wrapped FileDescriptor, as described above
   FileDescriptor fd_;
@@ -142,20 +154,35 @@ class Int64Result final : public PosixResult {
 
 class FileDescriptors {
  public:
+  struct PosixSocketCreateResult {
+    FileDescriptor sock;
+    EventEngine::ResolvedAddress mapped_target_addr;
+  };
+
   FileDescriptors() = default;
   FileDescriptors(const FileDescriptors&& other) = delete;
+
+  static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
+                                             bool is_client);
 
   FileDescriptorResult Accept(const FileDescriptor& sockfd,
                               struct sockaddr* addr, socklen_t* addrlen);
   FileDescriptorResult Accept4(const FileDescriptor& sockfd,
                                EventEngine::ResolvedAddress& addr, int nonblock,
                                int cloexec);
+  FileDescriptorResult Socket(int domain, int type, int protocol);
+
+  // Represents fd as integer. Needed for APIs like ARES, that need to have
+  // a single int as a handle.
+  int AsInteger(const FileDescriptor& fd);
+  // May return a wrong generation error
+  FileDescriptorResult FromInteger(int fd);
 
   // Creates a new socket for connecting to (or listening on) an address.
   //
   // If addr is AF_INET6, this creates an IPv6 socket first.  If that fails,
-  // and addr is within ::ffff:0.0.0.0/96, then it automatically falls back to
-  // an IPv4 socket.
+  // and addr is within ::ffff:0.0.0.0/96, then it automatically falls back
+  // to an IPv4 socket.
   //
   // If addr is AF_INET, AF_UNIX, or anything else, then this is similar to
   // calling socket() directly.
@@ -164,7 +191,7 @@ class FileDescriptors {
   // absl::Status
   //
   // The dsmode output indicates which address family was actually created.
-  absl::StatusOr<PosixSocketWrapper> CreateDualStackSocket(
+  absl::StatusOr<FileDescriptor> CreateDualStackSocket(
       std::function<int(int, int, int)> socket_factory,
       const experimental::EventEngine::ResolvedAddress& addr, int type,
       int protocol, PosixSocketWrapper::DSMode& dsmode);
@@ -177,6 +204,8 @@ class FileDescriptors {
   std::optional<int> GetRawFileDescriptor(const FileDescriptor& fd);
 
   // Posix
+  PosixResult Connect(const FileDescriptor& sockfd, const struct sockaddr* addr,
+                      socklen_t addrlen);
   PosixResult Ioctl(const FileDescriptor& fd, int op, void* arg);
   PosixResult Shutdown(const FileDescriptor& fd, int how);
   PosixResult GetSockOpt(const FileDescriptor& fd, int level, int optname,
@@ -185,8 +214,13 @@ class FileDescriptors {
                          uint32_t optval);
   Int64Result RecvMsg(const FileDescriptor& fd, struct msghdr* message,
                       int flags);
+  Int64Result RecvFrom(const FileDescriptor& fd, void* buf, size_t len,
+                       int flags, struct sockaddr* src_addr,
+                       socklen_t* addrlen);
   Int64Result SendMsg(const FileDescriptor& fd, const struct msghdr* message,
                       int flags);
+  Int64Result WriteV(const FileDescriptor& fd, const struct iovec* iov,
+                     int iovcnt);
 
   // Epoll
   PosixResult EpollCtlAdd(int epfd, const FileDescriptor& fd, void* data);
@@ -218,8 +252,7 @@ class FileDescriptors {
   // created. For example, if target_addr is IPv4 and dual stack sockets are
   // available, mapped_target_addr will be an IPv4-mapped IPv6 address.
   //
-  absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
-  CreateAndPrepareTcpClientSocket(
+  absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
       const PosixTcpOptions& options,
       const EventEngine::ResolvedAddress& target_addr);
 
@@ -228,15 +261,57 @@ class FileDescriptors {
                                            grpc_fd_usage usage,
                                            const PosixTcpOptions& options);
 
+  // Set socket to close on exec
+  absl::Status SetSocketCloexec(const FileDescriptor& fd, int close_on_exec);
+
+  // Disable nagle algorithm
+  absl::Status SetSocketLowLatency(const FileDescriptor& fd, int low_latency);
+
   // Tries to set the socket using a grpc_socket_mutator
   absl::Status SetSocketMutator(const FileDescriptor& fd, grpc_fd_usage usage,
                                 grpc_socket_mutator* mutator);
 
+  // Set socket to non blocking mode
+  absl::Status SetSocketNonBlocking(const FileDescriptor& fd, int non_blocking);
+
+  // Set socket to reuse old addresses
+  absl::Status SetSocketReuseAddr(const FileDescriptor& fd, int reuse);
+
+  // Set socket to use zerocopy
+  absl::Status SetSocketZeroCopy(const FileDescriptor& fd);
+
+  // Set SO_REUSEPORT
+  absl::Status SetSocketReusePort(const FileDescriptor& fd, int reuse);
+
+  // Set Differentiated Services Code Point (DSCP)
+  absl::Status SetSocketDscp(const FileDescriptor& fd, int dscp);
+
+  int ConfigureSocket(const FileDescriptor& fd, int type);
+
+  // Tries to set IP_PKTINFO if available on this platform. If IP_PKTINFO is not
+  // available, returns not OK status.
+  absl::Status SetSocketIpPktInfoIfPossible(const FileDescriptor& fd);
+
+  // Tries to set IPV6_RECVPKTINFO if available on this platform. If
+  // IPV6_RECVPKTINFO is not available, returns not OK status.
+  absl::Status SetSocketIpv6RecvPktInfoIfPossible(const FileDescriptor& fd);
+
+  // Tries to set the socket's send buffer to given size.
+  absl::Status SetSocketSndBuf(const FileDescriptor& fd, int buffer_size_bytes);
+
+  // Tries to set the socket's receive buffer to given size.
+  absl::Status SetSocketRcvBuf(const FileDescriptor& fd, int buffer_size_bytes);
+
+  // Override default Tcp user timeout values if necessary.
+  void TrySetSocketTcpUserTimeout(const FileDescriptor& fd,
+                                  const PosixTcpOptions& options,
+                                  bool is_client);
+
  private:
-  absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
-                                      const FileDescriptor& fd,
+  absl::Status PrepareTcpClientSocket(const FileDescriptor& fd,
                                       const EventEngine::ResolvedAddress& addr,
                                       const PosixTcpOptions& options);
+
   FileDescriptorResult RegisterPosixResult(int result);
 };
 

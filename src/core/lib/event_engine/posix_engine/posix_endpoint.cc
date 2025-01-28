@@ -1283,7 +1283,6 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
-  PosixSocketWrapper sock(handle->WrappedFd().fd());
   fd_ = handle_->WrappedFd();
   CHECK(options.resource_quota != nullptr);
   auto& fds = poller_->GetFileDescriptors();

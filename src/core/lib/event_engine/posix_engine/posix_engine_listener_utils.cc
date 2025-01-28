@@ -65,22 +65,22 @@ absl::StatusOr<int> GetUnusedPort(FileDescriptors* fds) {
   PosixSocketWrapper::DSMode dsmode;
   auto sock = fds->CreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
   GRPC_RETURN_IF_ERROR(sock.status());
+  int fd = sock->fd();
   if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
     wild = ResolvedAddressMakeWild4(0);
   }
-  if (bind(sock->Fd(), wild.address(), wild.size()) != 0) {
-    close(sock->Fd());
+  if (bind(fd, wild.address(), wild.size()) != 0) {
+    close(fd);
     return absl::FailedPreconditionError(
         absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
   }
   socklen_t len = wild.size();
-  if (getsockname(sock->Fd(), const_cast<sockaddr*>(wild.address()), &len) !=
-      0) {
-    close(sock->Fd());
+  if (getsockname(fd, const_cast<sockaddr*>(wild.address()), &len) != 0) {
+    close(fd);
     return absl::FailedPreconditionError(
         absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
   }
-  close(sock->Fd());
+  close(fd);
   int port = ResolvedAddressGetPort(wild);
   if (port <= 0) {
     return absl::FailedPreconditionError("Bad port");
@@ -132,7 +132,7 @@ int GetMaxAcceptQueueSize() {
 absl::Status PrepareSocket(FileDescriptors* fds, const PosixTcpOptions& options,
                            ListenerSocket& socket) {
   ResolvedAddress sockname_temp;
-  int fd = socket.sock.Fd();
+  int fd = socket.sock.fd();
   CHECK_GE(fd, 0);
   bool close_fd = true;
   socket.zero_copy_enabled = false;
@@ -142,14 +142,14 @@ absl::Status PrepareSocket(FileDescriptors* fds, const PosixTcpOptions& options,
       close(fd);
     }
   });
-  if (PosixSocketWrapper::IsSocketReusePortSupported() &&
-      options.allow_reuse_port && socket.addr.address()->sa_family != AF_UNIX &&
+  FileDescriptor wrapped = fds->Adopt(fd);
+  if (IsSocketReusePortSupported() && options.allow_reuse_port &&
+      socket.addr.address()->sa_family != AF_UNIX &&
       !ResolvedAddressIsVSock(socket.addr)) {
-    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReusePort(1));
+    GRPC_RETURN_IF_ERROR(fds->SetSocketReusePort(wrapped, 1));
   }
-
 #ifdef GRPC_LINUX_ERRQUEUE
-  if (!socket.sock.SetSocketZeroCopy().ok()) {
+  if (!fds->SetSocketZeroCopy(wrapped).ok()) {
     // it's not fatal, so just log it.
     VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
   } else {
@@ -157,17 +157,16 @@ absl::Status PrepareSocket(FileDescriptors* fds, const PosixTcpOptions& options,
   }
 #endif
 
-  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNonBlocking(1));
-  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketCloexec(1));
+  GRPC_RETURN_IF_ERROR(fds->SetSocketNonBlocking(wrapped, 1));
+  GRPC_RETURN_IF_ERROR(fds->SetSocketCloexec(wrapped, 1));
 
   if (socket.addr.address()->sa_family != AF_UNIX &&
       !ResolvedAddressIsVSock(socket.addr)) {
-    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketLowLatency(1));
-    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReuseAddr(1));
-    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketDscp(options.dscp));
-    socket.sock.TrySetSocketTcpUserTimeout(options, false);
+    GRPC_RETURN_IF_ERROR(fds->SetSocketLowLatency(wrapped, 1));
+    GRPC_RETURN_IF_ERROR(fds->SetSocketReuseAddr(wrapped, 1));
+    GRPC_RETURN_IF_ERROR(fds->SetSocketDscp(wrapped, options.dscp));
+    fds->TrySetSocketTcpUserTimeout(wrapped, options, false);
   }
-  FileDescriptor wrapped = fds->Adopt(fd);
   GRPC_RETURN_IF_ERROR(fds->SetSocketNoSigpipeIfPossible(wrapped));
   GRPC_RETURN_IF_ERROR(fds->ApplySocketMutatorInOptions(
       wrapped, GRPC_FD_SERVER_LISTENER_USAGE, options));

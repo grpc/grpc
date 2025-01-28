@@ -27,6 +27,7 @@
 #include "src/core/util/strerror.h"
 #include "test/core/test_util/test_config.h"
 
+using ::grpc_event_engine::experimental::FileDescriptor;
 using ::grpc_event_engine::experimental::FileDescriptors;
 using ::grpc_event_engine::experimental::PosixSocketWrapper;
 
@@ -43,7 +44,7 @@ TEST(LogTooManyOpenFilesTest, MainTest) {
       "ipv4:127.0.0.1:80");
   ASSERT_TRUE(addr.ok());
   PosixSocketWrapper::DSMode dsmode;
-  absl::StatusOr<PosixSocketWrapper> result = fds.CreateDualStackSocket(
+  absl::StatusOr<FileDescriptor> result = fds.CreateDualStackSocket(
       mock_socket_factory, *addr, SOCK_STREAM, AF_INET, dsmode);
   EXPECT_FALSE(result.ok());
   std::string emfile_message = grpc_core::StrError(EMFILE);
