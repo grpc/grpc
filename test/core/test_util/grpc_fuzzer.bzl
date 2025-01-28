@@ -157,7 +157,6 @@ def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], data = [], external_de
         tags: The tags for the test.
         data: The data for the test.
         external_deps: External deps.
-        data: The data dependencies of the test.
     """
     grpc_cc_test(
         name = name,
