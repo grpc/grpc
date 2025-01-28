@@ -2025,6 +2025,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_file_descriptors",
+    srcs = ["lib/event_engine/posix_engine/file_descriptors.cc"],
+    hdrs = ["lib/event_engine/posix_engine/file_descriptors.h"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "event_engine_tcp_socket_utils",
+        "iomgr_port",
+        "strerror",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "posix_event_engine_event_poller",
     srcs = [],
     hdrs = [
@@ -2039,6 +2060,7 @@ grpc_cc_library(
         "event_engine_poller",
         "forkable",
         "posix_event_engine_closure",
+        "posix_event_engine_file_descriptors",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
@@ -2178,6 +2200,7 @@ grpc_cc_library(
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
+        "posix_event_engine_file_descriptors",
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_lockfree_event",
         "posix_event_engine_wakeup_fd_posix",
@@ -2216,6 +2239,7 @@ grpc_cc_library(
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
+        "posix_event_engine_file_descriptors",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
         "status_helper",
@@ -2316,6 +2340,7 @@ grpc_cc_library(
         "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
+        "posix_event_engine_file_descriptors",
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_traced_buffer_list",
@@ -2437,6 +2462,7 @@ grpc_cc_library(
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
+        "posix_event_engine_file_descriptors",
         "posix_event_engine_listener_utils",
         "posix_event_engine_tcp_socket_utils",
         "socket_mutator",
@@ -2483,6 +2509,7 @@ grpc_cc_library(
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
+        "posix_event_engine_file_descriptors",
         "posix_event_engine_listener",
         "posix_event_engine_poller_posix_default",
         "posix_event_engine_tcp_socket_utils",

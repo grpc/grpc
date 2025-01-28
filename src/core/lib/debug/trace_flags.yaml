@@ -82,10 +82,6 @@ chttp2_hpack_parser:
 chttp2_new_stream:
   default: false
   description: HTTP/2 incoming stream creation.
-chttp2_server_refcount:
-  debug_only: true
-  default: false
-  description: Refcounting in Chttp2 Server.
 client_channel:
   default: false
   description: Client channel control plane activity, including resolver and load balancing policy interaction.

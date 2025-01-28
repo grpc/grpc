@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
-#include <string>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -165,12 +164,6 @@ class PosixSocketWrapper {
 
   ~PosixSocketWrapper() = default;
 
-  // Instruct the kernel to wait for specified number of bytes to be received on
-  // the socket before generating an interrupt for packet receive. If the call
-  // succeeds, it returns the number of bytes (wait threshold) that was actually
-  // set.
-  absl::StatusOr<int> SetSocketRcvLowat(int bytes);
-
   // Set socket to use zerocopy
   absl::Status SetSocketZeroCopy();
 
@@ -221,18 +214,6 @@ class PosixSocketWrapper {
   // Extracts the first socket mutator from config if any and applies on the fd.
   absl::Status ApplySocketMutatorInOptions(grpc_fd_usage usage,
                                            const PosixTcpOptions& options);
-
-  // Return LocalAddress as EventEngine::ResolvedAddress
-  absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress();
-
-  // Return PeerAddress as EventEngine::ResolvedAddress
-  absl::StatusOr<EventEngine::ResolvedAddress> PeerAddress();
-
-  // Return LocalAddress as string
-  absl::StatusOr<std::string> LocalAddressString();
-
-  // Return PeerAddress as string
-  absl::StatusOr<std::string> PeerAddressString();
 
   // An enum to keep track of IPv4/IPv6 socket modes.
 
