@@ -18,7 +18,6 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
@@ -103,7 +102,9 @@ TEST(InterActivityPipe, CanClose) {
                             }));
   EXPECT_FALSE(done);
   // Drop the sender
-  { auto x = std::move(pipe.sender); }
+  {
+    auto x = std::move(pipe.sender);
+  }
   EXPECT_TRUE(done);
 }
 

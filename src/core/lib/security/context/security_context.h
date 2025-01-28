@@ -19,25 +19,25 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <memory>
 #include <utility>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
+#include "src/core/lib/surface/connection_context.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 
 // --- grpc_auth_context ---
@@ -79,6 +79,7 @@ struct grpc_auth_context
     if (chained_ != nullptr) {
       peer_identity_property_name_ = chained_->peer_identity_property_name_;
     }
+    connection_context_ = grpc_core::ConnectionContext::Create();
   }
 
   ~grpc_auth_context() {
@@ -99,6 +100,10 @@ struct grpc_auth_context
 
   const grpc_auth_context* chained() const { return chained_.get(); }
   const grpc_auth_property_array& properties() const { return properties_; }
+
+  grpc_core::ConnectionContext* connection_context() const {
+    return connection_context_.get();
+  }
 
   bool is_authenticated() const {
     return peer_identity_property_name_ != nullptr;
@@ -122,6 +127,7 @@ struct grpc_auth_context
   grpc_auth_property_array properties_;
   const char* peer_identity_property_name_ = nullptr;
   std::unique_ptr<Extension> extension_;
+  grpc_core::OrphanablePtr<grpc_core::ConnectionContext> connection_context_;
 };
 
 // --- grpc_security_context_extension ---

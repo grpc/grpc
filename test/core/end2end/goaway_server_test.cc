@@ -16,6 +16,16 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -32,23 +42,9 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/credentials.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -60,6 +56,8 @@
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -267,7 +265,7 @@ int main(int argc, char** argv) {
           .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
           .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
           // When this test brings down server1 and then brings up server2,
-          // the targetted server port number changes, and the client channel
+          // the targeted server port number changes, and the client channel
           // needs to re-resolve to pick this up. This test requires that
           // happen within 10 seconds, but gRPC's DNS resolvers rate limit
           // resolution attempts to at most once every 30 seconds by default.

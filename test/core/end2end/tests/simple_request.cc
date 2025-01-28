@@ -16,23 +16,21 @@
 //
 //
 
+#include <grpc/status.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 using testing::HasSubstr;
@@ -50,7 +48,7 @@ void CheckPeer(std::string peer_name) {
 void SimpleRequestBody(CoreEnd2endTest& test) {
   auto before = global_stats().Collect();
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
@@ -61,9 +59,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
   CheckPeer(*s.GetPeer());
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   CheckPeer(*c.GetPeer());
   IncomingCloseOnServer client_close;
   s.NewBatch(102)

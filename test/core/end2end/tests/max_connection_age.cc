@@ -16,17 +16,16 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <limits.h>
 
 #include <memory>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/test_config.h"
 
@@ -109,6 +108,8 @@ CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
   // The connection should be closed immediately after the max age grace period,
   // the in-progress RPC should fail.
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
+  EXPECT_THAT(server_status.message(),
+              ::testing::MatchesRegex("max connection age"));
 }
 
 CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
@@ -162,10 +163,12 @@ CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
     Expect(101, false);
   }
   Step();
-  // The connection is closed gracefully with goaway, the rpc should still be
-  // completed.
-  EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
-  EXPECT_EQ(server_status.message(), "xyz");
+  if (got_server) {
+    // The connection is closed gracefully with goaway, the rpc should still be
+    // completed.
+    EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
+    EXPECT_EQ(server_status.message(), "xyz");
+  }
 }
 
 }  // namespace

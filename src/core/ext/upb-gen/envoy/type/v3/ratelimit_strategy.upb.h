@@ -3,10 +3,11 @@
  *     envoy/type/v3/ratelimit_strategy.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H_
-#define ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -107,6 +108,7 @@ UPB_INLINE const envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit* envoy_type
   const envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit* default_val = NULL;
   const envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -123,6 +125,7 @@ UPB_INLINE const struct envoy_type_v3_TokenBucket* envoy_type_v3_RateLimitStrate
   const struct envoy_type_v3_TokenBucket* default_val = NULL;
   const struct envoy_type_v3_TokenBucket* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__TokenBucket_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -138,6 +141,7 @@ UPB_INLINE void envoy_type_v3_RateLimitStrategy_set_blanket_rule(envoy_type_v3_R
 }
 UPB_INLINE void envoy_type_v3_RateLimitStrategy_set_requests_per_time_unit(envoy_type_v3_RateLimitStrategy *msg, envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit* envoy_type_v3_RateLimitStrategy_mutable_requests_per_time_unit(envoy_type_v3_RateLimitStrategy* msg, upb_Arena* arena) {
@@ -150,6 +154,7 @@ UPB_INLINE struct envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit* envoy_typ
 }
 UPB_INLINE void envoy_type_v3_RateLimitStrategy_set_token_bucket(envoy_type_v3_RateLimitStrategy *msg, struct envoy_type_v3_TokenBucket* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__TokenBucket_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_TokenBucket* envoy_type_v3_RateLimitStrategy_mutable_token_bucket(envoy_type_v3_RateLimitStrategy* msg, upb_Arena* arena) {
@@ -237,4 +242,4 @@ UPB_INLINE void envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit_set_time_uni
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_H_ */

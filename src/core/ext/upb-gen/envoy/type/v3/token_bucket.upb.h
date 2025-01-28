@@ -3,10 +3,11 @@
  *     envoy/type/v3/token_bucket.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_TOKEN_BUCKET_PROTO_UPB_H_
-#define ENVOY_TYPE_V3_TOKEN_BUCKET_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_V3_TOKEN_BUCKET_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_V3_TOKEN_BUCKET_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -87,6 +88,7 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_type_v3_TokenBucket_t
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
   const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -103,6 +105,7 @@ UPB_INLINE const struct google_protobuf_Duration* envoy_type_v3_TokenBucket_fill
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -118,6 +121,7 @@ UPB_INLINE void envoy_type_v3_TokenBucket_set_max_tokens(envoy_type_v3_TokenBuck
 }
 UPB_INLINE void envoy_type_v3_TokenBucket_set_tokens_per_fill(envoy_type_v3_TokenBucket *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_type_v3_TokenBucket_mutable_tokens_per_fill(envoy_type_v3_TokenBucket* msg, upb_Arena* arena) {
@@ -130,6 +134,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_type_v3_TokenBucket_mutable
 }
 UPB_INLINE void envoy_type_v3_TokenBucket_set_fill_interval(envoy_type_v3_TokenBucket *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_type_v3_TokenBucket_mutable_fill_interval(envoy_type_v3_TokenBucket* msg, upb_Arena* arena) {
@@ -147,4 +152,4 @@ UPB_INLINE struct google_protobuf_Duration* envoy_type_v3_TokenBucket_mutable_fi
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_TOKEN_BUCKET_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_V3_TOKEN_BUCKET_PROTO_UPB_H__UPB_H_ */

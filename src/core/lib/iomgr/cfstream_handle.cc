@@ -18,18 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/memory.h"
 
 #ifdef GRPC_CFSTREAM
 #import <CoreFoundation/CoreFoundation.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #import "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -65,10 +63,9 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
   grpc_error_handle error;
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(client_callback_info);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    VLOG(2) << "CFStream ReadCallback (" << handle << ", " << stream << ", "
-            << type << ", " << client_callback_info << ")";
-  }
+  GRPC_TRACE_VLOG(tcp, 2) << "CFStream ReadCallback (" << handle << ", "
+                          << stream << ", " << type << ", "
+                          << client_callback_info << ")";
   switch (type) {
     case kCFStreamEventOpenCompleted:
       handle->open_event_.SetReady();
@@ -99,10 +96,9 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
   grpc_error_handle error;
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    VLOG(2) << "CFStream WriteCallback (" << handle << ", " << stream << ", "
-            << type << ", " << clientCallBackInfo << ")";
-  }
+  GRPC_TRACE_VLOG(tcp, 2) << "CFStream WriteCallback (" << handle << ", "
+                          << stream << ", " << type << ", "
+                          << clientCallBackInfo << ")";
   switch (type) {
     case kCFStreamEventOpenCompleted:
       handle->open_event_.SetReady();

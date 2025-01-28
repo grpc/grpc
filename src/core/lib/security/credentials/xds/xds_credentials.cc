@@ -18,14 +18,13 @@
 
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 
-#include "absl/log/check.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
+#include "absl/log/check.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"

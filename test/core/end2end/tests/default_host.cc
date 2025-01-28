@@ -16,15 +16,14 @@
 //
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+#include <optional>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 using testing::AnyOf;
@@ -35,7 +34,7 @@ namespace {
 
 CORE_END2END_TEST(CoreClientChannelTest, DefaultHost) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
@@ -46,8 +45,8 @@ CORE_END2END_TEST(CoreClientChannelTest, DefaultHost) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

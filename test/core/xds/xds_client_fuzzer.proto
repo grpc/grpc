@@ -16,9 +16,10 @@
 
 syntax = "proto3";
 
-import "src/proto/grpc/testing/xds/v3/discovery.proto";
-
 package xds_client_fuzzer;
+
+import "envoy/service/discovery/v3/discovery.proto";
+import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
 
 // We'd ideally like to use google.rpc.Status instead of creating our
 // own proto for this, but that winds up causing all sorts of dependency
@@ -117,7 +118,8 @@ message Action {
   }
 }
 
-message Message {
+message Msg {
   string bootstrap = 1;
   repeated Action actions = 2;
+  fuzzing_event_engine.Actions fuzzing_event_engine_actions = 3;
 }

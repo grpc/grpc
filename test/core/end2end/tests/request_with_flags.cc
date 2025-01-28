@@ -16,22 +16,20 @@
 //
 //
 
-#include <stdint.h>
-#include <string.h>
-
-#include <map>
-#include <utility>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <stdint.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <map>
+#include <optional>
+#include <utility>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -66,7 +64,7 @@ void InvokeRequestWithFlags(CoreEnd2endTest& test,
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  absl::optional<CoreEnd2endTest::Call> c =
+  std::optional<CoreEnd2endTest::Call> c =
       test.NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
 
   memset(ops, 0, sizeof(ops));
@@ -144,20 +142,17 @@ CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnRecvStatusOnClient) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, WriteBufferIntAcceptedOnSendMessage) {
-  SKIP_IF_V3();
   InvokeRequestWithFlags(
       *this, {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT}}, GRPC_CALL_OK);
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, WriteNoCompressAcceptedOnSendMessage) {
-  SKIP_IF_V3();
   InvokeRequestWithFlags(
       *this, {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_NO_COMPRESS}}, GRPC_CALL_OK);
 }
 
 CORE_END2END_TEST(CoreEnd2endTest,
                   WriteBufferHintAndNoCompressAcceptedOnSendMessage) {
-  SKIP_IF_V3();
   InvokeRequestWithFlags(
       *this,
       {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS}},
@@ -165,7 +160,6 @@ CORE_END2END_TEST(CoreEnd2endTest,
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, WriteInternalCompressAcceptedOnSendMessage) {
-  SKIP_IF_V3();
   InvokeRequestWithFlags(*this,
                          {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_INTERNAL_COMPRESS}},
                          GRPC_CALL_OK);

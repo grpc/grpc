@@ -25,6 +25,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <grpc/support/alloc.h>
 #include <limits.h>
 #include <poll.h>
 #include <string.h>
@@ -37,17 +38,14 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
@@ -332,12 +330,11 @@ static void fork_fd_list_add_wakeup_fd(grpc_cached_wakeup_fd* fd) {
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                    int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(fd_refcount)) {
-    VLOG(2) << "FD " << fd->fd << " " << fd << "   ref " << n << " "
-            << gpr_atm_no_barrier_load(&fd->refst) << " -> "
-            << gpr_atm_no_barrier_load(&fd->refst) + n << " [" << reason << "; "
-            << file << ":" << line << "]";
-  }
+  GRPC_TRACE_VLOG(fd_refcount, 2)
+      << "FD " << fd->fd << " " << fd << "   ref " << n << " "
+      << gpr_atm_no_barrier_load(&fd->refst) << " -> "
+      << gpr_atm_no_barrier_load(&fd->refst) + n << " [" << reason << "; "
+      << file << ":" << line << "]";
 #else
 #define REF_BY(fd, n, reason) \
   do {                        \
@@ -357,12 +354,11 @@ static void ref_by(grpc_fd* fd, int n) {
 #ifndef NDEBUG
 static void unref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                      int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(fd_refcount)) {
-    VLOG(2) << "FD " << fd->fd << " " << fd << " unref " << n << " "
-            << gpr_atm_no_barrier_load(&fd->refst) << " -> "
-            << gpr_atm_no_barrier_load(&fd->refst) - n << " [" << reason << "; "
-            << file << ":" << line << "]";
-  }
+  GRPC_TRACE_VLOG(fd_refcount, 2)
+      << "FD " << fd->fd << " " << fd << " unref " << n << " "
+      << gpr_atm_no_barrier_load(&fd->refst) << " -> "
+      << gpr_atm_no_barrier_load(&fd->refst) - n << " [" << reason << "; "
+      << file << ":" << line << "]";
 #else
 static void unref_by(grpc_fd* fd, int n) {
 #endif
@@ -1062,12 +1058,11 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
             }
             fd_end_poll(&watchers[i], 0, 0);
           } else {
-            if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-              LOG(INFO) << pollset << " got_event: " << pfds[i].fd
-                        << " r:" << ((pfds[i].revents & POLLIN_CHECK) != 0)
-                        << " w:" << ((pfds[i].revents & POLLOUT_CHECK) != 0)
-                        << " [" << pfds[i].revents << "]";
-            }
+            GRPC_TRACE_LOG(polling, INFO)
+                << pollset << " got_event: " << pfds[i].fd
+                << " r:" << ((pfds[i].revents & POLLIN_CHECK) != 0)
+                << " w:" << ((pfds[i].revents & POLLOUT_CHECK) != 0) << " ["
+                << pfds[i].revents << "]";
             // This is a mitigation to prevent poll() from spinning on a
             //* POLLHUP https://github.com/grpc/grpc/pull/13665
             //

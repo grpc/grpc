@@ -60,7 +60,7 @@ some configuration as environment variables that can be set.
   - NONE - won't log any.
   GRPC_VERBOSITY will set verbosity of absl logging. 
   - If the external application sets some other verbosity, then whatever is set later will be honoured. 
-  - If nothing is set as GRPC_VERBOSITY, then the setting of the exernal application will be honoured.
+  - If nothing is set as GRPC_VERBOSITY, then the setting of the external application will be honoured.
   - If nothing is set by the external application also, the default set by absl will be honoured.
 <!-- END_OPEN_SOURCE_DOCUMENTATION -->
 

@@ -19,17 +19,16 @@
 #ifndef GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURITY_HANDSHAKER_H
 #define GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURITY_HANDSHAKER_H
 
-#include "absl/status/statusor.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/statusor.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 

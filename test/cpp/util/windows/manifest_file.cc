@@ -28,10 +28,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
-
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc {
 namespace testing {

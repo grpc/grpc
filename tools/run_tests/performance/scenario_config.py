@@ -321,7 +321,7 @@ class CXXLanguage(Language):
         )
 
         # Scenario was added in https://github.com/grpc/grpc/pull/12987, but its purpose is unclear
-        # (beyond excercising some params that other scenarios don't)
+        # (beyond exercising some params that other scenarios don't)
         yield _ping_pong_scenario(
             "cpp_protobuf_async_unary_75Kqps_600channel_60Krpcs_300Breq_50Bresp",
             rpc_type="UNARY",

@@ -19,18 +19,17 @@
 #ifndef GRPCPP_IMPL_INTERCEPTOR_COMMON_H
 #define GRPCPP_IMPL_INTERCEPTOR_COMMON_H
 
-#include <array>
-#include <functional>
-
-#include "absl/log/absl_check.h"
-
 #include <grpc/impl/grpc_types.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/intercepted_channel.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/server_interceptor.h>
+
+#include <array>
+#include <functional>
+
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 namespace internal {

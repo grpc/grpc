@@ -14,12 +14,16 @@
 // limitations under the License.
 //
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -31,22 +35,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -57,9 +49,15 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
 
@@ -199,7 +197,7 @@ class XdsClusterManagerLb final : public LoadBalancingPolicy {
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
 
     // States for delayed removal.
-    absl::optional<EventEngine::TaskHandle> delayed_removal_timer_handle_;
+    std::optional<EventEngine::TaskHandle> delayed_removal_timer_handle_;
     bool shutdown_ = false;
   };
 
@@ -262,11 +260,11 @@ void XdsClusterManagerLb::ShutdownLocked() {
 }
 
 void XdsClusterManagerLb::ExitIdleLocked() {
-  for (auto& p : children_) p.second->ExitIdleLocked();
+  for (auto& [_, child] : children_) child->ExitIdleLocked();
 }
 
 void XdsClusterManagerLb::ResetBackoffLocked() {
-  for (auto& p : children_) p.second->ResetBackoffLocked();
+  for (auto& [_, child] : children_) child->ResetBackoffLocked();
 }
 
 absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
@@ -277,18 +275,15 @@ absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = args.config.TakeAsSubclass<XdsClusterManagerLbConfig>();
   // Deactivate the children not in the new config.
-  for (const auto& p : children_) {
-    const std::string& name = p.first;
-    ClusterChild* child = p.second.get();
+  for (const auto& [name, child] : children_) {
     if (config_->cluster_map().find(name) == config_->cluster_map().end()) {
       child->DeactivateLocked();
     }
   }
   // Add or update the children in the new config.
   std::vector<std::string> errors;
-  for (const auto& p : config_->cluster_map()) {
-    const std::string& name = p.first;
-    const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second.config;
+  for (const auto& [name, cluster] : config_->cluster_map()) {
+    const RefCountedPtr<LoadBalancingPolicy::Config>& config = cluster.config;
     auto& child = children_[name];
     if (child == nullptr) {
       child = MakeOrphanable<ClusterChild>(
@@ -324,9 +319,7 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   size_t num_ready = 0;
   size_t num_connecting = 0;
   size_t num_idle = 0;
-  for (const auto& p : children_) {
-    const auto& child_name = p.first;
-    const ClusterChild* child = p.second.get();
+  for (const auto& [child_name, child] : children_) {
     // Skip the children that are not in the latest update.
     if (config_->cluster_map().find(child_name) ==
         config_->cluster_map().end()) {
@@ -367,8 +360,7 @@ void XdsClusterManagerLb::UpdateStateLocked() {
       << "[xds_cluster_manager_lb " << this << "] connectivity changed to "
       << ConnectivityStateName(connectivity_state);
   ClusterPicker::ClusterMap cluster_map;
-  for (const auto& p : config_->cluster_map()) {
-    const std::string& cluster_name = p.first;
+  for (const auto& [cluster_name, _] : config_->cluster_map()) {
     RefCountedPtr<SubchannelPicker>& child_picker = cluster_map[cluster_name];
     child_picker = children_[cluster_name]->picker();
     if (child_picker == nullptr) {
@@ -531,13 +523,12 @@ void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked() {
 void XdsClusterManagerLb::ClusterChild::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb "
-              << xds_cluster_manager_child_->xds_cluster_manager_policy_.get()
-              << "] child " << xds_cluster_manager_child_->name_
-              << ": received update: state=" << ConnectivityStateName(state)
-              << " (" << status << ") picker=" << picker.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb "
+      << xds_cluster_manager_child_->xds_cluster_manager_policy_.get()
+      << "] child " << xds_cluster_manager_child_->name_
+      << ": received update: state=" << ConnectivityStateName(state) << " ("
+      << status << ") picker=" << picker.get();
   if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
     return;
   }

@@ -18,7 +18,6 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_RBAC_RBAC_SERVICE_CONFIG_PARSER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <algorithm>
@@ -27,14 +26,13 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/authorization/rbac_policy.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/validation_errors.h"
 
 namespace grpc_core {
 

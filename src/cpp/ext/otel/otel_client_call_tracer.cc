@@ -18,11 +18,15 @@
 
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 
 #include <array>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -34,27 +38,20 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
-
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
@@ -114,29 +111,31 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
-    RecordSendMessage(const grpc_core::SliceBuffer& send_message) {
-  RecordAnnotation(
-      absl::StrFormat("Send message: %ld bytes", send_message.Length()));
+    RecordSendMessage(const grpc_core::Message& send_message) {
+  RecordAnnotation(absl::StrFormat("Send message: %ld bytes",
+                                   send_message.payload()->Length()));
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordSendCompressedMessage(
-        const grpc_core::SliceBuffer& send_compressed_message) {
-  RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
-                                   send_compressed_message.Length()));
+        const grpc_core::Message& send_compressed_message) {
+  RecordAnnotation(
+      absl::StrFormat("Send compressed message: %ld bytes",
+                      send_compressed_message.payload()->Length()));
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
-    RecordReceivedMessage(const grpc_core::SliceBuffer& recv_message) {
-  RecordAnnotation(
-      absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
+    RecordReceivedMessage(const grpc_core::Message& recv_message) {
+  RecordAnnotation(absl::StrFormat("Received message: %ld bytes",
+                                   recv_message.payload()->Length()));
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordReceivedDecompressedMessage(
-        const grpc_core::SliceBuffer& recv_decompressed_message) {
-  RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
-                                   recv_decompressed_message.Length()));
+        const grpc_core::Message& recv_decompressed_message) {
+  RecordAnnotation(
+      absl::StrFormat("Received decompressed message: %ld bytes",
+                      recv_decompressed_message.payload()->Length()));
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::

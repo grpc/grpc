@@ -19,23 +19,21 @@
 #ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 #define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 
-#include <stdint.h>
-
-#include <functional>
-#include <string>
-#include <vector>
-
-#include "absl/container/flat_hash_map.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/types/variant.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
+#include <stdint.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/time.h"
+#include <functional>
+#include <string>
+#include <variant>
+#include <vector>
+
+#include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -63,7 +61,7 @@ class CqVerifier {
   };
 
   using ExpectedResult =
-      absl::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
+      std::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
 
   // Captures information about one failure
   struct Failure {

@@ -1075,7 +1075,7 @@ def _handle_call(
 ) -> Tuple[Optional[_RPCState], Optional[futures.Future]]:
     """Handles RPC based on provided handlers.
 
-      When receiving a call event from Core, registered method will have it's
+      When receiving a call event from Core, registered method will have its
     name as tag, we pass the tag as registered_method_name to this method,
     then we can find the handler in registered_method_handlers based on
     the method name.

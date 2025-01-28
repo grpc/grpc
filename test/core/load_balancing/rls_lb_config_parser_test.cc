@@ -14,19 +14,18 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
+
 #include <memory>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -90,7 +89,7 @@ TEST_F(RlsConfigParsingTest, TopLevelRequiredFieldsMissing) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig error:field not present]"))
@@ -115,7 +114,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
   EXPECT_EQ(service_config.status().message(),
             "errors validating service config: ["
             "field:loadBalancingConfig "
-            "error:errors validing RLS LB policy config: ["
+            "error:errors validating RLS LB policy config: ["
             "field:childPolicy error:is not an array; "
             "field:childPolicyConfigTargetFieldName error:is not a string; "
             "field:routeLookupChannelServiceConfig error:is not an object; "
@@ -141,7 +140,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:No known policies in list: unknown; "
           "field:childPolicyConfigTargetFieldName error:must be non-empty; "
           "field:routeLookupConfig error:field not present]"))
@@ -165,7 +164,7 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
       service_config.status().message(),
-      ::testing::HasSubstr("errors validing RLS LB policy config: ["
+      ::testing::HasSubstr("errors validating RLS LB policy config: ["
                            "field:childPolicy error:"
                            "errors validating grpclb LB policy config: ["
                            "field:childPolicy error:type should be array]; "
@@ -194,7 +193,7 @@ TEST_F(RlsConfigParsingTest, InvalidRlsChannelServiceConfig) {
   EXPECT_EQ(service_config.status().message(),
             "errors validating service config: ["
             "field:loadBalancingConfig "
-            "error:errors validing RLS LB policy config: ["
+            "error:errors validating RLS LB policy config: ["
             "field:routeLookupChannelServiceConfig.loadBalancingPolicy "
             "error:unknown LB policy \"unknown\"; "
             "field:routeLookupConfig error:field not present]]")
@@ -221,7 +220,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigRequiredFieldsMissing) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:field not present; "
@@ -254,7 +253,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:"
@@ -286,7 +285,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:"
@@ -321,7 +320,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:field not present; "
@@ -355,7 +354,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:field not present; "
@@ -400,7 +399,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:field not present; "
@@ -458,7 +457,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:field not present; "
@@ -515,7 +514,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:field not present; "
@@ -559,7 +558,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:field not present; "
@@ -603,7 +602,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
   EXPECT_THAT(
       service_config.status().message(),
       ::testing::HasSubstr(
-          "errors validing RLS LB policy config: ["
+          "errors validating RLS LB policy config: ["
           "field:childPolicy error:field not present; "
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:field not present; "

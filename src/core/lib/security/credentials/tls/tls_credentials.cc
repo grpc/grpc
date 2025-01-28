@@ -18,18 +18,17 @@
 
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 
-#include <memory>
-#include <string>
-#include <utility>
-
-#include "absl/log/log.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+
+#include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
@@ -104,7 +103,7 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 TlsCredentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target_name, grpc_core::ChannelArgs* args) {
-  absl::optional<std::string> overridden_target_name =
+  std::optional<std::string> overridden_target_name =
       args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
   auto* ssl_session_cache = args->GetObject<tsi::SslSessionLRUCache>();
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
@@ -145,7 +144,7 @@ TlsServerCredentials::create_security_connector(
       CreateTlsServerSecurityConnector(this->Ref(), options_);
 }
 
-grpc_core::UniqueTypeName TlsServerCredentials::type() const {
+grpc_core::UniqueTypeName TlsServerCredentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("Tls");
   return kFactory.Create();
 }

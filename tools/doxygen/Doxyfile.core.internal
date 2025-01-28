@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 43.0.0
+PROJECT_NUMBER         = 45.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -890,6 +890,8 @@ include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
 src/core/README.md \
+src/core/call/request_buffer.cc \
+src/core/call/request_buffer.h \
 src/core/channelz/channel_trace.cc \
 src/core/channelz/channel_trace.h \
 src/core/channelz/channelz.cc \
@@ -901,6 +903,7 @@ src/core/client_channel/backup_poller.cc \
 src/core/client_channel/backup_poller.h \
 src/core/client_channel/client_channel.cc \
 src/core/client_channel/client_channel.h \
+src/core/client_channel/client_channel_args.h \
 src/core/client_channel/client_channel_factory.cc \
 src/core/client_channel/client_channel_factory.h \
 src/core/client_channel/client_channel_filter.cc \
@@ -927,6 +930,8 @@ src/core/client_channel/retry_filter.cc \
 src/core/client_channel/retry_filter.h \
 src/core/client_channel/retry_filter_legacy_call_data.cc \
 src/core/client_channel/retry_filter_legacy_call_data.h \
+src/core/client_channel/retry_interceptor.cc \
+src/core/client_channel/retry_interceptor.h \
 src/core/client_channel/retry_service_config.cc \
 src/core/client_channel/retry_service_config.h \
 src/core/client_channel/retry_throttle.cc \
@@ -938,6 +943,13 @@ src/core/client_channel/subchannel_pool_interface.cc \
 src/core/client_channel/subchannel_pool_interface.h \
 src/core/client_channel/subchannel_stream_client.cc \
 src/core/client_channel/subchannel_stream_client.h \
+src/core/config/config_vars.cc \
+src/core/config/config_vars.h \
+src/core/config/config_vars_non_generated.cc \
+src/core/config/core_configuration.cc \
+src/core/config/core_configuration.h \
+src/core/config/load_config.cc \
+src/core/config/load_config.h \
 src/core/ext/README.md \
 src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
 src/core/ext/filters/backend_metrics/backend_metric_filter.h \
@@ -951,6 +963,10 @@ src/core/ext/filters/fault_injection/fault_injection_filter.cc \
 src/core/ext/filters/fault_injection/fault_injection_filter.h \
 src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
 src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h \
+src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
+src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h \
+src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc \
+src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h \
 src/core/ext/filters/http/client/http_client_filter.cc \
 src/core/ext/filters/http/client/http_client_filter.h \
 src/core/ext/filters/http/client_authority_filter.cc \
@@ -971,7 +987,6 @@ src/core/ext/filters/stateful_session/stateful_session_filter.h \
 src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
 src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
 src/core/ext/transport/README.md \
-src/core/ext/transport/binder/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
@@ -984,6 +999,8 @@ src/core/ext/transport/chttp2/transport/bin_decoder.cc \
 src/core/ext/transport/chttp2/transport/bin_decoder.h \
 src/core/ext/transport/chttp2/transport/bin_encoder.cc \
 src/core/ext/transport/chttp2/transport/bin_encoder.h \
+src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc \
+src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h \
 src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list_entry.h \
@@ -1001,6 +1018,8 @@ src/core/ext/transport/chttp2/transport/frame_ping.cc \
 src/core/ext/transport/chttp2/transport/frame_ping.h \
 src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
 src/core/ext/transport/chttp2/transport/frame_rst_stream.h \
+src/core/ext/transport/chttp2/transport/frame_security.cc \
+src/core/ext/transport/chttp2/transport/frame_security.h \
 src/core/ext/transport/chttp2/transport/frame_settings.cc \
 src/core/ext/transport/chttp2/transport/frame_settings.h \
 src/core/ext/transport/chttp2/transport/frame_window_update.cc \
@@ -1030,6 +1049,7 @@ src/core/ext/transport/chttp2/transport/ping_callbacks.h \
 src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_rate_policy.h \
 src/core/ext/transport/chttp2/transport/stream_lists.cc \
+src/core/ext/transport/chttp2/transport/stream_lists.h \
 src/core/ext/transport/chttp2/transport/varint.cc \
 src/core/ext/transport/chttp2/transport/varint.h \
 src/core/ext/transport/chttp2/transport/write_size_policy.cc \
@@ -1141,6 +1161,9 @@ src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.h \
+src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb.h \
+src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c \
+src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.h \
@@ -1210,9 +1233,6 @@ src/core/ext/upb-gen/envoy/config/trace/v3/http_tracer.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb.h \
 src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.h \
-src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb.h \
-src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.c \
-src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb.h \
 src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.h \
@@ -1243,6 +1263,9 @@ src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitabl
 src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h \
 src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h \
+src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h \
+src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c \
+src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.h \
 src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb.h \
 src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.h \
@@ -1273,6 +1296,9 @@ src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_
 src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h \
 src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.h \
+src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb.h \
+src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.c \
+src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.h \
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb.h \
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.h \
@@ -1414,9 +1440,6 @@ src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h \
 src/core/ext/upb-gen/google/rpc/status.upb.h \
 src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
 src/core/ext/upb-gen/google/rpc/status.upb_minitable.h \
-src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb.h \
-src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.c \
-src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.h \
 src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h \
 src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
 src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h \
@@ -1602,6 +1625,8 @@ src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.c \
@@ -1648,8 +1673,6 @@ src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.h \
-src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.c \
-src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.c \
@@ -1670,6 +1693,8 @@ src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.
 src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3/router.upbdefs.c \
@@ -1680,6 +1705,8 @@ src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manage
 src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
@@ -1774,8 +1801,6 @@ src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
 src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h \
 src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
 src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h \
-src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.c \
-src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.h \
 src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
 src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h \
 src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \
@@ -1838,6 +1863,9 @@ src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c \
 src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h \
 src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
 src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h \
+src/core/filter/blackboard.cc \
+src/core/filter/blackboard.h \
+src/core/filter/filter_args.h \
 src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
 src/core/handshaker/endpoint_info/endpoint_info_handshaker.h \
 src/core/handshaker/handshaker.cc \
@@ -1849,6 +1877,8 @@ src/core/handshaker/http_connect/http_connect_handshaker.cc \
 src/core/handshaker/http_connect/http_connect_handshaker.h \
 src/core/handshaker/http_connect/http_proxy_mapper.cc \
 src/core/handshaker/http_connect/http_proxy_mapper.h \
+src/core/handshaker/http_connect/xds_http_proxy_mapper.cc \
+src/core/handshaker/http_connect/xds_http_proxy_mapper.h \
 src/core/handshaker/proxy_mapper.h \
 src/core/handshaker/proxy_mapper_registry.cc \
 src/core/handshaker/proxy_mapper_registry.h \
@@ -1863,11 +1893,6 @@ src/core/lib/address_utils/parse_address.cc \
 src/core/lib/address_utils/parse_address.h \
 src/core/lib/address_utils/sockaddr_utils.cc \
 src/core/lib/address_utils/sockaddr_utils.h \
-src/core/lib/avl/avl.h \
-src/core/lib/backoff/backoff.cc \
-src/core/lib/backoff/backoff.h \
-src/core/lib/backoff/random_early_detection.cc \
-src/core/lib/backoff/random_early_detection.h \
 src/core/lib/channel/README.md \
 src/core/lib/channel/call_finalization.h \
 src/core/lib/channel/channel_args.cc \
@@ -1892,15 +1917,6 @@ src/core/lib/compression/compression_internal.cc \
 src/core/lib/compression/compression_internal.h \
 src/core/lib/compression/message_compress.cc \
 src/core/lib/compression/message_compress.h \
-src/core/lib/config/config_vars.cc \
-src/core/lib/config/config_vars.h \
-src/core/lib/config/config_vars_non_generated.cc \
-src/core/lib/config/core_configuration.cc \
-src/core/lib/config/core_configuration.h \
-src/core/lib/config/load_config.cc \
-src/core/lib/config/load_config.h \
-src/core/lib/debug/event_log.cc \
-src/core/lib/debug/event_log.h \
 src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
 src/core/lib/debug/trace_flags.cc \
@@ -2021,84 +2037,6 @@ src/core/lib/experiments/config.cc \
 src/core/lib/experiments/config.h \
 src/core/lib/experiments/experiments.cc \
 src/core/lib/experiments/experiments.h \
-src/core/lib/gprpp/README.md \
-src/core/lib/gprpp/atomic_utils.h \
-src/core/lib/gprpp/bitset.h \
-src/core/lib/gprpp/chunked_vector.h \
-src/core/lib/gprpp/construct_destruct.h \
-src/core/lib/gprpp/cpp_impl_of.h \
-src/core/lib/gprpp/crash.cc \
-src/core/lib/gprpp/crash.h \
-src/core/lib/gprpp/debug_location.h \
-src/core/lib/gprpp/directory_reader.h \
-src/core/lib/gprpp/down_cast.h \
-src/core/lib/gprpp/dual_ref_counted.h \
-src/core/lib/gprpp/dump_args.cc \
-src/core/lib/gprpp/dump_args.h \
-src/core/lib/gprpp/env.h \
-src/core/lib/gprpp/examine_stack.cc \
-src/core/lib/gprpp/examine_stack.h \
-src/core/lib/gprpp/fork.cc \
-src/core/lib/gprpp/fork.h \
-src/core/lib/gprpp/glob.cc \
-src/core/lib/gprpp/glob.h \
-src/core/lib/gprpp/host_port.cc \
-src/core/lib/gprpp/host_port.h \
-src/core/lib/gprpp/if_list.h \
-src/core/lib/gprpp/linux/env.cc \
-src/core/lib/gprpp/load_file.cc \
-src/core/lib/gprpp/load_file.h \
-src/core/lib/gprpp/manual_constructor.h \
-src/core/lib/gprpp/match.h \
-src/core/lib/gprpp/memory.h \
-src/core/lib/gprpp/mpscq.cc \
-src/core/lib/gprpp/mpscq.h \
-src/core/lib/gprpp/no_destruct.h \
-src/core/lib/gprpp/notification.h \
-src/core/lib/gprpp/orphanable.h \
-src/core/lib/gprpp/overload.h \
-src/core/lib/gprpp/packed_table.h \
-src/core/lib/gprpp/per_cpu.cc \
-src/core/lib/gprpp/per_cpu.h \
-src/core/lib/gprpp/posix/directory_reader.cc \
-src/core/lib/gprpp/posix/env.cc \
-src/core/lib/gprpp/posix/stat.cc \
-src/core/lib/gprpp/posix/thd.cc \
-src/core/lib/gprpp/ref_counted.h \
-src/core/lib/gprpp/ref_counted_ptr.h \
-src/core/lib/gprpp/ref_counted_string.cc \
-src/core/lib/gprpp/ref_counted_string.h \
-src/core/lib/gprpp/single_set_ptr.h \
-src/core/lib/gprpp/sorted_pack.h \
-src/core/lib/gprpp/stat.h \
-src/core/lib/gprpp/status_helper.cc \
-src/core/lib/gprpp/status_helper.h \
-src/core/lib/gprpp/strerror.cc \
-src/core/lib/gprpp/strerror.h \
-src/core/lib/gprpp/sync.h \
-src/core/lib/gprpp/table.h \
-src/core/lib/gprpp/tchar.cc \
-src/core/lib/gprpp/tchar.h \
-src/core/lib/gprpp/thd.h \
-src/core/lib/gprpp/time.cc \
-src/core/lib/gprpp/time.h \
-src/core/lib/gprpp/time_averaged_stats.cc \
-src/core/lib/gprpp/time_averaged_stats.h \
-src/core/lib/gprpp/time_util.cc \
-src/core/lib/gprpp/time_util.h \
-src/core/lib/gprpp/type_list.h \
-src/core/lib/gprpp/unique_type_name.h \
-src/core/lib/gprpp/uuid_v4.cc \
-src/core/lib/gprpp/uuid_v4.h \
-src/core/lib/gprpp/validation_errors.cc \
-src/core/lib/gprpp/validation_errors.h \
-src/core/lib/gprpp/windows/directory_reader.cc \
-src/core/lib/gprpp/windows/env.cc \
-src/core/lib/gprpp/windows/stat.cc \
-src/core/lib/gprpp/windows/thd.cc \
-src/core/lib/gprpp/work_serializer.cc \
-src/core/lib/gprpp/work_serializer.h \
-src/core/lib/gprpp/xxhash_inline.h \
 src/core/lib/iomgr/README.md \
 src/core/lib/iomgr/block_annotate.h \
 src/core/lib/iomgr/buffer_list.cc \
@@ -2144,13 +2082,6 @@ src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
 src/core/lib/iomgr/fork_posix.cc \
 src/core/lib/iomgr/fork_windows.cc \
-src/core/lib/iomgr/gethostname.h \
-src/core/lib/iomgr/gethostname_fallback.cc \
-src/core/lib/iomgr/gethostname_host_name_max.cc \
-src/core/lib/iomgr/gethostname_sysconf.cc \
-src/core/lib/iomgr/grpc_if_nametoindex.h \
-src/core/lib/iomgr/grpc_if_nametoindex_posix.cc \
-src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc \
 src/core/lib/iomgr/internal_errqueue.cc \
 src/core/lib/iomgr/internal_errqueue.h \
 src/core/lib/iomgr/iocp_windows.cc \
@@ -2241,8 +2172,6 @@ src/core/lib/iomgr/wakeup_fd_pipe.cc \
 src/core/lib/iomgr/wakeup_fd_pipe.h \
 src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
-src/core/lib/matchers/matchers.cc \
-src/core/lib/matchers/matchers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/all_ok.h \
@@ -2343,6 +2272,8 @@ src/core/lib/security/credentials/external/url_external_account_credentials.cc \
 src/core/lib/security/credentials/external/url_external_account_credentials.h \
 src/core/lib/security/credentials/fake/fake_credentials.cc \
 src/core/lib/security/credentials/fake/fake_credentials.h \
+src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
+src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h \
 src/core/lib/security/credentials/google_default/credentials_generic.cc \
 src/core/lib/security/credentials/google_default/google_default_credentials.cc \
 src/core/lib/security/credentials/google_default/google_default_credentials.h \
@@ -2379,6 +2310,8 @@ src/core/lib/security/credentials/tls/tls_credentials.cc \
 src/core/lib/security/credentials/tls/tls_credentials.h \
 src/core/lib/security/credentials/tls/tls_utils.cc \
 src/core/lib/security/credentials/tls/tls_utils.h \
+src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc \
+src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.h \
 src/core/lib/security/credentials/xds/xds_credentials.cc \
 src/core/lib/security/credentials/xds/xds_credentials.h \
 src/core/lib/security/security_connector/alts/alts_security_connector.cc \
@@ -2441,6 +2374,8 @@ src/core/lib/surface/completion_queue.cc \
 src/core/lib/surface/completion_queue.h \
 src/core/lib/surface/completion_queue_factory.cc \
 src/core/lib/surface/completion_queue_factory.h \
+src/core/lib/surface/connection_context.cc \
+src/core/lib/surface/connection_context.h \
 src/core/lib/surface/event_string.cc \
 src/core/lib/surface/event_string.h \
 src/core/lib/surface/filter_stack_call.cc \
@@ -2499,10 +2434,9 @@ src/core/lib/transport/timeout_encoding.cc \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.cc \
 src/core/lib/transport/transport.h \
+src/core/lib/transport/transport_framing_endpoint_extension.h \
 src/core/lib/transport/transport_fwd.h \
 src/core/lib/transport/transport_op_string.cc \
-src/core/lib/uri/uri_parser.cc \
-src/core/lib/uri/uri_parser.h \
 src/core/load_balancing/address_filtering.cc \
 src/core/load_balancing/address_filtering.h \
 src/core/load_balancing/backend_metric_data.h \
@@ -2560,8 +2494,6 @@ src/core/load_balancing/xds/xds_wrr_locality.cc \
 src/core/plugin_registry/grpc_plugin_registry.cc \
 src/core/plugin_registry/grpc_plugin_registry_extra.cc \
 src/core/resolver/README.md \
-src/core/resolver/binder/README.md \
-src/core/resolver/binder/binder_resolver.cc \
 src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
 src/core/resolver/dns/c_ares/dns_resolver_ares.h \
 src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h \
@@ -2595,6 +2527,8 @@ src/core/resolver/resolver_registry.h \
 src/core/resolver/server_address.h \
 src/core/resolver/sockaddr/README.md \
 src/core/resolver/sockaddr/sockaddr_resolver.cc \
+src/core/resolver/xds/xds_config.cc \
+src/core/resolver/xds/xds_config.h \
 src/core/resolver/xds/xds_dependency_manager.cc \
 src/core/resolver/xds/xds_dependency_manager.h \
 src/core/resolver/xds/xds_resolver.cc \
@@ -2690,10 +2624,43 @@ src/core/tsi/transport_security_interface.h \
 src/core/util/README.md \
 src/core/util/alloc.cc \
 src/core/util/alloc.h \
-src/core/util/android/log.cc \
-src/core/util/atm.cc \
+src/core/util/atomic_utils.h \
+src/core/util/avl.h \
+src/core/util/backoff.cc \
+src/core/util/backoff.h \
+src/core/util/bitset.h \
+src/core/util/chunked_vector.h \
+src/core/util/construct_destruct.h \
+src/core/util/cpp_impl_of.h \
+src/core/util/crash.cc \
+src/core/util/crash.h \
+src/core/util/debug_location.h \
+src/core/util/directory_reader.h \
+src/core/util/down_cast.h \
+src/core/util/dual_ref_counted.h \
+src/core/util/dump_args.cc \
+src/core/util/dump_args.h \
+src/core/util/env.h \
+src/core/util/event_log.cc \
+src/core/util/event_log.h \
+src/core/util/examine_stack.cc \
+src/core/util/examine_stack.h \
+src/core/util/fork.cc \
+src/core/util/fork.h \
 src/core/util/gcp_metadata_query.cc \
 src/core/util/gcp_metadata_query.h \
+src/core/util/gethostname.h \
+src/core/util/gethostname_fallback.cc \
+src/core/util/gethostname_host_name_max.cc \
+src/core/util/gethostname_sysconf.cc \
+src/core/util/glob.cc \
+src/core/util/glob.h \
+src/core/util/gpr_time.cc \
+src/core/util/grpc_if_nametoindex.h \
+src/core/util/grpc_if_nametoindex_posix.cc \
+src/core/util/grpc_if_nametoindex_unsupported.cc \
+src/core/util/host_port.cc \
+src/core/util/host_port.h \
 src/core/util/http_client/format_request.cc \
 src/core/util/http_client/format_request.h \
 src/core/util/http_client/httpcli.cc \
@@ -2702,6 +2669,7 @@ src/core/util/http_client/httpcli_security_connector.cc \
 src/core/util/http_client/httpcli_ssl_credentials.h \
 src/core/util/http_client/parser.cc \
 src/core/util/http_client/parser.h \
+src/core/util/if_list.h \
 src/core/util/iphone/cpu.cc \
 src/core/util/json/json.h \
 src/core/util/json/json_args.h \
@@ -2717,35 +2685,93 @@ src/core/util/json/json_writer.h \
 src/core/util/latent_see.cc \
 src/core/util/latent_see.h \
 src/core/util/linux/cpu.cc \
-src/core/util/linux/log.cc \
+src/core/util/linux/env.cc \
+src/core/util/load_file.cc \
+src/core/util/load_file.h \
 src/core/util/log.cc \
+src/core/util/lru_cache.h \
+src/core/util/manual_constructor.h \
+src/core/util/match.h \
+src/core/util/matchers.cc \
+src/core/util/matchers.h \
+src/core/util/memory.h \
+src/core/util/mpscq.cc \
+src/core/util/mpscq.h \
 src/core/util/msys/tmpfile.cc \
+src/core/util/no_destruct.h \
+src/core/util/notification.h \
+src/core/util/orphanable.h \
+src/core/util/overload.h \
+src/core/util/packed_table.h \
+src/core/util/per_cpu.cc \
+src/core/util/per_cpu.h \
 src/core/util/posix/cpu.cc \
-src/core/util/posix/log.cc \
+src/core/util/posix/directory_reader.cc \
+src/core/util/posix/env.cc \
+src/core/util/posix/stat.cc \
 src/core/util/posix/string.cc \
 src/core/util/posix/sync.cc \
+src/core/util/posix/thd.cc \
 src/core/util/posix/time.cc \
 src/core/util/posix/tmpfile.cc \
+src/core/util/random_early_detection.cc \
+src/core/util/random_early_detection.h \
+src/core/util/ref_counted.h \
+src/core/util/ref_counted_ptr.h \
+src/core/util/ref_counted_string.cc \
+src/core/util/ref_counted_string.h \
 src/core/util/ring_buffer.h \
+src/core/util/single_set_ptr.h \
+src/core/util/sorted_pack.h \
 src/core/util/spinlock.h \
+src/core/util/stat.h \
+src/core/util/status_helper.cc \
+src/core/util/status_helper.h \
+src/core/util/strerror.cc \
+src/core/util/strerror.h \
 src/core/util/string.cc \
 src/core/util/string.h \
 src/core/util/sync.cc \
+src/core/util/sync.h \
 src/core/util/sync_abseil.cc \
+src/core/util/table.h \
+src/core/util/tchar.cc \
+src/core/util/tchar.h \
+src/core/util/thd.h \
 src/core/util/time.cc \
+src/core/util/time.h \
+src/core/util/time_averaged_stats.cc \
+src/core/util/time_averaged_stats.h \
 src/core/util/time_precise.cc \
 src/core/util/time_precise.h \
+src/core/util/time_util.cc \
+src/core/util/time_util.h \
 src/core/util/tmpfile.h \
+src/core/util/type_list.h \
 src/core/util/unique_ptr_with_bitset.h \
+src/core/util/unique_type_name.h \
 src/core/util/upb_utils.h \
+src/core/util/uri.cc \
+src/core/util/uri.h \
 src/core/util/useful.h \
+src/core/util/uuid_v4.cc \
+src/core/util/uuid_v4.h \
+src/core/util/validation_errors.cc \
+src/core/util/validation_errors.h \
+src/core/util/wait_for_single_owner.h \
 src/core/util/windows/cpu.cc \
-src/core/util/windows/log.cc \
+src/core/util/windows/directory_reader.cc \
+src/core/util/windows/env.cc \
+src/core/util/windows/stat.cc \
 src/core/util/windows/string.cc \
 src/core/util/windows/string_util.cc \
 src/core/util/windows/sync.cc \
+src/core/util/windows/thd.cc \
 src/core/util/windows/time.cc \
 src/core/util/windows/tmpfile.cc \
+src/core/util/work_serializer.cc \
+src/core/util/work_serializer.h \
+src/core/util/xxhash_inline.h \
 src/core/xds/grpc/certificate_provider_store.cc \
 src/core/xds/grpc/certificate_provider_store.h \
 src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
@@ -2779,6 +2805,8 @@ src/core/xds/grpc/xds_http_fault_filter.h \
 src/core/xds/grpc/xds_http_filter.h \
 src/core/xds/grpc/xds_http_filter_registry.cc \
 src/core/xds/grpc/xds_http_filter_registry.h \
+src/core/xds/grpc/xds_http_gcp_authn_filter.cc \
+src/core/xds/grpc/xds_http_gcp_authn_filter.h \
 src/core/xds/grpc/xds_http_rbac_filter.cc \
 src/core/xds/grpc/xds_http_rbac_filter.h \
 src/core/xds/grpc/xds_http_stateful_session_filter.cc \
@@ -2789,6 +2817,10 @@ src/core/xds/grpc/xds_listener.cc \
 src/core/xds/grpc/xds_listener.h \
 src/core/xds/grpc/xds_listener_parser.cc \
 src/core/xds/grpc/xds_listener_parser.h \
+src/core/xds/grpc/xds_metadata.cc \
+src/core/xds/grpc/xds_metadata.h \
+src/core/xds/grpc/xds_metadata_parser.cc \
+src/core/xds/grpc/xds_metadata_parser.h \
 src/core/xds/grpc/xds_route_config.cc \
 src/core/xds/grpc/xds_route_config.h \
 src/core/xds/grpc/xds_route_config_parser.cc \
@@ -2799,15 +2831,18 @@ src/core/xds/grpc/xds_server_grpc.cc \
 src/core/xds/grpc/xds_server_grpc.h \
 src/core/xds/grpc/xds_transport_grpc.cc \
 src/core/xds/grpc/xds_transport_grpc.h \
+src/core/xds/xds_client/lrs_client.cc \
+src/core/xds/xds_client/lrs_client.h \
 src/core/xds/xds_client/xds_api.cc \
 src/core/xds/xds_client/xds_api.h \
+src/core/xds/xds_client/xds_backend_metric_propagation.cc \
+src/core/xds/xds_client/xds_backend_metric_propagation.h \
 src/core/xds/xds_client/xds_bootstrap.cc \
 src/core/xds/xds_client/xds_bootstrap.h \
 src/core/xds/xds_client/xds_channel_args.h \
 src/core/xds/xds_client/xds_client.cc \
 src/core/xds/xds_client/xds_client.h \
-src/core/xds/xds_client/xds_client_stats.cc \
-src/core/xds/xds_client/xds_client_stats.h \
+src/core/xds/xds_client/xds_locality.h \
 src/core/xds/xds_client/xds_metrics.h \
 src/core/xds/xds_client/xds_resource_type.h \
 src/core/xds/xds_client/xds_resource_type_impl.h \
@@ -3460,7 +3495,7 @@ EXT_LINKS_IN_WINDOW    = NO
 
 FORMULA_FONTSIZE       = 10
 
-# Use the FORMULA_TRANPARENT tag to determine whether or not the images
+# Use the FORMULA_TRANSPARENT tag to determine whether or not the images
 # generated for formulas are transparent PNGs. Transparent PNGs are not
 # supported properly for IE 6.0, but are supported on all modern browsers.
 #
@@ -4035,7 +4070,7 @@ INCLUDE_FILE_PATTERNS  =
 # recursively expanded use the := operator instead of the = operator.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-PREDEFINED             = GRPC_FINAL= GRPC_OVERIDE=
+PREDEFINED             = GRPC_FINAL= GRPC_OVERRIDE=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

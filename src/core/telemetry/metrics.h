@@ -15,6 +15,9 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_METRICS_H
 #define GRPC_SRC_CORE_TELEMETRY_METRICS_H
 
+#include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <memory>
 #include <type_traits>
@@ -24,17 +27,12 @@
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/metrics.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -211,7 +209,7 @@ class GlobalInstrumentsRegistry {
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
   static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
       GlobalInstrumentHandle handle);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindInstrumentByName(absl::string_view name);
 
  private:
@@ -448,6 +446,8 @@ class GlobalStatsPluginRegistry {
       return false;
     }
 
+    size_t size() const { return plugins_state_.size(); }
+
     // Registers a callback to be used to populate callback metrics.
     // The callback will update the specified metrics.  The callback
     // will be invoked no more often than min_interval.  Multiple callbacks may
@@ -479,7 +479,6 @@ class GlobalStatsPluginRegistry {
       std::shared_ptr<StatsPlugin> plugin;
     };
 
-    // C++17 has fold expression that may simplify this.
     template <GlobalInstrumentsRegistry::ValueType V,
               GlobalInstrumentsRegistry::InstrumentType I, size_t M, size_t N>
     static constexpr void AssertIsCallbackGaugeHandle(
@@ -490,11 +489,6 @@ class GlobalStatsPluginRegistry {
       static_assert(
           I == GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge,
           "InstrumentType must be kCallbackGauge");
-    }
-    template <typename T, typename... Args>
-    static constexpr void AssertIsCallbackGaugeHandle(T t, Args&&... args) {
-      AssertIsCallbackGaugeHandle(t);
-      AssertIsCallbackGaugeHandle(args...);
     }
 
     std::vector<PluginState> plugins_state_;
@@ -510,13 +504,15 @@ class GlobalStatsPluginRegistry {
   static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);
 
  private:
+  struct GlobalStatsPluginNode {
+    std::shared_ptr<StatsPlugin> plugin;
+    GlobalStatsPluginNode* next = nullptr;
+  };
   friend class GlobalStatsPluginRegistryTestPeer;
 
   GlobalStatsPluginRegistry() = default;
 
-  static NoDestruct<Mutex> mutex_;
-  static NoDestruct<std::vector<std::shared_ptr<StatsPlugin>>> plugins_
-      ABSL_GUARDED_BY(mutex_);
+  static std::atomic<GlobalStatsPluginNode*> plugins_;
 };
 
 // A metric callback that is registered with a stats plugin group.
@@ -555,7 +551,7 @@ inline std::unique_ptr<RegisteredMetricCallback>
 GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
     absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
     Duration min_interval, Args... args) {
-  AssertIsCallbackGaugeHandle(args...);
+  (AssertIsCallbackGaugeHandle(args), ...);
   return std::make_unique<RegisteredMetricCallback>(
       *this, std::move(callback),
       std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{args...},

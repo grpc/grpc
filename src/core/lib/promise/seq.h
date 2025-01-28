@@ -15,17 +15,16 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_SEQ_H
 #define GRPC_SRC_CORE_LIB_PROMISE_SEQ_H
 
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <utility>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/seq_state.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/debug_location.h"
 
 namespace grpc_core {
 
@@ -47,12 +46,6 @@ struct SeqTraits {
   template <typename R>
   static R ReturnValue(T&&) {
     abort();
-  }
-  template <typename F, typename Elem>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallSeqFactory(F& f,
-                                                                  Elem&& elem,
-                                                                  T&& value) {
-    return f(std::forward<Elem>(elem), std::forward<T>(value));
   }
   template <typename Result, typename PriorResult, typename RunNext>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
@@ -78,25 +71,8 @@ class Seq {
   SeqState<SeqTraits, P, Fs...> state_;
 };
 
-template <typename I, typename F, typename Arg>
-struct SeqIterTraits {
-  using Iter = I;
-  using Factory = F;
-  using Argument = Arg;
-  using IterValue = decltype(*std::declval<Iter>());
-  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                                  std::declval<Arg>()));
-  using State = PromiseLike<StateCreated>;
-  using Wrapped = typename State::Result;
-
-  using Traits = SeqTraits<Wrapped>;
-};
-
 template <typename Iter, typename Factory, typename Argument>
-struct SeqIterResultTraits {
-  using IterTraits = SeqIterTraits<Iter, Factory, Argument>;
-  using Result = BasicSeqIter<IterTraits>;
-};
+using SeqIter = BasicSeqIter<SeqTraits, Iter, Factory, Argument>;
 
 }  // namespace promise_detail
 
@@ -107,32 +83,33 @@ struct SeqIterResultTraits {
 // etc
 // Return the final value.
 template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION F Seq(F functor) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F Seq(F functor) {
   return functor;
 }
 
 template <typename F0, typename F1>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Seq<F0, F1> Seq(
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1> Seq(
     F0 f0, F1 f1, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1>(std::move(f0), std::move(f1), whence);
 }
 
 template <typename F0, typename F1, typename F2>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Seq<F0, F1, F2> Seq(
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2> Seq(
     F0 f0, F1 f1, F2 f2, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2>(std::move(f0), std::move(f1),
                                          std::move(f2), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Seq<F0, F1, F2, F3> Seq(
-    F0 f0, F1 f1, F2 f2, F3 f3, DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2, F3>
+Seq(F0 f0, F1 f1, F2 f2, F3 f3, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Seq<F0, F1, F2, F3, F4>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2, F3,
+                                                                F4>
 Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3, F4>(std::move(f0), std::move(f1),
                                                  std::move(f2), std::move(f3),
@@ -141,7 +118,8 @@ Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, DebugLocation whence = {}) {
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Seq<F0, F1, F2, F3, F4, F5>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2, F3,
+                                                                F4, F5>
 Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3, F4, F5>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
@@ -226,11 +204,11 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-typename promise_detail::SeqIterResultTraits<Iter, Factory, Argument>::Result
-SeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
-  using Result = typename promise_detail::SeqIterResultTraits<Iter, Factory,
-                                                              Argument>::Result;
-  return Result(begin, end, std::move(factory), std::move(argument));
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqIter(Iter begin, Iter end,
+                                                  Argument argument,
+                                                  Factory factory) {
+  return promise_detail::SeqIter<Iter, Factory, Argument>(
+      begin, end, std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core

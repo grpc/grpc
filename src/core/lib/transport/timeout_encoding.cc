@@ -18,14 +18,13 @@
 
 #include "src/core/lib/transport/timeout_encoding.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+
 #include <limits>
 
 #include "absl/base/attributes.h"
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
 
 namespace grpc_core {
 
@@ -110,19 +109,19 @@ Slice Timeout::Encode() const {
     case 5:
       *p++ = '0' + n / 10000;
       n %= 10000;
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 4:
       *p++ = '0' + n / 1000;
       n %= 1000;
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 3:
       *p++ = '0' + n / 100;
       n %= 100;
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 2:
       *p++ = '0' + n / 10;
       n %= 10;
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 1:
       *p++ = '0' + n;
   }
@@ -132,28 +131,28 @@ Slice Timeout::Encode() const {
       break;
     case Unit::kHundredMilliseconds:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kTenMilliseconds:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kMilliseconds:
       *p++ = 'm';
       break;
     case Unit::kHundredSeconds:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kTenSeconds:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kSeconds:
       *p++ = 'S';
       break;
     case Unit::kHundredMinutes:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kTenMinutes:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kMinutes:
       *p++ = 'M';
       break;
@@ -230,7 +229,7 @@ Timeout Timeout::FromHours(int64_t hours) {
   return Timeout(kMaxHours, Unit::kHours);
 }
 
-absl::optional<Duration> ParseTimeout(const Slice& text) {
+std::optional<Duration> ParseTimeout(const Slice& text) {
   int32_t x = 0;
   const uint8_t* p = text.begin();
   const uint8_t* end = text.end();
@@ -250,21 +249,21 @@ absl::optional<Duration> ParseTimeout(const Slice& text) {
     }
     x = x * 10 + digit;
   }
-  if (!have_digit) return absl::nullopt;
+  if (!have_digit) return std::nullopt;
   // skip whitespace
   for (; p != end && *p == ' '; p++) {
   }
-  if (p == end) return absl::nullopt;
+  if (p == end) return std::nullopt;
   // decode unit specifier
   Duration timeout;
   switch (*p) {
     case 'n':
-      timeout =
-          Duration::Milliseconds(x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0));
+      timeout = Duration::Milliseconds((x / GPR_NS_PER_MS) +
+                                       (x % GPR_NS_PER_MS != 0));
       break;
     case 'u':
-      timeout =
-          Duration::Milliseconds(x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0));
+      timeout = Duration::Milliseconds((x / GPR_US_PER_MS) +
+                                       (x % GPR_US_PER_MS != 0));
       break;
     case 'm':
       timeout = Duration::Milliseconds(x);
@@ -279,10 +278,10 @@ absl::optional<Duration> ParseTimeout(const Slice& text) {
       timeout = Duration::Hours(x);
       break;
     default:
-      return absl::nullopt;
+      return std::nullopt;
   }
   p++;
-  if (!IsAllSpace(p, end)) return absl::nullopt;
+  if (!IsAllSpace(p, end)) return std::nullopt;
   return timeout;
 }
 

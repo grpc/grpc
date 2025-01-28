@@ -3,7 +3,8 @@
  *     envoy/service/status/v3/csds.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -21,9 +22,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_service_status_v3_ClientStatusRequest_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__NodeMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_service_status_v3_ClientStatusRequest__submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__NodeMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_service_status_v3_ClientStatusRequest__fields[3] = {
@@ -33,7 +35,7 @@ static const upb_MiniTableField envoy_service_status_v3_ClientStatusRequest__fie
 };
 
 const upb_MiniTable envoy__service__status__v3__ClientStatusRequest_msg_init = {
-  &envoy_service_status_v3_ClientStatusRequest_submsgs[0],
+  &envoy_service_status_v3_ClientStatusRequest__submsgs[0],
   &envoy_service_status_v3_ClientStatusRequest__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -47,12 +49,13 @@ const upb_MiniTable envoy__service__status__v3__ClientStatusRequest_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_service_status_v3_PerXdsConfig_submsgs[5] = {
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__ListenersConfigDump_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__ClustersConfigDump_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__RoutesConfigDump_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__ScopedRoutesConfigDump_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__EndpointsConfigDump_msg_init},
+const upb_MiniTable* envoy__service__status__v3__ClientStatusRequest_msg_init_ptr = &envoy__service__status__v3__ClientStatusRequest_msg_init;
+static const upb_MiniTableSubInternal envoy_service_status_v3_PerXdsConfig__submsgs[5] = {
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__ListenersConfigDump_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__ClustersConfigDump_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__RoutesConfigDump_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__ScopedRoutesConfigDump_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__EndpointsConfigDump_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_service_status_v3_PerXdsConfig__fields[7] = {
@@ -66,7 +69,7 @@ static const upb_MiniTableField envoy_service_status_v3_PerXdsConfig__fields[7] 
 };
 
 const upb_MiniTable envoy__service__status__v3__PerXdsConfig_msg_init = {
-  &envoy_service_status_v3_PerXdsConfig_submsgs[0],
+  &envoy_service_status_v3_PerXdsConfig__submsgs[0],
   &envoy_service_status_v3_PerXdsConfig__fields[0],
   UPB_SIZE(24, 32), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -84,10 +87,11 @@ const upb_MiniTable envoy__service__status__v3__PerXdsConfig_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_service_status_v3_ClientConfig_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__service__status__v3__PerXdsConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__service__status__v3__ClientConfig__GenericXdsConfig_msg_init},
+const upb_MiniTable* envoy__service__status__v3__PerXdsConfig_msg_init_ptr = &envoy__service__status__v3__PerXdsConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_service_status_v3_ClientConfig__submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__service__status__v3__PerXdsConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__service__status__v3__ClientConfig__GenericXdsConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_service_status_v3_ClientConfig__fields[4] = {
@@ -98,7 +102,7 @@ static const upb_MiniTableField envoy_service_status_v3_ClientConfig__fields[4] 
 };
 
 const upb_MiniTable envoy__service__status__v3__ClientConfig_msg_init = {
-  &envoy_service_status_v3_ClientConfig_submsgs[0],
+  &envoy_service_status_v3_ClientConfig__submsgs[0],
   &envoy_service_status_v3_ClientConfig__fields[0],
   UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -116,10 +120,11 @@ const upb_MiniTable envoy__service__status__v3__ClientConfig_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_service_status_v3_ClientConfig_GenericXdsConfig_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__UpdateFailureState_msg_init},
+const upb_MiniTable* envoy__service__status__v3__ClientConfig_msg_init_ptr = &envoy__service__status__v3__ClientConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_service_status_v3_ClientConfig_GenericXdsConfig__submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__UpdateFailureState_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_service_status_v3_ClientConfig_GenericXdsConfig__fields[9] = {
@@ -135,7 +140,7 @@ static const upb_MiniTableField envoy_service_status_v3_ClientConfig_GenericXdsC
 };
 
 const upb_MiniTable envoy__service__status__v3__ClientConfig__GenericXdsConfig_msg_init = {
-  &envoy_service_status_v3_ClientConfig_GenericXdsConfig_submsgs[0],
+  &envoy_service_status_v3_ClientConfig_GenericXdsConfig__submsgs[0],
   &envoy_service_status_v3_ClientConfig_GenericXdsConfig__fields[0],
   UPB_SIZE(64, 96), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -161,8 +166,9 @@ const upb_MiniTable envoy__service__status__v3__ClientConfig__GenericXdsConfig_m
   })
 };
 
-static const upb_MiniTableSub envoy_service_status_v3_ClientStatusResponse_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__service__status__v3__ClientConfig_msg_init},
+const upb_MiniTable* envoy__service__status__v3__ClientConfig__GenericXdsConfig_msg_init_ptr = &envoy__service__status__v3__ClientConfig__GenericXdsConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_service_status_v3_ClientStatusResponse__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__service__status__v3__ClientConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_service_status_v3_ClientStatusResponse__fields[1] = {
@@ -170,7 +176,7 @@ static const upb_MiniTableField envoy_service_status_v3_ClientStatusResponse__fi
 };
 
 const upb_MiniTable envoy__service__status__v3__ClientStatusResponse_msg_init = {
-  &envoy_service_status_v3_ClientStatusResponse_submsgs[0],
+  &envoy_service_status_v3_ClientStatusResponse__submsgs[0],
   &envoy_service_status_v3_ClientStatusResponse__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -182,6 +188,7 @@ const upb_MiniTable envoy__service__status__v3__ClientStatusResponse_msg_init = 
   })
 };
 
+const upb_MiniTable* envoy__service__status__v3__ClientStatusResponse_msg_init_ptr = &envoy__service__status__v3__ClientStatusResponse_msg_init;
 static const upb_MiniTable *messages_layout[5] = {
   &envoy__service__status__v3__ClientStatusRequest_msg_init,
   &envoy__service__status__v3__PerXdsConfig_msg_init,

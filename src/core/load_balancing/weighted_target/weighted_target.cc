@@ -16,12 +16,16 @@
 
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -36,22 +40,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -62,9 +53,16 @@
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/util/work_serializer.h"
 
 // IWYU pragma: no_include <type_traits>
 
@@ -202,7 +200,7 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
       void OnTimerLocked();
 
       RefCountedPtr<WeightedChild> weighted_child_;
-      absl::optional<EventEngine::TaskHandle> timer_handle_;
+      std::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     // Methods for dealing with the child policy.
@@ -302,7 +300,7 @@ void WeightedTargetLb::ShutdownLocked() {
 }
 
 void WeightedTargetLb::ResetBackoffLocked() {
-  for (auto& p : targets_) p.second->ResetBackoffLocked();
+  for (auto& [_, child] : targets_) child->ResetBackoffLocked();
 }
 
 absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
@@ -313,9 +311,7 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = args.config.TakeAsSubclass<WeightedTargetLbConfig>();
   // Deactivate the targets not in the new config.
-  for (const auto& p : targets_) {
-    const std::string& name = p.first;
-    WeightedChild* child = p.second.get();
+  for (const auto& [name, child] : targets_) {
     if (config_->target_map().find(name) == config_->target_map().end()) {
       child->DeactivateLocked();
     }
@@ -324,9 +320,7 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   absl::StatusOr<HierarchicalAddressMap> address_map =
       MakeHierarchicalAddressMap(args.addresses);
   std::vector<std::string> errors;
-  for (const auto& p : config_->target_map()) {
-    const std::string& name = p.first;
-    const WeightedTargetLbConfig::ChildConfig& config = p.second;
+  for (const auto& [name, config] : config_->target_map()) {
     auto& target = targets_[name];
     // Create child if it does not already exist.
     if (target == nullptr) {
@@ -394,21 +388,16 @@ void WeightedTargetLb::UpdateStateLocked() {
   // the aggregated state.
   size_t num_connecting = 0;
   size_t num_idle = 0;
-  for (const auto& p : targets_) {
-    const std::string& child_name = p.first;
-    const WeightedChild* child = p.second.get();
+  for (const auto& [child_name, child] : targets_) {
     // Skip the targets that are not in the latest update.
     if (config_->target_map().find(child_name) == config_->target_map().end()) {
       continue;
     }
     auto child_picker = child->picker();
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-      LOG(INFO) << "[weighted_target_lb " << this << "]   child=" << child_name
-                << " state="
-                << ConnectivityStateName(child->connectivity_state())
-                << " weight=" << child->weight()
-                << " picker=" << child_picker.get();
-    }
+    GRPC_TRACE_LOG(weighted_target_lb, INFO)
+        << "[weighted_target_lb " << this << "]   child=" << child_name
+        << " state=" << ConnectivityStateName(child->connectivity_state())
+        << " weight=" << child->weight() << " picker=" << child_picker.get();
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
         CHECK_GT(child->weight(), 0u);
@@ -488,13 +477,11 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
   if (timer_handle_.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-      LOG(INFO) << "[weighted_target_lb "
-                << weighted_child_->weighted_target_policy_.get()
-                << "] WeightedChild " << weighted_child_.get() << " "
-                << weighted_child_->name_
-                << ": cancelling delayed removal timer";
-    }
+    GRPC_TRACE_LOG(weighted_target_lb, INFO)
+        << "[weighted_target_lb "
+        << weighted_child_->weighted_target_policy_.get() << "] WeightedChild "
+        << weighted_child_.get() << " " << weighted_child_->name_
+        << ": cancelling delayed removal timer";
     weighted_child_->weighted_target_policy_->channel_control_helper()
         ->GetEventEngine()
         ->Cancel(*timer_handle_);
@@ -619,13 +606,11 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
     RefCountedPtr<SubchannelPicker> picker) {
   // Cache the picker in the WeightedChild.
   picker_ = std::move(picker);
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-    LOG(INFO) << "[weighted_target_lb " << weighted_target_policy_.get()
-              << "] WeightedChild " << this << " " << name_
-              << ": connectivity state update: state="
-              << ConnectivityStateName(state) << " (" << status
-              << ") picker=" << picker_.get();
-  }
+  GRPC_TRACE_LOG(weighted_target_lb, INFO)
+      << "[weighted_target_lb " << weighted_target_policy_.get()
+      << "] WeightedChild " << this << " " << name_
+      << ": connectivity state update: state=" << ConnectivityStateName(state)
+      << " (" << status << ") picker=" << picker_.get();
   // If the child reports IDLE, immediately tell it to exit idle.
   if (state == GRPC_CHANNEL_IDLE) child_policy_->ExitIdleLocked();
   // Decide what state to report for aggregation purposes.

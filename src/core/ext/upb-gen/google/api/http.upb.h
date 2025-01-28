@@ -3,14 +3,16 @@
  *     google/api/http.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_API_HTTP_PROTO_UPB_H_
-#define GOOGLE_API_HTTP_PROTO_UPB_H_
+#ifndef GOOGLE_API_HTTP_PROTO_UPB_H__UPB_H_
+#define GOOGLE_API_HTTP_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
 #include "google/api/http.upb_minitable.h"
+
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -67,6 +69,7 @@ UPB_INLINE void google_api_Http_clear_rules(google_api_Http* msg) {
 }
 UPB_INLINE const google_api_HttpRule* const* google_api_Http_rules(const google_api_Http* msg, size_t* size) {
   const upb_MiniTableField field = {1, UPB_SIZE(8, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__HttpRule_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -78,6 +81,7 @@ UPB_INLINE const google_api_HttpRule* const* google_api_Http_rules(const google_
 }
 UPB_INLINE const upb_Array* _google_api_Http_rules_upb_array(const google_api_Http* msg, size_t* size) {
   const upb_MiniTableField field = {1, UPB_SIZE(8, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__HttpRule_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -86,6 +90,7 @@ UPB_INLINE const upb_Array* _google_api_Http_rules_upb_array(const google_api_Ht
 }
 UPB_INLINE upb_Array* _google_api_Http_rules_mutable_upb_array(google_api_Http* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {1, UPB_SIZE(8, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__HttpRule_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -108,6 +113,7 @@ UPB_INLINE bool google_api_Http_fully_decode_reserved_expansion(const google_api
 
 UPB_INLINE google_api_HttpRule** google_api_Http_mutable_rules(google_api_Http* msg, size_t* size) {
   upb_MiniTableField field = {1, UPB_SIZE(8, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__HttpRule_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -124,6 +130,7 @@ UPB_INLINE google_api_HttpRule** google_api_Http_resize_rules(google_api_Http* m
 }
 UPB_INLINE struct google_api_HttpRule* google_api_Http_add_rules(google_api_Http* msg, upb_Arena* arena) {
   upb_MiniTableField field = {1, UPB_SIZE(8, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__HttpRule_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -303,6 +310,7 @@ UPB_INLINE const google_api_CustomHttpPattern* google_api_HttpRule_custom(const 
   const google_api_CustomHttpPattern* default_val = NULL;
   const google_api_CustomHttpPattern* ret;
   const upb_MiniTableField field = {8, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__CustomHttpPattern_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -317,6 +325,7 @@ UPB_INLINE void google_api_HttpRule_clear_additional_bindings(google_api_HttpRul
 }
 UPB_INLINE const google_api_HttpRule* const* google_api_HttpRule_additional_bindings(const google_api_HttpRule* msg, size_t* size) {
   const upb_MiniTableField field = {11, UPB_SIZE(12, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__HttpRule_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -328,6 +337,7 @@ UPB_INLINE const google_api_HttpRule* const* google_api_HttpRule_additional_bind
 }
 UPB_INLINE const upb_Array* _google_api_HttpRule_additional_bindings_upb_array(const google_api_HttpRule* msg, size_t* size) {
   const upb_MiniTableField field = {11, UPB_SIZE(12, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__HttpRule_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -336,6 +346,7 @@ UPB_INLINE const upb_Array* _google_api_HttpRule_additional_bindings_upb_array(c
 }
 UPB_INLINE upb_Array* _google_api_HttpRule_additional_bindings_mutable_upb_array(google_api_HttpRule* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {11, UPB_SIZE(12, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__HttpRule_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -386,6 +397,7 @@ UPB_INLINE void google_api_HttpRule_set_body(google_api_HttpRule *msg, upb_Strin
 }
 UPB_INLINE void google_api_HttpRule_set_custom(google_api_HttpRule *msg, google_api_CustomHttpPattern* value) {
   const upb_MiniTableField field = {8, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__CustomHttpPattern_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_api_CustomHttpPattern* google_api_HttpRule_mutable_custom(google_api_HttpRule* msg, upb_Arena* arena) {
@@ -398,6 +410,7 @@ UPB_INLINE struct google_api_CustomHttpPattern* google_api_HttpRule_mutable_cust
 }
 UPB_INLINE google_api_HttpRule** google_api_HttpRule_mutable_additional_bindings(google_api_HttpRule* msg, size_t* size) {
   upb_MiniTableField field = {11, UPB_SIZE(12, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__HttpRule_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -414,6 +427,7 @@ UPB_INLINE google_api_HttpRule** google_api_HttpRule_resize_additional_bindings(
 }
 UPB_INLINE struct google_api_HttpRule* google_api_HttpRule_add_additional_bindings(google_api_HttpRule* msg, upb_Arena* arena) {
   upb_MiniTableField field = {11, UPB_SIZE(12, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__HttpRule_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -507,4 +521,4 @@ UPB_INLINE void google_api_CustomHttpPattern_set_path(google_api_CustomHttpPatte
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_API_HTTP_PROTO_UPB_H_ */
+#endif  /* GOOGLE_API_HTTP_PROTO_UPB_H__UPB_H_ */

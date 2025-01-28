@@ -18,6 +18,19 @@
 
 #include "src/core/lib/surface/call.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -42,21 +55,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/call.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -64,15 +62,6 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/cpp_impl_of.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -105,6 +94,15 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/cpp_impl_of.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/match.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 
@@ -336,11 +334,9 @@ void Call::HandleCompressionAlgorithmDisabled(
 
 void Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    LOG(INFO) << "[call " << this
-              << "] UpdateDeadline from=" << deadline_.ToString()
-              << " to=" << deadline.ToString();
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call " << this << "] UpdateDeadline from=" << deadline_.ToString()
+      << " to=" << deadline.ToString();
   if (deadline >= deadline_) return;
   if (deadline < Timestamp::Now()) {
     lock.Release();
@@ -494,6 +490,13 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
 void grpc_call_tracer_set(grpc_call* call,
                           grpc_core::ClientCallTracer* tracer) {
   grpc_core::Arena* arena = grpc_call_get_arena(call);
+  return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+}
+
+void grpc_call_tracer_set_and_manage(grpc_call* call,
+                                     grpc_core::ClientCallTracer* tracer) {
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  arena->ManagedNew<ClientCallTracerWrapper>(tracer);
   return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
 }
 

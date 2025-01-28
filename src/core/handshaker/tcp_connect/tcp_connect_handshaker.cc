@@ -18,7 +18,13 @@
 
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -26,24 +32,13 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -54,7 +49,10 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 

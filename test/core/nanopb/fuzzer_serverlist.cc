@@ -16,11 +16,9 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 #include <string.h>
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "test/core/test_util/test_config.h"
 

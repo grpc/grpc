@@ -29,6 +29,9 @@
 // configurations and assess whether such a change is correct and desirable.
 //
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -38,15 +41,10 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

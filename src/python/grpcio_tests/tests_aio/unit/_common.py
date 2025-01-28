@@ -51,7 +51,7 @@ def inject_callbacks(call: aio.Call):
     first_callback_ran = asyncio.Event()
 
     def first_callback(call):
-        # Validate that all resopnses have been received
+        # Validate that all responses have been received
         # and the call is an end state.
         assert call.done()
         first_callback_ran.set()

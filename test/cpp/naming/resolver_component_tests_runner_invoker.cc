@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
 #include <signal.h>
 #include <string.h>
-
-#include <grpc/support/port_platform.h>
 
 #ifndef GPR_WINDOWS
 #include <unistd.h>
 #endif  // GPR_WINDOWS
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 #include <memory>
 #include <string>
@@ -30,18 +33,13 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 #ifdef __FreeBSD__
 #include <sys/wait.h>
 #endif
 
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/env.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
@@ -114,7 +112,7 @@ int main(int argc, char** argv) {
         test_srcdir.value() +
         absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir) +
         std::string("/test/cpp/naming");
-    // Invoke bazel's executeable links to the .sh and .py scripts (don't use
+    // Invoke bazel's executable links to the .sh and .py scripts (don't use
     // the .sh and .py suffixes) to make
     // sure that we're using bazel's test environment.
     result = grpc::testing::InvokeResolverComponentTestsRunner(

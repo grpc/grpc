@@ -17,12 +17,15 @@
 //
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/thd_id.h>
 #include <inttypes.h>
 
 #include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -30,22 +33,17 @@
 #include "absl/log/log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/thd_id.h>
-
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/examine_stack.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/examine_stack.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/time.h"
 
 #ifdef GPR_POSIX_SYNC
 #include <csignal>
@@ -103,8 +101,7 @@
 // backtrace will be printed for every running thread, and the process will
 // abort.
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 // TODO(ctiller): grpc_core::Timestamp, Duration have very specific contracts
@@ -118,7 +115,7 @@ namespace {
 constexpr auto kIdleThreadLimit = std::chrono::seconds(20);
 // Rate at which "Waiting for ..." logs should be printed while quiescing.
 constexpr size_t kBlockingQuiesceLogRateSeconds = 3;
-// Minumum time between thread creations.
+// Minimum time between thread creations.
 constexpr grpc_core::Duration kTimeBetweenThrottledThreadStarts =
     grpc_core::Duration::Seconds(1);
 // Minimum time a worker thread should sleep between checking for new work. Used
@@ -400,9 +397,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
       if (pool_->IsQuiesced()) break;
     } else {
       lifeguard_should_shut_down_->WaitForNotificationWithTimeout(
-          absl::Milliseconds(
-              (backoff_.NextAttemptTime() - grpc_core::Timestamp::Now())
-                  .millis()));
+          absl::Milliseconds(backoff_.NextAttemptDelay().millis()));
     }
     MaybeStartNewThread();
   }
@@ -556,8 +551,8 @@ bool WorkStealingThreadPool::ThreadState::Step() {
     // No closures were retrieved from anywhere.
     // Quit the thread if the pool has been shut down.
     if (pool_->IsShutdown()) break;
-    bool timed_out = pool_->work_signal()->WaitWithTimeout(
-        backoff_.NextAttemptTime() - grpc_core::Timestamp::Now());
+    bool timed_out =
+        pool_->work_signal()->WaitWithTimeout(backoff_.NextAttemptDelay());
     if (pool_->IsForking() || pool_->IsShutdown()) break;
     // Quit a thread if the pool has more than it requires, and this thread
     // has been idle long enough.
@@ -624,5 +619,4 @@ bool WorkStealingThreadPool::WorkSignal::WaitWithTimeout(
   return cv_.WaitWithTimeout(&mu_, absl::Milliseconds(time.millis()));
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

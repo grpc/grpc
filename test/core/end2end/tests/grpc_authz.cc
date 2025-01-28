@@ -12,23 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <string>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/tls_utils.h"
 
@@ -327,7 +325,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInvalidPolicySkipReload) {
           on_reload_done.Notify();
         }
       });
-  // Replace exisiting policy in file with an invalid policy.
+  // Replace existing policy in file with an invalid policy.
   tmp_policy.file().RewriteFile("{}");
   on_reload_done.WaitForNotification();
   TestAllowAuthorizedRequest(*this);
@@ -359,7 +357,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherRecoversFromFailure) {
           on_first_reload_done.Notify();
         }
       });
-  // Replace exisiting policy in file with an invalid policy.
+  // Replace existing policy in file with an invalid policy.
   tmp_policy.file().RewriteFile("{}");
   on_first_reload_done.WaitForNotification();
   TestAllowAuthorizedRequest(*this);

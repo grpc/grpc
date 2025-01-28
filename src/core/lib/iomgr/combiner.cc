@@ -19,20 +19,18 @@
 #include "src/core/lib/iomgr/combiner.h"
 
 #include <assert.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/mpscq.h"
 
 #define STATE_UNORPHANED 1
 #define STATE_ELEM_COUNT_LOW_BIT 2
@@ -71,14 +69,12 @@ static void start_destroy(grpc_core::Combiner* lock) {
 }
 
 #ifndef NDEBUG
-#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                            \
-  if (GRPC_TRACE_FLAG_ENABLED(combiner)) {                             \
-    VLOG(2).AtLocation(file, line)                                     \
-        << "C:" << lock << " " << (op) << " "                          \
-        << gpr_atm_no_barrier_load(&lock->refs.count) << " --> "       \
-        << gpr_atm_no_barrier_load(&lock->refs.count) + (delta) << " " \
-        << reason;                                                     \
-  }
+#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                          \
+  GRPC_TRACE_VLOG(combiner, 2).AtLocation(file, line)                \
+      << "C:" << lock << " " << (op) << " "                          \
+      << gpr_atm_no_barrier_load(&lock->refs.count) << " --> "       \
+      << gpr_atm_no_barrier_load(&lock->refs.count) + (delta) << " " \
+      << reason;
 #else
 #define GRPC_COMBINER_DEBUG_SPAM(op, delta)
 #endif

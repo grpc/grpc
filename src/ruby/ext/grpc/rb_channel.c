@@ -20,6 +20,12 @@
 
 #include "rb_channel.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <ruby/thread.h>
 
 #include "rb_byte_buffer.h"
@@ -31,13 +37,6 @@
 #include "rb_grpc_imports.generated.h"
 #include "rb_server.h"
 #include "rb_xds_channel_credentials.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 /* id_channel is the name of the hidden ivar that preserves a reference to the
  * channel on a call, so that calls are not GCed before their channel.  */
@@ -655,7 +654,7 @@ static void* run_poll_channels_loop_no_gil(void* arg) {
   watch_state_op* op = NULL;
   bg_watched_channel* bg = NULL;
   (void)arg;
-  gpr_log(GPR_DEBUG, "GRPC_RUBY: run_poll_channels_loop_no_gil - begin");
+  grpc_absl_log(GPR_DEBUG, "GRPC_RUBY: run_poll_channels_loop_no_gil - begin");
 
   gpr_mu_lock(&global_connection_polling_mu);
   gpr_cv_broadcast(&global_connection_polling_cv);
@@ -685,9 +684,10 @@ static void* run_poll_channels_loop_no_gil(void* arg) {
     gpr_mu_unlock(&global_connection_polling_mu);
   }
   grpc_completion_queue_destroy(g_channel_polling_cq);
-  gpr_log(GPR_DEBUG,
-          "GRPC_RUBY: run_poll_channels_loop_no_gil - exit connection polling "
-          "loop");
+  grpc_absl_log(
+      GPR_DEBUG,
+      "GRPC_RUBY: run_poll_channels_loop_no_gil - exit connection polling "
+      "loop");
   return NULL;
 }
 
@@ -701,9 +701,10 @@ static void* run_poll_channels_loop_unblocking_func_wrapper(void* arg) {
   (void)arg;
 
   gpr_mu_lock(&global_connection_polling_mu);
-  gpr_log(GPR_DEBUG,
-          "GRPC_RUBY: run_poll_channels_loop_unblocking_func - begin aborting "
-          "connection polling");
+  grpc_absl_log(
+      GPR_DEBUG,
+      "GRPC_RUBY: run_poll_channels_loop_unblocking_func - begin aborting "
+      "connection polling");
   // early out after first time through
   if (g_abort_channel_polling) {
     gpr_mu_unlock(&global_connection_polling_mu);
@@ -721,21 +722,23 @@ static void* run_poll_channels_loop_unblocking_func_wrapper(void* arg) {
     bg = bg->next;
   }
 
-  gpr_log(GPR_DEBUG, "GRPC_RUBY: cq shutdown on global polling cq. pid: %d",
-          getpid());
+  grpc_absl_log_int(
+      GPR_DEBUG,
+      "GRPC_RUBY: cq shutdown on global polling cq. pid: ", getpid());
   grpc_completion_queue_shutdown(g_channel_polling_cq);
   gpr_cv_broadcast(&global_connection_polling_cv);
   gpr_mu_unlock(&global_connection_polling_mu);
-  gpr_log(GPR_DEBUG,
-          "GRPC_RUBY: run_poll_channels_loop_unblocking_func - end aborting "
-          "connection polling");
+  grpc_absl_log(
+      GPR_DEBUG,
+      "GRPC_RUBY: run_poll_channels_loop_unblocking_func - end aborting "
+      "connection polling");
   return NULL;
 }
 
 // Poll channel connectivity states in background thread without the GIL.
 static VALUE run_poll_channels_loop(void* arg) {
   (void)arg;
-  gpr_log(
+  grpc_absl_log(
       GPR_DEBUG,
       "GRPC_RUBY: run_poll_channels_loop - create connection polling thread");
   rb_thread_call_without_gvl(run_poll_channels_loop_no_gil, NULL,
@@ -777,7 +780,8 @@ void grpc_rb_channel_polling_thread_start() {
   g_channel_polling_thread = rb_thread_create(run_poll_channels_loop, NULL);
 
   if (!RTEST(g_channel_polling_thread)) {
-    gpr_log(GPR_ERROR, "GRPC_RUBY: failed to spawn channel polling thread");
+    grpc_absl_log(GPR_ERROR,
+                  "GRPC_RUBY: failed to spawn channel polling thread");
     rb_thread_call_without_gvl(set_abort_channel_polling_without_gil, NULL,
                                NULL, NULL);
     return;
@@ -786,8 +790,9 @@ void grpc_rb_channel_polling_thread_start() {
 
 void grpc_rb_channel_polling_thread_stop() {
   if (!RTEST(g_channel_polling_thread)) {
-    gpr_log(GPR_ERROR,
-            "GRPC_RUBY: channel polling thread stop: thread was not started");
+    grpc_absl_log(
+        GPR_ERROR,
+        "GRPC_RUBY: channel polling thread stop: thread was not started");
     return;
   }
   rb_thread_call_without_gvl(run_poll_channels_loop_unblocking_func_wrapper,

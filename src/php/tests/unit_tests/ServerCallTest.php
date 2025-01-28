@@ -236,7 +236,7 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
         $status = \Grpc\Status::status(
             \Grpc\STATUS_INVALID_ARGUMENT,
             "invalid argument",
-            ['trailiingMeta' => 100]
+            ['trailingMeta' => 100]
         );
 
         $this->mockCall->expects($this->once())
@@ -259,7 +259,7 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
     {
         $metadata = ['a' => 1];
         $message = $this->newStringMessage();
-        $status = \Grpc\Status::ok(['trailiingMeta' => 100]);
+        $status = \Grpc\Status::ok(['trailingMeta' => 100]);
 
         $this->mockCall->expects($this->once())
             ->method('startBatch')

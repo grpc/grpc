@@ -18,7 +18,6 @@
 #include <thread>
 
 #include "gtest/gtest.h"
-
 #include "src/core/lib/experiments/experiments.h"
 
 namespace grpc_core {
@@ -77,8 +76,8 @@ TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
   policy.SentPing();
   // Second ping is throttled since no data has been sent.
   auto result = policy.RequestSendPing(Duration::Zero(), 0);
-  EXPECT_TRUE(absl::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
-  EXPECT_EQ(absl::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
+  EXPECT_TRUE(std::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
+  EXPECT_EQ(std::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
             Duration::Minutes(1));
   policy.ResetPingsBeforeDataRequired();
   // After resetting pings before data required (data sent), we can send pings
@@ -89,8 +88,8 @@ TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
   policy.SentPing();
   // After reaching limit, we are throttled again.
   result = policy.RequestSendPing(Duration::Zero(), 0);
-  EXPECT_TRUE(absl::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
-  EXPECT_EQ(absl::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
+  EXPECT_TRUE(std::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
+  EXPECT_EQ(std::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
             Duration::Minutes(1));
 }
 

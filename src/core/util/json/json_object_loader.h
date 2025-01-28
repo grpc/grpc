@@ -21,6 +21,7 @@
 #include <cstring>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -30,14 +31,12 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
 
 // Provides a means to load JSON objects into C++ objects, with the aim of
 // minimizing object code size.
@@ -389,15 +388,15 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
   ~AutoLoader() = default;
 };
 
-// Specializations of AutoLoader for absl::optional<>.
+// Specializations of AutoLoader for std::optional<>.
 template <typename T>
-class AutoLoader<absl::optional<T>> final : public LoadWrapped {
+class AutoLoader<std::optional<T>> final : public LoadWrapped {
  public:
   void* Emplace(void* dst) const final {
-    return &static_cast<absl::optional<T>*>(dst)->emplace();
+    return &static_cast<std::optional<T>*>(dst)->emplace();
   }
   void Reset(void* dst) const final {
-    static_cast<absl::optional<T>*>(dst)->reset();
+    static_cast<std::optional<T>*>(dst)->reset();
   }
   const LoaderInterface* ElementLoader() const final {
     return LoaderForType<T>();
@@ -458,7 +457,7 @@ const LoaderInterface* LoaderForType() {
 struct Element {
   Element() = default;
   template <typename A, typename B>
-  Element(const char* name, bool optional, B A::*p,
+  Element(const char* name, bool optional, B A::* p,
           const LoaderInterface* loader, const char* enable_key)
       : loader(loader),
         member_offset(static_cast<uint16_t>(
@@ -565,13 +564,13 @@ class JsonObjectLoader final {
 
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1> Field(
-      const char* name, U T::*p, const char* enable_key = nullptr) const {
+      const char* name, U T::* p, const char* enable_key = nullptr) const {
     return Field(name, false, p, enable_key);
   }
 
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1> OptionalField(
-      const char* name, U T::*p, const char* enable_key = nullptr) const {
+      const char* name, U T::* p, const char* enable_key = nullptr) const {
     return Field(name, true, p, enable_key);
   }
 
@@ -582,7 +581,7 @@ class JsonObjectLoader final {
  private:
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1> Field(const char* name, bool optional,
-                                            U T::*p,
+                                            U T::* p,
                                             const char* enable_key) const {
     return JsonObjectLoader<T, kElemCount + 1>(
         elements_, Element(name, optional, p, LoaderForType<U>(), enable_key));
@@ -624,19 +623,19 @@ T LoadFromJson(const Json& json, const JsonArgs& args,
 }
 
 template <typename T>
-absl::optional<T> LoadJsonObjectField(const Json::Object& json,
-                                      const JsonArgs& args,
-                                      absl::string_view field,
-                                      ValidationErrors* errors,
-                                      bool required = true) {
+std::optional<T> LoadJsonObjectField(const Json::Object& json,
+                                     const JsonArgs& args,
+                                     absl::string_view field,
+                                     ValidationErrors* errors,
+                                     bool required = true) {
   ValidationErrors::ScopedField error_field(errors, absl::StrCat(".", field));
   const Json* field_json =
       json_detail::GetJsonObjectField(json, field, errors, required);
-  if (field_json == nullptr) return absl::nullopt;
+  if (field_json == nullptr) return std::nullopt;
   T result{};
   size_t starting_error_size = errors->size();
   json_detail::LoaderForType<T>()->LoadInto(*field_json, args, &result, errors);
-  if (errors->size() > starting_error_size) return absl::nullopt;
+  if (errors->size() > starting_error_size) return std::nullopt;
   return std::move(result);
 }
 

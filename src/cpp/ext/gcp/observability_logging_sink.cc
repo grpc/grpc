@@ -18,22 +18,6 @@
 
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
-#include <algorithm>
-#include <map>
-#include <utility>
-
-#include "absl/log/log.h"
-#include "absl/numeric/int128.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
-#include "google/api/monitored_resource.pb.h"
-#include "google/logging/v2/log_entry.pb.h"
-#include "google/logging/v2/logging.grpc.pb.h"
-#include "google/logging/v2/logging.pb.h"
-#include "google/protobuf/text_format.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -42,11 +26,26 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
 
+#include <algorithm>
+#include <map>
+#include <optional>
+#include <utility>
+
+#include "absl/log/log.h"
+#include "absl/numeric/int128.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
+#include "google/api/monitored_resource.pb.h"
+#include "google/logging/v2/log_entry.pb.h"
+#include "google/logging/v2/logging.grpc.pb.h"
+#include "google/logging/v2/logging.pb.h"
+#include "google/protobuf/text_format.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/uuid_v4.h"
+#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uuid_v4.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
 // IWYU pragma: no_include "google/protobuf/struct.pb.h"
@@ -68,9 +67,9 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
   for (auto& server_rpc_event_config : logging_config.server_rpc_events) {
     server_configs_.emplace_back(server_rpc_event_config);
   }
-  absl::optional<std::string> authority_env =
+  std::optional<std::string> authority_env =
       grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
-  absl::optional<std::string> endpoint_env =
+  std::optional<std::string> endpoint_env =
       grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
   if (authority_env.has_value() && !authority_env->empty()) {
     authority_ = std::move(*endpoint_env);
@@ -290,7 +289,7 @@ void ObservabilityLoggingSink::Flush() {
     flush_triggered_ = false;
     if (stub_ == nullptr) {
       std::string endpoint;
-      absl::optional<std::string> endpoint_env =
+      std::optional<std::string> endpoint_env =
           grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
       if (endpoint_env.has_value() && !endpoint_env->empty()) {
         endpoint = std::move(*endpoint_env);

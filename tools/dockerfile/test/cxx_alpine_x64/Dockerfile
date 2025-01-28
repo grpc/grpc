@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.15
+FROM alpine:3.18
 
 # Install Git and basic packages.
 RUN apk update && apk add \
   autoconf \
   automake \
+  bash \
   bzip2 \
   build-base \
   cmake \

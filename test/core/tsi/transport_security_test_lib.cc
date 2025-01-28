@@ -18,10 +18,8 @@
 
 #include "test/core/tsi/transport_security_test_lib.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <openssl/asn1.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
@@ -30,17 +28,15 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/memory.h"
 
 static void notification_signal(tsi_test_fixture* fixture) {
   gpr_mu_lock(&fixture->mu);
@@ -380,7 +376,7 @@ static void do_handshaker_next(handshaker_args* args) {
     if (buf_size > 0) {
       args->transferred_data = true;
     }
-    // Peform handshaker next.
+    // Perform handshaker next.
     result = tsi_handshaker_next(
         handshaker, args->handshake_buffer, buf_size,
         const_cast<const unsigned char**>(&bytes_to_send), &bytes_to_send_size,
@@ -397,7 +393,7 @@ static void do_handshaker_next(handshaker_args* args) {
 }
 
 void tsi_test_do_handshake(tsi_test_fixture* fixture) {
-  // Initializaiton.
+  // Initialization.
   setup_handshakers(fixture);
   handshaker_args* client_args =
       handshaker_args_create(fixture, true /* is_client */);

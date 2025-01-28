@@ -19,10 +19,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/handshaker/http_connect/http_connect_handshaker.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/server/server.h"
@@ -72,9 +72,6 @@ extern void RegisterLoadBalancedCallDestination(
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
-#ifdef GPR_SUPPORT_BINDER_TRANSPORT
-extern void RegisterBinderResolver(CoreConfiguration::Builder* builder);
-#endif
 
 namespace {
 
@@ -122,9 +119,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterFakeResolver(builder);
   RegisterHttpProxyMapper(builder);
   RegisterLoadBalancedCallDestination(builder);
-#ifdef GPR_SUPPORT_BINDER_TRANSPORT
-  RegisterBinderResolver(builder);
-#endif
 #ifndef GRPC_NO_RLS
   RegisterRlsLbPolicy(builder);
 #endif  // !GRPC_NO_RLS

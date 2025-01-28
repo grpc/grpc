@@ -15,12 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
@@ -32,7 +30,7 @@ namespace grpc_core {
 
 // Apply a (possibly async) mapping function to src, and output into dst.
 //
-// In psuedo-code:
+// In pseudo-code:
 // for each element in wait_for src.Next:
 //   x = wait_for filter_factory(element)
 //   wait_for dst.Push(x)

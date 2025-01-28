@@ -23,6 +23,7 @@
 #ifdef GRPC_HAVE_IFADDRS
 
 #include <errno.h>
+#include <grpc/support/alloc.h>
 #include <ifaddrs.h>
 #include <stddef.h>
 #include <string.h>
@@ -33,14 +34,11 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
+#include "src/core/util/crash.h"
 
 // Return the listener in s with address addr or NULL.
 static grpc_tcp_listener* find_listener_with_addr(grpc_tcp_server* s,
@@ -90,7 +88,7 @@ static grpc_error_handle get_unused_port(int* port) {
   return *port <= 0 ? GRPC_ERROR_CREATE("Bad port") : absl::OkStatus();
 }
 
-static bool grpc_is_ipv4_availabile() {
+static bool grpc_is_ipv4_available() {
   const int fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (fd >= 0) close(fd);
   return fd >= 0;
@@ -118,7 +116,7 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     VLOG(2) << "Picked unused port " << requested_port;
   }
 
-  static bool v4_available = grpc_is_ipv4_availabile();
+  static bool v4_available = grpc_is_ipv4_available();
 
   if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
     return GRPC_OS_ERROR(errno, "getifaddrs");

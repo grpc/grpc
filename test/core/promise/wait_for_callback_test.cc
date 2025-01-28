@@ -16,9 +16,8 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/util/notification.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 namespace grpc_core {

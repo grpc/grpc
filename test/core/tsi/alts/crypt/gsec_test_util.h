@@ -19,12 +19,11 @@
 #ifndef GRPC_TEST_CORE_TSI_ALTS_CRYPT_GSEC_TEST_UTIL_H
 #define GRPC_TEST_CORE_TSI_ALTS_CRYPT_GSEC_TEST_UTIL_H
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <grpc/grpc.h>
 
 ///
 /// This method returns random bytes of certain length.

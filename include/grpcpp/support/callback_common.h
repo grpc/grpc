@@ -19,18 +19,18 @@
 #ifndef GRPCPP_SUPPORT_CALLBACK_COMMON_H
 #define GRPCPP_SUPPORT_CALLBACK_COMMON_H
 
-#include <functional>
-
-#include "absl/log/absl_check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/support/global_callback_hook.h>
 #include <grpcpp/support/status.h>
+
+#include <functional>
+
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 namespace internal {
@@ -127,7 +127,18 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
     auto status = std::move(status_);
     func_ = nullptr;     // reset to clear this out for sure
     status_ = Status();  // reset to clear this out for sure
-    CatchingCallback(std::move(func), std::move(status));
+    GetGlobalCallbackHook()->RunCallback(
+        call_, [func = std::move(func), status = std::move(status)]() {
+#if GRPC_ALLOW_EXCEPTIONS
+          try {
+            func(status);
+          } catch (...) {
+            // nothing to return or change here, just don't crash the library
+          }
+#else   // GRPC_ALLOW_EXCEPTIONS
+  func(status);
+#endif  // GRPC_ALLOW_EXCEPTIONS
+        });
     grpc_call_unref(call_);
   }
 };
@@ -214,7 +225,17 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
 #endif
 
     if (do_callback) {
-      CatchingCallback(func_, ok);
+      GetGlobalCallbackHook()->RunCallback(call_, [this, ok]() {
+#if GRPC_ALLOW_EXCEPTIONS
+        try {
+          func_(ok);
+        } catch (...) {
+          // nothing to return or change here, just don't crash the library
+        }
+#else   // GRPC_ALLOW_EXCEPTIONS
+  func_(ok);
+#endif  // GRPC_ALLOW_EXCEPTIONS
+      });
     }
   }
 };

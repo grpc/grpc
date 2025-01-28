@@ -15,13 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PROMISE_MUTEX_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PROMISE_MUTEX_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 

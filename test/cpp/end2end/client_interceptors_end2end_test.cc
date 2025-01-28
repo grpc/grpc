@@ -16,14 +16,6 @@
 //
 //
 
-#include <memory>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -35,7 +27,13 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/server_posix.h>
 #include <grpcpp/support/client_interceptor.h>
+#include <gtest/gtest.h>
 
+#include <memory>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
@@ -128,9 +126,8 @@ class HijackingInterceptor : public experimental::Interceptor {
       auto* map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+      for (const auto& [key, value] : *map) {
+        found = key.starts_with("testkey") && value.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -249,9 +246,8 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       auto* map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+      for (const auto& [key, value] : *map) {
+        found = key.starts_with("testkey") && value.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -473,9 +469,8 @@ class ServerStreamingRpcHijackingInterceptor
       auto* map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+      for (const auto& [key, value] : *map) {
+        found = key.starts_with("testkey") && value.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -621,9 +616,8 @@ class LoggingInterceptor : public experimental::Interceptor {
       auto* map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+      for (const auto& [key, value] : *map) {
+        found = key.starts_with("testkey") && value.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);

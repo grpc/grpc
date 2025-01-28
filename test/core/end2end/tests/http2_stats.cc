@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/status.h>
+#include <grpc/support/time.h>
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -23,20 +26,12 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
@@ -49,6 +44,9 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 
@@ -75,14 +73,14 @@ class FakeCallTracer : public ClientCallTracer {
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-    void RecordSendMessage(const SliceBuffer& /*send_message*/) override {}
+    void RecordSendMessage(const Message& /*send_message*/) override {}
     void RecordSendCompressedMessage(
-        const SliceBuffer& /*send_compressed_message*/) override {}
+        const Message& /*send_compressed_message*/) override {}
     void RecordReceivedInitialMetadata(
         grpc_metadata_batch* /*recv_initial_metadata*/) override {}
-    void RecordReceivedMessage(const SliceBuffer& /*recv_message*/) override {}
+    void RecordReceivedMessage(const Message& /*recv_message*/) override {}
     void RecordReceivedDecompressedMessage(
-        const SliceBuffer& /*recv_decompressed_message*/) override {}
+        const Message& /*recv_decompressed_message*/) override {}
 
     void RecordReceivedTrailingMetadata(
         absl::Status /*status*/,
@@ -175,14 +173,14 @@ class FakeServerCallTracer : public ServerCallTracer {
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-  void RecordSendMessage(const SliceBuffer& /*send_message*/) override {}
+  void RecordSendMessage(const Message& /*send_message*/) override {}
   void RecordSendCompressedMessage(
-      const SliceBuffer& /*send_compressed_message*/) override {}
+      const Message& /*send_compressed_message*/) override {}
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* /*recv_initial_metadata*/) override {}
-  void RecordReceivedMessage(const SliceBuffer& /*recv_message*/) override {}
+  void RecordReceivedMessage(const Message& /*recv_message*/) override {}
   void RecordReceivedDecompressedMessage(
-      const SliceBuffer& /*recv_decompressed_message*/) override {}
+      const Message& /*recv_decompressed_message*/) override {}
   void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
   std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
     return nullptr;

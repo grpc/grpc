@@ -18,6 +18,11 @@
 
 #include "src/core/handshaker/handshaker.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <string>
@@ -29,22 +34,14 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
 
@@ -81,11 +78,10 @@ HandshakeManager::HandshakeManager()
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   MutexLock lock(&mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    LOG(INFO) << "handshake_manager " << this << ": adding handshaker "
-              << std::string(handshaker->name()) << " [" << handshaker.get()
-              << "] at index " << handshakers_.size();
-  }
+  GRPC_TRACE_LOG(handshaker, INFO)
+      << "handshake_manager " << this << ": adding handshaker "
+      << std::string(handshaker->name()) << " [" << handshaker.get()
+      << "] at index " << handshakers_.size();
   handshakers_.push_back(std::move(handshaker));
 }
 
@@ -153,11 +149,10 @@ void HandshakeManager::Shutdown(absl::Status error) {
 }
 
 void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
-  if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    LOG(INFO) << "handshake_manager " << this << ": error=" << error
-              << " shutdown=" << is_shutdown_ << " index=" << index_
-              << ", args=" << HandshakerArgsString(&args_);
-  }
+  GRPC_TRACE_LOG(handshaker, INFO)
+      << "handshake_manager " << this << ": error=" << error
+      << " shutdown=" << is_shutdown_ << " index=" << index_
+      << ", args=" << HandshakerArgsString(&args_);
   CHECK(index_ <= handshakers_.size());
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
@@ -168,12 +163,10 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
       error = GRPC_ERROR_CREATE("handshaker shutdown");
       args_.endpoint.reset();
     }
-    if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-      LOG(INFO) << "handshake_manager " << this
-                << ": handshaking complete -- scheduling "
-                   "on_handshake_done with error="
-                << error;
-    }
+    GRPC_TRACE_LOG(handshaker, INFO) << "handshake_manager " << this
+                                     << ": handshaking complete -- scheduling "
+                                        "on_handshake_done with error="
+                                     << error;
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
     args_.event_engine->Cancel(deadline_timer_handle_);
@@ -192,11 +185,10 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
   }
   // Call the next handshaker.
   auto handshaker = handshakers_[index_];
-  if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    LOG(INFO) << "handshake_manager " << this << ": calling handshaker "
-              << handshaker->name() << " [" << handshaker.get() << "] at index "
-              << index_;
-  }
+  GRPC_TRACE_LOG(handshaker, INFO)
+      << "handshake_manager " << this << ": calling handshaker "
+      << handshaker->name() << " [" << handshaker.get() << "] at index "
+      << index_;
   ++index_;
   handshaker->DoHandshake(&args_, [self = Ref()](absl::Status error) mutable {
     MutexLock lock(&self->mu_);

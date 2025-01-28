@@ -28,7 +28,7 @@ import sys
 
 import yaml
 
-with open("src/core/lib/config/config_vars.yaml") as f:
+with open("src/core/config/config_vars.yaml") as f:
     attrs = yaml.safe_load(f.read())
 
 error = False
@@ -39,7 +39,9 @@ for attr in attrs:
         print("config has no name: %r" % attr)
         error = True
         continue
-    if "experiment" in attr["name"] and attr["name"] != "experiments":
+    if (
+        "experiment" in attr["name"] and "experimental" not in attr["name"]
+    ) and attr["name"] != "experiments":
         print("use experiment system for experiments")
         error = True
     if "description" not in attr:
@@ -113,10 +115,10 @@ MEMBER_TYPE = {
 }
 
 FLAG_TYPE = {
-    "int": "absl::optional<int32_t>",
-    "string": "absl::optional<std::string>",
+    "int": "std::optional<int32_t>",
+    "string": "std::optional<std::string>",
     "comma_separated_string": "std::vector<std::string>",
-    "bool": "absl::optional<bool>",
+    "bool": "std::optional<bool>",
 }
 
 PROTO_TYPE = {
@@ -225,7 +227,7 @@ with open("test/core/test_util/fuzz_config_vars.h", "w") as H:
     print("#include <grpc/support/port_platform.h>", file=H)
     print(file=H)
     print('#include "test/core/test_util/fuzz_config_vars.pb.h"', file=H)
-    print('#include "src/core/lib/config/config_vars.h"', file=H)
+    print('#include "src/core/config/config_vars.h"', file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
@@ -300,7 +302,7 @@ with open("test/core/test_util/fuzz_config_vars.cc", "w") as C:
     print(file=C)
     print("}  // namespace grpc_core", file=C)
 
-with open("src/core/lib/config/config_vars.h", "w") as H:
+with open("src/core/config/config_vars.h", "w") as H:
     put_copyright(H)
 
     put_banner(
@@ -319,9 +321,9 @@ with open("src/core/lib/config/config_vars.h", "w") as H:
     print(file=H)
     print("#include <string>", file=H)
     print("#include <atomic>", file=H)
+    print("#include <optional>", file=H)
     print("#include <stdint.h>", file=H)
     print('#include "absl/strings/string_view.h"', file=H)
-    print('#include "absl/types/optional.h"', file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
@@ -330,7 +332,7 @@ with open("src/core/lib/config/config_vars.h", "w") as H:
     print("  struct Overrides {", file=H)
     for attr in attrs_in_packing_order:
         print(
-            "    absl::optional<%s> %s;"
+            "    std::optional<%s> %s;"
             % (MEMBER_TYPE[attr["type"]], attr["name"]),
             file=H,
         )
@@ -385,7 +387,7 @@ with open("src/core/lib/config/config_vars.h", "w") as H:
         if attr.get("force-load-on-access", False) == False:
             continue
         print(
-            "  absl::optional<%s> override_%s_;"
+            "  std::optional<%s> override_%s_;"
             % (MEMBER_TYPE[attr["type"]], attr["name"]),
             file=H,
         )
@@ -395,7 +397,7 @@ with open("src/core/lib/config/config_vars.h", "w") as H:
     print(file=H)
     print("#endif  // GRPC_SRC_CORE_LIB_CONFIG_CONFIG_VARS_H", file=H)
 
-with open("src/core/lib/config/config_vars.cc", "w") as C:
+with open("src/core/config/config_vars.cc", "w") as C:
     put_copyright(C)
 
     put_banner(
@@ -408,8 +410,8 @@ with open("src/core/lib/config/config_vars.cc", "w") as C:
     )
 
     print("#include <grpc/support/port_platform.h>", file=C)
-    print('#include "src/core/lib/config/config_vars.h"', file=C)
-    print('#include "src/core/lib/config/load_config.h"', file=C)
+    print('#include "src/core/config/config_vars.h"', file=C)
+    print('#include "src/core/config/load_config.h"', file=C)
     print('#include "absl/strings/escaping.h"', file=C)
     print('#include "absl/flags/flag.h"', file=C)
     print(file=C)

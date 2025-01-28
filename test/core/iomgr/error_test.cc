@@ -18,18 +18,15 @@
 
 #include "src/core/lib/iomgr/error.h"
 
-#include <string.h>
-
 #include <gmock/gmock.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <string.h>
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 #include "test/core/test_util/test_config.h"
 
 TEST(ErrorTest, SetGetInt) {

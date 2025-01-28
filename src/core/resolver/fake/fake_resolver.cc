@@ -19,24 +19,22 @@
 
 #include "src/core/resolver/fake/fake_resolver.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <type_traits>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/resolver_factory.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
 
@@ -64,7 +62,7 @@ class FakeResolver final : public Resolver {
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
   // The next resolution result to be returned, if any.  Present when we
   // get a result before the resolver is started.
-  absl::optional<Result> next_result_;
+  std::optional<Result> next_result_;
   // True after the call to StartLocked().
   bool started_ = false;
   // True after the call to ShutdownLocked().

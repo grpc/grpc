@@ -25,18 +25,17 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
+#include "src/core/config/config_vars.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/uri.h"
+#include "src/core/util/work_serializer.h"
 #include "test/core/test_util/test_config.h"
 
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;

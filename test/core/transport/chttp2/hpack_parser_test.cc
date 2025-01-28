@@ -18,7 +18,14 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/cleanup/cleanup.h"
@@ -26,25 +33,17 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/parse_hexstring.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"
@@ -65,8 +64,8 @@ struct TestInput {
 
 struct Test {
   std::string name;
-  absl::optional<size_t> table_size;
-  absl::optional<size_t> max_metadata_size;
+  std::optional<size_t> table_size;
+  std::optional<size_t> max_metadata_size;
   std::vector<TestInput> inputs;
 };
 
@@ -104,7 +103,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
   }
 
   void TestVector(grpc_slice_split_mode mode,
-                  absl::optional<size_t> max_metadata_size,
+                  std::optional<size_t> max_metadata_size,
                   std::string hexstring, absl::StatusOr<std::string> expect,
                   uint32_t flags) {
     ExecCtx exec_ctx;
@@ -696,7 +695,7 @@ INSTANTIATE_TEST_SUITE_P(
                  "makes "
                  "it text.\nUseful for storing files.\n",
                  0},
-                // Third entry should be unprobable (it's no longer in the
+                // Third entry should be improbable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},
@@ -754,7 +753,7 @@ INSTANTIATE_TEST_SUITE_P(
                  "makes "
                  "it text.\nUseful for storing files.\n",
                  0},
-                // Third entry should be unprobable (it's no longer in the
+                // Third entry should be improbable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},

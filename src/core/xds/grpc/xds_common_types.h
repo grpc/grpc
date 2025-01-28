@@ -18,14 +18,13 @@
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_H
 
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
-
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/matchers/matchers.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/matchers.h"
+#include "src/core/util/validation_errors.h"
 
 namespace grpc_core {
 
@@ -47,8 +46,8 @@ struct CommonTlsContext {
     struct SystemRootCerts {
       bool operator==(const SystemRootCerts&) const { return true; }
     };
-    absl::variant<absl::monostate, CertificateProviderPluginInstance,
-                  SystemRootCerts>
+    std::variant<std::monostate, CertificateProviderPluginInstance,
+                 SystemRootCerts>
         ca_certs;
     std::vector<StringMatcher> match_subject_alt_names;
 
@@ -79,7 +78,7 @@ struct XdsExtension {
   // The type, either from the top level or from inside the TypedStruct.
   absl::string_view type;
   // A Json object for a TypedStruct, or the serialized config otherwise.
-  absl::variant<absl::string_view /*serialized_value*/, Json /*typed_struct*/>
+  std::variant<absl::string_view /*serialized_value*/, Json /*typed_struct*/>
       value;
   // Validation fields that need to stay in scope until we're done
   // processing the extension.

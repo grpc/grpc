@@ -6,11 +6,11 @@ This xDS example builds on the [Hello World Example](https://github.com/grpc/grp
 
 The client takes two command-line arguments -
 * target - By default, the client tries to connect to the xDS "xds:///helloworld:50051" and gRPC would use xDS to resolve this target and connect to the server backend. This can be overridden to change the target.
-* secure - Bool value, defaults to true. When this is set, [XdsCredentials](https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md) will be used with a fallback on `InsecureChannelCredentials`. If unset, `InsecureChannelCredentials` will be used.
+* xds-creds - Bool value, defaults to true. When this is set, [XdsCredentials](https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md) will be used with a fallback on `InsecureChannelCredentials`. If unset, `InsecureChannelCredentials` will be used.
 
 The server takes three command-line arguments -
 * port - Port on which the Hello World service is run. Defaults to 50051.
-* mantenance_port - If secure mode is used (see below), the [Admin](https://github.com/grpc/proposal/blob/master/A38-admin-interface-api.md) service is exposed on this port. If secure mode is not used, `maintenance_port` is unused, and the Admin service is just exposed on `port`. Defaults to 50052.
+* maintenance_port - If secure mode is used (see below), the [Admin](https://github.com/grpc/proposal/blob/master/A38-admin-interface-api.md) service is exposed on this port. If secure mode is not used, `maintenance_port` is unused, and the Admin service is just exposed on `port`. Defaults to 50052.
 * secure - Bool value, defaults to true. When this is set, [XdsServerCredentials](https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md) will be used with a fallback on `InsecureServerCredentials`. If unset, `InsecureServerCredentials` will be used.
 
 ## Running the example
@@ -34,4 +34,25 @@ To run the client -
 $ export GRPC_XDS_BOOTSTRAP=/path/to/bootstrap.json
 $ tools/bazel run examples/cpp/xds:greeter_client
 ```
+
+## Building Docker
+
+From the gRPC workspace folder:
+
+Client:
+```
+docker build -f examples/cpp/xds/Dockerfile.client examples/cpp/xds
+```
+Server:
+```
+docker build -f examples/cpp/xds/Dockerfile.server examples/cpp/xds
+```
+
+To push to a registry, add a tag to the image either by adding a `-t` flag to `docker build` command above or run:
+
+```
+docker image tag ${sha from build command above} ${tag}
+```
+
+And then push the tagged image using `docker push`
 

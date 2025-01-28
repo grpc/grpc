@@ -15,15 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_CONTEXT_H
 #define GRPC_SRC_CORE_LIB_PROMISE_CONTEXT_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/down_cast.h"
+#include "src/core/util/down_cast.h"
 
 namespace grpc_core {
 
@@ -107,13 +105,13 @@ class WithContext {
 
 // Return true if a context of type T is currently active.
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool HasContext() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool HasContext() {
   return promise_detail::Context<T>::get() != nullptr;
 }
 
 // Retrieve the current value of a context, or abort if the value is unset.
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* GetContext() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
   DCHECK_NE(p, nullptr);
   return p;
@@ -121,12 +119,12 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* GetContext() {
 
 // Retrieve the current value of a context, or nullptr if the value is unset.
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* MaybeGetContext() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T* MaybeGetContext() {
   return promise_detail::Context<T>::get();
 }
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SetContext(T* p) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void SetContext(T* p) {
   promise_detail::Context<T>::set(p);
 }
 

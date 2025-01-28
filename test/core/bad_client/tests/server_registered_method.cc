@@ -16,13 +16,11 @@
 //
 //
 
-#include "absl/log/check.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "absl/log/check.h"
 #include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"

@@ -18,8 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
 
 // This polling engine is only relevant on linux kernels supporting epoll
 // epoll_create() or epoll_create1()
@@ -27,6 +27,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
 #include <limits.h>
 #include <poll.h>
 #include <pthread.h>
@@ -43,12 +45,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
-
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -57,6 +53,8 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 
@@ -360,9 +358,8 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name.c_str());
   fork_fd_list_add_grpc_fd(new_fd);
 #ifndef NDEBUG
-  if (GRPC_TRACE_FLAG_ENABLED(fd_refcount)) {
-    VLOG(2) << "FD " << fd << " " << new_fd << " create " << fd_name;
-  }
+  GRPC_TRACE_VLOG(fd_refcount, 2)
+      << "FD " << fd << " " << new_fd << " create " << fd_name;
 #endif
 
   struct epoll_event ev;
@@ -709,7 +706,7 @@ static grpc_error_handle process_epoll_events(grpc_pollset* /*pollset*/) {
 
 // NOTE ON SYNCHRONIZATION: At any point of time, only the g_active_poller
 // (i.e the designated poller thread) will be calling this function. So there is
-// no need for any synchronization when accesing fields in g_epoll_set
+// no need for any synchronization when accessing fields in g_epoll_set
 static grpc_error_handle do_epoll_wait(grpc_pollset* ps,
                                        grpc_core::Timestamp deadline) {
   int r;
@@ -831,12 +828,11 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
     grpc_core::ExecCtx::Get()->InvalidateNow();
   }
 
-  if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-    LOG(INFO) << "PS:" << pollset << " BEGIN_DONE:" << worker
-              << " kick_state=" << kick_state_string(worker->state)
-              << " shutdown=" << pollset->shutting_down
-              << " kicked_without_poller: " << pollset->kicked_without_poller;
-  }
+  GRPC_TRACE_LOG(polling, INFO)
+      << "PS:" << pollset << " BEGIN_DONE:" << worker
+      << " kick_state=" << kick_state_string(worker->state)
+      << " shutdown=" << pollset->shutting_down
+      << " kicked_without_poller: " << pollset->kicked_without_poller;
 
   // We release pollset lock in this function at a couple of places:
   //   1. Briefly when assigning pollset to a neighborhood
@@ -1013,7 +1009,7 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
     // threads
 
     // process_epoll_events() returns very quickly: It just queues the work on
-    // exec_ctx but does not execute it (the actual exectution or more
+    // exec_ctx but does not execute it (the actual execution or more
     // accurately grpc_core::ExecCtx::Get()->Flush() happens in end_worker()
     // AFTER selecting a designated poller). So we are not waiting long periods
     // without a designated poller

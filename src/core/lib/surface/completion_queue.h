@@ -21,15 +21,14 @@
 
 // Internal API for completion queues
 
-#include <stdint.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/mpscq.h"
 
 typedef struct grpc_cq_completion {
   grpc_core::ManualConstructor<
@@ -63,7 +62,7 @@ void grpc_cq_internal_unref(grpc_completion_queue* cq);
 #endif
 
 // Flag that an operation is beginning: the completion channel will not finish
-// shutdown until a corrensponding grpc_cq_end_* call is made.
+// shutdown until a corresponding grpc_cq_end_* call is made.
 // \a tag is currently used only in debug builds. Return true on success, and
 // false if completion_queue has been shutdown.
 bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag);

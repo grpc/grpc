@@ -15,6 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <array>
@@ -22,6 +25,7 @@
 #include <cstddef>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,21 +35,15 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/memory_request.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -153,7 +151,7 @@ class ReclaimerQueue {
 
     class Sweep {
      public:
-      virtual void RunAndDelete(absl::optional<ReclamationSweep> sweep) = 0;
+      virtual void RunAndDelete(std::optional<ReclamationSweep> sweep) = 0;
 
      protected:
       explicit Sweep(std::shared_ptr<State> state) : state_(std::move(state)) {}
@@ -169,7 +167,7 @@ class ReclaimerQueue {
      public:
       explicit SweepFn(F&& f, std::shared_ptr<State> state)
           : Sweep(std::move(state)), f_(std::move(f)) {}
-      void RunAndDelete(absl::optional<ReclamationSweep> sweep) override {
+      void RunAndDelete(std::optional<ReclamationSweep> sweep) override {
         if (!sweep.has_value()) MarkCancelled();
         f_(std::move(sweep));
         delete this;
@@ -241,7 +239,7 @@ class PressureController {
  private:
   // How many update periods have we reached the same decision in a row?
   // Too many and we should start expanding the search space since we're not
-  // being agressive enough.
+  // being aggressive enough.
   uint8_t ticks_same_ = 0;
   // Maximum number of ticks with the same value until we start expanding the
   // control space.
@@ -461,7 +459,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
 
   // Primitive reservation function.
-  GRPC_MUST_USE_RESULT absl::optional<size_t> TryReserve(MemoryRequest request);
+  GRPC_MUST_USE_RESULT std::optional<size_t> TryReserve(MemoryRequest request);
   // This function may be invoked during a memory release operation.
   // It will try to return half of our free pool to the quota.
   void MaybeDonateBack();
@@ -532,6 +530,14 @@ class MemoryOwner final : public MemoryAllocator {
   // Is this object valid (ie has not been moved out of or reset)
   bool is_valid() const { return impl() != nullptr; }
 
+  static double memory_pressure_high_threshold() { return 0.99; }
+
+  // Return true if the controlled memory pressure is high.
+  bool IsMemoryPressureHigh() const {
+    return GetPressureInfo().pressure_control_value >
+           memory_pressure_high_threshold();
+  }
+
  private:
   const GrpcMemoryAllocatorImpl* impl() const {
     return static_cast<const GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
@@ -565,11 +571,9 @@ class MemoryQuota final
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
 
-  // Return true if the controlled memory pressure is high.
   bool IsMemoryPressureHigh() const {
-    static constexpr double kMemoryPressureHighThreshold = 0.99;
     return memory_quota_->GetPressureInfo().pressure_control_value >
-           kMemoryPressureHighThreshold;
+           MemoryOwner::memory_pressure_high_threshold();
   }
 
  private:
@@ -583,6 +587,10 @@ inline MemoryQuotaRefPtr MakeMemoryQuota(std::string name) {
 }
 
 std::vector<std::shared_ptr<BasicMemoryQuota>> AllMemoryQuotas();
+
+void SetContainerMemoryPressure(double pressure);
+
+double ContainerMemoryPressure();
 
 }  // namespace grpc_core
 

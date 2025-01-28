@@ -18,7 +18,13 @@
 
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
@@ -26,21 +32,8 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-#include <grpcpp/impl/grpc_library.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -48,7 +41,13 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "src/core/util/gcp_metadata_query.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 
 namespace grpc {
 namespace internal {
@@ -63,10 +62,9 @@ std::string GetNamespaceName() {
       "/var/run/secrets/kubernetes.io/serviceaccount/namespace";
   auto namespace_name = grpc_core::LoadFile(filename, false);
   if (!namespace_name.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect)) {
-      VLOG(2) << "Reading file " << filename << " failed: "
-              << grpc_core::StatusToString(namespace_name.status());
-    }
+    GRPC_TRACE_VLOG(environment_autodetect, 2)
+        << "Reading file " << filename
+        << " failed: " << grpc_core::StatusToString(namespace_name.status());
     // Fallback on an environment variable
     return grpc_core::GetEnv("NAMESPACE_NAME").value_or("");
   }
@@ -248,15 +246,13 @@ class EnvironmentAutoDetectHelper
       queries_.push_back(grpc_core::MakeOrphanable<grpc_core::GcpMetadataQuery>(
           element.first, &pollent_,
           [this](std::string attribute, absl::StatusOr<std::string> result) {
-            if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect)) {
-              LOG(INFO) << "Environment AutoDetect: Attribute: \"" << attribute
-                        << "\" Result: \""
-                        << (result.ok()
-                                ? result.value()
+            GRPC_TRACE_LOG(environment_autodetect, INFO)
+                << "Environment AutoDetect: Attribute: \"" << attribute
+                << "\" Result: \""
+                << (result.ok() ? result.value()
                                 : grpc_core::StatusToString(result.status()))
-                        << "\"";
-            }
-            absl::optional<EnvironmentAutoDetect::ResourceType> resource;
+                << "\"";
+            std::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
               grpc_core::MutexLock lock(&mu_);
               auto it = attributes_to_fetch_.find(attribute);

@@ -14,19 +14,18 @@
 
 #include "src/core/lib/security/authorization/cel_authorization_engine.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
+#include <optional>
 #include <utility>
 
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "upb/base/string_view.h"
 #include "upb/message/map.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -125,7 +124,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
           header_items;
       for (const auto& header_key : header_keys_) {
         std::string temp_value;
-        absl::optional<absl::string_view> header_value =
+        std::optional<absl::string_view> header_value =
             args.GetHeaderValue(header_key, &temp_value);
         if (header_value.has_value()) {
           header_items.push_back(

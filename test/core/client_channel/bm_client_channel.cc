@@ -13,12 +13,10 @@
 // limitations under the License.
 
 #include <benchmark/benchmark.h>
+#include <grpc/grpc.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "test/core/transport/call_spine_benchmarks.h"

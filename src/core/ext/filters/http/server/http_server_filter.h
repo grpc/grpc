@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -51,10 +50,10 @@ class HttpServerFilter : public ImplementChannelFilter<HttpServerFilter> {
                                                  HttpServerFilter* filter);
     void OnServerInitialMetadata(ServerMetadata& md);
     void OnServerTrailingMetadata(ServerMetadata& md);
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
   };
 
  private:

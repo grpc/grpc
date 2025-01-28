@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <benchmark/benchmark.h>
-
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -45,7 +44,7 @@ class TestCallDestination : public UnstartedCallDestination {
   void Orphaned() override { handler_.reset(); }
 
  private:
-  absl::optional<UnstartedCallHandler> handler_;
+  std::optional<UnstartedCallHandler> handler_;
 };
 
 class Helper {
@@ -63,7 +62,7 @@ class Helper {
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine_.get());
     return std::unique_ptr<grpc_call, void (*)(grpc_call*)>(
-        MakeClientCall(nullptr, 0, cq_, path_.Copy(), absl::nullopt, true,
+        MakeClientCall(nullptr, 0, cq_, path_.Copy(), std::nullopt, true,
                        Timestamp::InfFuture(), compression_options_,
                        std::move(arena), destination_),
         grpc_call_unref);
@@ -151,7 +150,7 @@ void BM_Unary(benchmark::State& state) {
                     return status.status();
                   }),
               Map(handler.PullMessage(),
-                  [](ValueOrFailure<absl::optional<MessageHandle>> message) {
+                  [](ClientToServerNextMessage message) {
                     return message.status();
                   }),
               handler.PushMessage(std::move(response))),
@@ -161,7 +160,6 @@ void BM_Unary(benchmark::State& state) {
                 Arena::MakePooledForOverwrite<ServerMetadata>();
             trailing_metadata->Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
             handler.PushServerTrailingMetadata(std::move(trailing_metadata));
-            return Empty{};
           });
     });
     auto ev = grpc_completion_queue_next(

@@ -14,6 +14,8 @@
 
 #include "test/core/end2end/end2end_test_fuzzer.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <gtest/gtest.h>
 #include <stdio.h>
 
 #include <algorithm>
@@ -24,20 +26,14 @@
 #include <utility>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/env.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/h2_tls_common.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -45,8 +41,8 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
 
+using ::grpc_event_engine::experimental::DefaultEventEngineScope;
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 bool squelch = true;
 
@@ -101,16 +97,12 @@ void RunEnd2endFuzzer(const core_end2end_test_fuzzer::Msg& msg) {
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   ConfigVars::SetOverrides(overrides);
   TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_event_engine::experimental::SetEventEngineFactory(
-      [actions = msg.event_engine_actions()]() {
-        FuzzingEventEngine::Options options;
-        options.max_delay_run_after = std::chrono::milliseconds(500);
-        options.max_delay_write = std::chrono::microseconds(5);
-        return std::make_unique<FuzzingEventEngine>(options, actions);
-      });
+  FuzzingEventEngine::Options options;
+  options.max_delay_run_after = std::chrono::milliseconds(500);
+  options.max_delay_write = std::chrono::microseconds(5);
   auto engine =
-      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
-
+      std::make_shared<FuzzingEventEngine>(options, msg.event_engine_actions());
+  DefaultEventEngineScope engine_scope(engine);
   if (!squelch) {
     fprintf(stderr, "RUN TEST: %s\n", tests[test_id].name.c_str());
   }

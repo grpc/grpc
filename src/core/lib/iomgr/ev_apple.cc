@@ -34,10 +34,9 @@
 #include <list>
 
 #include "absl/time/time.h"
-
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/ev_apple.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/time_util.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
 
@@ -58,7 +57,7 @@ struct GlobalRunLoopContext {
 };
 
 struct GrpcAppleWorker {
-  // The condition varible to kick the worker. Works with the pollset's lock
+  // The condition variable to kick the worker. Works with the pollset's lock
   // (GrpcApplePollset.mu).
   grpc_core::CondVar cv;
 

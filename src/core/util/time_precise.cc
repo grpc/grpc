@@ -23,13 +23,11 @@
 #include <unistd.h>
 #endif
 
+#include <grpc/support/time.h>
+
 #include <algorithm>
 
 #include "absl/log/log.h"
-
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/time_precise.h"
 
 #ifndef GPR_CYCLE_COUNTER_CUSTOM

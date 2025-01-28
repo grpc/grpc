@@ -15,28 +15,6 @@
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
 
-#include <stdint.h>
-#include <stdio.h>
-
-#include <algorithm>
-#include <functional>
-#include <initializer_list>
-#include <map>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-#include "absl/meta/type_traits.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-#include "gtest/gtest.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/credentials.h>
@@ -46,17 +24,38 @@
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <stdint.h>
+#include <stdio.h>
 
+#include <algorithm>
+#include <functional>
+#include <initializer_list>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
+#include "absl/meta/type_traits.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/time.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -69,7 +68,7 @@
 // GRPC_PRIVACY_AND_INTEGRITY.
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS (1 << 2)
 // Feature mask supports call credentials with a minimum security level of
-// GRPC_SECURTITY_NONE.
+// GRPC_SECURITY_NONE.
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE (1 << 3)
 #define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING (1 << 4)
 #define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL (1 << 5)
@@ -84,6 +83,7 @@
 // Exclude this fixture from experiment runs
 #define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 14)
 #define FEATURE_MASK_IS_CALL_V3 (1 << 15)
+#define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 16)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -213,13 +213,13 @@ class CoreEnd2endTest : public ::testing::Test {
    public:
     ClientCallBuilder(CoreEnd2endTest& test, std::string method)
         : test_(test),
-          call_selector_(UnregisteredCall{std::move(method), absl::nullopt}) {}
+          call_selector_(UnregisteredCall{std::move(method), std::nullopt}) {}
     ClientCallBuilder(CoreEnd2endTest& test, RegisteredCall registered_call)
         : test_(test), call_selector_(registered_call.p) {}
 
     // Specify the host (otherwise nullptr is passed)
     ClientCallBuilder& Host(std::string host) {
-      absl::get<UnregisteredCall>(call_selector_).host = std::move(host);
+      std::get<UnregisteredCall>(call_selector_).host = std::move(host);
       return *this;
     }
     // Specify the timeout (otherwise gpr_inf_future is passed) - this time is
@@ -239,9 +239,9 @@ class CoreEnd2endTest : public ::testing::Test {
     CoreEnd2endTest& test_;
     struct UnregisteredCall {
       std::string method;
-      absl::optional<std::string> host;
+      std::optional<std::string> host;
     };
-    absl::variant<void*, UnregisteredCall> call_selector_;
+    std::variant<void*, UnregisteredCall> call_selector_;
     grpc_call* parent_call_ = nullptr;
     uint32_t propagation_mask_ = GRPC_PROPAGATE_DEFAULTS;
     gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_REALTIME);
@@ -273,9 +273,9 @@ class CoreEnd2endTest : public ::testing::Test {
     }
     // Access the peer structure (returns a string that can be matched, etc) -
     // or nullopt if grpc_call_get_peer returns nullptr.
-    absl::optional<std::string> GetPeer() {
+    std::optional<std::string> GetPeer() {
       char* peer = grpc_call_get_peer(call_);
-      if (peer == nullptr) return absl::nullopt;
+      if (peer == nullptr) return std::nullopt;
       std::string result(peer);
       gpr_free(peer);
       return result;
@@ -329,10 +329,10 @@ class CoreEnd2endTest : public ::testing::Test {
     }
 
     // Return some initial metadata.
-    absl::optional<std::string> GetInitialMetadata(absl::string_view key) const;
+    std::optional<std::string> GetInitialMetadata(absl::string_view key) const;
 
     // Return the peer address.
-    absl::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
+    std::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
 
     // Return the auth context.
     std::unique_ptr<grpc_auth_context, void (*)(grpc_auth_context*)>
@@ -416,7 +416,7 @@ class CoreEnd2endTest : public ::testing::Test {
   // Step the system until expectations are met or until timeout is reached.
   // If there are no expectations logged, then step for 1 second and verify that
   // no events occur.
-  void Step(absl::optional<Duration> timeout = absl::nullopt,
+  void Step(std::optional<Duration> timeout = std::nullopt,
             SourceLocation whence = {}) {
     if (expectations_ == 0) {
       cq_verifier().VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);
@@ -576,9 +576,9 @@ class CoreEnd2endTest : public ::testing::Test {
       grpc_event_engine::experimental::EventEngine::Duration) const>
       step_fn_ = nullptr;
   absl::AnyInvocable<void(
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>)>
       quiesce_event_engine_ =
-          grpc_event_engine::experimental::WaitForSingleOwner;
+          WaitForSingleOwner<grpc_event_engine::experimental::EventEngine>;
 };
 
 // Define names for additional test suites.
@@ -683,11 +683,22 @@ class CoreEnd2endTestRegistry {
     GTEST_SKIP() << "Disabled for initial v3 testing";      \
   }
 
+#define SKIP_IF_LOCAL_TCP_CREDS()                                   \
+  if (GetParam()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
+    GTEST_SKIP() << "Disabled for Local TCP Connection";            \
+  }
+
 #define CORE_END2END_TEST(suite, name)                                       \
   class CoreEnd2endTest_##suite##_##name : public grpc_core::suite {         \
    public:                                                                   \
     CoreEnd2endTest_##suite##_##name() {}                                    \
-    void TestBody() override { RunTest(); }                                  \
+    void TestBody() override {                                               \
+      if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&            \
+          (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {         \
+        GTEST_SKIP() << "call-v3 not supported with poll poller";            \
+      }                                                                      \
+      RunTest();                                                             \
+    }                                                                        \
     void RunTest() override;                                                 \
                                                                              \
    private:                                                                  \

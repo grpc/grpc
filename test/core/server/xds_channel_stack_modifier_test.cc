@@ -18,17 +18,16 @@
 
 #include "src/core/server/xds_channel_stack_modifier.h"
 
+#include <grpc/grpc.h>
+
 #include <algorithm>
 #include <string>
 
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"

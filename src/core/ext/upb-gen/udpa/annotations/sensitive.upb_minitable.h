@@ -3,10 +3,11 @@
  *     udpa/annotations/sensitive.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_MINITABLE_H_
-#define UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_MINITABLE_H_
+#ifndef UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H__UPB_MINITABLE_H_
+#define UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -27,4 +28,4 @@ extern const upb_MiniTableFile udpa_annotations_sensitive_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_MINITABLE_H_ */
+#endif  /* UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H__UPB_MINITABLE_H_ */

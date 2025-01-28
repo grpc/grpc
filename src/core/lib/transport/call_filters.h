@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -22,12 +24,7 @@
 #include <type_traits>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/dump_args.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
@@ -39,6 +36,9 @@
 #include "src/core/lib/transport/call_state.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/dump_args.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 // CallFilters tracks a list of filters that are attached to a call.
 // At a high level, a filter (for the purposes of this module) is a class
@@ -58,7 +58,7 @@
 //
 // The type of these members matters, and is selectable by the class
 // author. For $INTERCEPTOR_NAME in the above list:
-// - static const NoInterceptor $INTERCEPTOR_NAME:
+// - static inline const NoInterceptor $INTERCEPTOR_NAME:
 //   defines that this filter does not intercept this event.
 //   there is zero runtime cost added to handling that event by this filter.
 // - void $INTERCEPTOR_NAME($VALUE_TYPE&):
@@ -91,7 +91,7 @@
 //
 // Finally, OnFinalize is added to intecept call finalization.
 // It must have one of the signatures:
-// - static const NoInterceptor OnFinalize:
+// - static inline const NoInterceptor OnFinalize:
 //   the filter does not intercept call finalization.
 // - void OnFinalize(const grpc_call_final_info*):
 //   the filter intercepts call finalization.
@@ -111,16 +111,109 @@ namespace grpc_core {
 // Tag type to indicate no interception.
 // This is used to indicate that a filter does not intercept a particular
 // event.
-// In C++14 we declare these as (for example):
-//   static const NoInterceptor OnClientInitialMetadata;
-// and out-of-line provide the definition:
-//   const MyFilter::Call::NoInterceptor
-//   MyFilter::Call::OnClientInitialMetadata;
-// In C++17 and later we can use inline variables instead:
-//   inline static const NoInterceptor OnClientInitialMetadata;
+// We declare these as (for example):
+//   inline static inline const NoInterceptor OnClientInitialMetadata;
 struct NoInterceptor {};
 
 namespace filters_detail {
+
+// Flow control across pipe stages.
+// This ends up being exceedingly subtle - essentially we need to ensure that
+// across a series of pipes we have no more than one outstanding message at a
+// time - but those pipes are for the most part independent.
+// How we achieve this is that this NextMessage object holds both the message
+// and a completion token - the last owning NextMessage instance will call
+// the on_progress method on the referenced CallState - and at that point that
+// CallState will allow the next message to be sent through it.
+// Next, the ForEach promise combiner explicitly holds onto the wrapper object
+// owning the result (this object) and extracts the message from it, but doesn't
+// dispose that instance until the action promise for the ForEach iteration
+// completes, ensuring most callers need do nothing special to have the
+// flow control work correctly.
+template <void (CallState::*on_progress)()>
+class NextMessage {
+ public:
+  ~NextMessage() {
+    if (message_ != end_of_stream() && message_ != error() &&
+        message_ != taken()) {
+      delete message_;
+    }
+    if (call_state_ != nullptr) {
+      (call_state_->*on_progress)();
+    }
+  }
+
+  NextMessage() = default;
+  explicit NextMessage(Failure) : message_(error()), call_state_(nullptr) {}
+  NextMessage(MessageHandle message, CallState* call_state) {
+    DCHECK_NE(call_state, nullptr);
+    DCHECK_NE(message.get(), nullptr);
+    DCHECK(message.get_deleter().has_freelist());
+    message_ = message.release();
+    call_state_ = call_state;
+  }
+  NextMessage(const NextMessage& other) = delete;
+  NextMessage& operator=(const NextMessage& other) = delete;
+  NextMessage(NextMessage&& other) noexcept
+      : message_(std::exchange(other.message_, taken())),
+        call_state_(std::exchange(other.call_state_, nullptr)) {}
+  NextMessage& operator=(NextMessage&& other) noexcept {
+    if (message_ != end_of_stream() && message_ != error() &&
+        message_ != taken()) {
+      delete message_;
+    }
+    if (call_state_ != nullptr) {
+      (call_state_->*on_progress)();
+    }
+    message_ = std::exchange(other.message_, taken());
+    call_state_ = std::exchange(other.call_state_, nullptr);
+    return *this;
+  }
+
+  bool ok() const {
+    DCHECK_NE(message_, taken());
+    return message_ != error();
+  }
+  bool has_value() const {
+    DCHECK_NE(message_, taken());
+    DCHECK(ok());
+    return message_ != end_of_stream();
+  }
+  StatusFlag status() const { return StatusFlag(ok()); }
+  Message& value() {
+    DCHECK_NE(message_, taken());
+    DCHECK(ok());
+    DCHECK(has_value());
+    return *message_;
+  }
+  MessageHandle TakeValue() {
+    DCHECK_NE(message_, taken());
+    DCHECK(ok());
+    DCHECK(has_value());
+    return MessageHandle(std::exchange(message_, taken()),
+                         Arena::PooledDeleter());
+  }
+  bool progressed() const { return call_state_ == nullptr; }
+  void Progress() {
+    DCHECK(!progressed());
+    (call_state_->*on_progress)();
+    call_state_ = nullptr;
+  }
+
+ private:
+  static Message* end_of_stream() { return nullptr; }
+  static Message* error() { return reinterpret_cast<Message*>(1); }
+  static Message* taken() { return reinterpret_cast<Message*>(2); }
+  Message* message_ = end_of_stream();
+  CallState* call_state_ = nullptr;
+};
+
+template <typename T>
+struct ArgumentMustBeNextMessage;
+template <void (CallState::*on_progress)()>
+struct ArgumentMustBeNextMessage<NextMessage<on_progress>> {
+  static constexpr bool value() { return true; }
+};
 
 inline void* Offset(void* base, size_t amt) {
   return static_cast<char*>(base) + amt;
@@ -220,10 +313,22 @@ struct ServerTrailingMetadataOperator {
       void* call_data, void* channel_data, ServerMetadataHandle metadata);
 };
 
-void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data);
-ServerMetadataHandle RunServerTrailingMetadata(
-    absl::Span<const ServerTrailingMetadataOperator> ops, void* call_data,
-    ServerMetadataHandle md);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void RunHalfClose(
+    absl::Span<const HalfCloseOperator> ops, void* call_data) {
+  for (const auto& op : ops) {
+    op.half_close(Offset(call_data, op.call_offset), op.channel_data);
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline ServerMetadataHandle
+RunServerTrailingMetadata(absl::Span<const ServerTrailingMetadataOperator> ops,
+                          void* call_data, ServerMetadataHandle md) {
+  for (auto& op : ops) {
+    md = op.server_trailing_metadata(Offset(call_data, op.call_offset),
+                                     op.channel_data, std::move(md));
+  }
+  return md;
+}
 
 // One call finalizer
 struct Finalizer {
@@ -389,6 +494,28 @@ struct AddOpImpl<FilterType, T,
   }
 };
 
+// void $INTERCEPTOR_NAME(const $VALUE_TYPE&)
+template <typename FilterType, typename T,
+          void (FilterType::Call::*impl)(const typename T::element_type&)>
+struct AddOpImpl<FilterType, T,
+                 void (FilterType::Call::*)(const typename T::element_type&),
+                 impl> {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
+    to.Add(0, 0,
+           Operator<T>{
+               channel_data,
+               call_offset,
+               [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
+                 (static_cast<typename FilterType::Call*>(call_data)->*impl)(
+                     *value);
+                 return ResultOr<T>{std::move(value), nullptr};
+               },
+               nullptr,
+               nullptr,
+           });
+  }
+};
+
 // void $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
           void (FilterType::Call::*impl)(typename T::element_type&,
@@ -396,6 +523,31 @@ template <typename FilterType, typename T,
 struct AddOpImpl<
     FilterType, T,
     void (FilterType::Call::*)(typename T::element_type&, FilterType*), impl> {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
+    to.Add(0, 0,
+           Operator<T>{
+               channel_data,
+               call_offset,
+               [](void*, void* call_data, void* channel_data,
+                  T value) -> Poll<ResultOr<T>> {
+                 (static_cast<typename FilterType::Call*>(call_data)->*impl)(
+                     *value, static_cast<FilterType*>(channel_data));
+                 return ResultOr<T>{std::move(value), nullptr};
+               },
+               nullptr,
+               nullptr,
+           });
+  }
+};
+
+// void $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
+template <typename FilterType, typename T,
+          void (FilterType::Call::*impl)(const typename T::element_type&,
+                                         FilterType*)>
+struct AddOpImpl<FilterType, T,
+                 void (FilterType::Call::*)(const typename T::element_type&,
+                                            FilterType*),
+                 impl> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(0, 0,
            Operator<T>{
@@ -1116,17 +1268,87 @@ class OperationExecutor {
   const Operator<T>* end_ops_;
 };
 
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline OperationExecutor<
+    T>::~OperationExecutor() {
+  if (promise_data_ != nullptr) {
+    ops_->early_destroy(promise_data_);
+    gpr_free_aligned(promise_data_);
+  }
+}
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
+OperationExecutor<T>::Start(const Layout<T>* layout, T input, void* call_data) {
+  ops_ = layout->ops.data();
+  end_ops_ = ops_ + layout->ops.size();
+  if (layout->promise_size == 0) {
+    // No call state ==> instantaneously ready
+    auto r = InitStep(std::move(input), call_data);
+    CHECK(r.ready());
+    return r;
+  }
+  promise_data_ =
+      gpr_malloc_aligned(layout->promise_size, layout->promise_alignment);
+  return InitStep(std::move(input), call_data);
+}
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
+OperationExecutor<T>::InitStep(T input, void* call_data) {
+  CHECK(input != nullptr);
+  while (true) {
+    if (ops_ == end_ops_) {
+      return ResultOr<T>{std::move(input), nullptr};
+    }
+    auto p =
+        ops_->promise_init(promise_data_, Offset(call_data, ops_->call_offset),
+                           ops_->channel_data, std::move(input));
+    if (auto* r = p.value_if_ready()) {
+      if (r->ok == nullptr) return std::move(*r);
+      input = std::move(r->ok);
+      ++ops_;
+      continue;
+    }
+    return Pending{};
+  }
+}
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
+OperationExecutor<T>::Step(void* call_data) {
+  DCHECK_NE(promise_data_, nullptr);
+  auto p = ContinueStep(call_data);
+  if (p.ready()) {
+    gpr_free_aligned(promise_data_);
+    promise_data_ = nullptr;
+  }
+  return p;
+}
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
+OperationExecutor<T>::ContinueStep(void* call_data) {
+  auto p = ops_->poll(promise_data_);
+  if (auto* r = p.value_if_ready()) {
+    if (r->ok == nullptr) return std::move(*r);
+    ++ops_;
+    return InitStep(std::move(r->ok), call_data);
+  }
+  return Pending{};
+}
+
 template <typename Fn>
 class ServerTrailingMetadataInterceptor {
  public:
   class Call {
    public:
-    static const NoInterceptor OnClientInitialMetadata;
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static const inline NoInterceptor OnClientInitialMetadata;
+    static const inline NoInterceptor OnServerInitialMetadata;
+    static const inline NoInterceptor OnClientToServerMessage;
+    static const inline NoInterceptor OnClientToServerHalfClose;
+    static const inline NoInterceptor OnServerToClientMessage;
+    static const inline NoInterceptor OnFinalize;
     void OnServerTrailingMetadata(ServerMetadata& md,
                                   ServerTrailingMetadataInterceptor* filter) {
       filter->fn_(md);
@@ -1138,23 +1360,6 @@ class ServerTrailingMetadataInterceptor {
  private:
   GPR_NO_UNIQUE_ADDRESS Fn fn_;
 };
-template <typename Fn>
-const NoInterceptor
-    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientInitialMetadata;
-template <typename Fn>
-const NoInterceptor
-    ServerTrailingMetadataInterceptor<Fn>::Call::OnServerInitialMetadata;
-template <typename Fn>
-const NoInterceptor
-    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
-template <typename Fn>
-const NoInterceptor
-    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientToServerHalfClose;
-template <typename Fn>
-const NoInterceptor
-    ServerTrailingMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
-template <typename Fn>
-const NoInterceptor ServerTrailingMetadataInterceptor<Fn>::Call::OnFinalize;
 
 template <typename Fn>
 class ClientInitialMetadataInterceptor {
@@ -1165,12 +1370,12 @@ class ClientInitialMetadataInterceptor {
                                  ClientInitialMetadataInterceptor* filter) {
       return filter->fn_(md);
     }
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static const inline NoInterceptor OnServerInitialMetadata;
+    static const inline NoInterceptor OnClientToServerMessage;
+    static const inline NoInterceptor OnClientToServerHalfClose;
+    static const inline NoInterceptor OnServerToClientMessage;
+    static const inline NoInterceptor OnServerTrailingMetadata;
+    static const inline NoInterceptor OnFinalize;
   };
 
   explicit ClientInitialMetadataInterceptor(Fn fn) : fn_(std::move(fn)) {}
@@ -1178,25 +1383,82 @@ class ClientInitialMetadataInterceptor {
  private:
   GPR_NO_UNIQUE_ADDRESS Fn fn_;
 };
-template <typename Fn>
-const NoInterceptor
-    ClientInitialMetadataInterceptor<Fn>::Call::OnServerInitialMetadata;
-template <typename Fn>
-const NoInterceptor
-    ClientInitialMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
-template <typename Fn>
-const NoInterceptor
-    ClientInitialMetadataInterceptor<Fn>::Call::OnClientToServerHalfClose;
-template <typename Fn>
-const NoInterceptor
-    ClientInitialMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
-template <typename Fn>
-const NoInterceptor
-    ClientInitialMetadataInterceptor<Fn>::Call::OnServerTrailingMetadata;
-template <typename Fn>
-const NoInterceptor ClientInitialMetadataInterceptor<Fn>::Call::OnFinalize;
 
 }  // namespace filters_detail
+
+namespace for_each_detail {
+template <void (CallState::*on_progress)()>
+struct NextValueTraits<filters_detail::NextMessage<on_progress>> {
+  using NextMsg = filters_detail::NextMessage<on_progress>;
+  using Value = MessageHandle;
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(
+      const NextMsg& t) {
+    if (!t.ok()) return NextValueType::kError;
+    if (t.has_value()) return NextValueType::kValue;
+    return NextValueType::kEndOfStream;
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static MessageHandle TakeValue(
+      NextMsg& t) {
+    return t.TakeValue();
+  }
+};
+}  // namespace for_each_detail
+
+template <void (CallState::*on_progress)()>
+struct FailureStatusCastImpl<filters_detail::NextMessage<on_progress>,
+                             StatusFlag> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static filters_detail::NextMessage<
+      on_progress>
+  Cast(StatusFlag flag) {
+    DCHECK_EQ(flag, Failure{});
+    return filters_detail::NextMessage<on_progress>(Failure{});
+  }
+};
+
+namespace promise_detail {
+template <void (CallState::*on_progress)()>
+struct TrySeqTraitsWithSfinae<filters_detail::NextMessage<on_progress>> {
+  using UnwrappedType = MessageHandle;
+  using WrappedType = filters_detail::NextMessage<on_progress>;
+  template <typename Next>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactory(
+      Next* next, WrappedType&& value) {
+    return next->Make(value.TakeValue());
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(
+      const WrappedType& value) {
+    return value.ok();
+  }
+  static const char* ErrorString(const WrappedType& status) {
+    DCHECK(!status.ok());
+    return "failed";
+  }
+  template <typename R>
+  static R ReturnValue(WrappedType&& status) {
+    DCHECK(!status.ok());
+    return WrappedType(Failure{});
+  }
+  template <typename F, typename Elem>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallSeqFactory(
+      F& f, Elem&& elem, WrappedType value)
+      -> decltype(f(std::forward<Elem>(elem), std::declval<MessageHandle>())) {
+    return f(std::forward<Elem>(elem), value.TakeValue());
+  }
+  template <typename Result, typename RunNext>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
+  CheckResultAndRunNext(WrappedType prior, RunNext run_next) {
+    if (!prior.ok()) return WrappedType(prior.status());
+    return run_next(std::move(prior));
+  }
+};
+}  // namespace promise_detail
+
+using ServerToClientNextMessage =
+    filters_detail::NextMessage<&CallState::FinishPullServerToClientMessage>;
+using ClientToServerNextMessage =
+    filters_detail::NextMessage<&CallState::FinishPullClientToServerMessage>;
 
 // Execution environment for a stack of filters.
 // This is a per-call object.
@@ -1276,8 +1538,20 @@ class CallFilters {
     filters_detail::StackData data_;
   };
 
-  explicit CallFilters(ClientMetadataHandle client_initial_metadata);
-  ~CallFilters();
+  explicit CallFilters(ClientMetadataHandle client_initial_metadata)
+      : call_data_(nullptr),
+        push_client_initial_metadata_(std::move(client_initial_metadata)) {}
+  ~CallFilters() {
+    if (call_data_ != nullptr && call_data_ != &g_empty_call_data_) {
+      for (const auto& stack : stacks_) {
+        for (const auto& destructor : stack.stack->data_.filter_destructor) {
+          destructor.call_destroy(filters_detail::Offset(
+              call_data_, stack.call_data_offset + destructor.call_offset));
+        }
+      }
+      gpr_free_aligned(call_data_);
+    }
+  };
 
   CallFilters(const CallFilters&) = delete;
   CallFilters& operator=(const CallFilters&) = delete;
@@ -1297,13 +1571,13 @@ class CallFilters {
 
  private:
   template <typename Output, typename Input,
-            Input(CallFilters::*input_location),
-            filters_detail::Layout<Input>(filters_detail::StackData::*layout),
+            Input(CallFilters::* input_location),
+            filters_detail::Layout<Input>(filters_detail::StackData::* layout),
             void (CallState::*on_done)(), typename StackIterator>
-  class Executor {
+  class MetadataExecutor {
    public:
-    Executor(CallFilters* filters, StackIterator stack_begin,
-             StackIterator stack_end)
+    MetadataExecutor(CallFilters* filters, StackIterator stack_begin,
+                     StackIterator stack_end)
         : stack_current_(stack_begin),
           stack_end_(stack_end),
           filters_(filters) {
@@ -1351,17 +1625,72 @@ class CallFilters {
     filters_detail::OperationExecutor<Input> executor_;
   };
 
+  template <MessageHandle(CallFilters::* input_location),
+            filters_detail::Layout<MessageHandle>(
+                filters_detail::StackData::* layout),
+            void (CallState::*on_done)(), typename StackIterator>
+  class MessageExecutor {
+   public:
+    using NextMsg = filters_detail::NextMessage<on_done>;
+
+    MessageExecutor(CallFilters* filters, StackIterator stack_begin,
+                    StackIterator stack_end)
+        : stack_current_(stack_begin),
+          stack_end_(stack_end),
+          filters_(filters) {
+      DCHECK_NE((filters_->*input_location).get(), nullptr);
+    }
+
+    Poll<NextMsg> operator()() {
+      if ((filters_->*input_location) != nullptr) {
+        if (stack_current_ == stack_end_) {
+          DCHECK_NE((filters_->*input_location).get(), nullptr);
+          return NextMsg(std::move(filters_->*input_location),
+                         &filters_->call_state_);
+        }
+        return FinishStep(executor_.Start(
+            &(stack_current_->stack->data_.*layout),
+            std::move(filters_->*input_location), filters_->call_data_));
+      } else {
+        return FinishStep(executor_.Step(filters_->call_data_));
+      }
+    }
+
+   private:
+    Poll<NextMsg> FinishStep(Poll<filters_detail::ResultOr<MessageHandle>> p) {
+      auto* r = p.value_if_ready();
+      if (r == nullptr) return Pending{};
+      if (r->ok != nullptr) {
+        ++stack_current_;
+        if (stack_current_ == stack_end_) {
+          return NextMsg{std::move(r->ok), &filters_->call_state_};
+        }
+        return FinishStep(
+            executor_.Start(&(stack_current_->stack->data_.*layout),
+                            std::move(r->ok), filters_->call_data_));
+      }
+      (filters_->call_state_.*on_done)();
+      filters_->PushServerTrailingMetadata(std::move(r->error));
+      return Failure{};
+    }
+
+    StackIterator stack_current_;
+    StackIterator stack_end_;
+    CallFilters* filters_;
+    filters_detail::OperationExecutor<MessageHandle> executor_;
+  };
+
  public:
   // Client: Fetch client initial metadata
   // Returns a promise that resolves to ValueOrFailure<ClientMetadataHandle>
   GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
     call_state_.BeginPullClientInitialMetadata();
-    return Executor<ClientMetadataHandle, ClientMetadataHandle,
-                    &CallFilters::push_client_initial_metadata_,
-                    &filters_detail::StackData::client_initial_metadata,
-                    &CallState::FinishPullClientInitialMetadata,
-                    StacksVector::const_iterator>(this, stacks_.cbegin(),
-                                                  stacks_.cend());
+    return MetadataExecutor<ClientMetadataHandle, ClientMetadataHandle,
+                            &CallFilters::push_client_initial_metadata_,
+                            &filters_detail::StackData::client_initial_metadata,
+                            &CallState::FinishPullClientInitialMetadata,
+                            StacksVector::const_iterator>(
+        this, stacks_.cbegin(), stacks_.cend());
   }
   // Server: Push server initial metadata
   // Returns a promise that resolves to a StatusFlag indicating success
@@ -1381,21 +1710,21 @@ class CallFilters {
               has_server_initial_metadata,
               [this]() {
                 return Map(
-                    Executor<
-                        absl::optional<ServerMetadataHandle>,
+                    MetadataExecutor<
+                        std::optional<ServerMetadataHandle>,
                         ServerMetadataHandle,
                         &CallFilters::push_server_initial_metadata_,
                         &filters_detail::StackData::server_initial_metadata,
                         &CallState::FinishPullServerInitialMetadata,
                         StacksVector::const_reverse_iterator>(
                         this, stacks_.crbegin(), stacks_.crend()),
-                    [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
+                    [](ValueOrFailure<std::optional<ServerMetadataHandle>> r) {
                       if (r.ok()) return std::move(*r);
-                      return absl::optional<ServerMetadataHandle>{};
+                      return std::optional<ServerMetadataHandle>{};
                     });
               },
               []() {
-                return Immediate(absl::optional<ServerMetadataHandle>{});
+                return Immediate(std::optional<ServerMetadataHandle>{});
               });
         });
   }
@@ -1411,7 +1740,7 @@ class CallFilters {
   // Client: Indicate that no more messages will be sent
   void FinishClientToServerSends() { call_state_.ClientToServerHalfClose(); }
   // Server: Fetch client to server message
-  // Returns a promise that resolves to ValueOrFailure<MessageHandle>
+  // Returns a promise that resolves to ClientToServerNextMessage
   GRPC_MUST_USE_RESULT auto PullClientToServerMessage() {
     return TrySeq(
         [this]() {
@@ -1421,16 +1750,15 @@ class CallFilters {
           return If(
               message_available,
               [this]() {
-                return Executor<
-                    absl::optional<MessageHandle>, MessageHandle,
+                return MessageExecutor<
                     &CallFilters::push_client_to_server_message_,
                     &filters_detail::StackData::client_to_server_messages,
                     &CallState::FinishPullClientToServerMessage,
                     StacksVector::const_iterator>(this, stacks_.cbegin(),
                                                   stacks_.cend());
               },
-              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
-                return absl::optional<MessageHandle>();
+              []() -> ClientToServerNextMessage {
+                return ClientToServerNextMessage();
               });
         });
   }
@@ -1442,7 +1770,7 @@ class CallFilters {
     return [this]() { return call_state_.PollPushServerToClientMessage(); };
   }
   // Server: Fetch server to client message
-  // Returns a promise that resolves to ValueOrFailure<MessageHandle>
+  // Returns a promise that resolves to ServerToClientNextMessage
   GRPC_MUST_USE_RESULT auto PullServerToClientMessage() {
     return TrySeq(
         [this]() {
@@ -1452,16 +1780,15 @@ class CallFilters {
           return If(
               message_available,
               [this]() {
-                return Executor<
-                    absl::optional<MessageHandle>, MessageHandle,
+                return MessageExecutor<
                     &CallFilters::push_server_to_client_message_,
                     &filters_detail::StackData::server_to_client_messages,
                     &CallState::FinishPullServerToClientMessage,
                     StacksVector::const_reverse_iterator>(
                     this, stacks_.crbegin(), stacks_.crend());
               },
-              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
-                return absl::optional<MessageHandle>();
+              []() -> ServerToClientNextMessage {
+                return ServerToClientNextMessage();
               });
         });
   }
@@ -1470,6 +1797,8 @@ class CallFilters {
   // If no server initial metadata has been sent, implies
   // NoServerInitialMetadata() called.
   void PushServerTrailingMetadata(ServerMetadataHandle md);
+  // Optimized path to push cancellation onto the call
+  void Cancel();
   // Client: Fetch server trailing metadata
   // Returns a promise that resolves to ServerMetadataHandle
   GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata() {
@@ -1485,7 +1814,6 @@ class CallFilters {
                   std::move(value));
             }
           }
-          call_state_.FinishPullServerTrailingMetadata();
           return value;
         });
   }
@@ -1497,6 +1825,23 @@ class CallFilters {
   GRPC_MUST_USE_RESULT auto WasCancelled() {
     return [this]() { return call_state_.PollWasCancelled(); };
   }
+  // Client & server: wait for server trailing metadata to be available, and
+  // resolve to empty when it is.
+  GRPC_MUST_USE_RESULT auto ServerTrailingMetadataWasPushed() {
+    return
+        [this]() { return call_state_.PollServerTrailingMetadataWasPushed(); };
+  }
+  // Client & server: returns true if server trailing metadata has been pushed
+  // *and* contained a cancellation, false otherwise.
+  GRPC_MUST_USE_RESULT bool WasCancelledPushed() const {
+    return call_state_.WasCancelledPushed();
+  }
+
+  // Returns true if server trailing metadata has been pulled
+  bool WasServerTrailingMetadataPulled() const {
+    return call_state_.WasServerTrailingMetadataPulled();
+  }
+
   // Client & server: fill in final_info with the final status of the call.
   void Finalize(const grpc_call_final_info* final_info);
 
@@ -1525,7 +1870,23 @@ class CallFilters {
   MessageHandle push_client_to_server_message_;
   MessageHandle push_server_to_client_message_;
   ServerMetadataHandle push_server_trailing_metadata_;
+
+  static char g_empty_call_data_;
 };
+
+static_assert(
+    filters_detail::ArgumentMustBeNextMessage<
+        absl::remove_cvref_t<decltype(std::declval<CallFilters*>()
+                                          ->PullServerToClientMessage()()
+                                          .value())>>::value(),
+    "PullServerToClientMessage must return a NextMessage");
+
+static_assert(
+    filters_detail::ArgumentMustBeNextMessage<
+        absl::remove_cvref_t<decltype(std::declval<CallFilters*>()
+                                          ->PullClientToServerMessage()()
+                                          .value())>>::value(),
+    "PullServerToClientMessage must return a NextMessage");
 
 }  // namespace grpc_core
 

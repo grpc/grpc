@@ -16,6 +16,8 @@
 
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -24,9 +26,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -50,14 +49,14 @@ constexpr double kMaxRatio = 10;
 // weights that are possibly accepting. In this case, without kMinRatio, it
 // would potentially require WeightedRoundRobin to perform thousands of picks
 // until it gets a single channel with near-zero weight. This was a part of what
-// hapenned in b/276292666.
+// happened in b/276292666.
 //
 // The current value of 0.01 was chosen without any experimenting. It should
 // ensure that WeightedRoundRobin doesn't do much more than an order of 100
 // picks of non-accepting channels with high weights in such corner cases. But
 // it also makes WeightedRoundRobin to send slightly more requests to
 // potentially very bad tasks (that would have near-zero weights) than zero.
-// This is not necesserily a downside, though. Perhaps this is not a problem at
+// This is not necessarily a downside, though. Perhaps this is not a problem at
 // all and we should increase this value (to 0.05 or 0.1) to save CPU cycles.
 //
 // Note that this class treats weights that are exactly equal to zero as unknown
@@ -77,11 +76,11 @@ constexpr double kMinRatio = 0.01;
 
 }  // namespace
 
-absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
+std::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
     absl::Span<const float> float_weights,
     absl::AnyInvocable<uint32_t()> next_sequence_func) {
-  if (float_weights.empty()) return absl::nullopt;
-  if (float_weights.size() == 1) return absl::nullopt;
+  if (float_weights.empty()) return std::nullopt;
+  if (float_weights.size() == 1) return std::nullopt;
 
   // TODO(b/190488683): should we normalize negative weights to 0?
 
@@ -97,7 +96,7 @@ absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
     }
   }
 
-  if (num_zero_weight_channels == n) return absl::nullopt;
+  if (num_zero_weight_channels == n) return std::nullopt;
 
   // Mean of non-zero weights before scaling to `kMaxWeight`.
   const double unscaled_mean =

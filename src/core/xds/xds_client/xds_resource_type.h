@@ -16,19 +16,18 @@
 
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_H
+#include <grpc/support/port_platform.h>
+
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "upb/mem/arena.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.h"
 
 namespace grpc_core {
 
@@ -42,7 +41,6 @@ class XdsResourceType {
   struct DecodeContext {
     XdsClient* client;
     const XdsBootstrap::XdsServer& server;
-    TraceFlag* tracer;
     upb_DefPool* symtab;
     upb_Arena* arena;
   };
@@ -59,7 +57,7 @@ class XdsResourceType {
     // The resource's name, if it can be determined.
     // If the name is not returned, the resource field should contain a
     // non-OK status.
-    absl::optional<std::string> name;
+    std::optional<std::string> name;
     // The parsed and validated resource, or an error status.
     absl::StatusOr<std::shared_ptr<const ResourceData>> resource;
   };

@@ -14,6 +14,10 @@
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/slice.h>
+
 #include <map>
 #include <memory>
 #include <string>
@@ -23,16 +27,11 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/slice.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

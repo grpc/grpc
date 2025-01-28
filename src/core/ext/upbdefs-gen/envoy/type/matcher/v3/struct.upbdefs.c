@@ -3,7 +3,8 @@
  *     envoy/type/matcher/v3/struct.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "envoy/type/matcher/v3/struct.upbdefs.h"

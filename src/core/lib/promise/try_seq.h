@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_TRY_SEQ_H
 #define GRPC_SRC_CORE_LIB_PROMISE_TRY_SEQ_H
 
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <type_traits>
@@ -24,9 +25,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/seq_state.h"
@@ -37,6 +35,45 @@
 namespace grpc_core {
 
 namespace promise_detail {
+
+// TrySeq Promise combinator.
+//
+// Input :
+// 1. The TrySeq combinator needs minimum one promise as input.
+// 2. The first input to TrySeq combinator is a promise.
+// 3. The remaining inputs to TrySeq combinator are Promise Factories (functors
+// that return a promise). The input type of the Nth functor should be the
+// return value of the (N-1)th promise.
+// 4. Functors can return promises with return type any of the following :
+//    1. StatusOr<> to signal that a value is fed forward, or Status to
+//       indicate only success/failure. In the case of returning Status, the
+//       next functor in the chain takes no arguments.
+//    2. StatusFlag and ValueOrStatus can be return types if rich error
+//       information is not necessar. In this case the next functor in the chain
+//       takes no arguments.
+//
+// Return :
+// Polling the TrySeq Promise combinator returns Poll<StatusOr<T>> where T is
+// the type returned by the last promise in the list of input promises.
+//
+// Polling the TrySeq combinator works in the following way :
+// Run the first promise. If it returns Pending{}, nothing else is executed.
+// If the first promise returns a value, pass this result to the second functor,
+// and run the returned promise. If it returns Pending{}, nothing else is
+// executed. If it returns a value, pass this result to the third functor, and
+// run the returned promise. etc. Return the final value.
+//
+// If any of the promises in the TrySeq chain returns a failure status, TrySeq
+// will NOT proceed with the execution of the remaining promises. If you want
+// the execution to continue when a failure status is received, use the Seq
+// combinator instead.
+//
+// Promises in the TrySeq combinator are run in order, serially and on the same
+// thread.
+//
+// Example :
+// The unit tests (esp ThreeTypedPendingThens) in try_seq_test.cc provide all
+// possible permutations of how TrySeq combinator can be used.
 
 template <typename T, typename Ignored = void>
 struct TrySeqTraitsWithSfinae {
@@ -54,13 +91,6 @@ struct TrySeqTraitsWithSfinae {
   template <typename R>
   static R ReturnValue(T&&) {
     abort();
-  }
-  template <typename F, typename Elem>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallSeqFactory(F& f,
-                                                                  Elem&& elem,
-                                                                  T&& value)
-      -> decltype(f(std::forward<Elem>(elem), std::forward<T>(value))) {
-    return f(std::forward<Elem>(elem), std::forward<T>(value));
   }
   template <typename Result, typename RunNext>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
@@ -89,12 +119,6 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R ReturnValue(
       absl::StatusOr<T>&& status) {
     return FailureStatusCast<R>(status.status());
-  }
-  template <typename F, typename Elem>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallSeqFactory(
-      F& f, Elem&& elem, absl::StatusOr<T> value)
-      -> decltype(f(std::forward<Elem>(elem), std::move(*value))) {
-    return f(std::forward<Elem>(elem), std::move(*value));
   }
   template <typename Result, typename RunNext>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
@@ -243,67 +267,63 @@ class TrySeq {
   SeqState<TrySeqTraits, P, Fs...> state_;
 };
 
-template <typename I, typename F, typename Arg>
-struct TrySeqIterTraits {
-  using Iter = I;
-  using Factory = F;
-  using Argument = Arg;
-  using IterValue = decltype(*std::declval<Iter>());
-  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                                  std::declval<Arg>()));
-  using State = PromiseLike<StateCreated>;
-  using Wrapped = typename State::Result;
-
-  using Traits = TrySeqTraits<Wrapped>;
-};
-
 template <typename Iter, typename Factory, typename Argument>
-struct TrySeqIterResultTraits {
-  using IterTraits = TrySeqIterTraits<Iter, Factory, Argument>;
-  using Result = BasicSeqIter<IterTraits>;
+using TrySeqIter = BasicSeqIter<TrySeqTraits, Iter, Factory, Argument>;
+
+template <typename Container, typename Factory, typename Argument>
+struct TrySeqContainerResultTraits {
+  using BaseResult =
+      TrySeqIter<typename Container::iterator, Factory, Argument>;
+  class Result {
+   public:
+    Result(Container container, Factory factory, Argument argument)
+        : container_(std::move(container)),
+          base_result_(container_.begin(), container_.end(), std::move(factory),
+                       std::move(argument)) {}
+    Result(const Result&) = delete;
+    Result& operator=(const Result&) = delete;
+    Result(Result&&) = default;
+    Result& operator=(Result&&) = default;
+
+    auto operator()() { return base_result_(); }
+
+   private:
+    Container container_;
+    BaseResult base_result_;
+  };
 };
 
 }  // namespace promise_detail
 
-// Try a sequence of operations.
-// * Run the first functor as a promise.
-// * Feed its success result into the second functor to create a promise,
-//   then run that.
-// * ...
-// * Feed the second-final success result into the final functor to create a
-//   promise, then run that, with the overall success result being that
-//   promises success result.
-// If any step fails, fail everything.
-// Functors can return StatusOr<> to signal that a value is fed forward, or
-// Status to indicate only success/failure. In the case of returning Status,
-// the construction functors take no arguments.
 template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION F TrySeq(F functor) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F TrySeq(F functor) {
   return functor;
 }
 
 template <typename F0, typename F1>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::TrySeq<F0, F1> TrySeq(
-    F0 f0, F1 f1, DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TrySeq<F0, F1>
+TrySeq(F0 f0, F1 f1, DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1>(std::move(f0), std::move(f1), whence);
 }
 
 template <typename F0, typename F1, typename F2>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::TrySeq<F0, F1, F2> TrySeq(
-    F0 f0, F1 f1, F2 f2, DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TrySeq<F0, F1, F2>
+TrySeq(F0 f0, F1 f1, F2 f2, DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1, F2>(std::move(f0), std::move(f1),
                                             std::move(f2), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::TrySeq<F0, F1, F2, F3>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TrySeq<F0, F1, F2,
+                                                                   F3>
 TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1, F2, F3>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::TrySeq<F0, F1, F2, F3, F4>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TrySeq<F0, F1, F2,
+                                                                   F3, F4>
 TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1, F2, F3, F4>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
@@ -352,14 +372,19 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
-    typename promise_detail::TrySeqIterResultTraits<Iter, Factory,
-                                                    Argument>::Result
-    TrySeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeqIter(Iter begin, Iter end,
+                                                     Argument argument,
+                                                     Factory factory) {
+  return promise_detail::TrySeqIter<Iter, Factory, Argument>(
+      begin, end, std::move(factory), std::move(argument));
+}
+
+template <typename Container, typename Factory, typename Argument>
+auto TrySeqContainer(Container container, Argument argument, Factory factory) {
   using Result =
-      typename promise_detail::TrySeqIterResultTraits<Iter, Factory,
-                                                      Argument>::Result;
-  return Result(begin, end, std::move(factory), std::move(argument));
+      typename promise_detail::TrySeqContainerResultTraits<Container, Factory,
+                                                           Argument>::Result;
+  return Result(std::move(container), std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core

@@ -19,9 +19,9 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_STACK_TRACER_H
 #define GRPC_TEST_CORE_TEST_UTIL_STACK_TRACER_H
 
-#include <string>
-
 #include <grpc/support/port_platform.h>
+
+#include <string>
 
 namespace grpc_core {
 namespace testing {

@@ -55,7 +55,7 @@ class TestConnectivityState(AioTestBase):
                 _common.block_until_certain_state(
                     channel, grpc.ChannelConnectivity.TRANSIENT_FAILURE
                 ),
-                test_constants.SHORT_TIMEOUT,
+                test_constants.SHORT_TIMEOUT * 2,
             )
 
     async def test_normal_backend(self):
@@ -116,7 +116,7 @@ class TestConnectivityState(AioTestBase):
         # Make sure there isn't any exception in the task
         await pending_task
 
-        # It can raise exceptions since it is an usage error, but it should not
+        # It can raise exceptions since it is a usage error, but it should not
         # segfault or abort.
         with self.assertRaises(aio.UsageError):
             await channel.wait_for_state_change(

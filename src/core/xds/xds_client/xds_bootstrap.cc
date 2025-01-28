@@ -16,11 +16,11 @@
 
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
-#include "absl/types/optional.h"
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/env.h"
+#include <optional>
+
+#include "src/core/util/env.h"
 #include "src/core/util/string.h"
 
 namespace grpc_core {
@@ -30,6 +30,15 @@ namespace grpc_core {
 bool XdsFederationEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   if (!value.has_value()) return true;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
+// TODO(roth): Remove this once the feature passes interop tests.
+bool XdsDataErrorHandlingEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  if (!value.has_value()) return false;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;

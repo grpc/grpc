@@ -14,19 +14,27 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <limits.h>
 
 #include <algorithm>
 #include <functional>
 #include <new>
+#include <optional>
 #include <set>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
@@ -39,17 +47,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -62,20 +59,14 @@
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -103,8 +94,15 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/work_serializer.h"
 
 //
 // Client channel filter
@@ -141,14 +139,14 @@ class ClientChannelFilter::CallData {
   // Checks whether a resolver result is available.  The following
   // outcomes are possible:
   // - No resolver result is available yet.  The call will be queued and
-  //   absl::nullopt will be returned.  Later, when a resolver result
+  //   std::nullopt will be returned.  Later, when a resolver result
   //   becomes available, RetryCheckResolutionLocked() will be called.
   // - The resolver has returned a transient failure.  If the call is
   //   not wait_for_ready, a non-OK status will be returned.  (If the
   //   call *is* wait_for_ready, it will be queued instead.)
   // - There is a valid resolver result.  The service config will be
   //   stored in the call context and an OK status will be returned.
-  absl::optional<absl::Status> CheckResolution(bool was_queued);
+  std::optional<absl::Status> CheckResolution(bool was_queued);
 
  private:
   // Accessors for data stored in the subclass.
@@ -616,6 +614,8 @@ class ClientChannelFilter::SubchannelWrapper final
     subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
   }
 
+  std::string address() const override { return subchannel_->address(); }
+
  private:
   // This wrapper provides a bridge between the internal Subchannel API
   // and the SubchannelInterface API that we expose to LB policies.
@@ -628,7 +628,7 @@ class ClientChannelFilter::SubchannelWrapper final
   //
   // This class handles things like hopping into the WorkSerializer
   // before passing notifications to the LB policy and propagating
-  // keepalive information betwen subchannels.
+  // keepalive information between subchannels.
   class WatcherWrapper final
       : public Subchannel::ConnectivityStateWatcherInterface {
    public:
@@ -685,8 +685,7 @@ class ClientChannelFilter::SubchannelWrapper final
           << parent_.get() << " subchannel " << parent_->subchannel_.get()
           << " watcher=" << watcher_.get()
           << " state=" << ConnectivityStateName(state) << " status=" << status;
-      absl::optional<absl::Cord> keepalive_throttling =
-          status.GetPayload(kKeepaliveThrottlingKey);
+      auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
       if (keepalive_throttling.has_value()) {
         int new_keepalive_time = -1;
         if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
@@ -1102,7 +1101,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   }
   // Get default service config.  If none is specified via the client API,
   // we use an empty config.
-  absl::optional<absl::string_view> service_config_json =
+  std::optional<absl::string_view> service_config_json =
       channel_args_.GetString(GRPC_ARG_SERVICE_CONFIG);
   if (!service_config_json.has_value()) service_config_json = "{}";
   *error = absl::OkStatus();
@@ -1114,7 +1113,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   }
   default_service_config_ = std::move(*service_config);
   // Get URI to resolve, using proxy mapper if needed.
-  absl::optional<std::string> target_uri =
+  std::optional<std::string> target_uri =
       channel_args_.GetOwnedString(GRPC_ARG_SERVER_URI);
   if (!target_uri.has_value()) {
     *error = GRPC_ERROR_CREATE(
@@ -1146,7 +1145,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
     keepalive_time_ = -1;  // unset
   }
   // Set default authority.
-  absl::optional<std::string> default_authority =
+  std::optional<std::string> default_authority =
       channel_args_.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {
     default_authority_ =
@@ -1199,7 +1198,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   }
   // Try the deprecated LB policy name from the service config.
   // If not, try the setting from channel args.
-  absl::optional<absl::string_view> policy_name;
+  std::optional<absl::string_view> policy_name;
   if (!parsed_service_config->parsed_deprecated_lb_policy().empty()) {
     policy_name = parsed_service_config->parsed_deprecated_lb_policy();
   } else {
@@ -1319,6 +1318,10 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
     service_config = std::move(*result.service_config);
     config_selector = result.args.GetObjectRef<ConfigSelector>();
   }
+  // Remove the config selector from channel args so that we're not holding
+  // unnecessary refs that cause it to be destroyed somewhere other than in the
+  // WorkSerializer.
+  result.args = result.args.Remove(GRPC_ARG_CONFIG_SELECTOR);
   // Note: The only case in which service_config is null here is if the resolver
   // returned a service config error and we don't have a previous service
   // config to fall back to.
@@ -1349,6 +1352,7 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
           << "chand=" << this << ": service config not changed";
     }
     // Create or update LB policy, as needed.
+    ChannelArgs new_args = result.args;
     resolver_result_status = CreateOrUpdateLbPolicyLocked(
         std::move(lb_policy_config),
         parsed_service_config->health_check_service_name(), std::move(result));
@@ -1357,7 +1361,7 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
       // This needs to happen after the LB policy has been updated, since
       // the ConfigSelector may need the LB policy to know about new
       // destinations before it can send RPCs to those destinations.
-      UpdateServiceConfigInDataPlaneLocked();
+      UpdateServiceConfigInDataPlaneLocked(new_args);
       // TODO(ncteisen): might be worth somehow including a snippet of the
       // config in the trace, at the risk of bloating the trace logs.
       trace_strings.push_back("Service config changed");
@@ -1401,7 +1405,7 @@ void ClientChannelFilter::OnResolverErrorLocked(absl::Status status) {
 
 absl::Status ClientChannelFilter::CreateOrUpdateLbPolicyLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-    const absl::optional<std::string>& health_check_service_name,
+    const std::optional<std::string>& health_check_service_name,
     Resolver::Result result) {
   // Construct update.
   LoadBalancingPolicy::UpdateArgs update_args;
@@ -1413,10 +1417,7 @@ absl::Status ClientChannelFilter::CreateOrUpdateLbPolicyLocked(
   }
   update_args.config = std::move(lb_policy_config);
   update_args.resolution_note = std::move(result.resolution_note);
-  // Remove the config selector from channel args so that we're not holding
-  // unnecessary refs that cause it to be destroyed somewhere other than in the
-  // WorkSerializer.
-  update_args.args = result.args.Remove(GRPC_ARG_CONFIG_SELECTOR);
+  update_args.args = std::move(result.args);
   // Add health check service name to channel args.
   if (health_check_service_name.has_value()) {
     update_args.args = update_args.args.Set(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME,
@@ -1480,7 +1481,8 @@ void ClientChannelFilter::UpdateServiceConfigInControlPlaneLocked(
       << saved_config_selector_.get();
 }
 
-void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked() {
+void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
+    const ChannelArgs& args) {
   // Grab ref to service config.
   RefCountedPtr<ServiceConfig> service_config = saved_service_config_;
   // Grab ref to config selector.  Use default if resolver didn't supply one.
@@ -1492,8 +1494,8 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked() {
     config_selector =
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
-  ChannelArgs new_args =
-      channel_args_.SetObject(this).SetObject(service_config);
+  // Modify channel args.
+  ChannelArgs new_args = args.SetObject(this).SetObject(service_config);
   bool enable_retries =
       !new_args.WantMinimalStack() &&
       new_args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
@@ -1505,9 +1507,11 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked() {
   } else {
     filters.push_back(&DynamicTerminationFilter::kFilterVtable);
   }
-  RefCountedPtr<DynamicFilters> dynamic_filters =
-      DynamicFilters::Create(new_args, std::move(filters));
+  auto new_blackboard = MakeRefCounted<Blackboard>();
+  RefCountedPtr<DynamicFilters> dynamic_filters = DynamicFilters::Create(
+      new_args, std::move(filters), blackboard_.get(), new_blackboard.get());
   CHECK(dynamic_filters != nullptr);
+  blackboard_ = std::move(new_blackboard);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until
@@ -1616,7 +1620,7 @@ void ClientChannelFilter::UpdateStateAndPickerLocked(
 
 namespace {
 
-// TODO(roth): Remove this in favor of the gprpp Match() function once
+// TODO(roth): Remove this in favor of src/core/util/match.h once
 // we can do that without breaking lock annotations.
 template <typename T>
 T HandlePickResult(
@@ -1626,22 +1630,22 @@ T HandlePickResult(
     std::function<T(LoadBalancingPolicy::PickResult::Fail*)> fail_func,
     std::function<T(LoadBalancingPolicy::PickResult::Drop*)> drop_func) {
   auto* complete_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
   if (complete_pick != nullptr) {
     return complete_func(complete_pick);
   }
   auto* queue_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
   if (queue_pick != nullptr) {
     return queue_func(queue_pick);
   }
   auto* fail_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
   if (fail_pick != nullptr) {
     return fail_func(fail_pick);
   }
   auto* drop_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
   CHECK_NE(drop_pick, nullptr);
   return drop_func(drop_pick);
 }
@@ -1893,7 +1897,7 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
   return absl::OkStatus();
 }
 
-absl::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
+std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
     bool was_queued) {
   // Check if we have a resolver result to use.
   absl::StatusOr<RefCountedPtr<ConfigSelector>> config_selector;
@@ -1903,7 +1907,7 @@ absl::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
     // If no result is available, queue the call.
     if (!result_ready) {
       AddCallToResolverQueuedCallsLocked();
-      return absl::nullopt;
+      return std::nullopt;
     }
   }
   // We have a result.  Apply service config to call.
@@ -2491,7 +2495,7 @@ void ClientChannelFilter::LoadBalancedCall::
   grpc_polling_entity_del_from_pollset_set(pollent(),
                                            chand_->interested_parties_);
   // Note: There's no need to actually remove the call from the queue
-  // here, beacuse that will be done in either
+  // here, because that will be done in either
   // LbQueuedCallCanceller::CancelLocked() or
   // in ClientChannelFilter::UpdateStateAndPickerLocked().
 }
@@ -2509,23 +2513,24 @@ void ClientChannelFilter::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
   OnAddToQueueLocked();
 }
 
-absl::optional<absl::Status>
+std::optional<absl::Status>
 ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
   // We may accumulate multiple pickers here, because if a picker says
   // to queue the call, we check again to see if the picker has been
   // updated before we queue it.
   // We need to unref pickers in the WorkSerializer.
   std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
-  auto cleanup = absl::MakeCleanup([&]() {
-    if (IsWorkSerializerDispatchEnabled()) return;
-    chand_->work_serializer_->Run(
-        [pickers = std::move(pickers)]() mutable {
-          for (auto& picker : pickers) {
-            picker.reset(DEBUG_LOCATION, "PickSubchannel");
-          }
-        },
-        DEBUG_LOCATION);
-  });
+  auto cleanup = absl::MakeCleanup(
+      [work_serializer = chand_->work_serializer_, &pickers]() {
+        if (IsWorkSerializerDispatchEnabled()) return;
+        work_serializer->Run(
+            [pickers = std::move(pickers)]() mutable {
+              for (auto& picker : pickers) {
+                picker.reset(DEBUG_LOCATION, "PickSubchannel");
+              }
+            },
+            DEBUG_LOCATION);
+      });
   absl::AnyInvocable<void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
       set_picker;
   if (!IsWorkSerializerDispatchEnabled()) {
@@ -2581,7 +2586,7 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
       }
       // Otherwise queue the pick to try again later when we get a new picker.
       AddCallToLbQueuedCallsLocked();
-      return absl::nullopt;
+      return std::nullopt;
     }
     // Pick is complete.
     // If it was queued, add a trace annotation.

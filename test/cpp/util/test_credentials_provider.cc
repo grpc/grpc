@@ -19,6 +19,9 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
+#include <grpc/support/sync.h>
+#include <grpcpp/security/server_credentials.h>
+
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -28,12 +31,7 @@
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpcpp/security/server_credentials.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
 ABSL_FLAG(std::string, tls_cert_file, "",

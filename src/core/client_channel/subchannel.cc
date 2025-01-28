@@ -14,16 +14,19 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/subchannel.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <limits.h>
 
 #include <algorithm>
 #include <memory>
 #include <new>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -32,31 +35,18 @@
 #include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/cancel_callback.h"
@@ -72,6 +62,13 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
 // Backoff parameters.
@@ -417,12 +414,11 @@ class Subchannel::ConnectedSubchannelStateWatcher final
       if (c->connected_subchannel_ == nullptr) return;
       if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
           new_state == GRPC_CHANNEL_SHUTDOWN) {
-        if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-          LOG(INFO) << "subchannel " << c << " " << c->key_.ToString()
-                    << ": Connected subchannel "
-                    << c->connected_subchannel_.get() << " reports "
-                    << ConnectivityStateName(new_state) << ": " << status;
-        }
+        GRPC_TRACE_LOG(subchannel, INFO)
+            << "subchannel " << c << " " << c->key_.ToString()
+            << ": Connected subchannel " << c->connected_subchannel_.get()
+            << " reports " << ConnectivityStateName(new_state) << ": "
+            << status;
         c->connected_subchannel_.reset();
         if (c->channelz_node() != nullptr) {
           c->channelz_node()->SetChildSocket(nullptr);
@@ -448,7 +444,7 @@ class Subchannel::ConnectedSubchannelStateWatcher final
 
 void Subchannel::ConnectivityStateWatcherList::AddWatcherLocked(
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
-  watchers_.insert(std::make_pair(watcher.get(), std::move(watcher)));
+  watchers_.insert(std::move(watcher));
 }
 
 void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
@@ -458,9 +454,9 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
-  for (const auto& p : watchers_) {
+  for (const auto& watcher : watchers_) {
     subchannel_->work_serializer_.Schedule(
-        [watcher = p.second->Ref(), state, status]() mutable {
+        [watcher = watcher->Ref(), state, status]() mutable {
           auto* watcher_ptr = watcher.get();
           watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
                                                  status);
@@ -477,7 +473,7 @@ namespace {
 
 BackOff::Options ParseArgsForBackoffValues(const ChannelArgs& args,
                                            Duration* min_connect_timeout) {
-  const absl::optional<Duration> fixed_reconnect_backoff =
+  const std::optional<Duration> fixed_reconnect_backoff =
       args.GetDurationFromIntMillis("grpc.testing.fixed_reconnect_backoff_ms");
   if (fixed_reconnect_backoff.has_value()) {
     const Duration backoff =
@@ -765,8 +761,9 @@ void Subchannel::OnRetryTimerLocked() {
 
 void Subchannel::StartConnectingLocked() {
   // Set next attempt time.
-  const Timestamp min_deadline = min_connect_timeout_ + Timestamp::Now();
-  next_attempt_time_ = backoff_.NextAttemptTime();
+  const Timestamp now = Timestamp::Now();
+  const Timestamp min_deadline = now + min_connect_timeout_;
+  next_attempt_time_ = now + backoff_.NextAttemptDelay();
   // Report CONNECTING.
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::OkStatus());
   // Start connection attempt.
@@ -803,12 +800,10 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
         next_attempt_time_ - Timestamp::Now();
-    if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-      LOG(INFO) << "subchannel " << this << " " << key_.ToString()
-                << ": connect failed (" << StatusToString(error)
-                << "), backing off for " << time_until_next_attempt.millis()
-                << " ms";
-    }
+    GRPC_TRACE_LOG(subchannel, INFO)
+        << "subchannel " << this << " " << key_.ToString()
+        << ": connect failed (" << StatusToString(error)
+        << "), backing off for " << time_until_next_attempt.millis() << " ms";
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     retry_timer_handle_ = event_engine_->RunAfter(
@@ -893,11 +888,9 @@ bool Subchannel::PublishTransportLocked() {
   }
   connecting_result_.Reset();
   // Publish.
-  if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-    LOG(INFO) << "subchannel " << this << " " << key_.ToString()
-              << ": new connected subchannel at "
-              << connected_subchannel_.get();
-  }
+  GRPC_TRACE_LOG(subchannel, INFO)
+      << "subchannel " << this << " " << key_.ToString()
+      << ": new connected subchannel at " << connected_subchannel_.get();
   if (channelz_node_ != nullptr) {
     channelz_node_->SetChildSocket(std::move(socket_node));
   }

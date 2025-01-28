@@ -16,6 +16,9 @@
 
 #ifdef GPR_APPLE
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+
 #include <thread>
 
 #include "absl/log/check.h"
@@ -23,10 +26,6 @@
 #include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -299,6 +298,23 @@ TEST(CFEventEngineTest, TestResolveAgainInCallback) {
       "localhost", "80");
 
   resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestLockOrder) {
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = std::move(cf_engine->GetDNSResolver({})).value();
+  grpc_core::Mutex mutex;
+
+  {
+    grpc_core::MutexLock lock(&mutex);
+    dns_resolver->LookupHostname(
+        [&mutex](auto result) { grpc_core::MutexLock lock2(&mutex); },
+        "google.com", "80");
+  }
+
+  dns_resolver.reset();
+
+  sleep(1);
 }
 
 TEST(CFEventEngineTest, TestResolveMany) {

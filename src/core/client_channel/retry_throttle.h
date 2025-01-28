@@ -20,19 +20,16 @@
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_THROTTLE_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
+#include <atomic>
 #include <map>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
-
-#include <grpc/support/atm.h>
-
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace internal {
@@ -61,11 +58,11 @@ class ServerRetryThrottleData final
 
   const uintptr_t max_milli_tokens_;
   const uintptr_t milli_token_ratio_;
-  gpr_atm milli_tokens_;
+  std::atomic<intptr_t> milli_tokens_;
   // A pointer to the replacement for this ServerRetryThrottleData entry.
   // If non-nullptr, then this entry is stale and must not be used.
   // We hold a reference to the replacement.
-  gpr_atm replacement_ = 0;
+  std::atomic<ServerRetryThrottleData*> replacement_{nullptr};
 };
 
 /// Global map of server name to retry throttle data.

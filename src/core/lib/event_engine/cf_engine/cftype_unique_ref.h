@@ -21,8 +21,7 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 template <typename T>
 class CFTypeUniqueRef {
@@ -37,7 +36,7 @@ class CFTypeUniqueRef {
   CFTypeUniqueRef(CFTypeUniqueRef const&) = delete;
   CFTypeUniqueRef& operator=(CFTypeUniqueRef const&) = delete;
 
-  CFTypeUniqueRef(CFTypeUniqueRef&& other) : cf_type_ref_(other.release()){};
+  CFTypeUniqueRef(CFTypeUniqueRef&& other) : cf_type_ref_(other.release()) {};
   CFTypeUniqueRef& operator=(CFTypeUniqueRef&& other) {
     reset(other.release());
     return *this;
@@ -73,8 +72,7 @@ class CFTypeUniqueRef {
   T cf_type_ref_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

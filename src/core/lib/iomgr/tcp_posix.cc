@@ -16,21 +16,26 @@
 //
 //
 
+#include <grpc/impl/grpc_types.h>
+#include <grpc/support/port_platform.h>
+
+#include <optional>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/grpc_types.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <errno.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <limits.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -47,21 +52,9 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/debug/event_log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -74,7 +67,12 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/event_log.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
 #ifndef SOL_TCP
@@ -328,7 +326,7 @@ class TcpZerocopySendCtx {
   size_t threshold_bytes() const { return threshold_bytes_; }
 
   // Expected to be called by handler reading messages from the err queue.
-  // It is used to indicate that some OMem meory is now available. It returns
+  // It is used to indicate that some OMem memory is now available. It returns
   // true to tell the caller to mark the file descriptor as immediately
   // writable.
   //
@@ -818,7 +816,7 @@ static void maybe_post_reclaimer(grpc_tcp* tcp)
     TCP_REF(tcp, "posted_reclaimer");
     tcp->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
-        [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
+        [tcp](std::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
             perform_reclamation(tcp);
           }
@@ -1255,9 +1253,8 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     uint32_t opt = grpc_core::kTimestampingSocketOptions;
     if (setsockopt(tcp->fd, SOL_SOCKET, SO_TIMESTAMPING,
                    static_cast<void*>(&opt), sizeof(opt)) != 0) {
-      if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-        LOG(ERROR) << "Failed to set timestamping options on the socket.";
-      }
+      GRPC_TRACE_LOG(tcp, ERROR)
+          << "Failed to set timestamping options on the socket.";
       return false;
     }
     tcp->bytes_counter = -1;
@@ -1341,9 +1338,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   auto next_cmsg = CMSG_NXTHDR(msg, cmsg);
   cmsghdr* opt_stats = nullptr;
   if (next_cmsg == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(ERROR) << "Received timestamp without extended error";
-    }
+    GRPC_TRACE_LOG(tcp, ERROR) << "Received timestamp without extended error";
     return cmsg;
   }
 
@@ -1353,9 +1348,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     opt_stats = next_cmsg;
     next_cmsg = CMSG_NXTHDR(msg, opt_stats);
     if (next_cmsg == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-        LOG(ERROR) << "Received timestamp without extended error";
-      }
+      GRPC_TRACE_LOG(tcp, ERROR) << "Received timestamp without extended error";
       return opt_stats;
     }
   }
@@ -1363,9 +1356,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   if (!(next_cmsg->cmsg_level == SOL_IP || next_cmsg->cmsg_level == SOL_IPV6) ||
       !(next_cmsg->cmsg_type == IP_RECVERR ||
         next_cmsg->cmsg_type == IPV6_RECVERR)) {
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(ERROR) << "Unexpected control message";
-    }
+    GRPC_TRACE_LOG(tcp, ERROR) << "Unexpected control message";
     return cmsg;
   }
 

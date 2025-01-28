@@ -18,14 +18,12 @@
 
 #include "test/cpp/qps/benchmark_config.h"
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-
-#include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "src/core/util/crash.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 ABSL_FLAG(bool, enable_log_reporter, true,

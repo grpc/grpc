@@ -14,16 +14,15 @@
 
 #include "src/core/lib/promise/interceptor_list.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_context.h"
 
 namespace grpc_core {
@@ -40,14 +39,14 @@ TEST_F(InterceptorListTest, NoOp) { InterceptorList<std::string>(); }
 TEST_F(InterceptorListTest, CanRunOne) {
   InterceptorList<std::string> list;
   list.AppendMap([](std::string s) { return s + "a"; }, DEBUG_LOCATION);
-  EXPECT_EQ(list.Run("hello")(), Poll<absl::optional<std::string>>("helloa"));
+  EXPECT_EQ(list.Run("hello")(), Poll<std::optional<std::string>>("helloa"));
 }
 
 TEST_F(InterceptorListTest, CanRunTwo) {
   InterceptorList<std::string> list;
   list.AppendMap([](std::string s) { return s + "a"; }, DEBUG_LOCATION);
   list.AppendMap([](std::string s) { return s + "b"; }, DEBUG_LOCATION);
-  EXPECT_EQ(list.Run("hello")(), Poll<absl::optional<std::string>>("helloab"));
+  EXPECT_EQ(list.Run("hello")(), Poll<std::optional<std::string>>("helloab"));
 }
 
 TEST_F(InterceptorListTest, CanRunTwoTwice) {
@@ -79,14 +78,14 @@ TEST_F(InterceptorListTest, CanRunManyWithCaptures) {
 TEST_F(InterceptorListTest, CanRunOnePrepended) {
   InterceptorList<std::string> list;
   list.PrependMap([](std::string s) { return s + "a"; }, DEBUG_LOCATION);
-  EXPECT_EQ(list.Run("hello")(), Poll<absl::optional<std::string>>("helloa"));
+  EXPECT_EQ(list.Run("hello")(), Poll<std::optional<std::string>>("helloa"));
 }
 
 TEST_F(InterceptorListTest, CanRunTwoPrepended) {
   InterceptorList<std::string> list;
   list.PrependMap([](std::string s) { return s + "a"; }, DEBUG_LOCATION);
   list.PrependMap([](std::string s) { return s + "b"; }, DEBUG_LOCATION);
-  EXPECT_EQ(list.Run("hello")(), Poll<absl::optional<std::string>>("helloba"));
+  EXPECT_EQ(list.Run("hello")(), Poll<std::optional<std::string>>("helloba"));
 }
 
 TEST_F(InterceptorListTest, CanRunManyWithCapturesPrepended) {
@@ -111,7 +110,7 @@ TEST_F(InterceptorListTest, CanRunManyWithCapturesThatDelay) {
     list.AppendMap(
         [i = std::make_shared<size_t>(i)](std::string s) {
           return
-              [x = false, i, s]() mutable -> Poll<absl::optional<std::string>> {
+              [x = false, i, s]() mutable -> Poll<std::optional<std::string>> {
                 if (!x) {
                   x = true;
                   return Pending{};

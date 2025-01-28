@@ -18,20 +18,16 @@
 
 #include "src/core/lib/iomgr/iomgr.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -39,7 +35,9 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
+#include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
 
 static gpr_mu g_mu;

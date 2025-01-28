@@ -27,13 +27,12 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
+#include "src/core/util/crash.h"
 
 static void create_sockets(SOCKET sv[2]) {
   SOCKET svr_sock = INVALID_SOCKET;

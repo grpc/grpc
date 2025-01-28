@@ -14,8 +14,12 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -26,26 +30,21 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/backoff/backoff.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/polling_resolver.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -90,15 +89,11 @@ NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
                           .set_max_backoff(Duration::Milliseconds(
                               GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
                       &dns_resolver_trace) {
-  if (GRPC_TRACE_FLAG_ENABLED(dns_resolver)) {
-    VLOG(2) << "[dns_resolver=" << this << "] created";
-  }
+  GRPC_TRACE_VLOG(dns_resolver, 2) << "[dns_resolver=" << this << "] created";
 }
 
 NativeClientChannelDNSResolver::~NativeClientChannelDNSResolver() {
-  if (GRPC_TRACE_FLAG_ENABLED(dns_resolver)) {
-    VLOG(2) << "[dns_resolver=" << this << "] destroyed";
-  }
+  GRPC_TRACE_VLOG(dns_resolver, 2) << "[dns_resolver=" << this << "] destroyed";
 }
 
 OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
@@ -107,19 +102,17 @@ OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
       absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this),
       name_to_resolve(), kDefaultSecurePort, kDefaultDNSRequestTimeout,
       interested_parties(), /*name_server=*/"");
-  if (GRPC_TRACE_FLAG_ENABLED(dns_resolver)) {
-    VLOG(2) << "[dns_resolver=" << this << "] starting request="
-            << DNSResolver::HandleToString(dns_request_handle);
-  }
+  GRPC_TRACE_VLOG(dns_resolver, 2)
+      << "[dns_resolver=" << this << "] starting request="
+      << DNSResolver::HandleToString(dns_request_handle);
   return MakeOrphanable<Request>();
 }
 
 void NativeClientChannelDNSResolver::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
-  if (GRPC_TRACE_FLAG_ENABLED(dns_resolver)) {
-    VLOG(2) << "[dns_resolver=" << this
-            << "] request complete, status=" << addresses_or.status();
-  }
+  GRPC_TRACE_VLOG(dns_resolver, 2)
+      << "[dns_resolver=" << this
+      << "] request complete, status=" << addresses_or.status();
   // Convert result from iomgr DNS API into Resolver::Result.
   Result result;
   if (addresses_or.ok()) {

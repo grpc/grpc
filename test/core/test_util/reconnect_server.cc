@@ -18,14 +18,12 @@
 
 #include "test/core/test_util/reconnect_server.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <string.h>
 
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"

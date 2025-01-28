@@ -19,6 +19,7 @@
 #ifndef GRPC_TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H
 #define GRPC_TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H
 
+#include <grpc/grpc.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -30,13 +31,10 @@
 
 #include "absl/log/check.h"
 #include "absl/types/span.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"

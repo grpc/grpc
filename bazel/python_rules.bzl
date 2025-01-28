@@ -14,6 +14,7 @@
 """Generates and compiles Python gRPC stubs from proto_library rules."""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+load("@rules_python//python:py_info.bzl", "PyInfo")
 load(
     "//bazel:protobuf.bzl",
     "declare_out_files",

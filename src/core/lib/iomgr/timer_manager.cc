@@ -18,18 +18,16 @@
 
 #include "src/core/lib/iomgr/timer_manager.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/thd.h"
 
 struct completed_thread {
   grpc_core::Thread thd;
@@ -243,7 +241,7 @@ static void timer_main_loop() {
         GRPC_TRACE_LOG(timer_check, INFO)
             << "timers not checked: expect another thread to";
         next = grpc_core::Timestamp::InfFuture();
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         if (!wait_until(next)) {
           return;

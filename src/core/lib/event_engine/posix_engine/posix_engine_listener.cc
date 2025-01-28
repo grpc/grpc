@@ -20,11 +20,14 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include <errno.h>       // IWYU pragma: keep
+#include <errno.h>  // IWYU pragma: keep
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <sys/socket.h>  // IWYU pragma: keep
 #include <unistd.h>      // IWYU pragma: keep
 
 #include <atomic>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -35,24 +38,18 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/strerror.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/strerror.h"
+#include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 PosixEngineListenerImpl::PosixEngineListenerImpl(
     PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
@@ -293,7 +290,7 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
 }
 
 void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {
-  // The ShutdownHandle whould trigger any waiting notify_on_accept_ to get
+  // The ShutdownHandle would trigger any waiting notify_on_accept_ to get
   // scheduled with the not-OK status.
   handle_->ShutdownHandle(absl::InternalError("Shutting down acceptor"));
   Unref();
@@ -332,7 +329,6 @@ PosixEngineListenerImpl::~PosixEngineListenerImpl() {
   }
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_TCP

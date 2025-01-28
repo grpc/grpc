@@ -16,20 +16,19 @@
 //
 //
 
-#include <memory>
-
-#include "absl/log/log.h"
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 
+#include <memory>
+#include <optional>
+
+#include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -233,10 +232,10 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
   EXPECT_EQ(client_message.payload(), "hello world");
   EXPECT_EQ(server_message.payload(), "hello you");
   EXPECT_EQ(s.GetInitialMetadata(GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(s.GetInitialMetadata(GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY),
-            absl::nullopt);
-  EXPECT_EQ(s.GetInitialMetadata(fake_md_key), absl::nullopt);
+            std::nullopt);
+  EXPECT_EQ(s.GetInitialMetadata(fake_md_key), std::nullopt);
 }
 
 CORE_END2END_TEST(PerCallCredsOnInsecureTest,
@@ -264,11 +263,17 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTest,
 }
 
 CORE_END2END_TEST(PerCallCredsTest, RequestResponseWithPayloadAndCallCreds) {
+  if (IsLocalConnectorSecureEnabled()) {
+    SKIP_IF_LOCAL_TCP_CREDS();
+  }
   TestRequestResponseWithPayloadAndCallCreds(*this, true);
 }
 
 CORE_END2END_TEST(PerCallCredsTest,
                   RequestResponseWithPayloadAndOverriddenCallCreds) {
+  if (IsLocalConnectorSecureEnabled()) {
+    SKIP_IF_LOCAL_TCP_CREDS();
+  }
   TestRequestResponseWithPayloadAndOverriddenCallCreds(*this, true);
 }
 

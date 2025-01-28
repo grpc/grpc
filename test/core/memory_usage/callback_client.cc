@@ -16,6 +16,11 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/status.h>
 #include <limits.h>
 #include <stdio.h>
 
@@ -31,14 +36,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/status.h>
-
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/notification.h"
 #include "src/cpp/ext/chaotic_good.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"

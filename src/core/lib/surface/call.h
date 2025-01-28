@@ -19,25 +19,22 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 
+#include <grpc/grpc.h>
+#include <grpc/impl/compression_types.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#include <optional>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/compression_types.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -48,6 +45,8 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
@@ -66,8 +65,8 @@ typedef struct grpc_call_create_args {
 
   const void* server_transport_data;
 
-  absl::optional<grpc_core::Slice> path;
-  absl::optional<grpc_core::Slice> authority;
+  std::optional<grpc_core::Slice> path;
+  std::optional<grpc_core::Slice> authority;
 
   grpc_core::Timestamp send_deadline;
   bool registered_method;  // client_only
@@ -265,6 +264,16 @@ void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
 
 void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
 
+// Sets call tracer on the call and manages its life by using the call's arena.
+// When using this API, the tracer will be destroyed by grpc_call arena when
+// grpc_call is about to be destroyed. The caller of this API SHOULD NOT
+// manually destroy the tracer. This API is used by Python as a way of using
+// Arena to manage the lifetime of the call tracer. Python needs this API
+// because the tracer was created within a separate shared object library which
+// doesn't have access to core functions like arena->ManagedNew<>.
+void grpc_call_tracer_set_and_manage(grpc_call* call,
+                                     grpc_core::ClientCallTracer* tracer);
+
 void* grpc_call_tracer_get(grpc_call* call);
 
 #define GRPC_CALL_LOG_BATCH(ops, nops)                    \
@@ -275,6 +284,15 @@ void* grpc_call_tracer_get(grpc_call* call);
   } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);
+
+class ClientCallTracerWrapper {
+ public:
+  explicit ClientCallTracerWrapper(grpc_core::ClientCallTracer* tracer)
+      : tracer_(tracer) {}
+
+ private:
+  std::unique_ptr<grpc_core::ClientCallTracer> tracer_;
+};
 
 // Return an appropriate compression algorithm for the requested compression \a
 // level in the context of \a call.

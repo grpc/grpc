@@ -18,10 +18,12 @@
 
 #include "src/core/lib/surface/channel_init.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <queue>
 #include <set>
 #include <string>
@@ -32,15 +34,11 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
 

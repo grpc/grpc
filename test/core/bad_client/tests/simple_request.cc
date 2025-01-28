@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 
+#include "absl/log/check.h"
 #include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -26,6 +24,26 @@
 #define PFX_STR                                                            \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */              \
+  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
+                                            simple_request.headers in this \
+                                            directory */                   \
+  "\x10\x05:path\x08/foo/bar"                                              \
+  "\x10\x07:scheme\x04http"                                                \
+  "\x10\x07:method\x04POST"                                                \
+  "\x10\x0a:authority\x09localhost"                                        \
+  "\x10\x0c"                                                               \
+  "content-type\x10"                                                       \
+  "application/grpc"                                                       \
+  "\x10\x14grpc-accept-encoding\x15"                                       \
+  "deflate,identity,gzip"                                                  \
+  "\x10\x02te\x08trailers"                                                 \
+  "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
+
+#define ONE_SETTING_HDR              \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
+  "\x00\x00\x06\x04\x00\x00\x00\x00\x00" /* settings frame */
+
+#define USUAL_HDR                                                          \
   "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
                                             simple_request.headers in this \
                                             directory */                   \
@@ -221,7 +239,6 @@ int main(int argc, char** argv) {
                            "\x00\x00\x05\x00\x00\x00\x00\x00\x01"
                            "\x34\x00\x00\x00\x00",
                            0);
-
   // push a data frame with bad flags
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x00\x02\x00\x00\x00\x01", 0);
@@ -237,6 +254,22 @@ int main(int argc, char** argv) {
                            "\x00\x00\x04\x08\x00\x00\x00\x00\x01"
                            "\x00\x00\x00\x00",
                            0);
+  // push a valid secure frame with payload "hello" and setting
+  // `allow_security_frame` enabled, frame should be parsed
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr,
+      ONE_SETTING_HDR
+      "\xFE\x05\x00\x00\x00\x01" USUAL_HDR
+      "\x00\x00\x05\xC8\x00\x00\x00\x00\x00\x68\x65\x6C\x6C\x6F",
+      0);
+  // push a valid secure frame with payload "hello" and setting
+  // `allow_security_frame` disabled, frame should be ignored
+  GRPC_RUN_BAD_CLIENT_TEST(
+      VerifyRpcDoesNotGetCanceled, nullptr,
+      ONE_SETTING_HDR
+      "\xFE\x05\x00\x00\x00\x00" USUAL_HDR
+      "\x00\x00\x05\xC8\x00\x00\x00\x00\x00\x68\x65\x6C\x6C\x6F",
+      0);
   // push a short goaway
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x04\x07\x00\x00\x00\x00\x00", 0);

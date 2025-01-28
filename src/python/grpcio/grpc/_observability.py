@@ -61,7 +61,7 @@ class ObservabilityPlugin(
      the gRPC team.*
 
     The ClientCallTracerCapsule and ClientCallTracerCapsule created by this
-    plugin should be inject to gRPC core using observability_init at the
+    plugin should be injected to gRPC core using observability_init at the
     start of a program, before any channels/servers are built.
 
     Any future methods added to this interface cannot have the
@@ -93,27 +93,10 @@ class ObservabilityPlugin(
         Args:
           method_name: The method name of the call in byte format.
           target: The channel target of the call in byte format.
-          registered_method: Wether this method is pre-registered.
+          registered_method: Whether this method is pre-registered.
 
         Returns:
           A PyCapsule which stores a ClientCallTracer object.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def delete_client_call_tracer(
-        self, client_call_tracer: ClientCallTracerCapsule
-    ) -> None:
-        """Deletes the ClientCallTracer stored in ClientCallTracerCapsule.
-
-        After register the plugin, if tracing or stats is enabled, this method
-        will be called at the end of the call to destroy the ClientCallTracer.
-
-        The ClientCallTracer is an object which implements `grpc_core::ClientCallTracer`
-        interface and wrapped in a PyCapsule using `client_call_tracer` as name.
-
-        Args:
-          client_call_tracer: A PyCapsule which stores a ClientCallTracer object.
         """
         raise NotImplementedError()
 
@@ -274,22 +257,6 @@ def observability_deinit() -> None:
     """
     set_plugin(None)
     _cygrpc.clear_server_call_tracer_factory()
-
-
-def delete_call_tracer(client_call_tracer_capsule: Any) -> None:
-    """Deletes the ClientCallTracer stored in ClientCallTracerCapsule.
-
-    This method will be called at the end of the call to destroy the ClientCallTracer.
-
-    The ClientCallTracer is an object which implements `grpc_core::ClientCallTracer`
-    interface and wrapped in a PyCapsule using `client_call_tracer` as the name.
-
-    Args:
-      client_call_tracer_capsule: A PyCapsule which stores a ClientCallTracer object.
-    """
-    with get_plugin() as plugin:
-        if plugin and plugin.observability_enabled:
-            plugin.delete_client_call_tracer(client_call_tracer_capsule)
 
 
 def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:

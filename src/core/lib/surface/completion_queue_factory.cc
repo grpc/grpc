@@ -18,12 +18,10 @@
 
 #include "src/core/lib/surface/completion_queue_factory.h"
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
 

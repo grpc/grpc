@@ -14,6 +14,7 @@
 
 #include "src/core/lib/experiments/config.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
@@ -21,6 +22,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
@@ -29,13 +31,10 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/no_destruct.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 namespace grpc_core {
@@ -66,8 +65,8 @@ absl::AnyInvocable<bool(struct ExperimentMetadata)>* g_check_constraints_cb =
 class TestExperiments {
  public:
   TestExperiments(const ExperimentMetadata* experiment_metadata,
-                  size_t num_experiments) {
-    enabled_ = new bool[num_experiments];
+                  size_t num_experiments)
+      : enabled_(num_experiments) {
     for (size_t i = 0; i < num_experiments; i++) {
       if (g_check_constraints_cb != nullptr) {
         enabled_[i] = (*g_check_constraints_cb)(experiment_metadata[i]);
@@ -91,12 +90,10 @@ class TestExperiments {
   }
 
   // Overloading [] operator to access elements in array style
-  bool operator[](int index) { return enabled_[index]; }
-
-  ~TestExperiments() { delete enabled_; }
+  bool operator[](int index) const { return enabled_[index]; }
 
  private:
-  bool* enabled_;
+  std::vector<bool> enabled_;
 };
 
 TestExperiments* g_test_experiments = nullptr;
@@ -220,9 +217,6 @@ bool IsTestExperimentEnabled(size_t experiment_id) {
   return (*g_test_experiments)[experiment_id];
 }
 
-// This is VLOG(2) for Open Source gRPC because of a lot of log noise
-// complaints. However, internally we want LOG(INFO) so that it is easier for us
-// to debug prod issues.
 #define GRPC_EXPERIMENT_LOG VLOG(2)
 
 void PrintExperimentsList() {

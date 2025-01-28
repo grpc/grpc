@@ -18,10 +18,6 @@
 
 #include "test/core/security/oauth2_utils.h"
 
-#include <string.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -29,15 +25,17 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
 
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {

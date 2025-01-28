@@ -17,37 +17,32 @@
 //
 
 #include "absl/time/time.h"
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/time.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
+#include <gtest/gtest.h>
 #include <limits.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -55,6 +50,7 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/test_util/test_config.h"
@@ -320,7 +316,8 @@ struct write_socket_state {
 
 static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
                                    size_t* num_blocks, uint8_t* current_data) {
-  size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1u : 0u);
+  size_t nslices =
+      (num_bytes / slice_size) + (num_bytes % slice_size ? 1u : 0u);
   grpc_slice* slices =
       static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * nslices));
   size_t num_bytes_left = num_bytes;

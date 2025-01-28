@@ -12,25 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <benchmark/benchmark.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include <atomic>
 #include <cmath>
 #include <memory>
 #include <vector>
 
-#include <benchmark/benchmark.h>
-
 #include "absl/debugging/leak_check.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpcpp/impl/grpc_library.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -102,7 +100,7 @@ void BM_EventEngine_RunClosure(benchmark::State& state) {
   int cb_count = state.range(0);
   grpc_core::Notification* signal = new grpc_core::Notification();
   std::atomic_int count{0};
-  // Ignore leaks from this closure. For simplicty, this closure is not deleted
+  // Ignore leaks from this closure. For simplicity, this closure is not deleted
   // because the closure may still be executing after the EventEngine is
   // destroyed. This is because the default posix EventEngine's thread pool may
   // get destroyed separately from the EventEngine.

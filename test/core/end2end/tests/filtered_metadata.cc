@@ -16,15 +16,14 @@
 //
 //
 
-#include <memory>
-
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+#include <optional>
+
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -68,9 +67,9 @@ void TestRequestResponseWithMetadataToBeFiltered(
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(s.GetInitialMetadata("key1"), "val1");
-  EXPECT_EQ(s.GetInitialMetadata(filtered_md_key), absl::nullopt);
+  EXPECT_EQ(s.GetInitialMetadata(filtered_md_key), std::nullopt);
   EXPECT_EQ(server_initial_metadata.Get("key2"), "val2");
-  EXPECT_EQ(server_initial_metadata.Get(filtered_md_key), absl::nullopt);
+  EXPECT_EQ(server_initial_metadata.Get(filtered_md_key), std::nullopt);
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, ContentLengthIsFiltered) {

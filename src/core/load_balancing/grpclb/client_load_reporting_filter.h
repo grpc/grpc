@@ -19,10 +19,9 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H
 
-#include "absl/status/statusor.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -44,10 +43,10 @@ class ClientLoadReportingFilter final
     void OnClientInitialMetadata(ClientMetadata& client_initial_metadata);
     void OnServerInitialMetadata(ServerMetadata& server_initial_metadata);
     void OnServerTrailingMetadata(ServerMetadata& server_trailing_metadata);
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnFinalize;
 
    private:
     RefCountedPtr<GrpcLbClientStats> client_stats_;

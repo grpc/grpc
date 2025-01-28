@@ -18,19 +18,6 @@
 
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 
-#include <string.h>
-
-#include <memory>
-#include <string>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -39,16 +26,20 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <string.h>
 
+#include <memory>
+#include <optional>
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -64,13 +55,20 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
+#include "src/core/util/env.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 
 using grpc_core::Json;
 
@@ -108,7 +106,7 @@ struct metadata_server_detector {
 
 namespace {
 
-bool IsXdsNonCfeCluster(absl::optional<absl::string_view> xds_cluster) {
+bool IsXdsNonCfeCluster(std::optional<absl::string_view> xds_cluster) {
   if (!xds_cluster.has_value()) return false;
   if (absl::StartsWith(*xds_cluster, "google_cfe_")) return false;
   if (!absl::StartsWith(*xds_cluster, "xdstp:")) return true;
@@ -145,7 +143,7 @@ grpc_google_default_channel_credentials::create_security_connector(
           ? alts_creds_->create_security_connector(call_creds, target, args)
           : ssl_creds_->create_security_connector(call_creds, target, args);
   // grpclb-specific channel args are removed from the channel args set
-  // to ensure backends and fallback adresses will have the same set of channel
+  // to ensure backends and fallback addresses will have the same set of channel
   // args. By doing that, it guarantees the connections to backends will not be
   // torn down and re-connected when switching in and out of fallback mode.
   //
@@ -162,8 +160,7 @@ grpc_google_default_channel_credentials::update_arguments(
   return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 
-grpc_core::UniqueTypeName grpc_google_default_channel_credentials::type()
-    const {
+grpc_core::UniqueTypeName grpc_google_default_channel_credentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("GoogleDefault");
   return kFactory.Create();
 }
@@ -258,68 +255,54 @@ static int is_metadata_server_reachable() {
 static grpc_error_handle create_default_creds_from_path(
     const std::string& creds_path,
     grpc_core::RefCountedPtr<grpc_call_credentials>* creds) {
-  grpc_auth_json_key key;
-  grpc_auth_refresh_token token;
-  grpc_core::RefCountedPtr<grpc_call_credentials> result;
-  absl::StatusOr<grpc_core::Slice> creds_data;
-  grpc_error_handle error;
-  Json json;
   if (creds_path.empty()) {
-    error = GRPC_ERROR_CREATE("creds_path unset");
-    goto end;
+    return GRPC_ERROR_CREATE("creds_path unset");
   }
-  creds_data = grpc_core::LoadFile(creds_path, /*add_null_terminator=*/false);
+  auto creds_data =
+      grpc_core::LoadFile(creds_path, /*add_null_terminator=*/false);
   if (!creds_data.ok()) {
-    error = absl_status_to_grpc_error(creds_data.status());
-    goto end;
+    return absl_status_to_grpc_error(creds_data.status());
   }
-  {
-    auto json_or = grpc_core::JsonParse(creds_data->as_string_view());
-    if (!json_or.ok()) {
-      error = absl_status_to_grpc_error(json_or.status());
-      goto end;
-    }
-    json = std::move(*json_or);
+  auto json = grpc_core::JsonParse(creds_data->as_string_view());
+  if (!json.ok()) {
+    return absl_status_to_grpc_error(json.status());
   }
-  if (json.type() != Json::Type::kObject) {
-    error = GRPC_ERROR_CREATE(absl::StrCat("Failed to parse JSON \"",
-                                           creds_data->as_string_view(), "\""));
-    goto end;
+  if (json->type() != Json::Type::kObject) {
+    return GRPC_ERROR_CREATE(absl::StrCat("Failed to parse JSON \"",
+                                          creds_data->as_string_view(), "\""));
   }
-
   // First, try an auth json key.
-  key = grpc_auth_json_key_create_from_json(json);
+  grpc_auth_json_key key = grpc_auth_json_key_create_from_json(*json);
   if (grpc_auth_json_key_is_valid(&key)) {
-    result =
+    *creds =
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
             key, grpc_max_auth_token_lifetime());
-    if (result == nullptr) {
-      error = GRPC_ERROR_CREATE(
+    if (*creds == nullptr) {
+      return GRPC_ERROR_CREATE(
           "grpc_service_account_jwt_access_credentials_create_from_auth_json_"
           "key failed");
     }
-    goto end;
+    return absl::OkStatus();
   }
-
   // Then try a refresh token if the auth json key was invalid.
-  token = grpc_auth_refresh_token_create_from_json(json);
+  grpc_auth_refresh_token token =
+      grpc_auth_refresh_token_create_from_json(*json);
   if (grpc_auth_refresh_token_is_valid(&token)) {
-    result =
+    *creds =
         grpc_refresh_token_credentials_create_from_auth_refresh_token(token);
-    if (result == nullptr) {
-      error = GRPC_ERROR_CREATE(
+    if (*creds == nullptr) {
+      return GRPC_ERROR_CREATE(
           "grpc_refresh_token_credentials_create_from_auth_refresh_token "
           "failed");
     }
-    goto end;
+    return absl::OkStatus();
   }
-
-  result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
-
-end:
-  CHECK((result == nullptr) + (error.ok()) == 1);
-  *creds = result;
-  return error;
+  // Use external creds.
+  auto external_creds =
+      grpc_core::ExternalAccountCredentials::Create(*json, {});
+  if (!external_creds.ok()) return external_creds.status();
+  *creds = std::move(*external_creds);
+  return absl::OkStatus();
 }
 
 static void update_tenancy() {

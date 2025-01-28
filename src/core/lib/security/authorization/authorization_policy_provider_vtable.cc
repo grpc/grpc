@@ -16,8 +16,8 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 
 namespace {

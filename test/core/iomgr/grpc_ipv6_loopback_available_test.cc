@@ -16,13 +16,11 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 
 #ifdef GPR_WINDOWS

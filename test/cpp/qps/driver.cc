@@ -18,6 +18,12 @@
 
 #include "test/cpp/qps/driver.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+
 #include <cinttypes>
 #include <deque>
 #include <list>
@@ -28,16 +34,9 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "google/protobuf/timestamp.pb.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -179,8 +178,8 @@ static void postprocess_scenario_result(ScenarioResult* result) {
     result->mutable_summary()->set_server_cpu_usage(0);
   } else {
     auto server_cpu_usage =
-        100 - 100 * average(result->server_stats(), ServerIdleCpuTime) /
-                  average(result->server_stats(), ServerTotalCpuTime);
+        100 - (100 * average(result->server_stats(), ServerIdleCpuTime) /
+               average(result->server_stats(), ServerTotalCpuTime));
     result->mutable_summary()->set_server_cpu_usage(server_cpu_usage);
   }
 

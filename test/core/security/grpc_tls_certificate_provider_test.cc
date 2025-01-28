@@ -16,20 +16,18 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
+#include <gmock/gmock.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <gtest/gtest.h>
+
 #include <deque>
 #include <list>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/status/status.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
@@ -41,6 +39,8 @@
 #define SERVER_CERT_PATH_2 "src/core/tsi/test_creds/server0.pem"
 #define SERVER_KEY_PATH_2 "src/core/tsi/test_creds/server0.key"
 #define INVALID_PATH "invalid/path"
+#define MALFORMED_CERT_PATH "src/core/tsi/test_creds/malformed-cert.pem"
+#define MALFORMED_KEY_PATH "src/core/tsi/test_creds/malformed-key.pem"
 
 namespace grpc_core {
 
@@ -118,8 +118,8 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     ~TlsCertificatesTestWatcher() override { state_->watcher = nullptr; }
 
     void OnCertificatesChanged(
-        absl::optional<absl::string_view> root_certs,
-        absl::optional<PemKeyCertPairList> key_cert_pairs) override {
+        std::optional<absl::string_view> root_certs,
+        std::optional<PemKeyCertPairList> key_cert_pairs) override {
       MutexLock lock(&state_->mu);
       std::string updated_root;
       if (root_certs.has_value()) {
@@ -163,12 +163,14 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     root_cert_2_ = GetFileContents(CA_CERT_PATH_2);
     cert_chain_2_ = GetFileContents(SERVER_CERT_PATH_2);
     private_key_2_ = GetFileContents(SERVER_KEY_PATH_2);
+    malformed_cert_ = GetFileContents(MALFORMED_CERT_PATH);
+    malformed_key_ = GetFileContents(MALFORMED_KEY_PATH);
   }
 
   WatcherState* MakeWatcher(
       RefCountedPtr<grpc_tls_certificate_distributor> distributor,
-      absl::optional<std::string> root_cert_name,
-      absl::optional<std::string> identity_cert_name) {
+      std::optional<std::string> root_cert_name,
+      std::optional<std::string> identity_cert_name) {
     MutexLock lock(&mu_);
     distributor_ = distributor;
     watchers_.emplace_back();
@@ -196,6 +198,8 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   std::string root_cert_2_;
   std::string private_key_2_;
   std::string cert_chain_2_;
+  std::string malformed_cert_;
+  std::string malformed_key_;
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   // Use a std::list<> here to avoid the address invalidation caused by internal
   // reallocation of std::vector<>.
@@ -217,18 +221,55 @@ TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
-      MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
+      MakeWatcher(provider.distributor(), kCertName, std::nullopt);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
-      MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
+      MakeWatcher(provider.distributor(), std::nullopt, kCertName);
   EXPECT_THAT(
       watcher_state_3->GetCredentialQueue(),
       ::testing::ElementsAre(CredentialInfo(
           "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
   CancelWatch(watcher_state_3);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithGoodPathsAndCredentialValidation) {
+  StaticDataCertificateProvider provider(
+      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithMalformedRootCertificate) {
+  StaticDataCertificateProvider provider(
+      malformed_cert_,
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithMalformedIdentityCertificate) {
+  StaticDataCertificateProvider provider(
+      root_cert_,
+      MakeCertKeyPairs(private_key_.c_str(), malformed_cert_.c_str()));
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError(
+                "Failed to parse certificate chain as PEM: Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithMalformedIdentityKey) {
+  StaticDataCertificateProvider provider(
+      root_cert_,
+      MakeCertKeyPairs(malformed_key_.c_str(), cert_chain_.c_str()));
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::NotFoundError(
+                "Failed to parse private key as PEM: No private key found."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -245,18 +286,52 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
-      MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
+      MakeWatcher(provider.distributor(), kCertName, std::nullopt);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
-      MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
+      MakeWatcher(provider.distributor(), std::nullopt, kCertName);
   EXPECT_THAT(
       watcher_state_3->GetCredentialQueue(),
       ::testing::ElementsAre(CredentialInfo(
           "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
   CancelWatch(watcher_state_3);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithGoodPathsAndCredentialValidation) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithMalformedRootCertificate) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2, SERVER_CERT_PATH_2,
+                                          MALFORMED_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithMalformedIdentityCertificate) {
+  FileWatcherCertificateProvider provider(
+      SERVER_KEY_PATH_2, MALFORMED_CERT_PATH, CA_CERT_PATH_2, 1);
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError(
+                "Failed to parse certificate chain as PEM: Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithMalformedIdentityKey) {
+  FileWatcherCertificateProvider provider(
+      MALFORMED_KEY_PATH, SERVER_CERT_PATH_2, CA_CERT_PATH_2, 1);
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::NotFoundError(
+                "Failed to parse private key as PEM: No private key found."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -272,14 +347,14 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
-      MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
+      MakeWatcher(provider.distributor(), kCertName, std::nullopt);
   EXPECT_THAT(watcher_state_2->GetErrorQueue(),
               ::testing::ElementsAre(ErrorInfo(kRootError, "")));
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
-      MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
+      MakeWatcher(provider.distributor(), std::nullopt, kCertName);
   EXPECT_THAT(watcher_state_3->GetErrorQueue(),
               ::testing::ElementsAre(ErrorInfo("", kIdentityError)));
   EXPECT_THAT(watcher_state_3->GetCredentialQueue(), ::testing::ElementsAre());

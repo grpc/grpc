@@ -19,30 +19,28 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_CHANNELZ_H
 #define GRPC_SRC_CORE_CHANNELZ_CHANNELZ_H
 
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <atomic>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channel_trace.h"
-#include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/per_cpu.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 
@@ -154,31 +152,12 @@ class PerCpuCallCountingHelper final {
 
   // We want to ensure that this per-cpu data structure lands on different
   // cachelines per cpu.
-  // With C++17 we can do so explicitly with an `alignas` specifier.
-  // Prior versions we can at best approximate it by padding the structure.
-  // It'll probably work out ok, but it's not guaranteed across allocators.
-  // (in the bad case where this gets split across cachelines we'll just have
-  // two cpus fighting over the same cacheline with a slight performance
-  // degregation).
-  // TODO(ctiller): When we move to C++17 delete the duplicate definition.
-#if __cplusplus >= 201703L
   struct alignas(GPR_CACHELINE_SIZE) PerCpuData {
     std::atomic<int64_t> calls_started{0};
     std::atomic<int64_t> calls_succeeded{0};
     std::atomic<int64_t> calls_failed{0};
     std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
   };
-#else
-  struct PerCpuDataHeader {
-    std::atomic<int64_t> calls_started{0};
-    std::atomic<int64_t> calls_succeeded{0};
-    std::atomic<int64_t> calls_failed{0};
-    std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
-  };
-  struct PerCpuData : public PerCpuDataHeader {
-    uint8_t padding[GPR_CACHELINE_SIZE - sizeof(PerCpuDataHeader)];
-  };
-#endif
   PerCpu<PerCpuData> per_cpu_data_{PerCpuOptions().SetCpusPerShard(4)};
 };
 
@@ -348,8 +327,8 @@ class SocketNode final : public BaseNode {
     };
     enum class ModelType { kUnset = 0, kTls = 1, kOther = 2 };
     ModelType type = ModelType::kUnset;
-    absl::optional<Tls> tls;
-    absl::optional<Json> other;
+    std::optional<Tls> tls;
+    std::optional<Json> other;
 
     Json RenderJson();
 

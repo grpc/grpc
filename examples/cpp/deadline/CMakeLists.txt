@@ -16,7 +16,7 @@
 # See cmake_externalproject/CMakeLists.txt for all-in-one cmake build
 # that automatically builds all the dependencies before building this example.
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 
 project(Deadline C CXX)
 

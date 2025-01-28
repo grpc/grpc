@@ -208,8 +208,12 @@ class SignalHandlingTest(unittest.TestCase):
                 self._handler.await_connected_client()
                 client.send_signal(signal.SIGINT)
                 client.wait()
-                print(_read_stream(client_stderr))
-                self.assertEqual(0, client.returncode)
+                client_stderr_output = _read_stream(client_stderr)
+                try:
+                    self.assertEqual(0, client.returncode)
+                except AssertionError:
+                    print(client_stderr_output, file=sys.stderr)
+                    raise
 
 
 if __name__ == "__main__":

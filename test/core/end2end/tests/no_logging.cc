@@ -16,8 +16,12 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+
 #include <atomic>
 #include <map>
+#include <optional>
 #include <regex>
 #include <string>
 #include <utility>
@@ -30,14 +34,9 @@
 #include "absl/log/log_sink_registry.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -90,17 +89,18 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // We should be very conservative while adding new entries to this list,
     // because this has potential to cause massive log noise. Several users are
     // using INFO log level setting for production.
-    static const auto* const allowed_logs_by_module =
-        new std::map<absl::string_view, std::regex>(
-            {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
-             {"chttp2_transport.cc",
-              std::regex("Sending goaway.*Channel Destroyed")},
-             {"chaotic_good_server.cc",
-              std::regex("Failed to bind some addresses for.*")},
-             {"log.cc",
-              std::regex("Prefer WARNING or ERROR. However if you see this "
-                         "message in a debug environmenmt or test environmenmt "
-                         "it is safe to ignore this message.")}});
+    static const auto* const allowed_logs_by_module = new std::map<
+        absl::string_view, std::regex>(
+        {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
+         {"chaotic_good_server.cc",
+          std::regex("Failed to bind some addresses for.*")},
+         {"log.cc",
+          std::regex("Prefer WARNING or ERROR. However if you see this "
+                     "message in a debug environment or test environment "
+                     "it is safe to ignore this message.")},
+         {"chttp2_server.cc",
+          std::regex(
+              "Only [0-9]+ addresses added out of total [0-9]+ resolved")}});
 
     if (IsVlogWithVerbosityMoreThan1(entry)) {
       return;
@@ -124,7 +124,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // If we reach here means we have log noise. log_noise_absent_ will make the
     // test fail.
     log_noise_absent_ = false;
-    LOG(ERROR) << "Unwanted log at location : " << entry.source_filename()
+    LOG(ERROR) << "🛑 Unwanted log at location : " << entry.source_filename()
                << ":" << entry.source_line() << " " << entry.text_message();
   }
 
@@ -136,7 +136,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
 
 void SimpleRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
   c.NewBatch(1)
@@ -147,8 +147,8 @@ void SimpleRequest(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

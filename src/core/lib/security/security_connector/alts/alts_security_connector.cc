@@ -18,17 +18,6 @@
 
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
-#include <string.h>
-
-#include <algorithm>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -36,12 +25,19 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
 
+#include <algorithm>
+#include <optional>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -56,6 +52,8 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 void grpc_alts_set_rpc_protocol_versions(
     grpc_gcp_rpc_protocol_versions* rpc_versions) {

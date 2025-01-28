@@ -16,29 +16,28 @@
 //
 //
 
-#include <memory>
-#include <new>
-
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+#include <new>
+#include <optional>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "test/core/test_util/test_config.h"
@@ -78,7 +77,7 @@ void TestRetryCancelWithMultipleSendBatches(
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(3))
                .Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Start a batch containing send_initial_metadata.
   c.NewBatch(1).SendInitialMetadata({});
   // Start a batch containing send_message.
@@ -186,12 +185,14 @@ void RegisterFilter() {
 }
 
 CORE_END2END_TEST(RetryTest, RetryCancelWithMultipleSendBatches) {
+  SKIP_IF_V3();  // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(RetryTest, RetryDeadlineWithMultipleSendBatches) {
+  SKIP_IF_V3();  // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<DeadlineCancellationMode>());

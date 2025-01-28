@@ -554,7 +554,7 @@ def wait_until_dns_server_is_up(dns_server_ip):
         time.sleep(0.1)
     raise Exception(
         "Failed to reach DNS server over TCP and/or UDP. "
-        "Exitting without running tests."
+        "Exiting without running tests."
     )
 
 

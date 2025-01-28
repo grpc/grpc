@@ -23,14 +23,12 @@
 #pragma comment(lib, "crypt32")
 
 #include <esent.h>
-#include <wincrypt.h>
-
-#include <vector>
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <wincrypt.h>
+
+#include <vector>
 
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/slice/slice_internal.h"

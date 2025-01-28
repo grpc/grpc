@@ -16,6 +16,8 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <gtest/gtest.h>
 #include <spawn.h>
 
 #include <sstream>
@@ -23,21 +25,16 @@
 #include <thread>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/time/time.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 #include "test/core/test_util/test_config.h"
 
 extern char** environ;

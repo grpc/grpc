@@ -259,7 +259,7 @@
    issued by the tcp_write(). By default, this is set to 4. */
 #define GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS \
   "grpc.experimental.tcp_tx_zerocopy_max_simultaneous_sends"
-/* Overrides the TCP socket recieve buffer size, SO_RCVBUF. */
+/* Overrides the TCP socket receive buffer size, SO_RCVBUF. */
 #define GRPC_ARG_TCP_RECEIVE_BUFFER_SIZE "grpc.tcp_receive_buffer_size"
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
@@ -400,6 +400,8 @@
   "grpc.max_allowed_incoming_connections"
 /** Configure per-channel or per-server stats plugins. */
 #define GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS "grpc.experimental.stats_plugins"
+/** If non-zero, allow security frames to be sent and received. */
+#define GRPC_ARG_SECURITY_FRAME_ALLOWED "grpc.security_frame_allowed"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

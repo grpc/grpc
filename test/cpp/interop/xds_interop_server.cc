@@ -16,6 +16,10 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpcpp/ext/csm_observability.h>
+#include <grpcpp/health_check_service_interface.h>
+
 #include <iostream>
 
 #include "absl/flags/flag.h"
@@ -23,12 +27,7 @@
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
-
-#include <grpc/grpc.h>
-#include <grpcpp/ext/csm_observability.h>
-#include <grpcpp/health_check_service_interface.h>
-
-#include "src/core/lib/iomgr/gethostname.h"
+#include "src/core/util/gethostname.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/xds_interop_server_lib.h"
 #include "test/cpp/util/test_config.h"
@@ -50,6 +49,7 @@ grpc::CsmObservability EnableCsmObservability() {
   // default was "localhost:9464" which causes connection issue across GKE
   // pods
   opts.url = "0.0.0.0:9464";
+  opts.without_otel_scope = false;
   auto prometheus_exporter =
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =

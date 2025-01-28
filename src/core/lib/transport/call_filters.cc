@@ -14,132 +14,20 @@
 
 #include "src/core/lib/transport/call_filters.h"
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_core {
-
-namespace filters_detail {
-
-void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data) {
-  for (const auto& op : ops) {
-    op.half_close(Offset(call_data, op.call_offset), op.channel_data);
-  }
-}
-
-ServerMetadataHandle RunServerTrailingMetadata(
-    absl::Span<const ServerTrailingMetadataOperator> ops, void* call_data,
-    ServerMetadataHandle md) {
-  for (auto& op : ops) {
-    md = op.server_trailing_metadata(Offset(call_data, op.call_offset),
-                                     op.channel_data, std::move(md));
-  }
-  return md;
-}
-
-template <typename T>
-OperationExecutor<T>::~OperationExecutor() {
-  if (promise_data_ != nullptr) {
-    ops_->early_destroy(promise_data_);
-    gpr_free_aligned(promise_data_);
-  }
-}
-
-template <typename T>
-Poll<ResultOr<T>> OperationExecutor<T>::Start(const Layout<T>* layout, T input,
-                                              void* call_data) {
-  ops_ = layout->ops.data();
-  end_ops_ = ops_ + layout->ops.size();
-  if (layout->promise_size == 0) {
-    // No call state ==> instantaneously ready
-    auto r = InitStep(std::move(input), call_data);
-    CHECK(r.ready());
-    return r;
-  }
-  promise_data_ =
-      gpr_malloc_aligned(layout->promise_size, layout->promise_alignment);
-  return InitStep(std::move(input), call_data);
-}
-
-template <typename T>
-Poll<ResultOr<T>> OperationExecutor<T>::InitStep(T input, void* call_data) {
-  CHECK(input != nullptr);
-  while (true) {
-    if (ops_ == end_ops_) {
-      return ResultOr<T>{std::move(input), nullptr};
-    }
-    auto p =
-        ops_->promise_init(promise_data_, Offset(call_data, ops_->call_offset),
-                           ops_->channel_data, std::move(input));
-    if (auto* r = p.value_if_ready()) {
-      if (r->ok == nullptr) return std::move(*r);
-      input = std::move(r->ok);
-      ++ops_;
-      continue;
-    }
-    return Pending{};
-  }
-}
-
-template <typename T>
-Poll<ResultOr<T>> OperationExecutor<T>::Step(void* call_data) {
-  DCHECK_NE(promise_data_, nullptr);
-  auto p = ContinueStep(call_data);
-  if (p.ready()) {
-    gpr_free_aligned(promise_data_);
-    promise_data_ = nullptr;
-  }
-  return p;
-}
-
-template <typename T>
-Poll<ResultOr<T>> OperationExecutor<T>::ContinueStep(void* call_data) {
-  auto p = ops_->poll(promise_data_);
-  if (auto* r = p.value_if_ready()) {
-    if (r->ok == nullptr) return std::move(*r);
-    ++ops_;
-    return InitStep(std::move(r->ok), call_data);
-  }
-  return Pending{};
-}
-
-// Explicit instantiations of some types used in filters.h
-// We'll need to add ServerMetadataHandle to this when it becomes different
-// to ClientMetadataHandle
-template class OperationExecutor<ClientMetadataHandle>;
-template class OperationExecutor<MessageHandle>;
-
-}  // namespace filters_detail
-
-namespace {
 // Call data for those calls that don't have any call data
 // (we form pointers to this that aren't allowed to be nullptr)
-char g_empty_call_data;
-}  // namespace
+char CallFilters::g_empty_call_data_;
 
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters
-
-CallFilters::CallFilters(ClientMetadataHandle client_initial_metadata)
-    : call_data_(nullptr),
-      push_client_initial_metadata_(std::move(client_initial_metadata)) {}
-
-CallFilters::~CallFilters() {
-  if (call_data_ != nullptr && call_data_ != &g_empty_call_data) {
-    for (const auto& stack : stacks_) {
-      for (const auto& destructor : stack.stack->data_.filter_destructor) {
-        destructor.call_destroy(filters_detail::Offset(
-            call_data_, stack.call_data_offset + destructor.call_offset));
-      }
-    }
-    gpr_free_aligned(call_data_);
-  }
-}
 
 void CallFilters::Start() {
   CHECK_EQ(call_data_, nullptr);
@@ -161,7 +49,7 @@ void CallFilters::Start() {
   if (call_data_size != 0) {
     call_data_ = gpr_malloc_aligned(call_data_size, call_data_alignment);
   } else {
-    call_data_ = &g_empty_call_data;
+    call_data_ = &g_empty_call_data_;
   }
   for (const auto& stack : stacks_) {
     for (const auto& constructor : stack.stack->data_.filter_constructor) {
@@ -188,14 +76,10 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
 void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   // We expect something cancelled before now
   if (push_server_trailing_metadata_ == nullptr) return;
-  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-    VLOG(2).AtLocation(but_where.file(), but_where.line())
-        << "Cancelling due to failed pipe operation: " << DebugString();
-  }
-  auto status =
-      ServerMetadataFromStatus(GRPC_STATUS_CANCELLED, "Failed pipe operation");
-  status->Set(GrpcCallWasCancelled(), true);
-  PushServerTrailingMetadata(std::move(status));
+  GRPC_TRACE_VLOG(promise_primitives, 2)
+          .AtLocation(but_where.file(), but_where.line())
+      << "Cancelling due to failed pipe operation: " << DebugString();
+  Cancel();
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
@@ -207,6 +91,15 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   if (call_state_.PushServerTrailingMetadata(
           md->get(GrpcCallWasCancelled()).value_or(false))) {
     push_server_trailing_metadata_ = std::move(md);
+  }
+}
+
+void CallFilters::Cancel() {
+  GRPC_TRACE_LOG(call, INFO) << GetContext<Activity>()->DebugTag() << " Cancel["
+                             << this << "]: into " << DebugString();
+  if (call_state_.PushServerTrailingMetadata(true)) {
+    push_server_trailing_metadata_ =
+        CancelledServerMetadataFromStatus(GRPC_STATUS_CANCELLED);
   }
 }
 

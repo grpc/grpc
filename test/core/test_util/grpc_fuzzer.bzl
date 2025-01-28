@@ -14,11 +14,26 @@
 
 """
 Includes fuzzer rules.
+
+Now that we are at C++17, please prefer grpc_fuzz_test over the
+grpc_fuzzer/grpc_proto_fuzzer older rules for new fuzzers - the former is
+simpler and better maintained, and we'll eventually replace existing fuzzers
+with grpc_fuzz_test.
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library")
 
-def grpc_fuzzer(name, corpus, owner = "grpc", srcs = [], tags = [], external_deps = [], deps = [], data = [], size = "large", **kwargs):
+def grpc_fuzzer(
+        name,
+        corpus,
+        owner = "grpc",  # @unused
+        srcs = [],
+        tags = [],
+        external_deps = [],
+        deps = [],
+        data = [],
+        size = "large",
+        **kwargs):
     """Instantiates a fuzzer test.
 
     Args:
@@ -75,8 +90,9 @@ def grpc_proto_fuzzer(
         corpus: The corpus for the test.
         proto: The proto for the test. If empty, it assumes the proto dependency
                 is already included in the target deps. Otherwise it creates a
-                new grpc_proto_library with name "_{name}_proto" and makes the
-                fuzz target depend on it.
+                new proto_library with name "_{name}_proto" and
+                cc_proto_library with name "_{name}_cc_proto" and makes the
+                fuzz target depend on the latter.
         proto_deps: Deps for proto. Only used if proto is not empty.
         external_deps: External deps.
         srcs: The source files for the test.
@@ -98,13 +114,17 @@ def grpc_proto_fuzzer(
 
     if proto != None:
         PROTO_LIBRARY = "_%s_proto" % name
-        grpc_proto_library(
+        grpc_internal_proto_library(
             name = PROTO_LIBRARY,
             srcs = [proto],
             deps = proto_deps,
-            has_services = False,
         )
-        deps = deps + [PROTO_LIBRARY]
+        CC_PROTO_LIBRARY = "_%s_cc_proto" % name
+        grpc_cc_proto_library(
+            name = CC_PROTO_LIBRARY,
+            deps = [PROTO_LIBRARY],
+        )
+        deps = deps + [CC_PROTO_LIBRARY]
 
     grpc_cc_test(
         name = name,
@@ -122,4 +142,33 @@ def grpc_proto_fuzzer(
             "//conditions:default": ["--directory=" + CORPUS_DIR],
         }),
         **kwargs
+    )
+
+def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], data = [], external_deps = []):
+    """Instantiates a fuzztest based test.
+
+    This is the preferred method of writing fuzzers.
+
+    Args:
+        name: The name of the test.
+        srcs: The source files for the test.
+        deps: The dependencies of the test.
+        tags: The tags for the test.
+        data: The data for the test.
+        external_deps: External deps.
+    """
+    grpc_cc_test(
+        name = name,
+        srcs = srcs,
+        tags = tags + [
+            "grpc-fuzzer",
+            "grpc-fuzztest",
+            "no-cache",
+            "no_windows",
+            "bazel_only",
+        ],
+        deps = deps,
+        uses_polling = False,
+        data = data,
+        external_deps = external_deps,
     )

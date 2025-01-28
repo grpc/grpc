@@ -14,19 +14,17 @@
 
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <stdlib.h>
 
 #include <memory>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/notification.h"
 
 namespace grpc_core {
 

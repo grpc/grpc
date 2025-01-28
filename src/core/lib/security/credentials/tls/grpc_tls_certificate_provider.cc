@@ -16,6 +16,10 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
+#include <grpc/credentials.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 #include <time.h>
 
@@ -26,22 +30,65 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/credentials.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
+#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/stat.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/stat.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
+namespace {
+
+absl::Status ValidateRootCertificates(absl::string_view root_certificates) {
+  if (root_certificates.empty()) return absl::OkStatus();
+  absl::StatusOr<std::vector<X509*>> parsed_roots =
+      ParsePemCertificateChain(root_certificates);
+  if (!parsed_roots.ok()) {
+    return absl::Status(
+        parsed_roots.status().code(),
+        absl::StrCat("Failed to parse root certificates as PEM: ",
+                     parsed_roots.status().message()));
+  }
+  for (X509* x509 : *parsed_roots) {
+    X509_free(x509);
+  }
+  return absl::OkStatus();
+}
+
+absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
+                                    absl::string_view private_key) {
+  if (cert_chain.empty() && private_key.empty()) return absl::OkStatus();
+  // Check that the cert chain consists of valid PEM blocks.
+  absl::StatusOr<std::vector<X509*>> parsed_certs =
+      ParsePemCertificateChain(cert_chain);
+  if (!parsed_certs.ok()) {
+    return absl::Status(
+        parsed_certs.status().code(),
+        absl::StrCat("Failed to parse certificate chain as PEM: ",
+                     parsed_certs.status().message()));
+  }
+  for (X509* x509 : *parsed_certs) {
+    X509_free(x509);
+  }
+  // Check that the private key consists of valid PEM blocks.
+  absl::StatusOr<EVP_PKEY*> parsed_private_key =
+      ParsePemPrivateKey(private_key);
+  if (!parsed_private_key.ok()) {
+    return absl::Status(parsed_private_key.status().code(),
+                        absl::StrCat("Failed to parse private key as PEM: ",
+                                     parsed_private_key.status().message()));
+  }
+  EVP_PKEY_free(*parsed_private_key);
+  return absl::OkStatus();
+}
+
+}  // namespace
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
@@ -52,8 +99,8 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    absl::optional<std::string> root_certificate;
-    absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
+    std::optional<std::string> root_certificate;
+    std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         !root_certificate_.empty()) {
@@ -100,6 +147,21 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
 UniqueTypeName StaticDataCertificateProvider::type() const {
   static UniqueTypeName::Factory kFactory("StaticData");
   return kFactory.Create();
+}
+
+absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
+  absl::Status status = ValidateRootCertificates(root_certificate_);
+  if (!status.ok()) {
+    return status;
+  }
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
 }
 
 namespace {
@@ -154,8 +216,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    absl::optional<std::string> root_certificate;
-    absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
+    std::optional<std::string> root_certificate;
+    std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     FileWatcherCertificateProvider::WatcherInfo& info =
         watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
@@ -206,9 +268,25 @@ UniqueTypeName FileWatcherCertificateProvider::type() const {
   return kFactory.Create();
 }
 
+absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
+  MutexLock lock(&mu_);
+  absl::Status status = ValidateRootCertificates(root_certificate_);
+  if (!status.ok()) {
+    return status;
+  }
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
+}
+
 void FileWatcherCertificateProvider::ForceUpdate() {
-  absl::optional<std::string> root_certificate;
-  absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
+  std::optional<std::string> root_certificate;
+  std::optional<PemKeyCertPairList> pem_key_cert_pairs;
   if (!root_cert_path_.empty()) {
     root_certificate = ReadRootCertificatesFromFile(root_cert_path_);
   }
@@ -247,8 +325,8 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
-      absl::optional<std::string> root_to_report;
-      absl::optional<PemKeyCertPairList> identity_to_report;
+      std::optional<std::string> root_to_report;
+      std::optional<PemKeyCertPairList> identity_to_report;
       // Set key materials to the distributor if their contents changed.
       if (info.root_being_watched && !root_certificate_.empty() &&
           root_cert_changed) {
@@ -276,7 +354,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   }
 }
 
-absl::optional<std::string>
+std::optional<std::string>
 FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     const std::string& root_cert_full_path) {
   // Read the root file.
@@ -285,7 +363,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
   if (!root_slice.ok()) {
     LOG(ERROR) << "Reading file " << root_cert_full_path
                << " failed: " << root_slice.status();
-    return absl::nullopt;
+    return std::nullopt;
   }
   return std::string(root_slice->as_string_view());
 }
@@ -302,7 +380,7 @@ time_t GetModificationTime(const char* filename) {
 
 }  // namespace
 
-absl::optional<PemKeyCertPairList>
+std::optional<PemKeyCertPairList>
 FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     const std::string& private_key_path,
     const std::string& identity_certificate_path) {
@@ -363,7 +441,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   }
   LOG(ERROR) << "All retry attempts failed. Will try again after the next "
                 "interval.";
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()

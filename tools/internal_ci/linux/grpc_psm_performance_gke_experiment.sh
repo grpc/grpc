@@ -19,16 +19,6 @@ cd "$(dirname "$0")/../../.."
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# This is to ensure we can push and pull images from gcr.io. We do not
-# necessarily need it to run load tests, but will need it when we employ
-# pre-built images in the optimization.
-gcloud auth configure-docker
-
-# Connect to benchmarks-prod2 cluster.
-gcloud config set project grpc-testing
-gcloud container clusters get-credentials psm-benchmarks-performance \
-  --zone us-central1-b --project grpc-testing
-
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 # BEGIN differentiate experimental configuration from master configuration.
@@ -38,7 +28,7 @@ fi
 BIGQUERY_TABLE_8CORE=e2e_benchmarks.psm_experimental_results_8core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
-PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
+PREBUILT_IMAGE_PREFIX="us-docker.pkg.dev/grpc-testing/e2etest-prebuilt"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
 # Head of the workspace checked out by Kokoro.
@@ -56,6 +46,17 @@ WORKER_POOL_8CORE=workers-c2-8core-ci
 # Prefix for log URLs in cnsviewer.
 LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
 
+# This is to ensure we can push and pull images from GCR and Artifact Registry.
+# We do not necessarily need it to run load tests, but will need it when we
+# employ pre-built images in the optimization.
+gcloud auth configure-docker --quiet
+gcloud auth configure-docker "${PREBUILT_IMAGE_PREFIX%%/*}" --quiet
+
+# Connect to benchmarks-prod2 cluster.
+gcloud config set project grpc-testing
+gcloud container clusters get-credentials psm-benchmarks-performance \
+  --zone us-central1-b --project grpc-testing
+
 # Clone test-infra repository and build all tools.
 pushd ..
 git clone https://github.com/grpc/test-infra.git
@@ -70,7 +71,7 @@ TEST_INFRA_VERSION=$(git describe --tags "$(git rev-list --tags --max-count=1)")
 popd
 
 # PSM tests related ENV
-PSM_IMAGE_PREFIX=gcr.io/grpc-testing/e2etest/runtime
+PSM_IMAGE_PREFIX=us-docker.pkg.dev/grpc-testing/e2etest
 PSM_IMAGE_TAG=${TEST_INFRA_VERSION}
 
 # Build psm test configurations.

@@ -13,18 +13,21 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/call")
 
-grpc_yodel_simple_test(
-    name = "client_call",
+grpc_fuzz_test(
+    name = "client_call_test",
     srcs = [
         "client_call_test.cc",
     ],
-    external_deps = ["gtest"],
-    language = "C++",
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     deps = [
         "batch_builder",
         "//:grpc_base",
@@ -32,13 +35,16 @@ grpc_yodel_simple_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "server_call",
+grpc_fuzz_test(
+    name = "server_call_test",
     srcs = [
         "server_call_test.cc",
     ],
-    external_deps = ["gtest"],
-    language = "C++",
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     deps = [
         "batch_builder",
         "//:grpc_base",
@@ -52,7 +58,6 @@ grpc_cc_test(
         "call_utils_test.cc",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:grpc_base",
     ],
@@ -82,8 +87,21 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_client_call",
     srcs = ["bm_client_call.cc"],
+    monitoring = HISTORY,
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",
+    ],
+)
+
+grpc_cc_test(
+    name = "request_buffer_test",
+    srcs = [
+        "request_buffer_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        "//src/core:request_buffer",
+        "//test/core/promise:poll_matcher",
     ],
 )

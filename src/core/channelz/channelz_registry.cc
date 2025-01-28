@@ -18,6 +18,11 @@
 
 #include "src/core/channelz/channelz_registry.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -26,18 +31,11 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/channelz/channelz.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace channelz {

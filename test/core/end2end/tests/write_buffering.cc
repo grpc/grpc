@@ -16,14 +16,13 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+
+#include "gtest/gtest.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {

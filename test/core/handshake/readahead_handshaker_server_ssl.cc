@@ -16,26 +16,25 @@
 //
 //
 
+#include <grpc/grpc.h>
+
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "test/core/handshake/server_ssl_common.h"
 #include "test/core/test_util/test_config.h"
 
