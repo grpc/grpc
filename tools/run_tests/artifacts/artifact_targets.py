@@ -275,7 +275,7 @@ class RubyArtifact:
                 self.gem_platform,
             ],
             use_workspace=True,
-            timeout_seconds=120 * 60,
+            timeout_seconds=180 * 60,
             environ=environ,
         )
 
@@ -471,10 +471,10 @@ def targets():
             PythonArtifact("windows", "x64", "Python312"),
             PythonArtifact("windows", "x64", "Python313", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
-            RubyArtifact("linux", "x64-mingw32", presubmit=True),
+            RubyArtifact("linux", "x64-mingw32"),
             RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
             RubyArtifact("linux", "x86_64-linux", presubmit=True),
-            RubyArtifact("linux", "x86-linux", presubmit=True),
+            RubyArtifact("linux", "x86-linux"),
             RubyArtifact("linux", "aarch64-linux", presubmit=True),
             RubyArtifact("linux", "x86_64-darwin", presubmit=True),
             RubyArtifact("linux", "arm64-darwin", presubmit=True),
