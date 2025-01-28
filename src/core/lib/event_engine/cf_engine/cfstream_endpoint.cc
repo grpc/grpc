@@ -14,6 +14,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifndef GPR_APPLE
+#error NO GPR_APPLE
+#endif
+
+#ifndef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
+#error NO AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
+#endif
+
 #ifdef GPR_APPLE
 #include <AvailabilityMacros.h>
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
