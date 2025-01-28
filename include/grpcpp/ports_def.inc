@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Protect Code from unwanted/inconvienet mnacros
+ * Protect Code from unwanted/inconvienet macros
  * you must follow this pattern when #including port_def.inc in a header file:
  *
  * #include "other_header.h"
