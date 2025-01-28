@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/promise/promise.h"
 #include "test/core/promise/poll_matcher.h"

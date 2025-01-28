@@ -13,8 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -49,13 +48,15 @@ grpc_cc_test(
     deps = ["//src/core:chaotic_good_frame_header"],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "frame_header_fuzzer",
     srcs = ["frame_header_fuzzer.cc"],
-    corpus = "frame_header_fuzzer_corpus",
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
     tags = ["no_windows"],
     deps = [
@@ -236,10 +237,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "control_endpoint",
+grpc_fuzz_test(
+    name = "control_endpoint_test",
     srcs = ["control_endpoint_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     tags = [
         "no_windows",
     ],
@@ -250,10 +255,14 @@ grpc_yodel_simple_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "data_endpoints",
+grpc_fuzz_test(
+    name = "data_endpoints_test",
     srcs = ["data_endpoints_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     tags = [
         "no_windows",
     ],
