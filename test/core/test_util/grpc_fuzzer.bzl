@@ -23,52 +23,6 @@ with grpc_fuzz_test.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library")
 
-def grpc_fuzzer(
-        name,
-        corpus,
-        owner = "grpc",  # @unused
-        srcs = [],
-        tags = [],
-        external_deps = [],
-        deps = [],
-        data = [],
-        size = "large",
-        **kwargs):
-    """Instantiates a fuzzer test.
-
-    Args:
-        name: The name of the test.
-        corpus: The corpus for the test.
-        srcs: The source files for the test.
-        external_deps: External deps.
-        deps: The dependencies of the test.
-        data: The data dependencies of the test.
-        size: The size of the test.
-        tags: The tags for the test.
-        owner: The owning team of the test (for auto-bug-filing).
-        **kwargs: Other arguments to supply to the test.
-    """
-    CORPUS_DIR = native.package_name() + "/" + corpus
-    grpc_cc_test(
-        name = name,
-        srcs = srcs,
-        tags = tags + ["grpc-fuzzer", "no-cache"],
-        deps = deps + select({
-            "//:grpc_build_fuzzers": [],
-            "//conditions:default": ["//test/core/test_util:fuzzer_corpus_test"],
-        }),
-        data = data + native.glob([corpus + "/**"]),
-        external_deps = external_deps + [
-            "gtest",
-        ],
-        size = size,
-        args = select({
-            "//:grpc_build_fuzzers": [CORPUS_DIR, "-runs=20000", "-max_total_time=300"],
-            "//conditions:default": ["--directory=" + CORPUS_DIR],
-        }),
-        **kwargs
-    )
-
 def grpc_proto_fuzzer(
         name,
         corpus,
