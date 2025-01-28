@@ -303,7 +303,10 @@ grpc_core_end2end_test(name = "retry")
 
 grpc_core_end2end_test(name = "retry_cancel_after_first_attempt_starts")
 
-grpc_core_end2end_test(name = "retry_cancel_during_delay", shard_count = 10)
+grpc_core_end2end_test(
+    name = "retry_cancel_during_delay",
+    shard_count = 10,
+)
 
 grpc_core_end2end_test(name = "retry_cancel_with_multiple_send_batches")
 
