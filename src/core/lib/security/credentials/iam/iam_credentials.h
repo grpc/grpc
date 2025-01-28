@@ -23,10 +23,10 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
@@ -58,7 +58,7 @@ class grpc_google_iam_credentials : public grpc_call_credentials {
         static_cast<const grpc_call_credentials*>(this), other);
   }
 
-  const absl::optional<grpc_core::Slice> token_;
+  const std::optional<grpc_core::Slice> token_;
   const grpc_core::Slice authority_selector_;
   const std::string debug_string_;
 };

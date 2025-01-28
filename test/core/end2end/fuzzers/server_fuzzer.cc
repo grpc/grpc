@@ -12,17 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/log/check.h"
-#include "absl/types/optional.h"
+#include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/util/env.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
@@ -87,8 +93,6 @@ class ServerFuzzer final : public BasicFuzzer {
   grpc_server* server_ = grpc_server_create(nullptr, nullptr);
 };
 
-}  // namespace testing
-
 void RunServerFuzzer(
     const fuzzer_input::Msg& msg,
     absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
@@ -107,4 +111,97 @@ void RunServerFuzzer(
   testing::ServerFuzzer(msg, server_setup).Run(msg.api_actions());
 }
 
+auto ParseTestProto(const std::string& proto) {
+  fuzzer_input::Msg msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  return msg;
+}
+
+void ChaoticGood(fuzzer_input::Msg msg) {
+  RunServerFuzzer(msg, [](grpc_server* server, int port_num,
+                          const ChannelArgs& channel_args) {
+    ExecCtx exec_ctx;
+    auto* listener = new chaotic_good::ChaoticGoodServerListener(
+        Server::FromC(server), channel_args, [next = uint64_t(0)]() mutable {
+          return absl::StrCat(absl::Hex(next++));
+        });
+    auto port =
+        listener->Bind(grpc_event_engine::experimental::URIToResolvedAddress(
+                           absl::StrCat("ipv4:0.0.0.0:", port_num))
+                           .value());
+    CHECK_OK(port);
+    CHECK_EQ(port.value(), port_num);
+    Server::FromC(server)->AddListener(
+        OrphanablePtr<chaotic_good::ChaoticGoodServerListener>(listener));
+  });
+}
+FUZZ_TEST(ServerFuzzers, ChaoticGood);
+
+void Chttp2(fuzzer_input::Msg msg) {
+  RunServerFuzzer(
+      msg, [](grpc_server* server, int port_num, const ChannelArgs&) {
+        auto* creds = grpc_insecure_server_credentials_create();
+        grpc_server_add_http2_port(
+            server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
+        grpc_server_credentials_release(creds);
+      });
+}
+FUZZ_TEST(ServerFuzzers, Chttp2);
+
+void Chttp2FakeSec(fuzzer_input::Msg msg) {
+  RunServerFuzzer(
+      msg, [](grpc_server* server, int port_num, const ChannelArgs&) {
+        auto* creds = grpc_fake_transport_security_server_credentials_create();
+        grpc_server_add_http2_port(
+            server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
+        grpc_server_credentials_release(creds);
+      });
+}
+FUZZ_TEST(ServerFuzzers, Chttp2FakeSec);
+
+TEST(ServerFuzzers, ChaoticGoodRegression1) {
+  ChaoticGood(
+      ParseTestProto(R"pb(network_input {
+                            input_segments {
+                              segments {
+                                delay_ms: 2147483647
+                                continuation { stream_id: 1 }
+                              }
+                            }
+                            connect_delay_ms: 1
+                            connect_timeout_ms: -962608097
+                            endpoint_config { args { key: "\177" str: "" } }
+                          }
+                          network_input {
+                            single_read_bytes: "\347"
+                            connect_delay_ms: -686402103
+                            connect_timeout_ms: -1
+                            endpoint_config {
+                              args {
+                                key: "\000D\177"
+                                resource_quota {}
+                              }
+                            }
+                          }
+                          network_input {}
+                          api_actions { close_channel {} }
+                          event_engine_actions {
+                            run_delay: 6798959307394479269
+                            connections { write_size: 4007813405 }
+                          }
+                          config_vars {
+                            enable_fork_support: true
+                            verbosity: "\004\004\004\000>G\000\000\000"
+                            dns_resolver: "d//"
+                            trace: "??\000\000\177\177\177\177\000\000\000"
+                            experiments: 8146841458895622537
+                          }
+                          channel_args {
+                            args {}
+                            args { key: "\000\177" str: "" }
+                          }
+                          shutdown_connector {})pb"));
+}
+
+}  // namespace testing
 }  // namespace grpc_core

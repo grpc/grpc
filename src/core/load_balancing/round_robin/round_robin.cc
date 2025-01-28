@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,7 +35,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -102,7 +102,7 @@ class RoundRobin final : public LoadBalancingPolicy {
 
      private:
       // Called when the child policy reports a connectivity state update.
-      void OnStateUpdate(absl::optional<grpc_connectivity_state> old_state,
+      void OnStateUpdate(std::optional<grpc_connectivity_state> old_state,
                          grpc_connectivity_state new_state,
                          const absl::Status& status) override;
     };
@@ -115,7 +115,7 @@ class RoundRobin final : public LoadBalancingPolicy {
     // Updates the counters of children in each state when a
     // child transitions from old_state to new_state.
     void UpdateStateCountersLocked(
-        absl::optional<grpc_connectivity_state> old_state,
+        std::optional<grpc_connectivity_state> old_state,
         grpc_connectivity_state new_state);
 
     // Ensures that the right child list is used and then updates
@@ -281,7 +281,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
 //
 
 void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
-    absl::optional<grpc_connectivity_state> old_state,
+    std::optional<grpc_connectivity_state> old_state,
     grpc_connectivity_state new_state, const absl::Status& status) {
   auto* rr_endpoint_list = endpoint_list<RoundRobinEndpointList>();
   auto* round_robin = policy<RoundRobin>();
@@ -311,7 +311,7 @@ void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
 //
 
 void RoundRobin::RoundRobinEndpointList::UpdateStateCountersLocked(
-    absl::optional<grpc_connectivity_state> old_state,
+    std::optional<grpc_connectivity_state> old_state,
     grpc_connectivity_state new_state) {
   // We treat IDLE the same as CONNECTING, since it will immediately
   // transition into that state anyway.

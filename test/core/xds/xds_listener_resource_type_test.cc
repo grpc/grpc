@@ -21,6 +21,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
@@ -31,7 +32,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/config_source.pb.h"
@@ -82,9 +82,9 @@ class XdsListenerTest : public ::testing::Test {
  protected:
   XdsListenerTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{
-            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
-            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
+                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
@@ -220,20 +220,20 @@ class HttpConnectionManagerTest
     return listener;
   }
 
-  static absl::optional<XdsListenerResource::HttpConnectionManager>
-  GetHCMConfig(const XdsListenerResource& resource) {
+  static std::optional<XdsListenerResource::HttpConnectionManager> GetHCMConfig(
+      const XdsListenerResource& resource) {
     if (GetParam().in_api_listener) {
       // Client.
       auto* hcm = std::get_if<XdsListenerResource::HttpConnectionManager>(
           &resource.listener);
-      if (hcm == nullptr) return absl::nullopt;
+      if (hcm == nullptr) return std::nullopt;
       return *hcm;
     }
     // Server.
     auto* tcp_listener =
         std::get_if<XdsListenerResource::TcpListener>(&resource.listener);
-    if (tcp_listener == nullptr) return absl::nullopt;
-    if (!tcp_listener->default_filter_chain.has_value()) return absl::nullopt;
+    if (tcp_listener == nullptr) return std::nullopt;
+    if (!tcp_listener->default_filter_chain.has_value()) return std::nullopt;
     return tcp_listener->default_filter_chain->http_connection_manager;
   }
 

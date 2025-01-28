@@ -25,11 +25,11 @@
 #include <condition_variable>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/types/optional.h"
 #include "examples/cpp/otel/util.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"

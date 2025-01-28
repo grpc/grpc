@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
@@ -35,7 +36,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -115,7 +115,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     virtual ~MetadataInterface() = default;
 
-    virtual absl::optional<absl::string_view> Lookup(
+    virtual std::optional<absl::string_view> Lookup(
         absl::string_view key, std::string* buffer) const = 0;
   };
 

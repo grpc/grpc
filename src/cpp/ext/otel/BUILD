@@ -53,11 +53,9 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
-        "absl/types:optional",
         "absl/types:span",
         "otel/api",
     ],
-    language = "c++",
     visibility = ["@grpc:otel_plugin"],
     deps = [
         "//:call_tracer",

@@ -19,12 +19,12 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 #include "absl/algorithm/container.h"
 #include "absl/log/check.h"
 #include "absl/random/random.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 #include "src/core/util/no_destruct.h"
@@ -56,7 +56,7 @@ const std::vector<float>& Weights() {
 
 void BM_StaticStrideSchedulerPickNonAtomic(benchmark::State& state) {
   uint32_t sequence = 0;
-  const absl::optional<StaticStrideScheduler> scheduler =
+  const std::optional<StaticStrideScheduler> scheduler =
       StaticStrideScheduler::Make(
           absl::MakeSpan(Weights()).subspan(0, state.range(0)),
           [&] { return sequence++; });
@@ -71,7 +71,7 @@ BENCHMARK(BM_StaticStrideSchedulerPickNonAtomic)
 
 void BM_StaticStrideSchedulerPickAtomic(benchmark::State& state) {
   std::atomic<uint32_t> sequence{0};
-  const absl::optional<StaticStrideScheduler> scheduler =
+  const std::optional<StaticStrideScheduler> scheduler =
       StaticStrideScheduler::Make(
           absl::MakeSpan(Weights()).subspan(0, state.range(0)),
           [&] { return sequence.fetch_add(1, std::memory_order_relaxed); });
@@ -87,7 +87,7 @@ BENCHMARK(BM_StaticStrideSchedulerPickAtomic)
 void BM_StaticStrideSchedulerMake(benchmark::State& state) {
   uint32_t sequence = 0;
   for (auto s : state) {
-    const absl::optional<StaticStrideScheduler> scheduler =
+    const std::optional<StaticStrideScheduler> scheduler =
         StaticStrideScheduler::Make(
             absl::MakeSpan(Weights()).subspan(0, state.range(0)),
             [&] { return sequence++; });

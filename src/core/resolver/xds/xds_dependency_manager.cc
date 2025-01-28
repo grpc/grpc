@@ -527,10 +527,11 @@ void XdsDependencyManager::OnClusterAmbientError(const std::string& name,
   if (xds_client_ == nullptr) return;
   auto it = cluster_watchers_.find(name);
   if (it == cluster_watchers_.end()) return;
+  auto& cluster_watcher = it->second;
   if (status.ok()) {
-    it->second.resolution_note.clear();
+    cluster_watcher.resolution_note.clear();
   } else {
-    it->second.resolution_note =
+    cluster_watcher.resolution_note =
         absl::StrCat("CDS resource ", name, ": ", status.message());
   }
   MaybeReportUpdate();
@@ -544,13 +545,14 @@ void XdsDependencyManager::OnEndpointUpdate(
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
   if (it == endpoint_watchers_.end()) return;
+  auto& endpoint_watcher = it->second;
   if (!endpoint.ok()) {
-    it->second.update.endpoints.reset();
-    it->second.update.resolution_note =
+    endpoint_watcher.update.endpoints.reset();
+    endpoint_watcher.update.resolution_note =
         absl::StrCat("EDS resource ", name, ": ", endpoint.status().message());
   } else {
     if ((*endpoint)->priorities.empty()) {
-      it->second.update.resolution_note =
+      endpoint_watcher.update.resolution_note =
           absl::StrCat("EDS resource ", name, ": contains no localities");
     } else {
       std::set<absl::string_view> empty_localities;
@@ -563,14 +565,14 @@ void XdsDependencyManager::OnEndpointUpdate(
         }
       }
       if (!empty_localities.empty()) {
-        it->second.update.resolution_note = absl::StrCat(
+        endpoint_watcher.update.resolution_note = absl::StrCat(
             "EDS resource ", name, ": contains empty localities: [",
             absl::StrJoin(empty_localities, "; "), "]");
       } else {
-        it->second.update.resolution_note.clear();
+        endpoint_watcher.update.resolution_note.clear();
       }
     }
-    it->second.update.endpoints = std::move(*endpoint);
+    endpoint_watcher.update.endpoints = std::move(*endpoint);
   }
   MaybeReportUpdate();
 }
@@ -583,10 +585,11 @@ void XdsDependencyManager::OnEndpointAmbientError(const std::string& name,
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
   if (it == endpoint_watchers_.end()) return;
+  auto& endpoint_watcher = it->second;
   if (status.ok()) {
-    it->second.update.resolution_note.clear();
+    endpoint_watcher.update.resolution_note.clear();
   } else {
-    it->second.update.resolution_note =
+    endpoint_watcher.update.resolution_note =
         absl::StrCat("EDS resource ", name, ": ", status.message());
   }
   MaybeReportUpdate();
@@ -895,7 +898,7 @@ void XdsDependencyManager::MaybeReportUpdate() {
   // Remove entries in cluster_watchers_ for any clusters not in
   // config->clusters.
   for (auto it = cluster_watchers_.begin(); it != cluster_watchers_.end();) {
-    const std::string& cluster_name = it->first;
+    auto& [cluster_name, cluster_watcher] = *it;
     if (config->clusters.contains(cluster_name)) {
       ++it;
       continue;
@@ -904,14 +907,14 @@ void XdsDependencyManager::MaybeReportUpdate() {
         << "[XdsDependencyManager " << this << "] cancelling watch for cluster "
         << cluster_name;
     XdsClusterResourceType::CancelWatch(xds_client_.get(), cluster_name,
-                                        it->second.watcher,
+                                        cluster_watcher.watcher,
                                         /*delay_unsubscription=*/false);
     cluster_watchers_.erase(it++);
   }
   // Remove entries in endpoint_watchers_ for any EDS resources not in
   // eds_resources_seen.
   for (auto it = endpoint_watchers_.begin(); it != endpoint_watchers_.end();) {
-    const std::string& eds_resource_name = it->first;
+    auto& [eds_resource_name, endpoint_watcher] = *it;
     if (eds_resources_seen.find(eds_resource_name) !=
         eds_resources_seen.end()) {
       ++it;
@@ -921,7 +924,7 @@ void XdsDependencyManager::MaybeReportUpdate() {
         << "[XdsDependencyManager " << this
         << "] cancelling watch for EDS resource " << eds_resource_name;
     XdsEndpointResourceType::CancelWatch(xds_client_.get(), eds_resource_name,
-                                         it->second.watcher,
+                                         endpoint_watcher.watcher,
                                          /*delay_unsubscription=*/false);
     endpoint_watchers_.erase(it++);
   }

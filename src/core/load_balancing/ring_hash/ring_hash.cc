@@ -27,6 +27,7 @@
 #include <cmath>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -40,7 +41,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -904,12 +904,13 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it =
           endpoint_map_.find(EndpointAddressSet(endpoints_[i].addresses()));
       CHECK(it != endpoint_map_.end());
-      if (it->second->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
+      auto& endpoint = it->second;
+      if (endpoint->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
         first_idle_index = endpoints_.size();
         break;
       }
       if (first_idle_index == endpoints_.size() &&
-          it->second->connectivity_state() == GRPC_CHANNEL_IDLE) {
+          endpoint->connectivity_state() == GRPC_CHANNEL_IDLE) {
         first_idle_index = i;
       }
     }
@@ -917,13 +918,14 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it = endpoint_map_.find(
           EndpointAddressSet(endpoints_[first_idle_index].addresses()));
       CHECK(it != endpoint_map_.end());
+      auto& endpoint = it->second;
       GRPC_TRACE_LOG(ring_hash_lb, INFO)
           << "[RH " << this
           << "] triggering internal connection attempt for endpoint "
-          << it->second.get() << " (" << endpoints_[first_idle_index].ToString()
+          << endpoint.get() << " (" << endpoints_[first_idle_index].ToString()
           << ") (index " << first_idle_index << " of " << endpoints_.size()
           << ")";
-      it->second->RequestConnectionLocked();
+      endpoint->RequestConnectionLocked();
     }
   }
 }

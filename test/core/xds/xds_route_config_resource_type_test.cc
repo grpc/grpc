@@ -24,6 +24,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
@@ -34,7 +35,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
@@ -78,9 +78,9 @@ class XdsRouteConfigTest : public ::testing::Test {
  protected:
   explicit XdsRouteConfigTest(bool trusted_xds_server = false)
       : xds_client_(MakeXdsClient(trusted_xds_server)),
-        decode_context_{
-            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
-            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
+                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient(bool trusted_xds_server) {
     auto bootstrap = GrpcXdsBootstrap::Create(

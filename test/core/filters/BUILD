@@ -28,10 +28,8 @@ grpc_cc_library(
         "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/types:optional",
         "gtest",
     ],
-    language = "c++",
     tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
     deps = [
         "//:gpr",
@@ -84,7 +82,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -109,7 +106,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -128,7 +124,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
