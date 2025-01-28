@@ -240,7 +240,8 @@ grpc_run_simple_command_test(
 test_suite(
     name = "bazel_build_tests_linux",
     tests = [
-        ":bazel_build_with_bzlmod_linux",
+        # TODO(veblush): Reenable after adding a new envoy-api version to BCR
+        # ":bazel_build_with_bzlmod_linux",
         ":bazel_build_with_grpc_no_xds_linux",
         ":bazel_build_with_grpc_no_xds_negative_test_linux",
         ":bazel_build_with_strict_warnings_linux",
