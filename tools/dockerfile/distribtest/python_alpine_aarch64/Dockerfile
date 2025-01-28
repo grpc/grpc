@@ -1,4 +1,4 @@
-# Copyright 2022 The gRPC Authors
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+FROM python:3.10-alpine3.14
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_distribtests_python.sh"
-timeout_mins: 840
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-    regex: "github/grpc/artifacts/**"
-  }
-}
+# Our test infrastructure demands bash
+RUN apk update && apk add bash
+
+RUN pip3 install virtualenv
