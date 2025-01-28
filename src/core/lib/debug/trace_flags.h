@@ -27,6 +27,7 @@ extern DebugOnlyTraceFlag auth_context_refcount_trace;
 extern DebugOnlyTraceFlag call_combiner_trace;
 extern DebugOnlyTraceFlag call_refcount_trace;
 extern DebugOnlyTraceFlag call_state_trace;
+extern DebugOnlyTraceFlag chttp2_server_refcount_trace;
 extern DebugOnlyTraceFlag closure_trace;
 extern DebugOnlyTraceFlag combiner_trace;
 extern DebugOnlyTraceFlag cq_refcount_trace;
@@ -124,7 +125,6 @@ extern TraceFlag xds_cluster_manager_lb_trace;
 extern TraceFlag xds_override_host_lb_trace;
 extern TraceFlag xds_resolver_trace;
 extern TraceFlag xds_server_config_fetcher_trace;
-extern TraceFlag xds_unittest_trace;
 extern TraceFlag xds_wrr_locality_lb_trace;
 
 }  // namespace grpc_core

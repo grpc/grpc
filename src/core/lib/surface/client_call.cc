@@ -100,7 +100,7 @@ grpc_call_error ValidateClientBatch(const grpc_op* ops, size_t nops) {
 }  // namespace
 
 ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
-                       Slice path, absl::optional<Slice> authority,
+                       Slice path, std::optional<Slice> authority,
                        bool registered_method, Timestamp deadline,
                        grpc_compression_options compression_options,
                        RefCountedPtr<Arena> arena,
@@ -318,7 +318,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
           return Map(
               started_call_initiator_.PullServerInitialMetadata(),
               [this,
-               array](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+               array](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
                 ServerMetadataHandle metadata;
                 if (!md.ok() || !md->has_value()) {
                   is_trailers_only_ = true;
@@ -335,9 +335,16 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
               });
         };
       });
-  auto primary_ops = AllOk<StatusFlag>(
-      TrySeq(std::move(send_message), std::move(send_close_from_client)),
-      TrySeq(std::move(recv_initial_metadata), std::move(recv_message)));
+  // We capture 'this' in the op handlers, but the call may be destroyed before
+  // the party owned by CallInitiator/CallHandler is destroyed -- meaning that
+  // op callbacks may happen after call destruction if we don't hold a ref.
+  // We do that via an implicitly captured one in a Map() here so that we don't
+  // need a ref held per batch operation -- they have the same lifetime always.
+  auto primary_ops = Map(
+      AllOk<StatusFlag>(
+          TrySeq(std::move(send_message), std::move(send_close_from_client)),
+          TrySeq(std::move(recv_initial_metadata), std::move(recv_message))),
+      [self = WeakRef()](StatusFlag x) { return x; });
   Party::WakeupHold wakeup_hold;
   if (const grpc_op* op = op_index.op(GRPC_OP_SEND_INITIAL_METADATA)) {
     wakeup_hold = StartCall(*op);
@@ -431,7 +438,7 @@ char* ClientCall::GetPeer() {
 
 grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
                           grpc_completion_queue* cq, Slice path,
-                          absl::optional<Slice> authority,
+                          std::optional<Slice> authority,
                           bool registered_method, Timestamp deadline,
                           grpc_compression_options compression_options,
                           RefCountedPtr<Arena> arena,

@@ -35,16 +35,12 @@ struct ClientAndServerTransportPair {
   bool is_slow = false;
 };
 
-using TransportFixture = absl::AnyInvocable<ClientAndServerTransportPair(
-    std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>)
-                                                const>;
+extern ClientAndServerTransportPair (*g_create_transport_test_fixture)(
+    std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>);
 
 class TransportTest : public YodelTest {
  protected:
-  TransportTest(const TransportFixture& fixture,
-                const fuzzing_event_engine::Actions& actions,
-                absl::BitGenRef rng)
-      : YodelTest(actions, rng), fixture_(std::move(fixture)) {}
+  using YodelTest::YodelTest;
 
   void SetServerCallDestination();
   CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata);
@@ -75,14 +71,15 @@ class TransportTest : public YodelTest {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override;
     void Orphaned() override {}
-    absl::optional<CallHandler> PopHandler();
+    std::optional<CallHandler> PopHandler();
 
    private:
     std::queue<CallHandler> handlers_;
   };
 
   void InitTest() override {
-    transport_pair_ = fixture_(event_engine());
+    CHECK(g_create_transport_test_fixture != nullptr);
+    transport_pair_ = (*g_create_transport_test_fixture)(event_engine());
     if (transport_pair_.is_slow) {
       SetMaxRandomMessageSize(1024);
     }
@@ -95,19 +92,23 @@ class TransportTest : public YodelTest {
 
   RefCountedPtr<ServerCallDestination> server_call_destination_ =
       MakeRefCounted<ServerCallDestination>();
-  const TransportFixture& fixture_;
   ClientAndServerTransportPair transport_pair_;
 };
 
 }  // namespace grpc_core
 
-#define TRANSPORT_TEST(name) YODEL_TEST_P(TransportTest, TransportFixture, name)
+#define TRANSPORT_TEST(name) YODEL_TEST(TransportTest, name)
 
+// Only one fixture can be created per binary.
 #define TRANSPORT_FIXTURE(name)                                                \
   static grpc_core::ClientAndServerTransportPair name(                         \
       std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>     \
           event_engine);                                                       \
-  YODEL_TEST_PARAM(TransportTest, TransportFixture, name, name);               \
+  int g_##name = [] {                                                          \
+    CHECK(g_create_transport_test_fixture == nullptr);                         \
+    g_create_transport_test_fixture = name;                                    \
+    return 0;                                                                  \
+  }();                                                                         \
   static grpc_core::ClientAndServerTransportPair name(                         \
       GRPC_UNUSED                                                              \
           std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> \

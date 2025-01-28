@@ -81,16 +81,20 @@
     windows: true
 - name: free_large_allocator
   default: false
+- name: keep_alive_ping_timer_batch
+  default: false
 - name: local_connector_secure
   default: false
 - name: max_pings_wo_data_throttle
-  default: false
+  default: true
 - name: monitoring_experiment
   default: true
 - name: pending_queue_cap
   default: true
 - name: pick_first_new
   default: true
+- name: posix_ee_skip_grpc_init
+  default: false
 - name: prioritize_finished_requests
   default: false
 - name: promise_based_client_call
@@ -105,6 +109,8 @@
 - name: rstpit
   default: false
 - name: schedule_cancellation_over_write
+  default: false
+- name: server_listener
   default: false
 - name: server_privacy
   default: false

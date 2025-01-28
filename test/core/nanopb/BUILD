@@ -23,7 +23,6 @@ grpc_fuzzer(
     name = "fuzzer_response",
     srcs = ["fuzzer_response.cc"],
     corpus = "corpus_response",
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -36,7 +35,6 @@ grpc_fuzzer(
     name = "fuzzer_serverlist",
     srcs = ["fuzzer_serverlist.cc"],
     corpus = "corpus_serverlist",
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",

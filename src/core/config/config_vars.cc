@@ -22,6 +22,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/strings/escaping.h"
+#include "absl/types/optional.h"
 #include "src/core/config/load_config.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING

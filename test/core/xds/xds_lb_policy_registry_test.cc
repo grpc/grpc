@@ -73,7 +73,7 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
   upb::DefPool def_pool;
-  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(), nullptr,
+  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(),
                                             def_pool.ptr(), arena.ptr()};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());

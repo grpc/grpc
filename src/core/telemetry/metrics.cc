@@ -17,9 +17,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/log/check.h"
-#include "absl/types/optional.h"
 #include "src/core/util/crash.h"
 
 namespace grpc_core {
@@ -164,7 +164,7 @@ GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
   return group;
 }
 
-absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
 GlobalInstrumentsRegistry::FindInstrumentByName(absl::string_view name) {
   const auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
@@ -174,7 +174,7 @@ GlobalInstrumentsRegistry::FindInstrumentByName(absl::string_view name) {
       return handle;
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 }  // namespace grpc_core

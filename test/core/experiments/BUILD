@@ -25,7 +25,6 @@ grpc_cc_library(
     hdrs = [
         "fixtures/experiments.h",
     ],
-    language = "c++",
     deps = [
         "//:gpr",
         "//src/core:experiments",
@@ -46,7 +45,6 @@ grpc_cc_test(
     name = "experiments_test",
     srcs = ["experiments_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -65,7 +63,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "experiments_tag_test",
     ],

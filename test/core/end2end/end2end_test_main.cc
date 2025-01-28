@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "test/core/end2end/end2end_tests.h"

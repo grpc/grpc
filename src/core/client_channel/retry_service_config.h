@@ -22,9 +22,9 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
@@ -61,7 +61,7 @@ class RetryMethodConfig final : public ServiceConfigParser::ParsedConfig {
   StatusCodeSet retryable_status_codes() const {
     return retryable_status_codes_;
   }
-  absl::optional<Duration> per_attempt_recv_timeout() const {
+  std::optional<Duration> per_attempt_recv_timeout() const {
     return per_attempt_recv_timeout_;
   }
 
@@ -88,7 +88,7 @@ class RetryMethodConfig final : public ServiceConfigParser::ParsedConfig {
   Duration max_backoff_;
   float backoff_multiplier_ = 0;
   StatusCodeSet retryable_status_codes_;
-  absl::optional<Duration> per_attempt_recv_timeout_;
+  std::optional<Duration> per_attempt_recv_timeout_;
 };
 
 class RetryServiceConfigParser final : public ServiceConfigParser::Parser {

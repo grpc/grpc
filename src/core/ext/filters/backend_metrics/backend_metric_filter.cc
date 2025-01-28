@@ -44,17 +44,10 @@
 
 namespace grpc_core {
 
-const NoInterceptor BackendMetricFilter::Call::OnClientInitialMetadata;
-const NoInterceptor BackendMetricFilter::Call::OnServerInitialMetadata;
-const NoInterceptor BackendMetricFilter::Call::OnClientToServerMessage;
-const NoInterceptor BackendMetricFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor BackendMetricFilter::Call::OnServerToClientMessage;
-const NoInterceptor BackendMetricFilter::Call::OnFinalize;
-
 namespace {
-absl::optional<std::string> MaybeSerializeBackendMetrics(
+std::optional<std::string> MaybeSerializeBackendMetrics(
     BackendMetricProvider* provider) {
-  if (provider == nullptr) return absl::nullopt;
+  if (provider == nullptr) return std::nullopt;
   BackendMetricData data = provider->GetBackendMetricData();
   upb::Arena arena;
   xds_data_orca_v3_OrcaLoadReport* response =
@@ -105,7 +98,7 @@ absl::optional<std::string> MaybeSerializeBackendMetrics(
     has_data = true;
   }
   if (!has_data) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   size_t len;
   char* buf =
@@ -132,7 +125,7 @@ void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
         << "[" << this << "] No BackendMetricProvider.";
     return;
   }
-  absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(ctx);
+  std::optional<std::string> serialized = MaybeSerializeBackendMetrics(ctx);
   if (serialized.has_value() && !serialized->empty()) {
     GRPC_TRACE_LOG(backend_metric_filter, INFO)
         << "[" << this

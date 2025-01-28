@@ -241,22 +241,22 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   // No plugins have data yet.
   EXPECT_EQ(plugin1->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin1->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -270,16 +270,16 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
               ::testing::Optional(2));
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // De-register the callbacks.
   callback1.reset();
   callback2.reset();
@@ -308,16 +308,16 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
               ::testing::Optional(2));
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -337,10 +337,10 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
               ::testing::Optional(4));
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // De-register the callbacks.
   callback1.reset();
   callback2.reset();
@@ -375,10 +375,10 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
               ::testing::Optional(4));
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -446,22 +446,22 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   // No plugins have data yet.
   EXPECT_EQ(plugin1->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin1->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -475,16 +475,16 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
               ::testing::Optional(2.34));
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // De-register the callbacks.
   callback1.reset();
   callback2.reset();
@@ -513,16 +513,16 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
               ::testing::Optional(2.34));
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -542,10 +542,10 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
               ::testing::Optional(4.56));
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // De-register the callbacks.
   callback1.reset();
   callback2.reset();
@@ -580,10 +580,10 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
               ::testing::Optional(4.56));
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -631,7 +631,7 @@ TEST_F(MetricsTest, DisableByDefaultMetricIsNotRecordedByFakeStatsPlugin) {
                        kOptionalLabelValues);
   EXPECT_EQ(plugin->GetDoubleHistogramValue(double_histogram_handle,
                                             kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
 }
 
 TEST_F(MetricsTest, FindInstrumentByName) {
@@ -706,6 +706,8 @@ TEST_F(MetricsDeathTest, RegisterTheSameMetricNameWouldCrash) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_core::GlobalInstrumentsRegistryTestPeer::
+      ResetGlobalInstrumentsRegistry();
   int ret = RUN_ALL_TESTS();
   return ret;
 }

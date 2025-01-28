@@ -28,15 +28,15 @@ wget https://github.com/bazelbuild/bazel-toolchains/releases/download/v5.1.2/rbe
 RBE_CONFIGS_GEN_TOOL_PATH="./rbe_configs_gen_windows_amd64.exe"
 
 # Actions on RBE will run under a dedicated docker image.
-WINDOWS_RBE_DOCKER_IMAGE=us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:5a97eb384a3089ac9180e6086ca89b1fdafa57735057624245b3d4a96b4744fe
+WINDOWS_RBE_DOCKER_IMAGE=us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:cfef0ae3681d4070f6a93a88afea44d616f5cbdfae36559b9394274e74873bc6
 
 # Bazel version used for configuring
 # Needs to be one of the versions from bazel/supported_versions.txt chosen so that the result is compatible
 # with other supported bazel versions.
-BAZEL_VERSION=7.3.1
+BAZEL_VERSION=7.4.1
 
 # Where to store the generated configs (relative to repo root)
-CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_windows_bazel_7.3.1_vs2022
+CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_windows_vs2022_bazel7
 
 # Delete old generated configs.
 rm -rf "${REPO_ROOT}/${CONFIG_OUTPUT_PATH}"

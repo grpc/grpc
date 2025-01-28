@@ -278,9 +278,9 @@ void JsonWriter::ValueString(const std::string& string) {
 
 void JsonWriter::DumpObject(const Json::Object& object) {
   ContainerBegins(Json::Type::kObject);
-  for (const auto& p : object) {
-    ObjectKey(p.first);
-    DumpValue(p.second);
+  for (const auto& [key, value] : object) {
+    ObjectKey(key);
+    DumpValue(value);
   }
   ContainerEnds(Json::Type::kObject);
 }

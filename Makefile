@@ -279,7 +279,7 @@ HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++14
+CXXFLAGS += -std=c++17
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 44.2.0
-CPP_VERSION = 1.70.0-dev
+CORE_VERSION = 45.0.0
+CPP_VERSION = 1.71.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -44
+SHARED_VERSION_CORE = -45
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -780,6 +780,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c \
@@ -803,7 +804,6 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/config/trace/v3/dynamic_ot.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/trace/v3/http_tracer.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.c \
-    src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/trace/v3/service.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/trace/v3/skywalking.upb_minitable.c \
@@ -873,7 +873,6 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
-    src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
@@ -947,6 +946,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/udp_socket_config.upbdefs.c \
@@ -970,7 +970,6 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/dynamic_ot.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.c \
-    src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/skywalking.upbdefs.c \
@@ -1035,7 +1034,6 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
-    src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c \
@@ -1861,8 +1859,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.44 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.44
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.45 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.45
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif

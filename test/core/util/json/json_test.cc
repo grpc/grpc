@@ -40,9 +40,9 @@ void ValidateValue(const Json& actual, const Json& expected);
 void ValidateObject(const Json::Object& actual, const Json::Object& expected) {
   ASSERT_EQ(actual.size(), expected.size());
   auto actual_it = actual.begin();
-  for (const auto& p : expected) {
-    EXPECT_EQ(actual_it->first, p.first);
-    ValidateValue(actual_it->second, p.second);
+  for (const auto& [key, value] : expected) {
+    EXPECT_EQ(actual_it->first, key);
+    ValidateValue(actual_it->second, value);
     ++actual_it;
   }
 }

@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <limits>
 #include <string>
 #include <utility>
 
@@ -125,6 +126,75 @@ class Party : public Activity, private Wakeable {
     uint64_t prev_state_;
   };
 
+  // SpawnSerializer is a helper class to serialize the execution of multiple
+  // promises on a party.
+  //
+  // Provides the guarantee that given:
+  //   SpawnSerializer* serializer = party->MakeSpawnSerializer();
+  //   serializer->Spawn([] { /* promise 1 */; });
+  //   serializer->Spawn([] { /* promise 2 */; });
+  // 1. promise 1 will be resolved before promise 2 is started.
+  // 2. promise 1 and promise 2 will execute on `party`.
+  //
+  // It's possible to have multiple SpawnSerializer instances on a party.
+  // Once created, the SpawnSerializer is only valid until the party is
+  // released - note that SpawnSerializer itself does not hold a ref to the
+  // party.
+  //
+  // Each SpawnSerializer consumes one slot in the party's participant array for
+  // the lifetime of the party - that is that a SpawnSerializer counts as one of
+  // the sixteen promises executing on a Party.
+  //
+  // The promises spawned by SpawnSerializer *DO NOT* count towards the sixteen
+  // promise limit.
+  //
+  // The size of this type matters, and so we leverage private inheritance to
+  // minimize the number of pointers needed to be kept per instance.
+  class SpawnSerializer final : private Participant {
+   public:
+    // Spawn a promise into the party.
+    //
+    // The promise will be polled until it is resolved, or until the party is
+    // shut down.
+    //
+    // Later promises spawned by this serializer will not be polled until this
+    // promise is resolved, and then one at a time in the order they were
+    // spawned.
+    //
+    // Spawn itself is not thread safe: at most one thread can call Spawn at a
+    // time. Just as the execution of promises is serialized by this type, the
+    // spawning of promises is expected to be serialized by some external entity
+    // (usually this is a Seq running on a different party).
+    template <class Factory>
+    void Spawn(Factory factory) {
+      auto empty_completion = [](Empty) {};
+      next_.Push(new ParticipantImpl<Factory, decltype(empty_completion)>(
+          "SpawnSerializer", std::move(factory), empty_completion));
+      party_->WakeupFromState<false>(
+          party_->state_.load(std::memory_order_relaxed), wakeup_mask_);
+    }
+
+   private:
+    friend class Party;
+    friend class Arena;
+
+    bool PollParticipantPromise() override;
+    void Destroy() override;
+
+    explicit SpawnSerializer(Party* party)
+        : next_(party->arena()), party_(party) {}
+
+    // Queue of promises to be executed after the active promise resolves.
+    ArenaSpsc<Participant*, false> next_;
+    // The promise currently being executed.
+    Participant* active_ = nullptr;
+    // The wakeup mask for this serializers participant.
+    // Allows us to wake up the party when a new promise is added to the queue.
+    WakeupMask wakeup_mask_;
+    // The party this serializer is running on.
+    Party* const party_;
+  };
+
   static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
     auto* arena_ptr = arena.get();
     return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
@@ -183,6 +253,14 @@ class Party : public Activity, private Wakeable {
   }
 
   Arena* arena() { return arena_.get(); }
+
+  SpawnSerializer* MakeSpawnSerializer() {
+    auto* const serializer = arena_->New<SpawnSerializer>(this);
+    const size_t slot = AddParticipant(serializer);
+    DCHECK_NE(slot, std::numeric_limits<size_t>::max());
+    serializer->wakeup_mask_ = 1ull << slot;
+    return serializer;
+  }
 
  protected:
   friend class Arena;
@@ -287,7 +365,7 @@ class Party : public Activity, private Wakeable {
           Construct(&promise_, std::move(p));
           state_.store(State::kPromise, std::memory_order_relaxed);
         }
-          ABSL_FALLTHROUGH_INTENDED;
+          [[fallthrough]];
         case State::kPromise: {
           auto p = promise_();
           if (auto* r = p.value_if_ready()) {
@@ -383,9 +461,10 @@ class Party : public Activity, private Wakeable {
       Unref();
       return;
     }
-    WakeupFromState(state_.load(std::memory_order_relaxed), wakeup_mask);
+    WakeupFromState<true>(state_.load(std::memory_order_relaxed), wakeup_mask);
   }
 
+  template <bool kReffed>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void WakeupFromState(
       uint64_t cur_state, WakeupMask wakeup_mask) {
     GRPC_LATENT_SEE_INNER_SCOPE("Party::WakeupFromState");
@@ -396,8 +475,13 @@ class Party : public Activity, private Wakeable {
         // If the party is locked, we need to set the wakeup bits, and then
         // we'll immediately unref. Since something is running this should never
         // bring the refcount to zero.
-        DCHECK_GT(cur_state & kRefMask, kOneRef);
-        auto new_state = (cur_state | wakeup_mask) - kOneRef;
+        if (kReffed) {
+          DCHECK_GT(cur_state & kRefMask, kOneRef);
+        } else {
+          DCHECK_GE(cur_state & kRefMask, kOneRef);
+        }
+        const uint64_t new_state =
+            (cur_state | wakeup_mask) - (kReffed ? kOneRef : 0);
         if (state_.compare_exchange_weak(cur_state, new_state,
                                          std::memory_order_release)) {
           LogStateChange("Wakeup", cur_state, cur_state | wakeup_mask);
@@ -406,9 +490,11 @@ class Party : public Activity, private Wakeable {
       } else {
         // If the party is not locked, we need to lock it and run.
         DCHECK_EQ(cur_state & kWakeupMask, 0u);
-        if (state_.compare_exchange_weak(cur_state, cur_state | kLocked,
+        const uint64_t new_state =
+            (cur_state | kLocked) + (kReffed ? 0 : kOneRef);
+        if (state_.compare_exchange_weak(cur_state, new_state,
                                          std::memory_order_acq_rel)) {
-          LogStateChange("WakeupAndRun", cur_state, cur_state | kLocked);
+          LogStateChange("WakeupAndRun", cur_state, new_state);
           wakeup_mask_ |= wakeup_mask;
           RunLockedAndUnref(this, cur_state);
           return;
@@ -421,8 +507,10 @@ class Party : public Activity, private Wakeable {
   void Drop(WakeupMask wakeup_mask) final;
 
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
-  void AddParticipant(Participant* participant);
-  void DelayAddParticipant(Participant* participant);
+  size_t AddParticipant(Participant* participant);
+  void MaybeAsyncAddParticipant(Participant* participant);
+
+  static uint64_t NextAllocationMask(uint64_t current_allocation_mask);
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void LogStateChange(
       const char* op, uint64_t prev_state, uint64_t new_state,
@@ -455,7 +543,7 @@ template <typename Factory, typename OnComplete>
 void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
   GRPC_TRACE_LOG(party_state, INFO) << "PARTY[" << this << "]: spawn " << name;
-  AddParticipant(new ParticipantImpl<Factory, OnComplete>(
+  MaybeAsyncAddParticipant(new ParticipantImpl<Factory, OnComplete>(
       name, std::move(promise_factory), std::move(on_complete)));
 }
 
@@ -465,7 +553,7 @@ auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
   auto participant = MakeRefCounted<PromiseParticipantImpl<Factory>>(
       name, std::move(promise_factory));
   Participant* p = participant->Ref().release();
-  AddParticipant(p);
+  MaybeAsyncAddParticipant(p);
   return [participant = std::move(participant)]() mutable {
     return participant->PollCompletion();
   };

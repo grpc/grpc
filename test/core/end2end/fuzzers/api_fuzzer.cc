@@ -29,6 +29,7 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -41,7 +42,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
+#include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -58,7 +59,6 @@
 #include "src/core/util/env.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
@@ -513,16 +513,15 @@ void ApiFuzzer::DestroyChannel() {
   channel_ = nullptr;
 }
 
-}  // namespace testing
-}  // namespace grpc_core
-
-using grpc_core::testing::ApiFuzzer;
-
-DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
-  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+void RunApiFuzzer(const api_fuzzer::Msg& msg) {
+  if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     grpc_disable_all_absl_logs();
   }
-  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
+  ApplyFuzzConfigVars(msg.config_vars());
+  TestOnlyReloadExperimentsFromConfigVariables();
   ApiFuzzer(msg.event_engine_actions()).Run(msg.actions());
 }
+FUZZ_TEST(MyTestSuite, RunApiFuzzer);
+
+}  // namespace testing
+}  // namespace grpc_core

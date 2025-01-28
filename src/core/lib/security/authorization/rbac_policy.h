@@ -21,10 +21,10 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "src/core/util/matchers.h"
 
 namespace grpc_core {
@@ -127,7 +127,7 @@ struct Rbac {
     static Principal MakeNotPrincipal(Principal principal);
     static Principal MakeAnyPrincipal();
     static Principal MakeAuthenticatedPrincipal(
-        absl::optional<StringMatcher> string_matcher);
+        std::optional<StringMatcher> string_matcher);
     static Principal MakeSourceIpPrincipal(CidrRange ip);
     static Principal MakeDirectRemoteIpPrincipal(CidrRange ip);
     static Principal MakeRemoteIpPrincipal(CidrRange ip);
@@ -145,7 +145,7 @@ struct Rbac {
 
     RuleType type = RuleType::kAnd;
     HeaderMatcher header_matcher;
-    absl::optional<StringMatcher> string_matcher;
+    std::optional<StringMatcher> string_matcher;
     CidrRange ip;
     // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
     // element.

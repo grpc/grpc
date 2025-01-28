@@ -58,7 +58,7 @@
 //
 // The type of these members matters, and is selectable by the class
 // author. For $INTERCEPTOR_NAME in the above list:
-// - static const NoInterceptor $INTERCEPTOR_NAME:
+// - static inline const NoInterceptor $INTERCEPTOR_NAME:
 //   defines that this filter does not intercept this event.
 //   there is zero runtime cost added to handling that event by this filter.
 // - void $INTERCEPTOR_NAME($VALUE_TYPE&):
@@ -91,7 +91,7 @@
 //
 // Finally, OnFinalize is added to intecept call finalization.
 // It must have one of the signatures:
-// - static const NoInterceptor OnFinalize:
+// - static inline const NoInterceptor OnFinalize:
 //   the filter does not intercept call finalization.
 // - void OnFinalize(const grpc_call_final_info*):
 //   the filter intercepts call finalization.
@@ -111,13 +111,8 @@ namespace grpc_core {
 // Tag type to indicate no interception.
 // This is used to indicate that a filter does not intercept a particular
 // event.
-// In C++14 we declare these as (for example):
-//   static const NoInterceptor OnClientInitialMetadata;
-// and out-of-line provide the definition:
-//   const MyFilter::Call::NoInterceptor
-//   MyFilter::Call::OnClientInitialMetadata;
-// In C++17 and later we can use inline variables instead:
-//   inline static const NoInterceptor OnClientInitialMetadata;
+// We declare these as (for example):
+//   inline static inline const NoInterceptor OnClientInitialMetadata;
 struct NoInterceptor {};
 
 namespace filters_detail {
@@ -528,6 +523,31 @@ template <typename FilterType, typename T,
 struct AddOpImpl<
     FilterType, T,
     void (FilterType::Call::*)(typename T::element_type&, FilterType*), impl> {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
+    to.Add(0, 0,
+           Operator<T>{
+               channel_data,
+               call_offset,
+               [](void*, void* call_data, void* channel_data,
+                  T value) -> Poll<ResultOr<T>> {
+                 (static_cast<typename FilterType::Call*>(call_data)->*impl)(
+                     *value, static_cast<FilterType*>(channel_data));
+                 return ResultOr<T>{std::move(value), nullptr};
+               },
+               nullptr,
+               nullptr,
+           });
+  }
+};
+
+// void $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
+template <typename FilterType, typename T,
+          void (FilterType::Call::*impl)(const typename T::element_type&,
+                                         FilterType*)>
+struct AddOpImpl<FilterType, T,
+                 void (FilterType::Call::*)(const typename T::element_type&,
+                                            FilterType*),
+                 impl> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(0, 0,
            Operator<T>{
@@ -1323,12 +1343,12 @@ class ServerTrailingMetadataInterceptor {
  public:
   class Call {
    public:
-    static const NoInterceptor OnClientInitialMetadata;
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static const inline NoInterceptor OnClientInitialMetadata;
+    static const inline NoInterceptor OnServerInitialMetadata;
+    static const inline NoInterceptor OnClientToServerMessage;
+    static const inline NoInterceptor OnClientToServerHalfClose;
+    static const inline NoInterceptor OnServerToClientMessage;
+    static const inline NoInterceptor OnFinalize;
     void OnServerTrailingMetadata(ServerMetadata& md,
                                   ServerTrailingMetadataInterceptor* filter) {
       filter->fn_(md);
@@ -1340,23 +1360,6 @@ class ServerTrailingMetadataInterceptor {
  private:
   GPR_NO_UNIQUE_ADDRESS Fn fn_;
 };
-template <typename Fn>
-const NoInterceptor
-    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientInitialMetadata;
-template <typename Fn>
-const NoInterceptor
-    ServerTrailingMetadataInterceptor<Fn>::Call::OnServerInitialMetadata;
-template <typename Fn>
-const NoInterceptor
-    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
-template <typename Fn>
-const NoInterceptor
-    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientToServerHalfClose;
-template <typename Fn>
-const NoInterceptor
-    ServerTrailingMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
-template <typename Fn>
-const NoInterceptor ServerTrailingMetadataInterceptor<Fn>::Call::OnFinalize;
 
 template <typename Fn>
 class ClientInitialMetadataInterceptor {
@@ -1367,12 +1370,12 @@ class ClientInitialMetadataInterceptor {
                                  ClientInitialMetadataInterceptor* filter) {
       return filter->fn_(md);
     }
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static const inline NoInterceptor OnServerInitialMetadata;
+    static const inline NoInterceptor OnClientToServerMessage;
+    static const inline NoInterceptor OnClientToServerHalfClose;
+    static const inline NoInterceptor OnServerToClientMessage;
+    static const inline NoInterceptor OnServerTrailingMetadata;
+    static const inline NoInterceptor OnFinalize;
   };
 
   explicit ClientInitialMetadataInterceptor(Fn fn) : fn_(std::move(fn)) {}
@@ -1380,23 +1383,6 @@ class ClientInitialMetadataInterceptor {
  private:
   GPR_NO_UNIQUE_ADDRESS Fn fn_;
 };
-template <typename Fn>
-const NoInterceptor
-    ClientInitialMetadataInterceptor<Fn>::Call::OnServerInitialMetadata;
-template <typename Fn>
-const NoInterceptor
-    ClientInitialMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
-template <typename Fn>
-const NoInterceptor
-    ClientInitialMetadataInterceptor<Fn>::Call::OnClientToServerHalfClose;
-template <typename Fn>
-const NoInterceptor
-    ClientInitialMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
-template <typename Fn>
-const NoInterceptor
-    ClientInitialMetadataInterceptor<Fn>::Call::OnServerTrailingMetadata;
-template <typename Fn>
-const NoInterceptor ClientInitialMetadataInterceptor<Fn>::Call::OnFinalize;
 
 }  // namespace filters_detail
 
@@ -1725,20 +1711,20 @@ class CallFilters {
               [this]() {
                 return Map(
                     MetadataExecutor<
-                        absl::optional<ServerMetadataHandle>,
+                        std::optional<ServerMetadataHandle>,
                         ServerMetadataHandle,
                         &CallFilters::push_server_initial_metadata_,
                         &filters_detail::StackData::server_initial_metadata,
                         &CallState::FinishPullServerInitialMetadata,
                         StacksVector::const_reverse_iterator>(
                         this, stacks_.crbegin(), stacks_.crend()),
-                    [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
+                    [](ValueOrFailure<std::optional<ServerMetadataHandle>> r) {
                       if (r.ok()) return std::move(*r);
-                      return absl::optional<ServerMetadataHandle>{};
+                      return std::optional<ServerMetadataHandle>{};
                     });
               },
               []() {
-                return Immediate(absl::optional<ServerMetadataHandle>{});
+                return Immediate(std::optional<ServerMetadataHandle>{});
               });
         });
   }

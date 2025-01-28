@@ -144,8 +144,8 @@ class ConnectedSubchannelTest : public YodelTest {
 
   void Shutdown() override {}
 
-  absl::optional<CallHandler> PopHandler() {
-    if (handlers_.empty()) return absl::nullopt;
+  std::optional<CallHandler> PopHandler() {
+    if (handlers_.empty()) return std::nullopt;
     auto handler = std::move(handlers_.front());
     handlers_.pop();
     return handler;

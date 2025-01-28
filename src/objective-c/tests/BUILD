@@ -399,6 +399,7 @@ grpc_sh_test(
     srcs = ["PluginTest/plugin_test.sh"],
     data = [
         "//src/compiler:grpc_objective_c_plugin",
+        "@bazel_tools//tools/bash/runfiles",
         "@com_google_protobuf//:protoc",
     ] + glob(["PluginTest/*.proto"]),
     uses_polling = False,
@@ -409,6 +410,7 @@ grpc_sh_test(
     srcs = ["PluginTest/plugin_option_test.sh"],
     data = [
         "//src/compiler:grpc_objective_c_plugin",
+        "@bazel_tools//tools/bash/runfiles",
         "@com_google_protobuf//:protoc",
         "@com_google_protobuf//:well_known_type_protos",
     ] + glob(["RemoteTestClient/*.proto"]),
