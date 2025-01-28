@@ -14,18 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Protect Code from unwanted/inconvienet macros
- * you must follow this pattern when #including port_def.h in a header file:
+ * Protect Code from unwanted/inconvienet mnacros
+ * you must follow this pattern when #including port_def.inc in a header file:
  *
  * #include "other_header.h"
  * #include "message.h"
  * etc.
  *
- * #include "port_def.h"  // MUST be last header included
+ * #include "port_def.inc"  // MUST be last header included
  *
  * Definitions for this header.
  *
- * #include "port_undef.h"   //At end of file
+ * #include "port_undef.inc"   //At end of file
  *
  * This is a textual header with no include guard, because we want to
  * detect/prohibit anytime it is #included twice without a corresponding
@@ -33,13 +33,13 @@
  */
 
 #ifdef GRPC_PORT_
-#error "port_def.h included multiple times"
+#error "port_def.inc included multiple times"
 #endif
 #define GRPC_PORT_
 
 
 // Windows declares several inconvenient macro names.  We #undef them and then
-// restore them in port_undef.h
+// restore them in port_undef.inc.
 #ifdef _WIN32
 #pragma push_macro("CompareString")
 #undef CompareString
