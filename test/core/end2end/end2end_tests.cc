@@ -105,9 +105,9 @@ CoreEnd2endTest::CoreEnd2endTest(
       Executor::SetThreadingAll(false);
     });
   } else {
-    grpc_core::ConfigVars::Overrides overrides;
+    ConfigVars::Overrides overrides;
     overrides.default_ssl_roots_file_path = CA_CERT_PATH;
-    grpc_core::ConfigVars::SetOverrides(overrides);
+    ConfigVars::SetOverrides(overrides);
   }
   CoreConfiguration::Reset();
   initialized_ = false;
