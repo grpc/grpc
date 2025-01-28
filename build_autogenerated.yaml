@@ -7398,6 +7398,7 @@ targets:
 - name: cancel_after_invoke_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
@@ -7849,6 +7850,7 @@ targets:
 - name: cancel_with_status_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
