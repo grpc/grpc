@@ -139,14 +139,20 @@ class XdsClientTest : public ::testing::Test {
      public:
       explicit FakeXdsServer(
           absl::string_view server_uri = kDefaultXdsServerUrl,
-          bool fail_on_data_errors = false)
+          bool fail_on_data_errors = false,
+          bool resource_timer_is_transient_failure = false)
           : server_uri_(server_uri),
-            fail_on_data_errors_(fail_on_data_errors) {}
+            fail_on_data_errors_(fail_on_data_errors),
+            resource_timer_is_transient_failure_(
+                resource_timer_is_transient_failure) {}
       const std::string& server_uri() const override { return server_uri_; }
       bool IgnoreResourceDeletion() const override {
         return !fail_on_data_errors_;
       }
       bool FailOnDataErrors() const override { return fail_on_data_errors_; }
+      bool ResourceTimerIsTransientFailure() const override {
+        return resource_timer_is_transient_failure_;
+      }
       bool Equals(const XdsServer& other) const override {
         const auto& o = static_cast<const FakeXdsServer&>(other);
         return server_uri_ == o.server_uri_ &&
@@ -159,6 +165,7 @@ class XdsClientTest : public ::testing::Test {
      private:
       std::string server_uri_;
       bool fail_on_data_errors_ = false;
+      bool resource_timer_is_transient_failure_ = false;
     };
 
     class FakeAuthority : public Authority {
@@ -3315,6 +3322,13 @@ TEST_F(XdsClientTest, ConnectionFailsWithCachedResource) {
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
+  event_engine_->SetRunAfterDurationCallback(
+      [&](grpc_event_engine::experimental::EventEngine::Duration duration) {
+        grpc_event_engine::experimental::EventEngine::Duration expected =
+            std::chrono::seconds(15);
+        EXPECT_EQ(duration, expected) << "Expected: " << expected.count()
+                                      << "\nActual:   " << duration.count();
+      });
   InitXdsClient();
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
@@ -3368,6 +3382,231 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   // receive the same does-not-exist notification.
   auto watcher2 = StartFooWatch("foo1");
   EXPECT_TRUE(watcher2->WaitForDoesNotExist());
+  // Now server sends a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watchers.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  resource = watcher2->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  // Check CSDS data.
+  csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  resource->AsJsonString(), "1", TimestampProtoEq(kTime0))));
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Cancel watch.
+  CancelFooWatch(watcher.get(), "foo1");
+  CancelFooWatch(watcher2.get(), "foo1");
+  EXPECT_TRUE(stream->IsOrphaned());
+}
+
+TEST_F(XdsClientTest, ResourceTimerIsTransientErrorIgnoredUnlessEnabled) {
+  event_engine_->SetRunAfterDurationCallback(
+      [&](grpc_event_engine::experimental::EventEngine::Duration duration) {
+        grpc_event_engine::experimental::EventEngine::Duration expected =
+            std::chrono::seconds(15);
+        EXPECT_EQ(duration, expected) << "Expected: " << expected.count()
+                                      << "\nActual:   " << duration.count();
+      });
+  InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
+      {FakeXdsBootstrap::FakeXdsServer(kDefaultXdsServerUrl, false, true)}));
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // Check metric data.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Do not send a response, but wait for the resource to be reported as
+  // not existing.
+  EXPECT_TRUE(watcher->WaitForDoesNotExist());
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "does_not_exist"),
+                  1)));
+  // Check CSDS data.
+  ClientConfig csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::ElementsAre(CsdsResourceDoesNotExistOnTimeout(
+                  XdsFooResourceType::Get()->type_url(), "foo1")));
+  // Start a new watcher for the same resource.  It should immediately
+  // receive the same does-not-exist notification.
+  auto watcher2 = StartFooWatch("foo1");
+  EXPECT_TRUE(watcher2->WaitForDoesNotExist());
+  // Now server sends a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watchers.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  resource = watcher2->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  // Check CSDS data.
+  csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  resource->AsJsonString(), "1", TimestampProtoEq(kTime0))));
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Cancel watch.
+  CancelFooWatch(watcher.get(), "foo1");
+  CancelFooWatch(watcher2.get(), "foo1");
+  EXPECT_TRUE(stream->IsOrphaned());
+}
+
+TEST_F(XdsClientTest, ResourceTimerIsTransientFailure) {
+  testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING",
+                                "true");
+  event_engine_->SetRunAfterDurationCallback(
+      [&](grpc_event_engine::experimental::EventEngine::Duration duration) {
+        grpc_event_engine::experimental::EventEngine::Duration expected =
+            std::chrono::seconds(30);
+        EXPECT_EQ(duration, expected) << "Expected: " << expected.count()
+                                      << "\nActual:   " << duration.count();
+      });
+  InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
+      {FakeXdsBootstrap::FakeXdsServer(kDefaultXdsServerUrl, false, true)}));
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // Check metric data.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Do not send a response, but wait for the resource to be reported as
+  // not existing.
+  auto error = watcher->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error, absl::UnavailableError(absl::StrCat(
+                       "timeout obtaining resource from xDS server ",
+                       kDefaultXdsServerUrl, " (node ID:xds_client_test)")));
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "timeout"),
+                  1)));
+  // Check CSDS data.
+  ClientConfig csds = DumpCsds();
+  EXPECT_THAT(
+      csds.generic_xds_configs(),
+      ::testing::UnorderedElementsAre(CsdsResourceEq(
+          ClientResourceStatus::TIMEOUT, XdsFooResourceType::Get()->type_url(),
+          "foo1", CsdsNoResourceFields(),
+          CsdsErrorDetailsOnly(
+              absl::StrCat("timeout obtaining resource from xDS server ",
+                           kDefaultXdsServerUrl)))));
+  // Start a new watcher for the same resource.  It should immediately
+  // receive the same does-not-exist notification.
+  auto watcher2 = StartFooWatch("foo1");
+  error = watcher2->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error, absl::UnavailableError(absl::StrCat(
+                       "timeout obtaining resource from xDS server ",
+                       kDefaultXdsServerUrl, " (node ID:xds_client_test)")));
   // Now server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
