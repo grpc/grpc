@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
@@ -156,6 +156,7 @@ grpc_fuzz_test(
     ],
     deps = [
         "call_checker",
+        "memory_quota_fuzzer_cc_proto",
         "//:debug_location",
         "//:exec_ctx",
         "//:gpr",
@@ -168,7 +169,6 @@ grpc_fuzz_test(
         "//src/core:useful",
         "//test/core/test_util:fuzz_config_vars",
         "//test/core/test_util:grpc_test_util",
-        "memory_quota_fuzzer_cc_proto"
     ],
 )
 
