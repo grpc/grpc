@@ -33,7 +33,7 @@ namespace grpc_core {
 // - 2 retries allowed for ABORTED status
 // - first attempt returns ABORTED
 // - second attempt returns OK
-CORE_END2END_TEST(RetryTest, Retry) {
+CORE_END2END_TEST(RetryTests, Retry) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(

@@ -184,14 +184,14 @@ void RegisterFilter() {
   });
 }
 
-CORE_END2END_TEST(RetryTest, RetryCancelWithMultipleSendBatches) {
+CORE_END2END_TEST(RetryTests, RetryCancelWithMultipleSendBatches) {
   SKIP_IF_V3();  // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<CancelCancellationMode>());
 }
 
-CORE_END2END_TEST(RetryTest, RetryDeadlineWithMultipleSendBatches) {
+CORE_END2END_TEST(RetryTests, RetryDeadlineWithMultipleSendBatches) {
   SKIP_IF_V3();  // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(

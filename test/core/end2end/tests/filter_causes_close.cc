@@ -82,7 +82,7 @@ const NoInterceptor TestFilter::Call::OnFinalize;
 const grpc_channel_filter TestFilter::kFilter =
     MakePromiseBasedFilter<TestFilter, FilterEndpoint::kServer>();
 
-CORE_END2END_TEST(CoreEnd2endTest, FilterCausesClose) {
+CORE_END2END_TEST(CoreEnd2endTests, FilterCausesClose) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterFilter<TestFilter>(GRPC_SERVER_CHANNEL);
   });

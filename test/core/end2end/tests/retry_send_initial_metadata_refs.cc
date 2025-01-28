@@ -36,7 +36,7 @@ namespace {
 // - 2 retries allowed for ABORTED status
 // - first attempt returns ABORTED
 // - second attempt returns OK
-CORE_END2END_TEST(RetryTest, RetrySendInitialMetadataRefs) {
+CORE_END2END_TEST(RetryTests, RetrySendInitialMetadataRefs) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(

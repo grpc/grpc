@@ -1,7 +1,0 @@
-test_id: 1711276032
-config_vars {
-  enable_fork_support: true
-  dns_resolver: "\177\177\177\177\177\177\177\177\177\177\177\177"
-  trace: "\177\177\177\001"
-  experiments: 2585189
-}

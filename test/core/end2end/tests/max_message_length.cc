@@ -132,7 +132,7 @@ void TestMaxMessageLengthOnServerOnResponse(CoreEnd2endTest& test) {
             "SERVER: Sent message larger than max (11 vs. 5)");
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   MaxMessageLengthOnClientOnRequestViaChannelArg) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
@@ -141,7 +141,7 @@ CORE_END2END_TEST(CoreEnd2endTest,
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnRequestViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
@@ -159,7 +159,7 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnRequestViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
@@ -176,7 +176,7 @@ CORE_END2END_TEST(
   TestMaxMessageLengthOnClientOnRequest(*this);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   MaxMessageLengthOnServerOnRequestViaChannelArg) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
@@ -184,7 +184,7 @@ CORE_END2END_TEST(CoreEnd2endTest,
   TestMaxMessageLengthOnServerOnRequest(*this);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   MaxMessageLengthOnClientOnResponseViaChannelArg) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
@@ -193,7 +193,7 @@ CORE_END2END_TEST(CoreEnd2endTest,
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
@@ -211,7 +211,7 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
@@ -228,7 +228,7 @@ CORE_END2END_TEST(
   TestMaxMessageLengthOnClientOnResponse(*this);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   MaxMessageLengthOnServerOnResponseViaChannelArg) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 5));
@@ -236,7 +236,8 @@ CORE_END2END_TEST(CoreEnd2endTest,
   TestMaxMessageLengthOnServerOnResponse(*this);
 }
 
-CORE_END2END_TEST(Http2Test, MaxMessageLengthOnServerOnRequestWithCompression) {
+CORE_END2END_TEST(Http2Tests,
+                  MaxMessageLengthOnServerOnRequestWithCompression) {
   SKIP_IF_MINSTACK();
   // Set limit via channel args.
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
@@ -271,7 +272,7 @@ CORE_END2END_TEST(Http2Test, MaxMessageLengthOnServerOnRequestWithCompression) {
               StartsWith("SERVER: Received message larger than max"));
 }
 
-CORE_END2END_TEST(Http2Test,
+CORE_END2END_TEST(Http2Tests,
                   MaxMessageLengthOnClientOnResponseWithCompression) {
   SKIP_IF_MINSTACK();
   // Set limit via channel args.

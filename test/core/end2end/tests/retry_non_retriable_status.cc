@@ -33,7 +33,7 @@ namespace {
 // Tests that we don't retry for non-retryable status codes.
 // - 1 retry allowed for ABORTED status
 // - first attempt gets INVALID_ARGUMENT, so no retry is done
-CORE_END2END_TEST(RetryTest, RetryNonRetriableStatus) {
+CORE_END2END_TEST(RetryTests, RetryNonRetriableStatus) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
