@@ -181,7 +181,7 @@ CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
   }
 }
 
-TEST(Fuzzers, NoLoggingTests_NoLoggingTestRegression1) {
+TEST(Fuzzers, NoLoggingTestRegression1) {
   NoLoggingTests_NoLoggingTest(
       CoreTestConfigurationNamed("Chttp2FullstackCompression"),
       ParseTestProto(R"pb(config_vars {
@@ -192,7 +192,7 @@ TEST(Fuzzers, NoLoggingTests_NoLoggingTestRegression1) {
                           })pb"));
 }
 
-TEST(Fuzzers, NoLoggingTests_NoLoggingTestRegression2) {
+TEST(Fuzzers, NoLoggingTestRegression2) {
   NoLoggingTests_NoLoggingTest(
       CoreTestConfigurationNamed("Chttp2Fullstack"),
       ParseTestProto(R"pb(event_engine_actions {
