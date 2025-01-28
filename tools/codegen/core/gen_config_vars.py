@@ -201,7 +201,7 @@ with open("test/core/test_util/fuzz_config_vars.proto", "w") as P:
         print(
             "  optional %s %s = %d;"
             % (
-                attr.get("fuzz_type", PROTO_TYPE[attr["type"]]),
+                PROTO_TYPE[attr["type"]],
                 attr["name"],
                 binascii.crc32(attr["name"].encode("ascii")) & 0x1FFFFFFF,
             ),
@@ -228,6 +228,7 @@ with open("test/core/test_util/fuzz_config_vars.h", "w") as H:
     print(file=H)
     print('#include "test/core/test_util/fuzz_config_vars.pb.h"', file=H)
     print('#include "src/core/config/config_vars.h"', file=H)
+    print('#include "test/core/test_util/fuzz_config_vars_helpers.h"', file=C)
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
@@ -260,7 +261,6 @@ with open("test/core/test_util/fuzz_config_vars.cc", "w") as C:
     )
 
     print('#include "test/core/test_util/fuzz_config_vars.h"', file=C)
-    print('#include "test/core/test_util/fuzz_config_vars_helpers.h"', file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
@@ -276,18 +276,12 @@ with open("test/core/test_util/fuzz_config_vars.cc", "w") as C:
         fuzz = attr.get("fuzz", False)
         if not fuzz:
             continue
+        assert fuzz == True
         print("  if (vars.has_%s()) {" % attr["name"], file=C)
-        if isinstance(fuzz, str):
-            print(
-                "    overrides.%s = %s(vars.%s());"
-                % (attr["name"], fuzz, attr["name"]),
-                file=C,
-            )
-        else:
-            print(
-                "    overrides.%s = vars.%s();" % (attr["name"], attr["name"]),
-                file=C,
-            )
+        print(
+            "    overrides.%s = vars.%s();" % (attr["name"], attr["name"]),
+            file=C,
+        )
         print("  }", file=C)
     print("  return overrides;", file=C)
     print("}", file=C)
