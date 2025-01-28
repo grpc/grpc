@@ -295,7 +295,10 @@ grpc_core_end2end_test(name = "no_logging")
 
 grpc_core_end2end_test(name = "no_op")
 
-grpc_core_end2end_test(name = "payload")
+grpc_core_end2end_test(
+    name = "payload",
+    shard_count = 10,
+)
 
 grpc_core_end2end_test(name = "ping")
 
