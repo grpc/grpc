@@ -68,7 +68,6 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
-                "server_listener",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -86,9 +85,6 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "server_listener",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -97,6 +93,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_listener",
+                "server_listener",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
@@ -120,6 +117,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "pick_first_new",
+                "server_listener",
                 "work_serializer_dispatch",
             ],
         },
@@ -134,7 +132,6 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
-                "server_listener",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -152,12 +149,10 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "server_listener",
-            ],
         },
         "on": {
             "core_end2end_test": [
+                "server_listener",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
@@ -172,6 +167,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "pick_first_new",
+                "server_listener",
                 "work_serializer_dispatch",
             ],
         },
@@ -186,7 +182,6 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
-                "server_listener",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -204,9 +199,6 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "server_listener",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -215,6 +207,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_listener",
+                "server_listener",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
@@ -238,6 +231,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "pick_first_new",
+                "server_listener",
                 "work_serializer_dispatch",
             ],
         },
