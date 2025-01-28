@@ -81,6 +81,7 @@ def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = 
         shard_count: per bazel
         tags: per bazel
         flaky: per bazel
+        enable_fuzzing: also create a fuzzer
     """
 
     if len(name) > 60:
@@ -100,6 +101,7 @@ def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = 
         data = _DATA,
         shard_count = shard_count,
         tags = tags,
+        flaky = flaky,
     )
 
     if enable_fuzzing:
