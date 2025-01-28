@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl","grpc_cc_proto_library",  "grpc_internal_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/ext/filters/event_engine_client_channel_resolver")
@@ -36,12 +36,18 @@ grpc_cc_proto_library(
 grpc_fuzz_test(
     name = "resolver_fuzzer",
     srcs = ["resolver_fuzzer.cc"],
-    external_deps = ["absl/log:check", "gtest", "fuzztest", "fuzztest_main"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = [
         "no_mac",
         "no_windows",
     ],
     deps = [
+        "resolver_fuzzer_cc_proto",
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
@@ -51,6 +57,5 @@ grpc_fuzz_test(
         "//test/core/test_util:fuzzing_channel_args",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-        "resolver_fuzzer_cc_proto"
     ],
 )
