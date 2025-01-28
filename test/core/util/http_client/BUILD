@@ -22,17 +22,17 @@ licenses(["notice"])
 grpc_fuzz_test(
     name = "fuzzer",
     srcs = ["fuzzer.cc"],
+    external_deps = [
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
     ],
-    external_deps = [
-        "gtest",
-        "fuzztest",
-        "fuzztest_main"
-    ]
 )
 
 grpc_cc_library(
