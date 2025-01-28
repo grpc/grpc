@@ -151,7 +151,6 @@ def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], data = [], external_de
 
     Args:
         name: The name of the test.
-        shard_count: The shard count for the test.
         srcs: The source files for the test.
         deps: The dependencies of the test.
         tags: The tags for the test.
