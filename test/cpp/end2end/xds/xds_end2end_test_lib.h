@@ -1046,7 +1046,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // checking that all work from the current test is done, but this is not a
   // guaranteed way since there might still be threads that are not using event
   // engine but are still accessing/modifying the system state.
-  grpc_event_engine::experimental::DefaultEventEngineScope event_engine_scope_;
+  grpc_event_engine::experimental::DefaultEventEngineScope scoped_event_engine_;
 
   std::unique_ptr<BalancerServerThread> balancer_;
 
