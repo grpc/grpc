@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_proto_fuzzer")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package","grpc_cc_proto_library", "grpc_internal_proto_library")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
@@ -81,20 +81,29 @@ grpc_cc_test(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "frame_fuzzer_proto",
+    srcs = ["frame_fuzzer.proto"],
+)
+
+grpc_cc_proto_library(
+    name = "frame_fuzzer_cc_proto",
+    deps = ["frame_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "frame_fuzzer",
     srcs = ["frame_fuzzer.cc"],
-    corpus = "frame_fuzzer_corpus",
     external_deps = [
         "absl/log:check",
         "absl/log:log",
         "absl/random:bit_gen_ref",
         "absl/status:statusor",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    proto = "frame_fuzzer.proto",
     tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:exec_ctx",
         "//:gpr",
@@ -110,6 +119,7 @@ grpc_proto_fuzzer(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//test/core/promise:test_context",
+        "frame_fuzzer_cc_proto",
     ],
 )
 
