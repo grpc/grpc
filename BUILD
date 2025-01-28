@@ -998,6 +998,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    visibility = ["@grpc:public"],
     deps = [
         "gpr",
         "grpc_base",
@@ -1029,6 +1030,7 @@ grpc_cc_library(
         "include/grpcpp/security/authorization_policy_provider.h",
     ],
     tags = ["nofixdeps"],
+    visibility = ["@grpc:public"],
     deps = [
         "gpr",
         "grpc++",
