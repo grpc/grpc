@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_proto_library","grpc_internal_proto_library","grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
@@ -42,7 +42,7 @@ grpc_internal_proto_library(
 
 grpc_cc_proto_library(
     name = "work_queue_fuzzer_cc_proto",
-    deps = ["work_queue_fuzzer_proto"]
+    deps = ["work_queue_fuzzer_proto"],
 )
 
 # TODO(hork): the same fuzzer configuration should work trivially for all
@@ -51,10 +51,14 @@ grpc_cc_proto_library(
 grpc_fuzz_test(
     name = "basic_work_queue_fuzzer",
     srcs = ["basic_work_queue_fuzzer.cc"],
+    external_deps = [
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
+        "work_queue_fuzzer_cc_proto",
         "//src/core:event_engine_basic_work_queue",
         "//test/core/test_util:grpc_test_util",
-        "work_queue_fuzzer_cc_proto",
     ],
-    external_deps = ["gtest", "fuzztest", "fuzztest_main"],
 )
