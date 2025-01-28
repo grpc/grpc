@@ -15,8 +15,10 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
     "grpc_cc_test",
-    "grpc_package","grpc_cc_proto_library", "grpc_internal_proto_library"
+    "grpc_internal_proto_library",
+    "grpc_package",
 )
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
@@ -179,25 +181,30 @@ grpc_cc_test(
 grpc_internal_proto_library(
     name = "xds_client_fuzzer_proto",
     srcs = [
-        "xds_client_fuzzer.proto"
+        "xds_client_fuzzer.proto",
     ],
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "@envoy_api//envoy/service/discovery/v3:pkg",
-    ]
+    ],
 )
 
 grpc_cc_proto_library(
     name = "xds_client_fuzzer_cc_proto",
     deps = [
         "xds_client_fuzzer_proto",
-    ]
+    ],
 )
 
 grpc_fuzz_test(
     name = "xds_client_fuzzer",
     srcs = ["xds_client_fuzzer.cc"],
-    external_deps = ["absl/log:log", "fuzztest", "fuzztest_main", "gtest"],
+    external_deps = [
+        "absl/log:log",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     tags = ["no_windows"],
     deps = [
         ":xds_client_test_peer",
