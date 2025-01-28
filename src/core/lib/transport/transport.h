@@ -420,12 +420,10 @@ typedef struct grpc_transport_op {
   grpc_core::ConnectivityStateWatcherInterface* stop_connectivity_watch =
       nullptr;
   /// should the transport be disconnected
-  /// Error contract: the transport that gets this op must cause
-  ///                disconnect_with_error to be unref'ed after processing it
   grpc_error_handle disconnect_with_error;
-  /// what should the goaway contain?
-  /// Error contract: the transport that gets this op must cause
-  ///                goaway_error to be unref'ed after processing it
+  /// Start a graceful goaway with the specified error message. (The error code
+  /// is ignored since graceful GOAWAYs use a NO_ERROR error code.) Use
+  /// disconnect_with_error if graceful shutdown is not needed.
   grpc_error_handle goaway_error;
   void (*set_accept_stream_fn)(void* user_data, grpc_core::Transport* transport,
                                const void* server_data) = nullptr;
