@@ -232,7 +232,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
     {"server_listener", description_server_listener,
      additional_constraints_server_listener,
-     required_experiments_server_listener, 1, false, true},
+     required_experiments_server_listener, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -448,7 +448,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
     {"server_listener", description_server_listener,
      additional_constraints_server_listener,
-     required_experiments_server_listener, 1, false, true},
+     required_experiments_server_listener, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -664,7 +664,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
     {"server_listener", description_server_listener,
      additional_constraints_server_listener,
-     required_experiments_server_listener, 1, false, true},
+     required_experiments_server_listener, 1, true, true},
 };
 
 }  // namespace grpc_core
