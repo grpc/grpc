@@ -331,10 +331,10 @@ static void test_connect(size_t num_connects,
   grpc_core::ExecCtx exec_ctx;
   // Use aligned_storage to allocate grpc_resolved_address objects on stack
   // to meet the alignment requirement of sockaddr_storage type.
-  std::aligned_storage<sizeof(grpc_resolved_address),
-                       alignof(sockaddr_storage)>::type resolved_addr_buffer;
-  std::aligned_storage<sizeof(grpc_resolved_address),
-                       alignof(sockaddr_storage)>::type resolved_addr1_buffer;
+  alignas(sockaddr_storage) char
+      resolved_addr_buffer[sizeof(grpc_resolved_address)];
+  alignas(sockaddr_storage) char
+      resolved_addr1_buffer[sizeof(grpc_resolved_address)];
   grpc_resolved_address& resolved_addr =
       *reinterpret_cast<grpc_resolved_address*>(&resolved_addr_buffer);
   grpc_resolved_address& resolved_addr1 =
