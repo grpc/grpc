@@ -451,6 +451,8 @@ libs:
   - src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.h
   - src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb.h
   - src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.h
   - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb.h
   - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.h
   - src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb.h
@@ -686,6 +688,7 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/service/status/v3/csds.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/type/matcher/v3/metadata.upbdefs.h
@@ -1416,6 +1419,7 @@ libs:
   - src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c
@@ -1577,6 +1581,7 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/service/status/v3/csds.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/type/matcher/v3/metadata.upbdefs.c
@@ -5286,6 +5291,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -7896,6 +7902,8 @@ targets:
   - src/core/ext/upb-gen/envoy/config/route/v3/route_components.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/route/v3/scoped_route.upb.h
   - src/core/ext/upb-gen/envoy/config/route/v3/scoped_route.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.h
   - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb.h
   - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.h
   - src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb.h
@@ -8067,6 +8075,7 @@ targets:
   - src/core/ext/upb-gen/envoy/config/route/v3/route.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/route/v3/route_components.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/route/v3/scoped_route.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c
@@ -15042,6 +15051,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -21969,6 +21979,7 @@ targets:
   - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/rbac/audit_loggers/stream/v3/stream.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -22146,6 +22157,7 @@ targets:
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
   - third_party/envoy-api/envoy/service/status/v3/csds.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -22294,6 +22306,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -22433,6 +22446,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/upstreams/http/v3/http_protocol_options.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -22578,6 +22592,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -22691,6 +22706,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -22828,6 +22844,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -23045,6 +23062,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -23193,6 +23211,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -23296,6 +23315,7 @@ targets:
   - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
   - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
   - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -23423,6 +23443,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -23571,6 +23592,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -23718,6 +23740,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -23866,6 +23889,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -24000,6 +24024,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/http/stateful_session/cookie/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -24118,6 +24143,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/round_robin/v3/round_robin.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -24247,6 +24273,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -24346,6 +24373,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
   - third_party/envoy-api/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -24471,6 +24499,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -24619,6 +24648,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/http/stateful_session/cookie/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -24797,6 +24827,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -24947,6 +24978,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -25097,6 +25129,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -25213,6 +25246,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -25360,6 +25394,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -25514,6 +25549,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -25670,6 +25706,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -25816,6 +25853,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -25891,12 +25929,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: aed4389a9cf7777df7811185770dca7352f19a2fd68a41ae04e47071dada31eb
+  hash: cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-88a37373e3cb5e1ab09e75dfb302b083168e6654
+  strip_prefix: data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
 - destination: third_party/googleapis
   hash: 0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
   proto_prefix: third_party/googleapis/

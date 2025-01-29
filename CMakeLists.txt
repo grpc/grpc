@@ -403,18 +403,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz
-    aed4389a9cf7777df7811185770dca7352f19a2fd68a41ae04e47071dada31eb
-    data-plane-api-88a37373e3cb5e1ab09e75dfb302b083168e6654
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
+    cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
+    data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz
-    aed4389a9cf7777df7811185770dca7352f19a2fd68a41ae04e47071dada31eb
-    data-plane-api-88a37373e3cb5e1ab09e75dfb302b083168e6654
+    https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
+    cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
+    data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -1058,6 +1058,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/type/http/v3/path_transformation.proto envoy/type/http/v3/path_transformation.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/envoy-api/envoy/type/matcher/v3/address.proto envoy/type/matcher/v3/address.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto envoy/type/matcher/v3/filter_state.proto
@@ -2355,6 +2358,7 @@ add_library(grpc
   src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c
@@ -2516,6 +2520,7 @@ add_library(grpc
   src/core/ext/upbdefs-gen/envoy/service/status/v3/csds.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/matcher/v3/metadata.upbdefs.c
@@ -6721,6 +6726,10 @@ add_executable(admin_services_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -10430,6 +10439,7 @@ add_executable(cel_authorization_engine_test
   src/core/ext/upb-gen/envoy/config/route/v3/route.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/route/v3/route_components.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/route/v3/scoped_route.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c
@@ -24096,6 +24106,10 @@ add_executable(pre_stop_hook_server_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -35480,6 +35494,10 @@ add_executable(xds_audit_logger_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/rbac/audit_loggers/stream/v3/stream.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/rbac/audit_loggers/stream/v3/stream.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/rbac/audit_loggers/stream/v3/stream.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -36138,6 +36156,10 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/status/v3/csds.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/status/v3/csds.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/status/v3/csds.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -36661,6 +36683,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -37176,6 +37202,10 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -37700,6 +37730,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -38090,6 +38124,10 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -38577,6 +38615,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -39322,6 +39364,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -39849,6 +39895,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -40226,6 +40276,10 @@ add_executable(xds_endpoint_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -40686,6 +40740,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -41220,6 +41278,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -41750,6 +41812,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -42280,6 +42346,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -42754,6 +42824,10 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -43172,6 +43246,10 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -43634,6 +43712,10 @@ add_executable(xds_listener_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -44000,6 +44082,10 @@ add_executable(xds_metadata_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -44464,6 +44550,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -44998,6 +45088,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -45623,6 +45717,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -46154,6 +46252,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -46689,6 +46791,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -47091,6 +47197,10 @@ add_executable(xds_route_config_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/rbac/v3/rbac.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/rbac/v3/rbac.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/rbac/v3/rbac.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -47622,6 +47732,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -48172,6 +48286,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -48751,6 +48869,10 @@ add_executable(xds_stats_watcher_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -49282,6 +49404,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
