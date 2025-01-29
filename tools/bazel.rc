@@ -32,6 +32,7 @@ build:macos --host_copt=-Wno-typedef-redefinition
 
 # MacOS 11 is the minimum MacOS version to support
 build:macos --macos_minimum_os=11.0
+build:macos --host_macos_minimum_os=11.0
 
 # Don't trigger --config=<host platform> when cross-compiling.
 build:android --noenable_platform_specific_config
