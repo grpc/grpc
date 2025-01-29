@@ -81,16 +81,17 @@ namespace grpc_core {
 // Execution of Spawned Promises
 // A Participant spawned on a party will get executed by that party.
 // Whenever the party wakes up, it will executed all unresolved Party
-// Participants atleast once. After the Party Participant is resolved, the slot
+// Participants atleast once. After any Party Participant is resolved, its slot
 // is freed up to make place for new participants.
 //
 // When these Party Participants are executed (polled), they can either
 // 1. Resolve by returning a value
 // 2. Return Pending{}
 // 3. Wait for a certain event to happen using either a Notification or a Latch.
-// When a promise factory is passed as a Party Participant, the factory is used
-// to generate the promise once, and then the promise is executed once each time
-// the party is polled till it resolves.
+//
+// When a promise factory is passed as a Party Participant, the promise factory
+// is used to generate the promise once, and then the promise is executed once
+// each time the party is polled till it resolves.
 //
 // Sleep mechanism of a Party
 // A party will Sleep/Quiece if all Participants Spawned on the party are in any
@@ -111,7 +112,7 @@ namespace grpc_core {
 //
 // Gurantees of a Party
 // 1. All Participant spawned on one party are guranteed to be run serially.
-// their execution will not happen in parallel.
+// Their execution will not happen in parallel.
 // 2. If a promise is executed, its on_complete is guranteed to be executed as
 // long as the party is not cancelled.
 // 3. Once a party is cancelled, Participants that were Spawned onto the party,
@@ -125,8 +126,7 @@ namespace grpc_core {
 // promise combinators is allowed.
 // 7. You can re-use the same party to spawn new Participants as long as the
 // older Participants have been resolved.
-// 8. A party participant is a promise which was spawned on a party and is not
-// yet resolved. We gurantee safe working of up to 16 un-resolved participatns
+// 8. We gurantee safe working of up to 16 un-resolved participatns
 // on a party at a time.
 //
 // Non-Gurantees of a Party
