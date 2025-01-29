@@ -23,7 +23,7 @@ set -ex
 HOME="$(mktemp -d)"
 export HOME
 
-pip install -r requirements.bazel.txt
+pip install -r requirements.docs.txt
 tools/run_tests/run_tests.py -c opt -l python --compiler python3.8 --newline_on_success -j 8 --build_only
 # shellcheck disable=SC1091
 source py38/bin/activate
