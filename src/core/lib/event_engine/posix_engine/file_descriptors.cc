@@ -321,7 +321,7 @@ IF_POSIX_SOCKET(absl::Status SetSocketDscp(int fdesc, int dscp), {
 })
 
 // Set a socket to use zerocopy
-absl::Status SetSocketZeroCopy(int fd) {
+IF_POSIX_SOCKET(absl::Status SetSocketZeroCopy(int fd), {
   if constexpr (kLinuxErrqueue) {
     return SetSocketOption(fd, SOL_SOCKET, SO_ZEROCOPY, 1, "SO_ZEROCOPY");
   } else {
@@ -329,7 +329,7 @@ absl::Status SetSocketZeroCopy(int fd) {
                         absl::StrCat("setsockopt(SO_ZEROCOPY): ",
                                      grpc_core::StrError(ENOSYS).c_str()));
   }
-}
+})
 
 // Set TCP_USER_TIMEOUT
 IF_POSIX_SOCKET(
