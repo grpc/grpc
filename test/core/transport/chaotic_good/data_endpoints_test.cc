@@ -28,6 +28,7 @@
 
 #include "src/core/ext/transport/chaotic_good/data_endpoints.h"
 
+#include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 
 #include "gtest/gtest.h"
@@ -86,12 +87,14 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
       [&write1_ep](uint32_t id) { write1_ep = id; },
       data_endpoints.Write(SliceBuffer(Slice::FromCopiedString("world"))),
       [&write2_ep](uint32_t id) { write2_ep = id; });
+  TickUntilTrue([&]() { return writes1.Length() + writes2.Length() == 10; });
   WaitForAllPendingWork();
   EXPECT_THAT(write1_ep, ::testing::AnyOf(0, 1));
   EXPECT_THAT(write2_ep, ::testing::AnyOf(0, 1));
   std::string expect[2];
   expect[write1_ep] += "hello";
   expect[write2_ep] += "world";
+  LOG(INFO) << GRPC_DUMP_ARGS(write1_ep, write2_ep);
   EXPECT_EQ(writes1.JoinIntoString(), expect[0]);
   EXPECT_EQ(writes2.JoinIntoString(), expect[1]);
 }
@@ -109,6 +112,39 @@ DATA_ENDPOINTS_TEST(CanRead) {
                                EXPECT_EQ(result->JoinIntoString(), "hello");
                              });
   WaitForAllPendingWork();
+}
+
+namespace {
+yodel::Msg ParseTestProto(const std::string& text) {
+  yodel::Msg msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(text, &msg));
+  return msg;
+}
+}  // namespace
+
+TEST(DataEndpointsTest, CanMultiWriteRegression) {
+  CanMultiWrite(ParseTestProto(
+      R"pb(event_engine_actions {
+             run_delay: 9223372036854775807
+             run_delay: 9223372036854775807
+             run_delay: 9223372036854775801
+             run_delay: 0
+             run_delay: 5807413915228537483
+             assign_ports: 3508738622
+             assign_ports: 4238198998
+             assign_ports: 857428670
+             assign_ports: 0
+             assign_ports: 4227858431
+             assign_ports: 2863084513
+             assign_ports: 1868867780
+             assign_ports: 0
+             connections { write_size: 2147483647 write_size: 4294705148 }
+             connections { write_size: 1 }
+           }
+           rng: 1
+           rng: 14109448502428080414
+           rng: 18446744073709551615
+           rng: 13568317980260708783)pb"));
 }
 
 }  // namespace grpc_core

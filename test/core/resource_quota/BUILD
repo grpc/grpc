@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_proto_fuzzer")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
@@ -133,21 +133,30 @@ grpc_cc_test(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "memory_quota_fuzzer_proto",
+    srcs = ["memory_quota_fuzzer.proto"],
+    deps = ["//test/core/test_util:fuzz_config_vars_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "memory_quota_fuzzer_cc_proto",
+    deps = ["memory_quota_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "memory_quota_fuzzer",
     srcs = ["memory_quota_fuzzer.cc"],
-    corpus = "memory_quota_fuzzer_corpus",
     external_deps = [
         "absl/status",
         "absl/strings",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    proto = "memory_quota_fuzzer.proto",
-    proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
-    tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "call_checker",
+        "memory_quota_fuzzer_cc_proto",
         "//:debug_location",
         "//:exec_ctx",
         "//:gpr",

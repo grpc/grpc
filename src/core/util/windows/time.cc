@@ -28,7 +28,6 @@
 #include <sys/timeb.h>
 
 #include "absl/log/check.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/time_precise.h"
 
 static LARGE_INTEGER g_start_time = []() {

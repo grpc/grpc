@@ -164,6 +164,7 @@ grpc_fuzz_test(
     srcs = ["connector_fuzzer.cc"],
     external_deps = [
         "absl/log:check",
+        "gtest",
         "fuzztest",
         "fuzztest_main",
     ],

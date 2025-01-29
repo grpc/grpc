@@ -633,10 +633,6 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
       << "[xds_resolver " << resolver_.get()
       << "] destroying XdsConfigSelector " << this;
   route_config_data_.reset();
-  if (!IsWorkSerializerDispatchEnabled()) {
-    resolver_->MaybeRemoveUnusedClusters();
-    return;
-  }
   resolver_->work_serializer_->Run(
       [resolver = std::move(resolver_)]() {
         resolver->MaybeRemoveUnusedClusters();

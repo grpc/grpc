@@ -251,9 +251,10 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
       suffix.Append(Slice::FromCopiedString(frame.payload_raw_bytes()));
       break;
     case fuzzer_input::ChaoticGoodFrame::kPayloadEmptyOfLength:
-      h.payload_length = frame.payload_empty_of_length();
-      suffix.Append(Slice::FromCopiedString(
-          std::string(frame.payload_empty_of_length(), 'a')));
+      h.payload_length =
+          std::min<uint32_t>(65536, frame.payload_empty_of_length());
+      suffix.Append(
+          Slice::FromCopiedString(std::string(h.payload_length, 'a')));
       break;
     case fuzzer_input::ChaoticGoodFrame::kPayloadOtherConnectionId:
       h.payload_connection_id =

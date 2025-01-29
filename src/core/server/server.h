@@ -633,6 +633,13 @@ class Server : public ServerInterface,
     return shutdown_refs_.load(std::memory_order_acquire) == 0;
   }
 
+  // Returns a promise that resolves to
+  // tuple<
+  //     optional<MessageHandle>,
+  //     RequestMatcherInterface::MatchResult,
+  //     ClientMetadataHandle>
+  auto MatchRequestAndMaybeReadFirstMessage(CallHandler call_handler,
+                                            ClientMetadataHandle md);
   auto MatchAndPublishCall(CallHandler call_handler);
   absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> MakeCallDestination(
       const ChannelArgs& args);

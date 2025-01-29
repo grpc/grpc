@@ -32,6 +32,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
+#include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -39,7 +40,6 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
 
@@ -470,15 +470,11 @@ void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
         tfc_->announced_stream_total_over_incoming_window());
 }
 
-}  // namespace
-}  // namespace chttp2
-}  // namespace grpc_core
-
-DEFINE_PROTO_FUZZER(const flow_control_fuzzer::Msg& msg) {
-  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_core::chttp2::InitGlobals();
-  grpc_core::chttp2::FlowControlFuzzer fuzzer(msg.enable_bdp());
+void Test(flow_control_fuzzer::Msg msg) {
+  ApplyFuzzConfigVars(msg.config_vars());
+  TestOnlyReloadExperimentsFromConfigVariables();
+  chttp2::InitGlobals();
+  chttp2::FlowControlFuzzer fuzzer(msg.enable_bdp());
   for (const auto& action : msg.actions()) {
     if (!squelch) {
       fprintf(stderr, "%s\n", action.DebugString().c_str());
@@ -488,3 +484,8 @@ DEFINE_PROTO_FUZZER(const flow_control_fuzzer::Msg& msg) {
     fuzzer.AssertAnnouncedOverInitialWindowSizeCorrect();
   }
 }
+FUZZ_TEST(FlowControl, Test);
+
+}  // namespace
+}  // namespace chttp2
+}  // namespace grpc_core
