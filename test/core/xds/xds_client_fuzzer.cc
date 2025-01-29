@@ -348,85 +348,6 @@ class Fuzzer {
   std::map<std::string, std::set<EndpointWatcher*>> endpoint_watchers_;
 };
 
-static const char* kBasicCluster = R"pb(
-  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
-  actions {
-    start_watch {
-      resource_type { cluster {} }
-      resource_name: "cluster1"
-    }
-  }
-  actions {
-    read_message_from_client {
-      stream_id { ads {} }
-      ok: true
-    }
-  }
-  actions {
-    send_message_to_client {
-      stream_id { ads {} }
-      response {
-        version_info: "1"
-        nonce: "A"
-        type_url: "type.googleapis.com/envoy.config.cluster.v3.Cluster"
-        resources {
-          [type.googleapis.com/envoy.config.cluster.v3.Cluster] {
-            name: "cluster1"
-            type: EDS
-            eds_cluster_config {
-              eds_config { ads {} }
-              service_name: "endpoint1"
-            }
-          }
-        }
-      }
-    }
-  }
-)pb";
-
-static const char* kBasicEndpoint = R"pb(
-  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
-  actions {
-    start_watch {
-      resource_type { endpoint {} }
-      resource_name: "endpoint1"
-    }
-  }
-  actions {
-    read_message_from_client {
-      stream_id { ads {} }
-      ok: true
-    }
-  }
-  actions {
-    send_message_to_client {
-      stream_id { ads {} }
-      response {
-        version_info: "1"
-        nonce: "A"
-        type_url: "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment"
-        resources {
-          [type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment] {
-            cluster_name: "endpoint1"
-            endpoints {
-              locality { region: "region1" zone: "zone1" sub_zone: "sub_zone1" }
-              load_balancing_weight { value: 1 }
-              lb_endpoints {
-                load_balancing_weight { value: 1 }
-                endpoint {
-                  address {
-                    socket_address { address: "127.0.0.1" port_value: 443 }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-)pb";
-
 static const char* kBasicListener = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions {
@@ -514,55 +435,83 @@ static const char* kBasicRouteConfig = R"pb(
   }
 )pb";
 
-static const char* kBasicXdsServersEmpty = R"pb(
-  bootstrap: "{\"xds_servers\": []}"
+static const char* kBasicCluster = R"pb(
+  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions {
     start_watch {
-      resource_type { listener {} }
-      resource_name: "\003"
+      resource_type { cluster {} }
+      resource_name: "cluster1"
     }
   }
-)pb";
-
-static const char* kResourceWrapperEmpty = R"pb(
-  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
-  actions { start_watch { resource_type { cluster {} } } }
+  actions {
+    read_message_from_client {
+      stream_id { ads {} }
+      ok: true
+    }
+  }
   actions {
     send_message_to_client {
       stream_id { ads {} }
       response {
-        version_info: "envoy.config.cluster.v3.Cluster"
-        resources { type_url: "envoy.service.discovery.v3.Resource" }
-        canary: true
-        type_url: "envoy.config.cluster.v3.Cluster"
-        nonce: "envoy.config.cluster.v3.Cluster"
-      }
-    }
-  }
-)pb";
-
-static const char* kRlsMissingTypedExtensionConfig = R"pb(
-  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:-257\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
-  actions { start_watch { resource_type { route_config {} } } }
-  actions {
-    send_message_to_client {
-      stream_id { ads {} }
-      response {
-        version_info: "grpc.lookup.v1.RouteLookup"
+        version_info: "1"
+        nonce: "A"
+        type_url: "type.googleapis.com/envoy.config.cluster.v3.Cluster"
         resources {
-          type_url: "envoy.config.route.v3.RouteConfiguration"
-          value: "\010\001b\000"
+          [type.googleapis.com/envoy.config.cluster.v3.Cluster] {
+            name: "cluster1"
+            type: EDS
+            eds_cluster_config {
+              eds_config { ads {} }
+              service_name: "endpoint1"
+            }
+          }
         }
-        type_url: "envoy.config.route.v3.RouteConfiguration"
-        nonce: "/@\001\000\\\000\000x141183468234106731687303715884105729"
       }
     }
   }
 )pb";
 
-static const char* kSendMessageToClientBeforeStreamCreated = R"pb(
+static const char* kBasicEndpoint = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
-  actions { send_message_to_client { stream_id { ads {} } } }
+  actions {
+    start_watch {
+      resource_type { endpoint {} }
+      resource_name: "endpoint1"
+    }
+  }
+  actions {
+    read_message_from_client {
+      stream_id { ads {} }
+      ok: true
+    }
+  }
+  actions {
+    send_message_to_client {
+      stream_id { ads {} }
+      response {
+        version_info: "1"
+        nonce: "A"
+        type_url: "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment"
+        resources {
+          [type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment] {
+            cluster_name: "endpoint1"
+            endpoints {
+              locality { region: "region1" zone: "zone1" sub_zone: "sub_zone1" }
+              load_balancing_weight { value: 1 }
+              lb_endpoints {
+                load_balancing_weight { value: 1 }
+                endpoint {
+                  address {
+                    socket_address { address: "127.0.0.1" port_value: 443 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 )pb";
 
 auto ParseTestProto(const std::string& proto) {
@@ -580,11 +529,66 @@ void Fuzz(const xds_client_fuzzer::Msg& message) {
 FUZZ_TEST(XdsClientFuzzer, Fuzz)
     .WithDomains(::fuzztest::Arbitrary<xds_client_fuzzer::Msg>().WithSeeds(
         {ParseTestProto(kBasicCluster), ParseTestProto(kBasicEndpoint),
-         ParseTestProto(kBasicListener), ParseTestProto(kBasicRouteConfig),
-         ParseTestProto(kBasicXdsServersEmpty),
-         ParseTestProto(kResourceWrapperEmpty),
-         ParseTestProto(kRlsMissingTypedExtensionConfig),
-         ParseTestProto(kSendMessageToClientBeforeStreamCreated)}));
+         ParseTestProto(kBasicListener), ParseTestProto(kBasicRouteConfig)}));
+
+TEST(XdsClientFuzzer, XdsServersEmpty) {
+  Fuzz(ParseTestProto(R"pb(
+    bootstrap: "{\"xds_servers\": []}"
+    actions {
+      start_watch {
+        resource_type { listener {} }
+        resource_name: "\003"
+      }
+    }
+  )pb"));
+}
+
+TEST(XdsClientFuzzer, ResourceWrapperEmpty) {
+  Fuzz(ParseTestProto(R"pb(
+    bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+    actions { start_watch { resource_type { cluster {} } } }
+    actions {
+      send_message_to_client {
+        stream_id { ads {} }
+        response {
+          version_info: "envoy.config.cluster.v3.Cluster"
+          resources { type_url: "envoy.service.discovery.v3.Resource" }
+          canary: true
+          type_url: "envoy.config.cluster.v3.Cluster"
+          nonce: "envoy.config.cluster.v3.Cluster"
+        }
+      }
+    }
+  )pb"));
+}
+
+TEST(XdsClientFuzzer, RlsMissingTypedExtensionConfig) {
+  Fuzz(ParseTestProto(R"pb(
+    bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:-257\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+    actions { start_watch { resource_type { route_config {} } } }
+    actions {
+      send_message_to_client {
+        stream_id { ads {} }
+        response {
+          version_info: "grpc.lookup.v1.RouteLookup"
+          resources {
+            type_url: "envoy.config.route.v3.RouteConfiguration"
+            value: "\010\001b\000"
+          }
+          type_url: "envoy.config.route.v3.RouteConfiguration"
+          nonce: "/@\001\000\\\000\000x141183468234106731687303715884105729"
+        }
+      }
+    }
+  )pb"));
+}
+
+TEST(XdsClientFuzzer, SendMessageToClientBeforeStreamCreated) {
+  Fuzz(ParseTestProto(R"pb(
+    bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+    actions { send_message_to_client { stream_id { ads {} } } }
+  )pb"));
+}
 
 TEST(XdsClientFuzzer, IgnoresConnectionFailuresWithOkStatus) {
   Fuzz(ParseTestProto(R"pb(
