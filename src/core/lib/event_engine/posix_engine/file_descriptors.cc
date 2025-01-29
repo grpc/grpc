@@ -91,6 +91,13 @@ namespace grpc_event_engine::experimental {
 
 namespace {
 
+// This way if constexpr can be used and also macro nesting is not needed
+#ifdef GRPC_LINUX_ERRQUEUE
+constexpr bool kLinuxErrqueue = true;
+#else   // GRPC_LINUX_ERRQUEUE
+constexpr bool kLinuxErrqueue = true;
+#endif  // GRPC_LINUX_ERRQUEUE
+
 // The default values for TCP_USER_TIMEOUT are currently configured to be in
 // line with the default values of KEEPALIVE_TIMEOUT as proposed in
 // https://github.com/grpc/proposal/blob/master/A18-tcp-user-timeout.md */
@@ -315,20 +322,20 @@ IF_POSIX_SOCKET(absl::Status SetSocketDscp(int fdesc, int dscp), {
 
 // Set a socket to use zerocopy
 absl::Status SetSocketZeroCopy(int fd) {
-#ifdef GRPC_LINUX_ERRQUEUE
-  const int enable = 1;
-  auto err = setsockopt(fd, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
-  if (err != 0) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_ZEROCOPY): ", grpc_core::StrError(errno)));
+  if constexpr (kLinuxErrqueue) {
+    const int enable = 1;
+    auto err = setsockopt(fd, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
+    if (err != 0) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrCat("setsockopt(SO_ZEROCOPY): ",
+                                       grpc_core::StrError(errno)));
+    }
+    return absl::OkStatus();
+  } else {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("setsockopt(SO_ZEROCOPY): ",
+                                     grpc_core::StrError(ENOSYS).c_str()));
   }
-  return absl::OkStatus();
-#else
-  return absl::Status(absl::StatusCode::kInternal,
-                      absl::StrCat("setsockopt(SO_ZEROCOPY): ",
-                                   grpc_core::StrError(ENOSYS).c_str()));
-#endif
 }
 
 // Set TCP_USER_TIMEOUT
@@ -859,13 +866,10 @@ IF_POSIX_SOCKET(
       GRPC_RETURN_IF_ERROR(SetSocketNoSigpipeIfPossible(fd));
       GRPC_RETURN_IF_ERROR(ApplySocketMutatorInOptions(
           fd, GRPC_FD_SERVER_LISTENER_USAGE, options));
-
-#ifdef GRPC_LINUX_ERRQUEUE
-      if (!SetSocketZeroCopy(f).ok()) {
+      if (kLinuxErrqueue && !SetSocketZeroCopy(f).ok()) {
         // it's not fatal, so just log it.
         VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
       }
-#endif
       if (bind(f, address.address(), address.size()) < 0) {
         auto sockaddr_str = ResolvedAddressToString(address);
         if (!sockaddr_str.ok()) {
