@@ -125,7 +125,7 @@ def get_plugin_args(
         flags,
         dir_out,
         generate_mocks,
-        allow_deprecated,
+        allow_deprecated = False,
         plugin_name = "PLUGIN"):
     """Returns arguments configuring protoc to use a plugin for a language.
 

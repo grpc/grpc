@@ -138,7 +138,7 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           } else {
             *error = std::string("Invalid parameter: ") + *parameter_string;
             return false;
-          } 
+          }
         } else {
           *error = std::string("Unknown parameter: ") + *parameter_string;
           return false;
