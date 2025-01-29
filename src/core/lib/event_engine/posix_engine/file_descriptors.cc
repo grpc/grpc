@@ -253,18 +253,18 @@ IF_POSIX_SOCKET(absl::Status SetSocketCloexec(int fd, int close_on_exec), {
 
 // set a socket to reuse old addresses
 IF_POSIX_SOCKET(
-    absl::Status SetSocketOption(int fd, int level, int optname, int reuse,
+    absl::Status SetSocketOption(int fd, int level, int option, int value,
                                  absl::string_view debug_label),
     {
-      int val = (reuse != 0);
+      int val = (value != 0);
       int newval;
       socklen_t intlen = sizeof(newval);
-      if (0 != setsockopt(fd, level, optname, &val, sizeof(val))) {
+      if (0 != setsockopt(fd, level, option, &val, sizeof(val))) {
         return absl::Status(absl::StatusCode::kInternal,
                             absl::StrCat("setsockopt(", debug_label,
                                          "): ", grpc_core::StrError(errno)));
       }
-      if (0 != getsockopt(fd, level, optname, &newval, &intlen)) {
+      if (0 != getsockopt(fd, level, option, &newval, &intlen)) {
         return absl::Status(absl::StatusCode::kInternal,
                             absl::StrCat("setsockopt(", debug_label,
                                          "): ", grpc_core::StrError(errno)));
@@ -323,14 +323,7 @@ IF_POSIX_SOCKET(absl::Status SetSocketDscp(int fdesc, int dscp), {
 // Set a socket to use zerocopy
 absl::Status SetSocketZeroCopy(int fd) {
   if constexpr (kLinuxErrqueue) {
-    const int enable = 1;
-    auto err = setsockopt(fd, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
-    if (err != 0) {
-      return absl::Status(absl::StatusCode::kInternal,
-                          absl::StrCat("setsockopt(SO_ZEROCOPY): ",
-                                       grpc_core::StrError(errno)));
-    }
-    return absl::OkStatus();
+    return SetSocketOption(fd, SOL_SOCKET, SO_ZEROCOPY, 1, "SO_ZEROCOPY");
   } else {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("setsockopt(SO_ZEROCOPY): ",
