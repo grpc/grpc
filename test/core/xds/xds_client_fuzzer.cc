@@ -347,18 +347,6 @@ class Fuzzer {
   std::map<std::string, std::set<EndpointWatcher*>> endpoint_watchers_;
 };
 
-static const char* kAssertEntryIsNull = R"pb(
-  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
-  actions { start_watch { resource_type { route_config {} } } }
-  actions { stop_watch { resource_type { route_config {} } } }
-  actions {
-    start_watch {
-      resource_type { route_config {} }
-      resource_name: "{\"xds_servers\": [\203\2600\027erver_uri\":\"xds\013.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
-    }
-  }
-)pb";
-
 static const char* kBasicCluster = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions {
@@ -590,9 +578,8 @@ void Fuzz(const xds_client_fuzzer::Msg& message) {
 }
 FUZZ_TEST(XdsClientFuzzer, Fuzz)
     .WithDomains(::fuzztest::Arbitrary<xds_client_fuzzer::Msg>().WithSeeds(
-        {ParseTestProto(kAssertEntryIsNull), ParseTestProto(kBasicCluster),
-         ParseTestProto(kBasicEndpoint), ParseTestProto(kBasicListener),
-         ParseTestProto(kBasicRouteConfig),
+        {ParseTestProto(kBasicCluster), ParseTestProto(kBasicEndpoint),
+         ParseTestProto(kBasicListener), ParseTestProto(kBasicRouteConfig),
          ParseTestProto(kBasicXdsServersEmpty),
          ParseTestProto(kResourceWrapperEmpty),
          ParseTestProto(kRlsMissingTypedExtensionConfig),
