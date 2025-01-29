@@ -28,7 +28,7 @@ set +ex
 # but we want to exit if there's a failure
 set -e
 
-RUBY_VERSION=3.3.0
+RUBY_VERSION=3.4.1
 echo "Installing ruby-${RUBY_VERSION}"
 time rvm install "ruby-${RUBY_VERSION}"
 echo "Setting default ruby version."
@@ -41,7 +41,7 @@ set -ex
 ruby --version
 
 # Bundler is required for grpc ruby artifact build.
-gem install bundler -v 2.5
+gem install bundler -v 2.6
 
 # log gem versions for easier debugging if things go wrong
 gem list || true
