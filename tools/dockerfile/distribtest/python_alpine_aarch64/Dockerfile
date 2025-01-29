@@ -1,4 +1,4 @@
-# Copyright 2025 gRPC authors.
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,24 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+# this an aarch64 image
+FROM arm64v8/python:3.13-alpine
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_examples_tests_cpp.sh"
-timeout_mins: 30
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+# Our test infrastructure demands bash
+RUN apk update && apk add bash
 
-env_vars {
-  key: "TASK_RUNNER_EXTRA_FILTERS"
-  value: "aarch64 -e x64 x86 armv7"
-}
-
-# env_vars {
-#   key: "TASK_RUNNER_EXCLUDE_FILTERS"
-#   value: "x64 x86 armv7"
-# }
+RUN pip3 install virtualenv

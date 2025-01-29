@@ -227,6 +227,8 @@ if EXTRA_ENV_LINK_ARGS is None:
         EXTRA_ENV_LINK_ARGS += " -lpthread"
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += " -latomic"
+    if "linux" in sys.platform:
+        EXTRA_ENV_LINK_ARGS += " -static-libgcc"
 
 # Explicitly link Core Foundation framework for MacOS to ensure no symbol is
 # missing when compiled using package managers like Conda.
