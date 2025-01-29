@@ -24,12 +24,13 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 IS_AARCH64_MUSL=""
-if [[ "${TASK_RUNNER_EXTRA_FILTERS}" == "aarch64 musllinux_1_1" || "${TASK_RUNNER_EXTRA_FILTERS}" == "presubmit aarch64 musllinux_1_1" ]]; then
+
+if echo "${TASK_RUNNER_EXTRA_FILTERS}" | grep "aarch64" && echo "${TASK_RUNNER_EXTRA_FILTERS}" | grep "musllinux_1_1"; then
   IS_AARCH64_MUSL="True"
 fi
 
 if [[ "${IS_AARCH64_MUSL}" == "True" ]]; then
-  echo "Skipping prepare_qemu_rc'"
+  echo "Skipping prepare_qemu_rc"
 else
   # some distribtests use a pre-registered binfmt_misc hook
   # to automatically execute foreign binaries (such as aarch64)
