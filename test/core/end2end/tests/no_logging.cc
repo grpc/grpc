@@ -89,15 +89,18 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // We should be very conservative while adding new entries to this list,
     // because this has potential to cause massive log noise. Several users are
     // using INFO log level setting for production.
-    static const auto* const allowed_logs_by_module =
-        new std::map<absl::string_view, std::regex>(
-            {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
-             {"chaotic_good_server.cc",
-              std::regex("Failed to bind some addresses for.*")},
-             {"log.cc",
-              std::regex("Prefer WARNING or ERROR. However if you see this "
-                         "message in a debug environment or test environment "
-                         "it is safe to ignore this message.")}});
+    static const auto* const allowed_logs_by_module = new std::map<
+        absl::string_view, std::regex>(
+        {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
+         {"chaotic_good_server.cc",
+          std::regex("Failed to bind some addresses for.*")},
+         {"log.cc",
+          std::regex("Prefer WARNING or ERROR. However if you see this "
+                     "message in a debug environment or test environment "
+                     "it is safe to ignore this message.")},
+         {"chttp2_server.cc",
+          std::regex(
+              "Only [0-9]+ addresses added out of total [0-9]+ resolved")}});
 
     if (IsVlogWithVerbosityMoreThan1(entry)) {
       return;
