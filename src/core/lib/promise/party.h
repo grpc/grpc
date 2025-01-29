@@ -43,6 +43,7 @@
 namespace grpc_core {
 
 // Terms Used:
+//
 // Concurrent promises: Promises that may be in progress at a given instant
 // of time, but they may or may not execute simultaneously.
 // Parallel promises: Two or more Promises that are getting executed
@@ -50,8 +51,14 @@ namespace grpc_core {
 //
 // Promise Party
 // A Promise Party forms the execution environment for Promises. It runs up
-// to sixteen concurrent promises and ensures none run in parallel with each
-// other.
+// to sixteen concurrent party participants and ensures none of the participants
+// run in parallel with each other.
+//
+// Party Participant
+// One Promise Party has 16 Participant slots. Each Participant slot can hold
+// 1. A Promise
+// 2. Or a Promise Factory
+// 3. or any type of Participant object, such as SpawnSerializer.
 //
 // Using a Party
 // A party should be used when
@@ -60,11 +67,6 @@ namespace grpc_core {
 // 2. These promises have their own complex sleep and wake mechanisms.
 // 3. You need a way to run the pending promises to completion by repolling them
 // as needed.
-//
-// Party Participant
-// One Promise Party has 16 Participant slots. Each Participant slot can either
-// hold a Promise, Promise Factory or any type of Participant object, such as
-// SpawnSerializer.
 //
 // Creating a new Party
 // A Party must only be created using Party::Make function.
@@ -76,7 +78,7 @@ namespace grpc_core {
 // starts executing them, use Party::WakeupHold.
 //
 // Execution of Spawned Promises
-// A promise spawned on a party will get executed by that party.
+// A Participant spawned on a party will get executed by that party.
 // Whenever the party wakes up, it will executed all unresolved Party
 // Participants atleast once.
 //
@@ -86,13 +88,13 @@ namespace grpc_core {
 // 3. Wait for a certain event to happen using either a Notification or a Latch.
 //
 // Sleep mechanism of a Party
-// A party will Sleep/Quiece if all promises Spawned on the party are in any of
-// the following states
+// A party will Sleep/Quiece if all Participants Spawned on the party are in any
+// of the following states
 // 1. Return Pending{}
 // 2. Resolve
 // 3. Are waiting by using Notification or a Latch.
 // 4. Sleeping because of Sleep promise.
-// If a party is currently running a promise, it is said to be active/awake.
+// If a party is currently running a Participant, it is said to be active/awake.
 // Otherwise it is said to be Sleeping or Quieced.
 //
 // Wake mechanism of a Party
@@ -103,12 +105,12 @@ namespace grpc_core {
 // A Party can be cancelled using party_.reset() method.
 //
 // Gurantees of a Party
-// 1. All promises spawned on one party are guranteed to be run serially. their
-// execution will not happen in concurrently.
+// 1. All Participant spawned on one party are guranteed to be run serially.
+// their execution will not happen in concurrently.
 // 2. If a promise is executed, its on_complete is guranteed to be executed as
 // long as the party is not cancelled.
-// 3. Once a party is cancelled, promises that were Spawned onto the party, but
-// not yet executed, will not get executed.
+// 3. Once a party is cancelled, Participant that were Spawned onto the party,
+// but not yet executed, will not get executed.
 // 4. Promise spawned on a party will never be repolled after it is resolved.
 // 5. A promise spawned on a party, can in turn spawn another promise either on
 // the same party or on another party. We allow nesting of Spawn.
@@ -116,8 +118,8 @@ namespace grpc_core {
 // either be a single simple promise, or it could be a promise combinator such
 // as TrySeq, TryJoin, Loop or any such promise combinator. Nesting of these
 // promise combinators is allowed.
-// 7. You can re-use the same party to spawn new promises as long as the older
-// promises have been resolved.
+// 7. You can re-use the same party to spawn new Participants as long as the
+// older Participants have been resolved.
 // 8. A party participant is a promise which was spawned on a party and is not
 // yet resolved. We gurantee safe working of up to 16 un-resolved participatns
 // on a party at a time.
@@ -128,9 +130,9 @@ namespace grpc_core {
 // in a specific order, use a SpawnSerializer. If that is not feasible for some
 // reason, then either consider the use of a promise combinator, or order the
 // execution of promises using Notifications or Latches.
-// 2. A party cannot gurantee which thread a spawned promise will execute on. It
-// could either execute on the current thread, or an event engine thread or any
-// other thread.
+// 2. A party cannot gurantee which thread a party Participant will execute on.
+// It could either execute on the current thread, or an event engine thread or
+// any other thread.
 // 3. Say, we spawned promises P1_1, P1_2, P1_3 on party1. Then promise P1_1 in
 // turn spawns promise P2_1, P2_2, P2_3 on party2. In such cases, party1 and
 // party2 may either execute on the same thread, or they may both execute on
