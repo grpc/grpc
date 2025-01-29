@@ -26,7 +26,7 @@
     bazel_dep(name = "bazel_skylib", version = "1.7.1")
     bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
     bazel_dep(name = "c-ares", version = "1.15.0", repo_name = "com_github_cares_cares")  # mistmatched 1.19.1
-    bazel_dep(name = "envoy_api", version = "0.0.0-20241214-918efc9")  # mistmatched 20250106
+    bazel_dep(name = "envoy_api", version = "0.0.0-20250128-4de3c74")
     bazel_dep(name = "google_benchmark", version = "1.9.0", repo_name = "com_github_google_benchmark")
     bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
     bazel_dep(name = "googletest", version = "1.15.2", repo_name = "com_google_googletest")
