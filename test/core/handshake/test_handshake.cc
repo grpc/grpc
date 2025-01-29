@@ -25,6 +25,7 @@
 #include "src/core/lib/event_engine/memory_allocator_factory.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
@@ -34,6 +35,8 @@ using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::grpc_event_engine_endpoint_create;
 using ::grpc_event_engine::experimental::MemoryQuotaBasedMemoryAllocatorFactory;
 using ::grpc_event_engine::experimental::ResolvedAddressMakeWild4;
+using ::grpc_event_engine::experimental::SetDefaultEventEngine;
+using ::grpc_event_engine::experimental::ShutdownDefaultEventEngine;
 
 namespace grpc_core {
 
@@ -60,12 +63,21 @@ void Handshake(HandshakerType handshaker_type,
 absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>> TestHandshake(
     ChannelArgs client_args, ChannelArgs server_args,
     const fuzzing_event_engine::Actions& actions) {
+  grpc_timer_manager_set_start_threaded(false);
   grpc_init();
-  auto cleanup = absl::MakeCleanup(grpc_shutdown);
   const int kPort = 1234;
   // Configure default event engine
   auto engine = std::make_shared<FuzzingEventEngine>(
       FuzzingEventEngine::Options(), actions);
+  auto cleanup = absl::MakeCleanup([&engine, &client_args, &server_args]() {
+    // Remove all references held to the event engine
+    engine.reset();
+    client_args = ChannelArgs();
+    server_args = ChannelArgs();
+    // And quiesce
+    ShutdownDefaultEventEngine();
+  });
+  SetDefaultEventEngine(std::static_pointer_cast<EventEngine>(engine));
   // Address - just ok for fuzzing ee
   const auto addr = ResolvedAddressMakeWild4(kPort);
   // Pass event engine down
@@ -106,8 +118,11 @@ absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>> TestHandshake(
       result.emplace(output_server_args->status());
     } else if (output_client_args.has_value() &&
                output_server_args.has_value()) {
-      result.emplace(std::make_tuple(std::move(**output_client_args),
-                                     std::move(**output_server_args)));
+      result.emplace(std::make_tuple(
+          (*output_client_args)
+              ->SetObject<EventEngine>(std::shared_ptr<EventEngine>()),
+          (*output_server_args)
+              ->SetObject<EventEngine>(std::shared_ptr<EventEngine>())));
     } else {
       engine->Tick();
     }
