@@ -18,27 +18,18 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
-#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
-
-bool squelch = false;
+#include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
+#include "src/core/ext/transport/chaotic_good/frame_header.h"
 
 using grpc_core::chaotic_good::TcpFrameHeader;
+using HeaderBuffer = std::array<uint8_t, TcpFrameHeader::kFrameHeaderSize>;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (size != TcpFrameHeader::kFrameHeaderSize) return 0;
-  auto r = TcpFrameHeader::Parse(data);
-  if (!r.ok()) return 0;
-  uint8_t reserialized[TcpFrameHeader::kFrameHeaderSize];
-  r->Serialize(reserialized);
-  // If it parses, we insist that the bytes reserialize to the same thing.
-  if (memcmp(data, reserialized, TcpFrameHeader::kFrameHeaderSize) != 0) {
-    auto esc = [](const void* s) {
-      return absl::CEscape(absl::string_view(static_cast<const char*>(s),
-                                             TcpFrameHeader::kFrameHeaderSize));
-    };
-    fprintf(stderr, "Failed:\nin:  %s\nout: %s\nser: %s\n", esc(data).c_str(),
-            esc(reserialized).c_str(), r->ToString().c_str());
-    abort();
-  }
-  return 0;
+void RoundTrips(HeaderBuffer buffer) {
+  auto r = TcpFrameHeader::Parse(buffer.data());
+  if (!r.ok()) return;
+  HeaderBuffer reserialized;
+  r->Serialize(reserialized.data());
+  EXPECT_EQ(buffer, reserialized);
 }
+FUZZ_TEST(FrameHeaderTest, RoundTrips);

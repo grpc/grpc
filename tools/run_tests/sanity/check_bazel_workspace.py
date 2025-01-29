@@ -82,6 +82,7 @@ _GRPC_DEP_NAMES = [
     "com_github_cncf_xds",
     "google_cloud_cpp",
     "rules_shell",
+    "rules_java",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -111,6 +112,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_google_libprotobuf_mutator",
     "google_cloud_cpp",
     "rules_shell",
+    "rules_java",
 ]
 
 
@@ -161,6 +163,11 @@ with open(os.path.join("bazel", "grpc_deps.bzl"), "r") as f:
     names_and_urls = {}
     eval_state = BazelEvalState(names_and_urls)
     bazel_file = f.read()
+
+# Remove bzlmod specific functions
+bazel_file = re.sub(
+    r"^grpc_repo_deps_ext.*$", "", bazel_file, flags=re.MULTILINE
+)
 
 # grpc_deps.bzl only defines 'grpc_deps' and 'grpc_test_only_deps', add these
 # lines to call them.

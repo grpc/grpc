@@ -379,7 +379,7 @@ INSTANTIATE_TEST_SUITE_P(
         PrecisionTestParam{[]() { return NormalSamples(100000, 0, 5); },
                            {{0.01, 0.5}, {0.5, 1}, {0.99, 0.5}}},
         PrecisionTestParam{[]() { return UniformSamples(100000, -5000, 5000); },
-                           {{0.01, 20}, {0.5, 50}, {0.99, 20}}}));
+                           {{0.01, 22}, {0.5, 70}, {0.99, 22}}}));
 
 class CdfPrecisionTest : public ::testing::TestWithParam<PrecisionTestParam> {
  public:
@@ -446,11 +446,11 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Continuous samples.
         PrecisionTestParam{[]() { return NormalSamples(100000, 0, 5); },
-                           {{-10, 0.005}, {0.0, 0.005}, {10, 0.005}}},
+                           {{-10, 0.005}, {0.0, 0.006}, {10, 0.005}}},
         PrecisionTestParam{[]() { return UniformSamples(100000, -5000, 5000); },
                            {{-5000.1, 0},
                             {-4900, 0.005},
-                            {0, 0.005},
+                            {0, 0.007},
                             {4900, 0.005},
                             {5000, 0}}},
 

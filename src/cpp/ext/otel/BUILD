@@ -56,7 +56,6 @@ grpc_cc_library(
         "absl/types:span",
         "otel/api",
     ],
-    language = "c++",
     visibility = ["@grpc:otel_plugin"],
     deps = [
         "//:call_tracer",
@@ -81,5 +80,6 @@ grpc_cc_library(
         "//src/core:metrics",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core:sync",
     ],
 )

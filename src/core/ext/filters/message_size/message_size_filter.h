@@ -127,9 +127,8 @@ class ClientMessageSizeFilter final
 
   class Call {
    public:
-    explicit Call(ClientMessageSizeFilter* filter);
-
-    static inline const NoInterceptor OnClientInitialMetadata;
+    void OnClientInitialMetadata(ClientMetadata&,
+                                 ClientMessageSizeFilter* filter);
     static inline const NoInterceptor OnServerInitialMetadata;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;

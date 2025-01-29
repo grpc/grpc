@@ -248,6 +248,16 @@ def grpc_deps():
             ],
         )
 
+    if "rules_java" not in native.existing_rules():
+        http_archive(
+            name = "rules_java",
+            sha256 = "5449ed36d61269579dd9f4b0e532cd131840f285b389b3795ae8b4d717387dd8",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_java/releases/download/8.7.0/rules_java-8.7.0.tar.gz",
+                "https://github.com/bazelbuild/rules_java/releases/download/8.7.0/rules_java-8.7.0.tar.gz",
+            ],
+        )
+
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
@@ -346,16 +356,7 @@ def grpc_deps():
             ],
         )
 
-    if "google_cloud_cpp" not in native.existing_rules():
-        http_archive(
-            name = "google_cloud_cpp",
-            sha256 = "e53ba3799c052d97acac9a6a6b27af24ce822dbde7bfde973bac9e5da714e6b2",
-            strip_prefix = "google-cloud-cpp-2.33.0",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
-                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
-            ],
-        )
+    grpc_module_deps()
 
     grpc_python_deps()
 
@@ -438,3 +439,17 @@ def grpc_test_only_deps():
             strip_prefix = "libprotobuf-mutator-1f95f8083066f5b38fd2db172e7e7f9aa7c49d2d",
             build_file = "@com_github_grpc_grpc//third_party:libprotobuf_mutator.BUILD",
         )
+
+def grpc_module_deps():
+    if "google_cloud_cpp" not in native.existing_rules():
+        http_archive(
+            name = "google_cloud_cpp",
+            sha256 = "e53ba3799c052d97acac9a6a6b27af24ce822dbde7bfde973bac9e5da714e6b2",
+            strip_prefix = "google-cloud-cpp-2.33.0",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
+                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
+            ],
+        )
+
+grpc_repo_deps_ext = module_extension(implementation = lambda ctx: grpc_module_deps())

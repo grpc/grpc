@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
@@ -49,15 +48,16 @@ grpc_cc_test(
     deps = ["//src/core:chaotic_good_tcp_frame_transport"],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "tcp_frame_header_fuzzer",
     srcs = ["tcp_frame_header_fuzzer.cc"],
-    corpus = "corpus/frame_header_fuzzer",
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:grpc",
@@ -103,22 +103,31 @@ grpc_cc_library(
     ],
 )
 
-grpc_proto_fuzzer(
-    name = "tcp_frame_fuzzer",
-    srcs = ["tcp_frame_fuzzer.cc"],
-    corpus = "corpus/tcp_frame_fuzzer",
+grpc_internal_proto_library(
+    name = "frame_fuzzer_proto",
+    srcs = ["frame_fuzzer.proto"],
+)
+
+grpc_cc_proto_library(
+    name = "frame_fuzzer_cc_proto",
+    deps = ["frame_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
+    name = "frame_fuzzer",
+    srcs = ["frame_fuzzer.cc"],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
         "absl/random:bit_gen_ref",
         "absl/status:statusor",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    language = "C++",
-    proto = "frame_fuzzer.proto",
     tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
+        "frame_fuzzer_cc_proto",
         "//:exec_ctx",
         "//:gpr",
         "//:hpack_encoder",
@@ -146,7 +155,6 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -174,7 +182,6 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -208,7 +215,6 @@ grpc_cc_test(
         "absl/time",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_windows",
     ],
@@ -231,11 +237,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "control_endpoint",
+grpc_fuzz_test(
+    name = "control_endpoint_test",
     srcs = ["control_endpoint_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     tags = [
         "no_windows",
     ],
@@ -246,11 +255,14 @@ grpc_yodel_simple_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "data_endpoints",
+grpc_fuzz_test(
+    name = "data_endpoints_test",
     srcs = ["data_endpoints_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     tags = [
         "no_windows",
     ],

@@ -13,18 +13,21 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/util/json")
 
 licenses(["notice"])
 
-grpc_fuzzer(
-    name = "json_fuzzer",
-    srcs = ["fuzzer.cc"],
-    corpus = "corpus",
-    external_deps = ["absl/log:check"],
-    language = "C++",
+grpc_fuzz_test(
+    name = "json_fuzz_test",
+    srcs = ["json_fuzz_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -40,7 +43,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -56,7 +58,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//src/core:json_object_loader",

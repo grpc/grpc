@@ -27,12 +27,26 @@
 namespace grpc_core {
 namespace http2 {
 
+// All Promise Based HTTP2 Transport TODOs have the tag
+// [PH2][Pn] where n = 0 to 5.
+// This helps to maintain the uniformity for quick lookup and fixing.
+//
+// [PH2][P0] Must be fixed before the current PR is submitted.
+// [PH2][P1] Must be fixed before the current sub-project is considered
+//           complete.
+// [PH2][P2] Must be fixed before the current Milestone is considered
+//           complete.
+// [PH2][P3] Must be fixed before Milestone 3 is considered complete.
+// [PH2][P4] Can be fixed after roll out begins. Evaluate these during
+//           Milestone 4. Either do the TODOs or delete them.
+// [PH2][P5] This must be a separate standalone project.
+
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
-// TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
-// rollout begins
+// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
+// http2 rollout begins.
 class Http2ClientTransport final : public ClientTransport {
  public:
   Http2ClientTransport(

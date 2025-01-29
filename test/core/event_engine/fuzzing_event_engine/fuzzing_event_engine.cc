@@ -140,7 +140,7 @@ void FuzzingEventEngine::Tick(Duration max_time) {
       if (!tasks_by_time_.empty()) {
         incr = std::min(incr, tasks_by_time_.begin()->first - now_);
       }
-      now_ += incr;
+      now_ += std::max(Duration::zero(), incr);
       CHECK_GE(now_.time_since_epoch().count(), 0);
       // Find newly expired timers.
       while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {

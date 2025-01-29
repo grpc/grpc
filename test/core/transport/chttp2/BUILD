@@ -13,25 +13,35 @@
 # limitations under the License.
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/transport/chttp2")
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "hpack_parser_fuzzer_proto",
+    srcs = ["hpack_parser_fuzzer.proto"],
+    deps = ["//test/core/test_util:fuzz_config_vars_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "hpack_parser_fuzzer_cc_proto",
+    deps = ["hpack_parser_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "hpack_parser_fuzzer",
-    srcs = ["hpack_parser_fuzzer_test.cc"],
-    corpus = "hpack_parser_corpus",
+    srcs = ["hpack_parser_fuzzer.cc"],
     external_deps = [
         "absl/log:check",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    proto = "hpack_parser_fuzzer.proto",
-    proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
-    tags = ["no_windows"],
-    uses_polling = False,
     deps = [
+        "hpack_parser_fuzzer_cc_proto",
         "//:grpc",
         "//test/core/test_util:fuzz_config_vars",
         "//test/core/test_util:grpc_test_util",
@@ -39,15 +49,28 @@ grpc_proto_fuzzer(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "hpack_sync_fuzzer_proto",
+    srcs = ["hpack_sync_fuzzer.proto"],
+    deps = ["//test/core/test_util:fuzz_config_vars_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "hpack_sync_fuzzer_cc_proto",
+    deps = ["hpack_sync_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "hpack_sync_fuzzer",
     srcs = ["hpack_sync_fuzzer.cc"],
-    corpus = "hpack_sync_corpus",
-    proto = "hpack_sync_fuzzer.proto",
-    proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
-    tags = ["no_windows"],
-    uses_polling = False,
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
+        "hpack_sync_fuzzer_cc_proto",
         "//:grpc",
         "//test/core/test_util:fuzz_config_vars",
         "//test/core/test_util:grpc_test_util",
@@ -55,36 +78,46 @@ grpc_proto_fuzzer(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "flow_control_fuzzer_proto",
+    srcs = ["flow_control_fuzzer.proto"],
+    deps = ["//test/core/test_util:fuzz_config_vars_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "flow_control_fuzzer_cc_proto",
+    deps = ["flow_control_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "flow_control_fuzzer",
     srcs = ["flow_control_fuzzer.cc"],
-    corpus = "flow_control_fuzzer_corpus",
-    external_deps = ["absl/log:check"],
-    language = "C++",
-    proto = "flow_control_fuzzer.proto",
-    proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
+        "flow_control_fuzzer_cc_proto",
         "//:gpr",
         "//src/core:chttp2_flow_control",
         "//test/core/test_util:fuzz_config_vars",
     ],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "hpack_parser_input_size_fuzzer",
     srcs = ["hpack_parser_input_size_fuzzer.cc"],
-    corpus = "hpack_parser_input_size_corpus",
     external_deps = [
         "absl/cleanup",
         "absl/status:statusor",
         "absl/status",
-        "absl/random:mocking_bit_gen",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
     tags = ["no_windows"],
-    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
@@ -92,30 +125,15 @@ grpc_fuzzer(
     ],
 )
 
-grpc_fuzzer(
-    name = "decode_huff_fuzzer",
-    srcs = ["decode_huff_fuzzer.cc"],
-    corpus = "decode_huff_corpus",
+grpc_fuzz_test(
+    name = "huff_fuzzer",
+    srcs = ["huff_fuzzer.cc"],
     external_deps = [
         "absl/strings",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    language = "C++",
-    tags = ["no_windows"],
-    deps = [
-        "//:grpc",
-        "//src/core:decode_huff",
-        "//src/core:huffsyms",
-    ],
-)
-
-grpc_fuzzer(
-    name = "encode_decode_huff_fuzzer",
-    srcs = ["encode_decode_huff_fuzzer.cc"],
-    corpus = "encode_decode_huff_corpus",
-    external_deps = [
-        "absl/strings",
-    ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:grpc",
@@ -128,7 +146,6 @@ grpc_cc_test(
     name = "alpn_test",
     srcs = ["alpn_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -143,7 +160,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -158,7 +174,6 @@ grpc_cc_test(
     name = "frame_test",
     srcs = ["frame_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -174,7 +189,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -189,7 +203,6 @@ grpc_cc_test(
     name = "ping_abuse_policy_test",
     srcs = ["ping_abuse_policy_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -203,7 +216,6 @@ grpc_cc_test(
     name = "ping_rate_policy_test",
     srcs = ["ping_rate_policy_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -217,7 +229,6 @@ grpc_cc_test(
     name = "ping_configuration_test",
     srcs = ["ping_configuration_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -234,7 +245,6 @@ grpc_cc_test(
         "gtest",
         "absl/random",
     ],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -250,7 +260,6 @@ grpc_cc_test(
         "gtest",
         "absl/random",
     ],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//src/core:write_size_policy",
@@ -264,7 +273,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     tags = ["flow_control_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -281,7 +289,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -300,7 +307,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = ["hpack_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -316,7 +322,6 @@ grpc_cc_test(
     name = "hpack_parser_test",
     srcs = ["hpack_parser_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = ["hpack_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -332,7 +337,6 @@ grpc_cc_test(
     name = "hpack_parser_table_test",
     srcs = ["hpack_parser_table_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = ["hpack_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -351,7 +355,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:channel_stack_builder",
         "//:gpr",
@@ -373,7 +376,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -413,7 +415,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -439,7 +440,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "flow_control_test",
         "no_windows",
@@ -460,7 +460,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -477,7 +476,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -490,7 +488,6 @@ grpc_cc_test(
     name = "http2_client_transport_test",
     srcs = ["http2_client_transport_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -506,7 +503,6 @@ grpc_cc_test(
     name = "http2_server_transport_test",
     srcs = ["http2_server_transport_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -527,7 +523,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

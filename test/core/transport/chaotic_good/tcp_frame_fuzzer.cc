@@ -23,6 +23,7 @@
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/statusor.h"
+#include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
@@ -33,11 +34,8 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/promise/test_context.h"
 #include "test/core/transport/chaotic_good/frame_fuzzer.pb.h"
-
-bool squelch = false;
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -74,10 +72,7 @@ void Run(const frame_fuzzer::Test& test) {
   AssertRoundTrips(absl::ConvertVariantTo<FrameInterface&>(*frame),
                    r->header.type);
 }
+FUZZ_TEST(FrameFuzzer, Run);
 
 }  // namespace chaotic_good
 }  // namespace grpc_core
-
-DEFINE_PROTO_FUZZER(const frame_fuzzer::Test& test) {
-  grpc_core::chaotic_good::Run(test);
-}

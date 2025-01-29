@@ -249,6 +249,9 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
   const bool on_done_added =
       call_handler.OnDone([self = RefAsSubclass<ChaoticGoodClientTransport>(),
                            stream_id](bool cancelled) {
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD: Client call " << self.get() << " id=" << stream_id
+            << " done: cancelled=" << cancelled;
         if (cancelled) {
           self->outgoing_frames_.UnbufferedImmediateSend(
               CancelFrame{stream_id});
@@ -291,6 +294,12 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
           [send_fragment]() mutable {
             ClientEndOfStream frame;
             return send_fragment(std::move(frame));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.WasCancelled(), [](bool cancelled) {
+              if (cancelled) return absl::CancelledError();
+              return absl::OkStatus();
+            });
           }));
 }
 
