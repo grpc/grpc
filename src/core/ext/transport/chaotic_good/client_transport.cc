@@ -296,10 +296,8 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
             return send_fragment(std::move(frame));
           },
           [call_handler]() mutable {
-            return Map(call_handler.WasCancelled(), [](bool cancelled) {
-              if (cancelled) return absl::CancelledError();
-              return absl::OkStatus();
-            });
+            return Map(call_handler.WasCancelled(),
+                       [](bool cancelled) { return StatusFlag(!cancelled); });
           }));
 }
 

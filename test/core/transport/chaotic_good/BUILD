@@ -103,49 +103,6 @@ grpc_cc_library(
     ],
 )
 
-grpc_internal_proto_library(
-    name = "frame_fuzzer_proto",
-    srcs = ["frame_fuzzer.proto"],
-)
-
-grpc_cc_proto_library(
-    name = "frame_fuzzer_cc_proto",
-    deps = ["frame_fuzzer_proto"],
-)
-
-grpc_fuzz_test(
-    name = "frame_fuzzer",
-    srcs = ["frame_fuzzer.cc"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-        "absl/random:bit_gen_ref",
-        "absl/status:statusor",
-        "gtest",
-        "fuzztest",
-        "fuzztest_main",
-    ],
-    tags = ["no_windows"],
-    deps = [
-        "frame_fuzzer_cc_proto",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:hpack_encoder",
-        "//:hpack_parser",
-        "//:ref_counted_ptr",
-        "//src/core:arena",
-        "//src/core:chaotic_good_frame",
-        "//src/core:chaotic_good_frame_header",
-        "//src/core:chaotic_good_tcp_frame_transport",
-        "//src/core:event_engine_memory_allocator",
-        "//src/core:memory_quota",
-        "//src/core:resource_quota",
-        "//src/core:slice",
-        "//src/core:slice_buffer",
-        "//test/core/promise:test_context",
-    ],
-)
-
 grpc_cc_test(
     name = "client_transport_test",
     srcs = ["client_transport_test.cc"],
