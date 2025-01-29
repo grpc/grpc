@@ -1,4 +1,0 @@
-frames {
-  max_metadata_length: 58
-  parse: "@\002te\000@\002te\002@\000et\000;e"
-}
