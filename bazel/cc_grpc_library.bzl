@@ -57,6 +57,8 @@ def cc_grpc_library(
           (passed in srcs parameter) instead. False by default.
         generate_mocks (bool): when True, Google Mock code for client stub is
           generated. False by default.
+        allow_deprecated (bool): when True, Generated class will marked
+          deprecated if deprecated option is set in proto.  
         use_external (bool): Not used.
         grpc_only (bool): if True, generate only grpc library, expecting
           protobuf messages library (cc_proto_library target) to be passed as
