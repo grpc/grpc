@@ -31,8 +31,6 @@ using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::grpc_event_engine_endpoint_create;
 using ::grpc_event_engine::experimental::MemoryQuotaBasedMemoryAllocatorFactory;
 using ::grpc_event_engine::experimental::ResolvedAddressMakeWild4;
-using ::grpc_event_engine::experimental::SetDefaultEventEngine;
-using ::grpc_event_engine::experimental::ShutdownDefaultEventEngine;
 
 namespace grpc_core {
 
@@ -80,9 +78,9 @@ absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>> TestHandshake(
       std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
           ResourceQuota::Default()->memory_quota()));
   if (!listener.ok()) return listener.status();
-  const auto bind_status = (*listener)->Bind(addr);
+  auto bind_status = (*listener)->Bind(addr);
   if (!bind_status.ok()) return bind_status.status();
-  const auto listen_status = (*listener)->Start();
+  auto listen_status = (*listener)->Start();
   if (!listen_status.ok()) return listen_status;
   // Connect client
   absl::optional<absl::StatusOr<ChannelArgs>> output_client_args;
