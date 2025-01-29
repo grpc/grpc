@@ -35,9 +35,8 @@ namespace grpc_core {
 // Input :
 // 1. The seq combinator needs minimum one promise as input.
 // 2. The first input to seq combinator is a promise.
-// 3. The remainng inputs to seq combinator are functors which return promises.
-// The input type of the Nth functor should be the return value of the (N-1)th
-// promise.
+// 3. The remaining inputs to seq combinator are promise factories. The input
+// type of the Nth functor should be the return value of the (N-1)th promise.
 //
 // Return :
 // Polling the Seq Promise combinator returns Poll<T> where T is the type
