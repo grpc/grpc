@@ -330,15 +330,15 @@ IF_POSIX_SOCKET(absl::Status SetSocketDscp(int fdesc, int dscp), {
 })
 
 // Set a socket to use zerocopy
-IF_POSIX_SOCKET(absl::Status SetSocketZeroCopy(int fd), {
-  if constexpr (kLinuxErrqueue) {
-    return SetSocketOption(fd, SOL_SOCKET, SO_ZEROCOPY, 1, "SO_ZEROCOPY");
-  } else {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("setsockopt(SO_ZEROCOPY): ",
-                                     grpc_core::StrError(ENOSYS).c_str()));
-  }
-})
+absl::Status SetSocketZeroCopy(int fd) {
+#if defined(GRPC_POSIX_SOCKET) && defined(GRPC_LINUX_ERRQUEUE)
+  return SetSocketOption(fd, SOL_SOCKET, SO_ZEROCOPY, 1, "SO_ZEROCOPY");
+#else   // defined(GRPC_POSIX_SOCKET) && defined(GRPC_LINUX_ERRQUEUE)
+  return absl::Status(absl::StatusCode::kInternal,
+                      absl::StrCat("setsockopt(SO_ZEROCOPY): ",
+                                   grpc_core::StrError(ENOSYS).c_str()));
+#endif  // defined(GRPC_POSIX_SOCKET) && defined(GRPC_LINUX_ERRQUEUE)
+}
 
 // Set TCP_USER_TIMEOUT
 IF_POSIX_SOCKET(
