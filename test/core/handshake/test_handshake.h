@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TEST_HANDSHAKE_H
-#define GRPC_TEST_CORE_TEST_HANDSHAKE_H
+#ifndef GRPC_TEST_CORE_HANDSHAKE_TEST_HANDSHAKE_H
+#define GRPC_TEST_CORE_HANDSHAKE_TEST_HANDSHAKE_H
 
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -30,4 +30,4 @@ absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>> TestHandshake(
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_HANDSHAKE_TEST_HANDSHAKE_H
