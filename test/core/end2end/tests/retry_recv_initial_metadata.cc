@@ -34,7 +34,7 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt receives initial metadata before trailing metadata,
 //   so no retry is done even though status was ABORTED
-CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
+CORE_END2END_TEST(RetryTests, RetryRecvInitialMetadata) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(

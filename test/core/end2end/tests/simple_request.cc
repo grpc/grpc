@@ -85,7 +85,8 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   uint64_t expected_calls = 1;
-  if (test.GetParam()->feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
+  if (test.test_config()->feature_mask &
+      FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
     expected_calls *= 2;
   }
   auto after = global_stats().Collect();
@@ -96,9 +97,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
             expected_calls);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest) { SimpleRequestBody(*this); }
+CORE_END2END_TEST(CoreEnd2endTests, SimpleRequest) { SimpleRequestBody(*this); }
 
-CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest10) {
+CORE_END2END_TEST(CoreEnd2endTests, SimpleRequest10) {
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this);
   }
