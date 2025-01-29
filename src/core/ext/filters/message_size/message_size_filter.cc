@@ -158,8 +158,9 @@ ServerMetadataHandle CheckPayload(const Message& msg,
 }
 }  // namespace
 
-ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
-    : limits_(filter->parsed_config_) {
+void ClientMessageSizeFilter::Call::OnClientInitialMetadata(
+    ClientMetadata&, ClientMessageSizeFilter* filter) {
+  limits_ = filter->parsed_config_;
   // Get max sizes from channel data, then merge in per-method config values.
   // Note: Per-method config is only available on the client, so we
   // apply the max request size to the send limit and the max response

@@ -57,7 +57,6 @@ grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "cmdline.cc",
-        "fuzzer_util.cc",
         "grpc_profiler.cc",
         "histogram.cc",
         "mock_endpoint.cc",
@@ -69,7 +68,6 @@ grpc_cc_library(
     hdrs = [
         "cmdline.h",
         "evaluate_args_test_util.h",
-        "fuzzer_util.h",
         "grpc_profiler.h",
         "histogram.h",
         "mock_endpoint.h",

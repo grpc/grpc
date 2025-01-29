@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2023 The gRPC Authors
+# Copyright 2025 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,4 @@
 
 set -ex
 
-# TODO(ctiller): remove --build_tag_filters=-grpc-fuzztest when fuzztest
-# is completely C++17.
-# (it leverages some C++20 extensions at the time of writing).
-# See b/391433873.
-tools/bazel build --define=use_strict_warning=true --build_tag_filters=-grpc-fuzztest -- "$@"
+tools/bazel build :grpc++ --enable_bzlmod=true --enable_workspace=false
