@@ -16,7 +16,10 @@
 
 #include <memory>
 
+#include "absl/cleanup/cleanup.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/memory_allocator_factory.h"
@@ -35,15 +38,16 @@ using ::grpc_event_engine::experimental::ResolvedAddressMakeWild4;
 namespace grpc_core {
 
 namespace {
-void Handshake(std::unique_ptr<EventEngine::Endpoint> endpoint,
+void Handshake(HandshakerType handshaker_type,
+               OrphanablePtr<grpc_endpoint> endpoint,
                const ChannelArgs& channel_args,
                absl::optional<absl::StatusOr<ChannelArgs>>* output) {
   auto handshake_mgr = MakeRefCounted<HandshakeManager>();
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      handshaker_type, channel_args, nullptr, handshake_mgr.get());
   handshake_mgr->DoHandshake(
-      OrphanablePtr<grpc_endpoint>(
-          grpc_event_engine_endpoint_create(std::move(endpoint))),
-      channel_args, Timestamp::Now() + Duration::Hours(24), nullptr,
-      [handshake_mgr, output](absl::StatusOr<HandshakerArgs*> result) {
+      std::move(endpoint), channel_args, Timestamp::Now() + Duration::Hours(24),
+      nullptr, [handshake_mgr, output](absl::StatusOr<HandshakerArgs*> result) {
         if (!result.ok()) {
           output->emplace(result.status());
         } else {
@@ -56,23 +60,31 @@ void Handshake(std::unique_ptr<EventEngine::Endpoint> endpoint,
 absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>> TestHandshake(
     ChannelArgs client_args, ChannelArgs server_args,
     const fuzzing_event_engine::Actions& actions) {
+  grpc_init();
+  auto cleanup = absl::MakeCleanup(grpc_shutdown);
   const int kPort = 1234;
   // Configure default event engine
   auto engine = std::make_shared<FuzzingEventEngine>(
       FuzzingEventEngine::Options(), actions);
-  // Pass event engine down
-  client_args = client_args.SetObject<EventEngine>(
-      std::static_pointer_cast<EventEngine>(engine));
-  server_args = server_args.SetObject<EventEngine>(
-      std::static_pointer_cast<EventEngine>(engine));
   // Address - just ok for fuzzing ee
   const auto addr = ResolvedAddressMakeWild4(kPort);
+  // Pass event engine down
+  client_args =
+      client_args
+          .SetObject<EventEngine>(std::static_pointer_cast<EventEngine>(engine))
+          .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
+               ResolvedAddressToURI(addr).value());
+  server_args = server_args.SetObject<EventEngine>(
+      std::static_pointer_cast<EventEngine>(engine));
   // Start listening
   absl::optional<absl::StatusOr<ChannelArgs>> output_server_args;
   auto listener = engine->CreateListener(
       [output_server_args = &output_server_args, server_args](
           std::unique_ptr<EventEngine::Endpoint> endpoint, MemoryAllocator) {
-        Handshake(std::move(endpoint), server_args, output_server_args);
+        Handshake(HandshakerType::HANDSHAKER_SERVER,
+                  OrphanablePtr<grpc_endpoint>(
+                      grpc_event_engine_endpoint_create(std::move(endpoint))),
+                  server_args, output_server_args);
       },
       [](const absl::Status&) {}, ChannelArgsEndpointConfig(server_args),
       std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
@@ -84,19 +96,7 @@ absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>> TestHandshake(
   if (!listen_status.ok()) return listen_status;
   // Connect client
   absl::optional<absl::StatusOr<ChannelArgs>> output_client_args;
-  std::ignore = engine->Connect(
-      [output_client_args = &output_client_args, client_args](
-          absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-        if (!endpoint.ok()) {
-          output_client_args->emplace(endpoint.status());
-        } else {
-          Handshake(std::move(*endpoint), client_args, output_client_args);
-        }
-      },
-      addr, ChannelArgsEndpointConfig(client_args),
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-          "connection"),
-      Duration::Hours(24));
+  Handshake(HANDSHAKER_CLIENT, nullptr, client_args, &output_client_args);
   // Await completion
   std::optional<absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>>> result;
   while (!result.has_value()) {

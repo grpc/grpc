@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/handshake/test_handshake.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
@@ -38,6 +39,10 @@ void BasicHandshakeSucceeds(const fuzzing_event_engine::Actions& actions) {
   CHECK_OK(TestHandshake(BaseChannelArgs(), BaseChannelArgs(), actions));
 }
 FUZZ_TEST(HandshakerFuzzer, BasicHandshakeSucceeds);
+
+TEST(HandshakerFuzzer, BasicHandshakeSucceedsRegression1) {
+  BasicHandshakeSucceeds(fuzzing_event_engine::Actions());
+}
 
 // Supplying effectively random channel args, we should expect no crashes (but
 // hey, maybe we don't connect).
