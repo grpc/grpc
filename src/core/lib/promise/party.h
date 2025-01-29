@@ -56,6 +56,7 @@ namespace grpc_core {
 //
 // Party Participant
 // One Promise Party has 16 Participant slots. Each Participant slot can hold
+// one of the three
 // 1. A Promise
 // 2. Or a Promise Factory
 // 3. or any type of Participant object, such as SpawnSerializer.
@@ -80,12 +81,16 @@ namespace grpc_core {
 // Execution of Spawned Promises
 // A Participant spawned on a party will get executed by that party.
 // Whenever the party wakes up, it will executed all unresolved Party
-// Participants atleast once.
+// Participants atleast once. After the Party Participant is resolved, the slot
+// is freed up to make place for new participants.
 //
 // When these Party Participants are executed (polled), they can either
 // 1. Resolve by returning a value
 // 2. Return Pending{}
 // 3. Wait for a certain event to happen using either a Notification or a Latch.
+// When a promise factory is passed as a Party Participant, the factory is used
+// to generate the promise once, and then the promise is executed once each time
+// the party is polled till it resolves.
 //
 // Sleep mechanism of a Party
 // A party will Sleep/Quiece if all Participants Spawned on the party are in any
@@ -106,14 +111,14 @@ namespace grpc_core {
 //
 // Gurantees of a Party
 // 1. All Participant spawned on one party are guranteed to be run serially.
-// their execution will not happen in concurrently.
+// their execution will not happen in parallel.
 // 2. If a promise is executed, its on_complete is guranteed to be executed as
 // long as the party is not cancelled.
-// 3. Once a party is cancelled, Participant that were Spawned onto the party,
+// 3. Once a party is cancelled, Participants that were Spawned onto the party,
 // but not yet executed, will not get executed.
 // 4. Promise spawned on a party will never be repolled after it is resolved.
 // 5. A promise spawned on a party, can in turn spawn another promise either on
-// the same party or on another party. We allow nesting of Spawn.
+// the same party or on another party. We allow nesting of Spawn function.
 // 6. A promise or promise factory that is passed to a Spawn function could
 // either be a single simple promise, or it could be a promise combinator such
 // as TrySeq, TryJoin, Loop or any such promise combinator. Nesting of these
@@ -136,7 +141,7 @@ namespace grpc_core {
 // 3. Say, we spawned promises P1_1, P1_2, P1_3 on party1. Then promise P1_1 in
 // turn spawns promise P2_1, P2_2, P2_3 on party2. In such cases, party1 and
 // party2 may either execute on the same thread, or they may both execute on
-// different threads.
+// different threads. party1 and party2 may or may not run in parallel.
 
 namespace party_detail {
 
