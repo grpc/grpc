@@ -122,72 +122,59 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(
 }
 
 template <typename T>
-auto ChaoticGoodClientTransport::DispatchFrame(IncomingFrame incoming_frame) {
+void ChaoticGoodClientTransport::DispatchFrame(IncomingFrame incoming_frame) {
   auto stream = LookupStream(incoming_frame.header().stream_id);
-  return GRPC_LATENT_SEE_PROMISE(
-      "ChaoticGoodClientTransport::DispatchFrame",
-      If(
-          stream != nullptr,
-          [this, &stream, &incoming_frame]() {
-            auto& call = stream->call;
-            // TODO(ctiller): instead of SpawnWaitable here we probably want a
-            // small queue to push into, so that the call can proceed
-            // asynchronously to other calls regardless of frame ordering.
-            return call.SpawnWaitable(
-                "push-frame",
-                [this, stream = std::move(stream),
-                 incoming_frame = std::move(incoming_frame)]() mutable {
-                  return TrySeq(
-                      incoming_frame.Payload(),
-                      [stream = std::move(stream), this](Frame frame) mutable {
-                        auto& call = stream->call;
-                        return Map(call.CancelIfFails(PushFrameIntoCall(
-                                       std::move(absl::get<T>(frame)),
-                                       std::move(stream))),
-                                   [](auto) { return absl::OkStatus(); });
-                      });
-                });
-          },
-          []() { return absl::OkStatus(); }));
+  if (stream == nullptr) return;
+  stream->frame_dispatch_serializer->Spawn(
+      [this, stream = std::move(stream),
+       incoming_frame = std::move(incoming_frame)]() mutable {
+        return Map(stream->call.CancelIfFails(TrySeq(
+                       incoming_frame.Payload(),
+                       [stream = std::move(stream), this](Frame frame) mutable {
+                         auto& call = stream->call;
+                         return Map(call.CancelIfFails(PushFrameIntoCall(
+                                        std::move(absl::get<T>(frame)),
+                                        std::move(stream))),
+                                    [](auto) { return absl::OkStatus(); });
+                       })),
+                   [](auto x) {});
+      });
 }
 
 auto ChaoticGoodClientTransport::TransportReadLoop(
     FrameTransport::ReadFramePipe::Receiver incoming_frames) {
   return ForEach(
       std::move(incoming_frames), [this](IncomingFrame incoming_frame) mutable {
-        return Switch(
-            incoming_frame.header().type,
-            Case<FrameType::kServerInitialMetadata>([&, this]() {
-              return DispatchFrame<ServerInitialMetadataFrame>(
-                  std::move(incoming_frame));
-            }),
-            Case<FrameType::kServerTrailingMetadata>([&, this]() {
-              return DispatchFrame<ServerTrailingMetadataFrame>(
-                  std::move(incoming_frame));
-            }),
-            Case<FrameType::kMessage>([&, this]() {
-              return DispatchFrame<MessageFrame>(std::move(incoming_frame));
-            }),
-            Case<FrameType::kBeginMessage>([&, this]() {
-              return DispatchFrame<BeginMessageFrame>(
-                  std::move(incoming_frame));
-            }),
-            Case<FrameType::kMessageChunk>([&, this]() {
-              return DispatchFrame<MessageChunkFrame>(
-                  std::move(incoming_frame));
-            }),
-            Default([&]() {
-              LOG_EVERY_N_SEC(INFO, 10)
-                  << "Bad frame type: " << incoming_frame.header().ToString();
-              return absl::OkStatus();
-            }));
+        switch (incoming_frame.header().type) {
+          case FrameType::kServerInitialMetadata:
+            DispatchFrame<ServerInitialMetadataFrame>(
+                std::move(incoming_frame));
+            break;
+          case FrameType::kServerTrailingMetadata:
+            DispatchFrame<ServerTrailingMetadataFrame>(
+                std::move(incoming_frame));
+            break;
+          case FrameType::kMessage:
+            DispatchFrame<MessageFrame>(std::move(incoming_frame));
+            break;
+          case FrameType::kBeginMessage:
+            DispatchFrame<BeginMessageFrame>(std::move(incoming_frame));
+            break;
+          case FrameType::kMessageChunk:
+            DispatchFrame<MessageChunkFrame>(std::move(incoming_frame));
+            break;
+          default:
+            LOG_EVERY_N_SEC(INFO, 10)
+                << "Unhandled frame of type: " << incoming_frame.header().type;
+        }
+        return Success{};
       });
 }
 
 auto ChaoticGoodClientTransport::OnTransportActivityDone(
     absl::string_view what) {
   return [self = RefAsSubclass<ChaoticGoodClientTransport>(),
-          what](absl::Status status) {
+          what](auto status) {
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: Client transport " << self.get() << " closed (via "
         << what << "): " << status;

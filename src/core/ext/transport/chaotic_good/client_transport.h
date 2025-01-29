@@ -85,9 +85,13 @@ class ChaoticGoodClientTransport final : public ClientTransport {
 
  private:
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallHandler call) : call(std::move(call)) {}
+    explicit Stream(CallHandler call)
+        : call(std::move(call)),
+          frame_dispatch_serializer(this->call.party()->MakeSpawnSerializer()) {
+    }
     CallHandler call;
     MessageReassembly message_reassembly;
+    Party::SpawnSerializer* frame_dispatch_serializer;
   };
   using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
 
@@ -96,7 +100,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
   auto OnTransportActivityDone(absl::string_view what);
   template <typename T>
-  auto DispatchFrame(IncomingFrame incoming_frame);
+  void DispatchFrame(IncomingFrame incoming_frame);
   auto TransportReadLoop(
       FrameTransport::ReadFramePipe::Receiver incoming_frames);
   // Push one frame into a call
