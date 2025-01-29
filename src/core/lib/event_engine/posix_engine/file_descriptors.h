@@ -32,8 +32,15 @@ class FileDescriptor {
  public:
   FileDescriptor() = default;
   explicit FileDescriptor(int fd) : fd_(fd) {};
-  int fd() const { return fd_; }
   bool ready() const { return fd_ > 0; }
+
+  // Only allowed to be called by pollers.
+  int polling_fd() const { return fd_; }
+  // Escape for iomgr and tests. Not to be used elsewhere
+  int iomgr_fd() const { return fd_; }
+  // For logging/debug purposes - may consider including generation, do not
+  // use for Posix calls!
+  int debug_fd() const { return fd_; }
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, FileDescriptor fd) {
@@ -41,6 +48,11 @@ class FileDescriptor {
   }
 
  private:
+  int fd() const { return fd_; }
+
+  // Can get fd_!
+  friend class FileDescriptors;
+
   int fd_ = 0;
 };
 
@@ -120,12 +132,7 @@ class FileDescriptorResult final : public PosixResult {
     return &fd_;
   }
 
-  int fd() const {
-    CHECK_OK(status());
-    return fd_.fd();
-  }
-
-  bool ok() const override { return PosixResult::ok() && fd_.fd() > 0; }
+  bool ok() const override { return PosixResult::ok() && fd_.ready(); }
 
   template <typename R, typename Fn>
   R if_ok(R if_bad, const Fn& fn) {
@@ -275,6 +282,8 @@ class FileDescriptors {
       const EventEngine::ResolvedAddress& address);
 
   int ConfigureSocket(const FileDescriptor& fd, int type);
+
+  absl::StatusOr<int> GetUnusedPort();
 
  private:
   absl::Status PrepareTcpClientSocket(const FileDescriptor& fd,

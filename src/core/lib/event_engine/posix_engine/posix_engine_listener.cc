@@ -80,16 +80,15 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
   UnlinkIfUnixDomainSocket(addr);
 
+  FileDescriptors& fds = poller_->GetFileDescriptors();
+
   /// Check if this is a wildcard port, and if so, try to keep the port the same
   /// as some previously created listener socket.
   for (auto it = acceptors_.begin();
        requested_port == 0 && it != acceptors_.end(); it++) {
-    EventEngine::ResolvedAddress sockname_temp;
-    socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-    if (0 == getsockname((*it)->Fd().fd(),
-                         const_cast<sockaddr*>(sockname_temp.address()),
-                         &len)) {
-      int used_port = ResolvedAddressGetPort(sockname_temp);
+    auto sockname_temp = fds.LocalAddress((*it)->Fd());
+    if (sockname_temp.ok()) {
+      int used_port = ResolvedAddressGetPort(*sockname_temp);
       if (used_port > 0) {
         requested_port = used_port;
         ResolvedAddressSetPort(res_addr, requested_port);
@@ -97,9 +96,6 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
       }
     }
   }
-
-  FileDescriptors& fds = poller_->GetFileDescriptors();
-
   auto used_port = MaybeGetWildcardPortFromAddress(res_addr);
   // Update the callback. Any subsequent new sockets created and added to
   // acceptors_ in this function will invoke the new callback.
@@ -197,9 +193,8 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     // For UNIX sockets, the accept call might not fill up the member
     // sun_path of sockaddr_un, so explicitly call getpeername to get it.
     if (addr.address()->sa_family == AF_UNIX) {
-      socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-      if (getpeername(fd.fd(), const_cast<sockaddr*>(addr.address()), &len) <
-          0) {
+      auto peer_address = fds.PeerAddress(*fd);
+      if (!peer_address.ok()) {
         auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
         LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
                    << ". Dropping the connection, and continuing "
@@ -211,7 +206,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
         handle_->NotifyOnRead(notify_on_accept_);
         return;
       }
-      addr = EventEngine::ResolvedAddress(addr.address(), len);
+      addr = std::move(peer_address).value();
     }
 
     (void)fds.SetSocketNoSigpipeIfPossible(*fd);
@@ -249,7 +244,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       // Call on_accept_ and then resume accepting new connections
       // by continuing the parent for-loop.
       listener_->on_accept_(
-          /*listener_fd=*/handle_->WrappedFd().fd(),
+          /*listener_fd=*/handle_->WrappedFd().iomgr_fd(),
           /*endpoint=*/std::move(endpoint),
           /*is_external=*/false,
           /*memory_allocator=*/

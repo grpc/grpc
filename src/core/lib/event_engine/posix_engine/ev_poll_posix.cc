@@ -643,7 +643,7 @@ Poller::WorkResult PollPoller::Work(
         // poll handle list for the poller under the poller lock.
         CHECK(!head->IsOrphaned());
         if (!head->IsPollhup()) {
-          pfds[pfd_count].fd = head->WrappedFd().fd();
+          pfds[pfd_count].fd = head->WrappedFd().polling_fd();
           watchers[pfd_count] = head;
           // BeginPollLocked takes a ref of the handle. It also marks the
           // fd as Watched with an appropriate watch_mask. The watch_mask

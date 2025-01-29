@@ -632,7 +632,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
     return impl_->GetLocalAddress();
   }
 
-  int GetWrappedFd() override { return impl_->GetWrappedFd().fd(); }
+  int GetWrappedFd() override { return impl_->GetWrappedFd().iomgr_fd(); }
 
   bool CanTrackErrors() override { return impl_->CanTrackErrors(); }
 

@@ -54,35 +54,6 @@ using ListenerSocket = ListenerSocketsContainer::ListenerSocket;
 
 #ifdef GRPC_HAVE_IFADDRS
 
-// Bind to "::" to get a port number not used by any address.
-absl::StatusOr<int> GetUnusedPort(FileDescriptors* fds) {
-  ResolvedAddress wild = ResolvedAddressMakeWild6(0);
-  DSMode dsmode;
-  auto sock = fds->CreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
-  GRPC_RETURN_IF_ERROR(sock.status());
-  int fd = sock->fd();
-  if (dsmode == DSMode::DSMODE_IPV4) {
-    wild = ResolvedAddressMakeWild4(0);
-  }
-  if (bind(fd, wild.address(), wild.size()) != 0) {
-    close(fd);
-    return absl::FailedPreconditionError(
-        absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
-  }
-  socklen_t len = wild.size();
-  if (getsockname(fd, const_cast<sockaddr*>(wild.address()), &len) != 0) {
-    close(fd);
-    return absl::FailedPreconditionError(
-        absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
-  }
-  close(fd);
-  int port = ResolvedAddressGetPort(wild);
-  if (port <= 0) {
-    return absl::FailedPreconditionError("Bad port");
-  }
-  return port;
-}
-
 bool SystemHasIfAddrs() { return true; }
 
 #else  // GRPC_HAVE_IFADDRS
@@ -150,7 +121,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
   bool no_local_addresses = true;
   int assigned_port = 0;
   if (requested_port == 0) {
-    auto result = GetUnusedPort(fds);
+    auto result = fds->GetUnusedPort();
     GRPC_RETURN_IF_ERROR(result.status());
     requested_port = *result;
     VLOG(2) << "Picked unused port " << requested_port;

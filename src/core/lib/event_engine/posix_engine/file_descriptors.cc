@@ -416,7 +416,7 @@ bool IsSocketReusePortSupported() {
       s = fds.Socket(AF_INET6, SOCK_STREAM, 0);
     }
     if (s.ok()) {
-      bool result = SetSocketReusePort(s->fd(), 1).ok();
+      bool result = SetSocketReusePort(s->iomgr_fd(), 1).ok();
       fds.Close(*s);
       return result;
     } else {
@@ -901,5 +901,34 @@ IF_POSIX_SOCKET(
       }
       return sockname_temp;
     })
+
+// Bind to "::" to get a port number not used by any address.
+absl::StatusOr<int> FileDescriptors::GetUnusedPort() {
+  EventEngine::ResolvedAddress wild = ResolvedAddressMakeWild6(0);
+  DSMode dsmode;
+  auto sock = CreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
+  GRPC_RETURN_IF_ERROR(sock.status());
+  int fd = sock->fd();
+  if (dsmode == DSMode::DSMODE_IPV4) {
+    wild = ResolvedAddressMakeWild4(0);
+  }
+  if (bind(fd, wild.address(), wild.size()) != 0) {
+    close(fd);
+    return absl::FailedPreconditionError(
+        absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
+  }
+  socklen_t len = wild.size();
+  if (getsockname(fd, const_cast<sockaddr*>(wild.address()), &len) != 0) {
+    close(fd);
+    return absl::FailedPreconditionError(
+        absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
+  }
+  close(fd);
+  int port = ResolvedAddressGetPort(wild);
+  if (port <= 0) {
+    return absl::FailedPreconditionError("Bad port");
+  }
+  return port;
+}
 
 }  // namespace grpc_event_engine::experimental

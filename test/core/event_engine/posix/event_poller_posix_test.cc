@@ -172,7 +172,7 @@ void SessionReadCb(session* se, absl::Status status) {
   }
 
   do {
-    read_once = read(fd.fd(), se->read_buf, BUF_SIZE);
+    read_once = read(fd.iomgr_fd(), se->read_buf, BUF_SIZE);
     if (read_once > 0) read_total += read_once;
   } while (read_once > 0);
   se->sv->read_bytes_total += read_total;
@@ -236,9 +236,9 @@ void ListenCb(server* sv, absl::Status status) {
                << fd.status();
   }
   ASSERT_TRUE(fd.ok()) << fd.status();
-  EXPECT_LT(fd.fd(), FD_SETSIZE);
-  flags = fcntl(fd.fd(), F_GETFL, 0);
-  fcntl(fd.fd(), F_SETFL, flags | O_NONBLOCK);
+  EXPECT_LT(fd->iomgr_fd(), FD_SETSIZE);
+  flags = fcntl(fd->iomgr_fd(), F_GETFL, 0);
+  fcntl(fd->iomgr_fd(), F_SETFL, flags | O_NONBLOCK);
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
   se->em_fd = g_event_poller->CreateHandle(*fd, "listener", false);
@@ -307,7 +307,8 @@ void ClientSessionShutdownCb(client* cl) {
 
 // Write as much as possible, then register notify_on_write.
 void ClientSessionWrite(client* cl, absl::Status status) {
-  int fd = cl->em_fd->WrappedFd().fd();
+  // Test calls unwrapped Posix functions
+  int fd = cl->em_fd->WrappedFd().iomgr_fd();
   ssize_t write_once = 0;
 
   if (!status.ok()) {

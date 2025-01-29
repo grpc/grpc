@@ -142,7 +142,7 @@ class PosixEngineListenerImpl
       acceptors_.push_back(new AsyncConnectionAcceptor(
           listener_->engine_, listener_->shared_from_this(), socket));
       if (on_append_) {
-        on_append_(socket.sock.fd());
+        on_append_(socket.sock.iomgr_fd());
       }
     }
 
