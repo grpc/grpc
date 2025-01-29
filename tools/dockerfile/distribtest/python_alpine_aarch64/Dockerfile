@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2025 The gRPC Authors
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+# this an aarch64 image
+FROM arm64v8/python:3.13-alpine
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+# Our test infrastructure demands bash
+RUN apk update && apk add bash
 
-echo "TODO: Building arm64 python artifacts"
+RUN pip3 install virtualenv
