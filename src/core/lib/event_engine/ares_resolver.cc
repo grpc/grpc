@@ -421,11 +421,18 @@ void AresResolver::CheckSocketsLocked() {
             fd_node_list_.begin(), fd_node_list_.end(),
             [sock = socks[i]](const auto& node) { return node->as == sock; });
         if (iter == fd_node_list_.end()) {
-          GRPC_TRACE_LOG(cares_resolver, INFO)
-              << "(EventEngine c-ares resolver) resolver:" << this
-              << " new fd: " << socks[i];
-          new_list.push_back(std::make_unique<FdNode>(
-              socks[i], polled_fd_factory_->NewGrpcPolledFdLocked(socks[i])));
+          auto polled_fd = polled_fd_factory_->NewGrpcPolledFdLocked(socks[i]);
+          if (polled_fd == nullptr) {
+            GRPC_TRACE_LOG(cares_resolver, ERROR)
+                << "(EventEngine c-ares resolver) resolver:" << this
+                << " can not use fd " << socks[i] << " (wrong generation)";
+          } else {
+            GRPC_TRACE_LOG(cares_resolver, INFO)
+                << "(EventEngine c-ares resolver) resolver:" << this
+                << " new fd: " << socks[i];
+            new_list.push_back(
+                std::make_unique<FdNode>(socks[i], std::move(polled_fd)));
+          }
         } else {
           new_list.splice(new_list.end(), fd_node_list_, iter);
         }
