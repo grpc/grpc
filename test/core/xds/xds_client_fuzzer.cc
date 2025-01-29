@@ -266,6 +266,7 @@ class Fuzzer {
 
   void TriggerConnectionFailure(const std::string& authority,
                                 absl::Status status) {
+    if (status.ok()) return;
     LOG(INFO) << "### TriggerConnectionFailure(" << authority
               << "): " << status;
     const auto* xds_server = GetServer(authority);
@@ -564,6 +565,20 @@ static const char* kSendMessageToClientBeforeStreamCreated = R"pb(
   actions { send_message_to_client { stream_id { ads {} } } }
 )pb";
 
+static const char* kTriggerConnectionFailureWithOkStatus = R"pb(
+  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com\320\272443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+  actions {
+    start_watch {
+      resource_type { cluster {} }
+      resource_name: "*"
+    }
+  }
+  actions {}
+  actions { trigger_connection_failure {} }
+  actions {}
+  fuzzing_event_engine_actions { connections { write_size: 2147483647 } }
+)pb";
+
 auto ParseTestProto(const std::string& proto) {
   xds_client_fuzzer::Msg msg;
   CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
@@ -583,6 +598,7 @@ FUZZ_TEST(XdsClientFuzzer, Fuzz)
          ParseTestProto(kBasicXdsServersEmpty),
          ParseTestProto(kResourceWrapperEmpty),
          ParseTestProto(kRlsMissingTypedExtensionConfig),
+         ParseTestProto(kTriggerConnectionFailureWithOkStatus),
          ParseTestProto(kSendMessageToClientBeforeStreamCreated)}));
 
 }  // namespace grpc_core
