@@ -1,4 +1,6 @@
-// Copyright 2022 gRPC authors.
+//
+//
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,25 +13,37 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+//
 
+#include <grpc/support/json.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
+#include "absl/strings/string_view.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
-#include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/util/dump_args.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 
-using grpc_core::chaotic_good::FrameHeader;
-using HeaderBuffer = std::array<uint8_t, FrameHeader::kFrameHeaderSize>;
+namespace grpc_core {
+namespace {
 
-void RoundTrips(HeaderBuffer buffer) {
-  auto r = FrameHeader::Parse(buffer.data());
-  if (!r.ok()) return;
-  HeaderBuffer reserialized;
-  r->Serialize(reserialized.data());
-  EXPECT_EQ(buffer, reserialized);
+void ParseRoundTrips(std::string input) {
+  auto json = JsonParse(input);
+  if (json.ok()) {
+    auto text2 = JsonDump(*json);
+    auto json2 = JsonParse(text2);
+    CHECK_OK(json2);
+    EXPECT_EQ(*json, *json2)
+        << GRPC_DUMP_ARGS(absl::CEscape(input), absl::CEscape(text2));
+  }
 }
-FUZZ_TEST(FrameHeaderTest, RoundTrips);
+FUZZ_TEST(JsonTest, ParseRoundTrips);
+
+}  // namespace
+}  // namespace grpc_core
