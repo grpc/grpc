@@ -21,6 +21,7 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/log.h"
@@ -46,6 +47,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #endif  //  GRPC_POSIX_SOCKET_UTILS_COMMON
+
+#ifdef GRPC_LINUX_EVENTFD
+#include <sys/eventfd.h>
+#endif
 
 // File needs to be compilable on all platforms. These macros will produce stubs
 // if specific feature is not available in specific environment
@@ -90,6 +95,10 @@
 namespace grpc_event_engine::experimental {
 
 namespace {
+
+// Comma in the type is not friendly with macros
+using StatusOrPipeEnds =
+    absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>>;
 
 // This way if constexpr can be used and also macro nesting is not needed
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -426,22 +435,11 @@ bool IsSocketReusePortSupported() {
   return kSupportSoReusePort;
 }
 
-void FileDescriptors::ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
-                                                     bool is_client) {
-  if (is_client) {
-    kDefaultClientUserTimeoutEnabled = enable;
-    if (timeout > 0) {
-      kDefaultClientUserTimeoutMs = timeout;
-    }
-  } else {
-    kDefaultServerUserTimeoutEnabled = enable;
-    if (timeout > 0) {
-      kDefaultServerUserTimeoutMs = timeout;
-    }
-  }
-}
-
 FileDescriptor FileDescriptors::Adopt(int fd) { return FileDescriptor(fd); }
+
+std::optional<int> FileDescriptors::GetFdForPolling(const FileDescriptor& fd) {
+  return fd.fd();
+}
 
 std::optional<int> FileDescriptors::GetRawFileDescriptor(
     const FileDescriptor& fd) {
@@ -579,6 +577,54 @@ IF_POSIX_SOCKET(FileDescriptorResult FileDescriptors::Socket(int domain,
                                                              int protocol),
                 { return RegisterPosixResult(socket(domain, type, protocol)); })
 
+IF_POSIX_SOCKET(StatusOrPipeEnds FileDescriptors::Pipe(), {
+  int pipefd[2];
+  int r = pipe(pipefd);
+  if (0 != r) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("pipe: ", grpc_core::StrError(errno)));
+  }
+  auto status = SetSocketNonBlocking(pipefd[0], 1);
+  if (!status.ok()) return status;
+  status = SetSocketNonBlocking(pipefd[1], 1);
+  if (!status.ok()) {
+    return status;
+  }
+  return std::make_pair(Adopt(pipefd[0]), Adopt(pipefd[1]));
+})
+
+FileDescriptorResult FileDescriptors::EventFd(int initval, int flags) {
+#ifdef GRPC_LINUX_EVENTFD
+  return RegisterPosixResult(eventfd(initval, flags));
+#else
+  grpc_core::Crash("EventFD not supported");
+#endif
+}
+
+FileDescriptorResult FileDescriptors::EpollCreateAndCloexec() {
+#ifdef GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EPOLL_CREATE1
+  auto fd = RegisterPosixResult(epoll_create1(EPOLL_CLOEXEC));
+  if (!fd.ok()) {
+    LOG(ERROR) << "epoll_create1 unavailable";
+  }
+  return fd;
+#else   // GRPC_LINUX_EPOLL_CREATE1
+  auto fd = RegisterPosixResult(epoll_create(MAX_EPOLL_EVENTS));
+  if (!fd.ok()) {
+    LOG(ERROR) << "epoll_create unavailable";
+    return fd;
+  } else if (fcntl(fd->fd(), F_SETFD, FD_CLOEXEC) != 0) {
+    LOG(ERROR) << "fcntl following epoll_create failed";
+    return FileDescriptorResult(OperationResultKind::kError, error_no);
+  }
+  return fd;
+#endif  // GRPC_LINUX_EPOLL_CREATE1
+#else   // GRPC_LINUX_EPOLL
+  grpc_core::Crash("Not supported");
+#endif  // GRPC_LINUX_EPOLL
+}
+
 int FileDescriptors::AsInteger(const FileDescriptor& fd) { return fd.fd(); }
 
 FileDescriptorResult FileDescriptors::FromInteger(int fd) {
@@ -619,6 +665,31 @@ IF_POSIX_SOCKET(
       }
     })
 
+IF_POSIX_SOCKET(Int64Result FileDescriptors::Read(const FileDescriptor& fd,
+                                                  absl::Span<char> buf),
+                { return Int64Wrap(read(fd.fd(), buf.data(), buf.size())); })
+
+IF_POSIX_SOCKET(Int64Result FileDescriptors::Write(const FileDescriptor& fd,
+                                                   absl::Span<char> buf),
+                { return Int64Wrap(write(fd.fd(), buf.data(), buf.size())); })
+
+PosixResult FileDescriptors::EventFdRead(const FileDescriptor& fd) {
+#ifdef GRPC_LINUX_EVENTFD
+  eventfd_t value;
+  return PosixResultWrap(eventfd_read(fd.fd(), &value));
+#else   // GRPC_LINUX_EVENTFD
+  grpc_core::Crash("Not implemented");
+#endif  // GRPC_LINUX_EVENTFD
+}
+
+PosixResult FileDescriptors::EventFdWrite(const FileDescriptor& fd) {
+#ifdef GRPC_LINUX_EVENTFD
+  return PosixResultWrap(eventfd_write(fd.fd(), 1));
+#else   // GRPC_LINUX_EVENTFD
+  grpc_core::Crash("Not implemented");
+#endif  // GRPC_LINUX_EVENTFD
+}
+
 IF_POSIX_SOCKET(Int64Result FileDescriptors::RecvFrom(
                     const FileDescriptor& fd, void* buf, size_t len, int flags,
                     struct sockaddr* src_addr, socklen_t* addrlen),
@@ -650,23 +721,27 @@ Int64Result FileDescriptors::WriteV(const FileDescriptor& fd,
 //
 // Epoll
 //
-IF_EPOLL(PosixResult FileDescriptors::EpollCtlDel(int epfd,
+IF_EPOLL(PosixResult FileDescriptors::EpollCtlDel(const FileDescriptor& epfd,
                                                   const FileDescriptor& fd),
          {
            epoll_event phony_event;
            return PosixResultWrap(
-               epoll_ctl(epfd, EPOLL_CTL_DEL, fd.fd(), &phony_event));
+               epoll_ctl(epfd.fd(), EPOLL_CTL_DEL, fd.fd(), &phony_event));
          })
 
-IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(int epfd,
+IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(const FileDescriptor& epfd,
+                                                  bool writable,
                                                   const FileDescriptor& fd,
                                                   void* data),
          {
            epoll_event event;
-           event.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
+           event.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
+           if (writable) {
+             event.events |= EPOLLOUT;
+           }
            event.data.ptr = data;
            return PosixResultWrap(
-               epoll_ctl(epfd, EPOLL_CTL_ADD, fd.fd(), &event));
+               epoll_ctl(epfd.fd(), EPOLL_CTL_ADD, fd.fd(), &event));
          })
 
 absl::StatusOr<EventEngine::ResolvedAddress> FileDescriptors::LocalAddress(
@@ -926,6 +1001,21 @@ absl::StatusOr<int> FileDescriptors::GetUnusedPort() {
     return absl::FailedPreconditionError("Bad port");
   }
   return port;
+}
+
+void FileDescriptors::ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
+                                                     bool is_client) {
+  if (is_client) {
+    kDefaultClientUserTimeoutEnabled = enable;
+    if (timeout > 0) {
+      kDefaultClientUserTimeoutMs = timeout;
+    }
+  } else {
+    kDefaultServerUserTimeoutEnabled = enable;
+    if (timeout > 0) {
+      kDefaultServerUserTimeoutMs = timeout;
+    }
+  }
 }
 
 }  // namespace grpc_event_engine::experimental

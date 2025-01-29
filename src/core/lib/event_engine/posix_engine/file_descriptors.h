@@ -33,9 +33,6 @@ class FileDescriptor {
   FileDescriptor() = default;
   explicit FileDescriptor(int fd) : fd_(fd) {};
   bool ready() const { return fd_ > 0; }
-
-  // Only allowed to be called by pollers.
-  int polling_fd() const { return fd_; }
   // Escape for iomgr and tests. Not to be used elsewhere
   int iomgr_fd() const { return fd_; }
   // For logging/debug purposes - may consider including generation, do not
@@ -174,6 +171,8 @@ class FileDescriptors {
   FileDescriptors() = default;
   FileDescriptors(const FileDescriptors&& other) = delete;
 
+  std::optional<int> GetFdForPolling(const FileDescriptor& fd);
+
   static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
                                              bool is_client);
 
@@ -182,7 +181,10 @@ class FileDescriptors {
   FileDescriptorResult Accept4(const FileDescriptor& sockfd,
                                EventEngine::ResolvedAddress& addr, int nonblock,
                                int cloexec);
+  FileDescriptorResult EventFd(int initval, int flags);
   FileDescriptorResult Socket(int domain, int type, int protocol);
+  absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>> Pipe();
+  FileDescriptorResult EpollCreateAndCloexec();
 
   // Represents fd as integer. Needed for APIs like ARES, that need to have
   // a single int as a handle.
@@ -218,25 +220,28 @@ class FileDescriptors {
   // Posix
   PosixResult Connect(const FileDescriptor& sockfd, const struct sockaddr* addr,
                       socklen_t addrlen);
-  PosixResult Ioctl(const FileDescriptor& fd, int op, void* arg);
-  PosixResult Shutdown(const FileDescriptor& fd, int how);
   PosixResult GetSockOpt(const FileDescriptor& fd, int level, int optname,
                          void* optval, void* optlen);
-  Int64Result SetSockOpt(const FileDescriptor& fd, int level, int optname,
-                         uint32_t optval);
-  Int64Result RecvMsg(const FileDescriptor& fd, struct msghdr* message,
-                      int flags);
+  PosixResult Ioctl(const FileDescriptor& fd, int op, void* arg);
   Int64Result RecvFrom(const FileDescriptor& fd, void* buf, size_t len,
                        int flags, struct sockaddr* src_addr,
                        socklen_t* addrlen);
+  Int64Result Read(const FileDescriptor& fd, absl::Span<char> buffer);
+  Int64Result RecvMsg(const FileDescriptor& fd, struct msghdr* message,
+                      int flags);
+  Int64Result SetSockOpt(const FileDescriptor& fd, int level, int optname,
+                         uint32_t optval);
   Int64Result SendMsg(const FileDescriptor& fd, const struct msghdr* message,
                       int flags);
+  PosixResult Shutdown(const FileDescriptor& fd, int how);
+  Int64Result Write(const FileDescriptor& fd, absl::Span<char> buffer);
   Int64Result WriteV(const FileDescriptor& fd, const struct iovec* iov,
                      int iovcnt);
 
   // Epoll
-  PosixResult EpollCtlAdd(int epfd, const FileDescriptor& fd, void* data);
-  PosixResult EpollCtlDel(int epfd, const FileDescriptor& fd);
+  PosixResult EpollCtlAdd(const FileDescriptor& epfd, bool writable,
+                          const FileDescriptor& fd, void* data);
+  PosixResult EpollCtlDel(const FileDescriptor& epfd, const FileDescriptor& fd);
 
   // Return LocalAddress as EventEngine::ResolvedAddress
   absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(
@@ -284,6 +289,9 @@ class FileDescriptors {
   int ConfigureSocket(const FileDescriptor& fd, int type);
 
   absl::StatusOr<int> GetUnusedPort();
+
+  PosixResult EventFdRead(const FileDescriptor& fd);
+  PosixResult EventFdWrite(const FileDescriptor& fd);
 
  private:
   absl::Status PrepareTcpClientSocket(const FileDescriptor& fd,

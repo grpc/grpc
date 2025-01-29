@@ -576,10 +576,9 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     EXPECT_GT(num_wakeups_, 0);
     EXPECT_NE(scheduler_, nullptr);
     EXPECT_NE(poller_, nullptr);
-    wakeup_fd_ = *PipeWakeupFd::CreatePipeWakeupFd();
-    handle_ = poller_->CreateHandle(
-        poller_->GetFileDescriptors().Adopt(wakeup_fd_->ReadFd()), "test",
-        false);
+    wakeup_fd_ =
+        *PipeWakeupFd::CreatePipeWakeupFd(&poller_->GetFileDescriptors());
+    handle_ = poller_->CreateHandle(wakeup_fd_->ReadFd(), "test", false);
     EXPECT_NE(handle_, nullptr);
     handle_->NotifyOnRead(on_read_);
     //  Send a wakeup initially.
@@ -610,7 +609,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     ssize_t r;
     int total_bytes_read = 0;
     for (;;) {
-      r = read(wakeup_fd_->ReadFd(), buf, sizeof(buf));
+      r = read(wakeup_fd_->ReadFd().iomgr_fd(), buf, sizeof(buf));
       if (r > 0) {
         total_bytes_read += r;
         continue;

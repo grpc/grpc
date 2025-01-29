@@ -2163,7 +2163,10 @@ grpc_cc_library(
         "lib/event_engine/posix_engine/wakeup_fd_posix.h",
     ],
     external_deps = ["absl/status"],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "posix_event_engine_file_descriptors",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -2181,6 +2184,7 @@ grpc_cc_library(
     ],
     deps = [
         "iomgr_port",
+        "posix_event_engine_file_descriptors",
         "posix_event_engine_wakeup_fd_posix",
         "strerror",
         "//:gpr",
@@ -2202,6 +2206,7 @@ grpc_cc_library(
     ],
     deps = [
         "iomgr_port",
+        "posix_event_engine_file_descriptors",
         "posix_event_engine_wakeup_fd_posix",
         "strerror",
         "//:gpr",
@@ -2222,6 +2227,7 @@ grpc_cc_library(
     ],
     deps = [
         "iomgr_port",
+        "posix_event_engine_file_descriptors",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_eventfd",
         "posix_event_engine_wakeup_fd_posix_pipe",

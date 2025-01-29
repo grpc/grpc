@@ -567,7 +567,7 @@ PollPoller::PollPoller(Scheduler* scheduler)
       num_poll_handles_(0),
       poll_handles_list_head_(nullptr),
       closed_(false) {
-  wakeup_fd_ = *CreateWakeupFd();
+  wakeup_fd_ = *CreateWakeupFd(&GetFileDescriptors());
   CHECK(wakeup_fd_ != nullptr);
   ForkPollerListAddPoller(this);
 }
@@ -580,7 +580,7 @@ PollPoller::PollPoller(Scheduler* scheduler, bool use_phony_poll)
       num_poll_handles_(0),
       poll_handles_list_head_(nullptr),
       closed_(false) {
-  wakeup_fd_ = *CreateWakeupFd();
+  wakeup_fd_ = *CreateWakeupFd(&GetFileDescriptors());
   CHECK(wakeup_fd_ != nullptr);
   ForkPollerListAddPoller(this);
 }
@@ -630,8 +630,11 @@ Poller::WorkResult PollPoller::Work(
       pfds = static_cast<struct pollfd*>(buf);
     }
 
+    auto& fds = GetFileDescriptors();
     pfd_count = 1;
-    pfds[0].fd = wakeup_fd_->ReadFd();
+    auto wakeup_fd = fds.GetFdForPolling(wakeup_fd_->ReadFd());
+    CHECK(wakeup_fd.has_value()) << "Wrong wakeup FD generation";
+    pfds[0].fd = *wakeup_fd;
     pfds[0].events = POLLIN;
     pfds[0].revents = 0;
     PollEventHandle* head = poll_handles_list_head_;
@@ -643,16 +646,23 @@ Poller::WorkResult PollPoller::Work(
         // poll handle list for the poller under the poller lock.
         CHECK(!head->IsOrphaned());
         if (!head->IsPollhup()) {
-          pfds[pfd_count].fd = head->WrappedFd().polling_fd();
-          watchers[pfd_count] = head;
-          // BeginPollLocked takes a ref of the handle. It also marks the
-          // fd as Watched with an appropriate watch_mask. The watch_mask
-          // is 0 if the fd is shutdown or if the fd is already ready (i.e
-          // both read and write events are already available) and doesn't
-          // need to be polled again. The watch_mask is > 0 otherwise
-          // indicating the fd needs to be polled.
-          pfds[pfd_count].events = head->BeginPollLocked(POLLIN, POLLOUT);
-          pfd_count++;
+          if (auto file_descriptor = fds.GetFdForPolling(head->WrappedFd());
+              file_descriptor.has_value()) {
+            pfds[pfd_count].fd = *file_descriptor;
+            watchers[pfd_count] = head;
+            // BeginPollLocked takes a ref of the handle. It also marks the
+            // fd as Watched with an appropriate watch_mask. The watch_mask
+            // is 0 if the fd is shutdown or if the fd is already ready (i.e
+            // both read and write events are already available) and doesn't
+            // need to be polled again. The watch_mask is > 0 otherwise
+            // indicating the fd needs to be polled.
+            pfds[pfd_count].events = head->BeginPollLocked(POLLIN, POLLOUT);
+            pfd_count++;
+          } else {
+            GRPC_TRACE_DLOG(polling, INFO)
+                << "Polling FD from a wrong generation: "
+                << head->WrappedFd().debug_fd();
+          }
         }
       }
       head = head->PollerHandlesListPos().next;

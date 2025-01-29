@@ -17,6 +17,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
@@ -26,13 +27,15 @@ namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
-absl::StatusOr<std::unique_ptr<WakeupFd>> NotSupported() {
+absl::StatusOr<std::unique_ptr<WakeupFd>> NotSupported(
+    FileDescriptors* /* unused */) {
   return absl::NotFoundError("Wakeup-fd is not supported on this system");
 }
 
 namespace {
-absl::StatusOr<std::unique_ptr<WakeupFd>> (*g_wakeup_fd_fn)() =
-    []() -> absl::StatusOr<std::unique_ptr<WakeupFd>> (*)() {
+absl::StatusOr<std::unique_ptr<WakeupFd>> (*g_wakeup_fd_fn)(
+    FileDescriptors* fds) = []()
+    -> absl::StatusOr<std::unique_ptr<WakeupFd>> (*)(FileDescriptors* fds) {
 #ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
   if (EventFdWakeupFd::IsSupported()) {
     return &EventFdWakeupFd::CreateEventFdWakeupFd;
@@ -47,15 +50,16 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> (*g_wakeup_fd_fn)() =
 
 bool SupportsWakeupFd() { return g_wakeup_fd_fn != NotSupported; }
 
-absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
-  return g_wakeup_fd_fn();
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd(FileDescriptors* fds) {
+  return g_wakeup_fd_fn(fds);
 }
 
 #else  // GRPC_POSIX_WAKEUP_FD
 
 bool SupportsWakeupFd() { return false; }
 
-absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd(
+    FileDescriptors* /* unused */) {
   return absl::NotFoundError("Wakeup-fd is not supported on this system");
 }
 

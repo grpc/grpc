@@ -25,6 +25,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
+#include "file_descriptors.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
@@ -100,7 +101,7 @@ class Epoll1Poller : public PosixEventPoller {
   friend class Epoll1EventHandle;
 #ifdef GRPC_LINUX_EPOLL
   struct EpollSet {
-    int epfd = -1;
+    FileDescriptor epfd;
 
     // The epoll_events after the last call to epoll_wait()
     struct epoll_event events[MAX_EPOLL_EVENTS]{};
