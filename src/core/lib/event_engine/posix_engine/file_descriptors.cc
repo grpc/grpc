@@ -278,7 +278,7 @@ IF_POSIX_SOCKET(
     })
 
 // set a socket to reuse old ports
-absl::Status SetSocketReusePort(int fd, int reuse) {
+absl::Status SetSocketReusePort(int fd, GRPC_UNUSED int reuse) {
 #ifndef SO_REUSEPORT
   return absl::Status(absl::StatusCode::kInternal,
                       "SO_REUSEPORT unavailable on compiling system");
