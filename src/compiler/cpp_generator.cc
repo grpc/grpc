@@ -1405,7 +1405,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
 
 
   printer->Print(service->GetLeadingComments("//").c_str());
-  if (service->is_deprecated()) {
+  if (params.allow_deprecated && service->is_deprecated()) {
     printer->Print(*vars,
                   "class [[deprecated]] $Service$ final {\n"
                   " public:\n");

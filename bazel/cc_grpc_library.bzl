@@ -25,6 +25,7 @@ def cc_grpc_library(
         proto_only = False,
         well_known_protos = False,
         generate_mocks = False,
+        allow_deprecated = False,
         use_external = False,  # @unused
         grpc_only = False,
         **kwargs):
@@ -105,6 +106,7 @@ def cc_grpc_library(
             plugin = Label("//src/compiler:grpc_cpp_plugin"),
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
+            allow_deprecated = allow_deprecated,
             **kwargs
         )
 
