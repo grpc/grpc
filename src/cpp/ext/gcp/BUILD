@@ -49,7 +49,6 @@ grpc_cc_library(
         "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
     ],
-    language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
         "environment_autodetect",
@@ -78,16 +77,13 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
     ],
-    language = "c++",
     visibility = [
         "//test:__subpackages__",
         "@grpc:grpc_python_observability",
     ],
     deps = [
         "//:gpr",
-        "//:grpc_base",
         "//:grpc_public_hdrs",
-        "//:iomgr",
         "//src/core:env",
         "//src/core:error",
         "//src/core:error_utils",
@@ -113,7 +109,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:log",
+        "absl/log",
         "absl/numeric:int128",
         "absl/strings",
         "absl/strings:str_format",
@@ -122,7 +118,6 @@ grpc_cc_library(
         "googleapis_logging_grpc_service",
         "protobuf_headers",
     ],
-    language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
         "environment_autodetect",
@@ -137,6 +132,7 @@ grpc_cc_library(
         "//src/core:env",
         "//src/core:json",
         "//src/core:logging_sink",
+        "//src/core:sync",
         "//src/core:time",
         "//src/core:uuid_v4",
     ],
@@ -154,12 +150,11 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
+        "absl/log",
         "absl/log:check",
-        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
     ],
-    language = "c++",
     visibility = [
         "//src/cpp/ext/gcp:__subpackages__",
         "//test:__subpackages__",
@@ -182,6 +177,7 @@ grpc_cc_library(
         "//src/core:load_file",
         "//src/core:slice",
         "//src/core:status_helper",
+        "//src/core:sync",
         "//src/core:time",
     ],
 )

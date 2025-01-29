@@ -22,7 +22,6 @@ grpc_cc_test(
     name = "core_configuration_test",
     srcs = ["core_configuration_test.cc"],
     external_deps = ["gtest"],
-    language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -35,7 +34,6 @@ grpc_cc_test(
     name = "load_config_test",
     srcs = ["load_config_test.cc"],
     external_deps = ["gtest"],
-    language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
