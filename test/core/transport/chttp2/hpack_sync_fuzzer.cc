@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <google/protobuf/text_format.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -224,6 +225,26 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
   }
 }
 FUZZ_TEST(HpackSyncFuzzer, FuzzOneInput);
+
+auto ParseTestProto(const std::string& proto) {
+  hpack_sync_fuzzer::Msg msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  return msg;
+}
+
+TEST(HpackSyncFuzzer, FuzzOneInputRegression1) {
+  FuzzOneInput(ParseTestProto(
+      R"pb(
+        headers { literal_not_idx { key: "grpc-status" value: "72" } }
+      )pb"));
+}
+
+TEST(HpackSyncFuzzer, FuzzOneInputRegression2) {
+  FuzzOneInput(ParseTestProto(
+      R"pb(
+        headers { literal_not_idx { key: "grpc-status" value: "-1" } }
+      )pb"));
+}
 
 }  // namespace
 }  // namespace grpc_core
