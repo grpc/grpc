@@ -185,13 +185,13 @@ struct inproc_stream {
 
     if (!server_data) {
       t->ref();
+      other_side = nullptr;  // will get filled in soon
       inproc_transport* st = t->other_side;
       if (st->accept_stream_cb == nullptr) {
         cancel_stream_locked(this,
                              absl::UnavailableError("inproc server closed"));
       } else {
         st->ref();
-        other_side = nullptr;  // will get filled in soon
         // Pass the client-side stream address to the server-side for a ref
         ref("inproc_init_stream:clt");  // ref it now on behalf of server
                                         // side to avoid destruction
