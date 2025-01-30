@@ -323,12 +323,6 @@ class GrpcLb final : public LoadBalancingPolicy {
 
    private:
     void Orphaned() override {
-      if (!IsWorkSerializerDispatchEnabled()) {
-        if (!lb_policy_->shutting_down_) {
-          lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
-        }
-        return;
-      }
       lb_policy_->work_serializer()->Run(
           [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
             if (!self->lb_policy_->shutting_down_) {

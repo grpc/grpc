@@ -18,27 +18,18 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
+#include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 
-bool squelch = false;
-
 using grpc_core::chaotic_good::FrameHeader;
+using HeaderBuffer = std::array<uint8_t, FrameHeader::kFrameHeaderSize>;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (size != FrameHeader::kFrameHeaderSize) return 0;
-  auto r = FrameHeader::Parse(data);
-  if (!r.ok()) return 0;
-  uint8_t reserialized[FrameHeader::kFrameHeaderSize];
-  r->Serialize(reserialized);
-  // If it parses, we insist that the bytes reserialize to the same thing.
-  if (memcmp(data, reserialized, FrameHeader::kFrameHeaderSize) != 0) {
-    auto esc = [](const void* s) {
-      return absl::CEscape(absl::string_view(static_cast<const char*>(s),
-                                             FrameHeader::kFrameHeaderSize));
-    };
-    fprintf(stderr, "Failed:\nin:  %s\nout: %s\nser: %s\n", esc(data).c_str(),
-            esc(reserialized).c_str(), r->ToString().c_str());
-    abort();
-  }
-  return 0;
+void RoundTrips(HeaderBuffer buffer) {
+  auto r = FrameHeader::Parse(buffer.data());
+  if (!r.ok()) return;
+  HeaderBuffer reserialized;
+  r->Serialize(reserialized.data());
+  EXPECT_EQ(buffer, reserialized);
 }
+FUZZ_TEST(FrameHeaderTest, RoundTrips);

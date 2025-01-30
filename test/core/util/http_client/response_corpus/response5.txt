@@ -1,5 +1,0 @@
-HTTP/0.9 200 OK
-test: hello
-content-length: 4
-
-abcd

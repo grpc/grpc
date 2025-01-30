@@ -20,6 +20,10 @@
 
 namespace grpc_core {
 
+ClientAndServerTransportPair (*g_create_transport_test_fixture)(
+    std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>) =
+    nullptr;
+
 ///////////////////////////////////////////////////////////////////////////////
 // TransportTest
 

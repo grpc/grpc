@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
@@ -241,5 +242,20 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//src/core:event_engine_query_extensions",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "resolved_address_fuzzer",
+    srcs = ["resolved_address_fuzzer.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        "//:grpc",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
