@@ -453,7 +453,6 @@ grpc_cc_library(
     ],
     deps = [
         "fuzz_config_vars_cc_proto",
-        "fuzz_config_vars_helpers",
         "//:config_vars",
         "//:gpr_platform",
     ],

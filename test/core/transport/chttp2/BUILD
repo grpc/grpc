@@ -44,6 +44,7 @@ grpc_fuzz_test(
         "hpack_parser_fuzzer_cc_proto",
         "//:grpc",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:proto_bit_gen",
     ],
@@ -73,6 +74,7 @@ grpc_fuzz_test(
         "hpack_sync_fuzzer_cc_proto",
         "//:grpc",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:proto_bit_gen",
     ],
@@ -103,6 +105,7 @@ grpc_fuzz_test(
         "//:gpr",
         "//src/core:chttp2_flow_control",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
     ],
 )
 

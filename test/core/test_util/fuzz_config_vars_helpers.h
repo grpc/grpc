@@ -15,6 +15,11 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_FUZZ_CONFIG_VARS_HELPERS_H
 #define GRPC_TEST_CORE_TEST_UTIL_FUZZ_CONFIG_VARS_HELPERS_H
 
+// We can't currently compile fuzztest for Windows, so we separate
+// this code from the code to read the protobufs - allowing the latter
+// to also be used in regression tests that do run on Windows, and
+// reserving this code only for the actual fuzzers.
+
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 

@@ -66,6 +66,7 @@
 
 #ifdef GRPC_END2END_TEST_INCLUDE_FUZZER
 #include "fuzztest/fuzztest.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #endif
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
