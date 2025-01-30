@@ -5872,10 +5872,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -5887,7 +5893,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -5895,12 +5900,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/bad_ping.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: bad_server_response_test
@@ -6106,10 +6114,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -6121,7 +6135,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -6129,12 +6142,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/binary_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: bitset_test
@@ -6308,10 +6324,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -6323,7 +6345,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -6331,12 +6352,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/call_creds.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: call_filters_test
@@ -6550,10 +6574,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -6565,7 +6595,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -6573,12 +6602,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/call_host_override.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: call_state_test
@@ -7257,10 +7289,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -7272,7 +7310,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -7280,12 +7317,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_after_accept.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_after_client_done_test
@@ -7332,10 +7372,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -7347,7 +7393,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -7355,12 +7400,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_after_client_done.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_after_invoke_test
@@ -7408,10 +7456,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -7423,7 +7477,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -7431,12 +7484,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_after_invoke.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_after_round_trip_test
@@ -7483,10 +7539,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -7498,7 +7560,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -7506,12 +7567,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_after_round_trip.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_ares_query_test
@@ -7575,10 +7639,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -7590,7 +7660,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -7598,12 +7667,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_before_invoke.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_callback_test
@@ -7752,10 +7824,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -7767,7 +7845,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -7775,12 +7852,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_in_a_vacuum.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cancel_with_status_test
@@ -7828,10 +7908,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -7843,7 +7929,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -7851,12 +7936,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_with_status.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cel_authorization_engine_test
@@ -8857,10 +8945,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -8872,7 +8966,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -8880,12 +8973,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: cmdline_test
@@ -9040,10 +9136,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9055,7 +9157,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -9063,12 +9164,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/compressed_payload.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: compression_test
@@ -9217,10 +9321,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9232,7 +9342,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -9240,12 +9349,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: context_allocator_end2end_test
@@ -9408,10 +9520,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9423,7 +9541,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -9431,12 +9548,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: delay_tracker_test
@@ -9628,10 +9748,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9643,7 +9769,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -9651,12 +9776,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/disappearing_server.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: dns_resolver_cooldown_test
@@ -9791,10 +9919,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9806,7 +9940,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -9814,12 +9947,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/empty_batch.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: end2end_test
@@ -10331,10 +10467,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10346,7 +10488,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -10354,12 +10495,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/filter_causes_close.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: filter_init_fails_test
@@ -10406,10 +10550,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10421,7 +10571,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -10429,12 +10578,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/filter_init_fails.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: filter_test_test
@@ -10499,10 +10651,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10514,7 +10672,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -10522,12 +10679,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/filtered_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: flaky_network_test
@@ -11054,10 +11214,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -11069,7 +11235,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -11077,12 +11242,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/graceful_server_shutdown.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: graceful_shutdown_test
@@ -11259,10 +11427,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -11274,7 +11448,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -11282,12 +11455,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/grpc_authz.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: grpc_byte_buffer_reader_test
@@ -11655,6 +11831,30 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/config.h
+  - src/core/ext/transport/chaotic_good/control_endpoint.h
+  - src/core/ext/transport/chaotic_good/data_endpoints.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/message_chunker.h
+  - src/core/ext/transport/chaotic_good/message_reassembly.h
+  - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
@@ -11663,25 +11863,50 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
   - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/h2_ssl_cert_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
 - name: h2_ssl_session_reuse_test
   gtest: true
@@ -11830,10 +12055,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -11845,7 +12076,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -11853,12 +12083,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/high_initial_seqno.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: histogram_test
@@ -12028,10 +12261,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -12043,7 +12282,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -12051,12 +12289,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/hpack_size.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: http2_client
@@ -12195,10 +12436,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -12210,7 +12457,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -12218,12 +12464,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/http2_stats.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: http_proxy_mapper_test
@@ -12662,10 +12911,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -12677,7 +12932,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -12685,12 +12939,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/invoke_large_request.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: iocp_test
@@ -12878,10 +13135,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -12893,7 +13156,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -12901,12 +13163,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/keepalive_timeout.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: lame_client_test
@@ -12965,10 +13230,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -12980,7 +13251,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -12988,12 +13258,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/large_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: latch_test
@@ -13412,10 +13685,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -13427,7 +13706,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -13435,12 +13713,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/max_concurrent_streams.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: max_connection_age_test
@@ -13487,10 +13768,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -13502,7 +13789,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -13510,12 +13796,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/max_connection_age.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: max_connection_idle_test
@@ -13562,10 +13851,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -13577,7 +13872,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -13585,12 +13879,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/max_connection_idle.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: max_message_length_test
@@ -13637,10 +13934,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -13652,7 +13955,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -13660,12 +13962,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/max_message_length.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: memory_quota_stress_test
@@ -13957,10 +14262,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -13972,7 +14283,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -13980,12 +14290,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/negative_deadline.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: no_destruct_test
@@ -14044,10 +14357,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -14059,7 +14378,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -14067,12 +14385,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/no_logging.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: no_op_test
@@ -14119,10 +14440,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -14134,7 +14461,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -14142,12 +14468,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/no_op.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: no_server_test
@@ -14539,10 +14868,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -14554,7 +14889,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -14562,12 +14896,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/payload.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: percent_encoding_test
@@ -14784,10 +15121,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -14799,7 +15142,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -14807,12 +15149,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/ping_pong_streaming.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: ping_rate_policy_test
@@ -14887,10 +15232,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -14902,7 +15253,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -14910,12 +15260,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/ping.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: pipe_test
@@ -15483,10 +15836,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -15498,7 +15857,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -15506,12 +15864,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/proxy_auth.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: qps_json_driver
@@ -15756,10 +16117,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -15771,7 +16138,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -15779,12 +16145,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/registered_call.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: remove_stream_from_stalled_lists_test
@@ -16014,10 +16383,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16029,7 +16404,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16037,12 +16411,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/request_with_flags.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: request_with_payload_test
@@ -16089,10 +16466,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16104,7 +16487,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16112,12 +16494,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/request_with_payload.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: resolve_address_using_ares_resolver_posix_test
@@ -16308,10 +16693,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16323,7 +16714,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16331,12 +16721,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/resource_quota_server.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: resource_quota_test
@@ -16394,10 +16787,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16409,7 +16808,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16417,12 +16815,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_cancel_during_delay_test
@@ -16469,10 +16870,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16484,7 +16891,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16492,12 +16898,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_cancel_during_delay.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_cancel_with_multiple_send_batches_test
@@ -16544,10 +16953,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16559,7 +16974,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16567,12 +16981,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_cancellation_test
@@ -16619,10 +17036,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16634,7 +17057,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16642,12 +17064,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_cancellation.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_disabled_test
@@ -16694,10 +17119,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16709,7 +17140,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16717,12 +17147,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_exceeds_buffer_size_in_delay_test
@@ -16769,10 +17202,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16784,7 +17223,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16792,12 +17230,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_exceeds_buffer_size_in_initial_batch_test
@@ -16844,10 +17285,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16859,7 +17306,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16867,12 +17313,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_exceeds_buffer_size_in_subsequent_batch_test
@@ -16919,10 +17368,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16934,7 +17389,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16942,12 +17396,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_lb_drop_test
@@ -16994,10 +17451,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17009,7 +17472,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17017,12 +17479,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_lb_drop.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_lb_fail_test
@@ -17069,10 +17534,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17084,7 +17555,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17092,12 +17562,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_lb_fail.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_non_retriable_status_before_trailers_test
@@ -17144,10 +17617,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17159,7 +17638,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17167,12 +17645,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_non_retriable_status_test
@@ -17219,10 +17700,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17234,7 +17721,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17242,12 +17728,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_non_retriable_status.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_per_attempt_recv_timeout_on_last_attempt_test
@@ -17294,10 +17783,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17309,7 +17804,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17317,12 +17811,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_per_attempt_recv_timeout_test
@@ -17369,10 +17866,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17384,7 +17887,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17392,12 +17894,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_recv_initial_metadata_test
@@ -17444,10 +17949,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17459,7 +17970,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17467,12 +17977,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_recv_message_replay_test
@@ -17519,10 +18032,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17534,7 +18053,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17542,12 +18060,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_recv_message_replay.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_recv_message_test
@@ -17594,10 +18115,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17609,7 +18136,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17617,12 +18143,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_recv_message.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_recv_trailing_metadata_error_test
@@ -17669,10 +18198,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17684,7 +18219,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17692,12 +18226,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_send_initial_metadata_refs_test
@@ -17744,10 +18281,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17759,7 +18302,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17767,12 +18309,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_send_op_fails_test
@@ -17819,10 +18364,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17834,7 +18385,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17842,12 +18392,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_send_op_fails.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_send_recv_batch_test
@@ -17894,10 +18447,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17909,7 +18468,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17917,12 +18475,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_send_recv_batch.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_server_pushback_delay_test
@@ -17969,10 +18530,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17984,7 +18551,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17992,12 +18558,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_server_pushback_delay.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_server_pushback_disabled_test
@@ -18044,10 +18613,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18059,7 +18634,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18067,12 +18641,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_server_pushback_disabled.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_service_config_test
@@ -18130,10 +18707,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18145,7 +18728,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18153,12 +18735,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_streaming_after_commit.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_streaming_succeeds_before_replay_finished_test
@@ -18205,10 +18790,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18220,7 +18811,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18228,12 +18818,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_streaming_test
@@ -18280,10 +18873,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18295,7 +18894,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18303,12 +18901,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_streaming.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_test
@@ -18355,10 +18956,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18370,7 +18977,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18378,12 +18984,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_throttle_test
@@ -18441,10 +19050,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18456,7 +19071,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18464,12 +19078,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_throttled.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_too_many_attempts_test
@@ -18516,10 +19133,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18531,7 +19154,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18539,12 +19161,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_too_many_attempts.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_transparent_goaway_test
@@ -18591,10 +19216,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18606,7 +19237,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18614,12 +19244,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_transparent_goaway.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_transparent_max_concurrent_streams_test
@@ -18666,10 +19299,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18681,7 +19320,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18689,12 +19327,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_transparent_not_sent_on_wire_test
@@ -18741,10 +19382,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18756,7 +19403,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18764,12 +19410,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_unref_before_finish_test
@@ -18816,10 +19465,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18831,7 +19486,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18839,12 +19493,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_unref_before_finish.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: retry_unref_before_recv_test
@@ -18891,10 +19548,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18906,7 +19569,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18914,12 +19576,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_unref_before_recv.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: ring_buffer_test
@@ -19335,10 +20000,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -19350,7 +20021,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -19358,12 +20028,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/server_finishes_request.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: server_interceptors_end2end_test
@@ -19502,10 +20175,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -19517,7 +20196,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -19525,12 +20203,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/server_streaming.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: server_test
@@ -19645,10 +20326,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -19660,7 +20347,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -19668,12 +20354,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: shutdown_finishes_tags_test
@@ -19720,10 +20409,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -19735,7 +20430,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -19743,12 +20437,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/shutdown_finishes_tags.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: shutdown_test
@@ -19814,10 +20511,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -19829,7 +20532,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -19837,12 +20539,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/simple_delayed_request.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: simple_metadata_test
@@ -19889,10 +20594,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -19904,7 +20615,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -19912,12 +20622,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/simple_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: simple_request_bad_client_test
@@ -19978,10 +20691,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -19993,7 +20712,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -20001,12 +20719,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/simple_request.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: single_set_ptr_test
@@ -20337,10 +21058,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -20352,7 +21079,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -20360,12 +21086,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/streaming_error_response.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: streaming_throughput_test
@@ -20728,10 +21457,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -20743,7 +21478,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -20751,12 +21485,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/channelz.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: test_core_event_engine_posix_timer_heap_test
@@ -21186,10 +21923,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -21201,7 +21944,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -21209,12 +21951,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/timeout_before_request_call.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: timeout_encoding_test
@@ -21450,10 +22195,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -21465,7 +22216,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -21473,12 +22223,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/trailing_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: transport_security_common_api_test
@@ -21888,10 +22641,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -21903,7 +22662,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -21911,12 +22669,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: write_buffering_test
@@ -21963,10 +22724,16 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -21978,7 +22745,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -21986,12 +22752,15 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/write_buffering.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_authorization_provider
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
 - name: write_size_policy_test
