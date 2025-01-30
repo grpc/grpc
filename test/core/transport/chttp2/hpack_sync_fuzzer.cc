@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <google/protobuf/text_format.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -227,7 +228,7 @@ FUZZ_TEST(HpackSyncFuzzer, FuzzOneInput);
 
 auto ParseTestProto(const std::string& proto) {
   hpack_sync_fuzzer::Msg msg;
-  CHECK(proto2::TextFormat::ParseFromString(proto, &msg));
+  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
   return msg;
 }
 
