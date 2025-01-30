@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "fuzz_config_vars_helpers.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 
 #include <stddef.h>
 #include <stdint.h>
