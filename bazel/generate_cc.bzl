@@ -154,6 +154,13 @@ def generate_cc_impl(ctx):
                 for f in ctx.attr.well_known_protos.files.to_list()
             ]
 
+    execution_requirements = {
+        "no-sandbox": "1",
+        "no-cache": "1",
+        "no-remote": "1",
+        "local": "1",
+    } if "no_sandbox" in ctx.attr.tags else {}
+
     ctx.actions.run(
         inputs = protos + includes + well_known_proto_files,
         tools = tools,
@@ -161,6 +168,7 @@ def generate_cc_impl(ctx):
         executable = ctx.executable._protoc,
         arguments = arguments,
         use_default_shell_env = True,
+        execution_requirements = execution_requirements
     )
 
     return DefaultInfo(files = depset(out_files))
