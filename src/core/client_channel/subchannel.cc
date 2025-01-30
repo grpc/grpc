@@ -458,8 +458,7 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
           auto* watcher_ptr = watcher.get();
           watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
                                                  status);
-        },
-        DEBUG_LOCATION);
+        });
   }
 }
 

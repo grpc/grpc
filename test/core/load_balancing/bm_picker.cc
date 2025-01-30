@@ -80,8 +80,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
                 std::make_shared<EndpointAddressesListIterator>(
                     std::move(addresses)),
                 config_, "", ChannelArgs()}));
-          },
-          DEBUG_LOCATION);
+          });
     }
   }
 
@@ -130,12 +129,10 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
         std::shared_ptr<ConnectivityStateWatcherInterface> watcher) {
       {
         MutexLock lock(&helper_->mu_);
-        helper_->work_serializer_->Run(
-            [watcher]() {
-              watcher->OnConnectivityStateChange(GRPC_CHANNEL_READY,
-                                                 absl::OkStatus());
-            },
-            DEBUG_LOCATION);
+        helper_->work_serializer_->Run([watcher]() {
+          watcher->OnConnectivityStateChange(GRPC_CHANNEL_READY,
+                                             absl::OkStatus());
+        });
         helper_->connectivity_watchers_.insert(std::move(watcher));
       }
     }

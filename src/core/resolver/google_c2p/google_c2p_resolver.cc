@@ -160,8 +160,7 @@ void GoogleCloud2ProdResolver::StartLocked() {
             [resolver, result = std::move(result)]() mutable {
               resolver->ZoneQueryDone(result.ok() ? std::move(result).value()
                                                   : "");
-            },
-            DEBUG_LOCATION);
+            });
       },
       Duration::Seconds(10));
   ipv6_query_ = MakeOrphanable<GcpMetadataQuery>(
@@ -177,8 +176,7 @@ void GoogleCloud2ProdResolver::StartLocked() {
               // servers in the wild, which can in some cases return 200
               // plus an empty result when they should have returned 404.
               resolver->IPv6QueryDone(result.ok() && !result->empty());
-            },
-            DEBUG_LOCATION);
+            });
       },
       Duration::Seconds(10));
 }

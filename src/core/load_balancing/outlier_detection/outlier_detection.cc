@@ -215,13 +215,11 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     };
 
     void Orphaned() override {
-      work_serializer_->Run(
-          [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
-            if (self->subchannel_state_ != nullptr) {
-              self->subchannel_state_->RemoveSubchannel(self.get());
-            }
-          },
-          DEBUG_LOCATION);
+      work_serializer_->Run([self = WeakRefAsSubclass<SubchannelWrapper>()]() {
+        if (self->subchannel_state_ != nullptr) {
+          self->subchannel_state_->RemoveSubchannel(self.get());
+        }
+      });
     }
 
     std::shared_ptr<WorkSerializer> work_serializer_;
@@ -838,8 +836,7 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
         ExecCtx exec_ctx;
         auto self_ptr = self.get();
         self_ptr->parent_->work_serializer()->Run(
-            [self = std::move(self)]() { self->OnTimerLocked(); },
-            DEBUG_LOCATION);
+            [self = std::move(self)]() { self->OnTimerLocked(); });
       });
 }
 

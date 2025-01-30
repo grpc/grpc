@@ -466,22 +466,18 @@ TEST_F(PickFirstTest, ResolverUpdateBeforeLeavingIdle) {
         // exit idle, so that the second update gets run before the initial
         // subchannel connectivity state notifications from the first update
         // are delivered.
-        work_serializer_->Run(
-            [&]() {
-              // Second update.
-              absl::Status status = lb_policy()->UpdateLocked(
-                  BuildUpdate(kNewAddresses, MakePickFirstConfig(false)));
-              EXPECT_TRUE(status.ok()) << status;
-              // Trigger notification once all connectivity state
-              // notifications have been delivered.
-              work_serializer_->Run([&]() { notification.Notify(); },
-                                    DEBUG_LOCATION);
-            },
-            DEBUG_LOCATION);
+        work_serializer_->Run([&]() {
+          // Second update.
+          absl::Status status = lb_policy()->UpdateLocked(
+              BuildUpdate(kNewAddresses, MakePickFirstConfig(false)));
+          EXPECT_TRUE(status.ok()) << status;
+          // Trigger notification once all connectivity state
+          // notifications have been delivered.
+          work_serializer_->Run([&]() { notification.Notify(); });
+        });
         // Exit idle.
         lb_policy()->ExitIdleLocked();
-      },
-      DEBUG_LOCATION);
+      });
   while (!notification.HasBeenNotified()) {
     fuzzing_ee_->Tick();
   }
