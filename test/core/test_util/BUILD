@@ -449,6 +449,7 @@ grpc_cc_library(
     hdrs = ["fuzz_config_vars.h"],
     tags = [
         "grpc-fuzztest",
+        "no_windows",
     ],
     deps = [
         "fuzz_config_vars_cc_proto",
@@ -468,6 +469,7 @@ grpc_cc_library(
     ],
     tags = [
         "grpc-fuzztest",
+        "no_windows",
     ],
     deps = [
         "fuzz_config_vars_cc_proto",
