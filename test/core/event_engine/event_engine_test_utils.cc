@@ -236,7 +236,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
     auto server_endpoint = last_in_progress_connection_.GetServerEndpoint();
     CHECK(server_endpoint != nullptr);
     // Set last_in_progress_connection_ to nullptr
-    return std::make_tuple(std::move(client_endpoint),
+    return std::tuple(std::move(client_endpoint),
                            std::move(server_endpoint));
   }
   return absl::CancelledError("Failed to create connection.");

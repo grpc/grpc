@@ -710,7 +710,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
             ModuleAlias(input_type_file_name, config.import_prefix,
                         config.prefixes_to_filter);
         imports_set.insert(
-            std::make_tuple(input_module_name, input_module_alias));
+            std::tuple(input_module_name, input_module_alias));
 
         std::string output_type_file_name = method->get_output_type_name();
         std::string output_module_name =
@@ -720,7 +720,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
             ModuleAlias(output_type_file_name, config.import_prefix,
                         config.prefixes_to_filter);
         imports_set.insert(
-            std::make_tuple(output_module_name, output_module_alias));
+            std::tuple(output_module_name, output_module_alias));
       }
     }
 

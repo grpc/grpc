@@ -113,7 +113,7 @@ TEST(TryJoinTestBasic, TryJoinPendingFour) {
   EXPECT_STREQ(execution_order.c_str(), "5");
 
   EXPECT_TRUE(retval.value().ok());  // All promises are a success.
-  EXPECT_EQ(retval.value().value(), std::make_tuple(3, 4.0, "5", 6));
+  EXPECT_EQ(retval.value().value(), std::tuple(3, 4.0, "5", 6));
 }
 
 TEST(TryJoinTestBasic, TryJoinPendingFailure) {

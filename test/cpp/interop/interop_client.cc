@@ -1189,16 +1189,16 @@ InteropClient::PerformOneSoakTestIteration(
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(now, start));
   if (!s.ok()) {
-    return std::make_tuple(false, elapsed_ms, context.debug_error_string(),
+    return std::tuple(false, elapsed_ms, context.debug_error_string(),
                            context.peer());
   } else if (elapsed_ms > max_acceptable_per_iteration_latency_ms) {
     std::string debug_string = absl::StrFormat(
         "%d ms exceeds max acceptable latency: %d ms, peer: %s", elapsed_ms,
         max_acceptable_per_iteration_latency_ms, context.peer());
-    return std::make_tuple(false, elapsed_ms, std::move(debug_string),
+    return std::tuple(false, elapsed_ms, std::move(debug_string),
                            context.peer());
   } else {
-    return std::make_tuple(true, elapsed_ms, "", context.peer());
+    return std::tuple(true, elapsed_ms, "", context.peer());
   }
 }
 
