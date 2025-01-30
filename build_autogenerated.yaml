@@ -5902,6 +5902,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -6144,6 +6145,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -6354,6 +6356,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -6602,6 +6605,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -7315,6 +7319,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -7398,6 +7403,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -7482,6 +7488,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -7565,6 +7572,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -7665,6 +7673,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -7850,6 +7859,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -7934,6 +7944,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8971,6 +8982,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9162,6 +9174,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9347,6 +9360,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9546,6 +9560,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9670,6 +9685,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9841,6 +9857,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -10389,6 +10406,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -10472,6 +10490,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -10573,6 +10592,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -11136,6 +11156,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -11349,6 +11370,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -11792,6 +11814,7 @@ targets:
   - test/core/test_util/fuzz_config_vars_helpers.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - protobuf
   - grpc_test_util
 - name: h2_ssl_session_reuse_test
@@ -11977,6 +12000,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -12183,6 +12207,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -12358,6 +12383,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -12833,6 +12859,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -13057,6 +13084,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -13152,6 +13180,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -13607,6 +13636,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -13690,6 +13720,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -13773,6 +13804,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -13856,6 +13888,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -14184,6 +14217,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -14279,6 +14313,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -14362,6 +14397,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -14790,6 +14826,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -15043,6 +15080,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -15154,6 +15192,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -15758,6 +15797,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -16039,6 +16079,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -16303,6 +16344,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -16386,6 +16428,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -16613,6 +16656,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -16707,6 +16751,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -16790,6 +16835,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -16873,6 +16919,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -16956,6 +17003,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17039,6 +17087,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17122,6 +17171,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17205,6 +17255,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17288,6 +17339,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17371,6 +17423,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17454,6 +17507,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17537,6 +17591,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17620,6 +17675,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17703,6 +17759,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17786,6 +17843,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17869,6 +17927,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -17952,6 +18011,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18035,6 +18095,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18118,6 +18179,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18201,6 +18263,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18284,6 +18347,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18367,6 +18431,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18450,6 +18515,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18533,6 +18599,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18627,6 +18694,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18710,6 +18778,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18793,6 +18862,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18876,6 +18946,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -18970,6 +19041,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -19053,6 +19125,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -19136,6 +19209,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -19219,6 +19293,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -19302,6 +19377,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -19385,6 +19461,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -19468,6 +19545,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -19920,6 +19998,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -20095,6 +20174,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -20246,6 +20326,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -20329,6 +20410,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -20431,6 +20513,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -20514,6 +20597,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -20611,6 +20695,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -20978,6 +21063,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -21377,6 +21463,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -21843,6 +21930,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -22115,6 +22203,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -22561,6 +22650,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -22644,6 +22734,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
