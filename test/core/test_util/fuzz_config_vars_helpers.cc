@@ -39,7 +39,7 @@ std::vector<std::string> ExperimentConfigChoices() {
 
 std::vector<std::string> TracerConfigChoices() {
   std::vector<std::string> choices;
-  for (auto [name, _] : GetAllTraceFlags()) {
+  for (const auto& [name, _] : GetAllTraceFlags()) {
     choices.push_back(name);
     choices.push_back(absl::StrCat("-", name));
   }
