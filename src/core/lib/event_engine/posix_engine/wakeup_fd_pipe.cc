@@ -64,7 +64,7 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
 
 absl::Status PipeWakeupFd::Wakeup() {
   char c = 0;
-  while (fds_->Write(WriteFd(), absl::Span(&c, 1)).IsPosixError(EINTR)) {
+  while (fds_->Write(WriteFd(), absl::Span<char>(&c, 1)).IsPosixError(EINTR)) {
   }
   return absl::OkStatus();
 }
