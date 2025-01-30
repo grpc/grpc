@@ -159,11 +159,6 @@ class TestClient {
     AsyncClientCall* call = new AsyncClientCall;
     for (const auto& data : config.metadata) {
       call->context.AddMetadata(data.first, data.second);
-      // TODO(@donnadionne): move deadline to separate proto.
-      if (data.first == "rpc-behavior" && data.second == "keep-open") {
-        deadline =
-            std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
-      }
     }
     SimpleRequest request;
     request.set_response_size(config.response_payload_size);
@@ -198,11 +193,6 @@ class TestClient {
     AsyncClientCall* call = new AsyncClientCall;
     for (const auto& data : config.metadata) {
       call->context.AddMetadata(data.first, data.second);
-      // TODO(@donnadionne): move deadline to separate proto.
-      if (data.first == "rpc-behavior" && data.second == "keep-open") {
-        deadline =
-            std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
-      }
     }
     call->context.set_deadline(deadline);
     call->result.saved_request_id = saved_request_id;
