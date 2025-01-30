@@ -88,35 +88,35 @@ struct ArenaContextType<DelayTracker> {
 // Wraps a promise, adding delay tracking if the promise returns Pending{}.
 template <typename Promise>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrackDelay(
-    absl::string_view delay_description, Promise promise) {
+    std::string delay_description, Promise promise) {
   using P = promise_detail::PromiseLike<Promise>;
-  return [delay_description = std::string(delay_description),
-          handle = std::optional<DelayTracker::Handle>(),
-          promise = P(std::move(promise))]() mutable
-             -> Poll<typename P::Result> {
-    auto r = promise();
-    if (r.pending()) {
-      // If we haven't already started recording a delay, do so now.
-      if (!handle.has_value()) {
-        // Get the DelayTracker from call context, creating it if needed.
-        DelayTracker* tracker = MaybeGetContext<DelayTracker>();
-        if (tracker == nullptr) {
-          Arena* arena = GetContext<Arena>();
-          tracker = arena->New<DelayTracker>();
-          arena->SetContext<DelayTracker>(tracker);
+  return
+      [delay_description = std::move(delay_description),
+       handle = std::optional<DelayTracker::Handle>(),
+       promise = P(std::move(promise))]() mutable -> Poll<typename P::Result> {
+        auto r = promise();
+        if (r.pending()) {
+          // If we haven't already started recording a delay, do so now.
+          if (!handle.has_value()) {
+            // Get the DelayTracker from call context, creating it if needed.
+            DelayTracker* tracker = MaybeGetContext<DelayTracker>();
+            if (tracker == nullptr) {
+              Arena* arena = GetContext<Arena>();
+              tracker = arena->New<DelayTracker>();
+              arena->SetContext<DelayTracker>(tracker);
+            }
+            // Start recording a delay.
+            handle = tracker->StartDelay(std::move(delay_description));
+          }
+          return Pending{};
         }
-        // Start recording a delay.
-        handle = tracker->StartDelay(delay_description);
-      }
-      return Pending{};
-    }
-    // If there was a delay, record that the delay is over.
-    if (handle.has_value()) {
-      DelayTracker* tracker = GetContext<DelayTracker>();
-      tracker->EndDelay(*handle);
-    }
-    return std::move(r.value());
-  };
+        // If there was a delay, record that the delay is over.
+        if (handle.has_value()) {
+          DelayTracker* tracker = GetContext<DelayTracker>();
+          tracker->EndDelay(*handle);
+        }
+        return std::move(r.value());
+      };
 }
 
 }  // namespace grpc_core

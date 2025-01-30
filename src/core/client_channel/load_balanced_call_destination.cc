@@ -15,6 +15,7 @@
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
 #include "absl/log/log.h"
+#include "src/core/call/delay_tracker.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/lb_metadata.h"
@@ -203,10 +204,11 @@ void LoadBalancedCallDestination::StartCall(
       "lb_pick", [unstarted_handler, picker = picker_]() mutable {
         return Map(
             // Wait for the LB picker.
-            CheckDelayed(Loop(
-                [last_picker =
-                     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>(),
-                 unstarted_handler, picker]() mutable {
+            TrackDelay(
+                "Load balancing",
+                CheckDelayed(Loop([last_picker = RefCountedPtr<
+                                       LoadBalancingPolicy::SubchannelPicker>(),
+                                   unstarted_handler, picker]() mutable {
                   return Map(
                       picker.Next(last_picker),
                       [unstarted_handler, &last_picker](
@@ -220,7 +222,7 @@ void LoadBalancedCallDestination::StartCall(
                         // - a connected subchannel to complete the pick
                         return PickSubchannel(*last_picker, unstarted_handler);
                       });
-                })),
+                }))),
             // Create call stack on the connected subchannel.
             [unstarted_handler](
                 std::tuple<
