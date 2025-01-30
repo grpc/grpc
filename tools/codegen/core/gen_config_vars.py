@@ -278,6 +278,7 @@ with open("src/core/config/config_vars.h", "w") as H:
     print("#include <atomic>", file=H)
     print("#include <optional>", file=H)
     print("#include <stdint.h>", file=H)
+    print('#include "absl/types/optional.h"', file=H)
     print('#include "absl/strings/string_view.h"', file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
@@ -287,7 +288,7 @@ with open("src/core/config/config_vars.h", "w") as H:
     print("  struct Overrides {", file=H)
     for attr in attrs_in_packing_order:
         print(
-            "    std::optional<%s> %s;"
+            "    absl::optional<%s> %s;"
             % (MEMBER_TYPE[attr["type"]], attr["name"]),
             file=H,
         )
@@ -342,7 +343,7 @@ with open("src/core/config/config_vars.h", "w") as H:
         if attr.get("force-load-on-access", False) == False:
             continue
         print(
-            "  std::optional<%s> override_%s_;"
+            "  absl::optional<%s> override_%s_;"
             % (MEMBER_TYPE[attr["type"]], attr["name"]),
             file=H,
         )
@@ -367,6 +368,7 @@ with open("src/core/config/config_vars.cc", "w") as C:
     print("#include <grpc/support/port_platform.h>", file=C)
     print('#include "src/core/config/config_vars.h"', file=C)
     print('#include "src/core/config/load_config.h"', file=C)
+    print('#include "absl/types/optional.h"', file=C)
     print('#include "absl/strings/escaping.h"', file=C)
     print('#include "absl/flags/flag.h"', file=C)
     print(file=C)
