@@ -23,6 +23,7 @@
 
 #include "absl/log/check.h"
 #include "absl/synchronization/notification.h"
+#include "fuzztest/fuzztest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -39,15 +40,7 @@ using grpc_core::HandshakerArgs;
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
-bool squelch = true;
-// ssl has an array of global gpr_mu's that are never released.
-// Turning this on will fail the leak check.
-bool leak_check = false;
-
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (squelch) {
-    grpc_disable_all_absl_logs();
-  }
+void SslServerTest(std::vector<uint8_t> buffer) {
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
@@ -57,7 +50,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         grpc_event_engine::experimental::MockEndpointController::Create(engine);
     mock_endpoint_controller->TriggerReadEvent(
         grpc_event_engine::experimental::Slice::FromCopiedBuffer(
-            reinterpret_cast<const char*>(data), size));
+            reinterpret_cast<const char*>(buffer.data()), buffer.size()));
     mock_endpoint_controller->NoMoreReads();
 
     // Load key pair and establish server SSL credentials.
@@ -108,5 +101,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   }
 
   grpc_shutdown();
-  return 0;
 }
+FUZZ_TEST(MyTestSuite, SslServerTest);

@@ -168,14 +168,11 @@ const auto kMetricFailedPicks =
         .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget)
         .Build();
 
-constexpr absl::string_view kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
 const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
 const char* kFakeTargetFieldValue = "fake_target_field_value";
 const char* kRlsHeaderKey = "x-google-rls-data";
 
-const Duration kDefaultLookupServiceTimeout = Duration::Seconds(10);
-const Duration kMaxMaxAge = Duration::Minutes(5);
 const Duration kMinExpirationTime = Duration::Seconds(5);
 const Duration kCacheBackoffInitial = Duration::Seconds(1);
 const double kCacheBackoffMultiplier = 1.6;
@@ -187,91 +184,12 @@ const int kDefaultThrottlePadding = 8;
 const Duration kCacheCleanupTimerInterval = Duration::Minutes(1);
 const int64_t kMaxCacheSizeBytes = 5 * 1024 * 1024;
 
-// Parsed RLS LB policy configuration.
-class RlsLbConfig final : public LoadBalancingPolicy::Config {
- public:
-  struct KeyBuilder {
-    std::map<std::string /*key*/, std::vector<std::string /*header*/>>
-        header_keys;
-    std::string host_key;
-    std::string service_key;
-    std::string method_key;
-    std::map<std::string /*key*/, std::string /*value*/> constant_keys;
-  };
-  using KeyBuilderMap = std::unordered_map<std::string /*path*/, KeyBuilder>;
-
-  struct RouteLookupConfig {
-    KeyBuilderMap key_builder_map;
-    std::string lookup_service;
-    Duration lookup_service_timeout = kDefaultLookupServiceTimeout;
-    Duration max_age = kMaxMaxAge;
-    Duration stale_age = kMaxMaxAge;
-    int64_t cache_size_bytes = 0;
-    std::string default_target;
-
-    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ValidationErrors* errors);
-  };
-
-  RlsLbConfig() = default;
-
-  RlsLbConfig(const RlsLbConfig&) = delete;
-  RlsLbConfig& operator=(const RlsLbConfig&) = delete;
-
-  RlsLbConfig(RlsLbConfig&& other) = delete;
-  RlsLbConfig& operator=(RlsLbConfig&& other) = delete;
-
-  absl::string_view name() const override { return kRls; }
-
-  const KeyBuilderMap& key_builder_map() const {
-    return route_lookup_config_.key_builder_map;
-  }
-  const std::string& lookup_service() const {
-    return route_lookup_config_.lookup_service;
-  }
-  Duration lookup_service_timeout() const {
-    return route_lookup_config_.lookup_service_timeout;
-  }
-  Duration max_age() const { return route_lookup_config_.max_age; }
-  Duration stale_age() const { return route_lookup_config_.stale_age; }
-  int64_t cache_size_bytes() const {
-    return route_lookup_config_.cache_size_bytes;
-  }
-  const std::string& default_target() const {
-    return route_lookup_config_.default_target;
-  }
-  const std::string& rls_channel_service_config() const {
-    return rls_channel_service_config_;
-  }
-  const Json& child_policy_config() const { return child_policy_config_; }
-  const std::string& child_policy_config_target_field_name() const {
-    return child_policy_config_target_field_name_;
-  }
-  RefCountedPtr<LoadBalancingPolicy::Config>
-  default_child_policy_parsed_config() const {
-    return default_child_policy_parsed_config_;
-  }
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&,
-                    ValidationErrors* errors);
-
- private:
-  RouteLookupConfig route_lookup_config_;
-  std::string rls_channel_service_config_;
-  Json child_policy_config_;
-  std::string child_policy_config_target_field_name_;
-  RefCountedPtr<LoadBalancingPolicy::Config>
-      default_child_policy_parsed_config_;
-};
-
 // RLS LB policy.
 class RlsLb final : public LoadBalancingPolicy {
  public:
   explicit RlsLb(Args args);
 
-  absl::string_view name() const override { return kRls; }
+  absl::string_view name() const override { return RlsLbConfig::Name(); }
   absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
@@ -2240,7 +2158,7 @@ void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
 }
 
 //
-// RlsLbFactory
+// RlsLbConfig
 //
 
 struct GrpcKeyBuilder {
@@ -2399,6 +2317,8 @@ struct GrpcKeyBuilder {
   }
 };
 
+}  // namespace
+
 const JsonLoaderInterface* RlsLbConfig::RouteLookupConfig::JsonLoader(
     const JsonArgs&) {
   static const auto* loader =
@@ -2512,6 +2432,7 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   // Parse routeLookupChannelServiceConfig.
   auto it = json.object().find("routeLookupChannelServiceConfig");
   if (it != json.object().end()) {
+    rls_channel_service_config_ = JsonDump(it->second);
     ValidationErrors::ScopedField field(errors,
                                         ".routeLookupChannelServiceConfig");
     // Don't need to save the result here, just need the errors (if any).
@@ -2570,9 +2491,15 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   }
 }
 
+//
+// RlsLbFactory
+//
+
+namespace {
+
 class RlsLbFactory final : public LoadBalancingPolicyFactory {
  public:
-  absl::string_view name() const override { return kRls; }
+  absl::string_view name() const override { return RlsLbConfig::Name(); }
 
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

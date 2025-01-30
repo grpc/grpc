@@ -508,42 +508,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
    private:
-    // A wrapper for a picker that hops into the WorkSerializer to
-    // release the ref to the picker.
-    class PickerWrapper : public LoadBalancingPolicy::SubchannelPicker {
-     public:
-      PickerWrapper(LoadBalancingPolicyTest* test,
-                    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
-          : test_(test), picker_(std::move(picker)) {
-        LOG(INFO) << "creating wrapper " << this << " for picker "
-                  << picker_.get();
-      }
-
-      void Orphaned() override {
-        absl::Notification notification;
-        ExecCtx exec_ctx;
-        test_->work_serializer_->Run(
-            [notification = &notification,
-             picker = std::move(picker_)]() mutable {
-              picker.reset();
-              notification->Notify();
-            },
-            DEBUG_LOCATION);
-        while (!notification.HasBeenNotified()) {
-          test_->fuzzing_ee_->Tick();
-        }
-      }
-
-      LoadBalancingPolicy::PickResult Pick(
-          LoadBalancingPolicy::PickArgs args) override {
-        return picker_->Pick(args);
-      }
-
-     private:
-      LoadBalancingPolicyTest* const test_;
-      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_;
-    };
-
     // Represents an event reported by the LB policy.
     using Event = std::variant<StateUpdate, ReresolutionRequested>;
 
@@ -587,11 +551,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         grpc_connectivity_state state, const absl::Status& status,
         RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
       MutexLock lock(&mu_);
-      StateUpdate update{
-          state, status,
-          IsWorkSerializerDispatchEnabled()
-              ? std::move(picker)
-              : MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
+      StateUpdate update{state, status, std::move(picker)};
       LOG(INFO) << "enqueuing state update from LB policy: "
                 << update.ToString();
       queue_.push_back(std::move(update));

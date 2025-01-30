@@ -30,7 +30,6 @@
 #include "absl/synchronization/mutex.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/time_util.h"
 
 void gpr_mu_init(gpr_mu* mu) {

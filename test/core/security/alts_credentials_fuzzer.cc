@@ -23,86 +23,67 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
+#include <optional>
+#include <string>
+
 #include "absl/log/check.h"
+#include "fuzztest/fuzztest.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
-#include "test/core/test_util/fuzzer_util.h"
 #include "test/core/test_util/test_config.h"
 
-using grpc_core::testing::grpc_fuzzer_get_next_byte;
-using grpc_core::testing::grpc_fuzzer_get_next_string;
-using grpc_core::testing::input_stream;
+const char* StrPtr(const std::optional<std::string>& str) {
+  return str.has_value() ? str->c_str() : nullptr;
+}
 
-// Logging
-bool squelch = true;
-bool leak_check = true;
-
-// Add a random number of target service accounts to client options.
-static void read_target_service_accounts(
-    input_stream* inp, grpc_alts_credentials_options* options) {
-  size_t n = grpc_fuzzer_get_next_byte(inp);
-  for (size_t i = 0; i < n; i++) {
-    char* service_account = grpc_fuzzer_get_next_string(inp, nullptr);
-    if (service_account != nullptr) {
-      grpc_alts_credentials_client_options_add_target_service_account(
-          options, service_account);
-      gpr_free(service_account);
-    }
+void ChannelCredentialsTest(bool enable_untrusted_alts,
+                            std::optional<std::string> handshaker_service_url,
+                            std::vector<std::string> target_service_accounts) {
+  grpc_init();
+  bool is_on_gcp = grpc_alts_is_running_on_gcp();
+  grpc_alts_credentials_options* options =
+      grpc_alts_credentials_client_options_create();
+  for (const auto& service_account : target_service_accounts) {
+    grpc_alts_credentials_client_options_add_target_service_account(
+        options, service_account.c_str());
   }
   // Added to improve code coverage.
   grpc_alts_credentials_client_options_add_target_service_account(options,
                                                                   nullptr);
   grpc_alts_credentials_client_options_add_target_service_account(
       nullptr, "this is service account");
-}
-
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    grpc_disable_all_absl_logs();
+  grpc_channel_credentials* cred = grpc_alts_credentials_create_customized(
+      options, StrPtr(handshaker_service_url), enable_untrusted_alts);
+  if (!enable_untrusted_alts && !is_on_gcp) {
+    CHECK_EQ(cred, nullptr);
+  } else {
+    CHECK_NE(cred, nullptr);
   }
-  input_stream inp = {data, data + size};
+  grpc_channel_credentials_release(cred);
+  grpc_alts_credentials_options_destroy(options);
+  grpc_shutdown();
+}
+FUZZ_TEST(AltsCredentials, ChannelCredentialsTest);
+
+void ServerCredentialsTest(bool enable_untrusted_alts,
+                           std::optional<std::string> handshaker_service_url) {
   grpc_init();
   bool is_on_gcp = grpc_alts_is_running_on_gcp();
-  while (inp.cur != inp.end) {
-    bool enable_untrusted_alts = grpc_fuzzer_get_next_byte(&inp) & 0x01;
-    char* handshaker_service_url =
-        grpc_fuzzer_get_next_byte(&inp) & 0x01
-            ? grpc_fuzzer_get_next_string(&inp, nullptr)
-            : nullptr;
-    if (grpc_fuzzer_get_next_byte(&inp) & 0x01) {
-      // Test ALTS channel credentials.
-      grpc_alts_credentials_options* options =
-          grpc_alts_credentials_client_options_create();
-      read_target_service_accounts(&inp, options);
-      grpc_channel_credentials* cred = grpc_alts_credentials_create_customized(
-          options, handshaker_service_url, enable_untrusted_alts);
-      if (!enable_untrusted_alts && !is_on_gcp) {
-        CHECK_EQ(cred, nullptr);
-      } else {
-        CHECK_NE(cred, nullptr);
-      }
-      grpc_channel_credentials_release(cred);
-      grpc_alts_credentials_options_destroy(options);
-    } else {
-      // Test ALTS server credentials.
-      grpc_alts_credentials_options* options =
-          grpc_alts_credentials_server_options_create();
-      grpc_server_credentials* cred =
-          grpc_alts_server_credentials_create_customized(
-              options, handshaker_service_url, enable_untrusted_alts);
-      if (!enable_untrusted_alts && !is_on_gcp) {
-        CHECK_EQ(cred, nullptr);
-      } else {
-        CHECK_NE(cred, nullptr);
-      }
-      grpc_server_credentials_release(cred);
-      grpc_alts_credentials_options_destroy(options);
-    }
-    gpr_free(handshaker_service_url);
+  grpc_alts_credentials_options* options =
+      grpc_alts_credentials_server_options_create();
+  grpc_server_credentials* cred =
+      grpc_alts_server_credentials_create_customized(
+          options, StrPtr(handshaker_service_url), enable_untrusted_alts);
+  if (!enable_untrusted_alts && !is_on_gcp) {
+    CHECK_EQ(cred, nullptr);
+  } else {
+    CHECK_NE(cred, nullptr);
   }
+  grpc_server_credentials_release(cred);
+  grpc_alts_credentials_options_destroy(options);
   grpc_shutdown();
-  return 0;
 }
+FUZZ_TEST(AltsCredentials, ServerCredentialsTest);

@@ -202,11 +202,11 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "aed4389a9cf7777df7811185770dca7352f19a2fd68a41ae04e47071dada31eb",
-            strip_prefix = "data-plane-api-88a37373e3cb5e1ab09e75dfb302b083168e6654",
+            sha256 = "cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f",
+            strip_prefix = "data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz",
             ],
         )
 
@@ -356,16 +356,7 @@ def grpc_deps():
             ],
         )
 
-    if "google_cloud_cpp" not in native.existing_rules():
-        http_archive(
-            name = "google_cloud_cpp",
-            sha256 = "e53ba3799c052d97acac9a6a6b27af24ce822dbde7bfde973bac9e5da714e6b2",
-            strip_prefix = "google-cloud-cpp-2.33.0",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
-                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
-            ],
-        )
+    grpc_module_deps()
 
     grpc_python_deps()
 
@@ -448,3 +439,17 @@ def grpc_test_only_deps():
             strip_prefix = "libprotobuf-mutator-1f95f8083066f5b38fd2db172e7e7f9aa7c49d2d",
             build_file = "@com_github_grpc_grpc//third_party:libprotobuf_mutator.BUILD",
         )
+
+def grpc_module_deps():
+    if "google_cloud_cpp" not in native.existing_rules():
+        http_archive(
+            name = "google_cloud_cpp",
+            sha256 = "e53ba3799c052d97acac9a6a6b27af24ce822dbde7bfde973bac9e5da714e6b2",
+            strip_prefix = "google-cloud-cpp-2.33.0",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
+                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
+            ],
+        )
+
+grpc_repo_deps_ext = module_extension(implementation = lambda ctx: grpc_module_deps())

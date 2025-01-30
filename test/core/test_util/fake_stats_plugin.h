@@ -224,8 +224,6 @@ class FakeStatsPlugin : public StatsPlugin {
                 descriptor) {
           if (!use_disabled_by_default_metrics &&
               !descriptor.enable_by_default) {
-            VLOG(2) << "FakeStatsPlugin[" << this
-                    << "]: skipping disabled metric: " << descriptor.name;
             return;
           }
           switch (descriptor.instrument_type) {
