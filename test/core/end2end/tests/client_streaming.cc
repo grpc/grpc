@@ -76,19 +76,19 @@ void ClientStreaming(CoreEnd2endTest& test, int messages) {
   EXPECT_EQ(server_status.message(), "xyz");
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, ClientStreaming0) {
+CORE_END2END_TEST(CoreEnd2endTests, ClientStreaming0) {
   ClientStreaming(*this, 0);
 }
-CORE_END2END_TEST(CoreEnd2endTest, ClientStreaming1) {
+CORE_END2END_TEST(CoreEnd2endTests, ClientStreaming1) {
   ClientStreaming(*this, 1);
 }
-CORE_END2END_TEST(CoreEnd2endTest, ClientStreaming3) {
+CORE_END2END_TEST(CoreEnd2endTests, ClientStreaming3) {
   ClientStreaming(*this, 3);
 }
-CORE_END2END_TEST(CoreEnd2endTest, ClientStreaming10) {
+CORE_END2END_TEST(CoreEnd2endTests, ClientStreaming10) {
   ClientStreaming(*this, 10);
 }
-CORE_END2END_TEST(CoreEnd2endTest, ClientStreaming30) {
+CORE_END2END_TEST(CoreEnd2endTests, ClientStreaming30) {
   ClientStreaming(*this, 30);
 }
 

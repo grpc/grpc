@@ -34,7 +34,7 @@ namespace {
 // - 2 retries allowed for ABORTED status
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but server push back disables retrying
-CORE_END2END_TEST(RetryTest, RetryServerPushbackDisabled) {
+CORE_END2END_TEST(RetryTests, RetryServerPushbackDisabled) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(

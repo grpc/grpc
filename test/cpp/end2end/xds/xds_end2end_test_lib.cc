@@ -381,7 +381,9 @@ const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
 XdsEnd2endTest::XdsEnd2endTest(
     std::shared_ptr<ServerCredentials> balancer_credentials)
-    : balancer_(CreateAndStartBalancer("Default Balancer",
+    : scoped_event_engine_(
+          grpc_event_engine::experimental::CreateEventEngine()),
+      balancer_(CreateAndStartBalancer("Default Balancer",
                                        std::move(balancer_credentials))) {
   // Initialize default client-side xDS resources.
   default_listener_ = XdsResourceUtils::DefaultListener();

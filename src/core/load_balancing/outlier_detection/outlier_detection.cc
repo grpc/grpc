@@ -215,12 +215,6 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     };
 
     void Orphaned() override {
-      if (!IsWorkSerializerDispatchEnabled()) {
-        if (subchannel_state_ != nullptr) {
-          subchannel_state_->RemoveSubchannel(this);
-        }
-        return;
-      }
       work_serializer_->Run(
           [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
             if (self->subchannel_state_ != nullptr) {

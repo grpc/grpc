@@ -15,10 +15,12 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
     "grpc_cc_test",
+    "grpc_internal_proto_library",
     "grpc_package",
 )
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/xds")
 
@@ -176,19 +178,34 @@ grpc_cc_test(
     ],
 )
 
-grpc_proto_fuzzer(
-    name = "xds_client_fuzzer",
-    srcs = ["xds_client_fuzzer.cc"],
-    corpus = "xds_client_corpora",
-    external_deps = ["absl/log:log"],
-    proto = "xds_client_fuzzer.proto",
-    proto_deps = [
+grpc_internal_proto_library(
+    name = "xds_client_fuzzer_proto",
+    srcs = [
+        "xds_client_fuzzer.proto",
+    ],
+    deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "@envoy_api//envoy/service/discovery/v3:pkg",
     ],
+)
+
+grpc_cc_proto_library(
+    name = "xds_client_fuzzer_cc_proto",
+    deps = [
+        "xds_client_fuzzer_proto",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "xds_client_fuzzer",
+    srcs = ["xds_client_fuzzer.cc"],
+    external_deps = [
+        "absl/log:log",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     tags = ["no_windows"],
-    uses_event_engine = True,
-    uses_polling = False,
     deps = [
         ":xds_client_test_peer",
         ":xds_transport_fake",
@@ -196,6 +213,7 @@ grpc_proto_fuzzer(
         "//test/core/test_util:grpc_test_util",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
+        "xds_client_fuzzer_cc_proto",
         # These proto deps are needed to ensure that we can read these
         # resource types out of the google.protobuf.Any fields in the
         # textproto files in the corpora.
@@ -205,6 +223,7 @@ grpc_proto_fuzzer(
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
     ],
 )
 

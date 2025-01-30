@@ -405,6 +405,7 @@ for dirname in [
     "test/core/call/yodel",
     "test/core/client_channel",
     "test/core/experiments",
+    "test/core/handshake",
     "test/core/load_balancing",
     "test/core/util",
     "test/core/test_util",

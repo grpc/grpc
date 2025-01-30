@@ -71,13 +71,12 @@ TEST(WorkSerializerTest, ExecuteOneScheduleAndDrain) {
   auto lock = std::make_unique<WorkSerializer>(GetDefaultEventEngine());
   gpr_event done;
   gpr_event_init(&done);
-  lock->Schedule(
+  lock->Run(
       [&done]() {
         EXPECT_EQ(gpr_event_get(&done), nullptr);
         gpr_event_set(&done, reinterpret_cast<void*>(1));
       },
       DEBUG_LOCATION);
-  lock->DrainQueue();
   EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
               nullptr);
   lock.reset();
@@ -173,7 +172,7 @@ class TestThreadScheduleAndDrain {
         ExecutionArgs* c = new ExecutionArgs;
         c->counter = &self->counter_;
         c->value = n++;
-        self->lock_->Schedule(
+        self->lock_->Run(
             [c]() {
               EXPECT_TRUE(*c->counter == c->value - 1);
               *c->counter = c->value;
@@ -181,7 +180,6 @@ class TestThreadScheduleAndDrain {
             },
             DEBUG_LOCATION);
       }
-      self->lock_->DrainQueue();
       // sleep for a little bit, to test other threads picking up the load
       gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
     }
@@ -269,10 +267,6 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
 }
 
 TEST(WorkSerializerTest, MetricsWork) {
-  if (!IsWorkSerializerDispatchEnabled()) {
-    GTEST_SKIP() << "Work serializer dispatch experiment not enabled";
-  }
-
   auto serializer = std::make_unique<WorkSerializer>(GetDefaultEventEngine());
   auto schedule_sleep = [&serializer](absl::Duration how_long) {
     ExecCtx exec_ctx;
@@ -389,8 +383,7 @@ TEST(WorkSerializerTest, RunningInWorkSerializer) {
         EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
         work_serializer2->Run(
             [=]() {
-              EXPECT_EQ(work_serializer1->RunningInWorkSerializer(),
-                        !IsWorkSerializerDispatchEnabled());
+              EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
               EXPECT_TRUE(work_serializer2->RunningInWorkSerializer());
             },
             DEBUG_LOCATION);
@@ -405,8 +398,7 @@ TEST(WorkSerializerTest, RunningInWorkSerializer) {
         work_serializer1->Run(
             [=]() {
               EXPECT_TRUE(work_serializer1->RunningInWorkSerializer());
-              EXPECT_EQ(work_serializer2->RunningInWorkSerializer(),
-                        !IsWorkSerializerDispatchEnabled());
+              EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
             },
             DEBUG_LOCATION);
       },
