@@ -369,12 +369,28 @@ struct SimpleIntBasedMetadata : public SimpleIntBasedMetadataBase<Int> {
 };
 
 // grpc-status metadata trait.
-struct GrpcStatusMetadata
-    : public SimpleIntBasedMetadata<grpc_status_code, GRPC_STATUS_UNKNOWN> {
+struct GrpcStatusMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallIntegralValuesCompressor<16>;
   static absl::string_view key() { return "grpc-status"; }
+  static grpc_status_code ParseMemento(Slice value, bool,
+                                       MetadataParseErrorFn on_error) {
+    int64_t wire_value;
+    if (!absl::SimpleAtoi(value.as_string_view(), &wire_value)) {
+      on_error("not an integer", value);
+      return GRPC_STATUS_UNKNOWN;
+    }
+    if (wire_value < 0) {
+      on_error("negative value", value);
+      return GRPC_STATUS_UNKNOWN;
+    }
+    if (wire_value >= GRPC_STATUS__DO_NOT_USE) {
+      on_error("out of range", value);
+      return GRPC_STATUS_UNKNOWN;
+    }
+    return static_cast<grpc_status_code>(wire_value);
+  }
 };
 
 // grpc-previous-rpc-attempts metadata trait.
