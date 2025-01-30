@@ -146,16 +146,6 @@ class OpenTelemetryPluginImpl::NPCMetricsKeyValueIterable
   const OptionalLabelsBitSet& optional_labels_bits_;
 };
 
-absl::string_view NoStdStringViewToAbslStringView(
-    opentelemetry::nostd::string_view string) {
-  return absl::string_view(string.data(), string.size());
-}
-
-opentelemetry::nostd::string_view AbslStringViewToNoStdStringView(
-    absl::string_view string) {
-  return opentelemetry::nostd::string_view(string.data(), string.size());
-}
-
 //
 // OpenTelemetryPluginBuilderImpl
 //
@@ -400,6 +390,14 @@ void OpenTelemetryPluginImpl::ServerBuilderOption::UpdateArguments(
   plugin_->AddToChannelArguments(args);
 }
 
+namespace {
+opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> MaybeMakeTracer(
+    opentelemetry::trace::TracerProvider* tracer_provider) {
+  if (tracer_provider == nullptr) return nullptr;
+  return tracer_provider->GetTracer("grpc-c++", GRPC_CPP_VERSION_STRING);
+}
+}  // namespace
+
 OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
     const absl::flat_hash_set<std::string>& metrics,
     opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
@@ -425,11 +423,7 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
           std::move(generic_method_attribute_filter)),
       plugin_options_(std::move(plugin_options)),
       tracer_provider_(std::move(tracer_provider)),
-      tracer_(
-          tracer_provider_ != nullptr
-              ? tracer_provider_->GetTracer("grpc-c++", GRPC_CPP_VERSION_STRING)
-              : opentelemetry::nostd::shared_ptr<
-                    opentelemetry::trace::Tracer>()),
+      tracer_(MaybeMakeTracer(tracer_provider_.get())),
       text_map_propagator_(std::move(text_map_propagator)),
       channel_scope_filter_(std::move(channel_scope_filter)) {
   if (meter_provider_ != nullptr) {
@@ -683,9 +677,6 @@ OpenTelemetryPluginImpl::OptionalLabelStringToKey(absl::string_view key) {
 
 absl::string_view OpenTelemetryPluginImpl::GetMethodFromPath(
     const grpc_core::Slice& path) {
-  if (path.empty()) {
-    return "";
-  }
   // Check for leading '/' and trim it if present.
   return absl::StripPrefix(path.as_string_view(), "/");
 }
@@ -728,9 +719,7 @@ void OpenTelemetryPluginImpl::AddCounter(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
     uint64_t value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
-  if (meter_provider_ == nullptr) {
-    return;
-  }
+  if (meter_provider_ == nullptr) return;
   const auto& instrument_data = instruments_data_.at(handle.index);
   if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
@@ -761,9 +750,7 @@ void OpenTelemetryPluginImpl::AddCounter(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
     double value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
-  if (meter_provider_ == nullptr) {
-    return;
-  }
+  if (meter_provider_ == nullptr) return;
   const auto& instrument_data = instruments_data_.at(handle.index);
   if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
@@ -794,9 +781,7 @@ void OpenTelemetryPluginImpl::RecordHistogram(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
     uint64_t value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
-  if (meter_provider_ == nullptr) {
-    return;
-  }
+  if (meter_provider_ == nullptr) return;
   const auto& instrument_data = instruments_data_.at(handle.index);
   if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
@@ -829,9 +814,7 @@ void OpenTelemetryPluginImpl::RecordHistogram(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
     double value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
-  if (meter_provider_ == nullptr) {
-    return;
-  }
+  if (meter_provider_ == nullptr) return;
   const auto& instrument_data = instruments_data_.at(handle.index);
   if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
@@ -862,9 +845,7 @@ void OpenTelemetryPluginImpl::RecordHistogram(
 
 void OpenTelemetryPluginImpl::AddCallback(
     grpc_core::RegisteredMetricCallback* callback) {
-  if (meter_provider_ == nullptr) {
-    return;
-  }
+  if (meter_provider_ == nullptr) return;
   std::vector<
       std::variant<CallbackGaugeState<int64_t>*, CallbackGaugeState<double>*>>
       gauges_that_need_to_add_callback;
@@ -941,9 +922,7 @@ void OpenTelemetryPluginImpl::AddCallback(
 
 void OpenTelemetryPluginImpl::RemoveCallback(
     grpc_core::RegisteredMetricCallback* callback) {
-  if (meter_provider_ == nullptr) {
-    return;
-  }
+  if (meter_provider_ == nullptr) return;
   {
     grpc_core::MutexLock lock(&mu_);
     callback_timestamps_.erase(callback);
@@ -1130,17 +1109,16 @@ class GrpcTraceBinTextMapPropagator : public TextMapPropagator {
       return;
     }
     carrier.Set("grpc-trace-bin",
-                // gRPC C++ does not have RTTI, so we encode bytes to String to
-                // comply with the TextMapSetter API.
                 absl::Base64Escape(absl::string_view(
                     reinterpret_cast<char*>(
                         SpanContextToGrpcTraceBinHeader(span_context).data()),
                     kGrpcTraceBinHeaderLen)));
   }
 
-  bool Fields(opentelemetry::nostd::function_ref<bool(
-                  opentelemetry::nostd::string_view)>) const noexcept override {
-    return true;
+  bool Fields(opentelemetry::nostd::function_ref<
+              bool(opentelemetry::nostd::string_view)>
+                  callback) const noexcept override {
+    return callback("grpc-trace-bin");
   }
 
  private:
@@ -1199,10 +1177,8 @@ opentelemetry::nostd::string_view GrpcTextMapCarrier::Get(
   // Store the string on the arena since we are returning a string_view.
   std::string* arena_stored_string =
       grpc_core::GetContext<grpc_core::Arena>()->ManagedNew<std::string>(
-          ret_val);
+          std::move(ret_val));
   return *arena_stored_string;
-  return AbslStringViewToNoStdStringView(
-      metadata_->GetStringValue(absl_key, &scratch).value_or(""));
 }
 
 void GrpcTextMapCarrier::Set(opentelemetry::nostd::string_view key,
@@ -1214,8 +1190,9 @@ void GrpcTextMapCarrier::Set(opentelemetry::nostd::string_view key,
     if (!absl::Base64Unescape(absl_value, &unescaped_value)) {
       return;
     }
-    metadata_->Set(grpc_core::GrpcTraceBinMetadata(),
-                   grpc_core::Slice::FromCopiedString(unescaped_value));
+    metadata_->Set(
+        grpc_core::GrpcTraceBinMetadata(),
+        grpc_core::Slice::FromCopiedString(std::move(unescaped_value)));
   } else if (absl::EndsWith(absl_key, "-bin")) {
     LOG(ERROR) << "Binary propagator other than GrpcTraceBinPropagator is "
                   "not supported.";

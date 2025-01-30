@@ -92,6 +92,23 @@ class OTelTracingTest : public ::testing::Test {
     grpc::Status status = stub_->Echo(&context, request, &response);
   }
 
+  // Waits for \a timeout for \a expected_size number of spans and returns them.
+  std::vector<std::unique_ptr<opentelemetry::sdk::trace::SpanData>> GetSpans(
+      size_t expected_size, absl::Duration timeout = absl::Seconds(10)) {
+    absl::Time start_time = absl::Now();
+    std::vector<std::unique_ptr<opentelemetry::sdk::trace::SpanData>> spans;
+    do {
+      auto current_spans = data_->GetSpans();
+      spans.insert(spans.end(), std::make_move_iterator(current_spans.begin()),
+                   std::make_move_iterator(current_spans.end()));
+      if (absl::Now() - start_time > timeout) {
+        break;
+      }
+      std::this_thread::yield();
+    } while (spans.size() != expected_size);
+    return spans;
+  }
+
   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> tracer_;
   std::shared_ptr<opentelemetry::exporter::memory::InMemorySpanData> data_;
   CallbackTestServiceImpl service_;
@@ -102,8 +119,7 @@ class OTelTracingTest : public ::testing::Test {
 
 TEST_F(OTelTracingTest, Basic) {
   SendRPC();
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  auto spans = data_->GetSpans();
+  auto spans = GetSpans(3);
   SpanData* client_span;
   SpanData* attempt_span;
   SpanData* server_span;
@@ -126,7 +142,7 @@ TEST_F(OTelTracingTest, Basic) {
                        [](const SpanDataEvent& event) {
                          return event.GetName() == "Outbound message";
                        });
-      EXPECT_NE(outbound_message_event, span->GetEvents().end());
+      ASSERT_NE(outbound_message_event, span->GetEvents().end());
       EXPECT_THAT(outbound_message_event->GetAttributes(),
                   UnorderedElementsAre(
                       Pair("sequence-number", VariantWith<uint64_t>(0)),
@@ -137,7 +153,7 @@ TEST_F(OTelTracingTest, Basic) {
                        [](const SpanDataEvent& event) {
                          return event.GetName() == "Inbound message";
                        });
-      EXPECT_NE(inbound_message_event, span->GetEvents().end());
+      ASSERT_NE(inbound_message_event, span->GetEvents().end());
       EXPECT_THAT(inbound_message_event->GetAttributes(),
                   UnorderedElementsAre(
                       Pair("sequence-number", VariantWith<uint64_t>(0)),
@@ -151,7 +167,7 @@ TEST_F(OTelTracingTest, Basic) {
                        [](const SpanDataEvent& event) {
                          return event.GetName() == "Outbound message";
                        });
-      EXPECT_NE(outbound_message_event, span->GetEvents().end());
+      ASSERT_NE(outbound_message_event, span->GetEvents().end());
       EXPECT_THAT(outbound_message_event->GetAttributes(),
                   UnorderedElementsAre(
                       Pair("sequence-number", VariantWith<uint64_t>(0)),
@@ -162,7 +178,7 @@ TEST_F(OTelTracingTest, Basic) {
                        [](const SpanDataEvent& event) {
                          return event.GetName() == "Inbound message";
                        });
-      EXPECT_NE(inbound_message_event, span->GetEvents().end());
+      ASSERT_NE(inbound_message_event, span->GetEvents().end());
       EXPECT_THAT(inbound_message_event->GetAttributes(),
                   UnorderedElementsAre(
                       Pair("sequence-number", VariantWith<uint64_t>(0)),
@@ -186,19 +202,18 @@ TEST_F(OTelTracingTest, TestApplicationContextFlows) {
     auto scope = opentelemetry::sdk::trace::Tracer::WithActiveSpan(span);
     SendRPC();
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  auto spans = data_->GetSpans();
+  auto spans = GetSpans(4);
   EXPECT_EQ(spans.size(), 4);
   const auto test_span = std::find_if(
       spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
         return span->GetName() == "TestSpan";
       });
-  EXPECT_NE(test_span, spans.end());
+  ASSERT_NE(test_span, spans.end());
   const auto client_span = std::find_if(
       spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
         return span->GetName() == "Sent.grpc.testing.EchoTestService/Echo";
       });
-  EXPECT_NE(test_span, spans.end());
+  ASSERT_NE(test_span, spans.end());
   EXPECT_EQ((*test_span)->GetTraceId(), (*client_span)->GetTraceId());
   EXPECT_EQ((*client_span)->GetParentSpanId(), (*test_span)->GetSpanId());
 }
@@ -211,21 +226,20 @@ TEST_F(OTelTracingTest, MessageEventsWithoutCompression) {
     grpc::ClientContext context;
     grpc::Status status = stub_->Echo(&context, request, &response);
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  auto spans = data_->GetSpans();
+  auto spans = GetSpans(3);
   EXPECT_EQ(spans.size(), 3);
   const auto attempt_span = std::find_if(
       spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
         return span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo";
       });
-  EXPECT_NE(attempt_span, spans.end());
+  ASSERT_NE(attempt_span, spans.end());
   // Verify outbound message on the attempt
   auto outbound_message_event = std::find_if(
       (*attempt_span)->GetEvents().begin(), (*attempt_span)->GetEvents().end(),
       [](const SpanDataEvent& event) {
         return event.GetName() == "Outbound message";
       });
-  EXPECT_NE(outbound_message_event, (*attempt_span)->GetEvents().end());
+  ASSERT_NE(outbound_message_event, (*attempt_span)->GetEvents().end());
   EXPECT_THAT(
       outbound_message_event->GetAttributes(),
       UnorderedElementsAre(Pair("sequence-number", VariantWith<uint64_t>(0)),
@@ -236,7 +250,7 @@ TEST_F(OTelTracingTest, MessageEventsWithoutCompression) {
       [](const SpanDataEvent& event) {
         return event.GetName() == "Inbound message";
       });
-  EXPECT_NE(inbound_message_event, (*attempt_span)->GetEvents().end());
+  ASSERT_NE(inbound_message_event, (*attempt_span)->GetEvents().end());
   EXPECT_THAT(
       inbound_message_event->GetAttributes(),
       UnorderedElementsAre(Pair("sequence-number", VariantWith<uint64_t>(0)),
@@ -245,14 +259,14 @@ TEST_F(OTelTracingTest, MessageEventsWithoutCompression) {
       spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
         return span->GetName() == "Recv.grpc.testing.EchoTestService/Echo";
       });
-  EXPECT_NE(server_span, spans.end());
+  ASSERT_NE(server_span, spans.end());
   // Verify inbound messages on the server
   inbound_message_event = std::find_if(
       (*server_span)->GetEvents().begin(), (*server_span)->GetEvents().end(),
       [](const SpanDataEvent& event) {
         return event.GetName() == "Inbound message";
       });
-  EXPECT_NE(inbound_message_event, (*server_span)->GetEvents().end());
+  ASSERT_NE(inbound_message_event, (*server_span)->GetEvents().end());
   EXPECT_THAT(
       inbound_message_event->GetAttributes(),
       UnorderedElementsAre(Pair("sequence-number", VariantWith<uint64_t>(0)),
@@ -263,7 +277,7 @@ TEST_F(OTelTracingTest, MessageEventsWithoutCompression) {
       [](const SpanDataEvent& event) {
         return event.GetName() == "Outbound message";
       });
-  EXPECT_NE(outbound_message_event, (*server_span)->GetEvents().end());
+  ASSERT_NE(outbound_message_event, (*server_span)->GetEvents().end());
   EXPECT_THAT(
       outbound_message_event->GetAttributes(),
       UnorderedElementsAre(Pair("sequence-number", VariantWith<uint64_t>(0)),
@@ -280,21 +294,20 @@ TEST_F(OTelTracingTest, CompressionMessageEvents) {
     context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
     grpc::Status status = stub_->Echo(&context, request, &response);
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  auto spans = data_->GetSpans();
+  auto spans = GetSpans(3);
   EXPECT_EQ(spans.size(), 3);
   const auto attempt_span = std::find_if(
       spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
         return span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo";
       });
-  EXPECT_NE(attempt_span, spans.end());
+  ASSERT_NE(attempt_span, spans.end());
   // Verify outbound messages on the attempt
   auto outbound_message_event = std::find_if(
       (*attempt_span)->GetEvents().begin(), (*attempt_span)->GetEvents().end(),
       [](const SpanDataEvent& event) {
         return event.GetName() == "Outbound message";
       });
-  EXPECT_NE(outbound_message_event, (*attempt_span)->GetEvents().end());
+  ASSERT_NE(outbound_message_event, (*attempt_span)->GetEvents().end());
   EXPECT_THAT(
       outbound_message_event->GetAttributes(),
       UnorderedElementsAre(Pair("sequence-number", VariantWith<uint64_t>(0)),
@@ -304,7 +317,7 @@ TEST_F(OTelTracingTest, CompressionMessageEvents) {
       [](const SpanDataEvent& event) {
         return event.GetName() == "Outbound message compressed";
       });
-  EXPECT_NE(outbound_message_compressed_event,
+  ASSERT_NE(outbound_message_compressed_event,
             (*attempt_span)->GetEvents().end());
   EXPECT_THAT(
       outbound_message_compressed_event->GetAttributes(),
@@ -317,7 +330,7 @@ TEST_F(OTelTracingTest, CompressionMessageEvents) {
       [](const SpanDataEvent& event) {
         return event.GetName() == "Inbound compressed message";
       });
-  EXPECT_NE(inbound_message_event, (*attempt_span)->GetEvents().end());
+  ASSERT_NE(inbound_message_event, (*attempt_span)->GetEvents().end());
   EXPECT_THAT(
       inbound_message_event->GetAttributes(),
       UnorderedElementsAre(
@@ -328,7 +341,7 @@ TEST_F(OTelTracingTest, CompressionMessageEvents) {
       [](const SpanDataEvent& event) {
         return event.GetName() == "Inbound message";
       });
-  EXPECT_NE(inbound_message_decompressed_event,
+  ASSERT_NE(inbound_message_decompressed_event,
             (*attempt_span)->GetEvents().end());
   EXPECT_THAT(
       inbound_message_decompressed_event->GetAttributes(),
@@ -338,14 +351,14 @@ TEST_F(OTelTracingTest, CompressionMessageEvents) {
       spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
         return span->GetName() == "Recv.grpc.testing.EchoTestService/Echo";
       });
-  EXPECT_NE(server_span, spans.end());
+  ASSERT_NE(server_span, spans.end());
   // Verify inbound messages on the server
   inbound_message_event = std::find_if(
       (*server_span)->GetEvents().begin(), (*server_span)->GetEvents().end(),
       [](const SpanDataEvent& event) {
         return event.GetName() == "Inbound compressed message";
       });
-  EXPECT_NE(inbound_message_event, (*server_span)->GetEvents().end());
+  ASSERT_NE(inbound_message_event, (*server_span)->GetEvents().end());
   EXPECT_THAT(
       inbound_message_event->GetAttributes(),
       UnorderedElementsAre(
@@ -356,7 +369,7 @@ TEST_F(OTelTracingTest, CompressionMessageEvents) {
       [](const SpanDataEvent& event) {
         return event.GetName() == "Inbound message";
       });
-  EXPECT_NE(inbound_message_decompressed_event,
+  ASSERT_NE(inbound_message_decompressed_event,
             (*server_span)->GetEvents().end());
   EXPECT_THAT(
       inbound_message_decompressed_event->GetAttributes(),
@@ -368,7 +381,7 @@ TEST_F(OTelTracingTest, CompressionMessageEvents) {
       [](const SpanDataEvent& event) {
         return event.GetName() == "Outbound message";
       });
-  EXPECT_NE(outbound_message_event, (*server_span)->GetEvents().end());
+  ASSERT_NE(outbound_message_event, (*server_span)->GetEvents().end());
   EXPECT_THAT(
       outbound_message_event->GetAttributes(),
       UnorderedElementsAre(Pair("sequence-number", VariantWith<uint64_t>(0)),
@@ -378,7 +391,7 @@ TEST_F(OTelTracingTest, CompressionMessageEvents) {
       [](const SpanDataEvent& event) {
         return event.GetName() == "Outbound message compressed";
       });
-  EXPECT_NE(outbound_message_compressed_event,
+  ASSERT_NE(outbound_message_compressed_event,
             (*server_span)->GetEvents().end());
   EXPECT_THAT(
       outbound_message_compressed_event->GetAttributes(),
@@ -400,14 +413,13 @@ TEST_F(OTelTracingTest, FailedStatus) {
     context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
     grpc::Status status = stub_->Echo(&context, request, &response);
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  auto spans = data_->GetSpans();
+  auto spans = GetSpans(3);
   EXPECT_EQ(spans.size(), 3);
   const auto attempt_span = std::find_if(
       spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
         return span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo";
       });
-  EXPECT_NE(attempt_span, spans.end());
+  ASSERT_NE(attempt_span, spans.end());
   EXPECT_EQ((*attempt_span)->GetStatus(),
             opentelemetry::trace::StatusCode::kError);
   EXPECT_THAT((*attempt_span)->GetDescription(),
@@ -416,7 +428,7 @@ TEST_F(OTelTracingTest, FailedStatus) {
       spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
         return span->GetName() == "Recv.grpc.testing.EchoTestService/Echo";
       });
-  EXPECT_NE(server_span, spans.end());
+  ASSERT_NE(server_span, spans.end());
   EXPECT_EQ((*server_span)->GetStatus(),
             opentelemetry::trace::StatusCode::kError);
   EXPECT_THAT((*server_span)->GetDescription(),
@@ -437,15 +449,14 @@ TEST_F(OTelTracingTest, Streaming) {
     stream->WritesDone();
     EXPECT_TRUE(stream->Finish().ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  auto spans = data_->GetSpans();
+  auto spans = GetSpans(3);
   EXPECT_EQ(spans.size(), 3);
   const auto attempt_span = std::find_if(
       spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
         return span->GetName() ==
                "Attempt.grpc.testing.EchoTestService/BidiStream";
       });
-  EXPECT_NE(attempt_span, spans.end());
+  ASSERT_NE(attempt_span, spans.end());
   // Verify messages on the attempt span
   std::vector<uint64_t> outbound_seq_nums;
   std::vector<uint64_t> inbound_seq_nums;
@@ -485,7 +496,7 @@ TEST_F(OTelTracingTest, Streaming) {
               UnorderedElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
   EXPECT_THAT(inbound_seq_nums,
               UnorderedElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
-  EXPECT_NE(server_span, spans.end());
+  ASSERT_NE(server_span, spans.end());
 }
 
 TEST_F(OTelTracingTest, Retries) {
@@ -517,8 +528,7 @@ TEST_F(OTelTracingTest, Retries) {
     grpc::ClientContext context;
     grpc::Status status = stub->Echo(&context, request, &response);
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  auto spans = data_->GetSpans();
+  auto spans = GetSpans(3);
   EXPECT_EQ(spans.size(), 7);  // 1 client span, 3 attempt spans, 3 server spans
   std::vector<uint64_t> attempt_seq_nums;
   uint64_t server_span_count = 0;

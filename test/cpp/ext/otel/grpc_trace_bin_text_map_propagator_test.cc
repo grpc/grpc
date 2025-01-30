@@ -30,6 +30,10 @@ namespace grpc {
 namespace testing {
 namespace {
 
+using ::testing::MockFunction;
+using ::testing::Return;
+using ::testing::StrictMock;
+
 class TestTextMapCarrier
     : public opentelemetry::context::propagation::TextMapCarrier {
  public:
@@ -87,15 +91,18 @@ TEST(GrpcTraceBinTextMapPropagatorTest, Inject) {
 
 TEST(GrpcTraceBinTextMapPropagatorTest, Extract) {
   TestTextMapCarrier carrier;
-  std::array<char, 29> trace_bin_val;
-  memcpy(trace_bin_val.data(),
-         "\x00\x00"
-         "0123456789ABCDEF"
-         "\x01"
-         "01234567\x02\x01",
-         29);
+  constexpr char kTraceBinValue[] =
+      "\x00"              // version
+      "\x00"              // field 0
+      "0123456789ABCDEF"  // trace
+      "\x01"              // field 1
+      "01234567"          // span
+      "\x02"              // field 2
+      "\x01";             // flag
+  absl::string_view trace_bin_value(kTraceBinValue, sizeof(kTraceBinValue));
   carrier.Set("grpc-trace-bin",
-              absl::Base64Escape(absl::string_view(trace_bin_val.data(), 29)));
+              absl::Base64Escape(absl::string_view(
+                  kTraceBinValue, sizeof(kTraceBinValue) - 1)));
   auto propagator = experimental::MakeGrpcTraceBinTextMapPropagator();
   opentelemetry::context::Context context;
   context = propagator->Extract(carrier, context);
@@ -109,6 +116,14 @@ TEST(GrpcTraceBinTextMapPropagatorTest, Extract) {
       opentelemetry::trace::SpanId(opentelemetry::nostd::span<const uint8_t, 8>(
           reinterpret_cast<const uint8_t*>("01234567"), 8)));
   EXPECT_EQ(span_context.trace_flags().flags(), 1);
+}
+
+TEST(GrpcTraceBinTextMapPropagatorTest, Fields) {
+  auto propagator = experimental::MakeGrpcTraceBinTextMapPropagator();
+  StrictMock<MockFunction<bool(opentelemetry::nostd::string_view)>>(
+      mock_callback);
+  EXPECT_CALL(mock_callback, Call("grpc-trace-bin")).WillOnce(Return(true));
+  propagator->Fields(mock_callback.AsStdFunction());
 }
 
 }  // namespace
