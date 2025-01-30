@@ -26,16 +26,16 @@ ConfigVars::Overrides OverridesFromFuzzConfigVars(
   if (vars.has_enable_fork_support()) {
     overrides.enable_fork_support = vars.enable_fork_support();
   }
-  if (vars.has_dns_resolver() && !vars.dns_resolver().empty()) {
+  if (vars.has_dns_resolver()) {
     overrides.dns_resolver = vars.dns_resolver();
   }
-  if (vars.has_verbosity() && !vars.verbosity().empty()) {
+  if (vars.has_verbosity()) {
     overrides.verbosity = vars.verbosity();
   }
-  if (vars.has_experiments() && !vars.experiments().empty()) {
+  if (vars.has_experiments()) {
     overrides.experiments = vars.experiments();
   }
-  if (vars.has_trace() && !vars.trace().empty()) {
+  if (vars.has_trace()) {
     overrides.trace = vars.trace();
   }
   return overrides;
