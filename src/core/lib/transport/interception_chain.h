@@ -219,10 +219,8 @@ class InterceptionChainBuilder final {
   // are added below it.
   template <typename F>
   InterceptionChainBuilder& AddOnServerTrailingMetadataForEachInterceptor(F f) {
-    LOG(INFO) << "Add";
     AddOnServerTrailingMetadata(f);
     on_new_interception_tail_.emplace_back([f](InterceptionChainBuilder* b) {
-      LOG(INFO) << "AddAnother";
       b->AddOnServerTrailingMetadata(f);
     });
     return *this;
