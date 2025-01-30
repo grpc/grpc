@@ -122,14 +122,12 @@ void HealthProducer::HealthChecker::NotifyWatchersLocked(
   GRPC_TRACE_LOG(health_check_client, INFO)
       << "HealthProducer " << producer_.get() << " HealthChecker " << this
       << ": reporting state " << ConnectivityStateName(state) << " to watchers";
-  work_serializer_->Run(
-      [self = Ref(), state, status = std::move(status)]() {
-        MutexLock lock(&self->producer_->mu_);
-        for (HealthWatcher* watcher : self->watchers_) {
-          watcher->Notify(state, status);
-        }
-      },
-      DEBUG_LOCATION);
+  work_serializer_->Run([self = Ref(), state, status = std::move(status)]() {
+    MutexLock lock(&self->producer_->mu_);
+    for (HealthWatcher* watcher : self->watchers_) {
+      watcher->Notify(state, status);
+    }
+  });
 }
 
 void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
@@ -152,8 +150,7 @@ void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
             watcher->Notify(state, self->status_);
           }
         }
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 //
@@ -442,8 +439,7 @@ void HealthWatcher::Notify(grpc_connectivity_state state, absl::Status status) {
   work_serializer_->Run(
       [watcher = watcher_, state, status = std::move(status)]() mutable {
         watcher->OnConnectivityStateChange(state, std::move(status));
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 //
