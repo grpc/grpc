@@ -15,8 +15,14 @@
 #include "src/core/call/delay_tracker.h"
 
 #include "gtest/gtest.h"
+#include "test/core/promise/poll_matcher.h"
+#include "test/core/promise/test_context.h"
 
 namespace grpc_core {
+
+//
+// DelayTracker tests
+//
 
 class DelayTrackerTest : public ::testing::Test {
  protected:
@@ -79,6 +85,44 @@ TEST_F(DelayTrackerTest, Children) {
             "foo delay 5000ms; "
             "attempt 0:[bar delay 3000ms]; "
             "attempt 1:[baz delay 4000ms]");
+}
+
+//
+// TrackDelay promise tests
+//
+
+class TrackDelayTest : public ::testing::Test {
+ protected:
+  void IncrementTimeBy(Duration duration) {
+    time_cache_.TestOnlySetNow(Timestamp::Now() + duration);
+  }
+
+  RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
+  TestContext<Arena> context_{arena_.get()};
+  ScopedTimeCache time_cache_;
+};
+
+TEST_F(TrackDelayTest, NoDelay) {
+  auto x = TrackDelay("foo", []() { return 42; });
+  EXPECT_THAT(x(), IsReady(42));
+  EXPECT_EQ(MaybeGetContext<DelayTracker>(), nullptr);
+}
+
+TEST_F(TrackDelayTest, Delay) {
+  EXPECT_EQ(MaybeGetContext<DelayTracker>(), nullptr);
+  auto x = TrackDelay("foo", [n = 1]() mutable -> Poll<int> {
+    if (n == 0) return 42;
+    --n;
+    return Pending{};
+  });
+  EXPECT_THAT(x(), IsPending());
+  DelayTracker* tracker = MaybeGetContext<DelayTracker>();
+  ASSERT_NE(tracker, nullptr);
+  IncrementTimeBy(Duration::Seconds(1));
+  EXPECT_EQ(tracker->GetDelayInfo(), "foo timed out after 1000ms");
+  IncrementTimeBy(Duration::Seconds(2));
+  EXPECT_THAT(x(), IsReady(42));
+  EXPECT_EQ(tracker->GetDelayInfo(), "foo delay 3000ms");
 }
 
 }  // namespace grpc_core

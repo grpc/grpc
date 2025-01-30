@@ -9499,6 +9499,8 @@ targets:
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
+  - test/core/promise/poll_matcher.h
+  - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/delay_tracker.cc

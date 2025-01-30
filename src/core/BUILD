@@ -1661,6 +1661,7 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
+        "context",
         "time",
     ],
 )

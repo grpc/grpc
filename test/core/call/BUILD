@@ -102,6 +102,8 @@ grpc_cc_test(
     external_deps = ["gtest"],
     deps = [
         "//src/core:delay_tracker",
+        "//test/core/promise:poll_matcher",
+        "//test/core/promise:test_context",
     ],
 )
 
