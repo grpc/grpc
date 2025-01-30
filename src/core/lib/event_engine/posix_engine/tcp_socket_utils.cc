@@ -191,13 +191,7 @@ bool IsIpv6LoopbackAvailable() {
 
 #else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-void PosixSocketWrapper::ConfigureDefaultTcpUserTimeout(bool /*enable*/,
-                                                        int /*timeout*/,
-                                                        bool /*is_client*/) {}
-
-bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
-  grpc_core::Crash("unimplemented");
-}
+bool IsIpv6LoopbackAvailable() { grpc_core::Crash("unimplemented"); }
 
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 

@@ -17,7 +17,7 @@
 #include <utility>
 
 #include "absl/strings/str_cat.h"
-#include "file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 

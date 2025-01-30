@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "absl/status/statusor.h"
-#include "file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 
 namespace grpc_event_engine::experimental {
 
