@@ -225,5 +225,25 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
 }
 FUZZ_TEST(HpackSyncFuzzer, FuzzOneInput);
 
+auto ParseTestProto(const std::string& proto) {
+  hpack_sync_fuzzer::Msg msg;
+  CHECK(proto2::TextFormat::ParseFromString(proto, &msg));
+  return msg;
+}
+
+TEST(HpackSyncFuzzer, FuzzOneInputRegression1) {
+  FuzzOneInput(ParseTestProto(
+      R"pb(
+        headers { literal_not_idx { key: "grpc-status" value: "72" } }
+      )pb"));
+}
+
+TEST(HpackSyncFuzzer, FuzzOneInputRegression2) {
+  FuzzOneInput(ParseTestProto(
+      R"pb(
+        headers { literal_not_idx { key: "grpc-status" value: "-1" } }
+      )pb"));
+}
+
 }  // namespace
 }  // namespace grpc_core
