@@ -194,7 +194,6 @@ TEST(ServerFuzzers, ChaoticGoodRegression1) {
                             verbosity: "\004\004\004\000>G\000\000\000"
                             dns_resolver: "d//"
                             trace: "??\000\000\177\177\177\177\000\000\000"
-                            experiments: 8146841458895622537
                           }
                           channel_args {
                             args {}

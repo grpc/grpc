@@ -283,6 +283,6 @@ void Fuzz(const event_engine_client_channel_resolver::Msg& msg) {
 FUZZ_TEST(ResolverFuzzer, Fuzz)
     .WithDomains(
         ::fuzztest::Arbitrary<event_engine_client_channel_resolver::Msg>()
-            .WithProtobufField("config_vars", AnyConfigVars()));
+            .WithProtobufField("config_vars", grpc_core::AnyConfigVars()));
 
 }  // namespace
