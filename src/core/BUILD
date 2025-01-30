@@ -1657,7 +1657,7 @@ grpc_cc_library(
         "call/delay_tracker.h",
     ],
     external_deps = [
-        "absl/strings"
+        "absl/strings",
     ],
     deps = [
         "arena",

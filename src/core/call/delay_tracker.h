@@ -38,10 +38,10 @@ class DelayTracker {
   DelayTracker& operator=(const DelayTracker&) = delete;
 
   // Movable.
-  DelayTracker(DelayTracker&& other)
+  DelayTracker(DelayTracker&& other) noexcept
       : delays_(std::move(other.delays_)),
         children_(std::move(other.children_)) {}
-  DelayTracker& operator=(DelayTracker&& other) {
+  DelayTracker& operator=(DelayTracker&& other) noexcept {
     delays_ = std::move(other.delays_);
     children_ = std::move(other.children_);
     return *this;

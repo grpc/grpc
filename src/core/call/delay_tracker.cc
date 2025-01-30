@@ -49,8 +49,8 @@ std::string DelayTracker::GetDelayInfo() const {
     }
   }
   for (const Child& child : children_) {
-    parts.push_back(absl::StrCat(
-        child.description, ":[", child.delay_tracker->GetDelayInfo(), "]"));
+    parts.push_back(absl::StrCat(child.description, ":[",
+                                 child.delay_tracker->GetDelayInfo(), "]"));
   }
   return absl::StrJoin(parts, "; ");
 }
