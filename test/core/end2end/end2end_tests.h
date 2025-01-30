@@ -719,6 +719,14 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
   void suite##_##name(const grpc_core::CoreTestConfiguration* config,          \
                       core_end2end_test_fuzzer::Msg msg) {                     \
     if (absl::StartsWith(#name, "DISABLED_")) GTEST_SKIP() << "disabled test"; \
+    if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled() ||    \
+        !IsEventEngineDnsEnabled()) {                                          \
+      GTEST_SKIP() << "fuzzers need event engine";                             \
+    }                                                                          \
+    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
+      GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
+                      "fuzzing currently";                                     \
+    }                                                                          \
     CoreEnd2endTest_##suite##_##name(config, &msg).RunTest();                  \
     grpc_event_engine::experimental::ShutdownDefaultEventEngine();             \
   }                                                                            \

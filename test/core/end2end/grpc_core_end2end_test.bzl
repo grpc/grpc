@@ -100,7 +100,7 @@ def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = 
         deps = _DEPS + ["end2end_test_lib_no_fuzztest_gtest"],
         data = _DATA,
         shard_count = shard_count,
-        tags = tags,
+        tags = tags + ["core_end2end_test"],
         flaky = flaky,
     )
 
