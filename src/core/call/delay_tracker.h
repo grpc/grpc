@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_CALL_DELAY_TRACKER_H
 #define GRPC_SRC_CORE_CALL_DELAY_TRACKER_H
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,22 @@ class DelayTracker {
  public:
   using Handle = size_t;
 
+  DelayTracker() = default;
+
+  // Not copyable.
+  DelayTracker(const DelayTracker&) = delete;
+  DelayTracker& operator=(const DelayTracker&) = delete;
+
+  // Movable.
+  DelayTracker(DelayTracker&& other)
+      : delays_(std::move(other.delays_)),
+        children_(std::move(other.children_)) {}
+  DelayTracker& operator=(DelayTracker&& other) {
+    delays_ = std::move(other.delays_);
+    children_ = std::move(other.children_);
+    return *this;
+  }
+
   // Starts recording a delay.  Returns a handle for the new delay.  The
   // caller needs to hold on to the handle and later pass it to EndDelay()
   // when the delay is complete.
@@ -37,6 +54,10 @@ class DelayTracker {
 
   // Ends a delay.
   void EndDelay(Handle handle);
+
+  // Adds a child DelayTracker.  Used to compose DelayTrackers from
+  // multiple parties as server trailing metadata is returned up the stack.
+  void AddChild(absl::string_view description, DelayTracker tracker);
 
   // Reports delay info in a form suitable for inclusion in a status message.
   std::string GetDelayInfo();
@@ -50,7 +71,17 @@ class DelayTracker {
     explicit Delay(absl::string_view desc) : description(desc) {}
   };
 
+  struct Child {
+    std::string description;
+    std::unique_ptr<DelayTracker> delay_tracker;
+
+    Child(absl::string_view desc, DelayTracker tracker)
+        : description(desc),
+          delay_tracker(std::make_unique<DelayTracker>(std::move(tracker))) {}
+  };
+
   std::vector<Delay> delays_;
+  std::vector<Child> children_;
 };
 
 // Allow DelayTracker to be used as an arena context element.

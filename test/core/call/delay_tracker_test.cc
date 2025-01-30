@@ -60,6 +60,27 @@ TEST_F(DelayTrackerTest, ConcurrentDelays) {
             "foo delay 6000ms; bar delay 9000ms; baz delay 12000ms");
 }
 
+TEST_F(DelayTrackerTest, Children) {
+  DelayTracker tracker;
+  auto handle = tracker.StartDelay("foo");
+  IncrementTimeBy(Duration::Seconds(5));
+  tracker.EndDelay(handle);
+  DelayTracker child0;
+  handle = child0.StartDelay("bar");
+  IncrementTimeBy(Duration::Seconds(3));
+  child0.EndDelay(handle);
+  DelayTracker child1;
+  handle = child1.StartDelay("baz");
+  IncrementTimeBy(Duration::Seconds(4));
+  child1.EndDelay(handle);
+  tracker.AddChild("attempt 0", std::move(child0));
+  tracker.AddChild("attempt 1", std::move(child1));
+  EXPECT_EQ(tracker.GetDelayInfo(),
+            "foo delay 5000ms; "
+            "attempt 0:[bar delay 3000ms]; "
+            "attempt 1:[baz delay 4000ms]");
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

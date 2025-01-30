@@ -30,6 +30,11 @@ void DelayTracker::EndDelay(Handle handle) {
   delays_[handle].end = Timestamp::Now();
 }
 
+void DelayTracker::AddChild(absl::string_view description,
+                            DelayTracker delay_tracker) {
+  children_.emplace_back(description, std::move(delay_tracker));
+}
+
 std::string DelayTracker::GetDelayInfo() {
   std::vector<std::string> parts;
   for (const Delay& delay : delays_) {
@@ -42,6 +47,10 @@ std::string DelayTracker::GetDelayInfo() {
       parts.push_back(
           absl::StrCat(delay.description, " delay ", duration.ToString()));
     }
+  }
+  for (const Child& child : children_) {
+    parts.push_back(absl::StrCat(
+        child.description, ":[", child.delay_tracker->GetDelayInfo(), "]"));
   }
   return absl::StrJoin(parts, "; ");
 }
