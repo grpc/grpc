@@ -22,7 +22,6 @@ namespace grpc_core {
 
 ConfigVars::Overrides OverridesFromFuzzConfigVars(
     const grpc::testing::FuzzConfigVars& vars) {
-  LOG(INFO) << vars.DebugString();
   ConfigVars::Overrides overrides;
   if (vars.has_enable_fork_support()) {
     overrides.enable_fork_support = vars.enable_fork_support();

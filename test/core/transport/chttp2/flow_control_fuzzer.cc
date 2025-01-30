@@ -485,7 +485,7 @@ void Test(flow_control_fuzzer::Msg msg) {
   }
 }
 FUZZ_TEST(FlowControl, Test)
-    .WithDomains(::fuzztest::Arbitrary<flow_control_fuzzer::Msg>(msg)
+    .WithDomains(::fuzztest::Arbitrary<flow_control_fuzzer::Msg>()
                      .WithProtobufField("config_vars", AnyConfigVars()));
 
 }  // namespace
