@@ -325,12 +325,12 @@ internal::CompletionQueueTag* ServerContextBase::GetCompletionOpTag() {
 
 void ServerContextBase::AddInitialMetadata(const std::string& key,
                                            const std::string& value) {
-  initial_metadata_.insert(std::make_pair(key, value));
+  initial_metadata_.insert(std::pair(key, value));
 }
 
 void ServerContextBase::AddTrailingMetadata(const std::string& key,
                                             const std::string& value) {
-  trailing_metadata_.insert(std::make_pair(key, value));
+  trailing_metadata_.insert(std::pair(key, value));
 }
 
 void ServerContextBase::TryCancel() const {
