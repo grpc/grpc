@@ -120,6 +120,9 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -136,16 +139,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
-const uint8_t required_experiments_server_listener[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -218,6 +211,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener, nullptr, 0, true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -228,11 +223,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener,
-     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -336,6 +326,9 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -352,16 +345,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
-const uint8_t required_experiments_server_listener[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -434,6 +417,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener, nullptr, 0, true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -444,11 +429,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener,
-     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -552,6 +532,9 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -568,16 +551,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
-const uint8_t required_experiments_server_listener[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -650,6 +623,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener, nullptr, 0, true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -660,11 +635,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener,
-     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core

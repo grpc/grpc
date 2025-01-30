@@ -127,7 +127,7 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
 // deferred at the point where recv_trailing_metadata was started from
 // the surface.  This resulted in ASAN failures caused by not unreffing
 // a grpc_error.
-CORE_END2END_TEST(RetryTest, RetryRecvMessageReplay) {
+CORE_END2END_TEST(RetryTests, RetryRecvMessageReplay) {
   SKIP_IF_V3();  // Need to convert filter
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()

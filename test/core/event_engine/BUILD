@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
@@ -76,7 +77,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr_platform",
@@ -185,7 +185,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -200,7 +199,6 @@ grpc_cc_test(
     name = "handle_tests",
     srcs = ["handle_tests.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -239,11 +237,25 @@ grpc_cc_test(
     name = "query_extensions_test",
     srcs = ["query_extensions_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr_platform",
         "//src/core:event_engine_query_extensions",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "resolved_address_fuzzer",
+    srcs = ["resolved_address_fuzzer.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        "//:grpc",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

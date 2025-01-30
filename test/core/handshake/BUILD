@@ -13,10 +13,43 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/handshake")
 
 licenses(["notice"])
+
+grpc_cc_library(
+    name = "test_handshake",
+    srcs = ["test_handshake.cc"],
+    hdrs = ["test_handshake.h"],
+    deps = [
+        "//:handshaker",
+        "//:iomgr",
+        "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:event_engine_memory_allocator_factory",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:resource_quota",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "handshaker_fuzzer",
+    srcs = ["handshaker_fuzzer.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "test_handshake",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:fuzzing_channel_args",
+        "//test/core/test_util:fuzzing_channel_args_cc_proto",
+    ],
+)
 
 grpc_cc_test(
     name = "client_ssl_test",
@@ -30,7 +63,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -64,7 +96,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         ":server_ssl_common",
@@ -83,7 +114,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         ":server_ssl_common",
@@ -108,8 +138,7 @@ grpc_cc_test(
 #        "absl/log:check",
 #        "absl/log:log",
 #    ],
-#    language = "C++",
-#    tags = ["no_mac", no_windows"],
+#    #    tags = ["no_mac", no_windows"],
 #    deps = [
 #        "//:gpr",
 #        "//:grpc",
@@ -121,7 +150,6 @@ grpc_cc_test(
     name = "http_proxy_mapper_test",
     srcs = ["http_proxy_mapper_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",

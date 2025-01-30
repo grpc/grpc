@@ -168,7 +168,6 @@ grpc_cc_test(
         "absl/flags:parse",
         "absl/log:log",
     ],
-    language = "C++",
     tags = MEMORY_USAGE_TAGS,
     deps = [
         "//:gpr",
@@ -189,7 +188,6 @@ grpc_cc_binary(
         "absl/flags:flag",
         "absl/flags:parse",
     ],
-    language = "C++",
     tags = MEMORY_USAGE_TAGS,
     deps = [
         "//:gpr",

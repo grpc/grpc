@@ -34,7 +34,7 @@ namespace {
 // status is received before the recv_trailing_metadata op is started.
 // - 1 retry allowed for ABORTED status
 // - first attempt gets INVALID_ARGUMENT, so no retry is done
-CORE_END2END_TEST(RetryTest,
+CORE_END2END_TEST(RetryTests,
                   RetryNonRetriableStatusBeforeRecvTrailingMetadataStarted) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());

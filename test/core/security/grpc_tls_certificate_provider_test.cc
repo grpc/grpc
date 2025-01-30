@@ -248,7 +248,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
       malformed_cert_,
       MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -257,7 +258,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
       root_cert_,
       MakeCertKeyPairs(private_key_.c_str(), malformed_cert_.c_str()));
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse certificate chain as PEM: Invalid PEM."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -266,7 +268,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
       root_cert_,
       MakeCertKeyPairs(malformed_key_.c_str(), cert_chain_.c_str()));
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::NotFoundError("No private key found."));
+            absl::NotFoundError(
+                "Failed to parse private key as PEM: No private key found."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -309,7 +312,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2, SERVER_CERT_PATH_2,
                                           MALFORMED_CERT_PATH, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -317,7 +321,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
   FileWatcherCertificateProvider provider(
       SERVER_KEY_PATH_2, MALFORMED_CERT_PATH, CA_CERT_PATH_2, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse certificate chain as PEM: Invalid PEM."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -325,7 +330,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
   FileWatcherCertificateProvider provider(
       MALFORMED_KEY_PATH, SERVER_CERT_PATH_2, CA_CERT_PATH_2, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::NotFoundError("No private key found."));
+            absl::NotFoundError(
+                "Failed to parse private key as PEM: No private key found."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
