@@ -137,5 +137,8 @@ void HpackParserFuzzer(const hpack_parser_fuzzer::Msg& msg) {
     }
   }
 }
-FUZZ_TEST(HpackParser, HpackParserFuzzer);
+FUZZ_TEST(HpackParser, HpackParserFuzzer)
+    .WithDomains(::fuzztest::Arbitrary<hpack_parser_fuzzer::Msg>()
+                     .WithProtobufField("config_vars", AnyConfigVars()));
+
 }  // namespace grpc_core

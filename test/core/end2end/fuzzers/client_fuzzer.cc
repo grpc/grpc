@@ -110,7 +110,9 @@ void Run(fuzzer_input::Msg msg) {
   TestOnlyReloadExperimentsFromConfigVariables();
   testing::ClientFuzzer(msg).Run(msg.api_actions());
 }
-FUZZ_TEST(ClientFuzzerTest, Run);
+FUZZ_TEST(ClientFuzzerTest, Run)
+    .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
+        "config_vars", AnyConfigVars()));
 
 }  // namespace testing
 }  // namespace grpc_core

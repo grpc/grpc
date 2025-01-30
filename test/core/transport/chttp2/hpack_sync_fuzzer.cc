@@ -223,7 +223,9 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
     }
   }
 }
-FUZZ_TEST(HpackSyncFuzzer, FuzzOneInput);
+FUZZ_TEST(HpackSyncFuzzer, FuzzOneInput)
+    .WithDomains(::fuzztest::Arbitrary<hpack_sync_fuzzer::Msg>()
+                     .WithProtobufField("config_vars", AnyConfigVars()));
 
 }  // namespace
 }  // namespace grpc_core

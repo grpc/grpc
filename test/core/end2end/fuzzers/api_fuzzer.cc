@@ -521,7 +521,9 @@ void RunApiFuzzer(const api_fuzzer::Msg& msg) {
   TestOnlyReloadExperimentsFromConfigVariables();
   ApiFuzzer(msg.event_engine_actions()).Run(msg.actions());
 }
-FUZZ_TEST(MyTestSuite, RunApiFuzzer);
+FUZZ_TEST(MyTestSuite, RunApiFuzzer)
+    .WithDomains(::fuzztest::Arbitrary<api_fuzzer::Msg>().WithProtobufField(
+        "config_vars", AnyConfigVars()));
 
 }  // namespace testing
 }  // namespace grpc_core

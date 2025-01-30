@@ -484,7 +484,9 @@ void Test(flow_control_fuzzer::Msg msg) {
     fuzzer.AssertAnnouncedOverInitialWindowSizeCorrect();
   }
 }
-FUZZ_TEST(FlowControl, Test);
+FUZZ_TEST(FlowControl, Test)
+    .WithDomains(::fuzztest::Arbitrary<flow_control_fuzzer::Msg>(msg)
+                     .WithProtobufField("config_vars", AnyConfigVars()));
 
 }  // namespace
 }  // namespace chttp2

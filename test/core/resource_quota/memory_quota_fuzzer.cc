@@ -187,7 +187,9 @@ void Fuzz(const memory_quota_fuzzer::Msg& msg) {
   grpc_tracer_init();
   testing::Fuzzer().Run(msg);
 }
-FUZZ_TEST(MemoryQuotaFuzzer, Fuzz);
+FUZZ_TEST(MemoryQuotaFuzzer, Fuzz)
+    .WithDomains(::fuzztest::Arbitrary<memory_quota_fuzzer::Msg>()
+                     .WithProtobufField("config_vars", AnyConfigVars()));
 
 }  // namespace
 }  // namespace testing

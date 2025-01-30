@@ -228,7 +228,7 @@ with open("test/core/test_util/fuzz_config_vars.h", "w") as H:
     print(file=H)
     print('#include "test/core/test_util/fuzz_config_vars.pb.h"', file=H)
     print('#include "src/core/config/config_vars.h"', file=H)
-    print('#include "test/core/test_util/fuzz_config_vars_helpers.h"', file=C)
+    print('#include "test/core/test_util/fuzz_config_vars_helpers.h"', file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)

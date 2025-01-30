@@ -678,10 +678,11 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
 #ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
 #define CORE_END2END_FUZZER(suite, name)
 #else
-#define CORE_END2END_FUZZER(suite, name)                                \
-  FUZZ_TEST(Fuzzers, suite##_##name)                                    \
-      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)), \
-                   ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>());
+#define CORE_END2END_FUZZER(suite, name)                                  \
+  FUZZ_TEST(Fuzzers, suite##_##name)                                      \
+      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)),   \
+                   ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>() \
+                       .WithProtobufField("config_vars", AnyConfigVars()));
 #endif
 
 // NOLINTBEGIN(bugprone-macro-parentheses)

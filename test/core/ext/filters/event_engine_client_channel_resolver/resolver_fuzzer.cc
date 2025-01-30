@@ -280,6 +280,9 @@ void Fuzz(const event_engine_client_channel_resolver::Msg& msg) {
   // resolver alive.
   while (engine.use_count() > 1) engine->Tick();
 }
-FUZZ_TEST(ResolverFuzzer, Fuzz);
+FUZZ_TEST(ResolverFuzzer, Fuzz)
+    .WithDomains(
+        ::fuzztest::Arbitrary<event_engine_client_channel_resolver::Msg>()
+            .WithProtobufField("config_vars", AnyConfigVars()));
 
 }  // namespace

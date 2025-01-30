@@ -18,27 +18,25 @@
 
 #include "test/core/test_util/fuzz_config_vars.h"
 
-#include "test/core/test_util/fuzz_config_vars_helpers.h"
-
 namespace grpc_core {
 
 ConfigVars::Overrides OverridesFromFuzzConfigVars(
     const grpc::testing::FuzzConfigVars& vars) {
+  LOG(INFO) << vars.DebugString();
   ConfigVars::Overrides overrides;
   if (vars.has_enable_fork_support()) {
     overrides.enable_fork_support = vars.enable_fork_support();
   }
-  if (vars.has_dns_resolver()) {
+  if (vars.has_dns_resolver() && !vars.dns_resolver().empty()) {
     overrides.dns_resolver = vars.dns_resolver();
   }
-  if (vars.has_verbosity()) {
+  if (vars.has_verbosity() && !vars.verbosity().empty()) {
     overrides.verbosity = vars.verbosity();
   }
-  if (vars.has_experiments()) {
-    overrides.experiments =
-        ValidateExperimentsStringForFuzzing(vars.experiments());
+  if (vars.has_experiments() && !vars.experiments().empty()) {
+    overrides.experiments = vars.experiments();
   }
-  if (vars.has_trace()) {
+  if (vars.has_trace() && !vars.trace().empty()) {
     overrides.trace = vars.trace();
   }
   return overrides;

@@ -129,7 +129,9 @@ void ChaoticGood(fuzzer_input::Msg msg) {
         OrphanablePtr<chaotic_good::ChaoticGoodServerListener>(listener));
   });
 }
-FUZZ_TEST(ServerFuzzers, ChaoticGood);
+FUZZ_TEST(ServerFuzzers, ChaoticGood)
+    .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
+        "config_vars", AnyConfigVars()));
 
 void Chttp2(fuzzer_input::Msg msg) {
   RunServerFuzzer(
@@ -140,7 +142,9 @@ void Chttp2(fuzzer_input::Msg msg) {
         grpc_server_credentials_release(creds);
       });
 }
-FUZZ_TEST(ServerFuzzers, Chttp2);
+FUZZ_TEST(ServerFuzzers, Chttp2)
+    .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
+        "config_vars", AnyConfigVars()));
 
 void Chttp2FakeSec(fuzzer_input::Msg msg) {
   RunServerFuzzer(
@@ -151,7 +155,9 @@ void Chttp2FakeSec(fuzzer_input::Msg msg) {
         grpc_server_credentials_release(creds);
       });
 }
-FUZZ_TEST(ServerFuzzers, Chttp2FakeSec);
+FUZZ_TEST(ServerFuzzers, Chttp2FakeSec)
+    .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
+        "config_vars", AnyConfigVars()));
 
 TEST(ServerFuzzers, ChaoticGoodRegression1) {
   ChaoticGood(

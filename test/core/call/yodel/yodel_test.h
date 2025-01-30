@@ -369,7 +369,9 @@ class YodelTest {
     YodelTest_##test_type##_##name test(msg.event_engine_actions(), bitgen); \
     test.RunTest();                                                          \
   }                                                                          \
-  FUZZ_TEST(test_type, name);                                                \
+  FUZZ_TEST(test_type, name)                                                 \
+      .WithDomains(::fuzztest::Arbitrary<yodel::Msg>().WithProtobufField(    \
+          "config_vars", AnyConfigVars()));                                  \
   void YodelTest_##test_type##_##name::TestImpl()
 
 #endif  // GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
