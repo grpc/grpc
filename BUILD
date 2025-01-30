@@ -2858,6 +2858,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/log",
         "absl/log:check",
+        "absl/functional:any_invocable",
     ],
     visibility = ["@grpc:client_channel"],
     deps = [

@@ -164,11 +164,9 @@ class XdsResolver final : public Resolver {
 
     void Orphaned() override {
       XdsResolver* resolver_ptr = resolver_.get();
-      resolver_ptr->work_serializer_->Run(
-          [resolver = std::move(resolver_)]() {
-            resolver->MaybeRemoveUnusedClusters();
-          },
-          DEBUG_LOCATION);
+      resolver_ptr->work_serializer_->Run([resolver = std::move(resolver_)]() {
+        resolver->MaybeRemoveUnusedClusters();
+      });
       cluster_subscription_.reset();
     }
 
@@ -633,11 +631,9 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
       << "[xds_resolver " << resolver_.get()
       << "] destroying XdsConfigSelector " << this;
   route_config_data_.reset();
-  resolver_->work_serializer_->Run(
-      [resolver = std::move(resolver_)]() {
-        resolver->MaybeRemoveUnusedClusters();
-      },
-      DEBUG_LOCATION);
+  resolver_->work_serializer_->Run([resolver = std::move(resolver_)]() {
+    resolver->MaybeRemoveUnusedClusters();
+  });
 }
 
 std::optional<uint64_t> HeaderHashHelper(

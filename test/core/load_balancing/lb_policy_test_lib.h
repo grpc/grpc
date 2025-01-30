@@ -341,21 +341,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             // executed after that state notifications has been delivered.
             if (run_before_flush != nullptr) run_before_flush();
             LOG(INFO) << "Waiting for state notifications to be delivered";
-            test_->work_serializer_->Run(
-                [&]() {
-                  LOG(INFO) << "State notifications delivered, waiting for "
-                               "health notifications";
-                  // Now the connectivity state notifications has been
-                  // delivered. If the state reported was READY, then the
-                  // pick_first leaf policy will have started a health watch, so
-                  // we add another callback to the queue to be executed after
-                  // the initial health watch notification has been delivered.
-                  test_->work_serializer_->Run([&]() { notification.Notify(); },
-                                               DEBUG_LOCATION);
-                },
-                DEBUG_LOCATION);
-          },
-          DEBUG_LOCATION);
+            test_->work_serializer_->Run([&]() {
+              LOG(INFO) << "State notifications delivered, waiting for "
+                           "health notifications";
+              // Now the connectivity state notifications has been
+              // delivered. If the state reported was READY, then the
+              // pick_first leaf policy will have started a health watch, so
+              // we add another callback to the queue to be executed after
+              // the initial health watch notification has been delivered.
+              test_->work_serializer_->Run([&]() { notification.Notify(); });
+            });
+          });
       while (!notification.HasBeenNotified()) {
         test_->fuzzing_ee_->Tick();
       }
@@ -400,8 +396,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*test_->work_serializer_) {
             num_watchers = state_tracker_.NumWatchers();
             notification.Notify();
-          },
-          DEBUG_LOCATION);
+          });
       while (!notification.HasBeenNotified()) {
         test_->fuzzing_ee_->Tick();
       }
@@ -794,31 +789,26 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // until all the initial notifications for all of those watchers
     // have been delivered to the LB policy.
     absl::Notification notification;
-    work_serializer_->Run(
-        [&]() {
-          status = lb_policy->UpdateLocked(std::move(update_args));
-          // UpdateLocked() enqueued the initial connectivity state
-          // notifications for the subchannels, so we add another
-          // callback to the queue to be executed after those initial
-          // state notifications have been delivered.
-          LOG(INFO) << "Applied update, waiting for initial connectivity state "
-                       "notifications";
-          work_serializer_->Run(
-              [&]() {
-                LOG(INFO) << "Initial connectivity state notifications "
-                             "delivered; waiting for health notifications";
-                // Now that the initial state notifications have been
-                // delivered, the queue will contain the health watch
-                // notifications for any subchannels in state READY,
-                // so we add another callback to the queue to be
-                // executed after those health watch notifications have
-                // been delivered.
-                work_serializer_->Run([&]() { notification.Notify(); },
-                                      DEBUG_LOCATION);
-              },
-              DEBUG_LOCATION);
-        },
-        DEBUG_LOCATION);
+    work_serializer_->Run([&]() {
+      status = lb_policy->UpdateLocked(std::move(update_args));
+      // UpdateLocked() enqueued the initial connectivity state
+      // notifications for the subchannels, so we add another
+      // callback to the queue to be executed after those initial
+      // state notifications have been delivered.
+      LOG(INFO) << "Applied update, waiting for initial connectivity state "
+                   "notifications";
+      work_serializer_->Run([&]() {
+        LOG(INFO) << "Initial connectivity state notifications "
+                     "delivered; waiting for health notifications";
+        // Now that the initial state notifications have been
+        // delivered, the queue will contain the health watch
+        // notifications for any subchannels in state READY,
+        // so we add another callback to the queue to be
+        // executed after those health watch notifications have
+        // been delivered.
+        work_serializer_->Run([&]() { notification.Notify(); });
+      });
+    });
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }
@@ -833,13 +823,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // Note: ExitIdle() will enqueue a bunch of connectivity state
     // notifications on the WorkSerializer, and we want to wait until
     // those are delivered to the LB policy.
-    work_serializer_->Run(
-        [&]() {
-          lb_policy_->ExitIdleLocked();
-          work_serializer_->Run([&]() { notification.Notify(); },
-                                DEBUG_LOCATION);
-        },
-        DEBUG_LOCATION);
+    work_serializer_->Run([&]() {
+      lb_policy_->ExitIdleLocked();
+      work_serializer_->Run([&]() { notification.Notify(); });
+    });
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }
@@ -1413,7 +1400,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     ExecCtx exec_ctx;
     LOG(INFO) << "waiting for WorkSerializer to flush...";
     absl::Notification notification;
-    work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
+    work_serializer_->Run([&]() { notification.Notify(); });
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }

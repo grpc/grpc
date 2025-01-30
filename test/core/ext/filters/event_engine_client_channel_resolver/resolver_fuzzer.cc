@@ -266,10 +266,10 @@ void Fuzz(const event_engine_client_channel_resolver::Msg& msg) {
             .Set(GRPC_INTERNAL_ARG_EVENT_ENGINE, engine),
         &done_resolving, work_serializer);
     auto resolver = resolver_factory.CreateResolver(std::move(resolver_args));
-    work_serializer->Run(
-        [resolver_ptr = resolver.get()]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-            *work_serializer) { resolver_ptr->StartLocked(); },
-        DEBUG_LOCATION);
+    work_serializer->Run([resolver_ptr = resolver.get()]()
+                             ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer) {
+                               resolver_ptr->StartLocked();
+                             });
     // wait for result (no need to check validity)
     while (!done_resolving) {
       engine->Tick();

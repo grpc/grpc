@@ -272,7 +272,10 @@ grpc_core_end2end_test(
 
 grpc_core_end2end_test(name = "http2_stats")
 
-grpc_core_end2end_test(name = "invoke_large_request")
+grpc_core_end2end_test(
+    name = "invoke_large_request",
+    shard_count = 5,
+)
 
 grpc_core_end2end_test(name = "keepalive_timeout")
 
