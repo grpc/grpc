@@ -52,8 +52,8 @@ grpc_cc_proto_library(
 grpc_cc_grpc_library(
     name = "compiler_test_cc_grpc",
     srcs = ["compiler_test_proto"],
-    generate_mocks = True,
     allow_deprecated = True,
+    generate_mocks = True,
     deps = ["compiler_test_cc_proto"],
 )
 
