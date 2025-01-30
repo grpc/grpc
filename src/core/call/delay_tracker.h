@@ -60,7 +60,7 @@ class DelayTracker {
   void AddChild(absl::string_view description, DelayTracker tracker);
 
   // Reports delay info in a form suitable for inclusion in a status message.
-  std::string GetDelayInfo();
+  std::string GetDelayInfo() const;
 
  private:
   struct Delay {

@@ -269,7 +269,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/span', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
-    ss.source_files = 'src/core/call/request_buffer.h',
+    ss.source_files = 'src/core/call/delay_tracker.h',
+                      'src/core/call/request_buffer.h',
                       'src/core/channelz/channel_trace.h',
                       'src/core/channelz/channelz.h',
                       'src/core/channelz/channelz_registry.h',
@@ -1569,7 +1570,8 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.h'
 
-    ss.private_header_files = 'src/core/call/request_buffer.h',
+    ss.private_header_files = 'src/core/call/delay_tracker.h',
+                              'src/core/call/request_buffer.h',
                               'src/core/channelz/channel_trace.h',
                               'src/core/channelz/channelz.h',
                               'src/core/channelz/channelz_registry.h',

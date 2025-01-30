@@ -409,6 +409,17 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
           server_trailing_metadata->get_pointer(GrpcMessageMetadata())) {
     message_slice = message->Ref();
   }
+  if (status == GRPC_STATUS_DEADLINE_EXCEEDED) {
+    if (auto* delay_tracker =
+            server_trailing_metadata->get_pointer(GrpcDelayTracker());
+        delay_tracker != nullptr) {
+      message_slice = Slice::FromCopiedString(
+          absl::StrCat(message_slice.empty()
+                           ? "Deadline exceeded"
+                           : message_slice.as_string_view(),
+                       " (", delay_tracker->GetDelayInfo(), ")"));
+    }
+  }
   *out_status_details = message_slice.TakeCSlice();
   if (out_error_string != nullptr) {
     if (status != GRPC_STATUS_OK) {

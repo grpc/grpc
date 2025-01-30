@@ -35,7 +35,7 @@ void DelayTracker::AddChild(absl::string_view description,
   children_.emplace_back(description, std::move(delay_tracker));
 }
 
-std::string DelayTracker::GetDelayInfo() {
+std::string DelayTracker::GetDelayInfo() const {
   std::vector<std::string> parts;
   for (const Delay& delay : delays_) {
     if (delay.end == Timestamp::InfPast()) {

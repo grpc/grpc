@@ -8321,6 +8321,7 @@ grpc_cc_library(
     deps = [
         "chunked_vector",
         "compression",
+        "delay_tracker",
         "experiments",
         "if_list",
         "metadata_compression_traits",
