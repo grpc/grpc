@@ -31,22 +31,6 @@ class DelayTracker {
  public:
   using Handle = size_t;
 
-  DelayTracker() = default;
-
-  // Not copyable.
-  DelayTracker(const DelayTracker&) = delete;
-  DelayTracker& operator=(const DelayTracker&) = delete;
-
-  // Movable.
-  DelayTracker(DelayTracker&& other) noexcept
-      : delays_(std::move(other.delays_)),
-        children_(std::move(other.children_)) {}
-  DelayTracker& operator=(DelayTracker&& other) noexcept {
-    delays_ = std::move(other.delays_);
-    children_ = std::move(other.children_);
-    return *this;
-  }
-
   // Starts recording a delay.  Returns a handle for the new delay.  The
   // caller needs to hold on to the handle and later pass it to EndDelay()
   // when the delay is complete.
@@ -78,6 +62,16 @@ class DelayTracker {
     Child(absl::string_view desc, DelayTracker tracker)
         : description(desc),
           delay_tracker(std::make_unique<DelayTracker>(std::move(tracker))) {}
+
+    // Copyable.
+    Child(const Child& other)
+        : description(other.description),
+          delay_tracker(std::make_unique<DelayTracker>(*other.delay_tracker)) {}
+    Child& operator=(const Child& other) {
+      description = other.description;
+      delay_tracker = std::make_unique<DelayTracker>(*other.delay_tracker);
+      return *this;
+    }
   };
 
   std::vector<Delay> delays_;
