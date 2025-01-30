@@ -975,7 +975,7 @@ IF_POSIX_SOCKET(
     })
 
 // Bind to "::" to get a port number not used by any address.
-absl::StatusOr<int> FileDescriptors::GetUnusedPort() {
+IF_POSIX_SOCKET(absl::StatusOr<int> FileDescriptors::GetUnusedPort(), {
   EventEngine::ResolvedAddress wild = ResolvedAddressMakeWild6(0);
   DSMode dsmode;
   auto sock = CreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
@@ -1001,7 +1001,7 @@ absl::StatusOr<int> FileDescriptors::GetUnusedPort() {
     return absl::FailedPreconditionError("Bad port");
   }
   return port;
-}
+})
 
 void FileDescriptors::ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
                                                      bool is_client) {
