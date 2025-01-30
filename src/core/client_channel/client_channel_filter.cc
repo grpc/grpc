@@ -529,25 +529,24 @@ class ClientChannelFilter::SubchannelWrapper final
     // WorkSerializer.
     // Ref held by callback.
     WeakRef(DEBUG_LOCATION, "subchannel map cleanup").release();
-    chand_->work_serializer_->Run(
-        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
-          chand_->subchannel_wrappers_.erase(this);
-          if (chand_->channelz_node_ != nullptr) {
-            auto* subchannel_node = subchannel_->channelz_node();
-            if (subchannel_node != nullptr) {
-              auto it =
-                  chand_->subchannel_refcount_map_.find(subchannel_.get());
-              CHECK(it != chand_->subchannel_refcount_map_.end());
-              --it->second;
-              if (it->second == 0) {
-                chand_->channelz_node_->RemoveChildSubchannel(
-                    subchannel_node->uuid());
-                chand_->subchannel_refcount_map_.erase(it);
-              }
-            }
+    chand_->work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                                      *chand_->work_serializer_) {
+      chand_->subchannel_wrappers_.erase(this);
+      if (chand_->channelz_node_ != nullptr) {
+        auto* subchannel_node = subchannel_->channelz_node();
+        if (subchannel_node != nullptr) {
+          auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
+          CHECK(it != chand_->subchannel_refcount_map_.end());
+          --it->second;
+          if (it->second == 0) {
+            chand_->channelz_node_->RemoveChildSubchannel(
+                subchannel_node->uuid());
+            chand_->subchannel_refcount_map_.erase(it);
           }
-          WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
-        });
+        }
+      }
+      WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
+    });
   }
 
   void WatchConnectivityState(

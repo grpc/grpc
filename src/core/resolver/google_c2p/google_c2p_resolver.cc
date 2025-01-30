@@ -156,11 +156,10 @@ void GoogleCloud2ProdResolver::StartLocked() {
       [resolver = RefAsSubclass<GoogleCloud2ProdResolver>()](
           std::string /* attribute */,
           absl::StatusOr<std::string> result) mutable {
-        resolver->work_serializer_->Run(
-            [resolver, result = std::move(result)]() mutable {
-              resolver->ZoneQueryDone(result.ok() ? std::move(result).value()
-                                                  : "");
-            });
+        resolver->work_serializer_->Run([resolver,
+                                         result = std::move(result)]() mutable {
+          resolver->ZoneQueryDone(result.ok() ? std::move(result).value() : "");
+        });
       },
       Duration::Seconds(10));
   ipv6_query_ = MakeOrphanable<GcpMetadataQuery>(
