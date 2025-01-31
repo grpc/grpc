@@ -34,6 +34,7 @@
 #include "test/core/call/yodel/fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
 
@@ -369,7 +370,9 @@ class YodelTest {
     YodelTest_##test_type##_##name test(msg.event_engine_actions(), bitgen); \
     test.RunTest();                                                          \
   }                                                                          \
-  FUZZ_TEST(test_type, name);                                                \
+  FUZZ_TEST(test_type, name)                                                 \
+      .WithDomains(::fuzztest::Arbitrary<yodel::Msg>().WithProtobufField(    \
+          "config_vars", AnyConfigVars()));                                  \
   void YodelTest_##test_type##_##name::TestImpl()
 
 #endif  // GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H

@@ -244,8 +244,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
             *subchannel_wrapper_->client_channel_->work_serializer_) {
           ApplyUpdateInControlPlaneWorkSerializer(state, status);
           Unref();
-        },
-        DEBUG_LOCATION);
+        });
   }
 
   grpc_pollset_set* interested_parties() override { return nullptr; }
@@ -368,8 +367,7 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
             }
           }
         }
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 void ClientChannel::SubchannelWrapper::WatchConnectivityState(
@@ -661,8 +659,7 @@ void ClientChannel::Orphaned() {
   work_serializer_->Run(
       [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         self->DestroyResolverAndLbPolicyLocked();
-      },
-      DEBUG_LOCATION);
+      });
   // IncreaseCallCount() introduces a phony call and prevents the idle
   // timer from being reset by other threads.
   idle_state_.IncreaseCallCount();
@@ -682,8 +679,7 @@ grpc_connectivity_state ClientChannel::CheckConnectivityState(
     work_serializer_->Run(
         [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
           self->TryToConnectLocked();
-        },
-        DEBUG_LOCATION);
+        });
   }
   return state;
 }
@@ -788,8 +784,7 @@ void ClientChannel::AddConnectivityWatcher(
   //       watcher = std::move(watcher)]()
   //            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
   //        self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
-  //      },
-  //      DEBUG_LOCATION);
+  //      });
 }
 
 void ClientChannel::RemoveConnectivityWatcher(
@@ -798,8 +793,7 @@ void ClientChannel::RemoveConnectivityWatcher(
   work_serializer_->Run(
       [self, watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         self->state_tracker_.RemoveWatcher(watcher);
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 void ClientChannel::GetInfo(const grpc_channel_info* info) {
@@ -817,8 +811,7 @@ void ClientChannel::ResetConnectionBackoff() {
   work_serializer_->Run(
       [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         if (self->lb_policy_ != nullptr) self->lb_policy_->ResetBackoffLocked();
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 namespace {
@@ -1379,8 +1372,7 @@ void ClientChannel::StartIdleTimer() {
                 // might need to check for any calls that are
                 // queued waiting for a resolver result or an LB
                 // pick.
-              },
-              DEBUG_LOCATION);
+              });
         }
       },
       std::move(arena)));

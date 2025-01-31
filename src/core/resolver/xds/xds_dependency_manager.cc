@@ -68,8 +68,7 @@ class XdsDependencyManager::ListenerWatcher final
         [dependency_mgr = dependency_mgr_, status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           dependency_mgr->OnListenerAmbientError(std::move(status));
-        },
-        DEBUG_LOCATION);
+        });
   }
 
  private:
@@ -97,8 +96,7 @@ class XdsDependencyManager::RouteConfigWatcher final
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnRouteConfigUpdate(self->name_,
                                                      std::move(route_config));
-        },
-        DEBUG_LOCATION);
+        });
   }
 
   void OnAmbientError(
@@ -109,8 +107,7 @@ class XdsDependencyManager::RouteConfigWatcher final
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnRouteConfigAmbientError(self->name_,
                                                            std::move(status));
-        },
-        DEBUG_LOCATION);
+        });
   }
 
  private:
@@ -137,8 +134,7 @@ class XdsDependencyManager::ClusterWatcher final
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnClusterUpdate(self->name_,
                                                  std::move(cluster));
-        },
-        DEBUG_LOCATION);
+        });
   }
 
   void OnAmbientError(
@@ -149,8 +145,7 @@ class XdsDependencyManager::ClusterWatcher final
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnClusterAmbientError(self->name_,
                                                        std::move(status));
-        },
-        DEBUG_LOCATION);
+        });
   }
 
  private:
@@ -190,8 +185,7 @@ class XdsDependencyManager::EndpointWatcher final
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnEndpointAmbientError(self->name_,
                                                         std::move(status));
-        },
-        DEBUG_LOCATION);
+        });
   }
 
  private:
@@ -215,8 +209,7 @@ class XdsDependencyManager::DnsResultHandler final
         [dependency_mgr = dependency_mgr_, name = name_,
          result = std::move(result)]() mutable {
           dependency_mgr->OnDnsResult(name, std::move(result));
-        },
-        DEBUG_LOCATION);
+        });
   }
 
  private:
@@ -229,12 +222,10 @@ class XdsDependencyManager::DnsResultHandler final
 //
 
 void XdsDependencyManager::ClusterSubscription::Orphaned() {
-  dependency_mgr_->work_serializer_->Run(
-      [self = WeakRef()]() {
-        self->dependency_mgr_->OnClusterSubscriptionUnref(self->cluster_name_,
-                                                          self.get());
-      },
-      DEBUG_LOCATION);
+  dependency_mgr_->work_serializer_->Run([self = WeakRef()]() {
+    self->dependency_mgr_->OnClusterSubscriptionUnref(self->cluster_name_,
+                                                      self.get());
+  });
 }
 
 //

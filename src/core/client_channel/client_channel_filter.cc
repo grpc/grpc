@@ -532,26 +532,24 @@ class ClientChannelFilter::SubchannelWrapper final
     // WorkSerializer.
     // Ref held by callback.
     WeakRef(DEBUG_LOCATION, "subchannel map cleanup").release();
-    chand_->work_serializer_->Run(
-        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
-          chand_->subchannel_wrappers_.erase(this);
-          if (chand_->channelz_node_ != nullptr) {
-            auto* subchannel_node = subchannel_->channelz_node();
-            if (subchannel_node != nullptr) {
-              auto it =
-                  chand_->subchannel_refcount_map_.find(subchannel_.get());
-              CHECK(it != chand_->subchannel_refcount_map_.end());
-              --it->second;
-              if (it->second == 0) {
-                chand_->channelz_node_->RemoveChildSubchannel(
-                    subchannel_node->uuid());
-                chand_->subchannel_refcount_map_.erase(it);
-              }
-            }
+    chand_->work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                                      *chand_->work_serializer_) {
+      chand_->subchannel_wrappers_.erase(this);
+      if (chand_->channelz_node_ != nullptr) {
+        auto* subchannel_node = subchannel_->channelz_node();
+        if (subchannel_node != nullptr) {
+          auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
+          CHECK(it != chand_->subchannel_refcount_map_.end());
+          --it->second;
+          if (it->second == 0) {
+            chand_->channelz_node_->RemoveChildSubchannel(
+                subchannel_node->uuid());
+            chand_->subchannel_refcount_map_.erase(it);
           }
-          WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
-        },
-        DEBUG_LOCATION);
+        }
+      }
+      WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
+    });
   }
 
   void WatchConnectivityState(
@@ -642,8 +640,7 @@ class ClientChannelFilter::SubchannelWrapper final
               *parent_->chand_->work_serializer_) {
             ApplyUpdateInControlPlaneWorkSerializer(state, status);
             Unref();
-          },
-          DEBUG_LOCATION);
+          });
     }
 
     grpc_pollset_set* interested_parties() override {
@@ -762,8 +759,7 @@ ClientChannelFilter::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
       [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
         // The ref is passed to AddWatcherLocked().
         AddWatcherLocked();
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 ClientChannelFilter::ExternalConnectivityWatcher::
@@ -816,8 +812,7 @@ void ClientChannelFilter::ExternalConnectivityWatcher::Notify(
         [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
           RemoveWatcherLocked();
           Unref(DEBUG_LOCATION, "RemoveWatcherLocked()");
-        },
-        DEBUG_LOCATION);
+        });
   }
 }
 
@@ -836,8 +831,7 @@ void ClientChannelFilter::ExternalConnectivityWatcher::Cancel() {
       [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
         RemoveWatcherLocked();
         Unref(DEBUG_LOCATION, "RemoveWatcherLocked()");
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 void ClientChannelFilter::ExternalConnectivityWatcher::AddWatcherLocked() {
@@ -867,8 +861,7 @@ class ClientChannelFilter::ConnectivityWatcherAdder final {
     chand_->work_serializer_->Run(
         [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
           AddWatcherLocked();
-        },
-        DEBUG_LOCATION);
+        });
   }
 
  private:
@@ -897,8 +890,7 @@ class ClientChannelFilter::ConnectivityWatcherRemover final {
     chand_->work_serializer_->Run(
         [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
           RemoveWatcherLocked();
-        },
-        DEBUG_LOCATION);
+        });
   }
 
  private:
@@ -1743,8 +1735,7 @@ void ClientChannelFilter::StartTransportOp(grpc_channel_element* elem,
   chand->work_serializer_->Run(
       [chand, op]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand->work_serializer_) {
         chand->StartTransportOpLocked(op);
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 void ClientChannelFilter::GetChannelInfo(grpc_channel_element* elem,
@@ -1781,8 +1772,7 @@ grpc_connectivity_state ClientChannelFilter::CheckConnectivityState(
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(owning_stack_, "TryToConnect");
     work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                              *work_serializer_) { TryToConnectLocked(); },
-                          DEBUG_LOCATION);
+                              *work_serializer_) { TryToConnectLocked(); });
   }
   return out;
 }
@@ -2064,8 +2054,7 @@ void ClientChannelFilter::FilterBasedCallData::StartTransportStreamOpBatch(
           [chand]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand->work_serializer_) {
             chand->CheckConnectivityState(/*try_to_connect=*/true);
             GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "ExitIdle");
-          },
-          DEBUG_LOCATION);
+          });
     }
     calld->TryCheckResolution(/*was_queued=*/false);
   } else {
