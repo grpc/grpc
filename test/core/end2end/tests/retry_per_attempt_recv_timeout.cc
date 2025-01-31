@@ -18,9 +18,9 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -35,7 +35,7 @@ namespace {
 // - first attempt does not receive a response until after perAttemptRecvTimeout
 // - second attempt returns ABORTED
 // - third attempt returns OK
-CORE_END2END_TEST(RetryTest, RetryPerAttemptRecvTimeout) {
+CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeout) {
   SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(
@@ -73,23 +73,22 @@ CORE_END2END_TEST(RetryTest, RetryPerAttemptRecvTimeout) {
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   // Server gets a call but does not respond to the call.
-  absl::optional<IncomingCall> s0 = RequestCall(101);
+  std::optional<IncomingCall> s0 = RequestCall(101);
   Expect(101, true);
   Step();
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
   // initial attempt.
-  EXPECT_EQ(s0->GetInitialMetadata("grpc-previous-rpc-attempts"),
-            absl::nullopt);
+  EXPECT_EQ(s0->GetInitialMetadata("grpc-previous-rpc-attempts"), std::nullopt);
   // Server gets a second call.
-  absl::optional<IncomingCall> s1 = RequestCall(201);
+  std::optional<IncomingCall> s1 = RequestCall(201);
   Expect(201, true);
   Step();
   // Now we can unref the first call.
   s0.reset();
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   EXPECT_EQ(s1->GetInitialMetadata("grpc-previous-rpc-attempts"), "1");
-  EXPECT_NE(s1->GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s1->GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Server sends status ABORTED.
   IncomingCloseOnServer client_close1;
   s1->NewBatch(202)

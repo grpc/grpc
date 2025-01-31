@@ -274,8 +274,8 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
 
 absl::StatusOr<Rbac::Policy> ParseRule(const Json& json,
                                        std::string* policy_name) {
-  absl::optional<Rbac::Principal> principals;
-  absl::optional<Rbac::Permission> permissions;
+  std::optional<Rbac::Principal> principals;
+  std::optional<Rbac::Permission> permissions;
   for (const auto& object : json.object()) {
     if (object.first == "name") {
       if (object.second.type() != Json::Type::kString) {

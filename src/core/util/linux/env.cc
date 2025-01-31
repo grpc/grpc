@@ -23,9 +23,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
-
-#include "absl/types/optional.h"
 
 #ifdef GPR_LINUX_ENV
 
@@ -36,14 +35,14 @@
 
 namespace grpc_core {
 
-absl::optional<std::string> GetEnv(const char* name) {
+std::optional<std::string> GetEnv(const char* name) {
   char* result = nullptr;
 #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 17)
   result = secure_getenv(name);
 #else
   result = getenv(name);
 #endif
-  if (result == nullptr) return absl::nullopt;
+  if (result == nullptr) return std::nullopt;
   return result;
 }
 

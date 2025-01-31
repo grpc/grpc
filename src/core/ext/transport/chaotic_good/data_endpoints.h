@@ -70,7 +70,7 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
   Poll<SliceBuffer> PollNext(uint32_t connection_id);
 
   Mutex mu_;
-  std::vector<absl::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
+  std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
   std::atomic<uint32_t> ready_endpoints_{0};
 };
@@ -153,7 +153,7 @@ class InputQueues : public RefCounted<InputQueues> {
   void AddEndpoint(uint32_t connection_id);
 
  private:
-  using ReadState = absl::variant<absl::StatusOr<SliceBuffer>, Waker>;
+  using ReadState = std::variant<absl::StatusOr<SliceBuffer>, Waker>;
 
   absl::StatusOr<uint64_t> CreateTicket(uint32_t connection_id, size_t length);
   Poll<absl::StatusOr<SliceBuffer>> PollRead(uint64_t ticket);

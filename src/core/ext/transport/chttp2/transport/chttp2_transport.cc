@@ -36,9 +36,11 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/attributes.h"
@@ -53,8 +55,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -224,6 +224,7 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
 
 namespace {
 
+using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
@@ -691,6 +692,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   settings.mutable_local().SetAllowTrueBinaryMetadata(true);
 
   read_channel_args(this, channel_args, is_client);
+
+  next_adjusted_keepalive_timestamp = grpc_core::Timestamp::InfPast();
 
   // Initially allow *UP TO* MAX_CONCURRENT_STREAMS incoming before we start
   // blanket cancelling them.
@@ -1922,14 +1925,24 @@ namespace {
 // we add a 20 second deadline, after which we send the second goaway.
 class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
  public:
-  static void Start(grpc_chttp2_transport* t) { new GracefulGoaway(t); }
+  static void Start(grpc_chttp2_transport* t, std::string message) {
+    new GracefulGoaway(t, std::move(message));
+  }
 
  private:
   using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
-  explicit GracefulGoaway(grpc_chttp2_transport* t) : t_(t->Ref()) {
+  explicit GracefulGoaway(grpc_chttp2_transport* t, std::string message)
+      : t_(t->Ref()), message_(std::move(message)) {
+    GRPC_TRACE_LOG(http, INFO) << "transport:" << t_.get() << " "
+                               << (t_->is_client ? "CLIENT" : "SERVER")
+                               << " peer:" << t_->peer_string.as_string_view()
+                               << " Graceful shutdown: Sending initial GOAWAY.";
     t->sent_goaway_state = GRPC_CHTTP2_GRACEFUL_GOAWAY;
-    grpc_chttp2_goaway_append((1u << 31) - 1, 0, grpc_empty_slice(), &t->qbuf);
+    // Graceful GOAWAYs require a NO_ERROR error code
+    grpc_chttp2_goaway_append(
+        (1u << 31) - 1, 0 /*NO_ERROR*/,
+        grpc_core::Slice::FromCopiedString(message_).TakeCSlice(), &t->qbuf);
     t->keepalive_timeout =
         std::min(t->keepalive_timeout, grpc_core::Duration::Seconds(20));
     t->ping_timeout =
@@ -1961,8 +1974,9 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
            "Sending final GOAWAY with stream_id:"
         << t_->last_new_stream_id;
     t_->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED;
-    grpc_chttp2_goaway_append(t_->last_new_stream_id, 0, grpc_empty_slice(),
-                              &t_->qbuf);
+    grpc_chttp2_goaway_append(
+        t_->last_new_stream_id, 0 /*NO_ERROR*/,
+        grpc_core::Slice::FromCopiedString(message_).TakeCSlice(), &t_->qbuf);
     grpc_chttp2_initiate_write(t_.get(),
                                GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
   }
@@ -1982,6 +1996,7 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
 
   const grpc_core::RefCountedPtr<grpc_chttp2_transport> t_;
   grpc_closure on_ping_ack_;
+  std::string message_;
 };
 
 }  // namespace
@@ -1992,11 +2007,10 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp::InfFuture(), nullptr,
                         &message, &http_error, nullptr);
-  if (!t->is_client && http_error == GRPC_HTTP2_NO_ERROR &&
-      !immediate_disconnect_hint) {
+  if (!t->is_client && !immediate_disconnect_hint) {
     // Do a graceful shutdown.
     if (t->sent_goaway_state == GRPC_CHTTP2_NO_GOAWAY_SEND) {
-      GracefulGoaway::Start(t);
+      GracefulGoaway::Start(t, std::move(message));
     } else {
       // Graceful GOAWAY is already in progress.
     }
@@ -2681,7 +2695,7 @@ static void WithUrgency(grpc_chttp2_transport* t,
       break;
     case grpc_core::chttp2::FlowControlAction::Urgency::UPDATE_IMMEDIATELY:
       grpc_chttp2_initiate_write(t, reason);
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case grpc_core::chttp2::FlowControlAction::Urgency::QUEUE_UPDATE:
       action();
       break;
@@ -2766,7 +2780,7 @@ static void read_action_parse_loop_locked(
          i < t->read_buffer.count && errors[1] == absl::OkStatus(); i++) {
       auto r = grpc_chttp2_perform_read(t.get(), t->read_buffer.slices[i],
                                         requests_started);
-      if (auto* partial_read_size = absl::get_if<size_t>(&r)) {
+      if (auto* partial_read_size = std::get_if<size_t>(&r)) {
         for (size_t j = 0; j < i; j++) {
           grpc_core::CSliceUnref(grpc_slice_buffer_take_first(&t->read_buffer));
         }
@@ -2782,7 +2796,7 @@ static void read_action_parse_loop_locked(
         // Early return: we queued to retry later.
         return;
       } else {
-        errors[1] = std::move(absl::get<absl::Status>(r));
+        errors[1] = std::move(std::get<absl::Status>(r));
       }
     }
     if (errors[1] != absl::OkStatus()) {
@@ -3032,17 +3046,27 @@ static void init_keepalive_ping_locked(
   CHECK(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING);
   CHECK(t->keepalive_ping_timer_handle != TaskHandle::kInvalid);
   t->keepalive_ping_timer_handle = TaskHandle::kInvalid;
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+  grpc_core::Timestamp adjusted_keepalive_timestamp = std::exchange(
+      t->next_adjusted_keepalive_timestamp, grpc_core::Timestamp::InfPast());
+  bool delay_callback = grpc_core::IsKeepAlivePingTimerBatchEnabled() &&
+                        adjusted_keepalive_timestamp > now;
   if (t->destroying || !t->closed_with_error.ok()) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
   } else {
-    if (t->keepalive_permit_without_calls || !t->stream_map.empty()) {
+    if (!delay_callback &&
+        (t->keepalive_permit_without_calls || !t->stream_map.empty())) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
       send_keepalive_ping_locked(t);
       grpc_chttp2_initiate_write(t.get(),
                                  GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
     } else {
+      grpc_core::Duration extend = grpc_core::Duration::Zero();
+      if (delay_callback) {
+        extend = adjusted_keepalive_timestamp - now;
+      }
       t->keepalive_ping_timer_handle =
-          t->event_engine->RunAfter(t->keepalive_time, [t] {
+          t->event_engine->RunAfter(t->keepalive_time + extend, [t] {
             grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
             init_keepalive_ping(t);
@@ -3083,9 +3107,34 @@ static void finish_keepalive_ping_locked(
   }
 }
 
+// Returns true if the timer was successfully extended. The provided callback
+// is used only if the timer was not previously scheduled with slack.
+static bool ExtendScheduledTimer(grpc_chttp2_transport* t, TaskHandle& handle,
+                                 grpc_core::Duration duration,
+                                 absl::AnyInvocable<void()> cb) {
+  if (handle == TaskHandle::kInvalid) {
+    return false;
+  }
+  if (grpc_core::IsKeepAlivePingTimerBatchEnabled()) {
+    t->next_adjusted_keepalive_timestamp =
+        grpc_core::Timestamp::Now() + duration;
+    return true;
+  }
+  if (t->event_engine->Cancel(handle)) {
+    handle = t->event_engine->RunAfter(duration, std::move(cb));
+    return true;
+  }
+  return false;
+}
+
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
-  if (t->keepalive_ping_timer_handle != TaskHandle::kInvalid &&
-      t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
+  if (ExtendScheduledTimer(
+          t, t->keepalive_ping_timer_handle, t->keepalive_time,
+          [t = t->Ref()]() mutable {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            init_keepalive_ping(std::move(t));
+          })) {
     // Cancel succeeds, resets the keepalive ping timer. Note that we don't
     // need to Ref or Unref here since we still hold the Ref.
     if (GRPC_TRACE_FLAG_ENABLED(http) ||
@@ -3093,12 +3142,6 @@ static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
       LOG(INFO) << t->peer_string.as_string_view()
                 << ": Keepalive ping cancelled. Resetting timer.";
     }
-    t->keepalive_ping_timer_handle =
-        t->event_engine->RunAfter(t->keepalive_time, [t = t->Ref()]() mutable {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
-          init_keepalive_ping(std::move(t));
-        });
   }
 }
 
@@ -3150,7 +3193,7 @@ static void post_benign_reclaimer(grpc_chttp2_transport* t) {
     t->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
         [t = t->Ref()](
-            absl::optional<grpc_core::ReclamationSweep> sweep) mutable {
+            std::optional<grpc_core::ReclamationSweep> sweep) mutable {
           if (sweep.has_value()) {
             auto* tp = t.get();
             tp->active_reclamation = std::move(*sweep);
@@ -3169,7 +3212,7 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
     t->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kDestructive,
         [t = t->Ref()](
-            absl::optional<grpc_core::ReclamationSweep> sweep) mutable {
+            std::optional<grpc_core::ReclamationSweep> sweep) mutable {
           if (sweep.has_value()) {
             auto* tp = t.get();
             tp->active_reclamation = std::move(*sweep);

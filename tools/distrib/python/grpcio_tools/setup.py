@@ -130,25 +130,18 @@ class BuildExt(build_ext.build_ext):
         return filename
 
     def build_extensions(self):
-        # This special conditioning is here due to difference of compiler
-        #   behavior in gcc and clang. The clang doesn't take --stdc++11
-        #   flags but gcc does. Since the setuptools of Python only support
-        #   all C or all C++ compilation, the mix of C and C++ will crash.
-        #   *By default*, macOS and FreeBSD use clang and Linux use gcc
-        #
-        #   If we are not using a permissive compiler that's OK with being
-        #   passed wrong std flags, swap out compile function by adding a filter
-        #   for it.
+        # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
+        # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
         old_compile = self.compiler._compile
 
         def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
             if src.endswith(".c"):
                 extra_postargs = [
-                    arg for arg in extra_postargs if "-std=c++" not in arg
+                    arg for arg in extra_postargs if arg != "-std=c++17"
                 ]
-            elif src.endswith(".cc") or src.endswith(".cpp"):
+            elif src.endswith((".cc", ".cpp")):
                 extra_postargs = [
-                    arg for arg in extra_postargs if "-std=c11" not in arg
+                    arg for arg in extra_postargs if arg != "-std=c11"
                 ]
             return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
@@ -184,20 +177,21 @@ EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
-        # MSVC by defaults uses C++14 so C11 needs to be specified.
+        # MSVC by defaults uses C++14 and C89 so both needs to be configured.
+        EXTRA_ENV_COMPILE_ARGS += " /std:c++17"
         EXTRA_ENV_COMPILE_ARGS += " /std:c11"
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform:
-        # GCC by defaults uses C17 so only C++14 needs to be specified.
+        # GCC by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
         # Reduce the optimization level from O3 (in many cases) to O1 to
         # workaround gcc misalignment bug with MOVAPS (internal b/329134877)
         EXTRA_ENV_COMPILE_ARGS += " -O1"
     elif "darwin" in sys.platform:
-        # AppleClang by defaults uses C17 so only C++14 needs to be specified.
+        # AppleClang by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
         EXTRA_ENV_COMPILE_ARGS += " -stdlib=libc++ -DHAVE_UNISTD_H"
@@ -233,6 +227,8 @@ if EXTRA_ENV_LINK_ARGS is None:
         EXTRA_ENV_LINK_ARGS += " -lpthread"
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += " -latomic"
+    if "linux" in sys.platform:
+        EXTRA_ENV_LINK_ARGS += " -static-libgcc"
 
 # Explicitly link Core Foundation framework for MacOS to ensure no symbol is
 # missing when compiled using package managers like Conda.

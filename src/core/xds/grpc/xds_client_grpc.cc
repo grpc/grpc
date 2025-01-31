@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,12 +36,11 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/service/status/v3/csds.upb.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
@@ -248,7 +248,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     absl::string_view key, const ChannelArgs& args, const char* reason) {
   // If getting bootstrap from channel args, create a local XdsClient
   // instance for the channel or server instead of using the global instance.
-  absl::optional<absl::string_view> bootstrap_config = args.GetString(
+  std::optional<absl::string_view> bootstrap_config = args.GetString(
       GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
   if (bootstrap_config.has_value()) {
     auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_config);
@@ -360,9 +360,9 @@ namespace {
 std::vector<RefCountedPtr<GrpcXdsClient>> GetAllXdsClients() {
   MutexLock lock(g_mu);
   std::vector<RefCountedPtr<GrpcXdsClient>> xds_clients;
-  for (const auto& key_client : *g_xds_client_map) {
+  for (const auto& [_, client] : *g_xds_client_map) {
     auto xds_client =
-        key_client.second->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs");
+        client->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs");
     if (xds_client != nullptr) {
       xds_clients.emplace_back(xds_client.TakeAsSubclass<GrpcXdsClient>());
     }

@@ -130,8 +130,8 @@ class ClientChannelTest : public YodelTest {
       handlers_.push(unstarted_call_handler.StartCall());
     }
 
-    absl::optional<CallHandler> PopHandler() {
-      if (handlers_.empty()) return absl::nullopt;
+    std::optional<CallHandler> PopHandler() {
+      if (handlers_.empty()) return std::nullopt;
       auto handler = std::move(handlers_.front());
       handlers_.pop();
       return handler;
@@ -190,12 +190,10 @@ class ClientChannelTest : public YodelTest {
 
     void QueueNameResolutionResult(Resolver::Result result) {
       result.args = result.args.UnionWith(args_);
-      work_serializer_->Run(
-          [self = RefAsSubclass<TestResolver>(),
-           result = std::move(result)]() mutable {
-            self->result_handler_->ReportResult(std::move(result));
-          },
-          DEBUG_LOCATION);
+      work_serializer_->Run([self = RefAsSubclass<TestResolver>(),
+                             result = std::move(result)]() mutable {
+        self->result_handler_->ReportResult(std::move(result));
+      });
     }
 
    private:
@@ -250,7 +248,7 @@ class ClientChannelTest : public YodelTest {
   }
 
   RefCountedPtr<ClientChannel> channel_;
-  absl::optional<ClientChannel::PickerObservable> picker_;
+  std::optional<ClientChannel::PickerObservable> picker_;
   TestCallDestinationFactory call_destination_factory_{this};
   TestClientChannelFactory client_channel_factory_;
   RefCountedPtr<TestCallDestination> call_destination_ =

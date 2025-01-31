@@ -96,13 +96,13 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
   EXPECT_EQ(server_status.message(), "xyz");
 }
 
-CORE_END2END_TEST(Http2Test, ServerStreaming) { ServerStreaming(*this, 1); }
+CORE_END2END_TEST(Http2Tests, ServerStreaming) { ServerStreaming(*this, 1); }
 
-CORE_END2END_TEST(Http2Test, ServerStreamingEmptyStream) {
+CORE_END2END_TEST(Http2Tests, ServerStreamingEmptyStream) {
   ServerStreaming(*this, 0);
 }
 
-CORE_END2END_TEST(Http2Test, ServerStreaming10Messages) {
+CORE_END2END_TEST(Http2Tests, ServerStreaming10Messages) {
   // TODO(yashykt): Remove this once b/376283636 is fixed.
   ConfigVars::Overrides overrides;
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;

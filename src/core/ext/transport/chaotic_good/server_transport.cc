@@ -170,7 +170,7 @@ auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
       // Wait for initial metadata then send it out.
       call_initiator.PullServerInitialMetadata(),
       [stream_id, outgoing_frames, call_initiator,
-       this](absl::optional<ServerMetadataHandle> md) mutable {
+       this](std::optional<ServerMetadataHandle> md) mutable {
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: SendCallInitialMetadataAndBody: md="
             << (md.has_value() ? (*md)->DebugString() : "null");
@@ -230,7 +230,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   RefCountedPtr<Arena> arena(call_arena_allocator_->MakeArena());
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
-  absl::optional<CallInitiator> call_initiator;
+  std::optional<CallInitiator> call_initiator;
   auto call = MakeCallPair(std::move(*md), std::move(arena));
   call_initiator.emplace(std::move(call.initiator));
   const auto stream_id = client_initial_metadata_frame->stream_id;
@@ -257,7 +257,7 @@ auto ChaoticGoodServerTransport::ReadOneFrame(
           [this, transport](IncomingFrame incoming_frame) mutable {
             return Switch(
                 incoming_frame.header().type,
-                Case<FrameType, FrameType::kClientInitialMetadata>([&, this]() {
+                Case<FrameType::kClientInitialMetadata>([&, this]() {
                   return TrySeq(incoming_frame.Payload(),
                                 [this, transport = std::move(transport),
                                  header = incoming_frame.header()](
@@ -266,24 +266,23 @@ auto ChaoticGoodServerTransport::ReadOneFrame(
                                                    std::move(payload));
                                 });
                 }),
-                Case<FrameType, FrameType::kMessage>([&, this]() mutable {
+                Case<FrameType::kMessage>([&, this]() mutable {
                   return DispatchFrame<MessageFrame>(std::move(transport),
                                                      std::move(incoming_frame));
                 }),
-                Case<FrameType, FrameType::kBeginMessage>([&, this]() mutable {
+                Case<FrameType::kBeginMessage>([&, this]() mutable {
                   return DispatchFrame<BeginMessageFrame>(
                       std::move(transport), std::move(incoming_frame));
                 }),
-                Case<FrameType, FrameType::kMessageChunk>([&, this]() mutable {
+                Case<FrameType::kMessageChunk>([&, this]() mutable {
                   return DispatchFrame<MessageChunkFrame>(
                       std::move(transport), std::move(incoming_frame));
                 }),
-                Case<FrameType, FrameType::kClientEndOfStream>(
-                    [&, this]() mutable {
-                      return DispatchFrame<ClientEndOfStream>(
-                          std::move(transport), std::move(incoming_frame));
-                    }),
-                Case<FrameType, FrameType::kCancel>([&, this]() {
+                Case<FrameType::kClientEndOfStream>([&, this]() mutable {
+                  return DispatchFrame<ClientEndOfStream>(
+                      std::move(transport), std::move(incoming_frame));
+                }),
+                Case<FrameType::kCancel>([&, this]() {
                   auto stream =
                       ExtractStream(incoming_frame.header().stream_id);
                   GRPC_TRACE_LOG(chaotic_good, INFO)

@@ -159,9 +159,8 @@ class InterceptionChainBuilder final {
   // the future, and building is a builder responsibility.
   // Instead, we declare a relatively closed set of destinations here, and
   // hide the adaptors inside the builder at build time.
-  using FinalDestination =
-      absl::variant<RefCountedPtr<UnstartedCallDestination>,
-                    RefCountedPtr<CallDestination>>;
+  using FinalDestination = std::variant<RefCountedPtr<UnstartedCallDestination>,
+                                        RefCountedPtr<CallDestination>>;
 
   explicit InterceptionChainBuilder(ChannelArgs args,
                                     const Blackboard* old_blackboard = nullptr,
@@ -201,14 +200,30 @@ class InterceptionChainBuilder final {
 
   // Add a filter that just mutates client initial metadata.
   template <typename F>
-  void AddOnClientInitialMetadata(F f) {
+  InterceptionChainBuilder& AddOnClientInitialMetadata(F f) {
     stack_builder().AddOnClientInitialMetadata(std::move(f));
+    return *this;
   }
 
   // Add a filter that just mutates server trailing metadata.
   template <typename F>
-  void AddOnServerTrailingMetadata(F f) {
+  InterceptionChainBuilder& AddOnServerTrailingMetadata(F f) {
     stack_builder().AddOnServerTrailingMetadata(std::move(f));
+    return *this;
+  }
+
+  // Immediately: Call AddOnServerTrailingMetadata
+  // Then, or every interceptor added to the filter from this point on:
+  // Perform an AddOnServerTrailingMetadata() immediately after
+  // the interceptor was added - but only if other filters or interceptors
+  // are added below it.
+  template <typename F>
+  InterceptionChainBuilder& AddOnServerTrailingMetadataForEachInterceptor(F f) {
+    AddOnServerTrailingMetadata(f);
+    on_new_interception_tail_.emplace_back([f](InterceptionChainBuilder* b) {
+      b->AddOnServerTrailingMetadata(f);
+    });
+    return *this;
   }
 
   void Fail(absl::Status status) {
@@ -224,7 +239,10 @@ class InterceptionChainBuilder final {
 
  private:
   CallFilters::StackBuilder& stack_builder() {
-    if (!stack_builder_.has_value()) stack_builder_.emplace();
+    if (!stack_builder_.has_value()) {
+      stack_builder_.emplace();
+      for (auto& f : on_new_interception_tail_) f(this);
+    }
     return *stack_builder_;
   }
 
@@ -248,8 +266,10 @@ class InterceptionChainBuilder final {
   void AddInterceptor(absl::StatusOr<RefCountedPtr<Interceptor>> interceptor);
 
   ChannelArgs args_;
-  absl::optional<CallFilters::StackBuilder> stack_builder_;
+  std::optional<CallFilters::StackBuilder> stack_builder_;
   RefCountedPtr<Interceptor> top_interceptor_;
+  std::vector<absl::AnyInvocable<void(InterceptionChainBuilder*)>>
+      on_new_interception_tail_;
   absl::Status status_;
   std::map<size_t, size_t> filter_type_counts_;
   static std::atomic<size_t> next_filter_id_;

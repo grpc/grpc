@@ -15,9 +15,9 @@
 #include "src/core/call/request_buffer.h"
 
 #include <cstdint>
+#include <optional>
 
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/util/match.h"
 
 namespace grpc_core {
@@ -29,8 +29,8 @@ RequestBuffer::RequestBuffer() : state_(absl::in_place_type_t<Buffering>()) {}
 ValueOrFailure<size_t> RequestBuffer::PushClientInitialMetadata(
     ClientMetadataHandle md) {
   MutexLock lock(&mu_);
-  if (absl::get_if<Cancelled>(&state_)) return Failure{};
-  auto& buffering = absl::get<Buffering>(state_);
+  if (std::get_if<Cancelled>(&state_)) return Failure{};
+  auto& buffering = std::get<Buffering>(state_);
   CHECK_EQ(buffering.initial_metadata.get(), nullptr);
   buffering.initial_metadata = std::move(md);
   buffering.buffered += buffering.initial_metadata->TransportSize();
@@ -41,15 +41,15 @@ ValueOrFailure<size_t> RequestBuffer::PushClientInitialMetadata(
 Poll<ValueOrFailure<size_t>> RequestBuffer::PollPushMessage(
     MessageHandle& message) {
   MutexLock lock(&mu_);
-  if (absl::get_if<Cancelled>(&state_)) return Failure{};
+  if (std::get_if<Cancelled>(&state_)) return Failure{};
   size_t buffered = 0;
-  if (auto* buffering = absl::get_if<Buffering>(&state_)) {
+  if (auto* buffering = std::get_if<Buffering>(&state_)) {
     if (winner_ != nullptr) return PendingPush();
     buffering->buffered += message->payload()->Length();
     buffered = buffering->buffered;
     buffering->messages.push_back(std::move(message));
   } else {
-    auto& streaming = absl::get<Streaming>(state_);
+    auto& streaming = std::get<Streaming>(state_);
     CHECK_EQ(streaming.end_of_stream, false);
     if (streaming.message != nullptr) {
       return PendingPush();
@@ -62,13 +62,13 @@ Poll<ValueOrFailure<size_t>> RequestBuffer::PollPushMessage(
 
 StatusFlag RequestBuffer::FinishSends() {
   MutexLock lock(&mu_);
-  if (absl::get_if<Cancelled>(&state_)) return Failure{};
-  if (auto* buffering = absl::get_if<Buffering>(&state_)) {
+  if (std::get_if<Cancelled>(&state_)) return Failure{};
+  if (auto* buffering = std::get_if<Buffering>(&state_)) {
     Buffered buffered(std::move(buffering->initial_metadata),
                       std::move(buffering->messages));
     state_.emplace<Buffered>(std::move(buffered));
   } else {
-    auto& streaming = absl::get<Streaming>(state_);
+    auto& streaming = std::get<Streaming>(state_);
     CHECK_EQ(streaming.end_of_stream, false);
     streaming.end_of_stream = true;
   }
@@ -78,7 +78,7 @@ StatusFlag RequestBuffer::FinishSends() {
 
 void RequestBuffer::Cancel(absl::Status error) {
   MutexLock lock(&mu_);
-  if (absl::holds_alternative<Cancelled>(state_)) return;
+  if (std::holds_alternative<Cancelled>(state_)) return;
   state_.emplace<Cancelled>(std::move(error));
   WakeupAsyncAllPullers();
 }
@@ -87,13 +87,13 @@ void RequestBuffer::Commit(Reader* winner) {
   MutexLock lock(&mu_);
   CHECK_EQ(winner_, nullptr);
   winner_ = winner;
-  if (auto* buffering = absl::get_if<Buffering>(&state_)) {
+  if (auto* buffering = std::get_if<Buffering>(&state_)) {
     if (buffering->initial_metadata != nullptr &&
         winner->message_index_ == buffering->messages.size() &&
         winner->pulled_client_initial_metadata_) {
       state_.emplace<Streaming>();
     }
-  } else if (auto* buffered = absl::get_if<Buffered>(&state_)) {
+  } else if (auto* buffered = std::get_if<Buffered>(&state_)) {
     CHECK_NE(buffered->initial_metadata.get(), nullptr);
     if (winner->message_index_ == buffered->messages.size()) {
       state_.emplace<Streaming>().end_of_stream = true;
@@ -116,7 +116,7 @@ RequestBuffer::Reader::PollPullClientInitialMetadata() {
     error_ = absl::CancelledError("Another call was chosen");
     return Failure{};
   }
-  if (auto* buffering = absl::get_if<Buffering>(&buffer_->state_)) {
+  if (auto* buffering = std::get_if<Buffering>(&buffer_->state_)) {
     if (buffering->initial_metadata.get() == nullptr) {
       return buffer_->PendingPull(this);
     }
@@ -125,22 +125,22 @@ RequestBuffer::Reader::PollPullClientInitialMetadata() {
     buffer_->MaybeSwitchToStreaming();
     return std::move(result);
   }
-  if (auto* buffered = absl::get_if<Buffered>(&buffer_->state_)) {
+  if (auto* buffered = std::get_if<Buffered>(&buffer_->state_)) {
     pulled_client_initial_metadata_ = true;
     return ClaimObject(buffered->initial_metadata);
   }
-  error_ = absl::get<Cancelled>(buffer_->state_).error;
+  error_ = std::get<Cancelled>(buffer_->state_).error;
   return Failure{};
 }
 
-Poll<ValueOrFailure<absl::optional<MessageHandle>>>
+Poll<ValueOrFailure<std::optional<MessageHandle>>>
 RequestBuffer::Reader::PollPullMessage() {
   ReleasableMutexLock lock(&buffer_->mu_);
   if (buffer_->winner_ != nullptr && buffer_->winner_ != this) {
     error_ = absl::CancelledError("Another call was chosen");
     return Failure{};
   }
-  if (auto* buffering = absl::get_if<Buffering>(&buffer_->state_)) {
+  if (auto* buffering = std::get_if<Buffering>(&buffer_->state_)) {
     if (message_index_ == buffering->messages.size()) {
       return buffer_->PendingPull(this);
     }
@@ -150,15 +150,15 @@ RequestBuffer::Reader::PollPullMessage() {
     buffer_->MaybeSwitchToStreaming();
     return std::move(result);
   }
-  if (auto* buffered = absl::get_if<Buffered>(&buffer_->state_)) {
-    if (message_index_ == buffered->messages.size()) return absl::nullopt;
+  if (auto* buffered = std::get_if<Buffered>(&buffer_->state_)) {
+    if (message_index_ == buffered->messages.size()) return std::nullopt;
     const auto idx = message_index_;
     ++message_index_;
     return ClaimObject(buffered->messages[idx]);
   }
-  if (auto* streaming = absl::get_if<Streaming>(&buffer_->state_)) {
+  if (auto* streaming = std::get_if<Streaming>(&buffer_->state_)) {
     if (streaming->message == nullptr) {
-      if (streaming->end_of_stream) return absl::nullopt;
+      if (streaming->end_of_stream) return std::nullopt;
       return buffer_->PendingPull(this);
     }
     auto msg = std::move(streaming->message);
@@ -167,7 +167,7 @@ RequestBuffer::Reader::PollPullMessage() {
     waker.Wakeup();
     return std::move(msg);
   }
-  error_ = absl::get<Cancelled>(buffer_->state_).error;
+  error_ = std::get<Cancelled>(buffer_->state_).error;
   return Failure{};
 }
 

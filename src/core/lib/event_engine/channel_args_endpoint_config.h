@@ -17,12 +17,12 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class ChannelArgsEndpointConfig : public EndpointConfig {
  public:
@@ -32,8 +32,8 @@ class ChannelArgsEndpointConfig : public EndpointConfig {
   ChannelArgsEndpointConfig(const ChannelArgsEndpointConfig& config) = default;
   ChannelArgsEndpointConfig& operator=(const ChannelArgsEndpointConfig& other) =
       default;
-  absl::optional<int> GetInt(absl::string_view key) const override;
-  absl::optional<absl::string_view> GetString(
+  std::optional<int> GetInt(absl::string_view key) const override;
+  std::optional<absl::string_view> GetString(
       absl::string_view key) const override;
   void* GetVoidPointer(absl::string_view key) const override;
 
@@ -41,7 +41,6 @@ class ChannelArgsEndpointConfig : public EndpointConfig {
   grpc_core::ChannelArgs args_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_ENDPOINT_CONFIG_H

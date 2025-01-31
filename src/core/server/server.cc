@@ -33,6 +33,7 @@
 #include <list>
 #include <memory>
 #include <new>
+#include <optional>
 #include <queue>
 #include <type_traits>
 #include <utility>
@@ -43,7 +44,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
@@ -180,7 +180,7 @@ void Server::ListenerState::Stop() {
   listener_.reset();
 }
 
-absl::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
+std::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
     OrphanablePtr<ListenerInterface::LogicalConnection> connection,
     const ChannelArgs& args, grpc_endpoint* endpoint) {
   RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager;
@@ -188,7 +188,7 @@ absl::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
     MutexLock lock(&mu_);
     if (!is_serving_) {
       // Not serving
-      return absl::nullopt;
+      return std::nullopt;
     }
     connection_manager = connection_manager_;
   }
@@ -204,24 +204,24 @@ absl::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
   if (server_->config_fetcher() != nullptr) {
     if (connection_manager == nullptr) {
       // Connection manager not available
-      return absl::nullopt;
+      return std::nullopt;
     }
     absl::StatusOr<ChannelArgs> args_result =
         connection_manager->UpdateChannelArgsForConnection(new_args, endpoint);
     if (!args_result.ok()) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     auto* server_credentials =
         (*args_result).GetObject<grpc_server_credentials>();
     if (server_credentials == nullptr) {
       // Could not find server credentials
-      return absl::nullopt;
+      return std::nullopt;
     }
     auto security_connector =
         server_credentials->create_security_connector(*args_result);
     if (security_connector == nullptr) {
       // Unable to create secure server with credentials
-      return absl::nullopt;
+      return std::nullopt;
     }
     new_args = (*args_result).SetObject(security_connector);
   }
@@ -232,7 +232,7 @@ absl::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
   // to the list of tracked connections.
   if (!is_serving_ || connection_manager != connection_manager_) {
     // Not serving
-    return absl::nullopt;
+    return std::nullopt;
   }
   connections_.emplace(std::move(connection));
   return new_args;
@@ -1085,71 +1085,71 @@ absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
 }
 }  // namespace
 
+auto Server::MatchRequestAndMaybeReadFirstMessage(CallHandler call_handler,
+                                                  ClientMetadataHandle md) {
+  auto* registered_method = static_cast<RegisteredMethod*>(
+      md->get(GrpcRegisteredMethod()).value_or(nullptr));
+  RequestMatcherInterface* rm;
+  grpc_server_register_method_payload_handling payload_handling =
+      GRPC_SRM_PAYLOAD_NONE;
+  if (registered_method == nullptr) {
+    rm = unregistered_request_matcher_.get();
+  } else {
+    payload_handling = registered_method->payload_handling;
+    rm = registered_method->matcher.get();
+  }
+  using FirstMessageResult = ValueOrFailure<std::optional<MessageHandle>>;
+  auto maybe_read_first_message = If(
+      payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
+      [call_handler]() mutable {
+        return Map(
+            call_handler.PullMessage(),
+            [](ClientToServerNextMessage next_msg) -> FirstMessageResult {
+              if (!next_msg.ok()) return Failure{};
+              if (!next_msg.has_value()) {
+                return FirstMessageResult(std::nullopt);
+              }
+              return FirstMessageResult(next_msg.TakeValue());
+            });
+      },
+      []() -> FirstMessageResult { return FirstMessageResult(std::nullopt); });
+  return TryJoin<absl::StatusOr>(
+      std::move(maybe_read_first_message), rm->MatchRequest(0),
+      [md = std::move(md)]() mutable {
+        return ValueOrFailure<ClientMetadataHandle>(std::move(md));
+      });
+}
+
 auto Server::MatchAndPublishCall(CallHandler call_handler) {
-  call_handler.SpawnGuardedUntilCallCompletes(
-      "request_matcher", [this, call_handler]() mutable {
-        return TrySeq(
+  call_handler.SpawnGuarded("request_matcher", [this, call_handler]() mutable {
+    return TrySeq(
+        call_handler.UntilCallCompletes(TrySeq(
             // Wait for initial metadata to pass through all filters
             Map(call_handler.PullClientInitialMetadata(), CheckClientMetadata),
             // Match request with requested call
             [this, call_handler](ClientMetadataHandle md) mutable {
-              auto* registered_method = static_cast<RegisteredMethod*>(
-                  md->get(GrpcRegisteredMethod()).value_or(nullptr));
-              RequestMatcherInterface* rm;
-              grpc_server_register_method_payload_handling payload_handling =
-                  GRPC_SRM_PAYLOAD_NONE;
-              if (registered_method == nullptr) {
-                rm = unregistered_request_matcher_.get();
-              } else {
-                payload_handling = registered_method->payload_handling;
-                rm = registered_method->matcher.get();
-              }
-              using FirstMessageResult =
-                  ValueOrFailure<absl::optional<MessageHandle>>;
-              auto maybe_read_first_message = If(
-                  payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-                  [call_handler]() mutable {
-                    return Map(
-                        call_handler.PullMessage(),
-                        [](ClientToServerNextMessage next_msg)
-                            -> FirstMessageResult {
-                          if (!next_msg.ok()) return Failure{};
-                          if (!next_msg.has_value()) {
-                            return FirstMessageResult(absl::nullopt);
-                          }
-                          return FirstMessageResult(next_msg.TakeValue());
-                        });
-                  },
-                  []() -> FirstMessageResult {
-                    return FirstMessageResult(absl::nullopt);
-                  });
-              return TryJoin<absl::StatusOr>(
-                  std::move(maybe_read_first_message), rm->MatchRequest(0),
-                  [md = std::move(md)]() mutable {
-                    return ValueOrFailure<ClientMetadataHandle>(std::move(md));
-                  });
-            },
-            // Publish call to cq
-            [call_handler,
-             this](std::tuple<absl::optional<MessageHandle>,
-                              RequestMatcherInterface::MatchResult,
-                              ClientMetadataHandle>
-                       r) {
-              RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
-              auto md = std::move(std::get<2>(r));
-              auto* rc = mr.TakeCall();
-              rc->Complete(std::move(std::get<0>(r)), *md);
-              grpc_call* call =
-                  MakeServerCall(call_handler, std::move(md), this,
-                                 rc->cq_bound_to_call, rc->initial_metadata);
-              *rc->call = call;
-              return Map(
-                  WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
-                  [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
-                    return absl::OkStatus();
-                  });
-            });
-      });
+              return MatchRequestAndMaybeReadFirstMessage(
+                  std::move(call_handler), std::move(md));
+            })),
+        // Publish call to cq
+        [call_handler, this](std::tuple<std::optional<MessageHandle>,
+                                        RequestMatcherInterface::MatchResult,
+                                        ClientMetadataHandle>
+                                 r) {
+          RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
+          auto md = std::move(std::get<2>(r));
+          auto* rc = mr.TakeCall();
+          rc->Complete(std::move(std::get<0>(r)), *md);
+          grpc_call* call =
+              MakeServerCall(call_handler, std::move(md), this,
+                             rc->cq_bound_to_call, rc->initial_metadata);
+          *rc->call = call;
+          return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
+                     [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
+                       return absl::OkStatus();
+                     });
+        });
+  });
 }
 
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>

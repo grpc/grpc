@@ -30,11 +30,13 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -47,9 +49,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -84,6 +84,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "src/core/util/work_serializer.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -340,21 +341,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             // executed after that state notifications has been delivered.
             if (run_before_flush != nullptr) run_before_flush();
             LOG(INFO) << "Waiting for state notifications to be delivered";
-            test_->work_serializer_->Run(
-                [&]() {
-                  LOG(INFO) << "State notifications delivered, waiting for "
-                               "health notifications";
-                  // Now the connectivity state notifications has been
-                  // delivered. If the state reported was READY, then the
-                  // pick_first leaf policy will have started a health watch, so
-                  // we add another callback to the queue to be executed after
-                  // the initial health watch notification has been delivered.
-                  test_->work_serializer_->Run([&]() { notification.Notify(); },
-                                               DEBUG_LOCATION);
-                },
-                DEBUG_LOCATION);
-          },
-          DEBUG_LOCATION);
+            test_->work_serializer_->Run([&]() {
+              LOG(INFO) << "State notifications delivered, waiting for "
+                           "health notifications";
+              // Now the connectivity state notifications has been
+              // delivered. If the state reported was READY, then the
+              // pick_first leaf policy will have started a health watch, so
+              // we add another callback to the queue to be executed after
+              // the initial health watch notification has been delivered.
+              test_->work_serializer_->Run([&]() { notification.Notify(); });
+            });
+          });
       while (!notification.HasBeenNotified()) {
         test_->fuzzing_ee_->Tick();
       }
@@ -399,8 +396,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*test_->work_serializer_) {
             num_watchers = state_tracker_.NumWatchers();
             notification.Notify();
-          },
-          DEBUG_LOCATION);
+          });
       while (!notification.HasBeenNotified()) {
         test_->fuzzing_ee_->Tick();
       }
@@ -469,17 +465,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // If the queue is empty or the next event is not a state update,
     // fails the test and returns nullopt without removing anything from
     // the queue.
-    absl::optional<StateUpdate> GetNextStateUpdate(
+    std::optional<StateUpdate> GetNextStateUpdate(
         SourceLocation location = SourceLocation()) {
       MutexLock lock(&mu_);
       EXPECT_FALSE(queue_.empty()) << location.file() << ":" << location.line();
-      if (queue_.empty()) return absl::nullopt;
+      if (queue_.empty()) return std::nullopt;
       Event& event = queue_.front();
-      auto* update = absl::get_if<StateUpdate>(&event);
+      auto* update = std::get_if<StateUpdate>(&event);
       EXPECT_NE(update, nullptr)
           << "unexpected event " << EventString(event) << " at "
           << location.file() << ":" << location.line();
-      if (update == nullptr) return absl::nullopt;
+      if (update == nullptr) return std::nullopt;
       StateUpdate result = std::move(*update);
       LOG(INFO) << "dequeued next state update: " << result.ToString();
       queue_.pop_front();
@@ -490,61 +486,25 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // If the queue is empty or the next event is not a re-resolution,
     // fails the test and returns nullopt without removing anything
     // from the queue.
-    absl::optional<ReresolutionRequested> GetNextReresolution(
+    std::optional<ReresolutionRequested> GetNextReresolution(
         SourceLocation location = SourceLocation()) {
       MutexLock lock(&mu_);
       EXPECT_FALSE(queue_.empty()) << location.file() << ":" << location.line();
-      if (queue_.empty()) return absl::nullopt;
+      if (queue_.empty()) return std::nullopt;
       Event& event = queue_.front();
-      auto* reresolution = absl::get_if<ReresolutionRequested>(&event);
+      auto* reresolution = std::get_if<ReresolutionRequested>(&event);
       EXPECT_NE(reresolution, nullptr)
           << "unexpected event " << EventString(event) << " at "
           << location.file() << ":" << location.line();
-      if (reresolution == nullptr) return absl::nullopt;
+      if (reresolution == nullptr) return std::nullopt;
       ReresolutionRequested result = *reresolution;
       queue_.pop_front();
       return result;
     }
 
    private:
-    // A wrapper for a picker that hops into the WorkSerializer to
-    // release the ref to the picker.
-    class PickerWrapper : public LoadBalancingPolicy::SubchannelPicker {
-     public:
-      PickerWrapper(LoadBalancingPolicyTest* test,
-                    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
-          : test_(test), picker_(std::move(picker)) {
-        LOG(INFO) << "creating wrapper " << this << " for picker "
-                  << picker_.get();
-      }
-
-      void Orphaned() override {
-        absl::Notification notification;
-        ExecCtx exec_ctx;
-        test_->work_serializer_->Run(
-            [notification = &notification,
-             picker = std::move(picker_)]() mutable {
-              picker.reset();
-              notification->Notify();
-            },
-            DEBUG_LOCATION);
-        while (!notification.HasBeenNotified()) {
-          test_->fuzzing_ee_->Tick();
-        }
-      }
-
-      LoadBalancingPolicy::PickResult Pick(
-          LoadBalancingPolicy::PickArgs args) override {
-        return picker_->Pick(args);
-      }
-
-     private:
-      LoadBalancingPolicyTest* const test_;
-      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_;
-    };
-
     // Represents an event reported by the LB policy.
-    using Event = absl::variant<StateUpdate, ReresolutionRequested>;
+    using Event = std::variant<StateUpdate, ReresolutionRequested>;
 
     // Returns a human-readable representation of an event.
     static std::string EventString(const Event& event) {
@@ -586,11 +546,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         grpc_connectivity_state state, const absl::Status& status,
         RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
       MutexLock lock(&mu_);
-      StateUpdate update{
-          state, status,
-          IsWorkSerializerDispatchEnabled()
-              ? std::move(picker)
-              : MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
+      StateUpdate update{state, status, std::move(picker)};
       LOG(INFO) << "enqueuing state update from LB policy: "
                 << update.ToString();
       queue_.push_back(std::move(update));
@@ -636,10 +592,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         : metadata_(std::move(metadata)) {}
 
    private:
-    absl::optional<absl::string_view> Lookup(
+    std::optional<absl::string_view> Lookup(
         absl::string_view key, std::string* /*buffer*/) const override {
       auto it = metadata_.find(std::string(key));
-      if (it == metadata_.end()) return absl::nullopt;
+      if (it == metadata_.end()) return std::nullopt;
       return it->second;
     }
 
@@ -692,7 +648,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       : public LoadBalancingPolicy::BackendMetricAccessor {
    public:
     explicit FakeBackendMetricAccessor(
-        absl::optional<BackendMetricData> backend_metric_data)
+        std::optional<BackendMetricData> backend_metric_data)
         : backend_metric_data_(std::move(backend_metric_data)) {}
 
     const BackendMetricData* GetBackendMetricData() override {
@@ -701,7 +657,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
    private:
-    const absl::optional<BackendMetricData> backend_metric_data_;
+    const std::optional<BackendMetricData> backend_metric_data_;
   };
 
   explicit LoadBalancingPolicyTest(absl::string_view lb_policy_name,
@@ -746,7 +702,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       lb_policy_.reset();
     }
     fuzzing_ee_->TickUntilIdle();
-    grpc_event_engine::experimental::WaitForSingleOwner(std::move(fuzzing_ee_));
+    WaitForSingleOwner(std::move(fuzzing_ee_));
     grpc_shutdown_blocking();
   }
 
@@ -833,31 +789,26 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // until all the initial notifications for all of those watchers
     // have been delivered to the LB policy.
     absl::Notification notification;
-    work_serializer_->Run(
-        [&]() {
-          status = lb_policy->UpdateLocked(std::move(update_args));
-          // UpdateLocked() enqueued the initial connectivity state
-          // notifications for the subchannels, so we add another
-          // callback to the queue to be executed after those initial
-          // state notifications have been delivered.
-          LOG(INFO) << "Applied update, waiting for initial connectivity state "
-                       "notifications";
-          work_serializer_->Run(
-              [&]() {
-                LOG(INFO) << "Initial connectivity state notifications "
-                             "delivered; waiting for health notifications";
-                // Now that the initial state notifications have been
-                // delivered, the queue will contain the health watch
-                // notifications for any subchannels in state READY,
-                // so we add another callback to the queue to be
-                // executed after those health watch notifications have
-                // been delivered.
-                work_serializer_->Run([&]() { notification.Notify(); },
-                                      DEBUG_LOCATION);
-              },
-              DEBUG_LOCATION);
-        },
-        DEBUG_LOCATION);
+    work_serializer_->Run([&]() {
+      status = lb_policy->UpdateLocked(std::move(update_args));
+      // UpdateLocked() enqueued the initial connectivity state
+      // notifications for the subchannels, so we add another
+      // callback to the queue to be executed after those initial
+      // state notifications have been delivered.
+      LOG(INFO) << "Applied update, waiting for initial connectivity state "
+                   "notifications";
+      work_serializer_->Run([&]() {
+        LOG(INFO) << "Initial connectivity state notifications "
+                     "delivered; waiting for health notifications";
+        // Now that the initial state notifications have been
+        // delivered, the queue will contain the health watch
+        // notifications for any subchannels in state READY,
+        // so we add another callback to the queue to be
+        // executed after those health watch notifications have
+        // been delivered.
+        work_serializer_->Run([&]() { notification.Notify(); });
+      });
+    });
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }
@@ -872,13 +823,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // Note: ExitIdle() will enqueue a bunch of connectivity state
     // notifications on the WorkSerializer, and we want to wait until
     // those are delivered to the LB policy.
-    work_serializer_->Run(
-        [&]() {
-          lb_policy_->ExitIdleLocked();
-          work_serializer_->Run([&]() { notification.Notify(); },
-                                DEBUG_LOCATION);
-        },
-        DEBUG_LOCATION);
+    work_serializer_->Run([&]() {
+      lb_policy_->ExitIdleLocked();
+      work_serializer_->Run([&]() { notification.Notify(); });
+    });
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }
@@ -1092,11 +1040,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     EXPECT_NE(picker, nullptr) << location.file() << ":" << location.line();
     if (picker == nullptr) return false;
     auto pick_result = DoPick(picker, call_attributes, metadata);
-    EXPECT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+    EXPECT_TRUE(std::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
         << PickResultString(pick_result) << "\nat " << location.file() << ":"
         << location.line();
-    return absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+    return std::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result);
   }
 
@@ -1107,7 +1055,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // subchannel_call_tracker is non-null, it will be set to point to the
   // call tracker; otherwise, the call tracker will be invoked
   // automatically to represent a complete call with no backend metric data.
-  absl::optional<std::string> ExpectPickComplete(
+  std::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
       const CallAttributes& call_attributes = {},
       const std::map<std::string, std::string>& metadata = {},
@@ -1117,14 +1065,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr);
     if (picker == nullptr) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     auto pick_result = DoPick(picker, call_attributes, metadata);
-    auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
+    auto* complete = std::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
                                  << location.file() << ":" << location.line();
-    if (complete == nullptr) return absl::nullopt;
+    if (complete == nullptr) return std::nullopt;
     auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
         complete->subchannel.get());
     if (picked_subchannel != nullptr) *picked_subchannel = subchannel;
@@ -1154,7 +1102,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Gets num_picks complete picks from picker and returns the resulting
   // list of addresses, or nullopt if a non-complete pick was returned.
-  absl::optional<std::vector<std::string>> GetCompletePicks(
+  std::optional<std::vector<std::string>> GetCompletePicks(
       LoadBalancingPolicy::SubchannelPicker* picker, size_t num_picks,
       const CallAttributes& call_attributes = {},
       std::vector<
@@ -1163,7 +1111,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr);
     if (picker == nullptr) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     std::vector<std::string> results;
     for (size_t i = 0; i < num_picks; ++i) {
@@ -1175,7 +1123,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                             ? nullptr
                                             : &subchannel_call_tracker,
                                         nullptr, location);
-      if (!address.has_value()) return absl::nullopt;
+      if (!address.has_value()) return std::nullopt;
       results.emplace_back(std::move(*address));
       if (subchannel_call_trackers != nullptr) {
         subchannel_call_trackers->emplace_back(
@@ -1191,7 +1139,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // must then continue in round-robin fashion, with wrap-around.
   bool PicksAreRoundRobin(absl::Span<const absl::string_view> expected,
                           absl::Span<const std::string> actual) {
-    absl::optional<size_t> expected_index;
+    std::optional<size_t> expected_index;
     for (const auto& address : actual) {
       auto it = std::find(expected.begin(), expected.end(), address);
       if (it == expected.end()) return false;
@@ -1393,8 +1341,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                       std::function<void(const absl::Status&)> check_status,
                       SourceLocation location = SourceLocation()) {
     auto pick_result = DoPick(picker);
-    auto* fail = absl::get_if<LoadBalancingPolicy::PickResult::Fail>(
-        &pick_result.result);
+    auto* fail =
+        std::get_if<LoadBalancingPolicy::PickResult::Fail>(&pick_result.result);
     ASSERT_NE(fail, nullptr) << PickResultString(pick_result) << " at "
                              << location.file() << ":" << location.line();
     check_status(fail->status);
@@ -1452,7 +1400,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     ExecCtx exec_ctx;
     LOG(INFO) << "waiting for WorkSerializer to flush...";
     absl::Notification notification;
-    work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
+    work_serializer_->Run([&]() { notification.Notify(); });
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }
@@ -1468,7 +1416,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     if (flush_work_serializer) WaitForWorkSerializerToFlush();
   }
 
-  void SetExpectedTimerDuration(absl::optional<EventEngine::Duration> duration,
+  void SetExpectedTimerDuration(std::optional<EventEngine::Duration> duration,
                                 SourceLocation location = SourceLocation()) {
     if (duration.has_value()) {
       fuzzing_ee_->SetRunAfterDurationCallback(
