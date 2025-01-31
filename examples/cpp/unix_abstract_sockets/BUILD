@@ -32,3 +32,13 @@ cc_binary(
         "//examples/protos:helloworld_cc_grpc",
     ],
 )
+
+cc_binary(
+    name = "threaded_server",
+    srcs = ["threaded_server.cc"],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//examples/protos:helloworld_cc_grpc",
+    ],
+)
