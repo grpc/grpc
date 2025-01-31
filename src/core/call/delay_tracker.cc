@@ -30,9 +30,9 @@ void DelayTracker::EndDelay(Handle handle) {
   delays_[handle].end = Timestamp::Now();
 }
 
-void DelayTracker::AddChild(absl::string_view description,
+void DelayTracker::AddChild(std::string description,
                             DelayTracker delay_tracker) {
-  children_.emplace_back(description, std::move(delay_tracker));
+  children_.emplace_back(std::move(description), std::move(delay_tracker));
 }
 
 std::string DelayTracker::GetDelayInfo() const {

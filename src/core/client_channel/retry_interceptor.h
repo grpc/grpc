@@ -136,6 +136,7 @@ class RetryInterceptor : public Interceptor {
    private:
     auto ClientToServer();
     auto ServerToClient();
+    void PropagateChildDelayTracker(ServerMetadata& md);
     auto ServerToClientGotInitialMetadata(ServerMetadataHandle md);
     auto ServerToClientGotTrailersOnlyResponse();
 

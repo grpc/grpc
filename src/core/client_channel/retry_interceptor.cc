@@ -284,6 +284,22 @@ RetryInterceptor::Attempt::Attempt(RefCountedPtr<Call> call)
 
 RetryInterceptor::Attempt::~Attempt() { call_->RemoveAttempt(this); }
 
+// Extracts the DelayTracker from the attempt's server trailing metadata
+// and adds it as a child to the DelayTracker in the parent call context.
+void RetryInterceptor::Attempt::PropagateChildDelayTracker(ServerMetadata& md) {
+  if (DelayTracker* attempt_tracker = md.get_pointer(GrpcDelayTracker());
+      attempt_tracker != nullptr) {
+    std::string msg = absl::StrCat(
+        "retry attempt ", call_->num_attempts_completed());
+    // TODO(roth): Include peer string here.  Doesn't work right now, since
+    // PeerString is in server initial metadata, which isn't returned in
+    // trailers-only responses -- so we could do this only for the last
+    // retry attempt.
+    DelayTracker* tracker = GetOrCreateDelayTrackerContext();
+    tracker->AddChild(std::move(msg), std::move(*attempt_tracker));
+  }
+}
+
 auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
     ServerMetadataHandle md) {
   GRPC_TRACE_LOG(retry, INFO)
@@ -303,11 +319,13 @@ auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
                              return Success{};
                            }),
                    initiator_.PullServerTrailingMetadata(),
-                   [call = call_](ServerMetadataHandle md) {
+                   [self = Ref()](ServerMetadataHandle md) {
+                     auto* call = self->call_.get();
                      GRPC_TRACE_LOG(retry, INFO)
                          << call->DebugTag()
                          << " got server trailing metadata: "
                          << md->DebugString();
+                     self->PropagateChildDelayTracker(*md);
                      call->call_handler()->SpawnPushServerTrailingMetadata(
                          std::move(md));
                      return absl::OkStatus();
@@ -324,6 +342,7 @@ auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
         GRPC_TRACE_LOG(retry, INFO)
             << self->DebugTag()
             << " got server trailing metadata: " << md->DebugString();
+        self->PropagateChildDelayTracker(*md);
         auto delay = self->call_->ShouldRetry(
             *md,
             [self = self.get()]() -> std::string { return self->DebugTag(); });

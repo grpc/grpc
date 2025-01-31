@@ -42,7 +42,7 @@ class DelayTracker {
 
   // Adds a child DelayTracker.  Used to compose DelayTrackers from
   // multiple parties as server trailing metadata is returned up the stack.
-  void AddChild(absl::string_view description, DelayTracker tracker);
+  void AddChild(std::string description, DelayTracker tracker);
 
   // Reports delay info in a form suitable for inclusion in a status message.
   std::string GetDelayInfo() const;
@@ -85,6 +85,17 @@ struct ArenaContextType<DelayTracker> {
   static void Destroy(DelayTracker* ptr) { ptr->~DelayTracker(); }
 };
 
+// Gets the DelayTracker from call context, creating it if needed.
+inline DelayTracker* GetOrCreateDelayTrackerContext() {
+  DelayTracker* tracker = MaybeGetContext<DelayTracker>();
+  if (tracker == nullptr) {
+    Arena* arena = GetContext<Arena>();
+    tracker = arena->New<DelayTracker>();
+    arena->SetContext<DelayTracker>(tracker);
+  }
+  return tracker;
+}
+
 // Wraps a promise, adding delay tracking if the promise returns Pending{}.
 template <typename Promise>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrackDelay(
@@ -98,14 +109,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrackDelay(
         if (r.pending()) {
           // If we haven't already started recording a delay, do so now.
           if (!handle.has_value()) {
-            // Get the DelayTracker from call context, creating it if needed.
-            DelayTracker* tracker = MaybeGetContext<DelayTracker>();
-            if (tracker == nullptr) {
-              Arena* arena = GetContext<Arena>();
-              tracker = arena->New<DelayTracker>();
-              arena->SetContext<DelayTracker>(tracker);
-            }
-            // Start recording a delay.
+            DelayTracker* tracker = GetOrCreateDelayTrackerContext();
             handle = tracker->StartDelay(std::move(delay_description));
           }
           return Pending{};
