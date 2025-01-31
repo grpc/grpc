@@ -1,0 +1,36 @@
+name: Update Flakiness
+on: [push]
+jobs:
+  UpdateFlakiness:
+    runs-on: ubuntu-latest
+    steps:
+      # Setup to run sanity suite
+      - name: Install Python Interpreter
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - name: Install Python Packages
+        run: |
+          pip install pyyaml mako virtualenv
+          pip install --upgrade google-cloud-bigquery
+          sudo apt-get update
+          sudo apt-get install python3-dev
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      # Run the things!
+      - name: Run tool
+        run: tools/distrib/update_flakes.py
+      # Report back with a PR if things are broken
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          delete-branch: true
+          branch-suffix: short-commit-hash
+          commit-message: "Automated change: Fix sanity tests"
+          title: Automated fix for ${{ github.ref }}
+          body: |
+            PanCakes to the rescue!
+
+            We noticed that our 'sanity' test was going to fail, but we think we can fix that automatically, so we put together this PR to do just that!
+
+            If you'd like to opt-out of these PR's, add yourself to NO_AUTOFIX_USERS in .github/workflows/pr-auto-fix.yaml
