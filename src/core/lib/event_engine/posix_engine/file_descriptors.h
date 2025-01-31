@@ -204,9 +204,8 @@ class FileDescriptors {
     }
   }
 
-  template <typename R, typename... Args>
-  Int64Result Int64Wrap(const FileDescriptor& fd, R (*fn)(int, Args...),
-                        Args... args) {
+  template <typename Fn, typename... Args>
+  Int64Result Int64Wrap(const FileDescriptor& fd, Fn fn, Args... args) {
     auto raw_fd = descriptors_.GetRawFileDescriptor(fd);
     if (raw_fd.has_value()) {
       int64_t result = fn(*raw_fd, args...);

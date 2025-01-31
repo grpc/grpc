@@ -716,18 +716,11 @@ IF_POSIX_SOCKET(
 
 IF_POSIX_SOCKET(Int64Result FileDescriptors::Read(const FileDescriptor& fd,
                                                   absl::Span<char> buf),
-                {
-                  return Int64Wrap(fd, read, static_cast<void*>(buf.data()),
-                                   buf.size());
-                })
+                { return Int64Wrap(fd, read, buf.data(), buf.size()); })
 
 IF_POSIX_SOCKET(Int64Result FileDescriptors::Write(const FileDescriptor& fd,
                                                    absl::Span<char> buf),
-                {
-                  return Int64Wrap(fd, write,
-                                   static_cast<const void*>(buf.data()),
-                                   buf.size());
-                })
+                { return Int64Wrap(fd, write, buf.data(), buf.size()); })
 
 PosixResult FileDescriptors::EventFdRead(const FileDescriptor& fd) {
 #ifdef GRPC_LINUX_EVENTFD
