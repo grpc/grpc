@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.69.0</span>
+   &#160;<span id="projectnumber">1.70.1</span>
    </div>
   </td>
  </tr>
@@ -66,8 +66,6 @@ $(function() {
 </div>
 </div><!-- top -->
 <div class="header">
-  <div class="summary">
-<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">atm.h File Reference</div>  </div>
 </div><!--header-->
@@ -75,72 +73,10 @@ $(function() {
 <div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
 </div>
 <p><a href="support_2atm_8h_source.html">Go to the source code of this file.</a></p>
-<table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:acd924aafc13347097cc06c74c8b5a68d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">gpr_atm_no_barrier_clamped_add</a> (<a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *value, <a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> delta, <a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> min, <a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> max)</td></tr>
-<tr class="memdesc:acd924aafc13347097cc06c74c8b5a68d"><td class="mdescLeft">&#160;</td><td class="mdescRight">This interface provides atomic operations and barriers.  <a href="support_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">More...</a><br /></td></tr>
-<tr class="separator:acd924aafc13347097cc06c74c8b5a68d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table>
-<h2 class="groupheader">Function Documentation</h2>
-<a id="acd924aafc13347097cc06c74c8b5a68d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acd924aafc13347097cc06c74c8b5a68d">&#9670;&nbsp;</a></span>gpr_atm_no_barrier_clamped_add()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> gpr_atm_no_barrier_clamped_add </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *&#160;</td>
-          <td class="paramname"><em>value</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a>&#160;</td>
-          <td class="paramname"><em>delta</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a>&#160;</td>
-          <td class="paramname"><em>min</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a>&#160;</td>
-          <td class="paramname"><em>max</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>This interface provides atomic operations and barriers. </p>
-<p>It is internal to gpr support code and should not be used outside it.</p>
-<p>If an operation with acquire semantics precedes another memory access by the same thread, the operation will precede that other access as seen by other threads.</p>
-<p>If an operation with release semantics follows another memory access by the same thread, the operation will follow that other access as seen by other threads.</p>
-<p>Routines with "acq" or "full" in the name have acquire semantics. Routines with "rel" or "full" in the name have release semantics. Routines with "no_barrier" in the name have neither acquire not release semantics.</p>
-<p>The routines may be implemented as macros.</p>
-<p>Atomic operations act on an integral_type gpr_atm that is guaranteed to be the same size as a pointer. typedef intptr_t gpr_atm;</p>
-<p>A memory barrier, providing both acquire and release semantics, but not otherwise acting on memory. void <a class="el" href="support_2atm__gcc__sync_8h.html#a95f86e51ae9a479026bd237cb792193e">gpr_atm_full_barrier(void)</a>;</p>
-<p>Atomically return *p, with acquire semantics. gpr_atm <a class="el" href="support_2atm__gcc__atomic_8h.html#a44607f95f7ee40eba592c7fe10960a06">gpr_atm_acq_load(gpr_atm *p)</a>; gpr_atm <a class="el" href="support_2atm__gcc__atomic_8h.html#aa647aa9c97294a6709bbf2ac401cd9a6">gpr_atm_no_barrier_load(gpr_atm *p)</a>;</p>
-<p>Atomically set *p = value, with release semantics. void <a class="el" href="support_2atm__gcc__atomic_8h.html#a42e3982d45ae4cec439a12b8fcd618e9">gpr_atm_rel_store(gpr_atm *p, gpr_atm value)</a>;</p>
-<p>Atomically add delta to *p, and return the old value of *p, with the barriers specified. gpr_atm <a class="el" href="support_2atm__gcc__sync_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">gpr_atm_no_barrier_fetch_add(gpr_atm *p, gpr_atm delta)</a>; gpr_atm <a class="el" href="support_2atm__gcc__sync_8h.html#abada8771b338845e4c6ef93c8392582c">gpr_atm_full_fetch_add(gpr_atm *p, gpr_atm delta)</a>;</p>
-<p>Atomically, if *p==o, set *p=n and return non-zero otherwise return 0, with the barriers specified if the operation succeeds. int <a class="el" href="support_2atm__gcc__sync_8h.html#ad39536b08912ac4a0770655ed334d260">gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n)</a>; int <a class="el" href="support_2atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">gpr_atm_acq_cas(gpr_atm *p, gpr_atm o, gpr_atm n)</a>; int <a class="el" href="support_2atm__gcc__sync_8h.html#ae7c3b215cda868ee9ee778822000c3f2">gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n)</a>; int <a class="el" href="support_2atm__gcc__sync_8h.html#a9d29f224b49d4de8bb2b0d7feae64fcb">gpr_atm_full_cas(gpr_atm *p, gpr_atm o, gpr_atm n)</a>;</p>
-<p>Atomically, set *p=n and return the old value of *p gpr_atm <a class="el" href="support_2atm__gcc__atomic_8h.html#a724691b6d48f35bbd9f575c82fdfb526">gpr_atm_full_xchg(gpr_atm *p, gpr_atm n)</a>; Adds <em>delta</em> to <em>*value</em>, clamping the result to the range specified by <em>min</em> and <em>max</em>. Returns the new value. </p>
-
-</div>
-</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jan 22 2025 17:46:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 31 2025 21:29:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.69.0</span>
+   &#160;<span id="projectnumber">1.70.1</span>
    </div>
   </td>
  </tr>
@@ -117,7 +117,7 @@ Compression &lt;strong&gt;Level&lt;/strong&gt; in Call Responses</h2>
 <h2><a class="anchor" id="autotoc_md77"></a>
 Compression &lt;strong&gt;Algorithm&lt;/strong&gt; in Call Responses</h2>
 <p><b>Server should avoid setting the compression algorithm directly</b>. Prefer setting compression levels unless there's a <em>very</em> compelling reason to choose specific algorithms (benchmarking, testing).</p>
-<p>Selection of concrete compression algorithms is performed by adding a <code>(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, &lt;algorithm-name&gt;)</code> key-value pair to the initial metadata, where <code>GRPC_COMPRESS_REQUEST_ALGORITHM_KEY</code> is defined in <a href="https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h"><code>grpc/impl/codegen/compression_types.h</code></a>), and <code>&lt;algorithm-name&gt;</code> is the human readable name of the algorithm as given in <a href="https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md">the HTTP2 spec</a> for <code>Message-Encoding</code> (e.g. gzip, identity, etc.). See <a href="https://github.com/grpc/grpc/blob/master/src/core/lib/compression/compression.c"><code>grpc_compression_algorithm_name</code></a> for the mapping between the <code>grpc_compression_algorithm</code> enum values and their textual representation.</p>
+<p>Selection of concrete compression algorithms is performed by adding a <code>(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, &lt;algorithm-name&gt;)</code> key-value pair to the initial metadata, where <code>GRPC_COMPRESS_REQUEST_ALGORITHM_KEY</code> is defined in <a href="https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h"><code>grpc/impl/codegen/compression_types.h</code></a>), and <code>&lt;algorithm-name&gt;</code> is the human readable name of the algorithm as given in <a href="https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md">the HTTP2 spec</a> for <code>Message-Encoding</code> (e.g. gzip, identity, etc.). See <a href="https://github.com/grpc/grpc/blob/master/src/core/lib/compression/compression.cc"><code>grpc_compression_algorithm_name</code></a> for the mapping between the <code>grpc_compression_algorithm</code> enum values and their textual representation.</p>
 <h1><a class="anchor" id="autotoc_md78"></a>
 Per Message Settings</h1>
 <p>To disable compression for a specific message, the <code>flags</code> field of <code>grpc_op</code> instances of type <code>GRPC_OP_SEND_MESSAGE</code> must have its <code>GRPC_WRITE_NO_COMPRESS</code> bit set. Refer to <a href="https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h"><code>grpc/impl/codegen/compression_types.h</code></a>), </p>
@@ -125,7 +125,7 @@ Per Message Settings</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jan 22 2025 17:46:52 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 31 2025 21:30:11 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
