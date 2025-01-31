@@ -48,7 +48,7 @@ class WorkStealingThreadPool final : public ThreadPool {
   ~WorkStealingThreadPool() override;
   // Shut down the pool, and wait for all threads to exit.
   // This method is safe to call from within a ThreadPool thread.
-  void Quiesce() override;
+  void Quiesce(absl::AnyInvocable<void() const> preshutdown) override;
   // Run must not be called after Quiesce completes
   void Run(absl::AnyInvocable<void()> callback) override;
   void Run(EventEngine::Closure* closure) override;
@@ -114,7 +114,7 @@ class WorkStealingThreadPool final : public ThreadPool {
     void StartThread();
     // Shut down the pool, and wait for all threads to exit.
     // This method is safe to call from within a ThreadPool thread.
-    void Quiesce();
+    void Quiesce(absl::AnyInvocable<void() const> preshutdown);
     // Sets a throttled state.
     // After the initial pool has been created, if the pool is backlogged when
     // a new thread has started, it is rate limited.
