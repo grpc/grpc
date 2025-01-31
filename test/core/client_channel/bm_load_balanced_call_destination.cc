@@ -45,7 +45,9 @@ class LoadBalancedCallDestinationTraits {
     return Arena::MakePooled<ServerMetadata>();
   }
 
-  MessageHandle MakePayload() { return Arena::MakePooled<Message>(); }
+  MessageHandle MakePayload(uint32_t flags) {
+    return Arena::MakePooled<Message>(SliceBuffer{}, flags);
+  }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
     return Arena::MakePooled<ServerMetadata>();
