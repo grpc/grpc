@@ -108,6 +108,7 @@ class ProtoBufService : public grpc_generator::Service {
       : service_(service) {}
 
   std::string name() const { return std::string(service_->name()); }
+  bool is_deprecated() const { return service_->options().deprecated(); }
 
   int method_count() const { return service_->method_count(); }
   std::unique_ptr<const grpc_generator::Method> method(int i) const {
