@@ -34,10 +34,11 @@
 namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_LINUX_ERRQUEUE
-int GetSocketTcpInfo(struct tcp_info* info, int fd) {
+PosixResult GetSocketTcpInfo(tcp_info* info, FileDescriptors* fds,
+                             const FileDescriptor& fd) {
   memset(info, 0, sizeof(*info));
   info->length = offsetof(tcp_info, length);
-  return getsockopt(fd, IPPROTO_TCP, TCP_INFO, info, &(info->length));
+  return fds->GetSockOpt(fd, IPPROTO_TCP, TCP_INFO, info, &(info->length));
 }
 #endif
 
