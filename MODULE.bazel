@@ -26,7 +26,7 @@ bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
 bazel_dep(name = "c-ares", version = "1.15.0", repo_name = "com_github_cares_cares")  # mistmatched 1.19.1
 bazel_dep(name = "envoy_api", version = "0.0.0-20250128-4de3c74")
 bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
-bazel_dep(name = "opentelemetry-cpp", version = "1.16.0", repo_name = "io_opentelemetry_cpp")  # mistmached 1.18.0
+bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 bazel_dep(name = "platforms", version = "0.0.10")
 bazel_dep(name = "protobuf", version = "29.0", repo_name = "com_google_protobuf")
 bazel_dep(name = "re2", version = "2024-07-02", repo_name = "com_googlesource_code_re2")  # mistmached 2022-04-01
