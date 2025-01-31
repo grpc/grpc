@@ -80,6 +80,7 @@ cc_binary(
     name = "greeter_server",
     srcs = ["greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
+    visibility = ["//visibility:public"],
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",

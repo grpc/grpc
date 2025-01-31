@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -34,16 +33,15 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/forkable.h"
-#include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -124,7 +122,7 @@ void AsyncConnect::OnWritable(absl::Status status)
     ABSL_NO_THREAD_SAFETY_ANALYSIS {
   int so_error = 0;
   socklen_t so_error_size;
-  int err;
+  absl::StatusOr<int> err;
   int done;
   int consumed_refs = 1;
   EventHandle* fd;
@@ -189,10 +187,12 @@ void AsyncConnect::OnWritable(absl::Status status)
 
   do {
     so_error_size = sizeof(so_error);
-    err = getsockopt(fd->WrappedFd(), SOL_SOCKET, SO_ERROR, &so_error,
-                     &so_error_size);
-  } while (err < 0 && errno == EINTR);
-  if (err < 0) {
+    err = fd->Poller()->GetSystemApi()->GetSockOpt(
+        fd->WrappedFd(), SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
+  } while (err.ok() && *err < 0 && errno == EINTR);
+  if (!err.ok()) {
+    status = std::move(err).status();
+  } else if (*err < 0) {
     status = absl::FailedPreconditionError(
         absl::StrCat("getsockopt: ", std::strerror(errno)));
     return;
@@ -237,20 +237,20 @@ void AsyncConnect::OnWritable(absl::Status status)
       break;
   }
 }
-
 EventEngine::ConnectionHandle
 PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
-    int fd, EventEngine::OnConnectCallback on_connect,
+    FileDescriptor fd, EventEngine::OnConnectCallback on_connect,
     const EventEngine::ResolvedAddress& addr,
     const PosixTcpOptions& tcp_options, MemoryAllocator memory_allocator,
     EventEngine::Duration timeout) {
-  int err;
-  int connect_errno;
+  PosixEventPoller* poller = poller_manager_->Poller();
+  absl::StatusOr<int> err;
   do {
-    err = connect(fd, addr.address(), addr.size());
-  } while (err < 0 && errno == EINTR);
-  connect_errno = (err < 0) ? errno : 0;
-
+    err = poller->GetSystemApi()->Connect(fd, addr.address(), addr.size());
+  } while (err.ok() && *err < 0 && errno == EINTR);
+  if (err.ok()) {
+    err = *err < 0 ? errno : 0;
+  }
   auto addr_uri = ResolvedAddressToURI(addr);
   if (!addr_uri.ok()) {
     Run([on_connect = std::move(on_connect),
@@ -261,11 +261,10 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
   }
 
   std::string name = absl::StrCat("tcp-client:", addr_uri.value());
-  PosixEventPoller* poller = poller_manager_->Poller();
   EventHandle* handle =
       poller->CreateHandle(fd, name, poller->CanTrackErrors());
 
-  if (connect_errno == 0) {
+  if (err.ok() && *err == 0) {
     // Connection already succeeded. Return 0 to discourage any cancellation
     // attempts.
     Run([on_connect = std::move(on_connect),
@@ -274,7 +273,9 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
              tcp_options)]() mutable { on_connect(std::move(ep)); });
     return EventEngine::ConnectionHandle::kInvalid;
   }
-  if (connect_errno != EWOULDBLOCK && connect_errno != EINPROGRESS) {
+  int connect_errno = err.value_or(-1);
+  if (err.ok() && connect_errno != EWOULDBLOCK &&
+      connect_errno != EINPROGRESS) {
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
     handle->OrphanHandle(nullptr, nullptr, "tcp_client_connect_error");
@@ -354,6 +355,18 @@ void PosixEnginePollerManager::TriggerShutdown() {
   poller_->Kick();
 }
 
+void PosixEnginePollerManager::Suspend() {
+  PollerState expected = PollerState::kOk;
+  CHECK(poller_state_.compare_exchange_weak(expected, PollerState::kSuspended));
+  poller_->FinishPolling();
+}
+
+void PosixEnginePollerManager::Resume() {
+  PollerState expected = PollerState::kSuspended;
+  CHECK(poller_state_.compare_exchange_weak(expected, PollerState::kOk));
+  poller_->Resume();
+}
+
 PosixEnginePollerManager::~PosixEnginePollerManager() {
   if (poller_ != nullptr) {
     poller_->Shutdown();
@@ -399,6 +412,9 @@ PosixEventEngine::PosixEventEngine()
 
 void PosixEventEngine::PollerWorkInternal(
     std::shared_ptr<PosixEnginePollerManager> poller_manager) {
+  if (poller_manager->IsSuspended()) {
+    return;
+  }
   // TODO(vigneshbabu): The timeout specified here is arbitrary. For instance,
   // this can be improved by setting the timeout to the next expiring timer.
   PosixEventPoller* poller = poller_manager->Poller();
@@ -468,7 +484,7 @@ PosixEventEngine::~PosixEventEngine() {
     poller_manager_->TriggerShutdown();
   }
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  executor_->Quiesce();
+  executor_->Quiesce([]() {});
 }
 
 bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
@@ -633,16 +649,19 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
     Duration timeout) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   CHECK_NE(poller_manager_, nullptr);
-  PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
-  absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult> socket =
-      PosixSocketWrapper::CreateAndPrepareTcpClientSocket(options, addr);
+  auto poller = poller_manager_->Poller();
+  PosixTcpOptions options =
+      TcpOptionsFromEndpointConfig(poller->GetSystemApi(), args);
+  SystemApi* system_api = poller->GetSystemApi();
+  absl::StatusOr<PosixSocketCreateResult> socket =
+      CreateAndPrepareTcpClientSocket(system_api, options, addr);
   if (!socket.ok()) {
     Run([on_connect = std::move(on_connect),
          status = socket.status()]() mutable { on_connect(status); });
     return EventEngine::ConnectionHandle::kInvalid;
   }
   return CreateEndpointFromUnconnectedFdInternal(
-      (*socket).sock.Fd(), std::move(on_connect), (*socket).mapped_target_addr,
+      socket->sock, std::move(on_connect), (*socket).mapped_target_addr,
       options, std::move(memory_allocator), timeout);
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   grpc_core::Crash("EventEngine::Connect is not supported on this platform");
@@ -654,8 +673,10 @@ EventEngine::ConnectionHandle PosixEventEngine::CreateEndpointFromUnconnectedFd(
     const EventEngine::ResolvedAddress& addr, const EndpointConfig& config,
     MemoryAllocator memory_allocator, EventEngine::Duration timeout) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  SystemApi* system_api = poller_manager_->Poller()->GetSystemApi();
   return CreateEndpointFromUnconnectedFdInternal(
-      fd, std::move(on_connect), addr, TcpOptionsFromEndpointConfig(config),
+      system_api->AdoptExternalFd(fd), std::move(on_connect), addr,
+      TcpOptionsFromEndpointConfig(system_api, config),
       std::move(memory_allocator), timeout);
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   grpc_core::Crash(
@@ -672,11 +693,12 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
   DCHECK_GT(fd, 0);
   PosixEventPoller* poller = poller_manager_->Poller();
   DCHECK_NE(poller, nullptr);
-  EventHandle* handle =
-      poller->CreateHandle(fd, "tcp-client", poller->CanTrackErrors());
+  SystemApi* system_api = poller->GetSystemApi();
+  EventHandle* handle = poller->CreateHandle(
+      system_api->AdoptExternalFd(fd), "tcp-client", poller->CanTrackErrors());
   return CreatePosixEndpoint(handle, nullptr, shared_from_this(),
                              std::move(memory_allocator),
-                             TcpOptionsFromEndpointConfig(config));
+                             TcpOptionsFromEndpointConfig(system_api, config));
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   grpc_core::Crash(
       "PosixEventEngine::CreatePosixEndpointFromFd is not supported on "
@@ -686,7 +708,9 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
 
 std::unique_ptr<EventEngine::Endpoint> PosixEventEngine::CreateEndpointFromFd(
     int fd, const EndpointConfig& config) {
-  auto options = TcpOptionsFromEndpointConfig(config);
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  SystemApi* system_api = poller_manager_->Poller()->GetSystemApi();
+  auto options = TcpOptionsFromEndpointConfig(system_api, config);
   MemoryAllocator allocator;
   if (options.memory_allocator_factory != nullptr) {
     return CreatePosixEndpointFromFd(
@@ -698,6 +722,11 @@ std::unique_ptr<EventEngine::Endpoint> PosixEventEngine::CreateEndpointFromFd(
       fd, config,
       options.resource_quota->memory_quota()->CreateMemoryAllocator(
           absl::StrCat("allocator:", fd)));
+#else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  grpc_core::Crash(
+      "PosixEventEngine::CreateEndpointFromFd is not supported on "
+      "this platform");
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
@@ -739,6 +768,53 @@ PosixEventEngine::CreatePosixListener(
   grpc_core::Crash(
       "EventEngine::CreateListener is not supported on this platform");
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+}
+
+absl::Status PosixEventEngine::HandlePreFork() {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  grpc_core::MutexLock lock(&fork_mutex_);
+  poller_manager_->Suspend();
+  timer_manager_->PrepareFork();
+  executor_->PrepareFork();
+  CHECK_OK(poller_manager_->Poller()->PrepareForkNew());
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  return absl::OkStatus();
+}
+
+absl::Status PosixEventEngine::HandleFork() {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  grpc_core::MutexLock lock(&fork_mutex_);
+  executor_->PostforkChild();
+  timer_manager_->PostforkChild();
+  poller_manager_->Resume();
+  PosixEventPoller* poller = poller_manager_->Poller();
+  absl::Status status = poller->RestartOnFork(false);
+  if (!status.ok()) {
+    return status;
+  }
+  executor_->Run([poller_manager = poller_manager_]() {
+    PollerWorkInternal(poller_manager);
+  });
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  return absl::OkStatus();
+}
+
+absl::Status PosixEventEngine::HandleForkInChild() {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  grpc_core::MutexLock lock(&fork_mutex_);
+  executor_->PostforkChild();
+  timer_manager_->PostforkChild();
+  poller_manager_->Resume();
+  PosixEventPoller* poller = poller_manager_->Poller();
+  absl::Status status = poller->RestartOnFork(true);
+  if (!status.ok()) {
+    return status;
+  }
+  executor_->Run([poller_manager = poller_manager_]() {
+    PollerWorkInternal(poller_manager);
+  });
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  return absl::OkStatus();
 }
 
 }  // namespace grpc_event_engine::experimental

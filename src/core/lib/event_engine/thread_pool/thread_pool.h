@@ -31,7 +31,7 @@ class ThreadPool : public Forkable {
   ~ThreadPool() override = default;
   // Shut down the pool, and wait for all threads to exit.
   // This method is safe to call from within a ThreadPool thread.
-  virtual void Quiesce() = 0;
+  virtual void Quiesce(absl::AnyInvocable<void() const> preshutdown) = 0;
   // Run must not be called after Quiesce completes
   virtual void Run(absl::AnyInvocable<void()> callback) = 0;
   virtual void Run(EventEngine::Closure* closure) = 0;

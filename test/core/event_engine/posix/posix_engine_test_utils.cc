@@ -21,6 +21,7 @@
 #include <sys/socket.h>
 
 #include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
 
@@ -32,22 +33,32 @@ using ResolvedAddress =
 
 // Creates a client socket and blocks until it connects to the specified
 // server address. The function abort fails upon encountering errors.
-int ConnectToServerOrDie(const ResolvedAddress& server_address) {
-  int client_fd;
+FileDescriptor ConnectToServerOrDie(SystemApi& system_api,
+                                    const ResolvedAddress& server_address) {
   int one = 1;
-  int flags;
 
-  client_fd = socket(AF_INET6, SOCK_STREAM, 0);
-  setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-  // Make fd non-blocking.
-  flags = fcntl(client_fd, F_GETFL, 0);
-  fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
-
-  if (connect(client_fd, const_cast<struct sockaddr*>(server_address.address()),
-              server_address.size()) == -1) {
+  FileDescriptor client_fd = system_api.Socket(AF_INET6, SOCK_STREAM, 0);
+  (void)system_api.SetSockOpt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one,
+                              sizeof(one), "test");
+  absl::Status status = system_api.SetNonBlocking(client_fd, true);
+  if (!status.ok()) {
+    grpc_core::Crash(absl::StrCat(status));
+  }
+  // Ok for test to let FD escape, they don't fork
+  auto locked_client_fd = system_api.Lock(client_fd);
+  if (!locked_client_fd.ok()) {
+    grpc_core::Crash(absl::StrCat(locked_client_fd.status()));
+  }
+  auto connect_result = system_api.Connect(
+      client_fd, const_cast<struct sockaddr*>(server_address.address()),
+      server_address.size());
+  if (!connect_result.ok()) {
+    grpc_core::Crash(absl::StrCat(connect_result.status()));
+  }
+  if (*connect_result == -1) {
     if (errno == EINPROGRESS) {
       struct pollfd pfd;
-      pfd.fd = client_fd;
+      pfd.fd = locked_client_fd->fd();
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {

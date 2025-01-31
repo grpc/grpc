@@ -21,12 +21,13 @@
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/strerror.h"
 #include "test/core/test_util/test_config.h"
 
-using ::grpc_event_engine::experimental::PosixSocketWrapper;
+using ::grpc_event_engine::experimental::FileDescriptor;
 
 // There is a special code path in create_socket to log errors upon EMFILE.
 // Goal of this test is just to exercise that code path and also make sure
@@ -34,15 +35,17 @@ using ::grpc_event_engine::experimental::PosixSocketWrapper;
 TEST(LogTooManyOpenFilesTest, MainTest) {
   const auto mock_socket_factory = [](int, int, int) {
     errno = EMFILE;
-    return -1;
+    return grpc_event_engine::experimental::FileDescriptor();
   };
   auto addr = grpc_event_engine::experimental::URIToResolvedAddress(
       "ipv4:127.0.0.1:80");
   ASSERT_TRUE(addr.ok());
-  PosixSocketWrapper::DSMode dsmode;
-  absl::StatusOr<PosixSocketWrapper> result =
-      PosixSocketWrapper::CreateDualStackSocket(mock_socket_factory, *addr,
-                                                SOCK_STREAM, AF_INET, dsmode);
+  grpc_event_engine::experimental::DSMode dsmode;
+  grpc_event_engine::experimental::SystemApi system_api;
+  absl::StatusOr<FileDescriptor> result =
+      grpc_event_engine::experimental::CreateDualStackSocket(
+          &system_api, mock_socket_factory, *addr, SOCK_STREAM, AF_INET,
+          dsmode);
   EXPECT_FALSE(result.ok());
   std::string emfile_message = grpc_core::StrError(EMFILE);
   EXPECT_THAT(result.status().message(), ::testing::HasSubstr(emfile_message));

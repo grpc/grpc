@@ -29,7 +29,7 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <type_traits>
+#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
@@ -41,7 +41,6 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -53,7 +52,6 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/sync.h"
-#include "src/core/util/time.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -98,15 +96,21 @@ namespace {
 
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
-ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
+ssize_t TcpSend(const SystemApi& api, FileDescriptor fd,
+                const struct msghdr* msg, int* saved_errno,
                 int additional_flags = 0) {
   GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
-  ssize_t sent_length;
+  absl::StatusOr<ssize_t> sent_length;
   do {
     grpc_core::global_stats().IncrementSyscallWrite();
-    sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
-  } while (sent_length < 0 && (*saved_errno = errno) == EINTR);
-  return sent_length;
+    sent_length = api.SendMsg(fd, msg, SENDMSG_FLAGS | additional_flags);
+  } while (sent_length.ok() && *sent_length < 0 &&
+           (*saved_errno = errno) == EINTR);
+  if (!sent_length.ok()) {
+    LOG(ERROR) << sent_length.status();
+    return -1;
+  }
+  return *sent_length;
 }
 
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -278,7 +282,7 @@ void PosixEndpointImpl::FinishEstimate() {
 
 absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kFd,
-                          handle_->WrappedFd());
+                          handle_->WrappedFd().debug_fd());
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   return src_error;
@@ -290,7 +294,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
-  ssize_t read_bytes;
+  absl::StatusOr<ssize_t> read_bytes;
   size_t total_read_bytes = 0;
   size_t iov_len = std::min<size_t>(MAX_READ_IOVEC, incoming_buffer_->Count());
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -334,10 +338,10 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
         incoming_buffer_->Count());
     do {
       grpc_core::global_stats().IncrementSyscallRead();
-      read_bytes = recvmsg(fd_, &msg, 0);
-    } while (read_bytes < 0 && errno == EINTR);
+      read_bytes = get_system_api()->RecvMsg(fd_, &msg, 0);
+    } while (read_bytes.ok() && *read_bytes < 0 && errno == EINTR);
 
-    if (read_bytes < 0 && errno == EAGAIN) {
+    if (read_bytes.ok() && *read_bytes < 0 && errno == EAGAIN) {
       // NB: After calling call_read_cb a parallel call of the read handler may
       // be running.
       if (total_read_bytes > 0) {
@@ -350,14 +354,16 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
     // We have read something in previous reads. We need to deliver those bytes
     // to the upper layer.
-    if (read_bytes <= 0 && total_read_bytes >= 1) {
+    if (read_bytes.value_or(-1) <= 0 && total_read_bytes >= 1) {
       break;
     }
 
-    if (read_bytes <= 0) {
+    if (read_bytes.value_or(-1) <= 0) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
-      if (read_bytes == 0) {
+      if (!read_bytes.ok()) {
+        status = TcpAnnotateError(std::move(read_bytes).status());
+      } else if (*read_bytes == 0) {
         status = TcpAnnotateError(absl::InternalError("Socket closed"));
       } else {
         status = TcpAnnotateError(absl::InternalError(
@@ -366,9 +372,10 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       return true;
     }
 
-    grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
-    AddToEstimate(static_cast<size_t>(read_bytes));
-    DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
+    grpc_core::global_stats().IncrementTcpReadSize(*read_bytes);
+    AddToEstimate(static_cast<size_t>(*read_bytes));
+    DCHECK((size_t)*read_bytes <=
+           incoming_buffer_->Length() - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (inq_capable_) {
@@ -384,14 +391,14 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     }
 #endif  // GRPC_HAVE_TCP_INQ
 
-    total_read_bytes += read_bytes;
+    total_read_bytes += *read_bytes;
     if (inq_ == 0 || total_read_bytes == incoming_buffer_->Length()) {
       break;
     }
 
     // We had a partial read, and still have space to read more data. So, adjust
     // IOVs and try to read more.
-    size_t remaining = read_bytes;
+    size_t remaining = *read_bytes;
     size_t j = 0;
     for (size_t i = 0; i < iov_len; i++) {
       if (remaining >= iov[i].iov_len) {
@@ -510,11 +517,13 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   if (set_rcvlowat_ == remaining) {
     return;
   }
-  auto result = sock_.SetSocketRcvLowat(remaining);
+  auto result =
+      get_system_api()->SetSockOpt(fd_, SOL_SOCKET, SO_RCVLOWAT, &remaining,
+                                   sizeof(remaining), "Update SO_RCVLOWAT");
   if (result.ok()) {
-    set_rcvlowat_ = *result;
+    set_rcvlowat_ = 0;
   } else {
-    LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result.status().message();
+    LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result;
   }
 }
 
@@ -707,17 +716,16 @@ bool PosixEndpointImpl::ProcessErrors() {
     struct cmsghdr align;
   } aligned_buf;
   msg.msg_control = aligned_buf.rbuf;
-  int r, saved_errno;
+  absl::StatusOr<int> r;
+  int saved_errno;
   while (true) {
     msg.msg_controllen = sizeof(aligned_buf.rbuf);
     do {
-      r = recvmsg(fd_, &msg, MSG_ERRQUEUE);
+      r = get_system_api()->RecvMsg(fd_, &msg, MSG_ERRQUEUE);
       saved_errno = errno;
-    } while (r < 0 && saved_errno == EINTR);
+    } while (r.ok() && *r < 0 && saved_errno == EINTR);
 
-    if (r < 0 && saved_errno == EAGAIN) {
-      return processed_err;  // No more errors to process
-    } else if (r < 0) {
+    if (r.value_or(-1) < 0) {
       return processed_err;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
@@ -847,10 +855,14 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
                                             ssize_t* sent_length,
                                             int* saved_errno,
                                             int additional_flags) {
+  const SystemApi* system_api = get_system_api();
   if (!socket_ts_enabled_) {
     uint32_t opt = kTimestampingSocketOptions;
-    if (setsockopt(fd_, SOL_SOCKET, SO_TIMESTAMPING, static_cast<void*>(&opt),
-                   sizeof(opt)) != 0) {
+    if (!system_api
+             ->SetSockOpt(fd_, SOL_SOCKET, SO_TIMESTAMPING,
+                          static_cast<void*>(&opt), sizeof(opt),
+                          "Set SO_TIMESTAMPING")
+             .ok()) {
       return false;
     }
     bytes_counter_ = -1;
@@ -871,12 +883,13 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
 
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
   grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
-  ssize_t length = TcpSend(fd_, msg, saved_errno, additional_flags);
+  ssize_t length =
+      TcpSend(*system_api, fd_, msg, saved_errno, additional_flags);
   *sent_length = length;
   // Only save timestamps if all the bytes were taken by sendmsg.
   if (sending_length == static_cast<size_t>(length)) {
     traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + length),
-                                fd_, outgoing_buffer_arg_);
+                                fd_.fd(), outgoing_buffer_arg_);
     outgoing_buffer_arg_ = nullptr;
   }
   return true;
@@ -969,7 +982,8 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
       msg.msg_controllen = 0;
       grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
-      sent_length = TcpSend(fd_, &msg, &saved_errno, MSG_ZEROCOPY);
+      sent_length =
+          TcpSend(*get_system_api(), fd_, &msg, &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp_zerocopy_send_ctx_->UpdateZeroCopyOptMemStateAfterSend(
             saved_errno == ENOBUFS, constrained) ||
@@ -1088,7 +1102,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       msg.msg_controllen = 0;
       grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
-      sent_length = TcpSend(fd_, &msg, &saved_errno);
+      sent_length = TcpSend(*get_system_api(), fd_, &msg, &saved_errno);
     }
 
     if (sent_length < 0) {
@@ -1233,7 +1247,7 @@ bool PosixEndpointImpl::Write(
 
 void PosixEndpointImpl::MaybeShutdown(
     absl::Status why,
-    absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd) {
+    absl::AnyInvocable<void(absl::StatusOr<FileDescriptor>)> on_release_fd) {
   if (poller_->CanTrackErrors()) {
     ZerocopyDisableAndWaitForRemaining();
     stop_error_notification_.store(true, std::memory_order_release);
@@ -1250,7 +1264,7 @@ void PosixEndpointImpl::MaybeShutdown(
 }
 
 PosixEndpointImpl ::~PosixEndpointImpl() {
-  int release_fd = -1;
+  FileDescriptor release_fd;
   handle_->OrphanHandle(on_done_,
                         on_release_fd_ == nullptr ? nullptr : &release_fd, "");
   if (on_release_fd_ != nullptr) {
@@ -1267,24 +1281,23 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      std::shared_ptr<EventEngine> engine,
                                      MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
-    : sock_(PosixSocketWrapper(handle->WrappedFd())),
-      on_done_(on_done),
+    : on_done_(on_done),
       traced_buffers_(),
       handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
-  PosixSocketWrapper sock(handle->WrappedFd());
+  const SystemApi* system_api = get_system_api();
   fd_ = handle_->WrappedFd();
   CHECK(options.resource_quota != nullptr);
-  auto peer_addr_string = sock.PeerAddressString();
+  auto peer_addr_string = system_api->PeerAddressString(fd_);
   mem_quota_ = options.resource_quota->memory_quota();
   memory_owner_ = mem_quota_->CreateMemoryOwner();
   self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
-  auto local_address = sock.LocalAddress();
+  auto local_address = system_api->LocalAddress(fd_);
   if (local_address.ok()) {
     local_address_ = *local_address;
   }
-  auto peer_address = sock.PeerAddress();
+  auto peer_address = system_api->PeerAddress(fd_);
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
   }
@@ -1308,8 +1321,10 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                  << "value.";
     } else {
       const int enable = 1;
-      if (setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable)) !=
-          0) {
+      if (!get_system_api()
+               ->SetSockOpt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable,
+                            sizeof(enable), "Setting SO_ZEROCOPY")
+               .ok()) {
         zerocopy_enabled = false;
         LOG(ERROR) << "Failed to set zerocopy options on the socket.";
       }
@@ -1327,10 +1342,13 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       options.tcp_tx_zerocopy_send_bytes_threshold);
 #ifdef GRPC_HAVE_TCP_INQ
   int one = 1;
-  if (setsockopt(fd_, SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
+  if (get_system_api()
+          ->SetSockOpt(fd_, SOL_TCP, TCP_INQ, &one, sizeof(one),
+                       "Setting TCP_INQ")
+          .ok()) {
     inq_capable_ = true;
   } else {
-    VLOG(2) << "cannot set inq fd=" << fd_ << " errno=" << errno;
+    VLOG(2) << "cannot set inq fd=" << fd_.debug_fd() << " errno=" << errno;
     inq_capable_ = false;
   }
 #else
