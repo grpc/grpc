@@ -99,6 +99,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     explicit Stream(CallInitiator call) : call(std::move(call)) {}
     CallInitiator call;
     MessageReassembly message_reassembly;
+    Party::SpawnSerializer* spawn_serializer =
+        call.party()->MakeSpawnSerializer();
   };
   using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
 
@@ -116,7 +118,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     RefCountedPtr<Stream> ExtractStream(uint32_t stream_id);
 
     template <typename T>
-    auto DispatchFrame(IncomingFrame frame);
+    void DispatchFrame(IncomingFrame frame);
     auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageFrame frame);
     auto PushFrameIntoCall(RefCountedPtr<Stream> stream,
                            ClientEndOfStream frame);
@@ -124,28 +126,30 @@ class ChaoticGoodServerTransport final : public ServerTransport {
                            BeginMessageFrame frame);
     auto PushFrameIntoCall(RefCountedPtr<Stream> stream,
                            MessageChunkFrame frame);
+    auto SendCallInitialMetadataAndBody(uint32_t stream_id,
+                                        CallInitiator call_initiator);
+    auto SendCallBody(uint32_t stream_id, CallInitiator call_initiator);
+    auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
+    auto ProcessNextFrame(IncomingFrame frame);
 
     Mutex mu_;
     StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
     uint32_t last_seen_new_stream_id_ ABSL_GUARDED_BY(mu_) = 0;
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
         "chaotic_good_server", GRPC_CHANNEL_READY};
+    const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine_;
+    const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
+    const RefCountedPtr<UnstartedCallDestination> call_destination_;
+    Party::SpawnSerializer* incoming_frame_spawner_;
   };
 
-  auto SendCallInitialMetadataAndBody(uint32_t stream_id,
-                                      CallInitiator call_initiator);
-  auto SendCallBody(uint32_t stream_id, CallInitiator call_initiator);
-  auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   // Read different parts of the server frame from control/data endpoints
   // based on frame header.
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
   auto ReadFrameBody(Slice read_buffer);
   void SendCancel(uint32_t stream_id, absl::Status why);
 
-  RefCountedPtr<UnstartedCallDestination> call_destination_;
-  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
-  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-      event_engine_;
   InterActivityLatch<void> got_acceptor_;
   MpscSender<Frame> outgoing_frames_;
   RefCountedPtr<StreamDispatch> stream_dispatch_;

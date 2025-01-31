@@ -251,6 +251,13 @@ auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
   });
 }
 
+// Takes a promise that resolves to T, and returns a promise that resolves to
+// Empty (discarding the result)
+template <typename Promise>
+auto DiscardResult(Promise promise) {
+  return Map(promise, [](auto x) {});
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_MAP_H
