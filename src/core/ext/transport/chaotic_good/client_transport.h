@@ -36,10 +36,10 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/lib/promise/activity.h"
@@ -67,8 +67,8 @@ namespace chaotic_good {
 class ChaoticGoodClientTransport final : public ClientTransport {
  public:
   ChaoticGoodClientTransport(const ChannelArgs& args,
-                             PromiseEndpoint control_endpoint, Config config,
-                             RefCountedPtr<ClientConnectionFactory> connector);
+                             FrameTransport& frame_transport,
+                             MessageChunker message_chunker);
   ~ChaoticGoodClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -96,9 +96,9 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
   auto OnTransportActivityDone(absl::string_view what);
   template <typename T>
-  auto DispatchFrame(RefCountedPtr<ChaoticGoodTransport> transport,
-                     IncomingFrame incoming_frame);
-  auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
+  auto DispatchFrame(IncomingFrame incoming_frame);
+  auto TransportReadLoop(
+      FrameTransport::ReadFramePipe::Receiver incoming_frames);
   // Push one frame into a call
   auto PushFrameIntoCall(ServerInitialMetadataFrame frame,
                          RefCountedPtr<Stream> stream);
@@ -108,10 +108,9 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   auto PushFrameIntoCall(BeginMessageFrame frame, RefCountedPtr<Stream> stream);
   auto PushFrameIntoCall(MessageChunkFrame frame, RefCountedPtr<Stream> stream);
 
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   grpc_event_engine::experimental::MemoryAllocator allocator_;
-  // Max buffer is set to 4, so that for stream writes each time it will queue
-  // at most 2 frames.
-  MpscReceiver<ClientFrame> outgoing_frames_;
+  MpscSender<Frame> outgoing_frames_;
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
