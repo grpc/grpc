@@ -55,12 +55,6 @@
   expiry: 2025/06/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
-- name: disable_buffer_hint_on_high_memory_pressure
-  description:
-    Disable buffer hint flag parsing in the transport under high memory pressure.
-  expiry: 2025/03/01
-  owner: vigneshbabu@google.com
-  test_tags: []
 - name: event_engine_application_callbacks
   description: Run application callbacks in EventEngine threads, instead of on the thread-local ApplicationCallbackExecCtx
   expiry: 2025/03/01
@@ -146,12 +140,6 @@
   expiry: 2025/03/02
   owner: hork@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test"]
-- name: prioritize_finished_requests
-  description: Prioritize flushing out finished requests over other in-flight
-    requests during transport writes.
-  expiry: 2025/03/01
-  owner: vigneshbabu@google.com
-  test_tags: []
 - name: promise_based_http2_client_transport
   description:
     Use promises for the http2 client transport. We have kept client and
@@ -214,11 +202,6 @@
   expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
-- name: trace_record_callops
-  description: Enables tracing of call batch initiation and completion.
-  expiry: 2025/01/30
-  owner: vigneshbabu@google.com
-  test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
   expiry: 2025/03/03
