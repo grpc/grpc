@@ -36,3 +36,4 @@ with open(".gitignore") as f:
 with open(".gitignore", "w") as f:
     f.write("".join(lines))
 
+subprocess.check("git rm generate_artifacts.sh")
