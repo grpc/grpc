@@ -57,6 +57,10 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
   export RUN_TESTS_FLAGS="--filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH $RUN_TESTS_FLAGS"
 fi
 
+# python
+time pip install --user -r $DIR/requirements.macos.txt
+time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
+
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   # Workaround for https://github.com/rvm/rvm/issues/5133
@@ -121,10 +125,6 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
 then
-  # python
-  time pip install --user -r $DIR/requirements.macos.txt
-  time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
-
   # Force reinstall of python3.7 to upgrade its patch version.
   # Kokoro mac workers come with python 3.7.3 and that version
   # suffers from https://bugs.python.org/issue22490.

@@ -38,7 +38,7 @@ fi
 
 git submodule update --init
 
-python3 -m pip install six
+python3 -m pip install six Mako
 
 # Allows the test driver to spin up a GDB subprocess and have it attach to
 # another subprocess of the test driver.
