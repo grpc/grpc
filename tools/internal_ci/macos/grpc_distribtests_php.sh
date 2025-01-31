@@ -24,6 +24,10 @@ cd $(dirname $0)/../../..
 export PREPARE_BUILD_INSTALL_DEPS_PHP=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
+if [ -f ./generate_artifacts.sh ]; then
+    ./generate_artifacts.sh
+fi
+
 # Build all PHP macos artifacts
 tools/run_tests/task_runner.py -f artifact macos php ${TASK_RUNNER_EXTRA_FILTERS} -j 4 -x build_artifacts/sponge_log.xml || FAILED="true"
 
