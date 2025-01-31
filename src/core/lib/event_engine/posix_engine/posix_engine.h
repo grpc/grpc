@@ -35,6 +35,7 @@
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
@@ -238,7 +239,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
       std::shared_ptr<PosixEnginePollerManager> poller_manager);
 
   ConnectionHandle CreateEndpointFromUnconnectedFdInternal(
-      int fd, EventEngine::OnConnectCallback on_connect,
+      const FileDescriptor& fd, EventEngine::OnConnectCallback on_connect,
       const EventEngine::ResolvedAddress& addr, const PosixTcpOptions& options,
       MemoryAllocator memory_allocator, EventEngine::Duration timeout);
 

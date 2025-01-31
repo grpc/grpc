@@ -1191,6 +1191,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller_posix_default.h )
+  s.files += %w( src/core/lib/event_engine/posix_engine/file_descriptors.cc )
+  s.files += %w( src/core/lib/event_engine/posix_engine/file_descriptors.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/internal_errqueue.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/internal_errqueue.h )
