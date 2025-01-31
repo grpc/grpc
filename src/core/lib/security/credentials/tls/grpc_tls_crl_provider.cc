@@ -117,7 +117,7 @@ absl::StatusOr<std::unique_ptr<CrlImpl>> CrlImpl::Create(X509_CRL* crl) {
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
 
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
-    absl::Span<const std::string> crls) {
+    absl::Span<const std::string> crls, bool deny_undetermined) {
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crl_map;
   for (const auto& raw_crl : crls) {
     absl::StatusOr<std::unique_ptr<Crl>> crl = Crl::Parse(raw_crl);
@@ -131,7 +131,8 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
                     "issuer. The first one in the span will be used.";
     }
   }
-  StaticCrlProvider provider = StaticCrlProvider(std::move(crl_map));
+  StaticCrlProvider provider =
+      StaticCrlProvider(std::move(crl_map), deny_undetermined);
   return std::make_shared<StaticCrlProvider>(std::move(provider));
 }
 
@@ -146,13 +147,14 @@ std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
 
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
-    std::function<void(absl::Status)> reload_error_callback) {
+    std::function<void(absl::Status)> reload_error_callback,
+    bool deny_undetermined) {
   if (refresh_duration < std::chrono::seconds(60)) {
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
   }
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
       refresh_duration, reload_error_callback, /*event_engine=*/nullptr,
-      MakeDirectoryReader(directory));
+      MakeDirectoryReader(directory), deny_undetermined);
   // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
   provider->UpdateAndStartTimer();
@@ -162,10 +164,11 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
 DirectoryReloaderCrlProvider::DirectoryReloaderCrlProvider(
     std::chrono::seconds duration, std::function<void(absl::Status)> callback,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    std::shared_ptr<DirectoryReader> directory_impl)
+    std::shared_ptr<DirectoryReader> directory_impl, bool deny_undetermined)
     : refresh_duration_(Duration::FromSecondsAsDouble(duration.count())),
       reload_error_callback_(std::move(callback)),
       crl_directory_(std::move(directory_impl)) {
+  deny_undetermined_ = deny_undetermined;
   // Must be called before `GetDefaultEventEngine`
   grpc_init();
   if (event_engine == nullptr) {
