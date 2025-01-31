@@ -823,12 +823,12 @@ bool Subchannel::PublishTransportLocked() {
     // At the top of each stack segment, move the delay tracker from call
     // context into server trailing metadata.
     builder.AddOnServerTrailingMetadataForEachInterceptor(
-      [](ServerMetadata& md) {
-        DelayTracker* tracker = MaybeGetContext<DelayTracker>();
-        if (tracker != nullptr) {
-          md.Set(GrpcDelayTracker(), std::move(*tracker));
-        }
-      });
+        [](ServerMetadata& md) {
+          DelayTracker* tracker = MaybeGetContext<DelayTracker>();
+          if (tracker != nullptr) {
+            md.Set(GrpcDelayTracker(), std::move(*tracker));
+          }
+        });
     if (channelz_node_ != nullptr) {
       // TODO(ctiller): If/when we have a good way to access the subchannel
       // from a filter (maybe GetContext<Subchannel>?), consider replacing

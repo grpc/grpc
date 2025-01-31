@@ -289,8 +289,8 @@ RetryInterceptor::Attempt::~Attempt() { call_->RemoveAttempt(this); }
 void RetryInterceptor::Attempt::PropagateChildDelayTracker(ServerMetadata& md) {
   if (DelayTracker* attempt_tracker = md.get_pointer(GrpcDelayTracker());
       attempt_tracker != nullptr) {
-    std::string msg = absl::StrCat(
-        "retry attempt ", call_->num_attempts_completed());
+    std::string msg =
+        absl::StrCat("retry attempt ", call_->num_attempts_completed());
     // TODO(roth): Include peer string here.  Doesn't work right now, since
     // PeerString is in server initial metadata, which isn't returned in
     // trailers-only responses -- so we could do this only for the last

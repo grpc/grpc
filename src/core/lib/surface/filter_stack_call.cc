@@ -716,8 +716,7 @@ void FilterStackCall::BatchControl::ReceivingTrailingMetadataReady(
   // context to server trailing metadata.
   if (DelayTracker* tracker = call_->arena()->GetContext<DelayTracker>();
       tracker != nullptr) {
-    call_->recv_trailing_metadata_.Set(GrpcDelayTracker(),
-                                       std::move(*tracker));
+    call_->recv_trailing_metadata_.Set(GrpcDelayTracker(), std::move(*tracker));
   }
   GRPC_CALL_COMBINER_STOP(call_->call_combiner(),
                           "recv_trailing_metadata_ready");

@@ -1280,13 +1280,12 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
                                    new_blackboard.get());
   // At the top of each stack segment, move the delay tracker from call
   // context into server trailing metadata.
-  builder.AddOnServerTrailingMetadataForEachInterceptor(
-      [](ServerMetadata& md) {
-        DelayTracker* tracker = MaybeGetContext<DelayTracker>();
-        if (tracker != nullptr) {
-          md.Set(GrpcDelayTracker(), std::move(*tracker));
-        }
-      });
+  builder.AddOnServerTrailingMetadataForEachInterceptor([](ServerMetadata& md) {
+    DelayTracker* tracker = MaybeGetContext<DelayTracker>();
+    if (tracker != nullptr) {
+      md.Set(GrpcDelayTracker(), std::move(*tracker));
+    }
+  });
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();
