@@ -281,8 +281,7 @@ MakeInProcessTransportPair(const ChannelArgs& server_channel_args) {
   auto server_transport =
       MakeOrphanable<InprocServerTransport>(server_channel_args);
   auto client_transport = server_transport->MakeClientTransport();
-  return std::make_pair(std::move(client_transport),
-                        std::move(server_transport));
+  return std::pair(std::move(client_transport), std::move(server_transport));
 }
 
 }  // namespace grpc_core

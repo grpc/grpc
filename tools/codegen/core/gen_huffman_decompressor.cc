@@ -1246,8 +1246,8 @@ class FunMaker {
   std::string ReadBytes(int bytes_needed, int bytes_allowed) {
     auto fn_name =
         absl::StrCat("Read", bytes_needed, "to", bytes_allowed, "Bytes");
-    if (have_reads_.count(std::make_pair(bytes_needed, bytes_allowed)) == 0) {
-      have_reads_.insert(std::make_pair(bytes_needed, bytes_allowed));
+    if (have_reads_.count(std::pair(bytes_needed, bytes_allowed)) == 0) {
+      have_reads_.insert(std::pair(bytes_needed, bytes_allowed));
       auto fn = NewFun(fn_name, "bool");
       auto s = fn->Add<Switch>("end_ - begin_");
       for (int i = 0; i <= bytes_allowed; i++) {

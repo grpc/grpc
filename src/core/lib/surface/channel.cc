@@ -72,8 +72,8 @@ Channel::Channel(std::string target, const ChannelArgs& channel_args)
 Channel::RegisteredCall* Channel::RegisterCall(const char* method,
                                                const char* host) {
   MutexLock lock(&mu_);
-  auto key = std::make_pair(std::string(host != nullptr ? host : ""),
-                            std::string(method != nullptr ? method : ""));
+  auto key = std::pair(std::string(host != nullptr ? host : ""),
+                       std::string(method != nullptr ? method : ""));
   auto rc_posn = registration_table_.find(key);
   if (rc_posn != registration_table_.end()) {
     return &rc_posn->second;

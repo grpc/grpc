@@ -42,7 +42,6 @@ using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::compiler::GeneratorContext;
 using grpc::protobuf::io::CodedOutputStream;
 using grpc::protobuf::io::ZeroCopyOutputStream;
-using std::make_pair;
 using std::map;
 using std::pair;
 using std::replace;
@@ -234,11 +233,11 @@ bool PrivateGenerator::PrintBetaServerFactory(
         return false;
       }
       method_implementation_constructors.insert(
-          make_pair(method->name(), method_implementation_constructor));
+          pair(method->name(), method_implementation_constructor));
       input_message_modules_and_classes.insert(
-          make_pair(method->name(), input_message_module_and_class));
+          pair(method->name(), input_message_module_and_class));
       output_message_modules_and_classes.insert(
-          make_pair(method->name(), output_message_module_and_class));
+          pair(method->name(), output_message_module_and_class));
     }
     StringMap method_dict;
     method_dict["PackageQualifiedServiceName"] = package_qualified_service_name;
@@ -341,12 +340,11 @@ bool PrivateGenerator::PrintBetaStubFactory(
               config.prefixes_to_filter)) {
         return false;
       }
-      method_cardinalities.insert(
-          make_pair(method->name(), method_cardinality));
+      method_cardinalities.insert(pair(method->name(), method_cardinality));
       input_message_modules_and_classes.insert(
-          make_pair(method->name(), input_message_module_and_class));
+          pair(method->name(), input_message_module_and_class));
       output_message_modules_and_classes.insert(
-          make_pair(method->name(), output_message_module_and_class));
+          pair(method->name(), output_message_module_and_class));
     }
     StringMap method_dict;
     method_dict["PackageQualifiedServiceName"] = package_qualified_service_name;
@@ -838,10 +836,10 @@ pair<bool, std::string> PrivateGenerator::GetGrpcServices() {
           "Client and server classes corresponding to protobuf-defined "
           "services.\"\"\"\n");
       if (!PrintPreamble(out.get())) {
-        return make_pair(false, "");
+        return pair(false, "");
       }
       if (!PrintGAServices(out.get())) {
-        return make_pair(false, "");
+        return pair(false, "");
       }
     } else {
       out->Print("try:\n");
@@ -851,16 +849,16 @@ pair<bool, std::string> PrivateGenerator::GetGrpcServices() {
             "# THESE ELEMENTS WILL BE DEPRECATED.\n"
             "# Please use the generated *_pb2_grpc.py files instead.\n");
         if (!PrintPreamble(out.get())) {
-          return make_pair(false, "");
+          return pair(false, "");
         }
         if (!PrintBetaPreamble(out.get())) {
-          return make_pair(false, "");
+          return pair(false, "");
         }
         if (!PrintGAServices(out.get())) {
-          return make_pair(false, "");
+          return pair(false, "");
         }
         if (!PrintBetaServices(out.get())) {
-          return make_pair(false, "");
+          return pair(false, "");
         }
       }
       out->Print("except ImportError:\n");
@@ -870,7 +868,7 @@ pair<bool, std::string> PrivateGenerator::GetGrpcServices() {
       }
     }
   }
-  return make_pair(true, std::move(output));
+  return pair(true, std::move(output));
 }
 
 }  // namespace

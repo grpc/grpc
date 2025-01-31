@@ -117,7 +117,7 @@ std::unique_ptr<ClientContext> ClientContext::FromCallbackServerContext(
 
 void ClientContext::AddMetadata(const std::string& meta_key,
                                 const std::string& meta_value) {
-  send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
+  send_initial_metadata_.insert(std::pair(meta_key, meta_value));
 }
 
 void ClientContext::set_call(grpc_call* call,

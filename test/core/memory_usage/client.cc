@@ -193,7 +193,7 @@ std::pair<MemStats, MemStats> run_test_loop(int iterations, int* call_idx) {
     init_ping_pong_request(*call_idx + i + 1);
   }
 
-  auto peak = std::make_pair(
+  auto peak = std::pair(
       // client
       MemStats::Snapshot(),
       // server
