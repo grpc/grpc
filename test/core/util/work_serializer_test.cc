@@ -59,8 +59,7 @@ TEST(WorkSerializerTest, ExecuteOneRun) {
   auto lock = std::make_unique<WorkSerializer>(GetDefaultEventEngine());
   gpr_event done;
   gpr_event_init(&done);
-  lock->Run([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
-            DEBUG_LOCATION);
+  lock->Run([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); });
   EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
               nullptr);
   lock.reset();
@@ -225,7 +224,7 @@ TEST(WorkSerializerTest, ExecuteManyMixedRunScheduleAndDrain) {
 // Tests that work serializers allow destruction from the last callback
 TEST(WorkSerializerTest, CallbackDestroysWorkSerializer) {
   auto lock = std::make_shared<WorkSerializer>(GetDefaultEventEngine());
-  lock->Run([&]() { lock.reset(); }, DEBUG_LOCATION);
+  lock->Run([&]() { lock.reset(); });
   WaitForSingleOwner(GetDefaultEventEngine());
 }
 
@@ -239,7 +238,7 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
       notification.WaitForNotification();
       lock.reset();
     });
-    lock->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
+    lock->Run([&]() { notification.Notify(); });
     t1.join();
   }
   WaitForSingleOwner(GetDefaultEventEngine());
@@ -255,7 +254,7 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
   for (int i = 0; i < 10; ++i) {
     threads.emplace_back([lock, &barrier]() mutable {
       barrier.Block();
-      lock->Run([lock]() mutable { lock.reset(); }, DEBUG_LOCATION);
+      lock->Run([lock]() mutable { lock.reset(); });
     });
   }
   barrier.Block();
@@ -407,8 +406,8 @@ TEST(WorkSerializerTest, RunningInWorkSerializer) {
   EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
   Notification done1;
   Notification done2;
-  work_serializer1->Run([&done1]() { done1.Notify(); }, DEBUG_LOCATION);
-  work_serializer2->Run([&done2]() { done2.Notify(); }, DEBUG_LOCATION);
+  work_serializer1->Run([&done1]() { done1.Notify(); });
+  work_serializer2->Run([&done2]() { done2.Notify(); });
   done1.WaitForNotification();
   done2.WaitForNotification();
   work_serializer1.reset();

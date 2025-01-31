@@ -116,7 +116,7 @@ def _update_visibility(visibility):
         "grpc_public_hdrs": PRIVATE,
         "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
-        "grpc++_public_hdrs": PUBLIC,
+        "grpc++_public_hdrs": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
         "iomgr_internal_errqueue": PRIVATE,

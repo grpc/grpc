@@ -442,7 +442,6 @@ for dirname in [
             "grpc_yodel_simple_test": lambda **kwargs: None,
             "grpc_fuzzer": grpc_cc_library,
             "grpc_fuzz_test": grpc_cc_library,
-            "grpc_proto_fuzzer": grpc_cc_library,
             "grpc_proto_library": grpc_proto_library,
             "grpc_internal_proto_library": grpc_proto_library,
             "grpc_cc_proto_library": lambda **kwargs: None,

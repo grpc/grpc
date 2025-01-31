@@ -208,9 +208,16 @@ class XdsClient::XdsChannel::AdsCall final
       if (state.HasResource()) return;
       // Start timer.
       ads_call_ = std::move(ads_call);
+      Duration timeout = ads_call_->xds_client()->request_timeout_;
+      if (timeout == Duration::Zero()) {
+        timeout = XdsDataErrorHandlingEnabled() &&
+                          ads_call_->xds_channel()
+                              ->server_.ResourceTimerIsTransientFailure()
+                      ? Duration::Seconds(30)
+                      : Duration::Seconds(15);
+      }
       timer_handle_ = ads_call_->xds_client()->engine()->RunAfter(
-          ads_call_->xds_client()->request_timeout_,
-          [self = Ref(DEBUG_LOCATION, "timer")]() {
+          timeout, [self = Ref(DEBUG_LOCATION, "timer")]() {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             self->OnTimer();
@@ -236,7 +243,15 @@ class XdsClient::XdsChannel::AdsCall final
                      name_.authority, type_->type_url(), name_.key)
               << "} from xds server";
           resource_seen_ = true;
-          state.SetDoesNotExistOnTimeout();
+          if (XdsDataErrorHandlingEnabled() &&
+              ads_call_->xds_channel()
+                  ->server_.ResourceTimerIsTransientFailure()) {
+            state.SetTimeout(
+                absl::StrCat("timeout obtaining resource from xDS server ",
+                             ads_call_->xds_channel()->server_uri()));
+          } else {
+            state.SetDoesNotExistOnTimeout();
+          }
           ads_call_->xds_client()->NotifyWatchersOnResourceChanged(
               state.failed_status(), state.watchers(),
               ReadDelayHandle::NoWait());
@@ -1302,16 +1317,10 @@ void XdsClient::ResourceState::SetNacked(const std::string& version,
     serialized_proto_.clear();
   }
   client_status_ = ClientResourceStatus::NACKED;
-  failed_version_ = version;
   failed_status_ =
       absl::InvalidArgumentError(absl::StrCat("invalid resource: ", details));
+  failed_version_ = version;
   failed_update_time_ = update_time;
-}
-
-void XdsClient::ResourceState::SetDoesNotExistOnTimeout() {
-  client_status_ = ClientResourceStatus::DOES_NOT_EXIST;
-  failed_status_ = absl::NotFoundError("does not exist");
-  failed_version_.clear();
 }
 
 void XdsClient::ResourceState::SetDoesNotExistOnLdsOrCdsDeletion(
@@ -1327,6 +1336,18 @@ void XdsClient::ResourceState::SetDoesNotExistOnLdsOrCdsDeletion(
   failed_update_time_ = update_time;
 }
 
+void XdsClient::ResourceState::SetDoesNotExistOnTimeout() {
+  client_status_ = ClientResourceStatus::DOES_NOT_EXIST;
+  failed_status_ = absl::NotFoundError("does not exist");
+  failed_version_.clear();
+}
+
+void XdsClient::ResourceState::SetTimeout(const std::string& details) {
+  client_status_ = ClientResourceStatus::TIMEOUT;
+  failed_status_ = absl::UnavailableError(details);
+  failed_version_.clear();
+}
+
 absl::string_view XdsClient::ResourceState::CacheStateString() const {
   switch (client_status_) {
     case ClientResourceStatus::REQUESTED:
@@ -1338,6 +1359,8 @@ absl::string_view XdsClient::ResourceState::CacheStateString() const {
       return "acked";
     case ClientResourceStatus::NACKED:
       return resource_ != nullptr ? "nacked_but_cached" : "nacked";
+    case ClientResourceStatus::TIMEOUT:
+      return "timeout";
   }
   Crash("unknown resource state");
 }
