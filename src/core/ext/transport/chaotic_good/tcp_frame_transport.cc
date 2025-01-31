@@ -14,6 +14,7 @@
 
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 
+#include "frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
@@ -157,18 +158,6 @@ auto TcpFrameTransport::WriteLoop(MpscReceiver<Frame> frames) {
   });
 }
 
-void TcpFrameTransport::StartWriting(
-    Party* party, MpscReceiver<Frame> frames,
-    absl::AnyInvocable<void(absl::Status)> on_done) {
-  party->Spawn(
-      "tcp-write",
-      [self = RefAsSubclass<TcpFrameTransport>(),
-       frames = std::move(frames)]() mutable {
-        return self->WriteLoop(std::move(frames));
-      },
-      std::move(on_done));
-}
-
 auto TcpFrameTransport::ReadFrameBytes() {
   return TrySeq(
       control_endpoint_.ReadSlice(TcpFrameHeader::kFrameHeaderSize),
@@ -226,10 +215,17 @@ auto TcpFrameTransport::ReadFrameBytes() {
       });
 }
 
-void TcpFrameTransport::StartReading(
-    Party* party, ReadFramePipe::Sender frames,
-    absl::AnyInvocable<void(absl::Status)> on_done) {
-  Crash("Not implemented");
+void TcpFrameTransport::Start(Party* party, MpscReceiver<Frame> frames,
+                              RefCountedPtr<FrameTransportSink> sink) {
+  party->Spawn(
+      "tcp-write",
+      [self = RefAsSubclass<TcpFrameTransport>(),
+       frames = std::move(frames)]() mutable {
+        return self->WriteLoop(std::move(frames));
+      },
+      [sink](absl::Status status) {
+        sink->OnFrameTransportClosed(std::move(status));
+      });
 }
 
 }  // namespace chaotic_good

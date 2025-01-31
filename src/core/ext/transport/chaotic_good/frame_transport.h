@@ -64,19 +64,16 @@ class IncomingFrame {
       payload_;
 };
 
+class FrameTransportSink : public RefCounted<FrameTransportSink> {
+ public:
+  virtual void OnIncomingFrame(IncomingFrame incoming_frame) = 0;
+  virtual void OnFrameTransportClosed(absl::Status status) = 0;
+};
+
 class FrameTransport : public RefCounted<FrameTransport> {
  public:
-  using ReadFramePipe = Pipe<IncomingFrame>;
-
-  // Spawn a read loop onto party - read frames from the wire, push them onto
-  // frames.
-  // TODO(ctiller): can likely use a buffered intra-party SpscSender here once
-  // we write one.
-  virtual void StartReading(Party* party, ReadFramePipe::Sender frames,
-                            absl::AnyInvocable<void(absl::Status)> on_done) = 0;
-  // Spawn a write loop onto party - write frames from frames to the wire.
-  virtual void StartWriting(Party* party, MpscReceiver<Frame> frames,
-                            absl::AnyInvocable<void(absl::Status)> on_done) = 0;
+  virtual void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
+                     RefCountedPtr<FrameTransportSink> sink) = 0;
 };
 
 }  // namespace chaotic_good

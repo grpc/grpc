@@ -124,8 +124,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, ClientEndOfStream frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, BeginMessageFrame frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageChunkFrame frame);
-  auto TransportReadLoop(
-      typename FrameTransport::ReadFramePipe::Receiver incoming_frames);
+  auto OnIncomingFrame(IncomingFrame incoming_frame);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;

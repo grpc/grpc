@@ -30,17 +30,16 @@ class MockFrameTransport final : public FrameTransport {
  public:
   ~MockFrameTransport() override;
 
-  void StartReading(Party* party, ReadFramePipe::Sender frames,
-                    absl::AnyInvocable<void(absl::Status)> on_done) final;
-  void StartWriting(Party* party, MpscReceiver<Frame> frames,
-                    absl::AnyInvocable<void(absl::Status)> on_done) final;
+  void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
+             RefCountedPtr<FrameTransportSink> sink) override;
 
   void ExpectWrite(Frame frame, SourceLocation whence = {}) {
     expected_writes_.emplace(std::move(frame), whence);
   }
   void Read(Frame frame);
   void Close() {
-    if (reader_.has_value()) reader_->CloseWithError();
+    if (sink_ != nullptr)
+      sink_->OnFrameTransportClosed(absl::UnavailableError("tschüß!"));
     on_read_done_(absl::UnavailableError("closed"));
     closed_.store(true);
   }
@@ -53,7 +52,7 @@ class MockFrameTransport final : public FrameTransport {
     SourceLocation whence;
   };
   std::queue<ExpectedWrite> expected_writes_;
-  absl::optional<ReadFramePipe::Sender> reader_;
+  RefCountedPtr<FrameTransportSink> sink_;
   std::atomic<bool> closed_{false};
   absl::AnyInvocable<void(absl::Status)> on_read_done_;
 };

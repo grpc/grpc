@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <initializer_list>  // IWYU pragma: keep
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -81,7 +82,6 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void Orphan() override;
 
   void StartCall(CallHandler call_handler) override;
-  void AbortWithError();
 
  private:
   struct Stream : public RefCounted<Stream> {
@@ -95,33 +95,50 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   };
   using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
 
-  uint32_t MakeStream(CallHandler call_handler);
-  RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
+  class StreamDispatch final : public FrameTransportSink {
+   public:
+    void OnIncomingFrame(IncomingFrame incoming_frame) override;
+    void OnFrameTransportClosed(absl::Status status) override;
+
+    uint32_t MakeStream(CallHandler call_handler);
+
+   private:
+    template <typename T>
+    void DispatchFrame(IncomingFrame incoming_frame);
+    RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
+
+    // Push one frame into a call
+    static auto PushFrameIntoCall(ServerInitialMetadataFrame frame,
+                                  RefCountedPtr<Stream> stream);
+    static auto PushFrameIntoCall(MessageFrame frame,
+                                  RefCountedPtr<Stream> stream);
+    static auto PushFrameIntoCall(ServerTrailingMetadataFrame frame,
+                                  RefCountedPtr<Stream> stream);
+    static auto PushFrameIntoCall(BeginMessageFrame frame,
+                                  RefCountedPtr<Stream> stream);
+    static auto PushFrameIntoCall(MessageChunkFrame frame,
+                                  RefCountedPtr<Stream> stream);
+
+    static constexpr const uint32_t kClosedTransportStreamId =
+        std::numeric_limits<uint32_t>::max();
+
+    Mutex mu_;
+    uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
+    // Map of stream incoming server frames, key
+    // is stream_id.
+    StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
+    ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
+        "chaotic_good_client", GRPC_CHANNEL_READY};
+  };
+
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
-  auto OnTransportActivityDone(absl::string_view what);
-  template <typename T>
-  void DispatchFrame(IncomingFrame incoming_frame);
-  auto TransportReadLoop(
-      FrameTransport::ReadFramePipe::Receiver incoming_frames);
-  // Push one frame into a call
-  auto PushFrameIntoCall(ServerInitialMetadataFrame frame,
-                         RefCountedPtr<Stream> stream);
-  auto PushFrameIntoCall(MessageFrame frame, RefCountedPtr<Stream> stream);
-  auto PushFrameIntoCall(ServerTrailingMetadataFrame frame,
-                         RefCountedPtr<Stream> stream);
-  auto PushFrameIntoCall(BeginMessageFrame frame, RefCountedPtr<Stream> stream);
-  auto PushFrameIntoCall(MessageChunkFrame frame, RefCountedPtr<Stream> stream);
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   grpc_event_engine::experimental::MemoryAllocator allocator_;
+  RefCountedPtr<StreamDispatch> stream_dispatch_ =
+      MakeRefCounted<StreamDispatch>();
   MpscSender<Frame> outgoing_frames_;
-  Mutex mu_;
-  uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
-  // Map of stream incoming server frames, key is stream_id.
-  StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
   RefCountedPtr<Party> party_;
-  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
-      "chaotic_good_client", GRPC_CHANNEL_READY};
   MessageChunker message_chunker_;
 };
 

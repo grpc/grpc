@@ -71,10 +71,8 @@ class TcpFrameTransport final : public FrameTransport {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
 
-  void StartReading(Party* party, ReadFramePipe::Sender frames,
-                    absl::AnyInvocable<void(absl::Status)> on_done) override;
-  void StartWriting(Party* party, MpscReceiver<Frame> frames,
-                    absl::AnyInvocable<void(absl::Status)> on_done) override;
+  void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
+             RefCountedPtr<FrameTransportSink> sink) override;
 
  private:
   auto WriteFrame(const FrameInterface& frame);

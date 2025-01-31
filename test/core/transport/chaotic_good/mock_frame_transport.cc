@@ -37,9 +37,9 @@ MockFrameTransport::~MockFrameTransport() {
     on_read_done_(absl::OkStatus());
   }
 }
-
+/*
 void MockFrameTransport::StartReading(
-    Party*, ReadFramePipe::Sender frames,
+    Party*, absl::AnyInvocable<void(IncomingFrame)> on_incoming_frame,
     absl::AnyInvocable<void(absl::Status)> on_done) {
   reader_ = std::move(frames);
   on_read_done_ = std::move(on_done);
@@ -73,15 +73,14 @@ void MockFrameTransport::StartWriting(
       },
       std::move(on_done));
 }
-
+*/
 void MockFrameTransport::Read(Frame frame) {
   SliceBuffer buffer;
   auto& frame_interface = absl::ConvertVariantTo<FrameInterface&>(frame);
   LOG(INFO) << "Read " << frame_interface.ToString();
   auto header = frame_interface.MakeHeader();
   frame_interface.SerializePayload(buffer);
-  EXPECT_THAT(reader_->Push(IncomingFrame(header, std::move(buffer)))(),
-              IsReady());
+  sink_->OnIncomingFrame(IncomingFrame(header, std::move(buffer)));
 }
 
 }  // namespace testing
