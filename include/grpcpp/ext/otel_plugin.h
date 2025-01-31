@@ -32,7 +32,9 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "opentelemetry/context/propagation/text_map_propagator.h"
 #include "opentelemetry/metrics/meter_provider.h"
+#include "opentelemetry/trace/tracer_provider.h"
 
 namespace grpc {
 namespace internal {
@@ -149,6 +151,16 @@ class OpenTelemetryPluginBuilder {
   /// Records \a optional_label_key on all metrics that provide it.
   OpenTelemetryPluginBuilder& AddOptionalLabel(
       absl::string_view optional_label_key);
+  /// EXPERIMENTAL API
+  /// If `SetTracerProvider()` is not called, no traces are collected.
+  OpenTelemetryPluginBuilder& SetTracerProvider(
+      std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider);
+  /// EXPERIMENTAL API
+  /// Set one or multiple text map propagators for span context propagation,
+  /// e.g. the community standard ones like W3C, etc.
+  OpenTelemetryPluginBuilder& SetTextMapPropagator(
+      std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+          text_map_propagator);
   /// Set scope filter to choose which channels are recorded by this plugin.
   /// Server-side recording remains unaffected.
   OpenTelemetryPluginBuilder& SetChannelScopeFilter(
@@ -170,6 +182,13 @@ class OpenTelemetryPluginBuilder {
 };
 
 namespace experimental {
+
+/// EXPERIMENTAL API
+/// TODO(): Think about whether this should under OpenTelemetryPluginBuilder
+/// or somewhere else
+std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+MakeGrpcTraceBinTextMapPropagator();
+
 // TODO(yashykt): Delete this after the 1.62 release.
 GRPC_DEPRECATED(
     "Use grpc::OpenTelemetryPluginBuilder instead. The experimental version "
