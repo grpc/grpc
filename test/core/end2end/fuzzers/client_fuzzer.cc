@@ -41,6 +41,7 @@
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
 
@@ -110,7 +111,9 @@ void Run(fuzzer_input::Msg msg) {
   TestOnlyReloadExperimentsFromConfigVariables();
   testing::ClientFuzzer(msg).Run(msg.api_actions());
 }
-FUZZ_TEST(ClientFuzzerTest, Run);
+FUZZ_TEST(ClientFuzzerTest, Run)
+    .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
+        "config_vars", AnyConfigVars()));
 
 }  // namespace testing
 }  // namespace grpc_core

@@ -61,10 +61,12 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_test_fuzzer.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
 
 #ifdef GRPC_END2END_TEST_INCLUDE_FUZZER
 #include "fuzztest/fuzztest.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #endif
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
@@ -678,10 +680,11 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
 #ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
 #define CORE_END2END_FUZZER(suite, name)
 #else
-#define CORE_END2END_FUZZER(suite, name)                                \
-  FUZZ_TEST(Fuzzers, suite##_##name)                                    \
-      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)), \
-                   ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>());
+#define CORE_END2END_FUZZER(suite, name)                                  \
+  FUZZ_TEST(Fuzzers, suite##_##name)                                      \
+      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)),   \
+                   ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>() \
+                       .WithProtobufField("config_vars", AnyConfigVars()));
 #endif
 
 // NOLINTBEGIN(bugprone-macro-parentheses)

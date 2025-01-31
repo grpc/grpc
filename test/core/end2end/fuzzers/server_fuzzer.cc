@@ -35,6 +35,7 @@
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -129,7 +130,9 @@ void ChaoticGood(fuzzer_input::Msg msg) {
         OrphanablePtr<chaotic_good::ChaoticGoodServerListener>(listener));
   });
 }
-FUZZ_TEST(ServerFuzzers, ChaoticGood);
+FUZZ_TEST(ServerFuzzers, ChaoticGood)
+    .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
+        "config_vars", AnyConfigVars()));
 
 void Chttp2(fuzzer_input::Msg msg) {
   RunServerFuzzer(
@@ -140,7 +143,9 @@ void Chttp2(fuzzer_input::Msg msg) {
         grpc_server_credentials_release(creds);
       });
 }
-FUZZ_TEST(ServerFuzzers, Chttp2);
+FUZZ_TEST(ServerFuzzers, Chttp2)
+    .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
+        "config_vars", AnyConfigVars()));
 
 void Chttp2FakeSec(fuzzer_input::Msg msg) {
   RunServerFuzzer(
@@ -151,7 +156,9 @@ void Chttp2FakeSec(fuzzer_input::Msg msg) {
         grpc_server_credentials_release(creds);
       });
 }
-FUZZ_TEST(ServerFuzzers, Chttp2FakeSec);
+FUZZ_TEST(ServerFuzzers, Chttp2FakeSec)
+    .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
+        "config_vars", AnyConfigVars()));
 
 TEST(ServerFuzzers, ChaoticGoodRegression1) {
   ChaoticGood(
@@ -188,7 +195,6 @@ TEST(ServerFuzzers, ChaoticGoodRegression1) {
                             verbosity: "\004\004\004\000>G\000\000\000"
                             dns_resolver: "d//"
                             trace: "??\000\000\177\177\177\177\000\000\000"
-                            experiments: 8146841458895622537
                           }
                           channel_args {
                             args {}
@@ -226,11 +232,7 @@ TEST(ServerFuzzers, Chttp2Regression1) {
              }
            }
            event_engine_actions { run_delay: 1 assign_ports: 2147483647 }
-           config_vars {
-             enable_fork_support: true
-             verbosity: "\355\237\277"
-             experiments: 18446744073709551615
-           }
+           config_vars { enable_fork_support: true verbosity: "\355\237\277" }
            shutdown_connector { shutdown_status: -1 }
       )pb"));
 }

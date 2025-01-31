@@ -54,6 +54,7 @@ grpc_fuzz_test(
         "//test/core/event_engine:aborting_event_engine",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:fuzzing_channel_args",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
