@@ -222,7 +222,7 @@ TYPED_TEST(TrySeqTest, SucceedDirectlyAndThenDirectly) {
                     return i + 1;
                   };
                 })(),
-            Poll<absl::StatusOr<int>>(2));
+            absl::StatusOr<int>(2));
   EXPECT_STREQ(execution_order.c_str(), "123");
 }
 
@@ -255,7 +255,7 @@ TYPED_TEST(TrySeqTest, RawSucceedAndThen) {
                      absl::StrAppend(&execution_order, "1");
                      return TypeParam::instant_ok_status();
                    })(),
-            TypeParam::ok_status());
+            TypeParam::ok_status().value());
   EXPECT_STREQ(execution_order.c_str(), "1");
 }
 
@@ -291,7 +291,7 @@ TYPED_TEST(TrySeqTest, RawSucceedAndThenValue) {
                     return absl::StatusOr<int>(42);
                   };
                 })(),
-            Poll<absl::StatusOr<int>>(absl::StatusOr<int>(42)));
+            absl::StatusOr<int>(42));
   EXPECT_STREQ(execution_order.c_str(), "123");
 }
 

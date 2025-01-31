@@ -302,8 +302,31 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "opt_seq_test",
+    srcs = ["opt_seq_test.cc"],
+    external_deps = ["gtest"],
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:seq"],
+)
+
+grpc_cc_test(
     name = "try_seq_test",
     srcs = ["try_seq_test.cc"],
+    external_deps = ["gtest"],
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "poll_matcher",
+        "//src/core:try_seq",
+    ],
+)
+
+grpc_cc_test(
+    name = "opt_try_seq_test",
+    srcs = ["opt_try_seq_test.cc"],
     external_deps = ["gtest"],
     tags = ["promise_test"],
     uses_event_engine = False,
