@@ -21,6 +21,7 @@ CONFIG=${CONFIG:-opt}
 cd "$(dirname "$0")/../../.."
 
 # build C core first
+cat Makefile
 make -j"${GRPC_RUN_TESTS_JOBS}" EMBED_OPENSSL=true EMBED_ZLIB=true static_c shared_c
 
 repo_root="$(pwd)"

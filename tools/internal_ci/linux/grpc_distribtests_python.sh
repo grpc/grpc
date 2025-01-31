@@ -40,6 +40,10 @@ fi
 # configure ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
+if [ -f ./generate_artifacts.sh ]; then
+  ./generate_artifacts.sh
+fi
+
 # Build all python linux artifacts (this step actually builds all the binary wheels and source archives)
 tools/run_tests/task_runner.py -f artifact linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts/sponge_log.xml || FAILED="true"
 

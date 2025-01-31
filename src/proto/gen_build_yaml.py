@@ -24,7 +24,7 @@ import sys
 def update_deps(key, proto_filename, deps, deps_external, is_trans, visited):
     if not proto_filename in visited:
         visited.append(proto_filename)
-        with open(proto_filename) as inp:
+        with open(proto_filename, encoding='utf-8') as inp:
             for line in inp:
                 imp = re.search(r'import "([^"]*)"', line)
                 if not imp:

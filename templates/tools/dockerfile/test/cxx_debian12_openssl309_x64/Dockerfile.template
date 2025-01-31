@@ -23,6 +23,7 @@
   <%include file="../../cmake.include"/>
   <%include file="../../ccache.include"/>
   <%include file="../../run_tests_addons.include"/>
+  <%include file="../../generate_artifacts.include"/>
 
   # Install openssl 3.0.9
   RUN apt-get update && apt-get install -y libssl-dev

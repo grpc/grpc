@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y \
   python3-pip \
   python3-setuptools \
   python3-yaml \
+  python3-mako \
   && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
@@ -80,6 +81,9 @@ ENV UBSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 
 # TODO(jtattermusch): Remove python2 once some tests stop failing without it.
 RUN apt-get update && apt-get install -y python2 && apt-get clean
+
+RUN if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
+
 
 # Define the default command.
 CMD ["bash"]

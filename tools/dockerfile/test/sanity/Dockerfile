@@ -132,6 +132,8 @@ RUN wget https://github.com/bazelbuild/buildtools/releases/download/0.29.0/build
 RUN chmod +x buildifier
 RUN mv buildifier /usr/local/bin
 
+RUN if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
+
 
 # Define the default command.
 CMD ["bash"]

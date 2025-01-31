@@ -23,5 +23,9 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+if [ -f ./generate_artifacts.sh ]; then
+    ./generate_artifacts.sh
+fi
+
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
 exec tools/run_tests/dockerize/build_and_run_docker.sh "${BAZEL_SCRIPT}"

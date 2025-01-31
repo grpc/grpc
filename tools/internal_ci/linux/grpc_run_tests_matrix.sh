@@ -31,6 +31,10 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; the
   export RUN_TESTS_FLAGS="--filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH $RUN_TESTS_FLAGS"
 fi
 
+if [ -f ./generate_artifacts.sh ]; then
+    ./generate_artifacts.sh
+fi
+
 tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
 
 echo 'Exiting gRPC main test script.'

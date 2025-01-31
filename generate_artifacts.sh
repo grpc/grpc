@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module GrpcBuildConfig
-  CORE_WINDOWS_DLL = '/tmp/libs/opt/grpc-45.dll'
-end
+set -ex
+
+cd $(dirname "$0")
+
+git submodule update --init
+tools/buildgen/generate_projects.sh

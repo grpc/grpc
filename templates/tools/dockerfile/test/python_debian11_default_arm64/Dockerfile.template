@@ -36,4 +36,5 @@
 
   <%include file="../../cmake.include"/>
   <%include file="../../ccache.include"/>
+  <%include file="../../generate_artifacts.include"/>
 
