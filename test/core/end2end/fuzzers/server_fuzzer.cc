@@ -232,11 +232,7 @@ TEST(ServerFuzzers, Chttp2Regression1) {
              }
            }
            event_engine_actions { run_delay: 1 assign_ports: 2147483647 }
-           config_vars {
-             enable_fork_support: true
-             verbosity: "\355\237\277"
-             experiments: 18446744073709551615
-           }
+           config_vars { enable_fork_support: true verbosity: "\355\237\277" }
            shutdown_connector { shutdown_status: -1 }
       )pb"));
 }
