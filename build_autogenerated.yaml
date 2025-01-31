@@ -811,6 +811,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
   - src/core/lib/event_engine/posix_engine/file_descriptors.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
@@ -1687,6 +1688,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
   - src/core/lib/event_engine/posix_engine/file_descriptors.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
@@ -2374,6 +2376,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
   - src/core/lib/event_engine/posix_engine/file_descriptors.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
@@ -2826,6 +2829,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
   - src/core/lib/event_engine/posix_engine/file_descriptors.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
@@ -4419,6 +4423,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
   - src/core/lib/event_engine/posix_engine/file_descriptors.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
@@ -4741,6 +4746,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
   - src/core/lib/event_engine/posix_engine/file_descriptors.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
@@ -6730,6 +6736,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
   - src/core/lib/event_engine/posix_engine/file_descriptors.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
@@ -7020,6 +7027,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
   - src/core/lib/event_engine/posix_engine/file_descriptors.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
@@ -10265,6 +10273,20 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
   - test/core/test_util/tracer_util.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: file_descriptor_collection_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/file_descriptor_collection_test.cc
   deps:
   - gtest
   - grpc_test_util

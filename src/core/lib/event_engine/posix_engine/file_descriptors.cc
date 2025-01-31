@@ -21,13 +21,16 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
@@ -130,13 +133,12 @@ PosixResult PosixResultError() {
   return PosixResult(OperationResultKind::kError, errno);
 }
 
-PosixResult PosixResultWrap(int result) {
-  return result == 0 ? PosixResultSuccess() : PosixResultError();
+PosixResult PosixResultWrongGeneration() {
+  return PosixResult(OperationResultKind::kWrongGeneration, 0);
 }
 
-Int64Result Int64Wrap(int64_t result) {
-  return result < 0 ? Int64Result(OperationResultKind::kError, errno, result)
-                    : Int64Result(result);
+PosixResult PosixResultSimpleWrap(int result) {
+  return result == 0 ? PosixResultSuccess() : PosixResultError();
 }
 
 absl::Status ErrorForFd(
@@ -412,6 +414,71 @@ bool SetSocketDualStack(int fd) {
 #endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
+IF_POSIX_SOCKET(absl::StatusOr<int> InternalCreateDualStackSocket(
+                    std::function<int(int, int, int)> socket_factory,
+                    const experimental::EventEngine::ResolvedAddress& addr,
+                    int type, int protocol, DSMode& dsmode),
+                {
+                  const sockaddr* sock_addr = addr.address();
+                  int family = sock_addr->sa_family;
+                  int newfd;
+                  if (family == AF_INET6) {
+                    if (IsIpv6LoopbackAvailable()) {
+                      newfd =
+                          CreateSocket(socket_factory, family, type, protocol);
+                    } else {
+                      newfd = -1;
+                      errno = EAFNOSUPPORT;
+                    }
+                    // Check if we've got a valid dualstack socket.
+                    if (newfd > 0 && SetSocketDualStack(newfd)) {
+                      dsmode = DSMode::DSMODE_DUALSTACK;
+                      return newfd;
+                    }
+                    // If this isn't an IPv4 address, then return whatever we've
+                    // got.
+                    if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
+                      if (newfd < 0) {
+                        return ErrorForFd(newfd, addr);
+                      }
+                      dsmode = DSMode::DSMODE_IPV6;
+                      return newfd;
+                    }
+                    // Fall back to AF_INET.
+                    if (newfd >= 0) {
+                      close(newfd);
+                    }
+                    family = AF_INET;
+                  }
+                  dsmode = family == AF_INET ? DSMode::DSMODE_IPV4
+                                             : DSMode::DSMODE_NONE;
+                  newfd = CreateSocket(socket_factory, family, type, protocol);
+                  if (newfd < 0) {
+                    return ErrorForFd(newfd, addr);
+                  }
+                  return newfd;
+                })
+
+absl::Status InternalSetSocketNoSigpipeIfPossible(GRPC_UNUSED int fd) {
+#ifdef GRPC_HAVE_SO_NOSIGPIPE
+  return SetSocketOption(fd, SOL_SOCKET, SO_NOSIGPIPE, 1, "SO_NOSIGPIPE");
+#else   // GRPC_HAVE_SO_NOSIGPIPE
+  return absl::OkStatus();
+#endif  // GRPC_HAVE_SO_NOSIGPIPE
+}
+
+absl::Status InternalApplySocketMutatorInOptions(
+    int fd, grpc_fd_usage usage, const PosixTcpOptions& options) {
+  if (options.socket_mutator == nullptr) {
+    return absl::OkStatus();
+  }
+  if (!grpc_socket_mutator_mutate_fd(options.socket_mutator, fd, usage)) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        "grpc_socket_mutator failed.");
+  }
+  return absl::OkStatus();
+}
+
 }  // namespace
 
 bool IsSocketReusePortSupported() {
@@ -435,22 +502,19 @@ bool IsSocketReusePortSupported() {
   return kSupportSoReusePort;
 }
 
-FileDescriptor FileDescriptors::Adopt(int fd) { return FileDescriptor(fd); }
+FileDescriptor FileDescriptors::Adopt(int fd) { return descriptors_.Add(fd); }
 
 std::optional<int> FileDescriptors::GetFdForPolling(const FileDescriptor& fd) {
-  return fd.fd();
+  return RunIfCorrectGeneration<std::optional<int>>(
+      fd, [](int fd) -> std::optional<int> { return fd; }, std::nullopt);
 }
 
-FileDescriptorResult FileDescriptors::RegisterPosixResult(int result) {
-  if (result > 0) {
-    return FileDescriptorResult(Adopt(result));
-  } else {
-    return FileDescriptorResult(OperationResultKind::kError, errno);
+IF_POSIX_SOCKET(void FileDescriptors::Close(const FileDescriptor& fd), {
+  auto raw = descriptors_.Remove(fd);
+  if (raw.has_value()) {
+    close(*raw);
   }
-}
-
-IF_POSIX_SOCKET(void FileDescriptors::Close(const FileDescriptor& fd),
-                { close(fd.fd()); })
+})
 
 //
 // Factories
@@ -459,7 +523,14 @@ IF_POSIX_SOCKET(
     FileDescriptorResult FileDescriptors::Accept(const FileDescriptor& sockfd,
                                                  struct sockaddr* addr,
                                                  socklen_t* addrlen),
-    { return RegisterPosixResult(accept(sockfd.fd(), addr, addrlen)); })
+    {
+      return RunIfCorrectGeneration<FileDescriptorResult>(
+          sockfd,
+          [&](int fd) {
+            return descriptors_.RegisterPosixResult(accept(fd, addr, addrlen));
+          },
+          FileDescriptorResult::WrongGeneration());
+    })
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 
@@ -508,69 +579,45 @@ IF_POSIX_SOCKET(
         grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
         int nonblock, int cloexec),
     {
-      int flags = 0;
-      flags |= nonblock ? SOCK_NONBLOCK : 0;
-      flags |= cloexec ? SOCK_CLOEXEC : 0;
-      EventEngine::ResolvedAddress peer_addr;
-      socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-      FileDescriptorResult ret = RegisterPosixResult(
-          accept4(sockfd.fd(), const_cast<sockaddr*>(peer_addr.address()), &len,
-                  flags));
-      if (ret.ok()) {
-        addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
-      }
-      return ret;
+      return RunIfCorrectGeneration(
+          sockfd,
+          [&](int fd) {
+            int flags = 0;
+            flags |= nonblock ? SOCK_NONBLOCK : 0;
+            flags |= cloexec ? SOCK_CLOEXEC : 0;
+            EventEngine::ResolvedAddress peer_addr;
+            socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+            FileDescriptorResult ret = descriptors_.RegisterPosixResult(accept4(
+                fd, const_cast<sockaddr*>(peer_addr.address()), &len, flags));
+            if (ret.ok()) {
+              addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+            }
+            return ret;
+          },
+          FileDescriptorResult::WrongGeneration());
     })
 
 #endif  // GRPC_POSIX_SOCKETUTILS
 
-IF_POSIX_SOCKET(
-    absl::StatusOr<FileDescriptor> FileDescriptors::CreateDualStackSocket(
-        std::function<int(int, int, int)> socket_factory,
-        const experimental::EventEngine::ResolvedAddress& addr, int type,
-        int protocol, DSMode& dsmode),
-    {
-      const sockaddr* sock_addr = addr.address();
-      int family = sock_addr->sa_family;
-      int newfd;
-      if (family == AF_INET6) {
-        if (IsIpv6LoopbackAvailable()) {
-          newfd = CreateSocket(socket_factory, family, type, protocol);
-        } else {
-          newfd = -1;
-          errno = EAFNOSUPPORT;
-        }
-        // Check if we've got a valid dualstack socket.
-        if (newfd > 0 && SetSocketDualStack(newfd)) {
-          dsmode = DSMode::DSMODE_DUALSTACK;
-          return Adopt(newfd);
-        }
-        // If this isn't an IPv4 address, then return whatever we've got.
-        if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
-          if (newfd < 0) {
-            return ErrorForFd(newfd, addr);
-          }
-          dsmode = DSMode::DSMODE_IPV6;
-          return Adopt(newfd);
-        }
-        // Fall back to AF_INET.
-        if (newfd >= 0) {
-          close(newfd);
-        }
-        family = AF_INET;
-      }
-      dsmode = family == AF_INET ? DSMode::DSMODE_IPV4 : DSMode::DSMODE_NONE;
-      newfd = CreateSocket(socket_factory, family, type, protocol);
-      if (newfd < 0) {
-        return ErrorForFd(newfd, addr);
-      }
-      return Adopt(newfd);
-    })
+absl::StatusOr<FileDescriptor> FileDescriptors::CreateDualStackSocket(
+    std::function<int(int, int, int)> socket_factory,
+    const experimental::EventEngine::ResolvedAddress& addr, int type,
+    int protocol, DSMode& dsmode) {
+  auto fd = InternalCreateDualStackSocket(std::move(socket_factory), addr, type,
+                                          protocol, dsmode);
+  if (!fd.ok()) {
+    return std::move(fd).status();
+  }
+  return descriptors_.Add(*fd);
+}
 
 IF_POSIX_SOCKET(FileDescriptorResult FileDescriptors::Socket(int domain,
                                                              int type,
                                                              int protocol),
-                { return RegisterPosixResult(socket(domain, type, protocol)); })
+                {
+                  return descriptors_.RegisterPosixResult(
+                      socket(domain, type, protocol));
+                })
 
 IF_POSIX_SOCKET(StatusOrPipeEnds FileDescriptors::Pipe(), {
   int pipefd[2];
@@ -590,7 +637,7 @@ IF_POSIX_SOCKET(StatusOrPipeEnds FileDescriptors::Pipe(), {
 
 FileDescriptorResult FileDescriptors::EventFd(int initval, int flags) {
 #ifdef GRPC_LINUX_EVENTFD
-  return RegisterPosixResult(eventfd(initval, flags));
+  return descriptors_.RegisterPosixResult(eventfd(initval, flags));
 #else
   grpc_core::Crash("EventFD not supported");
 #endif
@@ -599,13 +646,13 @@ FileDescriptorResult FileDescriptors::EventFd(int initval, int flags) {
 FileDescriptorResult FileDescriptors::EpollCreateAndCloexec() {
 #ifdef GRPC_LINUX_EPOLL
 #ifdef GRPC_LINUX_EPOLL_CREATE1
-  auto fd = RegisterPosixResult(epoll_create1(EPOLL_CLOEXEC));
+  auto fd = descriptors_.RegisterPosixResult(epoll_create1(EPOLL_CLOEXEC));
   if (!fd.ok()) {
     LOG(ERROR) << "epoll_create1 unavailable";
   }
   return fd;
 #else   // GRPC_LINUX_EPOLL_CREATE1
-  auto fd = RegisterPosixResult(epoll_create(MAX_EPOLL_EVENTS));
+  auto fd = descriptors_.RegisterPosixResult(epoll_create(MAX_EPOLL_EVENTS));
   if (!fd.ok()) {
     LOG(ERROR) << "epoll_create unavailable";
     return fd;
@@ -620,40 +667,45 @@ FileDescriptorResult FileDescriptors::EpollCreateAndCloexec() {
 #endif  // GRPC_LINUX_EPOLL
 }
 
-int FileDescriptors::AsInteger(const FileDescriptor& fd) { return fd.fd(); }
-
-FileDescriptorResult FileDescriptors::FromInteger(int fd) {
-  return FileDescriptorResult(FileDescriptor(fd));
-}
-
-IF_POSIX_SOCKET(
-    PosixResult FileDescriptors::Connect(const FileDescriptor& sockfd,
-                                         const struct sockaddr* addr,
-                                         socklen_t addrlen),
-    { return PosixResultWrap(connect(sockfd.fd(), addr, addrlen)); })
+IF_POSIX_SOCKET(PosixResult FileDescriptors::Connect(
+                    const FileDescriptor& sockfd, const struct sockaddr* addr,
+                    socklen_t addrlen),
+                {
+                  return PosixResultWrap(sockfd, [&](int sockfd) {
+                    return connect(sockfd, addr, addrlen);
+                  });
+                })
 
 IF_POSIX_SOCKET(PosixResult FileDescriptors::Ioctl(const FileDescriptor& fd,
                                                    int op, void* arg),
-                { return PosixResultWrap(ioctl(fd.fd(), op, arg)); });
-
-IF_POSIX_SOCKET(PosixResult FileDescriptors::Shutdown(const FileDescriptor& fd,
-                                                      int how),
-                { return PosixResultWrap(shutdown(fd.fd(), how)); })
+                {
+                  return PosixResultWrap(
+                      fd, [&](int fd) { return ioctl(fd, op, arg); });
+                });
 
 IF_POSIX_SOCKET(
-    PosixResult FileDescriptors::GetSockOpt(const FileDescriptor& fd, int level,
-                                            int optname, void* optval,
-                                            void* optlen),
-    {
-      return PosixResultWrap(getsockopt(fd.fd(), level, optname, optval,
-                                        static_cast<socklen_t*>(optlen)));
-    })
+    PosixResult FileDescriptors::Shutdown(const FileDescriptor& fd, int how),
+    { return PosixResultWrap(fd, [&](int fd) { return shutdown(fd, how); }); })
+
+IF_POSIX_SOCKET(PosixResult FileDescriptors::GetSockOpt(
+                    const FileDescriptor& fd, int level, int optname,
+                    void* optval, void* optlen),
+                {
+                  return PosixResultWrap(fd, [&](int fd) {
+                    return getsockopt(fd, level, optname, optval,
+                                      static_cast<socklen_t*>(optlen));
+                  });
+                })
 
 IF_POSIX_SOCKET(
     Int64Result FileDescriptors::SetSockOpt(const FileDescriptor& fd, int level,
                                             int optname, uint32_t optval),
     {
-      if (setsockopt(fd.fd(), level, optname, &optval, sizeof(optval)) < 0) {
+      auto f = descriptors_.GetRawFileDescriptor(fd);
+      if (!f.has_value()) {
+        return Int64Result::WrongGeneration();
+      }
+      if (setsockopt(*f, level, optname, &optval, sizeof(optval)) < 0) {
         return Int64Result(OperationResultKind::kError, errno, optval);
       } else {
         return Int64Result(optval);
@@ -662,16 +714,25 @@ IF_POSIX_SOCKET(
 
 IF_POSIX_SOCKET(Int64Result FileDescriptors::Read(const FileDescriptor& fd,
                                                   absl::Span<char> buf),
-                { return Int64Wrap(read(fd.fd(), buf.data(), buf.size())); })
+                {
+                  return Int64Wrap(fd, read, static_cast<void*>(buf.data()),
+                                   buf.size());
+                })
 
 IF_POSIX_SOCKET(Int64Result FileDescriptors::Write(const FileDescriptor& fd,
                                                    absl::Span<char> buf),
-                { return Int64Wrap(write(fd.fd(), buf.data(), buf.size())); })
+                {
+                  return Int64Wrap(fd, write,
+                                   static_cast<const void*>(buf.data()),
+                                   buf.size());
+                })
 
 PosixResult FileDescriptors::EventFdRead(const FileDescriptor& fd) {
 #ifdef GRPC_LINUX_EVENTFD
-  eventfd_t value;
-  return PosixResultWrap(eventfd_read(fd.fd(), &value));
+  return PosixResultWrap(fd, [](int fd) {
+    eventfd_t value;
+    return eventfd_read(fd, &value);
+  });
 #else   // GRPC_LINUX_EVENTFD
   grpc_core::Crash("Not implemented");
 #endif  // GRPC_LINUX_EVENTFD
@@ -679,35 +740,34 @@ PosixResult FileDescriptors::EventFdRead(const FileDescriptor& fd) {
 
 PosixResult FileDescriptors::EventFdWrite(const FileDescriptor& fd) {
 #ifdef GRPC_LINUX_EVENTFD
-  return PosixResultWrap(eventfd_write(fd.fd(), 1));
+  return PosixResultWrap(fd, [](int fd) { return eventfd_write(fd, 1); });
 #else   // GRPC_LINUX_EVENTFD
   grpc_core::Crash("Not implemented");
 #endif  // GRPC_LINUX_EVENTFD
 }
 
-IF_POSIX_SOCKET(Int64Result FileDescriptors::RecvFrom(
-                    const FileDescriptor& fd, void* buf, size_t len, int flags,
-                    struct sockaddr* src_addr, socklen_t* addrlen),
-                {
-                  return Int64Wrap(
-                      recvfrom(fd.fd(), buf, len, flags, src_addr, addrlen));
-                })
+IF_POSIX_SOCKET(
+    Int64Result FileDescriptors::RecvFrom(const FileDescriptor& fd, void* buf,
+                                          size_t len, int flags,
+                                          struct sockaddr* src_addr,
+                                          socklen_t* addrlen),
+    { return Int64Wrap(fd, recvfrom, buf, len, flags, src_addr, addrlen); })
 
 IF_POSIX_SOCKET(Int64Result FileDescriptors::RecvMsg(const FileDescriptor& fd,
                                                      struct msghdr* message,
                                                      int flags),
-                { return Int64Wrap(recvmsg(fd.fd(), message, flags)); })
+                { return Int64Wrap(fd, recvmsg, message, flags); })
 
 IF_POSIX_SOCKET(Int64Result FileDescriptors::SendMsg(
                     const FileDescriptor& fd, const struct msghdr* message,
                     int flags),
-                { return Int64Wrap(sendmsg(fd.fd(), message, flags)); })
+                { return Int64Wrap(fd, sendmsg, message, flags); })
 
 Int64Result FileDescriptors::WriteV(const FileDescriptor& fd,
                                     const struct iovec* iov, int iovcnt) {
 #if defined(GRPC_POSIX_SOCKET) && GRPC_ARES == 1 && \
     defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-  return Int64Wrap(writev(fd.fd(), iov, iovcnt));
+  return Int64Wrap(fd, writev, iov, iovcnt);
 #else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   grpc_core::Crash("Not available");
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
@@ -719,9 +779,14 @@ Int64Result FileDescriptors::WriteV(const FileDescriptor& fd,
 IF_EPOLL(PosixResult FileDescriptors::EpollCtlDel(const FileDescriptor& epfd,
                                                   const FileDescriptor& fd),
          {
+           auto epfdfd = descriptors_.GetRawFileDescriptor(epfd);
+           auto fdfd = descriptors_.GetRawFileDescriptor(fd);
+           if (!epfdfd.has_value() || !fdfd.has_value()) {
+             return PosixResultWrongGeneration();
+           }
            epoll_event phony_event;
-           return PosixResultWrap(
-               epoll_ctl(epfd.fd(), EPOLL_CTL_DEL, fd.fd(), &phony_event));
+           return PosixResultSimpleWrap(
+               epoll_ctl(*epfdfd, EPOLL_CTL_DEL, *fdfd, &phony_event));
          })
 
 IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(const FileDescriptor& epfd,
@@ -735,19 +800,30 @@ IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(const FileDescriptor& epfd,
              event.events |= EPOLLOUT;
            }
            event.data.ptr = data;
-           return PosixResultWrap(
-               epoll_ctl(epfd.fd(), EPOLL_CTL_ADD, fd.fd(), &event));
+           auto epfdfd = descriptors_.GetRawFileDescriptor(epfd);
+           auto fdfd = descriptors_.GetRawFileDescriptor(fd);
+           if (!epfdfd.has_value() || !fdfd.has_value()) {
+             return PosixResult(OperationResultKind::kWrongGeneration, 0);
+           }
+           return PosixResultSimpleWrap(
+               epoll_ctl(*epfdfd, EPOLL_CTL_ADD, *fdfd, &event));
          })
 
 absl::StatusOr<EventEngine::ResolvedAddress> FileDescriptors::LocalAddress(
     const FileDescriptor& fd) {
-  EventEngine::ResolvedAddress addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  if (getsockname(fd.fd(), const_cast<sockaddr*>(addr.address()), &len) < 0) {
-    return absl::InternalError(
-        absl::StrCat("getsockname:", grpc_core::StrError(errno)));
-  }
-  return EventEngine::ResolvedAddress(addr.address(), len);
+  return RunIfCorrectGeneration<absl::StatusOr<EventEngine::ResolvedAddress>>(
+      fd,
+      [](int fd) -> absl::StatusOr<EventEngine::ResolvedAddress> {
+        EventEngine::ResolvedAddress addr;
+        socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+        if (getsockname(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+          return absl::InternalError(
+              absl::StrCat("getsockname:", grpc_core::StrError(errno)));
+        }
+        return EventEngine::ResolvedAddress(addr.address(), len);
+      },
+      absl::InternalError(
+          "getsockname: file descriptor from wrong generation"));
 }
 
 absl::StatusOr<std::string> FileDescriptors::LocalAddressString(
@@ -761,13 +837,18 @@ absl::StatusOr<std::string> FileDescriptors::LocalAddressString(
 
 absl::StatusOr<EventEngine::ResolvedAddress> FileDescriptors::PeerAddress(
     const FileDescriptor& fd) {
-  EventEngine::ResolvedAddress addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  if (getpeername(fd.fd(), const_cast<sockaddr*>(addr.address()), &len) < 0) {
-    return absl::InternalError(
-        absl::StrCat("getpeername:", grpc_core::StrError(errno)));
-  }
-  return EventEngine::ResolvedAddress(addr.address(), len);
+  return RunIfCorrectGeneration<absl::StatusOr<EventEngine::ResolvedAddress>>(
+      fd,
+      [](int fd) -> absl::StatusOr<EventEngine::ResolvedAddress> {
+        EventEngine::ResolvedAddress addr;
+        socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+        if (getpeername(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+          return absl::InternalError(
+              absl::StrCat("getpeername:", grpc_core::StrError(errno)));
+        }
+        return EventEngine::ResolvedAddress(addr.address(), len);
+      },
+      absl::InternalError("getpeername: wrong file descriptor generation"));
 }
 
 absl::StatusOr<std::string> FileDescriptors::PeerAddressString(
@@ -780,60 +861,40 @@ absl::StatusOr<std::string> FileDescriptors::PeerAddressString(
 }
 
 absl::Status FileDescriptors::SetSocketNoSigpipeIfPossible(
-    GRPC_UNUSED const FileDescriptor& fd) {
-#ifdef GRPC_HAVE_SO_NOSIGPIPE
-  int val = 1;
-  int newval;
-  socklen_t intlen = sizeof(newval);
-  int fd_posix = fd.fd();
-  if (0 != setsockopt(fd_posix, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_NOSIGPIPE): ", grpc_core::StrError(errno)));
-  }
-  if (0 != getsockopt(fd_posix, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen)) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(SO_NOSIGPIPE): ", grpc_core::StrError(errno)));
-  }
-  if ((newval != 0) != (val != 0)) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        "Failed to set SO_NOSIGPIPE");
-  }
-#endif
-  return absl::OkStatus();
+    const FileDescriptor& fd) {
+  return RunIfCorrectGeneration(fd, InternalSetSocketNoSigpipeIfPossible,
+                                absl::OkStatus());
 }
 
 IF_POSIX_SOCKET(
     absl::Status FileDescriptors::PrepareTcpClientSocket(
-        const FileDescriptor& fd, const EventEngine::ResolvedAddress& addr,
+        int fd, const EventEngine::ResolvedAddress& addr,
         const PosixTcpOptions& options),
     {
       bool close_fd = true;
-      auto sock_cleanup = absl::MakeCleanup([&close_fd, &fd, this]() -> void {
-        if (close_fd and fd.fd()) {
-          Close(fd);
+      auto sock_cleanup = absl::MakeCleanup([&close_fd, &fd]() -> void {
+        if (close_fd && fd > 0) {
+          close(fd);
         }
       });
-      int f = fd.fd();
-      GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
-      GRPC_RETURN_IF_ERROR(SetSocketCloexec(f, 1));
+      GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(fd, 1));
+      GRPC_RETURN_IF_ERROR(SetSocketCloexec(fd, 1));
       if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
         GRPC_RETURN_IF_ERROR(
-            SetSocketRcvBuf(fd.fd(), options.tcp_receive_buffer_size));
+            SetSocketRcvBuf(fd, options.tcp_receive_buffer_size));
       }
       if (addr.address()->sa_family != AF_UNIX &&
           !ResolvedAddressIsVSock(addr)) {
         // If its not a unix socket or vsock address.
         GRPC_RETURN_IF_ERROR(
-            SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
+            SetSocketOption(fd, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
         GRPC_RETURN_IF_ERROR(
-            SetSocketOption(f, SOL_SOCKET, SO_REUSEADDR, 1, "SO_REUSEADDR"));
-        GRPC_RETURN_IF_ERROR(SetSocketDscp(f, options.dscp));
-        TrySetSocketTcpUserTimeout(f, options, true);
+            SetSocketOption(fd, SOL_SOCKET, SO_REUSEADDR, 1, "SO_REUSEADDR"));
+        GRPC_RETURN_IF_ERROR(SetSocketDscp(fd, options.dscp));
+        TrySetSocketTcpUserTimeout(fd, options, true);
       }
-      GRPC_RETURN_IF_ERROR(SetSocketNoSigpipeIfPossible(fd));
-      GRPC_RETURN_IF_ERROR(ApplySocketMutatorInOptions(
+      GRPC_RETURN_IF_ERROR(InternalSetSocketNoSigpipeIfPossible(fd));
+      GRPC_RETURN_IF_ERROR(InternalApplySocketMutatorInOptions(
           fd, GRPC_FD_CLIENT_CONNECTION_USAGE, options));
       // No errors. Set close_fd to false to ensure the socket is
       // not closed.
@@ -854,10 +915,10 @@ FileDescriptors::CreateAndPrepareTcpClientSocket(
     // addr is v4 mapped to v6 or just v6.
     mapped_target_addr = target_addr;
   }
-  absl::StatusOr<FileDescriptor> posix_socket_wrapper = CreateDualStackSocket(
+  absl::StatusOr<FileDescriptor> socket_fd = CreateDualStackSocket(
       nullptr, mapped_target_addr, SOCK_STREAM, 0, dsmode);
-  if (!posix_socket_wrapper.ok()) {
-    return posix_socket_wrapper.status();
+  if (!socket_fd.ok()) {
+    return socket_fd.status();
   }
 
   if (dsmode == DSMode::DSMODE_IPV4) {
@@ -866,13 +927,13 @@ FileDescriptors::CreateAndPrepareTcpClientSocket(
       mapped_target_addr = target_addr;
     }
   }
-
-  auto error = PrepareTcpClientSocket(Adopt(posix_socket_wrapper->fd()),
-                                      mapped_target_addr, options);
+  // It was just created above
+  int raw_fd = *descriptors_.GetRawFileDescriptor(*socket_fd);
+  auto error = PrepareTcpClientSocket(raw_fd, mapped_target_addr, options);
   if (!error.ok()) {
     return error;
   }
-  return PosixSocketCreateResult{*posix_socket_wrapper, mapped_target_addr};
+  return PosixSocketCreateResult{*socket_fd, mapped_target_addr};
 }
 
 // Set a socket using a grpc_socket_mutator
@@ -880,7 +941,11 @@ absl::Status FileDescriptors::SetSocketMutator(const FileDescriptor& fd,
                                                grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator) {
   CHECK(mutator);
-  if (!grpc_socket_mutator_mutate_fd(mutator, fd.fd(), usage)) {
+  auto raw_fd = descriptors_.GetRawFileDescriptor(fd);
+  if (!raw_fd.has_value()) {
+    return absl::InternalError("SetSocketMutator: FD has a wrong generation");
+  }
+  if (!grpc_socket_mutator_mutate_fd(mutator, *raw_fd, usage)) {
     return absl::Status(absl::StatusCode::kInternal,
                         "grpc_socket_mutator failed.");
   }
@@ -890,22 +955,27 @@ absl::Status FileDescriptors::SetSocketMutator(const FileDescriptor& fd,
 absl::Status FileDescriptors::ApplySocketMutatorInOptions(
     const FileDescriptor& fd, grpc_fd_usage usage,
     const PosixTcpOptions& options) {
-  if (options.socket_mutator == nullptr) {
-    return absl::OkStatus();
+  auto raw_fd = descriptors_.GetRawFileDescriptor(fd);
+  if (!raw_fd.has_value()) {
+    return absl::InternalError("ApplySocketMutatorInOptions: wrong generation");
   }
-  return SetSocketMutator(fd, usage, options.socket_mutator);
+  return InternalApplySocketMutatorInOptions(*raw_fd, usage, options);
 }
 
 int FileDescriptors::ConfigureSocket(const FileDescriptor& fd, int type) {
   // clang-format off
 #define RETURN_IF_ERROR(expr) if (!(expr).ok()) { return -1; }
-  int f = fd.fd();
+  auto f = descriptors_.GetRawFileDescriptor(fd);
+  if (!f.has_value()) {
+    errno = 0;
+    return -1;
+  }
   // clang-format on
-  RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
-  RETURN_IF_ERROR(SetSocketCloexec(f, 1));
+  RETURN_IF_ERROR(SetSocketNonBlocking(*f, 1));
+  RETURN_IF_ERROR(SetSocketCloexec(*f, 1));
   if (type == SOCK_STREAM) {
     RETURN_IF_ERROR(
-        SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
+        SetSocketOption(*f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
   }
   return 0;
 }
@@ -916,81 +986,86 @@ IF_POSIX_SOCKET(
             const FileDescriptor& fd, const PosixTcpOptions& options,
             const EventEngine::ResolvedAddress& address),
     {
-      int f = fd.fd();
+      return RunIfCorrectGeneration<
+          absl::StatusOr<EventEngine::ResolvedAddress>>(
+          fd,
+          [&](int f) -> absl::StatusOr<EventEngine::ResolvedAddress> {
+            if (IsSocketReusePortSupported() && options.allow_reuse_port &&
+                address.address()->sa_family != AF_UNIX &&
+                !ResolvedAddressIsVSock(address)) {
+              GRPC_RETURN_IF_ERROR(SetSocketReusePort(f, 1));
+            }
 
-      if (IsSocketReusePortSupported() && options.allow_reuse_port &&
-          address.address()->sa_family != AF_UNIX &&
-          !ResolvedAddressIsVSock(address)) {
-        GRPC_RETURN_IF_ERROR(SetSocketReusePort(f, 1));
-      }
+            GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
+            GRPC_RETURN_IF_ERROR(SetSocketCloexec(f, 1));
 
-      GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
-      GRPC_RETURN_IF_ERROR(SetSocketCloexec(f, 1));
-
-      if (address.address()->sa_family != AF_UNIX &&
-          !ResolvedAddressIsVSock(address)) {
-        GRPC_RETURN_IF_ERROR(
-            SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
-        GRPC_RETURN_IF_ERROR(
-            SetSocketOption(f, SOL_SOCKET, SO_REUSEADDR, 1, "SO_REUSEADDR"));
-        GRPC_RETURN_IF_ERROR(SetSocketDscp(f, options.dscp));
-        TrySetSocketTcpUserTimeout(f, options, false);
-      }
-      GRPC_RETURN_IF_ERROR(SetSocketNoSigpipeIfPossible(fd));
-      GRPC_RETURN_IF_ERROR(ApplySocketMutatorInOptions(
-          fd, GRPC_FD_SERVER_LISTENER_USAGE, options));
-      if (kLinuxErrqueue && !SetSocketZeroCopy(f).ok()) {
-        // it's not fatal, so just log it.
-        VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
-      }
-      if (bind(f, address.address(), address.size()) < 0) {
-        auto sockaddr_str = ResolvedAddressToString(address);
-        if (!sockaddr_str.ok()) {
-          LOG(ERROR) << "Could not convert sockaddr to string: "
-                     << sockaddr_str.status();
-          sockaddr_str = "<unparsable>";
-        }
-        sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
-        return absl::FailedPreconditionError(
-            absl::StrCat("Error in bind for address '", *sockaddr_str,
-                         "': ", std::strerror(errno)));
-      }
-      if (listen(f, GetMaxAcceptQueueSize()) < 0) {
-        return absl::FailedPreconditionError(
-            absl::StrCat("Error in listen: ", std::strerror(errno)));
-      }
-      socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-      EventEngine::ResolvedAddress sockname_temp;
-      if (getsockname(f, const_cast<sockaddr*>(sockname_temp.address()), &len) <
-          0) {
-        return absl::FailedPreconditionError(
-            absl::StrCat("Error in getsockname: ", std::strerror(errno)));
-      }
-      return sockname_temp;
+            if (address.address()->sa_family != AF_UNIX &&
+                !ResolvedAddressIsVSock(address)) {
+              GRPC_RETURN_IF_ERROR(SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY,
+                                                   1, "TCP_NODELAY"));
+              GRPC_RETURN_IF_ERROR(SetSocketOption(f, SOL_SOCKET, SO_REUSEADDR,
+                                                   1, "SO_REUSEADDR"));
+              GRPC_RETURN_IF_ERROR(SetSocketDscp(f, options.dscp));
+              TrySetSocketTcpUserTimeout(f, options, false);
+            }
+            GRPC_RETURN_IF_ERROR(InternalSetSocketNoSigpipeIfPossible(f));
+            GRPC_RETURN_IF_ERROR(InternalApplySocketMutatorInOptions(
+                f, GRPC_FD_SERVER_LISTENER_USAGE, options));
+            if (kLinuxErrqueue && !SetSocketZeroCopy(f).ok()) {
+              // it's not fatal, so just log it.
+              VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
+            }
+            if (bind(f, address.address(), address.size()) < 0) {
+              auto sockaddr_str = ResolvedAddressToString(address);
+              if (!sockaddr_str.ok()) {
+                LOG(ERROR) << "Could not convert sockaddr to string: "
+                           << sockaddr_str.status();
+                sockaddr_str = "<unparsable>";
+              }
+              sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
+              return absl::FailedPreconditionError(
+                  absl::StrCat("Error in bind for address '", *sockaddr_str,
+                               "': ", std::strerror(errno)));
+            }
+            if (listen(f, GetMaxAcceptQueueSize()) < 0) {
+              return absl::FailedPreconditionError(
+                  absl::StrCat("Error in listen: ", std::strerror(errno)));
+            }
+            socklen_t len =
+                static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+            EventEngine::ResolvedAddress sockname_temp;
+            if (getsockname(f, const_cast<sockaddr*>(sockname_temp.address()),
+                            &len) < 0) {
+              return absl::FailedPreconditionError(
+                  absl::StrCat("Error in getsockname: ", std::strerror(errno)));
+            }
+            return sockname_temp;
+          },
+          absl::InternalError("PrepareListenerSocket: wrong generation"));
     })
 
 // Bind to "::" to get a port number not used by any address.
 IF_POSIX_SOCKET(absl::StatusOr<int> FileDescriptors::GetUnusedPort(), {
   EventEngine::ResolvedAddress wild = ResolvedAddressMakeWild6(0);
   DSMode dsmode;
-  auto sock = CreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
-  GRPC_RETURN_IF_ERROR(sock.status());
-  int fd = sock->fd();
+  auto fd =
+      InternalCreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
+  GRPC_RETURN_IF_ERROR(fd.status());
   if (dsmode == DSMode::DSMODE_IPV4) {
     wild = ResolvedAddressMakeWild4(0);
   }
-  if (bind(fd, wild.address(), wild.size()) != 0) {
-    close(fd);
+  if (bind(*fd, wild.address(), wild.size()) != 0) {
+    close(*fd);
     return absl::FailedPreconditionError(
         absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
   }
   socklen_t len = wild.size();
-  if (getsockname(fd, const_cast<sockaddr*>(wild.address()), &len) != 0) {
-    close(fd);
+  if (getsockname(*fd, const_cast<sockaddr*>(wild.address()), &len) != 0) {
+    close(*fd);
     return absl::FailedPreconditionError(
         absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
   }
-  close(fd);
+  close(*fd);
   int port = ResolvedAddressGetPort(wild);
   if (port <= 0) {
     return absl::FailedPreconditionError("Bad port");
@@ -1011,6 +1086,16 @@ void FileDescriptors::ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
       kDefaultServerUserTimeoutMs = timeout;
     }
   }
+}
+
+PosixResult FileDescriptors::PosixResultWrap(
+    const FileDescriptor& wrapped,
+    const absl::AnyInvocable<int(int) const>& fn) const {
+  auto fd = descriptors_.GetRawFileDescriptor(wrapped);
+  if (!fd.has_value()) {
+    return PosixResultWrongGeneration();
+  }
+  return PosixResultSimpleWrap(fn(*fd));
 }
 
 }  // namespace grpc_event_engine::experimental

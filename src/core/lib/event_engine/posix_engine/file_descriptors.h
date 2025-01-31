@@ -19,136 +19,24 @@
 
 #include <cerrno>
 #include <cstdint>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
 namespace grpc_event_engine::experimental {
-
-class FileDescriptor {
- public:
-  FileDescriptor() = default;
-  explicit FileDescriptor(int fd) : fd_(fd) {};
-  bool ready() const { return fd_ > 0; }
-  // Escape for iomgr and tests. Not to be used elsewhere
-  int iomgr_fd() const { return fd_; }
-  // For logging/debug purposes - may consider including generation, do not
-  // use for Posix calls!
-  int debug_fd() const { return fd_; }
-
-  template <typename Sink>
-  friend void AbslStringify(Sink& sink, FileDescriptor fd) {
-    sink.Append(absl::StrFormat("FD(%d)", fd.fd()));
-  }
-
- private:
-  int fd() const { return fd_; }
-
-  // Can get fd_!
-  friend class FileDescriptors;
-
-  int fd_ = 0;
-};
-
-enum class OperationResultKind {
-  kSuccess,          // Operation does not return a file descriptor and
-                     // return value was >= 0. native_result holds the
-                     // original return value.
-  kError,            // Check native_result and errno for details
-  kWrongGeneration,  // System call was not performed because file
-                     // descriptor belongs to the wrong generation.
-};
-
-template <typename Sink>
-void AbslStringify(Sink& sink, OperationResultKind kind) {
-  sink.Append(kind == OperationResultKind::kSuccess ? "(Success)"
-              : kind == OperationResultKind::kError ? "(Success)"
-                                                    : "(Success)");
-}
-
-// Result of the factory call. kWrongGeneration may happen in the call to
-// Accept*
-class PosixResult {
- public:
-  constexpr PosixResult() = default;
-  explicit constexpr PosixResult(OperationResultKind kind, int errno_value)
-      : kind_(kind), errno_value_(errno_value) {}
-
-  virtual ~PosixResult() = default;
-
-  absl::Status status() const {
-    switch (kind_) {
-      case OperationResultKind::kSuccess:
-        return absl::OkStatus();
-      case OperationResultKind::kError:
-        return absl::ErrnoToStatus(errno_value_, "");
-      case OperationResultKind::kWrongGeneration:
-        return absl::InternalError(
-            "File descriptor is from the wrong generation");
-      default:
-        return absl::InvalidArgumentError("Unexpected kind_");
-    }
-  }
-
-  virtual bool ok() const { return kind_ == OperationResultKind::kSuccess; }
-
-  bool IsPosixError(int err) const {
-    return kind_ == OperationResultKind::kError && errno_value_ == err;
-  }
-
-  OperationResultKind kind() const { return kind_; }
-  int errno_value() const { return errno_value_; }
-
- private:
-  OperationResultKind kind_ = OperationResultKind::kSuccess;
-  // errno value on call completion, in order to reduce the race conditions
-  // from relying on global variable.
-  int errno_value_ = 0;
-};
-
-// Result of the factory call. kWrongGeneration may happen in the call to
-// Accept*
-class FileDescriptorResult final : public PosixResult {
- public:
-  FileDescriptorResult() = default;
-  explicit FileDescriptorResult(const FileDescriptor& fd)
-      : PosixResult(OperationResultKind::kSuccess, 0), fd_(fd) {}
-  FileDescriptorResult(OperationResultKind kind, int errno_value)
-      : PosixResult(kind, errno_value) {}
-
-  FileDescriptor operator*() const {
-    CHECK_OK(status());
-    return fd_;
-  }
-
-  const FileDescriptor* operator->() const {
-    CHECK_OK(status());
-    return &fd_;
-  }
-
-  bool ok() const override { return PosixResult::ok() && fd_.ready(); }
-
-  template <typename R, typename Fn>
-  R if_ok(R if_bad, const Fn& fn) {
-    if (ok()) {
-      return fn(fd_);
-    } else {
-      return std::move(if_bad);
-    }
-  }
-
- private:
-  // gRPC wrapped FileDescriptor, as described above
-  FileDescriptor fd_;
-};
 
 // Result of the call that returns error or ssize_t. Smaller integer types
 // will also be packed here.
 class Int64Result final : public PosixResult {
  public:
+  static Int64Result WrongGeneration() {
+    return Int64Result(OperationResultKind::kWrongGeneration, 0, 0);
+  }
+
   Int64Result() = default;
   explicit Int64Result(int64_t result)
       : PosixResult(OperationResultKind::kSuccess, 0), result_(result) {}
@@ -188,9 +76,12 @@ class FileDescriptors {
 
   // Represents fd as integer. Needed for APIs like ARES, that need to have
   // a single int as a handle.
-  int AsInteger(const FileDescriptor& fd);
+  int ToInteger(const FileDescriptor& fd) { return descriptors_.ToInteger(fd); }
+
   // May return a wrong generation error
-  FileDescriptorResult FromInteger(int fd);
+  FileDescriptorResult FromInteger(int fd) {
+    return descriptors_.FromInteger(fd);
+  }
 
   // Creates a new socket for connecting to (or listening on) an address.
   //
@@ -291,11 +182,52 @@ class FileDescriptors {
   PosixResult EventFdWrite(const FileDescriptor& fd);
 
  private:
-  absl::Status PrepareTcpClientSocket(const FileDescriptor& fd,
+  absl::Status PrepareTcpClientSocket(int fd,
                                       const EventEngine::ResolvedAddress& addr,
                                       const PosixTcpOptions& options);
 
-  FileDescriptorResult RegisterPosixResult(int result);
+  PosixResult PosixResultWrap(
+      const FileDescriptor& wrapped,
+      const absl::AnyInvocable<int(int) const>& fn) const;
+
+  template <typename... Args>
+  Int64Result PosixResultWrap(const FileDescriptor& fd, int (*fn)(int, Args...),
+                              Args... args) {
+    auto raw_fd = descriptors_.GetRawFileDescriptor(fd);
+    if (raw_fd.has_value()) {
+      int64_t result = fn(*raw_fd, args...);
+      return result < 0
+                 ? Int64Result(OperationResultKind::kError, errno, result)
+                 : Int64Result(result);
+    } else {
+      return Int64Result::WrongGeneration();
+    }
+  }
+
+  template <typename... Args>
+  Int64Result Int64Wrap(const FileDescriptor& fd, int64_t (*fn)(int, Args...),
+                        Args... args) {
+    auto raw_fd = descriptors_.GetRawFileDescriptor(fd);
+    if (raw_fd.has_value()) {
+      int64_t result = fn(*raw_fd, args...);
+      return result < 0
+                 ? Int64Result(OperationResultKind::kError, errno, result)
+                 : Int64Result(result);
+    } else {
+      return Int64Result::WrongGeneration();
+    }
+  }
+
+  template <typename R, typename Fn>
+  R RunIfCorrectGeneration(const FileDescriptor& fd, Fn fn, R&& r) {
+    auto raw = descriptors_.GetRawFileDescriptor(fd);
+    if (!raw.has_value()) {
+      return std::forward<R>(r);
+    }
+    return fn(*raw);
+  }
+
+  FileDescriptorCollection descriptors_;
 };
 
 }  // namespace grpc_event_engine::experimental

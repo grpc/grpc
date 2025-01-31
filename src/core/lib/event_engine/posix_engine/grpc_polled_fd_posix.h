@@ -133,7 +133,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     auto& fds = static_cast<GrpcPolledFdFactoryPosix*>(polled_fd_factory)
                     ->poller_->GetFileDescriptors();
     return fds.Socket(af, type, protocol)
-        .if_ok(-1, [&](const FileDescriptor& fd) { return fds.AsInteger(fd); });
+        .if_ok(-1, [&](const FileDescriptor& fd) { return fds.ToInteger(fd); });
   }
 
   /// Overridden connect API for c-ares

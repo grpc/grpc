@@ -313,7 +313,7 @@ void Epoll1Poller::Close() {
 
   if (g_epoll_set_.epfd.ready()) {
     GetFileDescriptors().Close(g_epoll_set_.epfd);
-    g_epoll_set_.epfd = FileDescriptor(-1);
+    g_epoll_set_.epfd = FileDescriptor::Invalid();
   }
 
   while (!free_epoll1_handles_list_.empty()) {
