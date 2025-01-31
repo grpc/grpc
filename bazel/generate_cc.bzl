@@ -23,6 +23,7 @@ load(
     "get_include_directory",
     "get_plugin_args",
     "get_proto_root",
+    "is_sibling_repository_layout",
     "proto_path_to_generated_filename",
 )
 
@@ -127,6 +128,7 @@ def generate_cc_impl(ctx):
         arguments.append("--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out)
         tools = []
 
+    is_sibling_layout = is_sibling_repository_layout(ctx)
     arguments += [
         "--proto_path={}".format(get_include_directory(i))
         for i in includes
@@ -141,7 +143,9 @@ def generate_cc_impl(ctx):
     well_known_proto_files = []
     if ctx.attr.well_known_protos:
         f = ctx.attr.well_known_protos.files.to_list()[0].dirname
-        if f != "external/com_google_protobuf/src/google/protobuf":
+        if f != "{}/com_google_protobuf/src/google/protobuf".format(
+            ".." if is_sibling_layout else "external",
+        ):
             print(
                 "Error: Only @com_google_protobuf//:well_known_type_protos is supported",
             )  # buildifier: disable=print
