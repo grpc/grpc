@@ -102,29 +102,45 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   };
   using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
 
-  absl::Status NewStream(uint32_t stream_id, CallInitiator call_initiator);
-  RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
-  RefCountedPtr<Stream> ExtractStream(uint32_t stream_id);
+  class StreamDispatch : public FrameTransportSink {
+   public:
+    void OnIncomingFrame(IncomingFrame incoming_frame) override;
+    void OnFrameTransportClosed(absl::Status status) override;
+
+   private:
+    absl::Status NewStream(
+        uint32_t stream_id,
+        ClientInitialMetadataFrame client_initial_metadata_frame);
+    absl::Status AddStream(uint32_t stream_id, CallInitiator call_initiator);
+    RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
+    RefCountedPtr<Stream> ExtractStream(uint32_t stream_id);
+
+    template <typename T>
+    auto DispatchFrame(IncomingFrame frame);
+    auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageFrame frame);
+    auto PushFrameIntoCall(RefCountedPtr<Stream> stream,
+                           ClientEndOfStream frame);
+    auto PushFrameIntoCall(RefCountedPtr<Stream> stream,
+                           BeginMessageFrame frame);
+    auto PushFrameIntoCall(RefCountedPtr<Stream> stream,
+                           MessageChunkFrame frame);
+
+    Mutex mu_;
+    StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
+    uint32_t last_seen_new_stream_id_ ABSL_GUARDED_BY(mu_) = 0;
+    ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
+        "chaotic_good_server", GRPC_CHANNEL_READY};
+  };
+
   auto SendCallInitialMetadataAndBody(uint32_t stream_id,
                                       CallInitiator call_initiator);
   auto SendCallBody(uint32_t stream_id, CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
-  auto OnTransportActivityDone(absl::string_view activity);
   // Read different parts of the server frame from control/data endpoints
   // based on frame header.
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
   auto ReadFrameBody(Slice read_buffer);
   void SendCancel(uint32_t stream_id, absl::Status why);
-  absl::Status NewStream(
-      uint32_t stream_id,
-      ClientInitialMetadataFrame client_initial_metadata_frame);
-  template <typename T>
-  auto DispatchFrame(IncomingFrame frame);
-  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageFrame frame);
-  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, ClientEndOfStream frame);
-  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, BeginMessageFrame frame);
-  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageChunkFrame frame);
-  auto OnIncomingFrame(IncomingFrame incoming_frame);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
@@ -132,14 +148,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       event_engine_;
   InterActivityLatch<void> got_acceptor_;
   MpscSender<Frame> outgoing_frames_;
-  Mutex mu_;
-  // Map of stream incoming server frames, key is stream_id.
-  StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
-  bool aborted_with_error_ ABSL_GUARDED_BY(mu_) = false;
-  uint32_t last_seen_new_stream_id_ = 0;
+  RefCountedPtr<StreamDispatch> stream_dispatch_;
   RefCountedPtr<Party> party_;
-  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
-      "chaotic_good_server", GRPC_CHANNEL_READY};
   MessageChunker message_chunker_;
 };
 

@@ -52,13 +52,7 @@ namespace grpc_core {
 namespace chaotic_good {
 
 void ChaoticGoodClientTransport::Orphan() {
-  AbortWithError();
-  RefCountedPtr<Party> party;
-  {
-    MutexLock lock(&mu_);
-    party = std::move(party_);
-  }
-  party.reset();
+  party_.reset();
   Unref();
 }
 
@@ -210,6 +204,19 @@ uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
   return stream_id;
 }
 
+void ChaoticGoodClientTransport::StreamDispatch::StartConnectivityWatch(
+    grpc_connectivity_state state,
+    OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+  MutexLock lock(&mu_);
+  state_tracker_.AddWatcher(state, std::move(watcher));
+}
+
+void ChaoticGoodClientTransport::StreamDispatch::StopConnectivityWatch(
+    ConnectivityStateWatcherInterface* watcher) {
+  MutexLock lock(&mu_);
+  state_tracker_.RemoveWatcher(watcher);
+}
+
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     const ChannelArgs& args, FrameTransport& frame_transport,
     MessageChunker message_chunker)
@@ -225,6 +232,8 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   party_ = Party::Make(std::move(party_arena));
   MpscReceiver<Frame> outgoing_frames{8};
   outgoing_frames_ = outgoing_frames.MakeSender();
+  stream_dispatch_ =
+      MakeRefCounted<StreamDispatch>(outgoing_frames.MakeSender());
   frame_transport.Start(party_.get(), std::move(outgoing_frames),
                         stream_dispatch_);
 }
@@ -273,7 +282,8 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
   call_handler.SpawnGuarded(
       "outbound_loop", [self = RefAsSubclass<ChaoticGoodClientTransport>(),
                         call_handler]() mutable {
-        const uint32_t stream_id = self->MakeStream(call_handler);
+        const uint32_t stream_id =
+            self->stream_dispatch_->MakeStream(call_handler);
         return If(
             stream_id != 0,
             [stream_id, call_handler = std::move(call_handler),
@@ -302,15 +312,15 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
 }
 
 void ChaoticGoodClientTransport::PerformOp(grpc_transport_op* op) {
-  MutexLock lock(&mu_);
   bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
-    state_tracker_.AddWatcher(op->start_connectivity_watch_state,
-                              std::move(op->start_connectivity_watch));
+    stream_dispatch_->StartConnectivityWatch(
+        op->start_connectivity_watch_state,
+        std::move(op->start_connectivity_watch));
     did_stuff = true;
   }
   if (op->stop_connectivity_watch != nullptr) {
-    state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
+    stream_dispatch_->StopConnectivityWatch(op->stop_connectivity_watch);
     did_stuff = true;
   }
   if (op->set_accept_stream) {

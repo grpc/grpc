@@ -104,6 +104,11 @@ class ChaoticGoodClientTransport final : public ClientTransport {
 
     uint32_t MakeStream(CallHandler call_handler);
 
+    void StartConnectivityWatch(
+        grpc_connectivity_state state,
+        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+    void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
+
    private:
     template <typename T>
     void DispatchFrame(IncomingFrame incoming_frame);
@@ -138,8 +143,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   grpc_event_engine::experimental::MemoryAllocator allocator_;
-  RefCountedPtr<StreamDispatch> stream_dispatch_ =
-      MakeRefCounted<StreamDispatch>();
+  RefCountedPtr<StreamDispatch> stream_dispatch_;
   MpscSender<Frame> outgoing_frames_;
   RefCountedPtr<Party> party_;
   MessageChunker message_chunker_;
