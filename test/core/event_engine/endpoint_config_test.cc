@@ -16,28 +16,51 @@
 #include <memory>
 #include <optional>
 
+#include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "test/core/test_util/fuzzing_channel_args.h"
+#include "test/core/test_util/fuzzing_channel_args.pb.h"
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 
-TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
-  grpc_core::ChannelArgs args;
-  args = args.Set("arst", 3);
+void ArbitraryAccess(
+    const grpc::testing::FuzzingChannelArgs& fuzzing_channel_args,
+    std::vector<std::string> keys_to_search) {
+  grpc_core::testing::FuzzingEnvironment fuzzing_env;
+  grpc_core::ChannelArgs args = CreateChannelArgsFromFuzzingConfiguration(
+      fuzzing_channel_args, fuzzing_env);
   ChannelArgsEndpointConfig config(args);
-  EXPECT_EQ(*config.GetInt("arst"), 3);
+  // Known keys are found
+  for (const auto& fuzz_arg : fuzzing_channel_args.args()) {
+    switch (fuzz_arg.value_case()) {
+      case grpc::testing::FuzzingChannelArg::kStr: {
+        auto val_s = config.GetString(fuzz_arg.key());
+        ASSERT_TRUE(val_s.has_value());
+        ASSERT_EQ(*val_s, fuzz_arg.str());
+        break;
+      }
+      case grpc::testing::FuzzingChannelArg::kI: {
+        auto val_i = config.GetInt(fuzz_arg.key());
+        ASSERT_TRUE(val_i.has_value());
+        ASSERT_EQ(*val_i, fuzz_arg.i());
+        break;
+      }
+      case grpc::testing::FuzzingChannelArg::kResourceQuota: {
+        auto val_p = config.GetVoidPointer(fuzz_arg.key());
+        ASSERT_EQ(val_p, &fuzz_arg.resource_quota());
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  // Arbitrary keys do not crash
+  for (const auto& key : keys_to_search) {
+    auto result_i = config.GetInt(key);
+    auto result_s = config.GetString(key);
+    auto result_p = config.GetVoidPointer(key);
+  }
 }
-
-TEST(EndpointConfigTest, ReturnsNoValueForMissingKeys) {
-  ChannelArgsEndpointConfig config;
-  EXPECT_TRUE(!config.GetInt("nonexistent").has_value());
-  EXPECT_TRUE(!config.GetString("nonexistent").has_value());
-  EXPECT_EQ(config.GetVoidPointer("nonexistent"), nullptr);
-}
-
-int main(int argc, char** argv) {
-  testing::InitGoogleTest(&argc, argv);
-  auto result = RUN_ALL_TESTS();
-  return result;
-}
+FUZZ_TEST(EndpointConfigTest, ArbitraryAccess);
