@@ -67,6 +67,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
 #include "test/core/test_util/test_config.h"
 
@@ -514,7 +515,9 @@ void RunApiFuzzer(const api_fuzzer::Msg& msg) {
   TestOnlyReloadExperimentsFromConfigVariables();
   ApiFuzzer(msg.event_engine_actions()).Run(msg.actions());
 }
-FUZZ_TEST(MyTestSuite, RunApiFuzzer);
+FUZZ_TEST(MyTestSuite, RunApiFuzzer)
+    .WithDomains(::fuzztest::Arbitrary<api_fuzzer::Msg>().WithProtobufField(
+        "config_vars", AnyConfigVars()));
 
 auto ParseTestProto(const std::string& proto) {
   api_fuzzer::Msg msg;
