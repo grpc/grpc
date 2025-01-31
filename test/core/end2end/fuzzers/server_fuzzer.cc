@@ -197,5 +197,43 @@ TEST(ServerFuzzers, ChaoticGoodRegression1) {
                           shutdown_connector {})pb"));
 }
 
+TEST(ServerFuzzers, Chttp2Regression1) {
+  Chttp2(ParseTestProto(
+      R"pb(network_input {
+             input_segments {
+               segments { client_prefix {} }
+               segments {
+                 delay_ms: 335613633
+                 settings {}
+               }
+               segments {
+                 header {
+                   stream_id: 2147483647
+                   end_headers: true
+                   raw_bytes: "\243"
+                 }
+               }
+               segments {
+                 rst_stream { stream_id: 4294967295 error_code: 2822318592 }
+               }
+             }
+             connect_timeout_ms: -1
+             endpoint_config {
+               args {
+                 key: "\355\237\277"
+                 resource_quota {}
+               }
+             }
+           }
+           event_engine_actions { run_delay: 1 assign_ports: 2147483647 }
+           config_vars {
+             enable_fork_support: true
+             verbosity: "\355\237\277"
+             experiments: 18446744073709551615
+           }
+           shutdown_connector { shutdown_status: -1 }
+      )pb"));
+}
+
 }  // namespace testing
 }  // namespace grpc_core
