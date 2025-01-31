@@ -82,7 +82,7 @@ class DelayTracker {
 // Allow DelayTracker to be used as an arena context element.
 template <>
 struct ArenaContextType<DelayTracker> {
-  static void Destroy(DelayTracker* ptr) { ptr->~DelayTracker(); }
+  static void Destroy(DelayTracker*) {}
 };
 
 // Gets the DelayTracker from call context, creating it if needed.
@@ -90,7 +90,10 @@ inline DelayTracker* GetOrCreateDelayTrackerContext() {
   DelayTracker* tracker = MaybeGetContext<DelayTracker>();
   if (tracker == nullptr) {
     Arena* arena = GetContext<Arena>();
-    tracker = arena->New<DelayTracker>();
+    // TODO(roth): When the legacy filter stack goes away, change this
+    // to use New() instead of ManagedNew(), and change the
+    // ArenaContextType above to do the deletion instead.
+    tracker = arena->ManagedNew<DelayTracker>();
     arena->SetContext<DelayTracker>(tracker);
   }
   return tracker;

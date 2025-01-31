@@ -433,6 +433,8 @@ class RetryFilter::LegacyCallData final {
   // send_trailing_metadata
   bool seen_send_trailing_metadata_ = false;
   grpc_metadata_batch send_trailing_metadata_;
+
+  DelayTracker* parent_delay_tracker_ = nullptr;
 };
 
 }  // namespace grpc_core
