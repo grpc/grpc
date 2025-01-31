@@ -97,6 +97,8 @@ class ChaoticGoodClientTransport final : public ClientTransport {
 
   class StreamDispatch final : public FrameTransportSink {
    public:
+    explicit StreamDispatch(MpscSender<Frame> outgoing_frames);
+
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
     void OnFrameTransportClosed(absl::Status status) override;
 
@@ -129,6 +131,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
     StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
         "chaotic_good_client", GRPC_CHANNEL_READY};
+    MpscSender<Frame> outgoing_frames_;
   };
 
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);

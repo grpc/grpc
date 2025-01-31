@@ -192,9 +192,8 @@ uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
   MutexLock lock(&mu_);
   if (next_stream_id_ == kClosedTransportStreamId) return 0;
   const uint32_t stream_id = next_stream_id_++;
-  const bool on_done_added =
-      call_handler.OnDone([self = RefAsSubclass<ChaoticGoodClientTransport>(),
-                           stream_id](bool cancelled) {
+  const bool on_done_added = call_handler.OnDone(
+      [self = RefAsSubclass<StreamDispatch>(), stream_id](bool cancelled) {
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: Client call " << self.get() << " id=" << stream_id
             << " done: cancelled=" << cancelled;
