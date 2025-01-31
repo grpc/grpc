@@ -204,8 +204,8 @@ class FileDescriptors {
     }
   }
 
-  template <typename... Args>
-  Int64Result Int64Wrap(const FileDescriptor& fd, int64_t (*fn)(int, Args...),
+  template <typename R, typename... Args>
+  Int64Result Int64Wrap(const FileDescriptor& fd, R (*fn)(int, Args...),
                         Args... args) {
     auto raw_fd = descriptors_.GetRawFileDescriptor(fd);
     if (raw_fd.has_value()) {
@@ -218,6 +218,8 @@ class FileDescriptors {
     }
   }
 
+  // Need parameter R for portability, ssize_t is neither available everywhere
+  // nor is the same cardinality
   template <typename R, typename Fn>
   R RunIfCorrectGeneration(const FileDescriptor& fd, Fn fn, R&& r) {
     auto raw = descriptors_.GetRawFileDescriptor(fd);

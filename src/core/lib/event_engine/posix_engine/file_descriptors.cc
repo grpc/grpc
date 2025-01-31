@@ -548,18 +548,20 @@ IF_POSIX_SOCKET(
         return fd;
       }
       int flags;
-      int fdescriptor = fd->fd();
+      auto raw_fd = descriptors_.GetRawFileDescriptor(*fd);
+      // We just created it!
+      CHECK(raw_fd.has_value());
       if (nonblock) {
-        flags = fcntl(fdescriptor, F_GETFL, 0);
+        flags = fcntl(*raw_fd, F_GETFL, 0);
         if (flags < 0) goto close_and_error;
-        if (fcntl(fdescriptor, F_SETFL, flags | O_NONBLOCK) != 0) {
+        if (fcntl(*raw_fd, F_SETFL, flags | O_NONBLOCK) != 0) {
           goto close_and_error;
         }
       }
       if (cloexec) {
-        flags = fcntl(fdescriptor, F_GETFD, 0);
+        flags = fcntl(*raw_fd, F_GETFD, 0);
         if (flags < 0) goto close_and_error;
-        if (fcntl(fdescriptor, F_SETFD, flags | FD_CLOEXEC) != 0) {
+        if (fcntl(*raw_fd, F_SETFD, flags | FD_CLOEXEC) != 0) {
           goto close_and_error;
         }
       }
