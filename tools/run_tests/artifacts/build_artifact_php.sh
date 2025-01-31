@@ -17,8 +17,6 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
-
 mkdir -p "${ARTIFACTS_OUT}"
 
 # Build the PHP extension archive (this just zips all the files up)
