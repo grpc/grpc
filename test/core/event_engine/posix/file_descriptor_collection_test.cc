@@ -16,6 +16,8 @@
 
 #include <grpc/grpc.h>
 
+#include <optional>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -80,6 +82,20 @@ TEST(FileDescriptorCollectionTest, FromInteger) {
   EXPECT_EQ(collection.FromInteger(gen + 7)->generation(), 31);
   EXPECT_EQ(collection.FromInteger((2 << kIntFdBits) + 7).kind(),
             OperationResultKind::kWrongGeneration);
+}
+
+TEST(FileDescriptorCollectionTest, Remove) {
+  FileDescriptorCollection collection;
+  collection.AdvanceGeneration();
+  collection.Add(7);
+  // Untracked
+  EXPECT_EQ(collection.Remove(FileDescriptor(6, 2)), std::nullopt);
+  // Wrong generation
+  EXPECT_EQ(collection.Remove(FileDescriptor(7, 1)), std::nullopt);
+  // Correct
+  EXPECT_EQ(collection.Remove(FileDescriptor(7, 2)), 7);
+  // Already gone
+  EXPECT_EQ(collection.Remove(FileDescriptor(7, 2)), std::nullopt);
 }
 
 }  // namespace grpc_event_engine::experimental
