@@ -467,7 +467,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
           (delay_tracker = b->get_pointer(GrpcDelayTracker())) != nullptr) {
         std::string msg = absl::StrCat(
             grpc_message.has_value() ? grpc_message->as_string_view()
-                                     : "Deadline exceeded",
+                                     : "Deadline Exceeded",
             " (", delay_tracker->GetDelayInfo(), ")");
         error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage, msg);
       } else if (grpc_message.has_value()) {

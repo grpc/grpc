@@ -63,6 +63,13 @@ void CancelAfterAccept(CoreEnd2endTest& test,
   EXPECT_THAT(server_status.status(),
               ::testing::AnyOf(cancellation_mode->ExpectedStatus(),
                                GRPC_STATUS_INTERNAL));
+  if (server_status.status() == GRPC_STATUS_DEADLINE_EXCEEDED) {
+    EXPECT_THAT(
+        server_status.message(),
+        ::testing::MatchesRegex(
+            "Deadline Exceeded \\(Name resolver delay [0-9]+ms; "
+            "retry attempt 0:\\[Load balancing delay [0-9]+ms\\]\\)"));
+  }
   EXPECT_TRUE(client_close.was_cancelled());
 }
 

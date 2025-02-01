@@ -414,7 +414,7 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
             server_trailing_metadata->get_pointer(GrpcDelayTracker());
         delay_tracker != nullptr) {
       message_slice = Slice::FromCopiedString(
-          absl::StrCat(message_slice.empty() ? "Deadline exceeded"
+          absl::StrCat(message_slice.empty() ? "Deadline Exceeded"
                                              : message_slice.as_string_view(),
                        " (", delay_tracker->GetDelayInfo(), ")"));
     }
