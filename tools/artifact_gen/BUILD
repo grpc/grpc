@@ -19,6 +19,9 @@ cc_binary(
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/log",
-        "@pugixml//:pugixml"
+        "@abseil-cpp//absl/algorithm:container",
+        "@pugixml//:pugixml",
+        "@pantor_inja//:inja",
+        "@nlohmann_json//:json"
     ],
 )

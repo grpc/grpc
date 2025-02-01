@@ -14,3 +14,15 @@
 
 bazel_dep(name = "pugixml", version = "1.15")
 bazel_dep(name = "abseil-cpp", version = "20240722.0")
+bazel_dep(name = "nlohmann_json", version = "3.11.3.bcr.1")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "pantor_inja",
+    urls = [
+        "https://github.com/pantor/inja/archive/refs/tags/v3.3.0.tar.gz",
+    ],
+    strip_prefix = "inja-3.3.0",
+    build_file = "inja.BUILD",
+    integrity = "sha256-5ijZlHYtzaqal/Y6m4tz2a9Rrw/6Ws6mvbugrOr47iU=",
+)

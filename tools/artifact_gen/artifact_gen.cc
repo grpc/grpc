@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
@@ -26,6 +27,8 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
+#include "include/inja/inja.hpp"
+#include "include/nlohmann/json.hpp"
 #include "pugixml.hpp"
 
 struct ExternalProtoLibrary {
@@ -66,7 +69,7 @@ struct BazelRule {
                      ? *bazel_rule.generator_function
                      : "None",
                  bazel_rule.size.has_value() ? *bazel_rule.size : "None",
-                 bazel_rule.flaky ? "True" : "False",
+                 bazel_rule.flaky ? "true" : "true",
                  bazel_rule.actual.has_value() ? *bazel_rule.actual : "None");
   }
 };
@@ -116,6 +119,269 @@ BazelRule BazelRuleFromXml(const pugi::xml_node& node) {
   }
   return out;
 }
+
+// extra metadata that will be used to construct build.yaml
+// there are mostly extra properties that we weren't able to obtain from the
+// bazel build _TYPE: whether this is library, target or test _RENAME: whether
+// this target should be renamed to a different name (to match expectations of
+// make and cmake builds)
+static const char* kBuildExtraMetadata = R"json({
+    "third_party/address_sorting:address_sorting": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "address_sorting"
+    },
+    "@com_google_protobuf//upb:base": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_base_lib"
+    },
+    "@com_google_protobuf//upb:mem": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_mem_lib"
+    },
+    "@com_google_protobuf//upb:message": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_message_lib"
+    },
+    "@com_google_protobuf//upb/json:json": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_json_lib"
+    },
+    "@com_google_protobuf//upb/mini_descriptor:mini_descriptor": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_mini_descriptor_lib"
+    },
+    "@com_google_protobuf//upb/text:text": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_textformat_lib"
+    },
+    "@com_google_protobuf//upb/wire:wire": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_wire_lib"
+    },
+    "@com_google_protobuf//third_party/utf8_range:utf8_range": {
+        "language": "c",
+        "build": "all",
+        // rename to utf8_range_lib is necessary for now to avoid clash with utf8_range target in protobuf's cmake
+        "_RENAME": "utf8_range_lib"
+    },
+    "@com_googlesource_code_re2//:re2": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "re2"
+    },
+    "@com_google_googletest//:gtest": {
+        "language": "c",
+        "build": "private",
+        "_RENAME": "gtest"
+    },
+    "@zlib//:zlib": {
+        "language": "c",
+        "zlib": true,
+        "build": "private",
+        "defaults": "zlib",
+        "_RENAME": "z"
+    },
+    "gpr": {
+        "language": "c",
+        "build": "all"
+    },
+    "grpc": {
+        "language": "c",
+        "build": "all",
+        "baselib": true,
+        "generate_plugin_registry": true
+    },
+    "grpc++": {
+        "language": "c++",
+        "build": "all",
+        "baselib": true
+    },
+    "grpc++_alts": {"language": "c++", "build": "all", "baselib": true},
+    "grpc++_error_details": {"language": "c++", "build": "all"},
+    "grpc++_reflection": {"language": "c++", "build": "all"},
+    "grpc_authorization_provider": {"language": "c++", "build": "all"},
+    "grpc++_unsecure": {
+        "language": "c++",
+        "build": "all",
+        "baselib": true
+    },
+    "grpc_unsecure": {
+        "language": "c",
+        "build": "all",
+        "baselib": true,
+        "generate_plugin_registry": true
+    },
+    "grpcpp_channelz": {"language": "c++", "build": "all"},
+    "grpcpp_otel_plugin": {
+        "language": "c++",
+        "build": "plugin"
+    },
+    "grpc++_test": {
+        "language": "c++",
+        "build": "private"
+    },
+    "src/compiler:grpc_plugin_support": {
+        "language": "c++",
+        "build": "protoc",
+        "_RENAME": "grpc_plugin_support"
+    },
+    "src/compiler:grpc_cpp_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_cpp_plugin"
+    },
+    "src/compiler:grpc_csharp_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_csharp_plugin"
+    },
+    "src/compiler:grpc_node_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_node_plugin"
+    },
+    "src/compiler:grpc_objective_c_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_objective_c_plugin"
+    },
+    "src/compiler:grpc_php_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_php_plugin"
+    },
+    "src/compiler:grpc_python_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_python_plugin"
+    },
+    "src/compiler:grpc_ruby_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_ruby_plugin"
+    },
+    // TODO(jtattermusch): consider adding grpc++_core_stats
+    // test support libraries
+    "test/core/test_util:grpc_test_util": {
+        "language": "c",
+        "build": "private",
+        "_RENAME": "grpc_test_util"
+    },
+    "test/core/test_util:grpc_test_util_unsecure": {
+        "language": "c",
+        "build": "private",
+        "_RENAME": "grpc_test_util_unsecure"
+    },
+    // TODO(jtattermusch): consider adding grpc++_test_util_unsecure - it doesn't seem to be used by bazel build (don't forget to set secure: true)
+    "test/cpp/util:test_config": {
+        "language": "c++",
+        "build": "private",
+        "_RENAME": "grpc++_test_config"
+    },
+    "test/cpp/util:test_util": {
+        "language": "c++",
+        "build": "private",
+        "_RENAME": "grpc++_test_util"
+    },
+    // benchmark support libraries
+    "test/cpp/microbenchmarks:helpers": {
+        "language": "c++",
+        "build": "test",
+        "defaults": "benchmark",
+        "_RENAME": "benchmark_helpers"
+    },
+    "test/cpp/interop:interop_client": {
+        "language": "c++",
+        "build": "test",
+        "run": true,
+        "_TYPE": "target",
+        "_RENAME": "interop_client"
+    },
+    "test/cpp/interop:interop_server": {
+        "language": "c++",
+        "build": "test",
+        "run": true,
+        "_TYPE": "target",
+        "_RENAME": "interop_server"
+    },
+    // TODO(stanleycheung): re-enable this after cmake support for otel is added
+    // "test/cpp/interop:xds_interop_client": {
+    //     "language": "c++",
+    //     "build": "test",
+    //     "run": true,
+    //     "_TYPE": "target",
+    //     "_RENAME": "xds_interop_client",
+    // },
+    // "test/cpp/interop:xds_interop_server": {
+    //     "language": "c++",
+    //     "build": "test",
+    //     "run": true,
+    //     "_TYPE": "target",
+    //     "_RENAME": "xds_interop_server",
+    // },
+    "test/cpp/interop:http2_client": {
+        "language": "c++",
+        "build": "test",
+        "run": true,
+        "_TYPE": "target",
+        "_RENAME": "http2_client"
+    },
+    "test/cpp/qps:qps_json_driver": {
+        "language": "c++",
+        "build": "test",
+        "run": true,
+        "_TYPE": "target",
+        "_RENAME": "qps_json_driver"
+    },
+    "test/cpp/qps:qps_worker": {
+        "language": "c++",
+        "build": "test",
+        "run": true,
+        "_TYPE": "target",
+        "_RENAME": "qps_worker"
+    },
+    "test/cpp/util:grpc_cli": {
+        "language": "c++",
+        "build": "test",
+        "run": true,
+        "_TYPE": "target",
+        "_RENAME": "grpc_cli"
+    },
+    "test/cpp/ext/otel:otel_plugin_test": {
+        "language": "c++",
+        "build": "plugin_test",
+        "_TYPE": "target",
+        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
+        "_RENAME": "otel_plugin_test"
+    }
+    // TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
+    // For now it's ok to disable them as these binaries aren't very useful anyway.
+    // 'test/core/security:create_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_create_jwt' },
+    // 'test/core/security:verify_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_verify_jwt' },
+    // TODO(jtattermusch): add remaining tools such as grpc_print_google_default_creds_token (they are not used by bazel build)
+    // TODO(jtattermusch): these fuzzers had no build.yaml equivalent
+    // test/core/compression:message_compress_fuzzer
+    // test/core/compression:message_decompress_fuzzer
+    // test/core/compression:stream_compression_fuzzer
+    // test/core/compression:stream_decompression_fuzzer
+    // test/core/slice:b64_decode_fuzzer
+    // test/core/slice:b64_encode_fuzzer
+})json";
 
 class ArtifactGen {
  public:
@@ -238,9 +504,64 @@ class ArtifactGen {
     }
   }
 
-  void GenerateExtraMetadataForTests() {
+  void GenerateBuildExtraMetadataForTests() {
+    std::map<std::string, nlohmann::json> test_metadata;
     for (const auto& test : tests_) {
-      LOG(FATAL) << "unimplemented";
+      nlohmann::json test_dict = nlohmann::json::object();
+      test_dict["build"] = "test";
+      test_dict["_TYPE"] = "target";
+      auto bazel_rule = LookupRule(test).value();
+      if (absl::c_contains(bazel_rule.tags, "manual")) {
+        test_dict["run"] = false;
+      }
+      if (bazel_rule.flaky) {
+        test_dict["run"] = false;
+      }
+      if (absl::c_contains(bazel_rule.tags, "no_uses_polling")) {
+        test_dict["uses_polling"] = false;
+      }
+      if (absl::c_contains(bazel_rule.tags, "bazel_only")) {
+        continue;
+      }
+      // if any tags that restrict platform compatibility are present,
+      // generate the "platforms" field accordingly
+      // TODO(jtattermusch): there is also a "no_linux" tag, but we cannot take
+      // it into account as it is applied by grpc_cc_test when poller expansion
+      // is made (for tests where uses_polling=true). So for now, we just
+      // assume all tests are compatible with linux and ignore the "no_linux"
+      // tag completely.
+      if (absl::c_contains(bazel_rule.tags, "no_windows") ||
+          absl::c_contains(bazel_rule.tags, "no_mac")) {
+        nlohmann::json platforms = nlohmann::json::array();
+        platforms.push_back("linux");
+        platforms.push_back("posix");
+        if (!absl::c_contains(bazel_rule.tags, "no_windows")) {
+          platforms.push_back("windows");
+        }
+        if (!absl::c_contains(bazel_rule.tags, "no_mac")) {
+          platforms.push_back("mac");
+        }
+        test_dict["platforms"] = platforms;
+      }
+      if (!bazel_rule.args.empty()) {
+        test_dict["args"] = bazel_rule.args;
+      }
+      if (absl::StartsWith(test, "test/cpp")) {
+        test_dict["language"] = "c++";
+      } else if (absl::StartsWith(test, "test/core")) {
+        test_dict["language"] = "c";
+      } else {
+        LOG(FATAL) << "wrong test: " << test;
+      }
+      auto test_name = absl::StrReplaceAll(test, {{"/", "_"}, {":", "_"}});
+      test_metadata[test_name] = test_dict;
+    }
+    const auto extra =
+        nlohmann::json::parse(kBuildExtraMetadata, nullptr, true, true);
+    LOG(INFO) << extra;
+    for (nlohmann::json::const_iterator it = extra.begin(); it != extra.end();
+         ++it) {
+      test_metadata[it.key()] = it.value();
     }
   }
 
@@ -362,8 +683,25 @@ class ArtifactGen {
     return absl::StrReplaceAll(label, {{":", "/"}});
   }
 
+  static std::string GetBazelLabel(std::string target_name) {
+    if (absl::StartsWith(target_name, "@")) return target_name;
+    if (absl::StrContains(target_name, ":")) {
+      return absl::StrCat("//", target_name);
+    } else {
+      return absl::StrCat("//:", target_name);
+    }
+  }
+
+  std::optional<BazelRule> LookupRule(std::string target_name) {
+    auto it = rules_.find(GetBazelLabel(target_name));
+    if (it == rules_.end()) return std::nullopt;
+    return it->second;
+  }
+
   std::map<std::string, BazelRule> rules_;
   std::vector<std::string> tests_;
+  nlohmann::json metadata_ = nlohmann::json::object();
+
   const std::map<std::string, std::string> external_source_prefixes_ = {
       // TODO(veblush) : Remove @utf8_range// item once protobuf is upgraded
       // to 26.x
@@ -413,6 +751,6 @@ int main(int argc, char** argv) {
   generator.PatchGrpcProtoLibraryRules();
   generator.PatchDescriptorUpbProtoLibrary();
   generator.PopulateCcTests();
-  generator.GenerateExtraMetadataForTests();
+  generator.GenerateBuildExtraMetadataForTests();
   return 0;
 }
