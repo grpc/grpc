@@ -42,12 +42,11 @@ EXPERIMENT_ENABLES = {
     "retry_in_callv3": "retry_in_callv3",
     "rq_fast_reject": "rq_fast_reject",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
+    "server_listener": "server_listener",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
-    "work_serializer_dispatch": "work_serializer_dispatch",
-    "server_listener": "server_listener,work_serializer_dispatch",
 }
 
 EXPERIMENT_POLLERS = [
@@ -94,10 +93,6 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_listener",
                 "server_listener",
-                "work_serializer_dispatch",
-            ],
-            "cpp_end2end_test": [
-                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
@@ -110,7 +105,6 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_new",
-                "work_serializer_dispatch",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -118,7 +112,6 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "pick_first_new",
                 "server_listener",
-                "work_serializer_dispatch",
             ],
         },
     },
@@ -153,22 +146,16 @@ EXPERIMENTS = {
         "on": {
             "core_end2end_test": [
                 "server_listener",
-                "work_serializer_dispatch",
-            ],
-            "cpp_end2end_test": [
-                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
             ],
             "lb_unit_test": [
                 "pick_first_new",
-                "work_serializer_dispatch",
             ],
             "xds_end2end_test": [
                 "pick_first_new",
                 "server_listener",
-                "work_serializer_dispatch",
             ],
         },
     },
@@ -208,10 +195,6 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_listener",
                 "server_listener",
-                "work_serializer_dispatch",
-            ],
-            "cpp_end2end_test": [
-                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
@@ -224,7 +207,6 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_new",
-                "work_serializer_dispatch",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -232,7 +214,6 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "pick_first_new",
                 "server_listener",
-                "work_serializer_dispatch",
             ],
         },
     },

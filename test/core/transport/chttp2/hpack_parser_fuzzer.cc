@@ -40,6 +40,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/transport/chttp2/hpack_parser_fuzzer.pb.h"
@@ -137,5 +138,8 @@ void HpackParserFuzzer(const hpack_parser_fuzzer::Msg& msg) {
     }
   }
 }
-FUZZ_TEST(HpackParser, HpackParserFuzzer);
+FUZZ_TEST(HpackParser, HpackParserFuzzer)
+    .WithDomains(::fuzztest::Arbitrary<hpack_parser_fuzzer::Msg>()
+                     .WithProtobufField("config_vars", AnyConfigVars()));
+
 }  // namespace grpc_core

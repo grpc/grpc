@@ -15,4 +15,11 @@
 
 set -ex
 
-tools/bazel build :grpc++ --enable_bzlmod=true --enable_workspace=false
+tools/bazel \
+    build \
+    --enable_bzlmod=true \
+    --enable_workspace=false \
+    :grpc \
+    :grpc_unsecure \
+    :grpc++ \
+    :grpc++_unsecure

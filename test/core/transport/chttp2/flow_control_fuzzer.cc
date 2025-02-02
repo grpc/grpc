@@ -41,6 +41,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
@@ -484,7 +485,9 @@ void Test(flow_control_fuzzer::Msg msg) {
     fuzzer.AssertAnnouncedOverInitialWindowSizeCorrect();
   }
 }
-FUZZ_TEST(FlowControl, Test);
+FUZZ_TEST(FlowControl, Test)
+    .WithDomains(::fuzztest::Arbitrary<flow_control_fuzzer::Msg>()
+                     .WithProtobufField("config_vars", AnyConfigVars()));
 
 }  // namespace
 }  // namespace chttp2

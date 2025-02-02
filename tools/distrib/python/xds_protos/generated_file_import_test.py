@@ -29,6 +29,8 @@ from contrib.envoy.extensions.private_key_providers.cryptomb.v3alpha import cryp
 from contrib.envoy.extensions.private_key_providers.qat.v3alpha import qat_pb2
 from contrib.envoy.extensions.regex_engines.hyperscan.v3alpha import hyperscan_pb2
 from contrib.envoy.extensions.router.cluster_specifier.golang.v3alpha import golang_pb2
+from contrib.envoy.extensions.tap_sinks.udp_sink.v3alpha import udp_sink_pb2
+from contrib.envoy.extensions.upstreams.http.tcp.golang.v3alpha import golang_pb2
 from contrib.envoy.extensions.vcl.v3alpha import vcl_socket_interface_pb2
 from envoy.admin.v2alpha import certs_pb2
 from envoy.admin.v2alpha import clusters_pb2
@@ -592,6 +594,7 @@ from envoy.type.matcher import regex_pb2
 from envoy.type.matcher import string_pb2
 from envoy.type.matcher import struct_pb2
 from envoy.type.matcher import value_pb2
+from envoy.type.matcher.v3 import address_pb2
 from envoy.type.matcher.v3 import filter_state_pb2
 from envoy.type.matcher.v3 import http_inputs_pb2
 from envoy.type.matcher.v3 import metadata_pb2

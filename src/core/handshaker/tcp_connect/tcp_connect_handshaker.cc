@@ -125,11 +125,13 @@ void TCPConnectHandshaker::DoHandshake(
   }
   CHECK_EQ(args->endpoint.get(), nullptr);
   args_ = args;
-  absl::StatusOr<URI> uri = URI::Parse(
-      args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value());
+  absl::string_view resolved_address_text =
+      args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value();
+  absl::StatusOr<URI> uri = URI::Parse(resolved_address_text);
   if (!uri.ok() || !grpc_parse_uri(*uri, &addr_)) {
     MutexLock lock(&mu_);
-    FinishLocked(GRPC_ERROR_CREATE("Resolved address in invalid format"));
+    FinishLocked(GRPC_ERROR_CREATE(absl::StrCat(
+        "Resolved address in invalid format: ", resolved_address_text)));
     return;
   }
   bind_endpoint_to_pollset_ =

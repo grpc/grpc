@@ -34,7 +34,7 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt receives a message and therefore does not retry even
 //   though the final status is ABORTED
-CORE_END2END_TEST(RetryTest, RetryRecvMessage) {
+CORE_END2END_TEST(RetryTests, RetryRecvMessage) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
