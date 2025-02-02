@@ -1,4 +1,4 @@
-FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.4.0-mri-x64-mingw-ucrt
+FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.9.1-mri-x64-mingw-ucrt
 
 RUN find / -name win32.h | while read f ; do sed -i 's/gettimeofday/rb_gettimeofday/' $f ; done
 

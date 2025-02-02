@@ -147,7 +147,7 @@ namespace promise_detail {
 //   EXPECT_STREQ(execution_order.c_str(), "5");
 //
 //   EXPECT_TRUE(retval.value().ok());  // All promises are a success.
-//   EXPECT_EQ(retval.value().value(), std::make_tuple(3, 4.0, "5", 6));
+//   EXPECT_EQ(retval.value().value(), std::tuple(3, 4.0, "5", 6));
 // }
 
 // Extract the T from a StatusOr<T>
@@ -217,7 +217,7 @@ struct TryJoinTraits {
   }
   template <typename... A>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto FinalReturn(A&&... a) {
-    return Result<std::tuple<A...>>(std::make_tuple(std::forward<A>(a)...));
+    return Result<std::tuple<A...>>(std::tuple(std::forward<A>(a)...));
   }
 };
 
@@ -240,7 +240,7 @@ struct WrapInStatusOrTuple {
   template <typename T>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION R<std::tuple<T>> operator()(R<T> x) {
     if (!x.ok()) return x.status();
-    return std::make_tuple(std::move(*x));
+    return std::tuple(std::move(*x));
   }
 };
 

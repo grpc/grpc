@@ -176,27 +176,12 @@ config_setting(
 
 config_setting(
     name = "windows",
-    values = {"cpu": "x64_windows"},
-)
-
-config_setting(
-    name = "windows_msvc",
-    values = {"cpu": "x64_windows_msvc"},
+    constraint_values = ["@platforms//os:windows"],
 )
 
 config_setting(
     name = "mac",
-    values = {"cpu": "darwin"},
-)
-
-config_setting(
-    name = "mac_x86_64",
-    values = {"cpu": "darwin_x86_64"},
-)
-
-config_setting(
-    name = "mac_arm64",
-    values = {"cpu": "darwin_arm64"},
+    constraint_values = ["@platforms//os:macos"],
 )
 
 config_setting(
@@ -2873,6 +2858,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/log",
         "absl/log:check",
+        "absl/functional:any_invocable",
     ],
     visibility = ["@grpc:client_channel"],
     deps = [

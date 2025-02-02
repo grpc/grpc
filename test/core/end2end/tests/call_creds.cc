@@ -238,7 +238,7 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
   EXPECT_EQ(s.GetInitialMetadata(fake_md_key), std::nullopt);
 }
 
-CORE_END2END_TEST(PerCallCredsOnInsecureTest,
+CORE_END2END_TEST(PerCallCredsOnInsecureTests,
                   RequestWithServerRejectingClientCreds) {
   InitClient(ChannelArgs());
   InitServer(ChannelArgs().Set(FAIL_AUTH_CHECK_SERVER_ARG_NAME, true));
@@ -262,14 +262,14 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTest,
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAUTHENTICATED);
 }
 
-CORE_END2END_TEST(PerCallCredsTest, RequestResponseWithPayloadAndCallCreds) {
+CORE_END2END_TEST(PerCallCredsTests, RequestResponseWithPayloadAndCallCreds) {
   if (IsLocalConnectorSecureEnabled()) {
     SKIP_IF_LOCAL_TCP_CREDS();
   }
   TestRequestResponseWithPayloadAndCallCreds(*this, true);
 }
 
-CORE_END2END_TEST(PerCallCredsTest,
+CORE_END2END_TEST(PerCallCredsTests,
                   RequestResponseWithPayloadAndOverriddenCallCreds) {
   if (IsLocalConnectorSecureEnabled()) {
     SKIP_IF_LOCAL_TCP_CREDS();
@@ -277,42 +277,42 @@ CORE_END2END_TEST(PerCallCredsTest,
   TestRequestResponseWithPayloadAndOverriddenCallCreds(*this, true);
 }
 
-CORE_END2END_TEST(PerCallCredsTest,
+CORE_END2END_TEST(PerCallCredsTests,
                   RequestResponseWithPayloadAndDeletedCallCreds) {
   TestRequestResponseWithPayloadAndDeletedCallCreds(*this, true);
 }
 
-CORE_END2END_TEST(PerCallCredsTest,
+CORE_END2END_TEST(PerCallCredsTests,
                   RequestResponseWithPayloadAndInsecureCallCreds) {
   TestRequestResponseWithPayloadAndCallCreds(*this, false);
 }
 
-CORE_END2END_TEST(PerCallCredsTest,
+CORE_END2END_TEST(PerCallCredsTests,
                   RequestResponseWithPayloadAndOverriddenInsecureCallCreds) {
   TestRequestResponseWithPayloadAndOverriddenCallCreds(*this, false);
 }
 
-CORE_END2END_TEST(PerCallCredsTest,
+CORE_END2END_TEST(PerCallCredsTests,
                   RequestResponseWithPayloadAndDeletedInsecureCallCreds) {
   TestRequestResponseWithPayloadAndDeletedCallCreds(*this, false);
 }
 
-CORE_END2END_TEST(PerCallCredsOnInsecureTest,
+CORE_END2END_TEST(PerCallCredsOnInsecureTests,
                   RequestResponseWithPayloadAndInsecureCallCreds) {
   TestRequestResponseWithPayloadAndCallCreds(*this, false);
 }
 
-CORE_END2END_TEST(PerCallCredsOnInsecureTest,
+CORE_END2END_TEST(PerCallCredsOnInsecureTests,
                   RequestResponseWithPayloadAndOverriddenInsecureCallCreds) {
   TestRequestResponseWithPayloadAndOverriddenCallCreds(*this, false);
 }
 
-CORE_END2END_TEST(PerCallCredsOnInsecureTest,
+CORE_END2END_TEST(PerCallCredsOnInsecureTests,
                   RequestResponseWithPayloadAndDeletedInsecureCallCreds) {
   TestRequestResponseWithPayloadAndDeletedCallCreds(*this, false);
 }
 
-CORE_END2END_TEST(PerCallCredsOnInsecureTest, FailToSendCallCreds) {
+CORE_END2END_TEST(PerCallCredsOnInsecureTests, FailToSendCallCreds) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   grpc_call_credentials* creds;
   creds = grpc_google_iam_credentials_create(iam_token, iam_selector, nullptr);

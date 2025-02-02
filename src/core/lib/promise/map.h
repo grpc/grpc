@@ -193,7 +193,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto CheckDelayed(Promise promise) {
       delayed = true;
       return Pending{};
     }
-    return std::make_tuple(std::move(r.value()), delayed);
+    return std::tuple(std::move(r.value()), delayed);
   };
 }
 

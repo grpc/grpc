@@ -507,8 +507,7 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
             ExecCtx exec_ctx;
             auto self_ptr = self.get();
             self_ptr->child_priority_->priority_policy_->work_serializer()->Run(
-                [self = std::move(self)]() { self->OnTimerLocked(); },
-                DEBUG_LOCATION);
+                [self = std::move(self)]() { self->OnTimerLocked(); });
           });
 }
 
@@ -560,8 +559,8 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
                 ExecCtx exec_ctx;
                 auto self_ptr = self.get();
                 self_ptr->child_priority_->priority_policy_->work_serializer()
-                    ->Run([self = std::move(self)]() { self->OnTimerLocked(); },
-                          DEBUG_LOCATION);
+                    ->Run(
+                        [self = std::move(self)]() { self->OnTimerLocked(); });
               });
 }
 

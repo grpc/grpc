@@ -53,7 +53,7 @@ auto MakeVec(F init) {
   return v;
 }
 
-CORE_END2END_TEST(ResourceQuotaTest, ResourceQuota) {
+CORE_END2END_TEST(ResourceQuotaTests, ResourceQuota) {
   if (IsEventEngineListenerEnabled()) {
     GTEST_SKIP() << "Not with event engine listener";
   }
