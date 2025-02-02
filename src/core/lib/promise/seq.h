@@ -117,8 +117,12 @@ using SeqIter = BasicSeqIter<SeqTraits, Iter, Factory, Argument>;
 
 }  // namespace promise_detail
 
-template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F Seq(F functor) {
+// Sequencing combinator.
+// Run the first promise.
+// Pass its result to the second, and run the returned promise.
+// Pass its result to the third, and run the returned promise. etc.
+// Return the final value.template
+<typename F> GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F Seq(F functor) {
   return functor;
 }
 
