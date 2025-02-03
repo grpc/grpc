@@ -1211,113 +1211,30 @@ auto OnCompleteNoop() {
   return [](Empty) {};
 }
 
-TEST_F(PartyTest, MpscOneSenderOneReceiverTest) {
-  // Number of Receivers = 1  // Will be 1 always for MPSC
-  // Number of Senders   = 1
-  // Number of Payloads  = 1
-  // Number of Parties   = 1
-  // Number of Threads   = 1
-
-  // Very basic MPSC & Party test.
-  // Just send one and receive one message using one party.
-  MpscReceiver<Payload> receiver(1);
-  MpscSender<Payload> sender = receiver.MakeSender();
-  auto party = MakeParty();
-  Notification sent;
-  Notification done;
-  std::string execution_order;
-  party->Spawn("sender", MakeSenderPromise(sender, sent, execution_order, 42),
-               OnCompleteNoop());
-  party->Spawn("receiver",
-               MakeReceiverPromise(receiver, sent, execution_order, 42),
-               OnCompleteNotify(done));
-  done.WaitForNotification();
-  // TODO(tjagtap): This crashes!! Is that expected?
-  // How do we know that we have read till the very end?
-  // auto nothing = receiver.Next()();
-}
-
 constexpr int kMpscNumPayloads = 20;
 constexpr int kMpscNumThreads = 8;
 constexpr int kMpscSleepMs = 10;
 
-TEST_F(PartyTest, MpscManySendersOnePartyStressTest) {
-  // Number of Receivers = 1  // Will be 1 always for MPSC
-  // Number of Senders   = kMpscNumThreads
-  // Number of Payloads  = kMpscNumThreads * kMpscNumPayloads
-  // Number of Parties   = 1
-  // Number of Threads   = kMpscNumThreads
-
-  // Stress testing MPSC & Party.
-  // This test has several threads, each thread having its own MPSC sender.
-  // Each thread sends multiple payloads to the receiver.
-  // The payloads on a single thread are sent and received in order, but the
-  // threads can interleave.
-  // Asserts
-  // 1. All payloads are sent and received.
-  // 2. The payloads on a single thread are received in order.
-
-  std::vector<std::string> execution_order(kMpscNumThreads);
-  MpscReceiver<Payload> receiver(1);
-  std::vector<MpscSender<Payload>> senders;
-  for (int i = 0; i < kMpscNumThreads; i++) {
-    senders.emplace_back(receiver.MakeSender());
-  }
-  auto party = MakeParty();
-  std::vector<std::thread> threads;
-  threads.reserve(kMpscNumThreads);
-  for (int i = 0; i < kMpscNumThreads; i++) {
-    MpscSender<Payload>& sender = senders[i];
-    std::string& order = execution_order[i];
-    threads.emplace_back([&order, &party, &sender, &receiver]() {
-      for (int j = 0; j < kMpscNumPayloads; j++) {
-        ExecCtx ctx;  // needed for Sleep
-        Notification sent;
-        Notification done;
-        party->Spawn(
-            "sned_and_receive",
-            Seq(MakeSenderPromise(sender, sent, order, j),
-                Sleep(Timestamp::Now() + Duration::Milliseconds(kMpscSleepMs)),
-                MakeReceiverPromise(receiver, sent, order, j)),
-            OnCompleteNotify(done));
-        done.WaitForNotification();
-      }
-    });
-  }
-  for (auto& thread : threads) {
-    thread.join();
-  }
-  std::vector<std::string> expected_order(kMpscNumThreads);
-  for (int i = 0; i < kMpscNumThreads; i++) {
-    // Generate the expected order for each thread.
-    for (int j = 0; j < kMpscNumPayloads; j++) {
-      absl::StrAppend(&expected_order[i], "S", j, "R", j);
-    }
-    // For the given test, the order is guaranteed because we wait for the
-    // done notification before the next loop iteration can start.
-    EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
-  }
-}
-
 TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
+  // This is a Integration and Stress Test.
+  // It tests if Promise Party works well with MPSC in an multi-threaded
+  // environment. Using multiple parties, on a different thread will ensure that
+  // we have multiple threads concurrently trying to send on the same MPSC. We
+  // will have only one receiver. Asserts
+  // 1. All payloads are sent and received.
+  // 2. If there is a bug in MPSC which causes any resource to be accessed
+  // concurrently, we should see a TSAN with this test. Because this test is
+  // multi-threaded and using different parties.
+  //
+
   // Number of Receivers = 1  // Will be 1 always for MPSC
   // Number of Senders   = kMpscNumThreads - 1
   // Number of Payloads  = (kMpscNumThreads - 1) * kMpscNumPayloads
   // Number of Parties   = kMpscNumThreads
   // Number of Threads   = kMpscNumThreads
 
-  // Stress testing MPSC & Party.
-  // This is the same as the above test, but with multiple parties.
-  // Using multiple parties, on a different thread will ensure that we have
-  // multiple threads concurrently trying to send on the same MPSC.
-  // We will have only one receiver.
-  // Asserts
-  // 1. All payloads are sent and received.
-  // 2. If there is a bug in MPSC which causes TSAN failure, there is a high
-  // chance that this test will trigger that case and fail TSAN.
-
   std::vector<std::string> execution_order(kMpscNumThreads);
-  MpscReceiver<Payload> receiver(1);
+  MpscReceiver<Payload> receiver((kMpscNumThreads - 1) * kMpscNumPayloads);
   std::vector<MpscSender<Payload>> senders;
   std::vector<RefCountedPtr<Party>> parties;
   for (int i = 0; i < kMpscNumThreads; i++) {
