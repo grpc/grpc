@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/flags/parse.h"
-#include "extract_metadata_from_bazel_xml.h"
-int main(int argc, char** argv) {
-  absl::ParseCommandLine(argc, argv);
-  auto build_yaml = ExtractMetadataFromBazelXml();
-  return 0;
-}
+#ifndef GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_XML_H
+#define GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_XML_H
+
+#include "include/nlohmann/json.hpp"
+
+nlohmann::json ExtractMetadataFromBazelXml();
+
+#endif  // GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_XML_H

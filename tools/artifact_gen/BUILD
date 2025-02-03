@@ -12,18 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cc_binary(
-    name = "artifact_gen",
-    srcs = ["artifact_gen.cc"],
+cc_library(
+    name = "extract_metadata_from_bazel_xml",
+    srcs = ["extract_metadata_from_bazel_xml.cc"],
+    hdrs = ["extract_metadata_from_bazel_xml.h"],
     deps = [
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/flags:flag",
-        "@abseil-cpp//absl/flags:parse",
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/algorithm:container",
         "@pugixml//:pugixml",
-        "@pantor_inja//:inja",
         "@nlohmann_json//:json"
+    ],
+)
+
+cc_binary(
+    name = "artifact_gen",
+    srcs = ["artifact_gen.cc"],
+    deps = [
+        "@pantor_inja//:inja",
+        "@abseil-cpp//absl/flags:parse",
+        ":extract_metadata_from_bazel_xml",
     ],
 )
