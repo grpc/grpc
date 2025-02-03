@@ -1185,19 +1185,19 @@ auto OnCompleteNoop() {
 constexpr int kMpscNumPayloads = 20;
 constexpr int kMpscNumThreads = 8;
 
-TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
+TEST_F(PartyTest, Mpsc_ManySenders_ManyParty_Integration_StressTest) {
   // This is a Integration and Stress Test.
   // It tests if Promise Party works well with MPSC in an multi-threaded
-  // environment. Using multiple Party objects, each Party on a different
-  // thread. We will Spawn promises which write to the MPSC queue on each party,
+  // environment. Using multiple Party objects, with each Party on a different
+  // thread. We will Spawn promises on each Party that write to the MPSC queue,
   // and this will ensure that we have multiple threads concurrently trying to
-  // send on the same MPSC. We will have only one receiver running on a spearate
+  // Send on the same MPSC. We will have one receiver running on a spearate
   // thread using a separate Party object.
   //
   // Asserts:
   // 1. If there is a bug in MPSC which causes any resource to be accessed
   // concurrently, we should see a TSAN failure with this test - because this
-  // test is multi-threaded and using different parties.
+  // test is multi-threaded and using different Party objects.
   // 2. All payloads are sent and received.
   // Note : Both MPSC and Party can be used independent of each other.
   //
@@ -1220,7 +1220,8 @@ TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
   std::vector<std::thread> threads;
   threads.reserve(kMpscNumThreads);
 
-  // Send payloads from all senders on different parties and different threads.
+  // Spawn on different Party objects using different threads.
+  // Each Spawned promise will perform the MPSC Send operation.
   for (int i = 0; i < kMpscNumThreads - 1; i++) {
     MpscSender<Payload>& sender = senders[i];
     std::string& order = execution_order[i];
@@ -1239,14 +1240,14 @@ TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
     });
   }
 
-  // Receive payloads on the last party and  Spawn using the last thread.
+  // Spawn promises on the last Party object using the last thread.
+  // These Spawned promises will read from the MPSC queue.
   int num_messages_sent = (kMpscNumThreads - 1) * kMpscNumPayloads;
   std::string& receive_order = execution_order[kMpscNumThreads - 1];
   RefCountedPtr<Party>& receive_party = parties[kMpscNumThreads - 1];
   threads.emplace_back([&receive_order, &receive_party, &receiver,
                         &num_messages_sent]() {
     for (int j = 0; j < num_messages_sent; j++) {
-      ExecCtx ctx;  // needed for Sleep
       receive_party->Spawn(
           "receive",
           [&receiver, &receive_order]() {
@@ -1258,9 +1259,12 @@ TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
           OnCompleteNoop());
     }
   });
+
   for (auto& thread : threads) {
-    thread.join();
+    thread.join();  // Wait for all threads to finish and join.
   }
+
+  // Asserting that all payloads were sent and received.
   for (int i = 0; i < kMpscNumThreads - 1; i++) {
     for (int j = 0; j < kMpscNumPayloads; j++) {
       // This check ensures that we sent all the payloads.
