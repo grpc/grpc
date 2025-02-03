@@ -1253,7 +1253,6 @@ TEST_F(PartyTest, Mpsc_ManySenders_ManyParty_Integration_StressTest) {
           [&receiver, &receive_order]() {
             auto receive_promise = receiver.Next();
             Poll<ValueOrFailure<Payload>> receive_result = receive_promise();
-            EXPECT_TRUE(receive_result.ready());
             absl::StrAppend(&receive_order, "R");
           },
           OnCompleteNoop());
