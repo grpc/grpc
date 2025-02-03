@@ -17,6 +17,8 @@ cc_binary(
     srcs = ["artifact_gen.cc"],
     deps = [
         "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/algorithm:container",

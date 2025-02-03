@@ -20,6 +20,8 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
@@ -30,6 +32,9 @@
 #include "include/inja/inja.hpp"
 #include "include/nlohmann/json.hpp"
 #include "pugixml.hpp"
+
+ABSL_FLAG(std::vector<std::string>, target_query, {},
+          "Filename containing bazel query results for some set of targets");
 
 struct ExternalProtoLibrary {
   std::string destination;
@@ -48,8 +53,16 @@ struct BazelRule {
   std::vector<std::string> args;
   std::optional<std::string> generator_function;
   std::optional<std::string> size;
-  bool flaky;
+  bool flaky = false;
   std::optional<std::string> actual;  // the real target name for aliases
+
+  bool transitive_deps_computed = false;
+  std::set<std::string> transitive_deps;
+  std::set<std::string> collapsed_deps;
+  std::set<std::string> exclude_deps;
+  std::set<std::string> collapsed_srcs;
+  std::set<std::string> collapsed_public_headers;
+  std::set<std::string> collapsed_headers;
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const BazelRule& bazel_rule) {
@@ -385,9 +398,9 @@ static const char* kBuildExtraMetadata = R"json({
 
 class ArtifactGen {
  public:
-  void LoadRulesXml(const char* source) {
+  void LoadRulesXml(const std::string& source) {
     pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_file(source);
+    pugi::xml_parse_result result = doc.load_file(source.c_str());
     CHECK(result) << source;
 
     for (const auto& query : doc.children("query")) {
@@ -505,7 +518,6 @@ class ArtifactGen {
   }
 
   void GenerateBuildExtraMetadataForTests() {
-    std::map<std::string, nlohmann::json> test_metadata;
     for (const auto& test : tests_) {
       nlohmann::json test_dict = nlohmann::json::object();
       test_dict["build"] = "test";
@@ -553,19 +565,356 @@ class ArtifactGen {
       } else {
         LOG(FATAL) << "wrong test: " << test;
       }
-      auto test_name = absl::StrReplaceAll(test, {{"/", "_"}, {":", "_"}});
-      test_metadata[test_name] = test_dict;
+      test_metadata_[test] = test_dict;
     }
     const auto extra =
         nlohmann::json::parse(kBuildExtraMetadata, nullptr, true, true);
-    LOG(INFO) << extra;
-    for (nlohmann::json::const_iterator it = extra.begin(); it != extra.end();
-         ++it) {
-      test_metadata[it.key()] = it.value();
+    for (auto it = extra.begin(); it != extra.end(); ++it) {
+      test_metadata_[it.key()] = it.value();
     }
   }
 
+  void PopulateTransitiveMetadata() {
+    for (auto it = test_metadata_.begin(); it != test_metadata_.end(); ++it) {
+      bazel_label_to_dep_name_[GetBazelLabel(it.key())] = it.key();
+    }
+    for (auto& [rule_name, rule] : rules_) {
+      if (rule.transitive_deps_computed) continue;
+      ComputeTransitiveMetadata(rule);
+    }
+  }
+
+  void UpdateTestMetadataWithTransitiveMetadata() {
+    for (auto it = test_metadata_.begin(); it != test_metadata_.end(); ++it) {
+      const auto& lib_name = it.key();
+      auto& lib_dict = it.value();
+      if (lib_dict["build"] != "test" && lib_dict["build"] != "plugin_test") {
+        continue;
+      }
+      if (lib_dict["_TYPE"] != "target") {
+        continue;
+      }
+      const auto& bazel_rule = LookupRule(lib_name).value();
+      if (bazel_rule.transitive_deps.count("//third_party:benchmark") > 0) {
+        lib_dict["benchmark"] = true;
+        lib_dict["defaults"] = "benchmark";
+      }
+      if (bazel_rule.transitive_deps.count("//third_party:gtest") > 0) {
+        lib_dict["gtest"] = true;
+        lib_dict["language"] = "c++";
+      }
+    }
+  }
+
+  void GenerateBuildMetadata() {
+    std::vector<std::string> lib_names;
+    for (auto it = test_metadata_.begin(); it != test_metadata_.end(); ++it) {
+      lib_names.push_back(it.key());
+    }
+    for (const auto& lib_name : lib_names) {
+      auto lib_dict = CreateTargetFromBazelRule(lib_name);
+      lib_dict.update(test_metadata_[lib_name]);
+      build_metadata_[lib_name] = lib_dict;
+    }
+  }
+
+  void ConvertToBuildYamlLike() {
+    std::vector<nlohmann::json> lib_list;
+    std::vector<nlohmann::json> target_list;
+    std::vector<nlohmann::json> test_list;
+    for (auto it = build_metadata_.begin(); it != build_metadata_.end(); ++it) {
+      const auto& lib_dict = it.value();
+      if (lib_dict["_TYPE"] == "library") {
+        lib_list.push_back(lib_dict);
+      } else if (lib_dict["_TYPE"] == "target") {
+        target_list.push_back(lib_dict);
+      } else if (lib_dict["_TYPE"] == "test" ||
+                 lib_dict["_TYPE"] == "plugin_test") {
+        test_list.push_back(lib_dict);
+      }
+    }
+    auto scrub = [](nlohmann::json& lib,
+                    std::initializer_list<std::string> explicit_fields) {
+      std::vector<std::string> fields_to_remove = explicit_fields;
+      for (auto it = lib.begin(); it != lib.end(); ++it) {
+        if (absl::StartsWith(it.key(), "_")) {
+          fields_to_remove.push_back(it.key());
+        }
+      }
+      for (const auto& field : fields_to_remove) {
+        lib.erase(field);
+      }
+    };
+    for (auto& lib : lib_list) {
+      scrub(lib, {});
+    }
+    for (auto& target : target_list) {
+      scrub(target, {"public_headers"});
+    }
+    for (auto& test : test_list) {
+      scrub(test, {"public_headers"});
+    }
+    build_yaml_like_ = {
+        {"libs", lib_list},
+        {"filegroups", {}},
+        {"targets", target_list},
+        {"tests", test_list},
+    };
+  }
+
+  void GenerateExternalProtoLibraries() {}
+
  private:
+  // Computes the final build metadata for Bazel target with rule_name.
+  //
+  // The dependencies that will appear on the deps list are:
+  //
+  // * Public build targets including binaries and tests;
+  // * External targets, like absl, re2.
+  //
+  // All other intermediate dependencies will be merged, which means their
+  // source file, headers, etc. will be collected into one build target. This
+  // step of processing will greatly reduce the complexity of the generated
+  // build specifications for other build systems, like CMake, Make, setuptools.
+  //
+  // The final build metadata are:
+  // * _TRANSITIVE_DEPS: all the transitive dependencies including intermediate
+  //                     targets;
+  // * _COLLAPSED_DEPS:  dependencies that fits our requirement above, and it
+  //                     will remove duplicated items and produce the shortest
+  //                     possible dependency list in alphabetical order;
+  // * _COLLAPSED_SRCS:  the merged source files;
+  // * _COLLAPSED_PUBLIC_HEADERS: the merged public headers;
+  // * _COLLAPSED_HEADERS: the merged non-public headers;
+  // * _EXCLUDE_DEPS: intermediate targets to exclude when performing collapsing
+  //      of sources and dependencies.
+  //
+  // For the collapsed_deps, the algorithm improved cases like:
+  //
+  // The result in the past:
+  //     end2end_tests -> [grpc_test_util, grpc, gpr, address_sorting, upb]
+  //     grpc_test_util -> [grpc, gpr, address_sorting, upb, ...]
+  //     grpc -> [gpr, address_sorting, upb, ...]
+  //
+  // The result of the algorithm:
+  //     end2end_tests -> [grpc_test_util]
+  //     grpc_test_util -> [grpc]
+  //     grpc -> [gpr, address_sorting, upb, ...]
+  void ComputeTransitiveMetadata(BazelRule& bazel_rule) {
+    auto direct_deps = ExtractDeps(bazel_rule);
+    std::set<std::string> transitive_deps;
+    std::set<std::string> collapsed_deps;
+    std::set<std::string> exclude_deps;
+    std::set<std::string> collapsed_srcs = ExtractSources(bazel_rule);
+    std::set<std::string> collapsed_public_headers =
+        ExtractPublicHeaders(bazel_rule);
+    std::set<std::string> collapsed_headers =
+        ExtractNonPublicHeaders(bazel_rule);
+
+    auto update = [](const std::set<std::string>& add,
+                     std::set<std::string>& to) {
+      for (const auto& a : add) to.insert(a);
+    };
+
+    for (const auto& dep : direct_deps) {
+      auto external_dep_name_maybe = ExternalDepNameFromBazelDependency(dep);
+
+      auto it = rules_.find(dep);
+      if (it != rules_.end()) {
+        BazelRule& dep_rule = it->second;
+        // Descend recursively, but no need to do that for external deps
+        if (!external_dep_name_maybe.has_value()) {
+          if (!dep_rule.transitive_deps_computed) {
+            ComputeTransitiveMetadata(dep_rule);
+          }
+          update(dep_rule.transitive_deps, transitive_deps);
+          update(dep_rule.collapsed_deps, collapsed_deps);
+          update(dep_rule.exclude_deps, exclude_deps);
+        }
+      }
+      // This dep is a public target, add it as a dependency
+      auto it_bzl = bazel_label_to_dep_name_.find(dep);
+      if (it_bzl != bazel_label_to_dep_name_.end()) {
+        transitive_deps.insert(it_bzl->second);
+        collapsed_deps.insert(it_bzl->second);
+        // Add all the transitive deps of our every public dep to exclude
+        // list since we want to avoid building sources that are already
+        // built by our dependencies
+        update(rules_[dep].transitive_deps, exclude_deps);
+        continue;
+      }
+      // This dep is an external target, add it as a dependency
+      if (external_dep_name_maybe.has_value()) {
+        transitive_deps.insert(external_dep_name_maybe.value());
+        collapsed_deps.insert(external_dep_name_maybe.value());
+        continue;
+      }
+    }
+    // Direct dependencies are part of transitive dependencies
+    update(direct_deps, transitive_deps);
+    // Calculate transitive public deps (needed for collapsing sources)
+    std::set<std::string> transitive_public_deps;
+    for (const auto& dep : transitive_deps) {
+      if (bazel_label_to_dep_name_.count(dep) > 0) {
+        transitive_public_deps.insert(dep);
+      }
+    }
+    // Remove intermediate targets that our public dependencies already depend
+    // on. This is the step that further shorten the deps list.
+    std::set<std::string> new_collapsed_deps;
+    for (const auto& dep : collapsed_deps) {
+      if (exclude_deps.count(dep) == 0) {
+        new_collapsed_deps.insert(dep);
+      }
+    }
+    collapsed_deps.swap(new_collapsed_deps);
+    // Compute the final source files and headers for this build target whose
+    // name is `rule_name` (input argument of this function).
+    //
+    // Imaging a public target PX has transitive deps [IA, IB, PY, IC, PZ]. PX,
+    // PY and PZ are public build targets. And IA, IB, IC are intermediate
+    // targets. In addition, PY depends on IC.
+    //
+    // Translate the condition into dependency graph:
+    //   PX -> [IA, IB, PY, IC, PZ]
+    //   PY -> [IC]
+    //   Public targets: [PX, PY, PZ]
+    //
+    // The collapsed dependencies of PX: [PY, PZ].
+    // The excluded dependencies of X: [PY, IC, PZ].
+    // (IC is excluded as a dependency of PX. It is already included in PY,
+    // hence it would be redundant to include it again.)
+    //
+    // Target PX should include source files and headers of [PX, IA, IB] as
+    // final build metadata.
+    for (const auto& dep : transitive_deps) {
+      if (exclude_deps.count(dep) == 0 &&
+          transitive_public_deps.count(dep) == 0) {
+        if (rules_.count(dep) != 0) {
+          update(ExtractSources(rules_[dep]), collapsed_srcs);
+          update(ExtractPublicHeaders(rules_[dep]), collapsed_public_headers);
+          update(ExtractNonPublicHeaders(rules_[dep]), collapsed_headers);
+        }
+      }
+    }
+    bazel_rule.transitive_deps_computed = true;
+    bazel_rule.transitive_deps = std::move(transitive_deps);
+    bazel_rule.collapsed_deps = std::move(collapsed_deps);
+    bazel_rule.exclude_deps = std::move(exclude_deps);
+    bazel_rule.collapsed_srcs = std::move(collapsed_srcs);
+    bazel_rule.collapsed_public_headers = std::move(collapsed_public_headers);
+    bazel_rule.collapsed_headers = std::move(collapsed_headers);
+  }
+
+  // Returns name of dependency if external bazel dependency is provided or
+  // nullopt
+  std::optional<std::string> ExternalDepNameFromBazelDependency(
+      std::string bazel_dep) {
+    if (absl::StartsWith(bazel_dep, "@com_google_absl//")) {
+      return bazel_dep.substr(15);
+    }
+    if (bazel_dep == "@com_github_google_benchmark//:benchmark") {
+      return "benchmark";
+    }
+    if (bazel_dep == "@boringssl//:ssl") {
+      return "libssl";
+    }
+    if (bazel_dep == "@com_github_cares_cares//:ares") {
+      return "cares";
+    }
+    if (bazel_dep == "@com_google_protobuf//:protobuf" ||
+        bazel_dep == "@com_google_protobuf//:protobuf_headers") {
+      return "protobuf";
+    }
+    if (bazel_dep == "@com_google_protobuf//:protoc_lib") {
+      return "protoc";
+    }
+    if (bazel_dep == "@io_opentelemetry_cpp//api:api") {
+      return "opentelemetry-cpp::api";
+    }
+    if (bazel_dep == "@io_opentelemetry_cpp//sdk/src/metrics:metrics") {
+      return "opentelemetry-cpp::metrics";
+    }
+    // Two options here:
+    // * either this is not external dependency at all (which is fine, we will
+    //   treat it as internal library)
+    // * this is external dependency, but we don't want to make the dependency
+    //   explicit in the build metadata for other build systems.
+    return std::nullopt;
+  }
+
+  std::set<std::string> ExtractDeps(const BazelRule& bazel_rule) {
+    std::set<std::string> deps;
+    for (const auto& dep : bazel_rule.deps) {
+      deps.insert(dep);
+    }
+    for (const auto& src : bazel_rule.srcs) {
+      if (!absl::EndsWith(src, ".cc") && !absl::EndsWith(src, ".c") &&
+          !absl::EndsWith(src, ".proto")) {
+        auto rule_it = rules_.find(src);
+        if (rule_it != rules_.end()) {
+          // This label doesn't point to a source file, but another Bazel
+          // target. This is required for :pkg_cc_proto_validate targets,
+          // and it's generally allowed by Bazel.
+          deps.insert(src);
+        }
+      }
+    }
+    return deps;
+  }
+
+  std::set<std::string> ExtractSources(const BazelRule& bazel_rule) {
+    std::set<std::string> srcs;
+    for (const auto& src : bazel_rule.srcs) {
+      if (absl::StartsWith(src, "@com_google_protobuf//") &&
+          absl::EndsWith(src, ".proto")) {
+        continue;
+      }
+      if (absl::EndsWith(src, ".cc") || absl::EndsWith(src, ".c") ||
+          absl::EndsWith(src, ".proto")) {
+        auto source_file_maybe = TryExtractSourceFilePath(src);
+        if (source_file_maybe.has_value()) {
+          srcs.insert(source_file_maybe.value());
+        }
+      }
+    }
+    return srcs;
+  }
+
+  std::set<std::string> ExtractPublicHeaders(const BazelRule& bazel_rule) {
+    std::set<std::string> headers;
+    for (const auto& hdr : bazel_rule.hdrs) {
+      if (absl::StartsWith(hdr, "//:include/") && HasHeaderSuffix(hdr)) {
+        auto source_file_maybe = TryExtractSourceFilePath(hdr);
+        if (source_file_maybe.has_value()) {
+          headers.insert(source_file_maybe.value());
+        }
+      }
+    }
+    return headers;
+  }
+
+  std::set<std::string> ExtractNonPublicHeaders(const BazelRule& bazel_rule) {
+    std::set<std::string> headers;
+    for (const auto* vec :
+         {&bazel_rule.hdrs, &bazel_rule.textual_hdrs, &bazel_rule.srcs}) {
+      for (const auto& hdr : *vec) {
+        if (!absl::StartsWith(hdr, "//:include/") && HasHeaderSuffix(hdr)) {
+          auto source_file_maybe = TryExtractSourceFilePath(hdr);
+          if (source_file_maybe.has_value()) {
+            headers.insert(source_file_maybe.value());
+          }
+        }
+      }
+    }
+    return headers;
+  }
+
+  bool HasHeaderSuffix(absl::string_view hdr) {
+    return absl::EndsWith(hdr, ".h") || absl::EndsWith(hdr, ".hpp") ||
+           absl::EndsWith(hdr, ".inc");
+  }
+
   bool WantCcTest(absl::string_view test) {
     // most qps tests are autogenerated, we are fine without them
     if (absl::StartsWith(test, "test/cpp/qps:")) return false;
@@ -694,13 +1043,35 @@ class ArtifactGen {
 
   std::optional<BazelRule> LookupRule(std::string target_name) {
     auto it = rules_.find(GetBazelLabel(target_name));
-    if (it == rules_.end()) return std::nullopt;
+    if (it == rules_.end()) {
+      LOG(ERROR) << "Rule not found: " << target_name
+                 << " bazel label: " << GetBazelLabel(target_name);
+      return std::nullopt;
+    }
     return it->second;
+  }
+
+  nlohmann::json CreateTargetFromBazelRule(std::string target_name) {
+    auto bazel_rule = LookupRule(target_name).value();
+    return nlohmann::json{
+        {"name", target_name},
+        {"_PUBLIC_HEADERS_BAZEL", ExtractPublicHeaders(bazel_rule)},
+        {"_HEADERS_BAZEL", ExtractNonPublicHeaders(bazel_rule)},
+        {"_SRC_BAZEL", ExtractSources(bazel_rule)},
+        {"_DEPS_BAZEL", ExtractDeps(bazel_rule)},
+        {"public_headers", bazel_rule.collapsed_public_headers},
+        {"headers", bazel_rule.collapsed_headers},
+        {"src", bazel_rule.collapsed_srcs},
+        {"deps", bazel_rule.collapsed_deps},
+    };
   }
 
   std::map<std::string, BazelRule> rules_;
   std::vector<std::string> tests_;
-  nlohmann::json metadata_ = nlohmann::json::object();
+  nlohmann::json test_metadata_ = nlohmann::json::object();
+  nlohmann::json build_metadata_ = nlohmann::json::object();
+  nlohmann::json build_yaml_like_ = nlohmann::json::object();
+  std::map<std::string, std::string> bazel_label_to_dep_name_;
 
   const std::map<std::string, std::string> external_source_prefixes_ = {
       // TODO(veblush) : Remove @utf8_range// item once protobuf is upgraded
@@ -743,14 +1114,20 @@ class ArtifactGen {
 };
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
   ArtifactGen generator;
-  for (int i = 1; i < argc; ++i) {
-    generator.LoadRulesXml(argv[i]);
+  for (auto target_query : absl::GetFlag(FLAGS_target_query)) {
+    generator.LoadRulesXml(target_query);
   }
   generator.ExpandUpbProtoLibraryRules();
   generator.PatchGrpcProtoLibraryRules();
   generator.PatchDescriptorUpbProtoLibrary();
   generator.PopulateCcTests();
   generator.GenerateBuildExtraMetadataForTests();
+  generator.PopulateTransitiveMetadata();
+  generator.UpdateTestMetadataWithTransitiveMetadata();
+  generator.GenerateBuildMetadata();
+  generator.ConvertToBuildYamlLike();
+  generator.GenerateExternalProtoLibraries();
   return 0;
 }
