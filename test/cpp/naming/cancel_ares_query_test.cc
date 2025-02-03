@@ -116,7 +116,7 @@ void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   grpc_core::Notification notification;
-  args->lock->Run([&notification]() { notification.Notify(); }, DEBUG_LOCATION);
+  args->lock->Run([&notification]() { notification.Notify(); });
   args->lock.reset();
   notification.WaitForNotification();
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);

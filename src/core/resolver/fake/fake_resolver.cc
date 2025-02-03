@@ -159,16 +159,15 @@ void FakeResolverResponseGenerator::SendResultToResolver(
     RefCountedPtr<FakeResolver> resolver, Resolver::Result result,
     Notification* notify_when_set) {
   auto* resolver_ptr = resolver.get();
-  resolver_ptr->work_serializer_->Run(
-      [resolver = std::move(resolver), result = std::move(result),
-       notify_when_set]() mutable {
-        if (!resolver->shutdown_) {
-          resolver->next_result_ = std::move(result);
-          resolver->MaybeSendResultLocked();
-        }
-        if (notify_when_set != nullptr) notify_when_set->Notify();
-      },
-      DEBUG_LOCATION);
+  resolver_ptr->work_serializer_->Run([resolver = std::move(resolver),
+                                       result = std::move(result),
+                                       notify_when_set]() mutable {
+    if (!resolver->shutdown_) {
+      resolver->next_result_ = std::move(result);
+      resolver->MaybeSendResultLocked();
+    }
+    if (notify_when_set != nullptr) notify_when_set->Notify();
+  });
 }
 
 bool FakeResolverResponseGenerator::WaitForResolverSet(absl::Duration timeout) {

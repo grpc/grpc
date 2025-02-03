@@ -470,8 +470,7 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
             auto* self_ptr = self.get();  // Avoid use-after-move problem.
             self_ptr->weighted_child_->weighted_target_policy_
                 ->work_serializer()
-                ->Run([self = std::move(self)] { self->OnTimerLocked(); },
-                      DEBUG_LOCATION);
+                ->Run([self = std::move(self)] { self->OnTimerLocked(); });
           });
 }
 

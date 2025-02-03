@@ -72,6 +72,12 @@ alias(
 )
 
 alias(
+    name = "gtest_main",
+    actual = "@com_google_googletest//:gtest_main",
+    tags = ["manual"],
+)
+
+alias(
     name = "fuzztest",
     actual = "@com_google_fuzztest//fuzztest",
     tags = ["manual"],

@@ -72,7 +72,7 @@ void TestRequestResponseWithMetadataToBeFiltered(
   EXPECT_EQ(server_initial_metadata.Get(filtered_md_key), std::nullopt);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, ContentLengthIsFiltered) {
+CORE_END2END_TEST(CoreEnd2endTests, ContentLengthIsFiltered) {
   TestRequestResponseWithMetadataToBeFiltered(*this, "content-length", "45");
 }
 

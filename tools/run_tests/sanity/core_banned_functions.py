@@ -111,6 +111,7 @@ BANNED_EXCEPT = {
     "absl::nullopt": [],
     "absl::make_optional": [],
     "std::make_pair": [],
+    "std::make_tuple": [],
 }
 
 errors = 0

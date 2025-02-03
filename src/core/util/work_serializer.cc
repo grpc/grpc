@@ -61,7 +61,7 @@ class WorkSerializer::WorkSerializerImpl
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine)
       : event_engine_(std::move(event_engine)) {}
-  void Run(std::function<void()> callback, const DebugLocation& location);
+  void Run(absl::AnyInvocable<void()> callback, DebugLocation location);
   void Run() override;
   void Orphan() override;
 
@@ -73,9 +73,10 @@ class WorkSerializer::WorkSerializerImpl
  private:
   // Wrapper to capture DebugLocation for the callback.
   struct CallbackWrapper {
-    CallbackWrapper(std::function<void()> cb, const DebugLocation& loc)
-        : callback(std::move(cb)), location(loc) {}
-    std::function<void()> callback;
+    CallbackWrapper(absl::AnyInvocable<void()>&& cb, const DebugLocation& loc)
+        : callback(std::forward<absl::AnyInvocable<void()>>(cb)),
+          location(loc) {}
+    absl::AnyInvocable<void()> callback;
     // GPR_NO_UNIQUE_ADDRESS means this is 0 sized in release builds.
     GPR_NO_UNIQUE_ADDRESS DebugLocation location;
   };
@@ -160,8 +161,8 @@ void WorkSerializer::WorkSerializerImpl::Orphan() {
 }
 
 // Implementation of WorkSerializerImpl::Run
-void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
-                                             const DebugLocation& location) {
+void WorkSerializer::WorkSerializerImpl::Run(
+    absl::AnyInvocable<void()> callback, DebugLocation location) {
   GRPC_TRACE_LOG(work_serializer, INFO)
       << "WorkSerializer[" << this << "] Scheduling callback ["
       << location.file() << ":" << location.line() << "]";
@@ -284,8 +285,8 @@ WorkSerializer::WorkSerializer(
 
 WorkSerializer::~WorkSerializer() = default;
 
-void WorkSerializer::Run(std::function<void()> callback,
-                         const DebugLocation& location) {
+void WorkSerializer::Run(absl::AnyInvocable<void()> callback,
+                         DebugLocation location) {
   impl_->Run(std::move(callback), location);
 }
 
