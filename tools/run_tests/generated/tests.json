@@ -3665,28 +3665,6 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": true,
-    "language": "c++",
-    "name": "fork_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix"
-    ],
-    "uses_polling": false
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
       "posix",
       "windows"
     ],
@@ -10477,6 +10455,28 @@
     "ci_platforms": [
       "linux",
       "mac",
+      "posix"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "test_core_event_engine_posix_fork_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
       "posix",
       "windows"
     ],
@@ -10636,6 +10636,28 @@
       "mac",
       "posix",
       "windows"
+    ],
+    "uses_polling": false
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "test_core_util_fork_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix"
     ],
     "uses_polling": false
   },
