@@ -393,12 +393,6 @@ class EventPollerTest : public ::testing::Test {
     }
   }
 
-  void TearDown() override {
-    if (g_event_poller != nullptr) {
-      g_event_poller->Shutdown();
-    }
-  }
-
  public:
   TestScheduler* Scheduler() { return scheduler_.get(); }
 

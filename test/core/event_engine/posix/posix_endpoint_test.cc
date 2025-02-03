@@ -210,9 +210,6 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   }
 
   void TearDown() override {
-    if (poller_ != nullptr) {
-      poller_->Shutdown();
-    }
     grpc_core::WaitForSingleOwner(std::move(posix_ee_));
     grpc_core::WaitForSingleOwner(std::move(oracle_ee_));
   }

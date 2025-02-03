@@ -18,6 +18,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/port_platform.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <atomic>
@@ -36,7 +37,6 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
@@ -48,7 +48,6 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/crash.h"
-#include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
@@ -77,19 +76,6 @@
 using namespace std::chrono_literals;
 
 namespace grpc_event_engine::experimental {
-
-namespace {
-
-grpc_core::NoDestruct<ObjectGroupForkHandler> g_timer_fork_manager;
-
-class TimerForkCallbackMethods {
- public:
-  static void Prefork() { g_timer_fork_manager->Prefork(); }
-  static void PostforkParent() { g_timer_fork_manager->PostforkParent(); }
-  static void PostforkChild() { g_timer_fork_manager->PostforkChild(); }
-};
-
-}  // namespace
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -319,10 +305,11 @@ PosixEnginePollerManager::PosixEnginePollerManager(
       trigger_shutdown_called_(false) {}
 
 PosixEnginePollerManager::PosixEnginePollerManager(
-    std::shared_ptr<PosixEventPoller> poller)
+    std::shared_ptr<PosixEventPoller> poller,
+    std::shared_ptr<ThreadPool> executor)
     : poller_(std::move(poller)),
       poller_state_(PollerState::kExternal),
-      executor_(nullptr),
+      executor_(std::move(executor)),
       trigger_shutdown_called_(false) {
   DCHECK_NE(poller_, nullptr);
 }
@@ -353,24 +340,15 @@ void PosixEnginePollerManager::TriggerShutdown() {
   poller_->Kick();
 }
 
-PosixEnginePollerManager::~PosixEnginePollerManager() {
-  if (poller_ != nullptr) {
-    poller_->Shutdown();
-  }
-}
-
 PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
     : grpc_core::KeepsGrpcInitialized(
           /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
       connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
-  g_timer_fork_manager->RegisterForkable(
-      timer_manager_, TimerForkCallbackMethods::Prefork,
-      TimerForkCallbackMethods::PostforkParent,
-      TimerForkCallbackMethods::PostforkChild);
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
+  poller_manager_ =
+      std::make_shared<PosixEnginePollerManager>(poller, executor_);
 #endif
 }
 
@@ -380,10 +358,6 @@ PosixEventEngine::PosixEventEngine()
       connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
-  g_timer_fork_manager->RegisterForkable(
-      timer_manager_, TimerForkCallbackMethods::Prefork,
-      TimerForkCallbackMethods::PostforkParent,
-      TimerForkCallbackMethods::PostforkChild);
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
   // The threadpool must be instantiated after the poller otherwise, the
@@ -743,5 +717,35 @@ PosixEventEngine::CreatePosixListener(
       "EventEngine::CreateListener is not supported on this platform");
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
+
+#ifdef GRPC_POSIX_SOCKET
+
+void PosixEventEngine::BeforeFork() {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  poller_manager_->Poller()->Kick();
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  executor_->PrepareFork();
+}
+
+void PosixEventEngine::AfterForkInParent() {
+  executor_->PostforkParent();
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  executor_->Run([poller_manager = poller_manager_]() {
+    PollerWorkInternal(poller_manager);
+  });
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+}
+
+void PosixEventEngine::AfterForkInChild() {
+  executor_->PostforkParent();
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  poller_manager_->Poller()->AdvanceGeneration();
+  executor_->Run([poller_manager = poller_manager_]() {
+    PollerWorkInternal(poller_manager);
+  });
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+}
+
+#endif  // GRPC_POSIX_SOCKET
 
 }  // namespace grpc_event_engine::experimental

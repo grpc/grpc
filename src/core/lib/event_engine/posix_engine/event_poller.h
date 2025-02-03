@@ -22,7 +22,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
@@ -86,23 +85,14 @@ class EventHandle {
   virtual ~EventHandle() = default;
 };
 
-class PosixEventPoller : public grpc_event_engine::experimental::Poller,
-                         public Forkable {
+class PosixEventPoller : public grpc_event_engine::experimental::Poller {
  public:
   // Return an opaque handle to perform actions on the provided file descriptor.
   virtual EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                                     bool track_err) = 0;
   virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
-  // Shuts down and deletes the poller. It is legal to call this function
-  // only when no other poller method is in progress. For instance, it is
-  // not safe to call this method, while a thread is blocked on Work(...).
-  // A graceful way to terminate the poller could be to:
-  // 1. First orphan all created handles.
-  // 2. Send a Kick() to the thread executing Work(...) and wait for the
-  //    thread to return.
-  // 3. Call Shutdown() on the poller.
-  virtual void Shutdown() = 0;
+  virtual void AdvanceGeneration() = 0;
   FileDescriptors& GetFileDescriptors() { return file_descriptors_; }
   ~PosixEventPoller() override = default;
 

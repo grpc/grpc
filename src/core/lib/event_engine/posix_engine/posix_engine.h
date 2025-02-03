@@ -28,14 +28,12 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
@@ -102,8 +100,8 @@ class PosixEnginePollerManager
  public:
   explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
   explicit PosixEnginePollerManager(
-      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
-          poller);
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller,
+      std::shared_ptr<ThreadPool> executor);
   grpc_event_engine::experimental::PosixEventPoller* Poller() {
     return poller_.get();
   }
@@ -118,8 +116,6 @@ class PosixEnginePollerManager
            PollerState::kShuttingDown;
   }
   void TriggerShutdown();
-
-  ~PosixEnginePollerManager() override;
 
  private:
   enum class PollerState { kExternal, kOk, kShuttingDown };
@@ -220,6 +216,11 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
           test_only_poller) {
     return std::make_shared<PosixEventEngine>(std::move(test_only_poller));
   }
+
+  // Called before fork is executed
+  void BeforeFork();
+  void AfterForkInParent();
+  void AfterForkInChild();
 #endif  // GRPC_POSIX_SOCKET_TCP
 
  private:

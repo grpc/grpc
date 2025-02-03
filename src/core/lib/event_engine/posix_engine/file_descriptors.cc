@@ -705,7 +705,7 @@ IF_POSIX_SOCKET(
     {
       auto f = descriptors_.GetRawFileDescriptor(fd);
       if (!f.has_value()) {
-        return Int64Result::WrongGeneration();
+        return Int64Result::WrongGeneration(-1);
       }
       if (setsockopt(*f, level, optname, &optval, sizeof(optval)) < 0) {
         return Int64Result(OperationResultKind::kError, errno, optval);
@@ -1091,6 +1091,14 @@ PosixResult FileDescriptors::PosixResultWrap(
     return PosixResultWrongGeneration();
   }
   return PosixResultSimpleWrap(fn(*fd));
+}
+
+void FileDescriptors::AdvanceGeneration() {
+  for (int fd : descriptors_.AdvanceGeneration()) {
+    if (fd > 0) {
+      close(fd);
+    }
+  }
 }
 
 }  // namespace grpc_event_engine::experimental
