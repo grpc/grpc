@@ -21,5 +21,15 @@ tools/bazel \
     --enable_workspace=false \
     :grpc \
     :grpc_unsecure \
+    :grpc_opencensus_plugin \
+    :grpc_security_base \
     :grpc++ \
-    :grpc++_unsecure
+    :grpc++_unsecure \
+    :grpc++_reflection \
+    :grpc++_test \
+    :grpcpp_admin \
+    :grpcpp_channelz \
+    :grpcpp_csds \
+    :grpcpp_orca_service \
+    :grpcpp_gcp_observability
+    :grpcpp_csm_observability  # Needed google_cloud_cpp to be added to BCR
