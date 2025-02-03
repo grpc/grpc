@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.69.0</span>
+   &#160;<span id="projectnumber">1.70.1</span>
    </div>
   </td>
  </tr>
@@ -221,6 +221,7 @@ template&lt;class Request , class Response &gt; </div>
 
 <p>Notifies the application that all operations associated with this RPC have completed and all Holds have been removed. </p>
 <p>OnDone provides the RPC status outcome for both successful and failed RPCs and will be called in all cases. If it is not called, it indicates an application-level problem (like failure to remove a hold).</p>
+<p>OnDone is called exactly once, and not concurrently with any (other) reaction. (Holds may be needed (see above) to prevent OnDone from being called concurrently with calls to the reactor from outside of reactions.)</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">s</td><td>The status outcome of this RPC </td></tr>
@@ -661,7 +662,7 @@ template&lt;class Request , class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jan 22 2025 17:46:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 31 2025 21:29:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
