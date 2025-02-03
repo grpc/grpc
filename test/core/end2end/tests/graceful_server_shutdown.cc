@@ -27,7 +27,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(Http2Test, GracefulServerShutdown) {
+CORE_END2END_TEST(Http2Tests, GracefulServerShutdown) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(10)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;

@@ -784,6 +784,18 @@ UPB_INLINE bool envoy_admin_v3_CommandLineOptions_skip_hot_restart_parent_stats(
                                     &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_admin_v3_CommandLineOptions_clear_skip_deprecated_logs(envoy_admin_v3_CommandLineOptions* msg) {
+  const upb_MiniTableField field = {41, UPB_SIZE(82, 59), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE bool envoy_admin_v3_CommandLineOptions_skip_deprecated_logs(const envoy_admin_v3_CommandLineOptions* msg) {
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {41, UPB_SIZE(82, 59), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_base_id(envoy_admin_v3_CommandLineOptions *msg, uint64_t value) {
   const upb_MiniTableField field = {1, UPB_SIZE(88, 64), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
@@ -1002,6 +1014,10 @@ UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_skip_hot_restart_on_no_par
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_skip_hot_restart_parent_stats(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {40, UPB_SIZE(81, 58), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_skip_deprecated_logs(envoy_admin_v3_CommandLineOptions *msg, bool value) {
+  const upb_MiniTableField field = {41, UPB_SIZE(82, 59), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 

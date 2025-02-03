@@ -447,7 +447,7 @@ void BasicMemoryQuota::Start() {
         // available.
         auto annotate = [](const char* name) {
           return [name](RefCountedPtr<ReclaimerQueue::Handle> f) {
-            return std::make_tuple(name, std::move(f));
+            return std::tuple(name, std::move(f));
           };
         };
         return Race(Map(self->reclaimers_[0].Next(), annotate("benign")),

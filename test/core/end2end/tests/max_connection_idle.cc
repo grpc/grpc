@@ -81,7 +81,7 @@ bool SimpleRequestBody(CoreEnd2endTest& test) {
   return true;
 }
 
-CORE_END2END_TEST(RetryHttp2Test, MaxConnectionIdle) {
+CORE_END2END_TEST(RetryHttp2Tests, MaxConnectionIdle) {
   const auto kMaxConnectionIdle = Duration::Seconds(2);
   const auto kMaxConnectionAge = Duration::Seconds(10);
   InitClient(
@@ -90,8 +90,8 @@ CORE_END2END_TEST(RetryHttp2Test, MaxConnectionIdle) {
                Duration::Seconds(1).millis())
           .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, Duration::Seconds(1).millis())
           .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS,
-               g_is_fuzzing_core_e2e_tests ? Duration::Minutes(5).millis()
-                                           : Duration::Seconds(5).millis())
+               fuzzing() ? Duration::Minutes(5).millis()
+                         : Duration::Seconds(5).millis())
           // Avoid transparent retries for this test.
           .Set(GRPC_ARG_ENABLE_RETRIES, false));
   InitServer(

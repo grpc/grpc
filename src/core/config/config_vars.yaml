@@ -35,8 +35,7 @@
     A comma separated list of currently active experiments. Experiments may be
     prefixed with a '-' to disable them.
   default:
-  fuzz_type: uint64
-  fuzz: ValidateExperimentsStringForFuzzing
+  fuzz: true
 - name: client_channel_backup_poll_interval_ms
   type: int
   default: 5000
