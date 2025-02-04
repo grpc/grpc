@@ -249,6 +249,7 @@ TEST(PosixSystemApiTest, ParentFork) {
 }
 
 TEST(ForkTest, ListenerOnFork) {
+  int port = grpc_pick_unused_port_or_die();
   auto ee = GetDefaultEventEngine();
   TestScheduler scheduler(ee.get());
   // auto poller = MakeDefaultPoller(&scheduler);
@@ -259,7 +260,7 @@ TEST(ForkTest, ListenerOnFork) {
       },
       [](const absl::Status& status) { LOG(INFO) << status; }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-#error Here!
+  // listener->Bind();
 }
 
 }  // namespace experimental
