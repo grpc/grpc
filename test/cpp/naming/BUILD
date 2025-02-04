@@ -32,7 +32,6 @@ grpc_py_binary(
     srcs = [
         "resolver_component_tests_runner.py",
     ],
-    python_version = "PY3",
 )
 
 grpc_cc_test(

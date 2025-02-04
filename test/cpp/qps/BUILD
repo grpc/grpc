@@ -231,7 +231,6 @@ grpc_py_binary(
     testonly = True,
     srcs = ["scenario_runner.py"],
     data = ["scenario_runner_cc"],
-    python_version = "PY3",
 )
 
 grpc_cc_binary(
