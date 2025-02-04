@@ -26,6 +26,8 @@ bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
 bazel_dep(name = "c-ares", version = "1.15.0", repo_name = "com_github_cares_cares")  # mistmatched 1.19.1
 bazel_dep(name = "envoy_api", version = "0.0.0-20241214-918efc9")  # mistmatched 20250106
 bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
+bazel_dep(name = "googletest", version = "1.15.2", repo_name = "com_google_googletest")
+bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "opentelemetry-cpp", version = "1.16.0", repo_name = "io_opentelemetry_cpp")  # mistmached 1.18.0
 bazel_dep(name = "platforms", version = "0.0.10")
 bazel_dep(name = "protobuf", version = "29.0", repo_name = "com_google_protobuf")
@@ -35,12 +37,6 @@ bazel_dep(name = "rules_cc", version = "0.0.17")
 bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "xds", version = "0.0.0-20240423-555b57e", repo_name = "com_github_cncf_xds")  # mismatched 20231116
 bazel_dep(name = "zlib", version = "1.3.1.bcr.3")
-
-grpc_repo_deps_ext = use_extension("//bazel:grpc_deps.bzl", "grpc_repo_deps_ext")
-use_repo(
-    grpc_repo_deps_ext,
-    "google_cloud_cpp",
-)
 
 switched_rules = use_extension("@com_google_googleapis//:extensions.bzl", "switched_rules")
 switched_rules.use_languages(
