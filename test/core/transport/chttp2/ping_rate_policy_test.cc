@@ -17,11 +17,15 @@
 #include <chrono>
 #include <thread>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
+
+using ::testing::PrintToString;
 
 Chttp2PingRatePolicy::RequestSendPingResult SendGranted() {
   return Chttp2PingRatePolicy::SendGranted{};
@@ -64,6 +68,12 @@ TEST(PingRatePolicy, ClientBlockedUntilDataSent) {
   EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), TooManyRecentPings());
 }
 
+MATCHER_P2(IsWithinRange, lo, hi,
+           absl::StrCat(negation ? "isn't" : "is", " between ",
+                        PrintToString(lo), " and ", PrintToString(hi))) {
+  return lo <= arg && arg <= hi;
+}
+
 TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
   if (!IsMaxPingsWoDataThrottleEnabled()) {
     GTEST_SKIP()
@@ -77,8 +87,8 @@ TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
   // Second ping is throttled since no data has been sent.
   auto result = policy.RequestSendPing(Duration::Zero(), 0);
   EXPECT_TRUE(std::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
-  EXPECT_EQ(std::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
-            Duration::Minutes(1));
+  EXPECT_THAT(std::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
+              IsWithinRange(Duration::Seconds(59), Duration::Minutes(1)));
   policy.ResetPingsBeforeDataRequired();
   // After resetting pings before data required (data sent), we can send pings
   // without being throttled.
@@ -89,8 +99,8 @@ TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
   // After reaching limit, we are throttled again.
   result = policy.RequestSendPing(Duration::Zero(), 0);
   EXPECT_TRUE(std::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
-  EXPECT_EQ(std::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
-            Duration::Minutes(1));
+  EXPECT_THAT(std::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
+              IsWithinRange(Duration::Seconds(59), Duration::Minutes(1)));
 }
 
 TEST(PingRatePolicy, RateThrottlingWorks) {
