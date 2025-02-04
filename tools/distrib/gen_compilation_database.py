@@ -59,11 +59,12 @@ def generateCompilationDatabase(args):
 
     compdb = []
     for compdb_file in Path(execroot).glob("**/*.compile_commands.json"):
-        compdb.extend(
-            json.loads(
-                compdb_file.read_text().replace("__EXEC_ROOT__", execroot)
-            )
-        )
+        text = compdb_file.read_text()
+        if len(text) == 0:
+            continue
+        if text[0] != "[":
+            text = "[" + text + "]"
+        compdb.extend(json.loads(text.replace("__EXEC_ROOT__", execroot)))
 
     if args.dedup_targets:
         compdb_map = {target["file"]: target for target in compdb}
@@ -116,7 +117,7 @@ def modifyCompileCommand(target, args):
         options += " -Wno-pragma-once-outside-header -Wno-unused-const-variable"
         options += " -Wno-unused-function"
         if not target["file"].startswith("external/"):
-            # *.h file is treated as C header by default while our headers files are all C++17.
+            # *.h file is treated as C header by default while our headers files are all C++14.
             options = "-x c++ -std=c++17 -fexceptions " + options
 
     target["command"] = " ".join([cc, options])

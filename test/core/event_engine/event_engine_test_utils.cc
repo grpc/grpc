@@ -199,7 +199,7 @@ absl::Status ConnectionManager::BindAndStartListener(
   // Insert same listener pointer for all bind addresses after the listener
   // has started successfully.
   for (auto& addr : addrs) {
-    listeners_.insert(std::make_pair(addr, listener));
+    listeners_.insert(std::pair(addr, listener));
   }
   return absl::OkStatus();
 }

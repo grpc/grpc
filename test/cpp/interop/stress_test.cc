@@ -186,7 +186,7 @@ bool ParseTestCasesString(const std::string& test_cases,
       break;
     }
 
-    tests.emplace_back(std::make_pair(test_case, weight));
+    tests.emplace_back(std::pair(test_case, weight));
   }
 
   return is_success;

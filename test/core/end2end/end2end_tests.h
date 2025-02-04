@@ -172,7 +172,8 @@ inline std::ostream& operator<<(std::ostream& out,
 class CoreEnd2endTest {
  public:
   CoreEnd2endTest(const CoreTestConfiguration* config,
-                  const core_end2end_test_fuzzer::Msg* fuzzing_args);
+                  const core_end2end_test_fuzzer::Msg* fuzzing_args,
+                  absl::string_view suite_name);
   ~CoreEnd2endTest();
 
   void SetCqVerifierStepFn(
@@ -692,13 +693,13 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
     defined(GRPC_END2END_TEST_NO_GTEST)
 #define CORE_END2END_TEST_P(suite, name)
 #else
-#define CORE_END2END_TEST_P(suite, name)                             \
-  TEST_P(suite, name) {                                              \
-    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&      \
-        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {   \
-      GTEST_SKIP() << "call-v3 not supported with poll poller";      \
-    }                                                                \
-    CoreEnd2endTest_##suite##_##name(GetParam(), nullptr).RunTest(); \
+#define CORE_END2END_TEST_P(suite, name)                                     \
+  TEST_P(suite, name) {                                                      \
+    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&              \
+        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
+      GTEST_SKIP() << "call-v3 not supported with poll poller";              \
+    }                                                                        \
+    CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
   }
 #endif
 
@@ -730,7 +731,7 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
       GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
                       "fuzzing currently";                                     \
     }                                                                          \
-    CoreEnd2endTest_##suite##_##name(config, &msg).RunTest();                  \
+    CoreEnd2endTest_##suite##_##name(config, &msg, #suite).RunTest();          \
     grpc_event_engine::experimental::ShutdownDefaultEventEngine();             \
   }                                                                            \
   CORE_END2END_TEST_P(suite, name)                                             \

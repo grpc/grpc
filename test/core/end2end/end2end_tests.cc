@@ -20,6 +20,7 @@
 #include <grpc/grpc.h>
 
 #include <memory>
+#include <optional>
 #include <regex>
 #include <tuple>
 
@@ -65,12 +66,13 @@ Slice RandomBinarySlice(size_t length) {
 
 CoreEnd2endTest::CoreEnd2endTest(
     const CoreTestConfiguration* config,
-    const core_end2end_test_fuzzer::Msg* fuzzing_args)
+    const core_end2end_test_fuzzer::Msg* fuzzing_args, absl::string_view suite_name)
     : test_config_(config), fuzzing_(fuzzing_args != nullptr) {
   if (fuzzing_args != nullptr) {
     ConfigVars::Overrides overrides =
         OverridesFromFuzzConfigVars(fuzzing_args->config_vars());
     overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+    if (suite_name == "NoLoggingTests") overrides.trace = std::nullopt;
     ConfigVars::SetOverrides(overrides);
     TestOnlyReloadExperimentsFromConfigVariables();
     FuzzingEventEngine::Options options;
