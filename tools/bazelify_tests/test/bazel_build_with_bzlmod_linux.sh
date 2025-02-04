@@ -32,4 +32,4 @@ tools/bazel \
     :grpcpp_csds \
     :grpcpp_orca_service \
     :grpcpp_gcp_observability
-    :grpcpp_csm_observability  # Needed google_cloud_cpp to be added to BCR
+    # :grpcpp_csm_observability  # Needed google_cloud_cpp to be added to BCR
