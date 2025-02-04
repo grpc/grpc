@@ -32,6 +32,7 @@
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -43,6 +44,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/test_util/port.h"
 
@@ -252,15 +254,58 @@ TEST(ForkTest, ListenerOnFork) {
   int port = grpc_pick_unused_port_or_die();
   auto ee = GetDefaultEventEngine();
   TestScheduler scheduler(ee.get());
-  // auto poller = MakeDefaultPoller(&scheduler);
-  ChannelArgsEndpointConfig config;
+  grpc_core::ChannelArgs args;
+  auto quota = grpc_core::ResourceQuota::Default();
+  args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+  ChannelArgsEndpointConfig config(args);
+  absl::Mutex mu;
+  std::optional<absl::Status> listener_done;
+  std::vector<std::unique_ptr<EventEngine::Endpoint>> endpoints;
   auto listener = ee->CreateListener(
-      [](auto endpoint, MemoryAllocator /* memory */) {
-        LOG(INFO) << "Accept: ";
+      [&](auto endpoint, MemoryAllocator /* memory */) {
+        LOG(INFO) << "connection! "
+                  << ResolvedAddressToURI(endpoint->GetPeerAddress());
+        absl::MutexLock lock(&mu);
+        endpoints.emplace_back(std::move(endpoint));
       },
-      [](const absl::Status& status) { LOG(INFO) << status; }, config,
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
-  // listener->Bind();
+      [&](absl::Status status) {
+        absl::MutexLock lock(&mu);
+        listener_done.emplace(std::move(status));
+      },
+      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+  ASSERT_TRUE(listener.ok()) << listener.status();
+  auto address = URIToResolvedAddress(absl::StrCat("ipv4:127.0.0.1:", port));
+  ASSERT_TRUE(address.ok()) << address.status();
+  auto bound_port = (*listener)->Bind(*address);
+  ASSERT_TRUE(bound_port.ok()) << bound_port;
+  LOG(INFO) << *bound_port;
+  auto status = (*listener)->Start();
+  ASSERT_TRUE(status.ok()) << status;
+
+  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(sockfd, 0) << absl::ErrnoToStatus(errno, "Creating socket");
+
+  int result = connect(sockfd, address->address(), sizeof(*address->address()));
+  EXPECT_GE(result, 0) << absl::ErrnoToStatus(errno, "Connect");
+
+  {
+    absl::MutexLock lock(&mu);
+    mu.Await(
+        {+[](std::vector<std::unique_ptr<EventEngine::Endpoint>>* endpoints) {
+           return !endpoints->empty();
+         },
+         &endpoints});
+  }
+
+  listener->reset();
+  absl::Condition cond(
+      +[](std::optional<absl::Status>* opt) { return opt->has_value(); },
+      &listener_done);
+  {
+    absl::MutexLock lock(&mu);
+    mu.Await(cond);
+  }
+  LOG(INFO) << *listener_done;
 }
 
 }  // namespace experimental
