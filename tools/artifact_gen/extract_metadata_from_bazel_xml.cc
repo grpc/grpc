@@ -631,6 +631,9 @@ class ArtifactGen {
     std::vector<nlohmann::json> test_list;
     for (auto it = build_metadata_.begin(); it != build_metadata_.end(); ++it) {
       const auto& lib_dict = it.value();
+      if (!lib_dict.contains("_TYPE")) {
+        continue;
+      }
       if (lib_dict["_TYPE"] == "library") {
         lib_list.push_back(lib_dict);
       } else if (lib_dict["_TYPE"] == "target") {

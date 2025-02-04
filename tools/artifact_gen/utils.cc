@@ -14,6 +14,8 @@
 
 #include "utils.h"
 
+#include <fstream>
+
 #include "absl/log/log.h"
 #include "include/yaml-cpp/yaml.h"
 
@@ -49,4 +51,30 @@ nlohmann::json YamlToJson(YAML::Node node) {
 
 nlohmann::json LoadYaml(const std::string& filename) {
   return YamlToJson(YAML::LoadFile(filename));
+}
+
+namespace {
+void AddAllFilesInDir(const std::string& root_dir, const std::string& dir,
+                      std::vector<std::string>* result) {
+  for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+    if (std::filesystem::is_regular_file(entry)) {
+      result->push_back(entry.path().lexically_relative(root_dir));
+    } else if (std::filesystem::is_directory(entry)) {
+      AddAllFilesInDir(root_dir, entry.path().string(), result);
+    }
+  }
+}
+}  // namespace
+
+std::vector<std::string> AllFilesInDir(const std::string& dir) {
+  std::vector<std::string> result;
+  AddAllFilesInDir(dir, dir, &result);
+  return result;
+}
+
+std::string LoadString(const std::string& filename) {
+  std::ifstream file(filename);
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  return buffer.str();
 }

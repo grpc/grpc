@@ -38,6 +38,21 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "render",
+    srcs = ["render.cc"],
+    hdrs = ["render.h"],
+    deps = [
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/log",
+        "@pantor_inja//:inja",
+        "@nlohmann_json//:json",
+        ":utils",
+    ],
+)
+
 cc_binary(
     name = "artifact_gen",
     srcs = ["artifact_gen.cc"],
@@ -46,5 +61,6 @@ cc_binary(
         "@abseil-cpp//absl/flags:parse",
         ":extract_metadata_from_bazel_xml",
         ":utils",
+        ":render",
     ],
 )

@@ -18,4 +18,6 @@ bazel build -c opt :artifact_gen
 bazel-bin/artifact_gen \
 	--target_query=`pwd`/test_deps.xml,`pwd`/root_all_deps.xml,`pwd`/compiler_deps.xml,`pwd`/third_party_alias_deps.xml,`pwd`/envoy_api_proto_deps.xml,`pwd`/upb_deps.xml \
 	--external_http_archive_query=`pwd`/external_http_archive_deps.xml \
-	--extra_build_yaml=`pwd`/../../build_handwritten.yaml
+	--extra_build_yaml=`pwd`/../../build_handwritten.yaml \
+	--templates_dir=`pwd`/../../templates \
+	--output_dir=`pwd`/../..
