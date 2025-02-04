@@ -67,7 +67,7 @@ class ServerInterceptor(metaclass=ABCMeta):
             [grpc.HandlerCallDetails], Awaitable[Optional[grpc.RpcMethodHandler]]
         ],
         handler_call_details: grpc.HandlerCallDetails,
-    ) -> grpc.RpcMethodHandler:
+    ) -> Optional[grpc.RpcMethodHandler]:
         """Intercepts incoming RPCs before handing them over to a handler.
 
         State can be passed from an interceptor to downstream interceptors
