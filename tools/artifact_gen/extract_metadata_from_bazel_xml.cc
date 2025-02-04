@@ -598,7 +598,7 @@ class ArtifactGen {
       if (lib_dict["build"] != "test" && lib_dict["build"] != "plugin_test") {
         continue;
       }
-      if (lib_dict["_TYPE"] != "target") {
+      if (!lib_dict.contains("_TYPE") || lib_dict["_TYPE"] != "target") {
         continue;
       }
       const auto& bazel_rule = LookupRule(lib_name).value();

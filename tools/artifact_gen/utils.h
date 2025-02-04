@@ -12,19 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "extract_metadata_from_bazel_xml.h"
-#include "utils.h"
+#ifndef GRPC_TOOLS_ARTIFACT_GEN_UTILS_H
+#define GRPC_TOOLS_ARTIFACT_GEN_UTILS_H
 
-ABSL_FLAG(std::vector<std::string>, extra_build_yaml, {},
-          "Extra build.yaml files to merge");
+#include "include/nlohmann/json.hpp"
 
-int main(int argc, char** argv) {
-  absl::ParseCommandLine(argc, argv);
-  auto build_yaml = ExtractMetadataFromBazelXml();
-  for (const auto& filename : absl::GetFlag(FLAGS_extra_build_yaml)) {
-    build_yaml.update(LoadYaml(filename), true);
-  }
-  return 0;
-}
+nlohmann::json LoadYaml(const std::string& filename);
+
+#endif  // GRPC_TOOLS_ARTIFACT_GEN_UTILS_H

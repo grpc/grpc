@@ -27,6 +27,17 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "utils",
+    srcs = ["utils.cc"],
+    hdrs = ["utils.h"],
+    deps = [
+        "@nlohmann_json//:json",
+        "@yaml-cpp//:yaml-cpp",
+        "@abseil-cpp//absl/log",
+    ],
+)
+
 cc_binary(
     name = "artifact_gen",
     srcs = ["artifact_gen.cc"],
@@ -34,5 +45,6 @@ cc_binary(
         "@pantor_inja//:inja",
         "@abseil-cpp//absl/flags:parse",
         ":extract_metadata_from_bazel_xml",
+        ":utils",
     ],
 )
