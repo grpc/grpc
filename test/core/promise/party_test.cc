@@ -1185,7 +1185,7 @@ auto OnCompleteNoop() {
 constexpr int kMpscNumPayloads = 20;
 constexpr int kMpscNumThreads = 8;
 
-TEST_F(PartyTest, Mpsc_ManySenders_ManyParty_Integration_StressTest) {
+TEST_F(PartyTest, MpscManySendersManyPartyIntegrationStressTest) {
   // This is a Integration and Stress Test.
   // It tests if Promise Party works well with MPSC in an multi-threaded
   // environment. Using multiple Party objects, with each Party on a different
