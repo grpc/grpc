@@ -40,6 +40,7 @@
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "examples/protos/helloworld.pb.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
@@ -245,6 +246,20 @@ TEST(PosixSystemApiTest, ParentFork) {
   //                                    grpc::InsecureChannelCredentials());
   // auto stub = Greeter::NewStub(channel);
   // EXPECT_THAT(CallSayHello(stub), IsOkStatus());
+}
+
+TEST(ForkTest, ListenerOnFork) {
+  auto ee = GetDefaultEventEngine();
+  TestScheduler scheduler(ee.get());
+  // auto poller = MakeDefaultPoller(&scheduler);
+  ChannelArgsEndpointConfig config;
+  auto listener = ee->CreateListener(
+      [](auto endpoint, MemoryAllocator /* memory */) {
+        LOG(INFO) << "Accept: ";
+      },
+      [](const absl::Status& status) { LOG(INFO) << status; }, config,
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
+#error Here!
 }
 
 }  // namespace experimental
