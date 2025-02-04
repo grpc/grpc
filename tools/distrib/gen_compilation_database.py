@@ -117,7 +117,7 @@ def modifyCompileCommand(target, args):
         options += " -Wno-pragma-once-outside-header -Wno-unused-const-variable"
         options += " -Wno-unused-function"
         if not target["file"].startswith("external/"):
-            # *.h file is treated as C header by default while our headers files are all C++14.
+            # *.h file is treated as C header by default while our headers files are all C++17.
             options = "-x c++ -std=c++17 -fexceptions " + options
 
     target["command"] = " ".join([cc, options])
