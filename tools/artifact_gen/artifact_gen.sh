@@ -20,4 +20,5 @@ bazel-bin/artifact_gen \
 	--external_http_archive_query=`pwd`/external_http_archive_deps.xml \
 	--extra_build_yaml=`pwd`/../../build_handwritten.yaml \
 	--templates_dir=`pwd`/../../templates \
-	--output_dir=`pwd`/../..
+	--output_dir=`pwd`/../.. \
+	--save_json=true

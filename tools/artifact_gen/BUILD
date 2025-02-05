@@ -28,6 +28,30 @@ cc_library(
 )
 
 cc_library(
+    name = "php",
+    srcs = ["php.cc"],
+    hdrs = ["php.h"],
+    deps = [
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/log",
+        "@nlohmann_json//:json",
+    ],
+)
+
+cc_library(
+    name = "expand_version",
+    srcs = ["expand_version.cc"],
+    hdrs = ["expand_version.h"],
+    deps = [
+        "@abseil-cpp//absl/strings",
+        "@nlohmann_json//:json",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/log",
+    ],
+)
+
+cc_library(
     name = "utils",
     srcs = ["utils.cc"],
     hdrs = ["utils.h"],
@@ -61,6 +85,8 @@ cc_binary(
         "@abseil-cpp//absl/flags:parse",
         ":extract_metadata_from_bazel_xml",
         ":utils",
+        ":php",
         ":render",
+        ":expand_version",
     ],
 )

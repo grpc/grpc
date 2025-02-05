@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fstream>
 #include <map>
 #include <optional>
 #include <queue>
@@ -629,12 +630,15 @@ class ArtifactGen {
     std::vector<nlohmann::json> lib_list;
     std::vector<nlohmann::json> target_list;
     std::vector<nlohmann::json> test_list;
+    {
+      std::ofstream ofs("build0.json");
+      ofs << build_metadata_.dump(4);
+    }
     for (auto it = build_metadata_.begin(); it != build_metadata_.end(); ++it) {
       const auto& lib_dict = it.value();
       if (!lib_dict.contains("_TYPE")) {
-        continue;
-      }
-      if (lib_dict["_TYPE"] == "library") {
+        lib_list.push_back(lib_dict);
+      } else if (lib_dict["_TYPE"] == "library") {
         lib_list.push_back(lib_dict);
       } else if (lib_dict["_TYPE"] == "target") {
         target_list.push_back(lib_dict);
@@ -728,7 +732,13 @@ class ArtifactGen {
     build_yaml_like_["external_proto_libraries"] = external_proto_libraries;
   }
 
-  nlohmann::json Result() { return build_yaml_like_; }
+  nlohmann::json Result() {
+    {
+      std::ofstream ofs("build1.json");
+      ofs << build_yaml_like_.dump(4);
+    }
+    return build_yaml_like_;
+  }
 
  private:
   // Computes the final build metadata for Bazel target with rule_name.
@@ -1129,6 +1139,11 @@ class ArtifactGen {
         {"headers", bazel_rule.collapsed_headers},
         {"src", bazel_rule.collapsed_srcs},
         {"deps", bazel_rule.collapsed_deps},
+        {"transitive_deps", bazel_rule.transitive_deps},
+        {"exclude_deps", bazel_rule.exclude_deps},
+        {"collapsed_deps", bazel_rule.collapsed_deps},
+        {"collapsed_headers", bazel_rule.collapsed_headers},
+        {"collapsed_srcs", bazel_rule.collapsed_srcs},
     };
   }
 
