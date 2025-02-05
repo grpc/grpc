@@ -53,6 +53,7 @@ class XdsBootstrap {
     virtual bool IgnoreResourceDeletion() const = 0;
 
     virtual bool FailOnDataErrors() const = 0;
+    virtual bool ResourceTimerIsTransientFailure() const = 0;
 
     virtual bool Equals(const XdsServer& other) const = 0;
 

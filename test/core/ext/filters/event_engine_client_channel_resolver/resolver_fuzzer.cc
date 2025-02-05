@@ -45,6 +45,7 @@
 #include "test/core/event_engine/util/aborting_event_engine.h"
 #include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
 #include "test/core/test_util/test_config.h"
 
@@ -266,10 +267,10 @@ void Fuzz(const event_engine_client_channel_resolver::Msg& msg) {
             .Set(GRPC_INTERNAL_ARG_EVENT_ENGINE, engine),
         &done_resolving, work_serializer);
     auto resolver = resolver_factory.CreateResolver(std::move(resolver_args));
-    work_serializer->Run(
-        [resolver_ptr = resolver.get()]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-            *work_serializer) { resolver_ptr->StartLocked(); },
-        DEBUG_LOCATION);
+    work_serializer->Run([resolver_ptr = resolver.get()]()
+                             ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer) {
+                               resolver_ptr->StartLocked();
+                             });
     // wait for result (no need to check validity)
     while (!done_resolving) {
       engine->Tick();
@@ -280,6 +281,9 @@ void Fuzz(const event_engine_client_channel_resolver::Msg& msg) {
   // resolver alive.
   while (engine.use_count() > 1) engine->Tick();
 }
-FUZZ_TEST(ResolverFuzzer, Fuzz);
+FUZZ_TEST(ResolverFuzzer, Fuzz)
+    .WithDomains(
+        ::fuzztest::Arbitrary<event_engine_client_channel_resolver::Msg>()
+            .WithProtobufField("config_vars", grpc_core::AnyConfigVars()));
 
 }  // namespace

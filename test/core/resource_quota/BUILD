@@ -168,6 +168,7 @@ grpc_fuzz_test(
         "//src/core:memory_quota",
         "//src/core:useful",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
     ],
 )

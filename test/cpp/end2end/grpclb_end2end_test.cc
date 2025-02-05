@@ -692,7 +692,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
               << options.num_requests_multiple_of << ") against the backends. "
               << num_ok << " succeeded, " << num_failure << " failed, "
               << num_drops << " dropped.";
-    return std::make_tuple(num_ok, num_failure, num_drops);
+    return std::tuple(num_ok, num_failure, num_drops);
   }
 
   void WaitForBackend(size_t backend_idx,

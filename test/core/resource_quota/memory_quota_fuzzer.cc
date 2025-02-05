@@ -40,6 +40,7 @@
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/resource_quota/memory_quota_fuzzer.pb.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -187,7 +188,9 @@ void Fuzz(const memory_quota_fuzzer::Msg& msg) {
   grpc_tracer_init();
   testing::Fuzzer().Run(msg);
 }
-FUZZ_TEST(MemoryQuotaFuzzer, Fuzz);
+FUZZ_TEST(MemoryQuotaFuzzer, Fuzz)
+    .WithDomains(::fuzztest::Arbitrary<memory_quota_fuzzer::Msg>()
+                     .WithProtobufField("config_vars", AnyConfigVars()));
 
 }  // namespace
 }  // namespace testing

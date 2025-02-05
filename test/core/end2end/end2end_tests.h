@@ -40,6 +40,12 @@
 #include <variant>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
+#include "absl/meta/type_traits.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -55,16 +61,12 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_test_fuzzer.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-#include "absl/meta/type_traits.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 #ifdef GRPC_END2END_TEST_INCLUDE_FUZZER
 #include "fuzztest/fuzztest.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #endif
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
@@ -170,7 +172,8 @@ inline std::ostream& operator<<(std::ostream& out,
 class CoreEnd2endTest {
  public:
   CoreEnd2endTest(const CoreTestConfiguration* config,
-                  const core_end2end_test_fuzzer::Msg* fuzzing_args);
+                  const core_end2end_test_fuzzer::Msg* fuzzing_args,
+                  absl::string_view suite_name);
   ~CoreEnd2endTest();
 
   void SetCqVerifierStepFn(
@@ -678,10 +681,11 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
 #ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
 #define CORE_END2END_FUZZER(suite, name)
 #else
-#define CORE_END2END_FUZZER(suite, name)                                \
-  FUZZ_TEST(Fuzzers, suite##_##name)                                    \
-      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)), \
-                   ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>());
+#define CORE_END2END_FUZZER(suite, name)                                  \
+  FUZZ_TEST(Fuzzers, suite##_##name)                                      \
+      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)),   \
+                   ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>() \
+                       .WithProtobufField("config_vars", AnyConfigVars()));
 #endif
 
 // NOLINTBEGIN(bugprone-macro-parentheses)
@@ -689,13 +693,13 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
     defined(GRPC_END2END_TEST_NO_GTEST)
 #define CORE_END2END_TEST_P(suite, name)
 #else
-#define CORE_END2END_TEST_P(suite, name)                             \
-  TEST_P(suite, name) {                                              \
-    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&      \
-        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {   \
-      GTEST_SKIP() << "call-v3 not supported with poll poller";      \
-    }                                                                \
-    CoreEnd2endTest_##suite##_##name(GetParam(), nullptr).RunTest(); \
+#define CORE_END2END_TEST_P(suite, name)                                     \
+  TEST_P(suite, name) {                                                      \
+    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&              \
+        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
+      GTEST_SKIP() << "call-v3 not supported with poll poller";              \
+    }                                                                        \
+    CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
   }
 #endif
 
@@ -719,7 +723,15 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
   void suite##_##name(const grpc_core::CoreTestConfiguration* config,          \
                       core_end2end_test_fuzzer::Msg msg) {                     \
     if (absl::StartsWith(#name, "DISABLED_")) GTEST_SKIP() << "disabled test"; \
-    CoreEnd2endTest_##suite##_##name(config, &msg).RunTest();                  \
+    if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled() ||    \
+        !IsEventEngineDnsEnabled()) {                                          \
+      GTEST_SKIP() << "fuzzers need event engine";                             \
+    }                                                                          \
+    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
+      GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
+                      "fuzzing currently";                                     \
+    }                                                                          \
+    CoreEnd2endTest_##suite##_##name(config, &msg, #suite).RunTest();          \
     grpc_event_engine::experimental::ShutdownDefaultEventEngine();             \
   }                                                                            \
   CORE_END2END_TEST_P(suite, name)                                             \
