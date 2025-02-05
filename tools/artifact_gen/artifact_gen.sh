@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 # PHASE 0: query bazel for information we'll need
 cd $(dirname $0)/../..
