@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
 
@@ -62,7 +63,7 @@ class ABSL_LOCKABLE WorkSerializer {
   //         }, DEBUG_LOCATION);
   //   }
   //   void callback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) { ... }
-  void Run(std::function<void()> callback, const DebugLocation& location);
+  void Run(absl::AnyInvocable<void()> callback, DebugLocation location = {});
 
 #ifndef NDEBUG
   // Returns true if the current thread is running in the WorkSerializer.

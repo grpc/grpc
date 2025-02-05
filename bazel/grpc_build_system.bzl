@@ -116,7 +116,7 @@ def _update_visibility(visibility):
         "grpc_public_hdrs": PRIVATE,
         "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
-        "grpc++_public_hdrs": PUBLIC,
+        "grpc++_public_hdrs": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
         "iomgr_internal_errqueue": PRIVATE,
@@ -302,7 +302,8 @@ def grpc_cc_grpc_library(
         srcs = [],
         deps = [],
         visibility = None,
-        generate_mocks = False):
+        generate_mocks = False,
+        allow_deprecated = False):
     """A wrapper around cc_grpc_library that forces grpc_only=True.
 
     Callers are expected to have their own proto_library() and
@@ -315,6 +316,7 @@ def grpc_cc_grpc_library(
         deps = deps,
         visibility = visibility,
         generate_mocks = generate_mocks,
+        allow_deprecated = allow_deprecated,
         grpc_only = True,
     )
 

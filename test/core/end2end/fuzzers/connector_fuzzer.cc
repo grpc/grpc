@@ -229,10 +229,7 @@ TEST(ConnectorFuzzers, Chttp2FakesecTimeout1) {
                                       assign_ports: 2147483647
                                       connections {}
                                     }
-                                    config_vars {
-                                      verbosity: ""
-                                      experiments: 9223372036854775807
-                                    })pb"));
+                                    config_vars { verbosity: "" })pb"));
 }
 
 }  // namespace

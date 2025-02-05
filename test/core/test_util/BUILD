@@ -447,9 +447,12 @@ grpc_cc_library(
     name = "fuzz_config_vars",
     srcs = ["fuzz_config_vars.cc"],
     hdrs = ["fuzz_config_vars.h"],
+    tags = [
+        "grpc-fuzztest",
+        "no_windows",
+    ],
     deps = [
         "fuzz_config_vars_cc_proto",
-        "fuzz_config_vars_helpers",
         "//:config_vars",
         "//:gpr_platform",
     ],
@@ -457,11 +460,21 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "fuzz_config_vars_helpers",
+    testonly = 1,
     srcs = ["fuzz_config_vars_helpers.cc"],
     hdrs = ["fuzz_config_vars_helpers.h"],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/strings",
+        "fuzztest",
+    ],
+    tags = [
+        "grpc-fuzztest",
+        "no_windows",
+    ],
     deps = [
+        "fuzz_config_vars_cc_proto",
         "//:gpr_platform",
+        "//:grpc_trace",
         "//src/core:experiments",
     ],
 )
