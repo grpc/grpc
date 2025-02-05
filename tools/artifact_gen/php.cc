@@ -26,13 +26,11 @@ void AddPhpConfig(nlohmann::json& config) {
   }
   std::map<std::string, const nlohmann::json*> lib_maps;
   for (const auto& lib : config["libs"]) {
-    LOG(INFO) << "lib: " << lib["name"];
     lib_maps[lib["name"]] = &lib;
   }
   std::vector<std::string> php_deps = config["php_config_m4"]["deps"];
   std::set<std::string> php_full_deps;
   for (const auto& dep : php_deps) {
-    LOG(INFO) << "dep: " << dep;
     php_full_deps.insert(dep);
     auto it = lib_maps.find(dep);
     if (it != lib_maps.end()) {

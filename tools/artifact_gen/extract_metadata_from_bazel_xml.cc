@@ -468,7 +468,7 @@ class ArtifactGen {
             CHECK(absl::StartsWith(proto_src, prefix_to_strip))
                 << "Source file " << proto_src << " in upb rule " << name
                 << " does not have the expected prefix " << prefix_to_strip;
-            proto_src = proto_src.substr(prefix.length());
+            proto_src = proto_src.substr(prefix_to_strip.length());
           }
         }
         CHECK(!absl::StartsWith(proto_src, "@"))
@@ -1083,8 +1083,7 @@ class ArtifactGen {
       for (const auto& [lib_name, prefix] : external_source_prefixes_) {
         if (absl::StartsWith(label, lib_name)) {
           return absl::StrReplaceAll(
-              absl::StrCat(prefix, label.substr(lib_name.length())),
-              {{":", "/"}, {"//", "/"}});
+              label, {{lib_name, prefix}, {":", "/"}, {"//", "/"}});
         }
       }
       // This source file is external, and we need to translate the
@@ -1094,10 +1093,9 @@ class ArtifactGen {
       for (const auto& [lib_name, external_proto_lib] :
            external_proto_libraries_) {
         if (absl::StartsWith(label, "@" + lib_name + "//")) {
-          return absl::StrReplaceAll(
-              absl::StrCat(external_proto_lib.proto_prefix,
-                           label.substr(lib_name.length() + 3)),
-              {{":", "/"}});
+          return absl::StrReplaceAll(label, {{absl::StrCat("@", lib_name, "//"),
+                                              external_proto_lib.proto_prefix},
+                                             {":", "/"}});
         }
       }
       // No external library match found.

@@ -1,0 +1,51 @@
+++ dirname ./artifact_gen.sh
++ cd ./../..
++ tools/bazel query --noimplicit_deps --output=xml 'deps(//test/...)'
+INFO: Running bazel wrapper (see //tools/bazel for details), bazel version 8.0.1 will be used instead of system-wide bazel installation.
+Loading: 0 packages loaded
++ tools/bazel query --noimplicit_deps --output=xml 'deps(//:all)'
+INFO: Running bazel wrapper (see //tools/bazel for details), bazel version 8.0.1 will be used instead of system-wide bazel installation.
+Loading: 0 packages loaded
++ tools/bazel query --noimplicit_deps --output=xml 'deps(//src/compiler/...)'
+INFO: Running bazel wrapper (see //tools/bazel for details), bazel version 8.0.1 will be used instead of system-wide bazel installation.
+Loading: 0 packages loaded
++ tools/bazel query --noimplicit_deps --output=xml 'kind(alias, "//third_party:*")'
+INFO: Running bazel wrapper (see //tools/bazel for details), bazel version 8.0.1 will be used instead of system-wide bazel installation.
+Loading: 0 packages loaded
++ tools/bazel query --noimplicit_deps --output=xml 'deps(kind("^proto_library", @envoy_api//envoy/...))'
+INFO: Running bazel wrapper (see //tools/bazel for details), bazel version 8.0.1 will be used instead of system-wide bazel installation.
+Loading: 0 packages loaded
++ tools/bazel query --noimplicit_deps --output=xml 'deps("@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")'
+INFO: Running bazel wrapper (see //tools/bazel for details), bazel version 8.0.1 will be used instead of system-wide bazel installation.
+Loading: 0 packages loaded
++ tools/bazel query --noimplicit_deps --output=xml 'kind(http_archive, //external:*)'
+INFO: Running bazel wrapper (see //tools/bazel for details), bazel version 8.0.1 will be used instead of system-wide bazel installation.
+Loading: 0 packages loaded
++ cd tools/artifact_gen
++ bazel build -c opt :artifact_gen
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //:artifact_gen (0 packages loaded, 0 targets configured)
+Analyzing: target //:artifact_gen (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //:artifact_gen (0 packages loaded, 0 targets configured).
+[1 / 4] Compiling extract_metadata_from_bazel_xml.cc; 1s linux-sandbox
+[2 / 4] [Prepa] Linking artifact_gen
+INFO: Found 1 target...
+Target //:artifact_gen up-to-date:
+  bazel-bin/artifact_gen
+INFO: Elapsed time: 9.011s, Critical Path: 8.82s
+INFO: 3 processes: 1 internal, 2 linux-sandbox.
+INFO: Build completed successfully, 3 total actions
+++ pwd
+++ pwd
+++ pwd
+++ pwd
+++ pwd
+++ pwd
+++ pwd
+++ pwd
+++ pwd
+++ pwd
++ bazel-bin/artifact_gen --target_query=/home/craig/grpc/tools/artifact_gen/test_deps.xml,/home/craig/grpc/tools/artifact_gen/root_all_deps.xml,/home/craig/grpc/tools/artifact_gen/compiler_deps.xml,/home/craig/grpc/tools/artifact_gen/third_party_alias_deps.xml,/home/craig/grpc/tools/artifact_gen/envoy_api_proto_deps.xml,/home/craig/grpc/tools/artifact_gen/upb_deps.xml --external_http_archive_query=/home/craig/grpc/tools/artifact_gen/external_http_archive_deps.xml --extra_build_yaml=/home/craig/grpc/tools/artifact_gen/../../build_handwritten.yaml --templates_dir=/home/craig/grpc/tools/artifact_gen/../../templates --output_dir=/home/craig/grpc/tools/artifact_gen/../.. --save_json=true
