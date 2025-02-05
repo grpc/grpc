@@ -84,7 +84,7 @@ RUN apt-get update && apt-get install -y \
 # otherwise clang-tidy will report missing <gtest/gtest.h> header
 RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
 
-RUN python3 -m pip install --break-system-packages simplejson mako virtualenv==16.7.9 lxml six
+RUN python3 -m pip install --break-system-packages simplejson mako virtualenv lxml six
 
 # Install prerequisites for the clang-tidy script
 RUN apt-get update && apt-get install -y jq git && apt-get clean
