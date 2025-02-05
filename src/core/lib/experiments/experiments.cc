@@ -42,12 +42,6 @@ const char* const description_event_engine_application_callbacks =
     "thread-local ApplicationCallbackExecCtx";
 const char* const additional_constraints_event_engine_application_callbacks =
     "{}";
-const char* const description_event_engine_callback_cq =
-    "Use EventEngine instead of the CallbackAlternativeCQ.";
-const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -62,6 +56,14 @@ const char* const additional_constraints_event_engine_dns_non_client_channel =
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdEventEngineApplicationCallbacks),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -158,9 +160,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_application_callbacks,
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
      true, true},
-    {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, false, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -171,6 +170,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, false, false},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 3, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -248,12 +250,6 @@ const char* const description_event_engine_application_callbacks =
     "thread-local ApplicationCallbackExecCtx";
 const char* const additional_constraints_event_engine_application_callbacks =
     "{}";
-const char* const description_event_engine_callback_cq =
-    "Use EventEngine instead of the CallbackAlternativeCQ.";
-const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -268,6 +264,14 @@ const char* const additional_constraints_event_engine_dns_non_client_channel =
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdEventEngineApplicationCallbacks),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -364,9 +368,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_application_callbacks,
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
      true, true},
-    {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -377,6 +378,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 3, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -454,12 +458,6 @@ const char* const description_event_engine_application_callbacks =
     "thread-local ApplicationCallbackExecCtx";
 const char* const additional_constraints_event_engine_application_callbacks =
     "{}";
-const char* const description_event_engine_callback_cq =
-    "Use EventEngine instead of the CallbackAlternativeCQ.";
-const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -474,6 +472,14 @@ const char* const additional_constraints_event_engine_dns_non_client_channel =
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdEventEngineApplicationCallbacks),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -570,9 +576,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_application_callbacks,
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
      true, true},
-    {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -583,6 +586,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 3, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
