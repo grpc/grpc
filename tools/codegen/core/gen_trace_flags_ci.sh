@@ -17,5 +17,9 @@ set -ex
 dir=$(dirname "${0}")
 cd "${dir}/../../.."
 
+VIRTUALENV=venv_gen_trace_flags_ci
+python3 -m virtualenv $VIRTUALENV
+source $VIRTUALENV/bin/activate
+
 python3 -m pip install absl-py
 python3 ${dir}/gen_trace_flags.py --check
