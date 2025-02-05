@@ -630,10 +630,6 @@ class ArtifactGen {
     std::vector<nlohmann::json> lib_list;
     std::vector<nlohmann::json> target_list;
     std::vector<nlohmann::json> test_list;
-    {
-      std::ofstream ofs("build0.json");
-      ofs << build_metadata_.dump(4);
-    }
     for (auto it = build_metadata_.begin(); it != build_metadata_.end(); ++it) {
       const auto& lib_dict = it.value();
       if (!lib_dict.contains("_TYPE")) {
@@ -732,13 +728,7 @@ class ArtifactGen {
     build_yaml_like_["external_proto_libraries"] = external_proto_libraries;
   }
 
-  nlohmann::json Result() {
-    {
-      std::ofstream ofs("build1.json");
-      ofs << build_yaml_like_.dump(4);
-    }
-    return build_yaml_like_;
-  }
+  nlohmann::json Result() { return build_yaml_like_; }
 
  private:
   // Computes the final build metadata for Bazel target with rule_name.
@@ -777,6 +767,7 @@ class ArtifactGen {
   //     grpc_test_util -> [grpc]
   //     grpc -> [gpr, address_sorting, upb, ...]
   void ComputeTransitiveMetadata(BazelRule& bazel_rule) {
+    LOG(INFO) << "ComputeTransitiveMetadata for " << bazel_rule.name;
     auto direct_deps = ExtractDeps(bazel_rule);
     std::set<std::string> transitive_deps;
     std::set<std::string> collapsed_deps;
@@ -807,6 +798,8 @@ class ArtifactGen {
           update(dep_rule.collapsed_deps, collapsed_deps);
           update(dep_rule.exclude_deps, exclude_deps);
         }
+      } else {
+        LOG(INFO) << "dep is not in rules_: " << dep;
       }
       // This dep is a public target, add it as a dependency
       auto it_bzl = bazel_label_to_dep_name_.find(dep);
