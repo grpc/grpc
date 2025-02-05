@@ -63,17 +63,16 @@ RUN git config --global protocol.file.allow always
 
 
 
-# Install Python 3.7 from source (and installed as a default python3)
+# Install Python 3.8 from source (and installed as a default python3)
 # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
 RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
                             libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
-RUN curl -O https://www.python.org/ftp/python/3.7.17/Python-3.7.17.tar.xz && \
-tar -xf Python-3.7.17.tar.xz && \
-cd Python-3.7.17 && \
+RUN curl -O https://www.python.org/ftp/python/3.8.20/Python-3.8.20.tar.xz && \
+tar -xf Python-3.8.20.tar.xz && \
+cd Python-3.8.20 && \
 ./configure && \
-make -j 4 && \
+make -j 16 && \
 make install
-RUN curl https://bootstrap.pypa.io/pip/3.7/get-pip.py | python3
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
@@ -127,8 +126,8 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 # The binary will work correctly when run on real arm64
 # hardware, when qemu-user-static isn't getting into the way.
 
-# Install buildifier v0.29.0
-RUN wget https://github.com/bazelbuild/buildtools/releases/download/0.29.0/buildifier
+# Install buildifier v8.0.0
+RUN wget -O buildifier https://github.com/bazelbuild/buildtools/releases/download/v8.0.0/buildifier-linux-amd64
 RUN chmod +x buildifier
 RUN mv buildifier /usr/local/bin
 

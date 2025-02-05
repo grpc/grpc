@@ -18,17 +18,16 @@
 
   <%include file="../../apt_get_basic.include"/>
 
-  # Install Python 3.7 from source (and installed as a default python3)
+  # Install Python 3.8 from source (and installed as a default python3)
   # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
   RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev ${'\\'}
                               libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
-  RUN curl -O https://www.python.org/ftp/python/3.7.17/Python-3.7.17.tar.xz && ${'\\'}
-  tar -xf Python-3.7.17.tar.xz && ${'\\'}
-  cd Python-3.7.17 && ${'\\'}
+  RUN curl -O https://www.python.org/ftp/python/3.8.20/Python-3.8.20.tar.xz && ${'\\'}
+  tar -xf Python-3.8.20.tar.xz && ${'\\'}
+  cd Python-3.8.20 && ${'\\'}
   ./configure && ${'\\'}
-  make -j 4 && ${'\\'}
+  make -j 16 && ${'\\'}
   make install
-  RUN curl https://bootstrap.pypa.io/pip/3.7/get-pip.py | python3
 
   <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../run_tests_addons.include"/>
