@@ -767,7 +767,6 @@ class ArtifactGen {
   //     grpc_test_util -> [grpc]
   //     grpc -> [gpr, address_sorting, upb, ...]
   void ComputeTransitiveMetadata(BazelRule& bazel_rule) {
-    LOG(INFO) << "ComputeTransitiveMetadata for " << bazel_rule.name;
     auto direct_deps = ExtractDeps(bazel_rule);
     std::set<std::string> transitive_deps;
     std::set<std::string> collapsed_deps;
@@ -798,8 +797,6 @@ class ArtifactGen {
           update(dep_rule.collapsed_deps, collapsed_deps);
           update(dep_rule.exclude_deps, exclude_deps);
         }
-      } else {
-        LOG(INFO) << "dep is not in rules_: " << dep;
       }
       // This dep is a public target, add it as a dependency
       auto it_bzl = bazel_label_to_dep_name_.find(dep);
