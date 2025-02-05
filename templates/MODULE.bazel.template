@@ -21,6 +21,9 @@
         repo_name = "com_github_grpc_grpc",
     )
 
+    # Regular dependencies
+    # ====================
+
     bazel_dep(name = "abseil-cpp", version = "20240722.0", repo_name = "com_google_absl")
     bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
     bazel_dep(name = "bazel_skylib", version = "1.7.1")
@@ -46,6 +49,16 @@
         grpc = True,
         python = True,
     )
+
+    # Development dependencies
+    # ========================
+
+    bazel_dep(name = "fuzztest", version = "20241028.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mistmached 2023-05-16
+    bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
+    bazel_dep(name = "rules_shell", version = "0.4.0", dev_dependency = True)
+
+    # Python dependencies
+    # ===================
 
     bazel_dep(name = "rules_python", version = "0.37.1")
 
