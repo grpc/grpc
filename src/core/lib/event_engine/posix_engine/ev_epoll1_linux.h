@@ -27,7 +27,6 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
@@ -66,9 +65,9 @@ class Epoll1Poller : public PosixEventPoller {
   ~Epoll1Poller() override;
 
   // Forkable
-  void PrepareFork() override;
-  void PostforkParent() override;
-  void PostforkChild() override;
+  void PrepareFork();
+  void PostforkParent();
+  void PostforkChild();
 
   void Close();
 

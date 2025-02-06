@@ -102,8 +102,8 @@ class PosixEnginePollerManager
  public:
   explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
   explicit PosixEnginePollerManager(
-      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
-          poller);
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller,
+      std::shared_ptr<ThreadPool> executor);
   grpc_event_engine::experimental::PosixEventPoller* Poller() {
     return poller_.get();
   }
@@ -156,9 +156,9 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   // not call this constructor directly. Instead use the
   // MakeTestOnlyPosixEventEngine static method. Its expected to be used only in
   // tests.
-  explicit PosixEventEngine(
-      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
-          poller);
+  PosixEventEngine(
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller,
+      bool begin_polling);
   PosixEventEngine();
 #else   // GRPC_POSIX_SOCKET_TCP
   PosixEventEngine();
@@ -217,8 +217,10 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   // since it does not own it.
   static std::shared_ptr<PosixEventEngine> MakeTestOnlyPosixEventEngine(
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
-          test_only_poller) {
-    return std::make_shared<PosixEventEngine>(std::move(test_only_poller));
+          test_only_poller,
+      bool begin_polling = false) {
+    return std::make_shared<PosixEventEngine>(std::move(test_only_poller),
+                                              begin_polling);
   }
 #endif  // GRPC_POSIX_SOCKET_TCP
 

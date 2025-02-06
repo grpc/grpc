@@ -1,0 +1,212 @@
+// Copyright 2025 gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <gmock/gmock.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/support/status.h>
+#include <gtest/gtest.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include <cerrno>
+#include <csignal>
+#include <cstdlib>
+#include <cstring>
+#include <memory>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/util/wait_for_single_owner.h"
+#include "test/core/event_engine/posix/posix_engine_test_utils.h"
+#include "test/core/test_util/port.h"
+
+namespace grpc_event_engine {
+namespace experimental {
+
+namespace {
+
+class PollerForkTest : public ::testing::Test {
+ public:
+  void SetUp() override {
+    scheduler_ =
+        std::make_unique<grpc_event_engine::experimental::TestScheduler>(
+            nullptr);
+    EXPECT_NE(scheduler_, nullptr);
+    poller_ = MakeDefaultPoller(scheduler_.get());
+    ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_, true);
+    EXPECT_NE(ee_, nullptr);
+    scheduler_->ChangeCurrentEventEngine(ee_.get());
+    if (poller_ != nullptr) {
+      LOG(INFO) << "Using poller: " << poller_->Name();
+    }
+  }
+
+  void TearDown() override {
+    if (poller_ != nullptr) {
+      poller_->Shutdown();
+      poller_->Kick();
+    }
+    grpc_core::WaitForSingleOwnerWithTimeout(std::move(ee_),
+                                             grpc_core::Duration::Seconds(30));
+  }
+
+  TestScheduler* Scheduler() { return scheduler_.get(); }
+
+  std::shared_ptr<EventEngine> ee() { return ee_; }
+
+  PosixEventPoller* PosixPoller() { return poller_.get(); }
+
+  absl::StatusOr<std::pair<std::unique_ptr<EventEngine::Listener>,
+                           EventEngine::ResolvedAddress>>
+  SetupListener(absl::AnyInvocable<void(std::unique_ptr<EventEngine::Endpoint>,
+                                        MemoryAllocator)>
+                    on_accept,
+                absl::AnyInvocable<void(absl::Status)> on_shutdown) {
+    int port = grpc_pick_unused_port_or_die();
+    grpc_core::ChannelArgs args;
+    auto quota = grpc_core::ResourceQuota::Default();
+    args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+    ChannelArgsEndpointConfig config(args);
+    std::optional<absl::Status> listener_done;
+    std::vector<std::unique_ptr<EventEngine::Endpoint>> endpoints;
+    auto listener = ee()->CreateListener(
+        std::move(on_accept), std::move(on_shutdown), config,
+        std::make_unique<grpc_core::MemoryQuota>("foo"));
+    if (!listener.ok()) {
+      return std::move(listener).status();
+    }
+    auto address = URIToResolvedAddress(absl::StrCat("ipv4:127.0.0.1:", port));
+    if (!address.ok()) {
+      return std::move(address).status();
+    }
+    auto bound_port = (*listener)->Bind(*address);
+    if (!bound_port.ok()) {
+      return std::move(bound_port).status();
+    }
+    auto status = (*listener)->Start();
+    if (!status.ok()) {
+      return status;
+    }
+    return std::make_pair(std::move(listener).value(),
+                          std::move(address).value());
+  }
+
+ private:
+  std::shared_ptr<PosixEventPoller> poller_;
+  std::unique_ptr<TestScheduler> scheduler_;
+  std::shared_ptr<EventEngine> ee_;
+};
+
+class RawPosixClient {
+ public:
+  explicit RawPosixClient(const EventEngine::ResolvedAddress& address) {
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+      status_ = absl::ErrnoToStatus(errno, "socket call");
+    } else {
+      int result =
+          connect(sockfd, address.address(), sizeof(*address.address()));
+      if (result < 0) {
+        status_ = absl::ErrnoToStatus(errno, "connect call");
+      }
+    }
+    status_ = absl::OkStatus();
+  }
+
+  RawPosixClient(const RawPosixClient& /* other */) = delete;
+
+  RawPosixClient(RawPosixClient&& other) noexcept
+      : socket_(other.socket_), status_(other.status()) {
+    other.socket_ = -1;
+    other.status_ = absl::OkStatus();
+  }
+
+  ~RawPosixClient() {
+    if (socket_ > 0) {
+      close(socket_);
+      socket_ = -1;
+    }
+  }
+
+  absl::Status status() const& { return status_; }
+
+  absl::Status&& status() && { return std::move(status_); }
+
+ private:
+  int socket_ = -1;
+  absl::Status status_;
+};
+
+}  // namespace
+
+TEST_F(PollerForkTest, ListenerOnFork) {
+  absl::Mutex mu;
+  std::optional<absl::Status> listener_done;
+  std::vector<std::unique_ptr<EventEngine::Endpoint>> endpoints;
+  auto listener_and_address = SetupListener(
+      [&](auto endpoint, MemoryAllocator /* memory */) {
+        absl::MutexLock lock(&mu);
+        endpoints.emplace_back(std::move(endpoint));
+      },
+      [&](absl::Status status) {
+        absl::MutexLock lock(&mu);
+        listener_done.emplace(std::move(status));
+      });
+  ASSERT_TRUE(listener_and_address.ok()) << listener_and_address.status();
+  RawPosixClient client(listener_and_address->second);
+  ASSERT_TRUE(client.status().ok()) << client.status();
+  {
+    absl::MutexLock lock(&mu);
+    mu.Await(
+        {+[](std::vector<std::unique_ptr<EventEngine::Endpoint>>* endpoints) {
+           return !endpoints->empty();
+         },
+         &endpoints});
+    LOG(INFO) << "Endpoint connected: "
+              << ResolvedAddressToNormalizedString(
+                     endpoints.front()->GetPeerAddress());
+  }
+  // PosixPoller()->PostforkChild();
+  listener_and_address->first.reset();
+  absl::Condition cond(&listener_done, &std::optional<absl::Status>::has_value);
+  {
+    absl::MutexLock lock(&mu);
+    mu.Await(cond);
+    EXPECT_TRUE(listener_done->ok()) << *listener_done;
+  }
+}
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
+}
