@@ -37,6 +37,7 @@ namespace {
 
 using opentelemetry::sdk::trace::SpanData;
 using opentelemetry::sdk::trace::SpanDataEvent;
+using ::testing::ElementsAre;
 using ::testing::Lt;
 using ::testing::MatchesRegex;
 using ::testing::Pair;
@@ -57,12 +58,13 @@ class OTelTracingTest : public ::testing::Test {
                 opentelemetry::exporter::memory::InMemorySpanExporterFactory::
                     Create(data_)));
     tracer_ = tracer_provider->GetTracer("grpc-test");
-    ASSERT_TRUE(OpenTelemetryPluginBuilder()
-                    .SetTracerProvider(std::move(tracer_provider))
-                    .SetTextMapPropagator(
-                        grpc::experimental::MakeGrpcTraceBinTextMapPropagator())
-                    .BuildAndRegisterGlobal()
-                    .ok());
+    ASSERT_TRUE(
+        OpenTelemetryPluginBuilder()
+            .SetTracerProvider(std::move(tracer_provider))
+            .SetTextMapPropagator(
+                OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator())
+            .BuildAndRegisterGlobal()
+            .ok());
     grpc::ServerBuilder builder;
     int port;
     // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
@@ -470,10 +472,8 @@ TEST_F(OTelTracingTest, Streaming) {
           std::get<uint64_t>(event.GetAttributes().at("sequence-number")));
     }
   }
-  EXPECT_THAT(outbound_seq_nums,
-              UnorderedElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
-  EXPECT_THAT(inbound_seq_nums,
-              UnorderedElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+  EXPECT_THAT(outbound_seq_nums, ElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+  EXPECT_THAT(inbound_seq_nums, ElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
   const auto server_span = std::find_if(
       spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
         return span->GetName() ==
@@ -492,10 +492,8 @@ TEST_F(OTelTracingTest, Streaming) {
           std::get<uint64_t>(event.GetAttributes().at("sequence-number")));
     }
   }
-  EXPECT_THAT(outbound_seq_nums,
-              UnorderedElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
-  EXPECT_THAT(inbound_seq_nums,
-              UnorderedElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+  EXPECT_THAT(outbound_seq_nums, ElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+  EXPECT_THAT(inbound_seq_nums, ElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
   ASSERT_NE(server_span, spans.end());
 }
 
@@ -540,7 +538,7 @@ TEST_F(OTelTracingTest, Retries) {
       ++server_span_count;
     }
   }
-  EXPECT_THAT(attempt_seq_nums, UnorderedElementsAre(0, 1, 2));
+  EXPECT_THAT(attempt_seq_nums, ElementsAre(0, 1, 2));
   EXPECT_EQ(server_span_count, 3);
 }
 

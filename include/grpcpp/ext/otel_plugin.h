@@ -161,6 +161,11 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetTextMapPropagator(
       std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
           text_map_propagator);
+  /// EXPERIMENTAL API
+  /// Returns a TextMapPropagator that uses gRPC's "grpc-trace-bin" metadata to
+  /// propagate span contexts.
+  static std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+  MakeGrpcTraceBinTextMapPropagator();
   /// Set scope filter to choose which channels are recorded by this plugin.
   /// Server-side recording remains unaffected.
   OpenTelemetryPluginBuilder& SetChannelScopeFilter(
@@ -182,13 +187,6 @@ class OpenTelemetryPluginBuilder {
 };
 
 namespace experimental {
-
-/// EXPERIMENTAL API
-/// TODO(): Think about whether this should under OpenTelemetryPluginBuilder
-/// or somewhere else
-std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
-MakeGrpcTraceBinTextMapPropagator();
-
 // TODO(yashykt): Delete this after the 1.62 release.
 GRPC_DEPRECATED(
     "Use grpc::OpenTelemetryPluginBuilder instead. The experimental version "

@@ -58,7 +58,8 @@ class TestTextMapCarrier
 };
 
 TEST(GrpcTraceBinTextMapPropagatorTest, Inject) {
-  auto propagator = experimental::MakeGrpcTraceBinTextMapPropagator();
+  auto propagator =
+      OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
   TestTextMapCarrier carrier;
   opentelemetry::context::Context context;
   char trace_id[] = "0123456789ABCDEF";
@@ -103,7 +104,8 @@ TEST(GrpcTraceBinTextMapPropagatorTest, Extract) {
   carrier.Set("grpc-trace-bin",
               absl::Base64Escape(absl::string_view(
                   kTraceBinValue, sizeof(kTraceBinValue) - 1)));
-  auto propagator = experimental::MakeGrpcTraceBinTextMapPropagator();
+  auto propagator =
+      OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
   opentelemetry::context::Context context;
   context = propagator->Extract(carrier, context);
   auto span_context = opentelemetry::trace::GetSpan(context)->GetContext();
@@ -119,7 +121,8 @@ TEST(GrpcTraceBinTextMapPropagatorTest, Extract) {
 }
 
 TEST(GrpcTraceBinTextMapPropagatorTest, Fields) {
-  auto propagator = experimental::MakeGrpcTraceBinTextMapPropagator();
+  auto propagator =
+      OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
   StrictMock<MockFunction<bool(opentelemetry::nostd::string_view)>>(
       mock_callback);
   EXPECT_CALL(mock_callback, Call("grpc-trace-bin")).WillOnce(Return(true));

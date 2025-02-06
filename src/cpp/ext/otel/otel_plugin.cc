@@ -1302,6 +1302,11 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetTextMapPropagator(
   return *this;
 }
 
+std::unique_ptr<TextMapPropagator>
+OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator() {
+  return std::make_unique<internal::GrpcTraceBinTextMapPropagator>();
+}
+
 OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetChannelScopeFilter(
     absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
         channel_scope_filter) {
@@ -1317,11 +1322,5 @@ absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
 OpenTelemetryPluginBuilder::Build() {
   return impl_->Build();
 }
-
-namespace experimental {
-std::unique_ptr<TextMapPropagator> MakeGrpcTraceBinTextMapPropagator() {
-  return std::make_unique<internal::GrpcTraceBinTextMapPropagator>();
-}
-}  // namespace experimental
 
 }  // namespace grpc
