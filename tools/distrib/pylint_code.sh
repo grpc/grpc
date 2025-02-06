@@ -42,7 +42,10 @@ python3.7 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 # TODO(https://github.com/grpc/grpc/issues/23394): Update Pylint.
-python3 -m pip install pylint==2.2.2
+python3 -m pip install --upgrade astroid==2.3.3 \
+  pylint==2.2.2 \
+  toml==0.10.2 \
+  "isort>=4.3.0,<5.0.0"
 
 EXIT=0
 for dir in "${DIRS[@]}"; do
