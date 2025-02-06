@@ -1029,10 +1029,11 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   // Resource is valid.
   ++context->num_valid_resources;
   // Check if the resource has changed.
-  // edge case. mark this as false if last update was not acked. 
+  // edge case. mark this as false if last update was not acked.
   // So we notify the watchers to clear their errors
   const bool resource_identical =
-      resource_state.client_status() == ResourceState::ClientResourceStatus::ACKED &&
+      resource_state.client_status() ==
+          ResourceState::ClientResourceStatus::ACKED &&
       resource_state.HasResource() &&
       context->type->ResourcesEqual(resource_state.resource().get(),
                                     decode_result.resource->get());
