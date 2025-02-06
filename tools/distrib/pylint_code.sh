@@ -38,11 +38,11 @@ TEST_DIRS=(
 )
 
 VIRTUALENV=venv_python_code
-python3 -m virtualenv $VIRTUALENV
+python3.7 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 # TODO(https://github.com/grpc/grpc/issues/23394): Update Pylint.
-python3 -m pip install pylint==3.3.4
+python3 -m pip install pylint==2.2.2
 
 EXIT=0
 for dir in "${DIRS[@]}"; do

@@ -45,5 +45,18 @@
   <%include file="../../bazel.include"/>
   <%include file="../../buildifier.include"/>
 
+  # Install Python 3.7 from source for old python tests such as pytype
+  # TODO(xuan): Remote this once those tests are updated to use Python 3.11
+  RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev ${'\\'}
+                              libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
+  RUN curl -O https://www.python.org/ftp/python/3.7.17/Python-3.7.17.tar.xz && ${'\\'}
+      tar -xf Python-3.7.17.tar.xz && ${'\\'}
+      cd Python-3.7.17 && ${'\\'}
+      ./configure && ${'\\'}
+      make -j 16 && ${'\\'}
+      make altinstall
+  RUN curl https://bootstrap.pypa.io/pip/3.7/get-pip.py | python3.7
+  RUN python3.7 -m pip install virtualenv
+
   # Define the default command.
   CMD ["bash"]

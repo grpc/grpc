@@ -14,5 +14,11 @@
 # limitations under the License.
 
 JOBS=$(nproc) || JOBS=4
-python3 -m pip install --break-system-packages pytype==2024.10.11
+
+VIRTUALENV=venv_check_pytype
+python3.7 -m virtualenv $VIRTUALENV
+source $VIRTUALENV/bin/activate
+
+# TODO(xuanwn): update pytype version
+python3 -m pip install pytype==2019.11.27
 python3 -m pytype --keep-going -j "$JOBS" --strict-import --config "setup.cfg"
