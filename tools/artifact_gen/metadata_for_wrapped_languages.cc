@@ -50,6 +50,7 @@ void AddPhpConfig(nlohmann::json& config) {
   }
   php_full_deps.erase("z");
   php_full_deps.erase("cares");
+  php_full_deps.erase("@zlib//:zlib");
   for (const auto& dep : php_full_deps) {
     auto it = lib_maps.find(dep);
     if (it != lib_maps.end()) {

@@ -1410,17 +1410,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/wire/internal/decode_fast.c \
     third_party/upb/upb/wire/reader.c \
     third_party/utf8_range/utf8_range.c \
-    third_party/zlib/adler32.c \
-    third_party/zlib/compress.c \
-    third_party/zlib/crc32.c \
-    third_party/zlib/deflate.c \
-    third_party/zlib/infback.c \
-    third_party/zlib/inffast.c \
-    third_party/zlib/inflate.c \
-    third_party/zlib/inftrees.c \
-    third_party/zlib/trees.c \
-    third_party/zlib/uncompr.c \
-    third_party/zlib/zutil.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
@@ -1744,5 +1733,4 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/utf8_range)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/zlib)
 fi
