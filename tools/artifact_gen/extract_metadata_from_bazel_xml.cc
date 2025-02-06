@@ -530,7 +530,7 @@ class ArtifactGen {
       nlohmann::json test_dict = nlohmann::json::object();
       test_dict["build"] = "test";
       test_dict["_TYPE"] = "target";
-      auto bazel_rule = LookupRule(test).value();
+      auto bazel_rule = *LookupRule(test);
       if (absl::c_contains(bazel_rule.tags, "manual")) {
         test_dict["run"] = false;
       }
@@ -602,7 +602,7 @@ class ArtifactGen {
       if (!lib_dict.contains("_TYPE") || lib_dict["_TYPE"] != "target") {
         continue;
       }
-      const auto& bazel_rule = LookupRule(lib_name).value();
+      const auto& bazel_rule = *LookupRule(lib_name);
       if (bazel_rule.transitive_deps.count("//third_party:benchmark") > 0) {
         lib_dict["benchmark"] = true;
         lib_dict["defaults"] = "benchmark";
@@ -1105,18 +1105,18 @@ class ArtifactGen {
     }
   }
 
-  std::optional<BazelRule> LookupRule(std::string target_name) {
+  BazelRule* LookupRule(std::string target_name) {
     auto it = rules_.find(GetBazelLabel(target_name));
     if (it == rules_.end()) {
       LOG(ERROR) << "Rule not found: " << target_name
                  << " bazel label: " << GetBazelLabel(target_name);
-      return std::nullopt;
+      return nullptr;
     }
-    return it->second;
+    return &it->second;
   }
 
   nlohmann::json CreateTargetFromBazelRule(std::string target_name) {
-    auto bazel_rule = LookupRule(target_name).value();
+    auto bazel_rule = *LookupRule(target_name);
     return nlohmann::json{
         {"name", target_name},
         {"_PUBLIC_HEADERS_BAZEL", ExtractPublicHeaders(bazel_rule)},

@@ -17,13 +17,13 @@ cc_library(
     srcs = ["extract_metadata_from_bazel_xml.cc"],
     hdrs = ["extract_metadata_from_bazel_xml.h"],
     deps = [
-        "@abseil-cpp//absl/strings",
-        "@abseil-cpp//absl/flags:flag",
-        "@abseil-cpp//absl/log:check",
-        "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/algorithm:container",
-        "@pugixml//:pugixml",
-        "@nlohmann_json//:json"
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
+        "@nlohmann_json//:json",
+        "@pugixml",
     ],
 )
 
@@ -32,9 +32,9 @@ cc_library(
     srcs = ["php.cc"],
     hdrs = ["php.h"],
     deps = [
-        "@abseil-cpp//absl/strings",
-        "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
         "@nlohmann_json//:json",
     ],
 )
@@ -44,10 +44,22 @@ cc_library(
     srcs = ["expand_version.cc"],
     hdrs = ["expand_version.h"],
     deps = [
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/strings",
         "@nlohmann_json//:json",
-        "@abseil-cpp//absl/log:check",
+    ],
+)
+
+cc_library(
+    name = "boringssl",
+    srcs = ["boringssl.cc"],
+    hdrs = ["boringssl.h"],
+    deps = [
         "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
+        "@nlohmann_json//:json",
     ],
 )
 
@@ -56,9 +68,9 @@ cc_library(
     srcs = ["utils.cc"],
     hdrs = ["utils.h"],
     deps = [
+        "@abseil-cpp//absl/log",
         "@nlohmann_json//:json",
         "@yaml-cpp//:yaml-cpp",
-        "@abseil-cpp//absl/log",
     ],
 )
 
@@ -67,13 +79,13 @@ cc_library(
     srcs = ["render.cc"],
     hdrs = ["render.h"],
     deps = [
-        "@abseil-cpp//absl/strings",
-        "@abseil-cpp//absl/flags:flag",
-        "@abseil-cpp//absl/log:check",
-        "@abseil-cpp//absl/log",
-        "@pantor_inja//:inja",
-        "@nlohmann_json//:json",
         ":utils",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
+        "@nlohmann_json//:json",
+        "@pantor_inja//:inja",
     ],
 )
 
@@ -81,12 +93,13 @@ cc_binary(
     name = "artifact_gen",
     srcs = ["artifact_gen.cc"],
     deps = [
-        "@pantor_inja//:inja",
-        "@abseil-cpp//absl/flags:parse",
+        ":boringssl",
+        ":expand_version",
         ":extract_metadata_from_bazel_xml",
-        ":utils",
         ":php",
         ":render",
-        ":expand_version",
+        ":utils",
+        "@abseil-cpp//absl/flags:parse",
+        "@pantor_inja//:inja",
     ],
 )

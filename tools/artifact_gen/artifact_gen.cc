@@ -21,6 +21,7 @@
 #include "php.h"
 #include "render.h"
 #include "utils.h"
+#include "boringssl.h"
 
 ABSL_FLAG(std::vector<std::string>, extra_build_yaml, {},
           "Extra build.yaml files to merge");
@@ -35,6 +36,7 @@ int main(int argc, char** argv) {
   // TODO(ctiller): all the special yaml updates
   AddPhpConfig(build_yaml);
   ExpandVersion(build_yaml);
+  AddBoringSslMetadata(build_yaml);
   if (absl::GetFlag(FLAGS_save_json)) {
     std::ofstream ofs("build.json");
     ofs << build_yaml.dump(4);
