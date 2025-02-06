@@ -20,17 +20,23 @@
 #include "extract_metadata_from_bazel_xml.h"
 #include "php.h"
 #include "render.h"
+#include "utils.h"
 #include "boringssl.h"
 
+ABSL_FLAG(std::vector<std::string>, extra_build_yaml, {},
+          "Extra build.yaml files to merge");
 ABSL_FLAG(bool, save_json, false, "Save the generated build.yaml to a file");
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   auto build_yaml = ExtractMetadataFromBazelXml();
+  for (const auto& filename : absl::GetFlag(FLAGS_extra_build_yaml)) {
+    build_yaml.update(LoadYaml(filename), true);
+  }
   // TODO(ctiller): all the special yaml updates
-  AddBoringSslMetadata(build_yaml);
-  ExpandVersion(build_yaml);
   AddPhpConfig(build_yaml);
+  ExpandVersion(build_yaml);
+  AddBoringSslMetadata(build_yaml);
   if (absl::GetFlag(FLAGS_save_json)) {
     std::ofstream ofs("build.json");
     ofs << build_yaml.dump(4);
