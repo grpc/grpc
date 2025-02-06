@@ -37,11 +37,9 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/wait_for_single_owner.h"
-#include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/test_util/port.h"
 
 namespace grpc_event_engine {
@@ -51,34 +49,14 @@ namespace {
 
 class PollerForkTest : public ::testing::Test {
  public:
-  void SetUp() override {
-    scheduler_ =
-        std::make_unique<grpc_event_engine::experimental::TestScheduler>(
-            nullptr);
-    EXPECT_NE(scheduler_, nullptr);
-    poller_ = MakeDefaultPoller(scheduler_.get());
-    ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_, true);
-    EXPECT_NE(ee_, nullptr);
-    scheduler_->ChangeCurrentEventEngine(ee_.get());
-    if (poller_ != nullptr) {
-      LOG(INFO) << "Using poller: " << poller_->Name();
-    }
-  }
+  void SetUp() override { ee_ = GetDefaultEventEngine(); }
 
   void TearDown() override {
-    if (poller_ != nullptr) {
-      poller_->Shutdown();
-      poller_->Kick();
-    }
     grpc_core::WaitForSingleOwnerWithTimeout(std::move(ee_),
                                              grpc_core::Duration::Seconds(30));
   }
 
-  TestScheduler* Scheduler() { return scheduler_.get(); }
-
-  std::shared_ptr<EventEngine> ee() { return ee_; }
-
-  PosixEventPoller* PosixPoller() { return poller_.get(); }
+  PosixEventEngine* ee() { return static_cast<PosixEventEngine*>(ee_.get()); }
 
   absl::StatusOr<std::pair<std::unique_ptr<EventEngine::Listener>,
                            EventEngine::ResolvedAddress>>
@@ -116,8 +94,6 @@ class PollerForkTest : public ::testing::Test {
   }
 
  private:
-  std::shared_ptr<PosixEventPoller> poller_;
-  std::unique_ptr<TestScheduler> scheduler_;
   std::shared_ptr<EventEngine> ee_;
 };
 
@@ -169,16 +145,21 @@ TEST_F(PollerForkTest, ListenerOnFork) {
   std::vector<std::unique_ptr<EventEngine::Endpoint>> endpoints;
   auto listener_and_address = SetupListener(
       [&](auto endpoint, MemoryAllocator /* memory */) {
+        LOG(INFO) << "a";
         absl::MutexLock lock(&mu);
+        LOG(INFO) << "b";
         endpoints.emplace_back(std::move(endpoint));
+        LOG(INFO) << "c";
       },
       [&](absl::Status status) {
         absl::MutexLock lock(&mu);
         listener_done.emplace(std::move(status));
       });
   ASSERT_TRUE(listener_and_address.ok()) << listener_and_address.status();
+  LOG(INFO) << 2;
   RawPosixClient client(listener_and_address->second);
   ASSERT_TRUE(client.status().ok()) << client.status();
+  LOG(INFO) << 3;
   {
     absl::MutexLock lock(&mu);
     mu.Await(
@@ -198,6 +179,7 @@ TEST_F(PollerForkTest, ListenerOnFork) {
     mu.Await(cond);
     EXPECT_TRUE(listener_done->ok()) << *listener_done;
   }
+  // FAIL() << "To see the output";
 }
 
 }  // namespace experimental

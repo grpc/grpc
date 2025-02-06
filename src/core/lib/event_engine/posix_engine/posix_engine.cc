@@ -345,8 +345,7 @@ PosixEnginePollerManager::~PosixEnginePollerManager() {
   }
 }
 
-PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller,
-                                   bool begin_polling)
+PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
     : grpc_core::KeepsGrpcInitialized(
           /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
       connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
@@ -355,11 +354,6 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller,
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   poller_manager_ =
       std::make_shared<PosixEnginePollerManager>(poller, executor_);
-  if (begin_polling) {
-    executor_->Run([poller_manager = poller_manager_]() {
-      PollerWorkInternal(poller_manager);
-    });
-  }
 #endif
 }
 

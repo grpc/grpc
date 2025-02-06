@@ -10809,6 +10809,21 @@ targets:
   - absl/status:statusor
   - gpr
   uses_polling: false
+- name: fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/fork_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: forkable_test
   gtest: true
   build: test
@@ -15121,6 +15136,25 @@ targets:
   - absl/log:check
   - absl/strings:str_format
   uses_polling: false
+- name: poller_fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/posix/posix_engine_test_utils.h
+  src:
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/posix/poller_fork_test.cc
+  - test/core/event_engine/posix/posix_engine_test_utils.cc
+  deps:
+  - gtest
+  - grpc++
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -21221,26 +21255,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-- name: test_core_event_engine_posix_fork_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/posix/posix_engine_test_utils.h
-  src:
-  - examples/protos/helloworld.proto
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/posix/fork_test.cc
-  - test/core/event_engine/posix/posix_engine_test_utils.cc
-  deps:
-  - gtest
-  - grpc++
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true
   build: test
@@ -21412,21 +21426,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
-- name: test_core_util_fork_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/util/fork_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
   uses_polling: false
 - name: test_core_util_time_test
   gtest: true

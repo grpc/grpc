@@ -26,6 +26,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
@@ -595,6 +596,18 @@ PollPoller::~PollPoller() {
 Poller::WorkResult PollPoller::Work(
     EventEngine::Duration timeout,
     absl::FunctionRef<void()> schedule_poll_again) {
+  static std::atomic_bool running(false);
+  bool expected = false;
+  running.compare_exchange_weak(expected, true);
+  static int count = 1;
+  int c = count++;
+  LOG(INFO) << "Poll begin: " << c;
+  absl::Cleanup cleanup = [&]() {
+    LOG(INFO) << "Poll end: " << c;
+    bool expected = true;
+    running.compare_exchange_strong(expected, false);
+  };
+
   // Avoid malloc for small number of elements.
   enum { inline_elements = 96 };
   struct pollfd pollfd_space[inline_elements];
@@ -668,19 +681,23 @@ Poller::WorkResult PollPoller::Work(
       head = head->PollerHandlesListPos().next;
     }
     mu_.Unlock();
+    LOG(INFO) << "a. " << c;
 
     if (!use_phony_poll_ || timeout_ms == 0 || pfd_count == 1) {
       // If use_phony_poll is true and pfd_count == 1, it implies only the
       // wakeup_fd is present. Allow the call to get blocked in this case as
       // well instead of crashing. This is because the poller::Work is called
-      // right after an event enging is constructed. Even if phony poll is
+      // right after an event engine is constructed. Even if phony poll is
       // expected to be used, we dont want to check for it until some actual
       // event handles are registered. Otherwise the EventEngine construction
       // may crash.
+      LOG(INFO) << "a.a. " << c;
       r = poll(pfds, pfd_count, timeout_ms);
+      LOG(INFO) << "a.b. " << c;
     } else {
       grpc_core::Crash("Attempted a blocking poll when declared non-polling.");
     }
+    LOG(INFO) << "b. " << c;
 
     if (r <= 0) {
       if (r < 0 && errno != EINTR) {
@@ -760,6 +777,7 @@ Poller::WorkResult PollPoller::Work(
         head->Unref();
       }
     }
+    LOG(INFO) << "c. " << c;
 
     if (pfds != pollfd_space) {
       gpr_free(pfds);
@@ -775,19 +793,26 @@ Poller::WorkResult PollPoller::Work(
       break;
     }
   }
+  LOG(INFO) << "d. " << c;
   mu_.Unlock();
   if (pending_events.empty()) {
     if (was_kicked_ext) {
+      LOG(INFO) << "Returned 'kicked' " << c;
       return Poller::WorkResult::kKicked;
     }
+    LOG(INFO) << "Returned 'deadline' " << c;
     return Poller::WorkResult::kDeadlineExceeded;
   }
+  LOG(INFO) << "e. " << c;
+
   // Run the provided callback synchronously.
   schedule_poll_again();
   // Process all pending events inline.
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
   }
+  LOG(INFO) << "f. " << c;
+
   return was_kicked_ext ? Poller::WorkResult::kKicked : Poller::WorkResult::kOk;
 }
 
