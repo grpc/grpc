@@ -31,11 +31,14 @@
 #include "absl/strings/string_view.h"
 #include "include/nlohmann/json.hpp"
 #include "pugixml.hpp"
+#include "utils.h"
 
 ABSL_FLAG(std::vector<std::string>, target_query, {},
           "Filename containing bazel query results for some set of targets");
 ABSL_FLAG(std::string, external_http_archive_query, "",
           "Filename containing bazel query results for external http archives");
+ABSL_FLAG(std::vector<std::string>, extra_build_yaml, {},
+          "Extra build.yaml files to merge");
 
 struct ExternalProtoLibrary {
   std::string destination;
@@ -406,6 +409,10 @@ static const char* kBuildExtraMetadata = R"json({
 
 class ArtifactGen {
  public:
+  void LoadBuildYaml(const std::string& source){
+    build_yaml_like_.update(LoadYaml(source),true);
+  }
+
   void LoadRulesXml(const std::string& source) {
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(source.c_str());
@@ -621,7 +628,7 @@ class ArtifactGen {
     }
     for (const auto& lib_name : lib_names) {
       auto lib_dict = CreateTargetFromBazelRule(lib_name);
-      lib_dict.update(test_metadata_[lib_name]);
+      lib_dict.update(test_metadata_[lib_name], true);
       build_metadata_[lib_name] = lib_dict;
     }
   }
@@ -664,12 +671,15 @@ class ArtifactGen {
     for (auto& test : test_list) {
       scrub(test, {"public_headers"});
     }
-    build_yaml_like_ = {
-        {"libs", lib_list},
-        {"filegroups", {}},
-        {"targets", target_list},
-        {"tests", test_list},
+    auto publish = [this](std::string name, std::vector<nlohmann::json> json) {
+      auto& destination = build_yaml_like_[name];
+      for (auto& j : json) {
+        destination.push_back(j);
+      }
     };
+    publish("libs", std::move(lib_list));
+    publish("targets", std::move(target_list));
+    publish("tests", std::move(test_list));
   }
 
   void GenerateExternalProtoLibraries() {
@@ -1139,7 +1149,12 @@ class ArtifactGen {
   std::vector<std::string> tests_;
   nlohmann::json test_metadata_ = nlohmann::json::object();
   nlohmann::json build_metadata_ = nlohmann::json::object();
-  nlohmann::json build_yaml_like_ = nlohmann::json::object();
+  nlohmann::json build_yaml_like_  {
+        {"libs", nlohmann::json::array()},
+        {"filegroups", nlohmann::json::array()},
+        {"targets", nlohmann::json::array()},
+        {"tests", nlohmann::json::array()},
+    };
   std::map<std::string, std::string> bazel_label_to_dep_name_;
 
   const std::map<std::string, std::string> external_source_prefixes_ = {
@@ -1186,6 +1201,9 @@ nlohmann::json ExtractMetadataFromBazelXml() {
   ArtifactGen generator;
   for (auto target_query : absl::GetFlag(FLAGS_target_query)) {
     generator.LoadRulesXml(target_query);
+  }
+  for (const auto& filename : absl::GetFlag(FLAGS_extra_build_yaml)) {
+    generator.LoadBuildYaml(filename);
   }
   generator.ExpandUpbProtoLibraryRules();
   generator.PatchGrpcProtoLibraryRules();
