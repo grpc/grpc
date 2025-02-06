@@ -14,6 +14,7 @@
 #
 # This file provides the source for generating requirements.bazel.txt.
 # Instructions for generation follow:
+# Use the oldest supported version of Python
 #
 #   $ docker run -it --rm -v $(pwd):/grpc python:3.8 /bin/bash
 #   # cd grpc
