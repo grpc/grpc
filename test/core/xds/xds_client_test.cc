@@ -6021,6 +6021,128 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
                /*resource_names=*/{"foo1"});
 }
 
+// flow steps :
+// 1. we  get valid resource
+// 2. we recieved invalid resource
+// 3. we receive valid resource again
+// Test that we redeliver resources to watcher
+// so they know error is cleared
+TEST_F(XdsClientTest, RedeliverSameResourceAfterError) {
+    InitXdsClient();
+
+    auto watcher = StartFooWatch("foo1");
+    // Watcher should initially not see any resource reported.
+    EXPECT_FALSE(watcher->HasEvent());
+
+    // XdsClient should have created an ADS stream.
+    auto stream = WaitForAdsStream();
+    ASSERT_TRUE(stream != nullptr);
+
+    // We will get request for resource
+    auto request = WaitForRequest(stream.get());
+    ASSERT_TRUE(request.has_value());
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+    CheckRequestNode(*request);
+    stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+
+    auto resource = watcher->WaitForNextResource();
+    ASSERT_NE(resource, nullptr);
+    EXPECT_EQ(resource->name, "foo1");
+    EXPECT_EQ(resource->value, 6);
+
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+
+    // Update with invalid resource
+    stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("2")
+          .set_nonce("B")
+          .AddInvalidResource(XdsFooResourceType::Get()->type_url(),
+                              "{\"name\":\"foo1\",\"value\":[]}")
+          .Serialize());
+
+    // XdsClient will ignore the error, so watcher should not see any event.
+    EXPECT_FALSE(watcher->HasEvent());
+
+  // XdsClient should deliver an error to the watcher.
+  auto error = watcher->WaitForNextAmbientError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(error->message(),
+            "invalid resource: errors validating JSON: "
+            "[field:value error:is not a number] (node ID:xds_client_test)")
+      << *error;
+
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "nacked_but_cached"),
+                  1)));
+
+  // XdsClient should NACK the update.
+  // Note that version_info is set to the previous version in this request,
+  // because there were no valid resources in it.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(
+      *request, XdsFooResourceType::Get()->type_url(),
+      /*version_info=*/"1", /*response_nonce=*/"B",
+      // error_detail=
+      absl::InvalidArgumentError(
+          "xDS response validation errors: ["
+          "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
+          "[field:value error:is not a number]]"),
+      /*resource_names=*/{"foo1"});
+
+
+  // Again send correct resource identical to the existing cache resource
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("3")
+          .set_nonce("C")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+
+    // Verify we again send notification to the watcher
+  auto resource2 = watcher->WaitForNextResource();
+  ASSERT_NE(resource2, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+
+  // Should Ack request
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"3", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+
+    // Check CSDS data.
+  auto csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+               ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                   XdsFooResourceType::Get()->type_url(), "foo1",
+                   resource->AsJsonString(), "3", TimestampProtoEq(kTime0))));
+
+  CancelFooWatch(watcher.get(), "foo1");
+  EXPECT_TRUE(stream->IsOrphaned());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
