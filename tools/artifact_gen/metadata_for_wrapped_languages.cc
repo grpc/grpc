@@ -24,6 +24,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/str_join.h"
 #include "utils.h"
 
 namespace {
@@ -55,8 +56,6 @@ void AddPhpConfig(nlohmann::json& config) {
       const nlohmann::json* lib = it->second;
       std::vector<std::string> src = (*lib)["src"];
       srcs.insert(src.begin(), src.end());
-    } else {
-      LOG(INFO) << "php not found " << dep;
     }
   }
   config["php_config_m4"]["srcs"] = srcs;
@@ -141,8 +140,7 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
         file_list({"ssl_headers", "ssl_internal_headers", "crypto_headers",
                    "crypto_internal_headers", "fips_fragments"})},
        {"boringssl", true},
-       {"defaults", "boringssl"},
-       {"transitive_deps", nlohmann::json::array()}});
+       {"defaults", "boringssl"}});
   metadata["libs"].push_back({{"name", "boringssl_test_util"},
                               {"build", "private"},
                               {"language", "c++"},
@@ -186,11 +184,61 @@ void AddAbseilMetadata(nlohmann::json& config) {
     config["libs"].push_back(build);
   }
 }
+
+class TransitiveDepsCalculator {
+public:
+  void DeclareDeps(std::string name, std::set<std::string> deps) {
+    auto& dst = deps_[name];
+    for (const auto& dep : deps) dst.insert(dep);
+  }
+
+  std::set<std::string> Calculate(std::string which) {
+    std::set<std::string> deps;
+    Fill(which, &deps);
+    return deps;
+  }
+
+private:
+  void Fill(std::string which, std::set<std::string>* out) {
+    auto it = deps_.find(which);
+    if (it == deps_.end()) return;
+    for (const auto& dep : it->second) {
+      if (out->emplace(dep).second) {
+        Fill(dep, out);
+      }
+    }
+  }
+
+  std::map<std::string, std::set<std::string>> deps_;
+};
+
+void ExpandTransitiveDeps(nlohmann::json& config) {
+  TransitiveDepsCalculator calc;
+  for (auto& lib : config["libs"]) {
+    calc.DeclareDeps(lib["name"], {});
+    auto grab = [&lib, &calc](std::string tag) {
+      auto value = lib[tag];
+      if (!value.is_array()) {
+        if (!value.is_null()) {
+          LOG(INFO) << lib["name"] << " " << tag << " " << value;
+        }
+        return;
+      }
+      calc.DeclareDeps(lib["name"], value);
+    };
+    grab("transitive_deps");
+    grab("deps");
+  }
+  for (auto& lib : config["libs"]) {
+    lib["transitive_deps"] = calc.Calculate(lib["name"]);
+  }
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   AddBoringSslMetadata(config);
   AddAbseilMetadata(config);
+  ExpandTransitiveDeps(config);
   AddPhpConfig(config);
   ExpandVersion(config);
 }
