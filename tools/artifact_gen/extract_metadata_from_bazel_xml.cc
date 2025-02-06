@@ -877,7 +877,7 @@ class ArtifactGen {
   std::optional<std::string> ExternalDepNameFromBazelDependency(
       std::string bazel_dep) {
     if (absl::StartsWith(bazel_dep, "@com_google_absl//")) {
-      return bazel_dep.substr(15);
+      return bazel_dep.substr(strlen("@com_google_absl//"));
     }
     if (bazel_dep == "@com_github_google_benchmark//:benchmark") {
       return "benchmark";

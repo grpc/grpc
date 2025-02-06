@@ -24,6 +24,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "utils.h"
 
 namespace {
 void AddPhpConfig(nlohmann::json& config) {
@@ -54,6 +55,8 @@ void AddPhpConfig(nlohmann::json& config) {
       const nlohmann::json* lib = it->second;
       std::vector<std::string> src = (*lib)["src"];
       srcs.insert(src.begin(), src.end());
+    } else {
+      LOG(INFO) << "php not found " << dep;
     }
   }
   config["php_config_m4"]["srcs"] = srcs;
@@ -172,10 +175,22 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
     });
   }
 }
+
+void AddAbseilMetadata(nlohmann::json& config) {
+  auto preprocessed = LoadYaml("../../src/abseil-cpp/preprocessed_builds.yaml");
+  for (auto& build : preprocessed) {
+    build["build"] = "private";
+    build["build_system"] = nlohmann::json::array();
+    build["language"] = "c";
+    build["secure"] = false;
+    config["libs"].push_back(build);
+  }
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   AddBoringSslMetadata(config);
+  AddAbseilMetadata(config);
   AddPhpConfig(config);
   ExpandVersion(config);
 }

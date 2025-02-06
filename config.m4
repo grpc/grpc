@@ -911,9 +911,338 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server.c \
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
+    third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
+    third_party/abseil-cpp/absl/base/internal/spinlock.cc \
+    third_party/abseil-cpp/absl/base/internal/sysinfo.cc \
+    third_party/abseil-cpp/absl/base/internal/thread_identity.cc \
+    third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
+    third_party/abseil-cpp/absl/base/log_severity.cc \
+    third_party/abseil-cpp/absl/flags/marshalling.cc \
+    third_party/abseil-cpp/absl/hash/internal/hash.cc \
+    third_party/abseil-cpp/absl/log/globals.cc \
+    third_party/abseil-cpp/absl/random/discrete_distribution.cc \
+    third_party/abseil-cpp/absl/random/gaussian_distribution.cc \
+    third_party/abseil-cpp/absl/status/internal/status_internal.cc \
+    third_party/abseil-cpp/absl/status/status.cc \
+    third_party/abseil-cpp/absl/status/status_payload_printer.cc \
+    third_party/abseil-cpp/absl/status/statusor.cc \
+    third_party/abseil-cpp/absl/strings/ascii.cc \
+    third_party/abseil-cpp/absl/strings/charconv.cc \
+    third_party/abseil-cpp/absl/strings/cord.cc \
+    third_party/abseil-cpp/absl/strings/cord_analysis.cc \
+    third_party/abseil-cpp/absl/strings/cord_buffer.cc \
+    third_party/abseil-cpp/absl/strings/escaping.cc \
+    third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
+    third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
+    third_party/abseil-cpp/absl/strings/internal/damerau_levenshtein_distance.cc \
+    third_party/abseil-cpp/absl/strings/internal/memutil.cc \
+    third_party/abseil-cpp/absl/strings/internal/stringify_sink.cc \
+    third_party/abseil-cpp/absl/strings/match.cc \
+    third_party/abseil-cpp/absl/strings/numbers.cc \
+    third_party/abseil-cpp/absl/strings/str_cat.cc \
+    third_party/abseil-cpp/absl/strings/str_replace.cc \
+    third_party/abseil-cpp/absl/strings/str_split.cc \
+    third_party/abseil-cpp/absl/strings/substitute.cc \
+    third_party/abseil-cpp/absl/synchronization/barrier.cc \
+    third_party/abseil-cpp/absl/synchronization/blocking_counter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/futex_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/pthread_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/sem_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/stdcpp_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/waiter_base.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/win32_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/mutex.cc \
+    third_party/abseil-cpp/absl/synchronization/notification.cc \
+    third_party/abseil-cpp/absl/time/civil_time.cc \
+    third_party/abseil-cpp/absl/time/clock.cc \
+    third_party/abseil-cpp/absl/time/duration.cc \
+    third_party/abseil-cpp/absl/time/format.cc \
+    third_party/abseil-cpp/absl/time/time.cc \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_dup.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_gentm.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_i2d_fp.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_int.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_mbstr.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_object.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_time.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_type.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_utctm.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_int.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_string.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/posix_time.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_enc.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_fre.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_new.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_typ.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_utl.cc \
+    third_party/boringssl-with-bazel/src/crypto/base64/base64.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/connect.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/errno.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/fd.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/file.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/hexdump.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/pair.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/printf.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/socket.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/socket_helper.cc \
+    third_party/boringssl-with-bazel/src/crypto/blake2/blake2.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn_extra/bn_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn_extra/convert.cc \
+    third_party/boringssl-with-bazel/src/crypto/buf/buf.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/asn1_compat.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/ber.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/cbb.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/cbs.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/unicode.cc \
+    third_party/boringssl-with-bazel/src/crypto/chacha/chacha.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/derive_key.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesctrhmac.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesgcmsiv.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_chacha20poly1305.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_des.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_null.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc2.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc4.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_tls.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/tls_cbc.cc \
+    third_party/boringssl-with-bazel/src/crypto/conf/conf.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_openbsd.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_sysreg.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_intel.cc \
+    third_party/boringssl-with-bazel/src/crypto/crypto.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_64_adx.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/des/des.cc \
+    third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/dh_extra/params.cc \
+    third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_derive.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/hash_to_curve.cc \
+    third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/ecdsa_extra/ecdsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/engine/engine.cc \
+    third_party/boringssl-with-bazel/src/crypto/err/err.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dh.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dh_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ec.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_hkdf.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/pbkdf.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/print.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/scrypt.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/sign.cc \
+    third_party/boringssl-with-bazel/src/crypto/ex_data.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.cc \
+    third_party/boringssl-with-bazel/src/crypto/hpke/hpke.cc \
+    third_party/boringssl-with-bazel/src/crypto/hrss/hrss.cc \
+    third_party/boringssl-with-bazel/src/crypto/keccak/keccak.cc \
+    third_party/boringssl-with-bazel/src/crypto/kyber/kyber.cc \
+    third_party/boringssl-with-bazel/src/crypto/lhash/lhash.cc \
+    third_party/boringssl-with-bazel/src/crypto/md4/md4.cc \
+    third_party/boringssl-with-bazel/src/crypto/md5/md5.cc \
+    third_party/boringssl-with-bazel/src/crypto/mem.cc \
+    third_party/boringssl-with-bazel/src/crypto/mldsa/mldsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/mlkem/mlkem.cc \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj.cc \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj_xref.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_all.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_info.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_lib.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_oth.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_pk8.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_pkey.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_xaux.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/p5_pbev2.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_arm.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_vec.cc \
+    third_party/boringssl-with-bazel/src/crypto/pool/pool.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/fork_detect.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/getentropy.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/ios.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/trusty.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/urandom.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.cc \
+    third_party/boringssl-with-bazel/src/crypto/rc4/rc4.cc \
+    third_party/boringssl-with-bazel/src/crypto/refcount.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.cc \
+    third_party/boringssl-with-bazel/src/crypto/sha/sha1.cc \
+    third_party/boringssl-with-bazel/src/crypto/sha/sha256.cc \
+    third_party/boringssl-with-bazel/src/crypto/sha/sha512.cc \
+    third_party/boringssl-with-bazel/src/crypto/siphash/siphash.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/fors.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/merkle.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/slhdsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/thash.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/wots.cc \
+    third_party/boringssl-with-bazel/src/crypto/stack/stack.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_none.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_pthread.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_win.cc \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/pmbtoken.cc \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token.cc \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_digest.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_sign.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_verify.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/algorithm.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/by_dir.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/by_file.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/name_print.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/policy.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_crl.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_req.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akey.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akeya.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_alt.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bcons.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bitst.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_conf.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_cpols.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_crld.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_enum.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_extku.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_genn.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ia5.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_info.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_int.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_lib.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ncons.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ocsp.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pcons.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pmaps.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_prn.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_purp.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_skey.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_utl.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_att.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_d2.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_def.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_ext.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_lu.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_obj.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_req.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_set.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_trs.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_txt.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_v3.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_vfy.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_vpm.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509cset.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509name.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509rset.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509spki.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_algor.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_all.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_crl.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_exten.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_name.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_req.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_sig.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_spki.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_val.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.cc \
+    third_party/boringssl-with-bazel/src/gen/crypto/err_data.cc \
+    third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_pkt.cc \
+    third_party/boringssl-with-bazel/src/ssl/d1_srtp.cc \
+    third_party/boringssl-with-bazel/src/ssl/dtls_method.cc \
+    third_party/boringssl-with-bazel/src/ssl/dtls_record.cc \
+    third_party/boringssl-with-bazel/src/ssl/encrypted_client_hello.cc \
+    third_party/boringssl-with-bazel/src/ssl/extensions.cc \
+    third_party/boringssl-with-bazel/src/ssl/handoff.cc \
+    third_party/boringssl-with-bazel/src/ssl/handshake.cc \
+    third_party/boringssl-with-bazel/src/ssl/handshake_client.cc \
+    third_party/boringssl-with-bazel/src/ssl/handshake_server.cc \
+    third_party/boringssl-with-bazel/src/ssl/s3_both.cc \
+    third_party/boringssl-with-bazel/src/ssl/s3_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/s3_pkt.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_aead_ctx.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_asn1.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_buffer.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_cert.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_cipher.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_credential.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_file.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_key_share.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_lib.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_privkey.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_session.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_stat.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_transcript.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_versions.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_x509.cc \
+    third_party/boringssl-with-bazel/src/ssl/t1_enc.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_both.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_client.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_enc.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
+    third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
     third_party/re2/re2/bitstate.cc \
     third_party/re2/re2/compile.cc \
     third_party/re2/re2/dfa.cc \
@@ -1228,7 +1557,69 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/xds_client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/flags)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/hash/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/log)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/random)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/synchronization)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/synchronization/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/address_sorting)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/asn1)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/base64)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/bio)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/blake2)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/bn_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/buf)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/bytestring)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/chacha)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/cipher_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/conf)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/curve25519)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/des)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/dh_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/digest_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/dsa)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/ec_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/ecdh_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/ecdsa_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/err)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/evp)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/fipsmodule)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/hpke)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/hrss)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/keccak)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/kyber)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/lhash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/md4)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/md5)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/mldsa)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/mlkem)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/obj)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/pem)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/pkcs7)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/pkcs8)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/poly1305)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/pool)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rand_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rc4)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rsa_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/sha)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/siphash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/slhdsa)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/stack)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/trust_token)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/gen/crypto)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/base)
