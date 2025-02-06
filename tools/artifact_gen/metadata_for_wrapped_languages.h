@@ -17,6 +17,6 @@
 
 #include "include/nlohmann/json.hpp"
 
-void AddPhpConfig(nlohmann::json& config);
+void AddMetadataForWrappedLanguages(nlohmann::json& config);
 
 #endif  // GRPC_TOOLS_ARTIFACT_GEN_PHP_H

@@ -16,12 +16,10 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "expand_version.h"
 #include "extract_metadata_from_bazel_xml.h"
-#include "php.h"
+#include "metadata_for_wrapped_languages.h"
 #include "render.h"
 #include "utils.h"
-#include "boringssl.h"
 
 ABSL_FLAG(std::vector<std::string>, extra_build_yaml, {},
           "Extra build.yaml files to merge");
@@ -34,9 +32,7 @@ int main(int argc, char** argv) {
     build_yaml.update(LoadYaml(filename), true);
   }
   // TODO(ctiller): all the special yaml updates
-  AddPhpConfig(build_yaml);
-  ExpandVersion(build_yaml);
-  AddBoringSslMetadata(build_yaml);
+  AddMetadataForWrappedLanguages(build_yaml);
   if (absl::GetFlag(FLAGS_save_json)) {
     std::ofstream ofs("build.json");
     ofs << build_yaml.dump(4);

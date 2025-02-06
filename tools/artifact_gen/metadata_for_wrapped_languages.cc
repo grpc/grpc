@@ -12,14 +12,93 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "boringssl.h"
+#include "metadata_for_wrapped_languages.h"
 
 #include <fstream>
-#include <initializer_list>
+#include <optional>
+#include <set>
 #include <vector>
 
-#include "absl/strings/match.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
+
+namespace {
+void AddPhpConfig(nlohmann::json& config) {
+  std::set<std::string> srcs;
+  for (const auto& src : config["php_config_m4"]["src"]) {
+    srcs.insert(src);
+  }
+  std::map<std::string, const nlohmann::json*> lib_maps;
+  for (const auto& lib : config["libs"]) {
+    lib_maps[lib["name"]] = &lib;
+  }
+  std::vector<std::string> php_deps = config["php_config_m4"]["deps"];
+  std::set<std::string> php_full_deps;
+  for (const auto& dep : php_deps) {
+    php_full_deps.insert(dep);
+    auto it = lib_maps.find(dep);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
+      php_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
+    }
+  }
+  php_full_deps.erase("z");
+  php_full_deps.erase("cares");
+  for (const auto& dep : php_full_deps) {
+    auto it = lib_maps.find(dep);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      std::vector<std::string> src = (*lib)["src"];
+      srcs.insert(src.begin(), src.end());
+    }
+  }
+  config["php_config_m4"]["srcs"] = srcs;
+
+  std::set<std::string> dirs;
+  for (const auto& src : srcs) {
+    dirs.insert(src.substr(0, src.rfind('/')));
+  }
+  config["php_config_m4"]["dirs"] = dirs;
+}
+
+void ExpandVersion(nlohmann::json& config) {
+  auto& settings = config["settings"];
+  std::string version_string = settings["version"];
+  std::optional<std::string> tag;
+  if (version_string.find("-") != std::string::npos) {
+    tag = version_string.substr(version_string.find("-") + 1);
+    version_string = version_string.substr(0, version_string.find("-"));
+  }
+  std::vector<std::string> version_parts = absl::StrSplit(version_string, '.');
+  CHECK_EQ(version_parts.size(), 3u);
+  int major, minor, patch;
+  CHECK(absl::SimpleAtoi(version_parts[0], &major));
+  CHECK(absl::SimpleAtoi(version_parts[1], &minor));
+  CHECK(absl::SimpleAtoi(version_parts[2], &patch));
+  settings["version"] = nlohmann::json::object();
+  settings["version"]["string"] = version_string;
+  settings["version"]["major"] = major;
+  settings["version"]["minor"] = minor;
+  settings["version"]["patch"] = patch;
+  if (tag) {
+    settings["version"]["tag"] = *tag;
+  }
+  std::string php_version = absl::StrCat(major, ".", minor, ".", patch);
+  if (tag.has_value()) {
+    if (tag == "dev") {
+      php_version += "dev";
+    } else if (tag->size() >= 3 && tag->substr(0, 3) == "pre") {
+      php_version += "RC" + tag->substr(3);
+    } else {
+      LOG(FATAL) << "Unknown tag: " << *tag;
+    }
+  }
+  settings["version"]["php"] = php_version;
+}
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {
   std::ifstream sources_in(
@@ -59,7 +138,8 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
         file_list({"ssl_headers", "ssl_internal_headers", "crypto_headers",
                    "crypto_internal_headers", "fips_fragments"})},
        {"boringssl", true},
-       {"defaults", "boringssl"}});
+       {"defaults", "boringssl"},
+       {"transitive_deps", nlohmann::json::array()}});
   metadata["libs"].push_back({{"name", "boringssl_test_util"},
                               {"build", "private"},
                               {"language", "c++"},
@@ -91,4 +171,11 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
         {"defaults", "boringssl"},
     });
   }
+}
+}  // namespace
+
+void AddMetadataForWrappedLanguages(nlohmann::json& config) {
+  AddBoringSslMetadata(config);
+  AddPhpConfig(config);
+  ExpandVersion(config);
 }
