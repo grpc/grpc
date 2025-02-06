@@ -38,7 +38,7 @@ Pod::Spec.new do |s|
   # which was released in Cocoapods v1.2.0.
   s.cocoapods_version = '>= 1.2.0'
 
-  s.ios.deployment_target = '11.0'
+  s.ios.deployment_target = '12.0'
   s.osx.deployment_target = '10.14'
   s.tvos.deployment_target = '13.0'
   s.watchos.deployment_target = '6.0'
@@ -89,7 +89,6 @@ Pod::Spec.new do |s|
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
     'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
-    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
