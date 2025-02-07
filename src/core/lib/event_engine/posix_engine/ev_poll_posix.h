@@ -39,7 +39,7 @@ class PollPoller : public PosixEventPoller,
  public:
   explicit PollPoller(Scheduler* scheduler);
   PollPoller(Scheduler* scheduler, bool use_phony_poll);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
+  EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
@@ -51,12 +51,10 @@ class PollPoller : public PosixEventPoller,
   bool CanTrackErrors() const override { return false; }
   ~PollPoller() override;
 
-  // Forkable
-  void PrepareFork() override;
-  void PostforkParent() override;
-  void PostforkChild() override;
-
   void Close();
+
+  // Forkable
+  void AdvanceGeneration() override;
 
  private:
   void KickExternal(bool ext);
