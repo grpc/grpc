@@ -18,6 +18,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/port_platform.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <atomic>
@@ -377,6 +378,7 @@ PosixEventEngine::PosixEventEngine()
 
 void PosixEventEngine::PollerWorkInternal(
     std::shared_ptr<PosixEnginePollerManager> poller_manager) {
+  LOG(INFO) << "PollerWorkInternal";
   // TODO(vigneshbabu): The timeout specified here is arbitrary. For instance,
   // this can be improved by setting the timeout to the next expiring timer.
   PosixEventPoller* poller = poller_manager->Poller();
@@ -722,5 +724,27 @@ PosixEventEngine::CreatePosixListener(
       "EventEngine::CreateListener is not supported on this platform");
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
+
+#ifdef GRPC_POSIX_SOCKET
+
+void PosixEventEngine::BeforeFork() {
+  LOG(INFO) << "Enter before fork, pid: " << getpid();
+  poller_manager_->Poller()->Kick();
+  LOG(INFO) << "Before stop pool";
+  executor_->PrepareFork();
+  LOG(INFO) << "Exit before fork";
+}
+
+void PosixEventEngine::AfterForkInParent() {
+  LOG(INFO) << "Enter after fork";
+  executor_->PostforkParent();
+  executor_->Run([poller_manager = poller_manager_]() {
+    PollerWorkInternal(poller_manager);
+  });
+  // poller_manager_.Resume();
+  LOG(INFO) << "Exit after fork";
+}
+
+#endif  // GRPC_POSIX_SOCKET
 
 }  // namespace grpc_event_engine::experimental

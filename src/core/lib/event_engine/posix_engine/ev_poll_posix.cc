@@ -681,7 +681,6 @@ Poller::WorkResult PollPoller::Work(
       head = head->PollerHandlesListPos().next;
     }
     mu_.Unlock();
-    LOG(INFO) << "a. " << c;
 
     if (!use_phony_poll_ || timeout_ms == 0 || pfd_count == 1) {
       // If use_phony_poll is true and pfd_count == 1, it implies only the
@@ -691,13 +690,10 @@ Poller::WorkResult PollPoller::Work(
       // expected to be used, we dont want to check for it until some actual
       // event handles are registered. Otherwise the EventEngine construction
       // may crash.
-      LOG(INFO) << "a.a. " << c;
       r = poll(pfds, pfd_count, timeout_ms);
-      LOG(INFO) << "a.b. " << c;
     } else {
       grpc_core::Crash("Attempted a blocking poll when declared non-polling.");
     }
-    LOG(INFO) << "b. " << c;
 
     if (r <= 0) {
       if (r < 0 && errno != EINTR) {
@@ -777,7 +773,6 @@ Poller::WorkResult PollPoller::Work(
         head->Unref();
       }
     }
-    LOG(INFO) << "c. " << c;
 
     if (pfds != pollfd_space) {
       gpr_free(pfds);
@@ -793,7 +788,6 @@ Poller::WorkResult PollPoller::Work(
       break;
     }
   }
-  LOG(INFO) << "d. " << c;
   mu_.Unlock();
   if (pending_events.empty()) {
     if (was_kicked_ext) {
@@ -803,16 +797,14 @@ Poller::WorkResult PollPoller::Work(
     LOG(INFO) << "Returned 'deadline' " << c;
     return Poller::WorkResult::kDeadlineExceeded;
   }
-  LOG(INFO) << "e. " << c;
 
   // Run the provided callback synchronously.
+  LOG(INFO) << "Scheduling poll again " << c;
   schedule_poll_again();
   // Process all pending events inline.
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
   }
-  LOG(INFO) << "f. " << c;
-
   return was_kicked_ext ? Poller::WorkResult::kKicked : Poller::WorkResult::kOk;
 }
 

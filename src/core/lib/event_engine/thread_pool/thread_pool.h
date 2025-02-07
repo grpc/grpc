@@ -34,6 +34,10 @@ class ThreadPool {
   // Run must not be called after Quiesce completes
   virtual void Run(absl::AnyInvocable<void()> callback) = 0;
   virtual void Run(EventEngine::Closure* closure) = 0;
+
+  virtual void PrepareFork() = 0;
+  virtual void PostforkChild() = 0;
+  virtual void PostforkParent() = 0;
 };
 
 // Creates a default thread pool.

@@ -27,14 +27,18 @@
 
 #include <cerrno>
 #include <csignal>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/strings/str_cat.h"
+#include "gmock/gmock.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
@@ -93,6 +97,48 @@ class PollerForkTest : public ::testing::Test {
                           std::move(address).value());
   }
 
+  absl::Status SendFromRawToEE(int socket_fd, EventEngine::Endpoint& endpoint,
+                               absl::string_view data) {
+    absl::Mutex mu;
+    SliceBuffer buffer;
+    std::optional<absl::Status> read_status;
+    EventEngine::Endpoint::ReadArgs read_args = {
+        static_cast<int64_t>(data.length())};
+    if (endpoint.Read(
+            [&](absl::Status status) {
+              absl::MutexLock lock(&mu);
+              read_status = absl::move(status);
+            },
+            &buffer, &read_args)) {
+      return absl::FailedPreconditionError("Endpoint has pending data");
+    }
+    ssize_t wrote = write(socket_fd, data.data(), data.size());
+    if (wrote < 0) {
+      return absl::ErrnoToStatus(errno, "Write to socket");
+    }
+    if (wrote < data.size()) {
+      return absl::DataLossError("Did not write all the data");
+    }
+    {
+      absl::MutexLock lock(&mu);
+      mu.Await({&read_status, &decltype(read_status)::has_value});
+      if (!read_status->ok()) {
+        return std::move(read_status).value();
+      }
+      if (buffer.Length() != data.size()) {
+        return absl::InternalError(absl::StrFormat(
+            "Read %ld instead of %ld", buffer.Length(), data.size()));
+      }
+      Slice slice = buffer.TakeFirst();
+      if (slice.as_string_view() != data) {
+        return absl::InternalError(absl::StrFormat(
+            "Read %v, expected %v", slice.as_string_view(), data));
+      }
+      LOG(INFO) << "Read " << slice.as_string_view();
+    }
+    return absl::OkStatus();
+  }
+
  private:
   std::shared_ptr<EventEngine> ee_;
 };
@@ -110,6 +156,7 @@ class RawPosixClient {
         status_ = absl::ErrnoToStatus(errno, "connect call");
       }
     }
+    socket_ = sockfd;
     status_ = absl::OkStatus();
   }
 
@@ -132,6 +179,8 @@ class RawPosixClient {
 
   absl::Status&& status() && { return std::move(status_); }
 
+  int socket_fd() const { return socket_; }
+
  private:
   int socket_ = -1;
   absl::Status status_;
@@ -145,20 +194,17 @@ TEST_F(PollerForkTest, ListenerOnFork) {
   std::vector<std::unique_ptr<EventEngine::Endpoint>> endpoints;
   auto listener_and_address = SetupListener(
       [&](auto endpoint, MemoryAllocator /* memory */) {
-        LOG(INFO) << "a";
         absl::MutexLock lock(&mu);
-        LOG(INFO) << "b";
         endpoints.emplace_back(std::move(endpoint));
-        LOG(INFO) << "c";
       },
       [&](absl::Status status) {
         absl::MutexLock lock(&mu);
         listener_done.emplace(std::move(status));
       });
-  ASSERT_TRUE(listener_and_address.ok()) << listener_and_address.status();
+  ASSERT_THAT(listener_and_address, absl_testing::IsOk());
   LOG(INFO) << 2;
   RawPosixClient client(listener_and_address->second);
-  ASSERT_TRUE(client.status().ok()) << client.status();
+  ASSERT_THAT(client.status(), absl_testing::IsOk());
   LOG(INFO) << 3;
   {
     absl::MutexLock lock(&mu);
@@ -171,7 +217,13 @@ TEST_F(PollerForkTest, ListenerOnFork) {
               << ResolvedAddressToNormalizedString(
                      endpoints.front()->GetPeerAddress());
   }
-  // PosixPoller()->PostforkChild();
+  ASSERT_THAT(SendFromRawToEE(client.socket_fd(), *endpoints.front(), "Hello"),
+              absl_testing::IsOk());
+  ee()->BeforeFork();
+  ee()->AfterForkInParent();
+  ASSERT_THAT(
+      SendFromRawToEE(client.socket_fd(), *endpoints.front(), "Hello again"),
+      absl_testing::IsOk());
   listener_and_address->first.reset();
   absl::Condition cond(&listener_done, &std::optional<absl::Status>::has_value);
   {
