@@ -5441,6 +5441,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "certificate_provider_factory",
+        "down_cast",
         "grpc_tls_credentials",
         "json",
         "json_args",
@@ -5593,6 +5594,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "channel_creds_registry",
+        "down_cast",
         "json",
         "json_args",
         "json_object_loader",

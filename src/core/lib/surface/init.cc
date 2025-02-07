@@ -238,7 +238,8 @@ bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout) {
   grpc_core::MutexLock lock(g_init_mu);
   while (g_initializations != 0) {
     if (g_shutting_down_cv->WaitWithDeadline(g_init_mu, deadline)) {
-      LOG(ERROR) << "grpc_wait_for_shutdown_with_timeout() timed out.";
+      GRPC_TRACE_LOG(api, ERROR)
+          << "grpc_wait_for_shutdown_with_timeout() timed out.";
       return false;
     }
   }
