@@ -271,8 +271,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
       key_(server.Key()) {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[GrpcXdsTransport " << this << "] created";
-  channel_ = CreateXdsChannel(factory_->args_,
-                              DownCast<const GrpcXdsServer&>(server));
+  channel_ =
+      CreateXdsChannel(factory_->args_, DownCast<const GrpcXdsServer&>(server));
   CHECK(channel_ != nullptr);
   if (channel_->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");
