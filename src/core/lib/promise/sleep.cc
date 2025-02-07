@@ -54,7 +54,8 @@ Poll<absl::Status> Sleep::operator()() {
 
 Sleep::ActiveClosure::ActiveClosure(Timestamp deadline)
     : waker_(GetContext<Activity>()->MakeOwningWaker()),
-      timer_handle_(GetContext<EventEngine>()->RunAfter(
+      event_engine_(GetContext<EventEngine>()->shared_from_this()),
+      timer_handle_(event_engine_->RunAfter(
           deadline - Timestamp::Now(), this)) {}
 
 void Sleep::ActiveClosure::Run() {
