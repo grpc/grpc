@@ -1812,20 +1812,21 @@ void XdsClient::MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
     if (authority_state.xds_channels.back() == xds_channel) {
       // Find type map.
       auto type_it = authority_state.type_map.find(type);
-      if (type_it == authority_state.type_map.end()) return;
-      auto& resource_map = type_it->second;
-      // Remove the cache entry for any resource without watchers.
-      for (auto resource_it = resource_map.begin();
-           resource_it != resource_map.end();) {
-        ResourceState& resource_state = resource_it->second;
-        if (!resource_state.HasWatchers()) {
-          resource_map.erase(resource_it++);
-        } else {
-          ++resource_it;
+      if (type_it != authority_state.type_map.end()) {
+        auto& resource_map = type_it->second;
+        // Remove the cache entry for any resource without watchers.
+        for (auto resource_it = resource_map.begin();
+             resource_it != resource_map.end();) {
+          ResourceState& resource_state = resource_it->second;
+          if (!resource_state.HasWatchers()) {
+            resource_map.erase(resource_it++);
+          } else {
+            ++resource_it;
+          }
         }
+        // Clean up empty entries in the map.
+        if (resource_map.empty()) authority_state.type_map.erase(type_it);
       }
-      // Clean up empty entries in the map.
-      if (resource_map.empty()) authority_state.type_map.erase(type_it);
     }
     if (authority_state.type_map.empty()) {
       authority_state_map_.erase(authority_it++);
