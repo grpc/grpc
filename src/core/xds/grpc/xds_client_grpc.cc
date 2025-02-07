@@ -20,7 +20,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include <algorithm>
@@ -48,6 +47,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/orphanable.h"
@@ -321,7 +321,7 @@ GrpcXdsClient::GrpcXdsClient(
                        .value_or(Duration::Seconds(15)))),
       key_(key),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
-          static_cast<const GrpcXdsBootstrap&>(this->bootstrap())
+          DownCast<const GrpcXdsBootstrap&>(this->bootstrap())
               .certificate_providers())),
       stats_plugin_group_(std::move(stats_plugin_group)),
       registered_metric_callback_(stats_plugin_group_.RegisterCallback(
