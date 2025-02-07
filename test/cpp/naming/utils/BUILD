@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("//bazel:grpc_build_system.bzl", "grpc_py_binary")
 
 package(
