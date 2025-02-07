@@ -28,19 +28,21 @@ grpc_py_binary(
     name = "dns_server",
     testonly = True,
     srcs = ["dns_server.py"],
-    python_version = "PY3",
-    deps = [
-        requirement("twisted"),
-        requirement("pyyaml"),
+    external_deps = [
+        "twisted",
+        "yaml",
     ],
+    python_version = "PY3",
 )
 
 grpc_py_binary(
     name = "dns_resolver",
     testonly = True,
     srcs = ["dns_resolver.py"],
+    external_deps = [
+        "twisted",
+    ],
     python_version = "PY3",
-    deps = [requirement("twisted")],
 )
 
 grpc_py_binary(
