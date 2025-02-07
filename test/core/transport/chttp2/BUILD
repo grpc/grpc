@@ -14,42 +14,67 @@
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/transport/chttp2")
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "hpack_parser_fuzzer_proto",
+    srcs = ["hpack_parser_fuzzer.proto"],
+    deps = ["//test/core/test_util:fuzz_config_vars_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "hpack_parser_fuzzer_cc_proto",
+    deps = ["hpack_parser_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "hpack_parser_fuzzer",
-    srcs = ["hpack_parser_fuzzer_test.cc"],
-    corpus = "hpack_parser_corpus",
+    srcs = ["hpack_parser_fuzzer.cc"],
     external_deps = [
         "absl/log:check",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    proto = "hpack_parser_fuzzer.proto",
-    proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
-    tags = ["no_windows"],
-    uses_polling = False,
     deps = [
+        "hpack_parser_fuzzer_cc_proto",
         "//:grpc",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:proto_bit_gen",
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "hpack_sync_fuzzer_proto",
+    srcs = ["hpack_sync_fuzzer.proto"],
+    deps = ["//test/core/test_util:fuzz_config_vars_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "hpack_sync_fuzzer_cc_proto",
+    deps = ["hpack_sync_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "hpack_sync_fuzzer",
     srcs = ["hpack_sync_fuzzer.cc"],
-    corpus = "hpack_sync_corpus",
-    proto = "hpack_sync_fuzzer.proto",
-    proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
-    tags = ["no_windows"],
-    uses_polling = False,
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
+        "hpack_sync_fuzzer_cc_proto",
         "//:grpc",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:proto_bit_gen",
     ],
@@ -80,6 +105,7 @@ grpc_fuzz_test(
         "//:gpr",
         "//src/core:chttp2_flow_control",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
     ],
 )
 

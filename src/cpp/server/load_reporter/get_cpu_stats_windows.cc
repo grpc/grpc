@@ -47,7 +47,7 @@ std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
     total = FiletimeToInt(kernel) + FiletimeToInt(user);
     busy = total - FiletimeToInt(idle);
   }
-  return std::make_pair(busy, total);
+  return std::pair(busy, total);
 }
 
 }  // namespace load_reporter

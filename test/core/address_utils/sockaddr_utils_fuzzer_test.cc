@@ -34,6 +34,7 @@ using fuzztest::VectorOf;
 void CheckUriIsParseable(std::vector<uint8_t> buffer) {
   grpc_resolved_address address;
   memset(&address, 0, sizeof(address));
+  memcpy(address.addr, buffer.data(), buffer.size());
   address.len = buffer.size();
   absl::StatusOr<std::string> uri = grpc_sockaddr_to_uri(&address);
   if (!uri.ok()) return;
