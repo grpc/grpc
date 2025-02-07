@@ -378,7 +378,6 @@ PosixEventEngine::PosixEventEngine()
 
 void PosixEventEngine::PollerWorkInternal(
     std::shared_ptr<PosixEnginePollerManager> poller_manager) {
-  LOG(INFO) << "PollerWorkInternal";
   // TODO(vigneshbabu): The timeout specified here is arbitrary. For instance,
   // this can be improved by setting the timeout to the next expiring timer.
   PosixEventPoller* poller = poller_manager->Poller();
@@ -728,21 +727,29 @@ PosixEventEngine::CreatePosixListener(
 #ifdef GRPC_POSIX_SOCKET
 
 void PosixEventEngine::BeforeFork() {
-  LOG(INFO) << "Enter before fork, pid: " << getpid();
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   poller_manager_->Poller()->Kick();
-  LOG(INFO) << "Before stop pool";
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   executor_->PrepareFork();
-  LOG(INFO) << "Exit before fork";
 }
 
 void PosixEventEngine::AfterForkInParent() {
-  LOG(INFO) << "Enter after fork";
   executor_->PostforkParent();
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   executor_->Run([poller_manager = poller_manager_]() {
     PollerWorkInternal(poller_manager);
   });
-  // poller_manager_.Resume();
-  LOG(INFO) << "Exit after fork";
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+}
+
+void PosixEventEngine::AfterForkInChild() {
+  executor_->PostforkParent();
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  poller_manager_->Poller()->AdvanceGeneration();
+  executor_->Run([poller_manager = poller_manager_]() {
+    PollerWorkInternal(poller_manager);
+  });
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
 #endif  // GRPC_POSIX_SOCKET

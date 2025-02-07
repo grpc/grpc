@@ -51,12 +51,10 @@ class PollPoller : public PosixEventPoller,
   bool CanTrackErrors() const override { return false; }
   ~PollPoller() override;
 
-  // Forkable
-  void PrepareFork();
-  void PostforkParent();
-  void PostforkChild();
-
   void Close();
+
+  // Forkable
+  void AdvanceGeneration() override;
 
  private:
   void KickExternal(bool ext);

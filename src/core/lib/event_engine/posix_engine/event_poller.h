@@ -101,6 +101,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller {
   //    thread to return.
   // 3. Call Shutdown() on the poller.
   virtual void Shutdown() = 0;
+  virtual void AdvanceGeneration() = 0;
   FileDescriptors& GetFileDescriptors() { return file_descriptors_; }
   ~PosixEventPoller() override = default;
 

@@ -36,6 +36,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "file_descriptor_collection.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
@@ -357,7 +358,10 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     if (read_bytes <= 0) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
-      if (read_bytes == 0) {
+      if (res.kind() == OperationResultKind::kWrongGeneration) {
+        status = TcpAnnotateError(
+            absl::InternalError("Descriptor was opened before fork"));
+      } else if (read_bytes == 0) {
         status = TcpAnnotateError(absl::InternalError("Socket closed"));
       } else {
         status = TcpAnnotateError(absl::InternalError(
@@ -365,7 +369,6 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       }
       return true;
     }
-
     grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     AddToEstimate(static_cast<size_t>(read_bytes));
     DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);

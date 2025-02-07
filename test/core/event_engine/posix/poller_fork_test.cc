@@ -188,7 +188,7 @@ class RawPosixClient {
 
 }  // namespace
 
-TEST_F(PollerForkTest, ListenerOnFork) {
+TEST_F(PollerForkTest, ListenerInParent) {
   absl::Mutex mu;
   std::optional<absl::Status> listener_done;
   std::vector<std::unique_ptr<EventEngine::Endpoint>> endpoints;
@@ -202,10 +202,8 @@ TEST_F(PollerForkTest, ListenerOnFork) {
         listener_done.emplace(std::move(status));
       });
   ASSERT_THAT(listener_and_address, absl_testing::IsOk());
-  LOG(INFO) << 2;
   RawPosixClient client(listener_and_address->second);
   ASSERT_THAT(client.status(), absl_testing::IsOk());
-  LOG(INFO) << 3;
   {
     absl::MutexLock lock(&mu);
     mu.Await(
@@ -231,7 +229,51 @@ TEST_F(PollerForkTest, ListenerOnFork) {
     mu.Await(cond);
     EXPECT_TRUE(listener_done->ok()) << *listener_done;
   }
-  // FAIL() << "To see the output";
+}
+
+TEST_F(PollerForkTest, ListenerInChild) {
+  absl::Mutex mu;
+  std::optional<absl::Status> listener_done;
+  std::vector<std::unique_ptr<EventEngine::Endpoint>> endpoints;
+  auto listener_and_address = SetupListener(
+      [&](auto endpoint, MemoryAllocator /* memory */) {
+        absl::MutexLock lock(&mu);
+        endpoints.emplace_back(std::move(endpoint));
+      },
+      [&](absl::Status status) {
+        absl::MutexLock lock(&mu);
+        listener_done.emplace(std::move(status));
+      });
+  ASSERT_THAT(listener_and_address, absl_testing::IsOk());
+  RawPosixClient client(listener_and_address->second);
+  ASSERT_THAT(client.status(), absl_testing::IsOk());
+  {
+    absl::MutexLock lock(&mu);
+    mu.Await(
+        {+[](std::vector<std::unique_ptr<EventEngine::Endpoint>>* endpoints) {
+           return !endpoints->empty();
+         },
+         &endpoints});
+    LOG(INFO) << "Endpoint connected: "
+              << ResolvedAddressToNormalizedString(
+                     endpoints.front()->GetPeerAddress());
+  }
+  ASSERT_THAT(SendFromRawToEE(client.socket_fd(), *endpoints.front(), "Hello"),
+              absl_testing::IsOk());
+  ee()->BeforeFork();
+  ee()->AfterForkInChild();
+  auto failure =
+      SendFromRawToEE(client.socket_fd(), *endpoints.front(), "Hello again");
+  ASSERT_THAT(failure, absl_testing::StatusIs(absl::StatusCode::kInternal));
+  ASSERT_THAT(failure.message(),
+              ::testing::StartsWith("Descriptor was opened before fork"));
+  listener_and_address->first.reset();
+  absl::Condition cond(&listener_done, &std::optional<absl::Status>::has_value);
+  {
+    absl::MutexLock lock(&mu);
+    mu.Await(cond);
+    EXPECT_TRUE(listener_done->ok()) << *listener_done;
+  }
 }
 
 }  // namespace experimental

@@ -24,15 +24,16 @@
 #include <atomic>
 #include <list>
 #include <memory>
+#include <string>
 #include <utility>
 
-#include "absl/cleanup/cleanup.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
@@ -596,18 +597,6 @@ PollPoller::~PollPoller() {
 Poller::WorkResult PollPoller::Work(
     EventEngine::Duration timeout,
     absl::FunctionRef<void()> schedule_poll_again) {
-  static std::atomic_bool running(false);
-  bool expected = false;
-  running.compare_exchange_weak(expected, true);
-  static int count = 1;
-  int c = count++;
-  LOG(INFO) << "Poll begin: " << c;
-  absl::Cleanup cleanup = [&]() {
-    LOG(INFO) << "Poll end: " << c;
-    bool expected = true;
-    running.compare_exchange_strong(expected, false);
-  };
-
   // Avoid malloc for small number of elements.
   enum { inline_elements = 96 };
   struct pollfd pollfd_space[inline_elements];
@@ -672,9 +661,8 @@ Poller::WorkResult PollPoller::Work(
             pfds[pfd_count].events = head->BeginPollLocked(POLLIN, POLLOUT);
             pfd_count++;
           } else {
-            GRPC_TRACE_DLOG(polling, INFO)
-                << "Polling FD from a wrong generation: "
-                << head->WrappedFd().debug_fd();
+            LOG(ERROR) << "Polling FD from a wrong generation: "
+                       << head->WrappedFd().debug_fd();
           }
         }
       }
@@ -683,6 +671,11 @@ Poller::WorkResult PollPoller::Work(
     mu_.Unlock();
 
     if (!use_phony_poll_ || timeout_ms == 0 || pfd_count == 1) {
+      std::set<std::string> fds;
+      for (int i = 0; i < pfd_count; i++) {
+        fds.emplace(std::to_string(pfds[i].fd));
+      }
+      LOG(INFO) << "Polling " << absl::StrJoin(fds, ", ");
       // If use_phony_poll is true and pfd_count == 1, it implies only the
       // wakeup_fd is present. Allow the call to get blocked in this case as
       // well instead of crashing. This is because the poller::Work is called
@@ -691,6 +684,7 @@ Poller::WorkResult PollPoller::Work(
       // event handles are registered. Otherwise the EventEngine construction
       // may crash.
       r = poll(pfds, pfd_count, timeout_ms);
+      LOG(INFO) << "Polling " << absl::StrJoin(fds, ", ") << " done";
     } else {
       grpc_core::Crash("Attempted a blocking poll when declared non-polling.");
     }
@@ -791,15 +785,12 @@ Poller::WorkResult PollPoller::Work(
   mu_.Unlock();
   if (pending_events.empty()) {
     if (was_kicked_ext) {
-      LOG(INFO) << "Returned 'kicked' " << c;
       return Poller::WorkResult::kKicked;
     }
-    LOG(INFO) << "Returned 'deadline' " << c;
     return Poller::WorkResult::kDeadlineExceeded;
   }
 
   // Run the provided callback synchronously.
-  LOG(INFO) << "Scheduling poll again " << c;
   schedule_poll_again();
   // Process all pending events inline.
   for (auto& it : pending_events) {
@@ -810,15 +801,15 @@ Poller::WorkResult PollPoller::Work(
 
 void PollPoller::Shutdown() { ForkPollerListRemovePoller(this); }
 
-void PollPoller::PrepareFork() { Kick(); }
-// TODO(vigneshbabu): implement
-void PollPoller::PostforkParent() {}
-// TODO(vigneshbabu): implement
-void PollPoller::PostforkChild() {}
-
 void PollPoller::Close() {
   grpc_core::MutexLock lock(&mu_);
   closed_ = true;
+}
+
+void PollPoller::AdvanceGeneration() {
+  LOG(INFO) << "Advancing generation";
+  GetFileDescriptors().AdvanceGeneration();
+  wakeup_fd_ = *CreateWakeupFd(&GetFileDescriptors());
 }
 
 std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,

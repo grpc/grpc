@@ -221,6 +221,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   // Called before fork is executed
   void BeforeFork();
   void AfterForkInParent();
+  void AfterForkInChild();
 #endif  // GRPC_POSIX_SOCKET_TCP
 
  private:

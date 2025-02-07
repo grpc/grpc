@@ -510,14 +510,6 @@ std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler) {
   return nullptr;
 }
 
-void Epoll1Poller::PrepareFork() { Kick(); }
-
-// TODO(vigneshbabu): implement
-void Epoll1Poller::PostforkParent() {}
-
-// TODO(vigneshbabu): implement
-void Epoll1Poller::PostforkChild() {}
-
 }  // namespace grpc_event_engine::experimental
 
 #else  // defined(GRPC_LINUX_EPOLL)

@@ -20,6 +20,7 @@
 #include <cerrno>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -33,8 +34,8 @@ namespace grpc_event_engine::experimental {
 // will also be packed here.
 class Int64Result final : public PosixResult {
  public:
-  static Int64Result WrongGeneration() {
-    return Int64Result(OperationResultKind::kWrongGeneration, 0, 0);
+  static Int64Result WrongGeneration(int64_t result) {
+    return Int64Result(OperationResultKind::kWrongGeneration, 0, -1);
   }
 
   Int64Result() = default;
@@ -58,6 +59,8 @@ class FileDescriptors {
 
   FileDescriptors() = default;
   FileDescriptors(const FileDescriptors&& other) = delete;
+
+  void AdvanceGeneration();
 
   std::optional<int> GetFdForPolling(const FileDescriptor& fd);
 
@@ -200,7 +203,7 @@ class FileDescriptors {
                  ? Int64Result(OperationResultKind::kError, errno, result)
                  : Int64Result(result);
     } else {
-      return Int64Result::WrongGeneration();
+      return Int64Result::WrongGeneration(-1);
     }
   }
 
@@ -213,7 +216,7 @@ class FileDescriptors {
                  ? Int64Result(OperationResultKind::kError, errno, result)
                  : Int64Result(result);
     } else {
-      return Int64Result::WrongGeneration();
+      return Int64Result::WrongGeneration(-1);
     }
   }
 
