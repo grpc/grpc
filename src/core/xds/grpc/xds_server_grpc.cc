@@ -26,6 +26,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 
@@ -69,7 +70,7 @@ bool GrpcXdsServer::TrustedXdsServer() const {
 }
 
 bool GrpcXdsServer::Equals(const XdsServer& other) const {
-  const auto& o = static_cast<const GrpcXdsServer&>(other);
+  const auto& o = DownCast<const GrpcXdsServer&>(other);
   return (server_uri_ == o.server_uri_ &&
           channel_creds_config_->type() == o.channel_creds_config_->type() &&
           channel_creds_config_->Equals(*o.channel_creds_config_) &&

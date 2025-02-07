@@ -24,7 +24,6 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <functional>
@@ -54,6 +53,7 @@
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
@@ -272,7 +272,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[GrpcXdsTransport " << this << "] created";
   channel_ = CreateXdsChannel(factory_->args_,
-                              static_cast<const GrpcXdsServer&>(server));
+                              DownCast<const GrpcXdsServer&>(server));
   CHECK(channel_ != nullptr);
   if (channel_->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");
