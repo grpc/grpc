@@ -391,9 +391,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   bool HasUncachedResources(const AuthorityState& authority_state);
 
-  void MaybeRemoveUnsubscribedCacheEntriesLocked(XdsChannel* xds_channel)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
   void MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
       XdsChannel* xds_channel, const XdsResourceType* type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);

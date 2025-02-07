@@ -124,10 +124,7 @@ class XdsClient::XdsChannel::AdsCall final
   // The ctor and dtor should not be used directly.
   explicit AdsCall(RefCountedPtr<RetryableCall<AdsCall>> retryable_call);
 
-  // Disable thread-safety analysis because this method is called via
-  // OrphanablePtr<>, but there's no way to pass the lock annotation
-  // through there.
-  void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
+  void Orphan() override;
 
   RetryableCall<AdsCall>* retryable_call() const {
     return retryable_call_.get();
@@ -450,6 +447,7 @@ void XdsClient::XdsChannel::Orphaned() ABSL_NO_THREAD_SAFETY_ANALYSIS {
 void XdsClient::XdsChannel::ResetBackoff() { transport_->ResetBackoff(); }
 
 XdsClient::XdsChannel::AdsCall* XdsClient::XdsChannel::ads_call() const {
+  if (ads_call_ == nullptr) return nullptr;
   return ads_call_->call();
 }
 
@@ -466,9 +464,9 @@ void XdsClient::XdsChannel::SubscribeLocked(const XdsResourceType* type,
   }
   // If the ADS call is in backoff state, we don't need to do anything now
   // because when the call is restarted it will resend all necessary requests.
-  if (ads_call() == nullptr) return;
+  if (ads_call_->call() == nullptr) return;
   // Subscribe to this resource if the ADS call is active.
-  ads_call()->SubscribeLocked(type, name, /*delay_send=*/false);
+  ads_call_->call()->SubscribeLocked(type, name, /*delay_send=*/false);
 }
 
 void XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
@@ -740,7 +738,6 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
 }
 
 void XdsClient::XdsChannel::AdsCall::Orphan() {
-  xds_client()->MaybeRemoveUnsubscribedCacheEntriesLocked(xds_channel());
   state_map_.clear();
   // Note that the initial ref is held by the StreamEventHandler, which
   // will be destroyed when streaming_call_ is destroyed, which may not happen
@@ -1601,12 +1598,7 @@ void XdsClient::Orphaned() {
   MutexLock lock(&mu_);
   shutting_down_ = true;
   // Clear cache and any remaining watchers that may not have been cancelled.
-  // Note: We move authority_state_map_ out of the way before clearing
-  // it, because clearing the map will trigger calls to
-  // MaybeRemoveUnsubscribedCacheEntriesLocked(), which would try to modify
-  // the map while we are iterating over it.
-  auto authority_state_map = std::move(authority_state_map_);
-  authority_state_map.clear();
+  authority_state_map_.clear();
   invalid_watchers_.clear();
 }
 
@@ -1763,42 +1755,19 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
       xds_channel->UnsubscribeLocked(type, *resource_name,
                                      delay_unsubscription);
     }
-  }
-}
-
-void XdsClient::MaybeRemoveUnsubscribedCacheEntriesLocked(
-    XdsChannel* xds_channel) {
-  // Look at each authority for which xds_channel is the last channel.
-  for (auto authority_it = authority_state_map_.begin();
-       authority_it != authority_state_map_.end();) {
-    AuthorityState& authority_state = authority_it->second;
-    if (authority_state.xds_channels.back() == xds_channel) {
-      // Look at each resource type.
-      for (auto type_it = authority_state.type_map.begin();
-           type_it != authority_state.type_map.end();) {
-        auto& resource_map = type_it->second;
-        // Remove the cache entry for any resource without watchers.
-        for (auto resource_it = resource_map.begin();
-             resource_it != resource_map.end();) {
-          ResourceState& resource_state = resource_it->second;
-          if (!resource_state.HasWatchers()) {
-            resource_map.erase(resource_it++);
-          } else {
-            ++resource_it;
-          }
-        }
-        // Clean up empty entries in the map.
-        if (resource_map.empty()) {
-          authority_state.type_map.erase(type_it++);
-        } else {
-          ++type_it;
-        }
-      }
-    }
-    if (authority_state.type_map.empty()) {
-      authority_state_map_.erase(authority_it++);
-    } else {
-      ++authority_it;
+    // Normally, we wait to remove the cache entries until we actualle send
+    // the unsubscription message on the ADS stream, so that if a watch is
+    // stopped and then started again before we send the next request
+    // for that resource type, we don't lose the cache entry without the
+    // xDS server knowing it needs to re-send it.  However, if this was the
+    // last resource we were subscribed to on the ADS stream, then
+    // XdsChannel::UnsubscribeLocked() will have closed the ADS stream,
+    // which means we won't be sending the unsubscription message.  In that
+    // case, we can remove the entire authority from the cache now.  Note
+    // that this also unrefs the XdsChannel, which is no longer needed if
+    // there is no ADS stream.
+    if (authority_state.xds_channels.back()->ads_call() == nullptr) {
+      authority_state_map_.erase(authority_it);
     }
   }
 }
@@ -1806,33 +1775,24 @@ void XdsClient::MaybeRemoveUnsubscribedCacheEntriesLocked(
 void XdsClient::MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
     XdsChannel* xds_channel, const XdsResourceType* type) {
   // Look at each authority for which xds_channel is the last channel.
-  for (auto authority_it = authority_state_map_.begin();
-       authority_it != authority_state_map_.end();) {
-    AuthorityState& authority_state = authority_it->second;
-    if (authority_state.xds_channels.back() == xds_channel) {
-      // Find type map.
-      auto type_it = authority_state.type_map.find(type);
-      if (type_it != authority_state.type_map.end()) {
-        auto& resource_map = type_it->second;
-        // Remove the cache entry for any resource without watchers.
-        for (auto resource_it = resource_map.begin();
-             resource_it != resource_map.end();) {
-          ResourceState& resource_state = resource_it->second;
-          if (!resource_state.HasWatchers()) {
-            resource_map.erase(resource_it++);
-          } else {
-            ++resource_it;
-          }
-        }
-        // Clean up empty entries in the map.
-        if (resource_map.empty()) authority_state.type_map.erase(type_it);
+  for (auto& [_, authority_state] : authority_state_map_) {
+    if (authority_state.xds_channels.back() != xds_channel) continue;
+    // Find type map.
+    auto type_it = authority_state.type_map.find(type);
+    if (type_it == authority_state.type_map.end()) continue;
+    auto& resource_map = type_it->second;
+    // Remove the cache entry for any resource without watchers.
+    for (auto resource_it = resource_map.begin();
+         resource_it != resource_map.end();) {
+      ResourceState& resource_state = resource_it->second;
+      if (!resource_state.HasWatchers()) {
+        resource_map.erase(resource_it++);
+      } else {
+        ++resource_it;
       }
     }
-    if (authority_state.type_map.empty()) {
-      authority_state_map_.erase(authority_it++);
-    } else {
-      ++authority_it;
-    }
+    // Clean up empty entries in the map.
+    if (resource_map.empty()) authority_state.type_map.erase(type_it);
   }
 }
 
