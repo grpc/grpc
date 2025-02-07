@@ -358,7 +358,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   struct AuthorityState {
     std::vector<RefCountedPtr<XdsChannel>> xds_channels;
     std::map<const XdsResourceType*, std::map<XdsResourceKey, ResourceState>>
-        resource_map;
+        type_map;
   };
 
   absl::Status AppendNodeToStatus(const absl::Status& status) const;
@@ -390,6 +390,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   bool HasUncachedResources(const AuthorityState& authority_state);
+
+  void MaybeRemoveUnsubscribedCacheEntriesLocked(XdsChannel* xds_channel)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  void MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
+      XdsChannel* xds_channel, const XdsResourceType* type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);
