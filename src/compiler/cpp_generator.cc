@@ -156,6 +156,8 @@ std::string GetHeaderIncludes(grpc_generator::File* file,
         "grpcpp/support/status.h",
         "grpcpp/support/stub_options.h",
         "grpcpp/support/sync_stream.h",
+        // ports_def.inc Must be included at last
+        "grpcpp/ports_def.inc",
     };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
@@ -1697,6 +1699,9 @@ std::string GetHeaderEpilogue(grpc_generator::File* file,
     }
 
     printer->Print(vars, "\n");
+
+    // Must be included at end of file
+    printer->Print("#include <grpcpp/ports_undef.inc>\n");
     printer->Print(vars, "#endif  // GRPC_$filename_identifier$__INCLUDED\n");
 
     printer->Print(file->GetTrailingComments("//").c_str());
