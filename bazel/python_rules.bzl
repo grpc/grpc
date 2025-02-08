@@ -13,6 +13,7 @@
 # limitations under the License.
 """Generates and compiles Python gRPC stubs from proto_library rules."""
 
+load("@com_google_protobuf//bazel:py_proto_library.bzl", protobuf_py_proto_library = "py_proto_library")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
 load(
@@ -28,6 +29,7 @@ load(
     "protos_from_context",
 )
 
+_VIRTUAL_IMPORTS = "/_virtual_imports/"
 _GENERATED_PROTO_FORMAT = "{}_pb2.py"
 _GENERATED_PROTO_STUB_FORMAT = "{}_pb2.pyi"
 _GENERATED_GRPC_PROTO_FORMAT = "{}_pb2_grpc.py"
@@ -158,28 +160,30 @@ def _generate_py_impl(context):
         out_pyinfo,
     ]
 
-py_proto_library = rule(
-    attrs = {
-        "deps": attr.label_list(
-            mandatory = True,
-            allow_empty = False,
-            providers = [ProtoInfo],
-            aspects = [_gen_py_aspect],
-        ),
-        "_protoc": attr.label(
-            default = Label("@com_google_protobuf//:protoc"),
-            providers = ["files_to_run"],
-            executable = True,
-            cfg = "exec",
-        ),
-        "_protobuf_library": attr.label(
-            default = Label("@com_google_protobuf//:protobuf_python"),
-            providers = [PyInfo],
-        ),
-        "imports": attr.string_list(),
-    },
-    implementation = _generate_py_impl,
-)
+# py_proto_library = rule(
+#     attrs = {
+#         "deps": attr.label_list(
+#             mandatory = True,
+#             allow_empty = False,
+#             providers = [ProtoInfo],
+#             aspects = [_gen_py_aspect],
+#         ),
+#         "_protoc": attr.label(
+#             default = Label("@com_google_protobuf//:protoc"),
+#             providers = ["files_to_run"],
+#             executable = True,
+#             cfg = "exec",
+#         ),
+#         "_protobuf_library": attr.label(
+#             default = Label("@com_google_protobuf//:protobuf_python"),
+#             providers = [PyInfo],
+#         ),
+#         "imports": attr.string_list(),
+#     },
+#     implementation = _generate_py_impl,
+# )
+
+py_proto_library = protobuf_py_proto_library
 
 def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
@@ -193,7 +197,7 @@ def _generate_pb2_grpc_src_impl(context):
     out_dir = get_out_dir(protos, context)
     if out_dir.import_path:
         # is virtual imports
-        out_path = out_dir.path
+        out_path = get_include_directory(out_files[0])
     else:
         out_path = context.genfiles_dir.path
     arguments += get_plugin_args(
@@ -219,7 +223,23 @@ def _generate_pb2_grpc_src_impl(context):
         mnemonic = "ProtocInvocation",
     )
 
-    p = PyInfo(transitive_sources = depset(direct = out_files))
+    imports = []
+
+    # Adding to PYTHONPATH so the generated modules can be imported.
+    # This is necessary when there is strip_import_prefix, the Python modules are generated under _virtual_imports.
+    # But it's undesirable otherwise, because it will put the repo root at the top of the PYTHONPATH, ahead of
+    # directories added through `imports` attributes.
+    if _VIRTUAL_IMPORTS in out_path:
+        import_path = out_path
+
+        # Handles virtual import cases
+        if out_path.startswith(context.genfiles_dir.path):
+            import_path = import_path[len(context.genfiles_dir.path) + 1:]
+
+        import_path = "{}/{}".format(context.workspace_name, import_path)
+        imports.append(import_path)
+
+    p = PyInfo(transitive_sources = depset(direct = out_files), imports = depset(direct = imports))
     py_info = _merge_pyinfos(
         [
             p,
