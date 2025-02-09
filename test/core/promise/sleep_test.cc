@@ -38,14 +38,6 @@
 
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::GetDefaultEventEngine;
-using grpc_event_engine::experimental::MockEventEngine;
-using testing::_;
-using testing::DoAll;
-using testing::Matcher;
-using testing::Mock;
-using testing::Return;
-using testing::SaveArg;
-using testing::StrictMock;
 
 namespace grpc_core {
 namespace {
