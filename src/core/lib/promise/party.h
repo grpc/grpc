@@ -42,24 +42,124 @@
 
 namespace grpc_core {
 
+// Terms Used:
+//
+// Concurrent promises: Promises that may be in progress at a given instant
+// of time, but they may or may not execute simultaneously.
+// Parallel promises: Two or more Promises that are getting executed
+// simultaneously at the same instant of time.
+//
+// Promise Party
+// A Promise Party forms the execution environment for Promises. It runs up
+// to sixteen concurrent party participants and ensures none of the participants
+// run in parallel with each other.
+//
+// Party Participant
+// One Promise Party has 16 Participant slots. Each Participant slot can hold
+// one of the three
+// 1. A Promise
+// 2. Or a Promise Factory
+// 3. or any type of Participant object, such as SpawnSerializer.
+//
+// Using a Party
+// A party should be used when
+// 1. You need many promises to be run in a way that is concurrent but not
+// parallel.
+// 2. These promises have their own complex sleep and wake mechanisms.
+// 3. You need a way to run the pending promises to completion by repolling them
+// as needed.
+//
+// Creating a new Party
+// A Party must only be created using Party::Make function.
+//
+// Spawning a promise on a Party
+// 1. A promise can be spawned on a party using either Spawn or SpawnWaitable
+// method.
+// 2. If you want to bulk spawn promises on a party before any thread
+// starts executing them, use Party::WakeupHold.
+//
+// Execution of Spawned Promises
+// A Participant spawned on a party will get executed by that party.
+// Whenever the party wakes up, it will executed all unresolved Party
+// Participants atleast once. After any Party Participant is resolved, its slot
+// is freed up to make place for new participants.
+//
+// When these Party Participants are executed (polled), they can either
+// 1. Resolve by returning a value
+// 2. Return Pending{}
+// 3. Wait for a certain event to happen using either a Notification or a Latch.
+//
+// When a promise factory is passed as a Party Participant, the promise factory
+// is used to generate the promise once, and then the promise is executed once
+// each time the party is polled till it resolves.
+//
+// Sleep mechanism of a Party
+// A party will Sleep/Quiece if all Participants Spawned on the party are in any
+// of the following states
+// 1. Return Pending{}
+// 2. Resolve
+// 3. Are waiting because of a Latch.
+// If a party is currently running a Participant, it is said to be active/awake.
+// Otherwise it is said to be Sleeping or Quieced.
+//
+// Wake mechanism of a Party
+// To wake up a sleeping party you can use the Waker object. Once the Party is
+// woken, it will be executed as mentioned above.
+//
+// Party Cancellation
+// A Party can be cancelled using party_.reset() method.
+//
+// Gurantees of a Party
+// 1. All Participant spawned on one party are guranteed to be run serially.
+// Their execution will not happen in parallel.
+// 2. If a promise is executed, its on_complete is guranteed to be executed as
+// long as the party is not cancelled.
+// 3. Once a party is cancelled, Participants that were Spawned onto the party,
+// but not yet executed, will not get executed.
+// 4. Promise spawned on a party will never be repolled after it is resolved.
+// 5. A promise spawned on a party, can in turn spawn another promise either on
+// the same party or on another party. We allow nesting of Spawn function.
+// 6. A promise or promise factory that is passed to a Spawn function could
+// either be a single simple promise, or it could be a promise combinator such
+// as TrySeq, TryJoin, Loop or any such promise combinator. Nesting of these
+// promise combinators is allowed.
+// 7. You can re-use the same party to spawn new Participants as long as the
+// older Participants have been resolved.
+// 8. We gurantee safe working of up to 16 un-resolved participatns
+// on a party at a time.
+//
+// Non-Gurantees of a Party
+// 1. Promises spawned on one party are not guranteed to execute in the same
+// order. They can execute in any order. If you need the promises to be executed
+// in a specific order, use a SpawnSerializer. If that is not feasible for some
+// reason, then either consider the use of a promise combinator, or order the
+// execution of promises using Notifications or Latches.
+// 2. A party cannot gurantee which thread a party Participant will execute on.
+// It could either execute on the current thread, or an event engine thread or
+// any other thread.
+// 3. Say, we spawned promises P1_1, P1_2, P1_3 on party1. Then promise P1_1 in
+// turn spawns promise P2_1, P2_2, P2_3 on party2. In such cases, party1 and
+// party2 may either execute on the same thread, or they may both execute on
+// different threads. party1 and party2 may or may not run in parallel.
+
 namespace party_detail {
 
 // Number of bits reserved for wakeups gives us the maximum number of
-// participants.
+// participants. This can change in the future and we dont gurantee this number
+// to be 16 always.
 static constexpr size_t kMaxParticipants = 16;
 
 }  // namespace party_detail
 
-// A Party is an Activity with multiple participant promises.
 class Party : public Activity, private Wakeable {
  private:
   // Non-owning wakeup handle.
   class Handle;
 
-  // One participant in the party.
+  // One promise participant in the party.
   class Participant {
    public:
-    // Poll the participant. Return true if complete.
+    // Poll the participant promise. Return true if complete.
     // Participant should take care of its own deallocation in this case.
     virtual bool PollParticipantPromise() = 0;
 
@@ -79,6 +179,12 @@ class Party : public Activity, private Wakeable {
  public:
   Party(const Party&) = delete;
   Party& operator=(const Party&) = delete;
+
+  // A Party object must be created only by using this method.
+  static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
+    auto* arena_ptr = arena.get();
+    return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
+  }
 
   // When calling into a Party from outside the promises system we often would
   // like to perform more than one action.
@@ -195,22 +301,19 @@ class Party : public Activity, private Wakeable {
     Party* const party_;
   };
 
-  static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
-    auto* arena_ptr = arena.get();
-    return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
-  }
-
   // Spawn one promise into the party.
-  // The promise will be polled until it is resolved, or until the party is shut
-  // down.
-  // The on_complete callback will be called with the result of the promise if
-  // it completes.
-  // A maximum of sixteen promises can be spawned onto a party.
+  // The party can poll the promise until it is resolved, or until the party is
+  // shut down.
+  // The on_complete callback will be called with the result of the
+  // promise if it completes.
   // promise_factory called to create the promise with the party lock taken;
-  // after the promise is created the factory is destroyed.
-  // This means that pointers or references to factory members will be
-  // invalidated after the promise is created - so the promise should not retain
-  // any of these.
+  // after the promise is created the factory is destroyed. This means that
+  // pointers or references to factory members will be invalidated after the
+  // promise is created - so the promise should not retain any of these.
+  // This function is thread safe. We can Spawn different promises onto the
+  // same party from different threads.
+  // A party can hold upto 16 unresolved promises at a time. However, this
+  // number might change in the future.
   template <typename Factory, typename OnComplete>
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
