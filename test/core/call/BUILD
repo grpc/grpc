@@ -112,7 +112,6 @@ grpc_cc_test(
         "filter_fusion_test.cc",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//src/core:filter_fusion",
     ],
