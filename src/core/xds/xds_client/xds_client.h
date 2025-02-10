@@ -209,7 +209,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void SubscribeLocked(const XdsResourceType* type,
                          const XdsResourceName& name)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-    void UnsubscribeLocked(const XdsResourceType* type,
+    // Returns true if the cached resource can be removed.
+    bool UnsubscribeLocked(const XdsResourceType* type,
                            const XdsResourceName& name,
                            bool delay_unsubscription)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
