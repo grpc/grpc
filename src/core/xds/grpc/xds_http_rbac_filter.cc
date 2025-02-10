@@ -17,7 +17,6 @@
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 
 #include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -43,6 +42,7 @@
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
@@ -418,7 +418,7 @@ Json ParseAuditLoggerConfigsToJson(
   Json::Array logger_configs_json;
   size_t size;
   const auto& registry =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .audit_logger_registry();
   const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* const*
       logger_configs =

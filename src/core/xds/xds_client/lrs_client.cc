@@ -810,7 +810,7 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
     std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
     absl::string_view cluster_name, absl::string_view eds_service_name) {
   auto key =
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+      std::pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterDropStats> cluster_drop_stats;
   {
     MutexLock lock(&mu_);
@@ -856,7 +856,7 @@ void LrsClient::RemoveClusterDropStats(
   if (server_it == load_report_map_.end()) return;
   auto& server = server_it->second;
   auto load_report_it = server.load_report_map.find(
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
+      std::pair(std::string(cluster_name), std::string(eds_service_name)));
   if (load_report_it == server.load_report_map.end()) return;
   LoadReportState& load_report_state = load_report_it->second;
   if (load_report_state.drop_stats == cluster_drop_stats) {
@@ -875,7 +875,7 @@ LrsClient::AddClusterLocalityStats(
     RefCountedPtr<XdsLocalityName> locality,
     RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation) {
   auto key =
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+      std::pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterLocalityStats> cluster_locality_stats;
   {
     MutexLock lock(&mu_);
@@ -929,7 +929,7 @@ void LrsClient::RemoveClusterLocalityStats(
   if (server_it == load_report_map_.end()) return;
   auto& server = server_it->second;
   auto load_report_it = server.load_report_map.find(
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
+      std::pair(std::string(cluster_name), std::string(eds_service_name)));
   if (load_report_it == server.load_report_map.end()) return;
   LoadReportState& load_report_state = load_report_it->second;
   auto locality_it = load_report_state.locality_stats.find(locality);

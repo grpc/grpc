@@ -1720,12 +1720,12 @@ argp.add_argument(
         "clang7",
         "clang19",
         # TODO: Automatically populate from supported version
-        "python3.7",
         "python3.8",
         "python3.9",
         "python3.10",
         "python3.11",
         "python3.12",
+        "python3.13",
         "pypy",
         "pypy3",
         "python_alpine",

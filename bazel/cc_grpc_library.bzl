@@ -25,6 +25,7 @@ def cc_grpc_library(
         proto_only = False,
         well_known_protos = False,
         generate_mocks = False,
+        allow_deprecated = False,
         use_external = False,  # @unused
         grpc_only = False,
         **kwargs):
@@ -56,6 +57,8 @@ def cc_grpc_library(
           (passed in srcs parameter) instead. False by default.
         generate_mocks (bool): when True, Google Mock code for client stub is
           generated. False by default.
+        allow_deprecated (bool): when True, Generated class will marked
+          deprecated if deprecated option is set in proto.
         use_external (bool): Not used.
         grpc_only (bool): if True, generate only grpc library, expecting
           protobuf messages library (cc_proto_library target) to be passed as
@@ -105,6 +108,7 @@ def cc_grpc_library(
             plugin = Label("//src/compiler:grpc_cpp_plugin"),
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
+            allow_deprecated = allow_deprecated,
             **kwargs
         )
 

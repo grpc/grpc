@@ -724,8 +724,7 @@ class XdsClientTest : public ::testing::Test {
                                uint64_t num_resources_valid,
                                uint64_t num_resources_invalid) override {
       MutexLock lock(&mu_);
-      auto key =
-          std::make_pair(std::string(xds_server), std::string(resource_type));
+      auto key = std::pair(std::string(xds_server), std::string(resource_type));
       if (num_resources_valid > 0) {
         resource_updates_valid_[key] += num_resources_valid;
       }

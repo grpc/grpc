@@ -347,12 +347,12 @@ def grpc_deps():
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
-            sha256 = "fb7c38e82ce5a5dcad70be7eafe0d3d4f439e3ef822b414a99db7514580ddac4",
-            strip_prefix = "opentelemetry-cpp-955a807c0461544560429c2414b8967f6023e590",
+            sha256 = "a85a22521de7426c3e019d50e18d0af16e0391e0353923308eb168b3e624aea1",
+            strip_prefix = "opentelemetry-cpp-ced79860f8c8a091a2eabfee6d47783f828a9b59",
             urls = [
-                # v1.18.0
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/955a807c0461544560429c2414b8967f6023e590.tar.gz",
-                "https://github.com/open-telemetry/opentelemetry-cpp/archive/955a807c0461544560429c2414b8967f6023e590.tar.gz",
+                # v1.19.0
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/ced79860f8c8a091a2eabfee6d47783f828a9b59.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/ced79860f8c8a091a2eabfee6d47783f828a9b59.tar.gz",
             ],
         )
 
@@ -444,11 +444,11 @@ def grpc_module_deps():
     if "google_cloud_cpp" not in native.existing_rules():
         http_archive(
             name = "google_cloud_cpp",
-            sha256 = "e53ba3799c052d97acac9a6a6b27af24ce822dbde7bfde973bac9e5da714e6b2",
-            strip_prefix = "google-cloud-cpp-2.33.0",
+            sha256 = "81ea28cf9e5bb032d356b0187409f30b1035f8ea5b530675ea248c8a6c0070aa",
+            strip_prefix = "google-cloud-cpp-2.35.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
-                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
             ],
         )
 
