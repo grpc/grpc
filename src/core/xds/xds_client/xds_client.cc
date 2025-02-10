@@ -473,18 +473,22 @@ void XdsClient::XdsChannel::SubscribeLocked(const XdsResourceType* type,
 bool XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
                                               const XdsResourceName& name,
                                               bool delay_unsubscription) {
-  bool cached_resource_can_be_removed = true;
   if (ads_call_ != nullptr) {
     auto* call = ads_call_->call();
     if (call != nullptr) {
-      cached_resource_can_be_removed =
+      bool cached_resource_can_be_removed =
           call->UnsubscribeLocked(type, name, delay_unsubscription);
       if (!call->HasSubscribedResources()) {
         ads_call_.reset();
+        // We won't actually be sending the unsubscription, so the
+        // caller should remove the cached resource immediately.
+        return true;
       }
+      return cached_resource_can_be_removed;
     }
   }
-  return cached_resource_can_be_removed;
+  // No ADS call, so caller should remove the cached resource.
+  return true;
 }
 
 bool XdsClient::XdsChannel::MaybeFallbackLocked(
