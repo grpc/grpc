@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -39,7 +40,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -200,7 +200,7 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
       void OnTimerLocked();
 
       RefCountedPtr<WeightedChild> weighted_child_;
-      absl::optional<EventEngine::TaskHandle> timer_handle_;
+      std::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     // Methods for dealing with the child policy.
@@ -469,8 +469,7 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
             auto* self_ptr = self.get();  // Avoid use-after-move problem.
             self_ptr->weighted_child_->weighted_target_policy_
                 ->work_serializer()
-                ->Run([self = std::move(self)] { self->OnTimerLocked(); },
-                      DEBUG_LOCATION);
+                ->Run([self = std::move(self)] { self->OnTimerLocked(); });
           });
 }
 

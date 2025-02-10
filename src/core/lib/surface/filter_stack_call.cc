@@ -449,8 +449,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
   if (!batch_error.ok()) {
     SetFinalStatus(batch_error);
   } else {
-    absl::optional<grpc_status_code> grpc_status =
-        b->Take(GrpcStatusMetadata());
+    std::optional<grpc_status_code> grpc_status = b->Take(GrpcStatusMetadata());
     if (grpc_status.has_value()) {
       grpc_status_code status_code = *grpc_status;
       grpc_error_handle error;
@@ -657,7 +656,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     grpc_metadata_batch* md = &call->recv_initial_metadata_;
     call->RecvInitialFilter(md);
 
-    absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
+    std::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {
       call_->set_send_deadline(*deadline);
     }

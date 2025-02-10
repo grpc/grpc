@@ -20,8 +20,8 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -33,7 +33,7 @@ namespace {
 // Tests that we don't retry for non-retryable status codes.
 // - 1 retry allowed for ABORTED status
 // - first attempt gets INVALID_ARGUMENT, so no retry is done
-CORE_END2END_TEST(RetryTest, RetryNonRetriableStatus) {
+CORE_END2END_TEST(RetryTests, RetryNonRetriableStatus) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
@@ -54,7 +54,7 @@ CORE_END2END_TEST(RetryTest, RetryNonRetriableStatus) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(30)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
@@ -68,8 +68,8 @@ CORE_END2END_TEST(RetryTest, RetryNonRetriableStatus) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

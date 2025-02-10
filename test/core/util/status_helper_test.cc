@@ -53,7 +53,7 @@ TEST(StatusUtilTest, SetAndGetInt) {
 
 TEST(StatusUtilTest, GetIntNotExistent) {
   absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<intptr_t>(),
+  EXPECT_EQ(std::optional<intptr_t>(),
             StatusGetInt(s, StatusIntProperty::kStreamId));
 }
 
@@ -65,7 +65,7 @@ TEST(StatusUtilTest, SetAndGetStr) {
 
 TEST(StatusUtilTest, GetStrNotExistent) {
   absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<std::string>(),
+  EXPECT_EQ(std::optional<std::string>(),
             StatusGetStr(s, StatusStrProperty::kFile));
 }
 
@@ -78,7 +78,7 @@ TEST(StatusUtilTest, SetAndGetTime) {
 
 TEST(StatusUtilTest, GetTimeNotExistent) {
   absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<absl::Time>(),
+  EXPECT_EQ(std::optional<absl::Time>(),
             StatusGetTime(s, StatusTimeProperty::kCreated));
 }
 

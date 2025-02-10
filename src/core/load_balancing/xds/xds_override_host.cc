@@ -25,6 +25,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -43,7 +44,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
@@ -333,46 +333,17 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
      private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<SubchannelConnectionRequester*>(arg);
-        self->subchannel_->policy()->work_serializer()->Run(
-            [self]() {
-              self->subchannel_->RequestConnection();
-              delete self;
-            },
-            DEBUG_LOCATION);
+        self->subchannel_->policy()->work_serializer()->Run([self]() {
+          self->subchannel_->RequestConnection();
+          delete self;
+        });
       }
 
       RefCountedPtr<SubchannelWrapper> subchannel_;
       grpc_closure closure_;
     };
 
-    class SubchannelCreationRequester final {
-     public:
-      SubchannelCreationRequester(RefCountedPtr<XdsOverrideHostLb> policy,
-                                  absl::string_view address)
-          : policy_(std::move(policy)), address_(address) {
-        GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
-        // Hop into ExecCtx, so that we don't get stuck running
-        // arbitrary WorkSerializer callbacks while doing a pick.
-        ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
-      }
-
-     private:
-      static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
-        auto* self = static_cast<SubchannelCreationRequester*>(arg);
-        self->policy_->work_serializer()->Run(
-            [self]() {
-              self->policy_->CreateSubchannelForAddress(self->address_);
-              delete self;
-            },
-            DEBUG_LOCATION);
-      }
-
-      RefCountedPtr<XdsOverrideHostLb> policy_;
-      std::string address_;
-      grpc_closure closure_;
-    };
-
-    absl::optional<LoadBalancingPolicy::PickResult> PickOverriddenHost(
+    std::optional<LoadBalancingPolicy::PickResult> PickOverriddenHost(
         XdsOverrideHostAttribute* override_host_attr) const;
 
     RefCountedPtr<XdsOverrideHostLb> policy_;
@@ -404,7 +375,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
     void OnTimerLocked();
 
     RefCountedPtr<XdsOverrideHostLb> policy_;
-    absl::optional<EventEngine::TaskHandle> timer_handle_;
+    std::optional<EventEngine::TaskHandle> timer_handle_;
   };
 
   ~XdsOverrideHostLb() override;
@@ -467,12 +438,12 @@ XdsOverrideHostLb::Picker::Picker(
       << "] constructed new picker " << this;
 }
 
-absl::optional<LoadBalancingPolicy::PickResult>
+std::optional<LoadBalancingPolicy::PickResult>
 XdsOverrideHostLb::Picker::PickOverriddenHost(
     XdsOverrideHostAttribute* override_host_attr) const {
   CHECK_NE(override_host_attr, nullptr);
   auto cookie_address_list = override_host_attr->cookie_address_list();
-  if (cookie_address_list.empty()) return absl::nullopt;
+  if (cookie_address_list.empty()) return std::nullopt;
   // The cookie has an address list, so look through the addresses in order.
   absl::string_view address_with_no_subchannel;
   RefCountedPtr<SubchannelWrapper> idle_subchannel;
@@ -482,30 +453,32 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
     for (absl::string_view address : absl::StrSplit(cookie_address_list, ',')) {
       auto it = policy_->subchannel_map_.find(address);
       if (it == policy_->subchannel_map_.end()) continue;
+      auto& subchannel_entry = it->second;
       if (!override_host_health_status_set_.Contains(
-              it->second->eds_health_status())) {
+              subchannel_entry->eds_health_status())) {
         GRPC_TRACE_LOG(xds_override_host_lb, INFO)
             << "Subchannel " << address << " health status is not overridden ("
-            << it->second->eds_health_status().ToString() << ")";
+            << subchannel_entry->eds_health_status().ToString() << ")";
         continue;
       }
-      auto subchannel = it->second->GetSubchannelRef();
+      auto subchannel = subchannel_entry->GetSubchannelRef();
       if (subchannel == nullptr) {
         GRPC_TRACE_LOG(xds_override_host_lb, INFO)
             << "No subchannel for " << address;
         if (address_with_no_subchannel.empty()) {
-          address_with_no_subchannel = it->first;
+          address_with_no_subchannel = address;
         }
         continue;
       }
-      auto connectivity_state = it->second->connectivity_state();
+      auto connectivity_state = subchannel_entry->connectivity_state();
       if (connectivity_state == GRPC_CHANNEL_READY) {
         // Found a READY subchannel.  Pass back the actual address list
         // and return the subchannel.
         GRPC_TRACE_LOG(xds_override_host_lb, INFO)
             << "Picker override found READY subchannel " << address;
-        it->second->set_last_used_time();
-        override_host_attr->set_actual_address_list(it->second->address_list());
+        subchannel_entry->set_last_used_time();
+        override_host_attr->set_actual_address_list(
+            subchannel_entry->address_list());
         return PickResult::Complete(subchannel->wrapped_subchannel());
       } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
         if (idle_subchannel == nullptr) idle_subchannel = std::move(subchannel);
@@ -536,20 +509,15 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
   if (!address_with_no_subchannel.empty()) {
     GRPC_TRACE_LOG(xds_override_host_lb, INFO)
         << "Picker override found entry with no subchannel";
-    if (!IsWorkSerializerDispatchEnabled()) {
-      new SubchannelCreationRequester(policy_, address_with_no_subchannel);
-    } else {
-      policy_->work_serializer()->Run(
-          [policy = policy_,
-           address = std::string(address_with_no_subchannel)]() {
-            policy->CreateSubchannelForAddress(address);
-          },
-          DEBUG_LOCATION);
-    }
+    policy_->work_serializer()->Run(
+        [policy = policy_,
+         address = std::string(address_with_no_subchannel)]() {
+          policy->CreateSubchannelForAddress(address);
+        });
     return PickResult::Queue();
   }
   // No entry found that was not in TRANSIENT_FAILURE.
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
@@ -603,8 +571,7 @@ XdsOverrideHostLb::IdleTimer::IdleTimer(RefCountedPtr<XdsOverrideHostLb> policy,
         ExecCtx exec_ctx;
         auto self_ptr = self.get();
         self_ptr->policy_->work_serializer()->Run(
-            [self = std::move(self)]() { self->OnTimerLocked(); },
-            DEBUG_LOCATION);
+            [self = std::move(self)]() { self->OnTimerLocked(); });
       });
 }
 
@@ -1057,15 +1024,6 @@ void XdsOverrideHostLb::SubchannelWrapper::Orphaned() {
   GRPC_TRACE_LOG(xds_override_host_lb, INFO)
       << "[xds_override_host_lb " << policy_.get() << "] subchannel wrapper "
       << this << " orphaned";
-  if (!IsWorkSerializerDispatchEnabled()) {
-    wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
-    if (subchannel_entry_ != nullptr) {
-      MutexLock lock(&policy()->mu_);
-      subchannel_entry_->OnSubchannelWrapperOrphan(
-          this, policy()->connection_idle_timeout_);
-    }
-    return;
-  }
   policy()->work_serializer()->Run(
       [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
         self->wrapped_subchannel()->CancelConnectivityStateWatch(
@@ -1075,8 +1033,7 @@ void XdsOverrideHostLb::SubchannelWrapper::Orphaned() {
           self->subchannel_entry_->OnSubchannelWrapperOrphan(
               self.get(), self->policy()->connection_idle_timeout_);
         }
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
@@ -1233,15 +1190,14 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   auto it = json.object().find("childPolicy");
   if (it == json.object().end()) {
     errors->AddError("field not present");
+  } else if (auto child_policy_config =
+                 CoreConfiguration::Get()
+                     .lb_policy_registry()
+                     .ParseLoadBalancingConfig(it->second);
+             !child_policy_config.ok()) {
+    errors->AddError(child_policy_config.status().message());
   } else {
-    auto child_policy_config =
-        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            it->second);
-    if (!child_policy_config.ok()) {
-      errors->AddError(child_policy_config.status().message());
-    } else {
-      child_config_ = std::move(*child_policy_config);
-    }
+    child_config_ = std::move(*child_policy_config);
   }
 }
 

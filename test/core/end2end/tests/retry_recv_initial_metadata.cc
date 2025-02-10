@@ -20,8 +20,8 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -34,7 +34,7 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt receives initial metadata before trailing metadata,
 //   so no retry is done even though status was ABORTED
-CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
+CORE_END2END_TEST(RetryTests, RetryRecvInitialMetadata) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
@@ -55,7 +55,7 @@ CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
@@ -81,8 +81,8 @@ CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Server sends initial metadata in its own batch, before sending
   // trailing metadata.
   // Ideally, this would not require actually sending any metadata

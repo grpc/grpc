@@ -17,6 +17,7 @@
 #include "test/cpp/end2end/xds/xds_server.h"
 
 #include <deque>
+#include <optional>
 #include <set>
 #include <string>
 #include <thread>
@@ -24,7 +25,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
@@ -112,8 +112,7 @@ void AdsServiceImpl::ProcessUnsubscriptions(
     ResourceNameMap* resource_name_map) {
   for (auto it = subscription_name_map->begin();
        it != subscription_name_map->end();) {
-    const std::string& resource_name = it->first;
-    SubscriptionState& subscription_state = it->second;
+    auto& [resource_name, subscription_state] = *it;
     if (resources_in_current_request.find(resource_name) !=
         resources_in_current_request.end()) {
       ++it;

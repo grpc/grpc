@@ -53,7 +53,7 @@ class OverrideHostTest : public XdsEnd2endTest {
     std::set<std::string> attributes;
 
     std::pair<std::string, std::string> Header() const {
-      return std::make_pair("cookie", absl::StrFormat("%s=%s", name, value));
+      return std::pair("cookie", absl::StrFormat("%s=%s", name, value));
     }
 
     template <typename Sink>
@@ -159,7 +159,7 @@ class OverrideHostTest : public XdsEnd2endTest {
   // For weighted clusters, more than one request per backend may be necessary
   // to obtain the cookie. max_requests_per_backend argument specifies
   // the number of requests per backend to send.
-  absl::optional<std::pair<std::string, std::string>>
+  std::optional<std::pair<std::string, std::string>>
   GetAffinityCookieHeaderForBackend(
       grpc_core::DebugLocation debug_location, size_t backend_index,
       size_t max_requests_per_backend = 1,
@@ -172,7 +172,7 @@ class OverrideHostTest : public XdsEnd2endTest {
         return cookie.Header();
       }
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   void SetClusterResource(absl::string_view cluster_name,
@@ -215,7 +215,7 @@ class OverrideHostTest : public XdsEnd2endTest {
 
   static Route BuildStatefulSessionRouteConfig(
       absl::string_view match_prefix, absl::string_view cookie_name,
-      absl::optional<grpc_core::Duration> opt_duration = absl::nullopt) {
+      std::optional<grpc_core::Duration> opt_duration = std::nullopt) {
     StatefulSessionPerRoute stateful_session_per_route;
     if (!cookie_name.empty()) {
       auto* session_state =

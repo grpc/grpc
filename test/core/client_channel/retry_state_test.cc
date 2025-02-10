@@ -105,8 +105,8 @@ auto AnyStatusExcept(grpc_status_code x) {
 // Domain that includes any metadata (biased to what's useful for these tests)
 auto AnyServerMetadata() {
   return fuzztest::Map(
-      [](absl::optional<grpc_status_code> status,
-         absl::optional<Duration> pushback,
+      [](std::optional<grpc_status_code> status,
+         std::optional<Duration> pushback,
          std::vector<std::pair<std::string, std::string>> vec) {
         auto md = Arena::MakePooled<ServerMetadata>();
         for (const auto& [key, value] : vec) {
@@ -133,7 +133,7 @@ auto AnyServerMetadata() {
 template <typename AllowedStatus>
 auto ServerMetadataWithStatus(AllowedStatus status) {
   return fuzztest::Map(
-      [](grpc_status_code status, absl::optional<Duration> pushback,
+      [](grpc_status_code status, std::optional<Duration> pushback,
          std::vector<std::pair<std::string, std::string>> vec) {
         auto md = Arena::MakePooled<ServerMetadata>();
         for (const auto& [key, value] : vec) {
@@ -210,7 +210,7 @@ auto AnyRetryMethodConfig() {
          std::vector<grpc_status_code> retryable_status_codes,
          std::variant<uint32_t, grpc_status_code>
              per_attempt_recv_timeout_or_another_retriable_status_code) {
-        absl::optional<uint32_t> per_attempt_recv_timeout;
+        std::optional<uint32_t> per_attempt_recv_timeout;
         if (std::holds_alternative<grpc_status_code>(
                 per_attempt_recv_timeout_or_another_retriable_status_code)) {
           retryable_status_codes.push_back(std::get<grpc_status_code>(
@@ -275,7 +275,7 @@ auto RetryMethodConfigWithRetryableStatusCodes(
       InRange(1e-12, 10.0));
 }
 
-void Printable(absl::optional<internal::RetryMethodConfig> policy,
+void Printable(std::optional<internal::RetryMethodConfig> policy,
                RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
   RetryState retry_state(policy.has_value() ? &*policy : nullptr,
                          throttle_data);
@@ -291,7 +291,7 @@ void NoPolicyNeverRetries(std::vector<ServerMetadataHandle> md,
     EXPECT_EQ(
         retry_state.ShouldRetry(**it, (it + 1 == md.end() && committed_at_end),
                                 FuzzerDebugTag),
-        absl::nullopt);
+        std::nullopt);
   }
 }
 FUZZ_TEST(MyTestSuite, NoPolicyNeverRetries)
@@ -302,7 +302,7 @@ void SuccessfulRequestsNeverRetry(
     RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
   RetryState retry_state(&policy, throttle_data);
   EXPECT_EQ(retry_state.ShouldRetry(*md, committed, FuzzerDebugTag),
-            absl::nullopt);
+            std::nullopt);
 }
 FUZZ_TEST(MyTestSuite, SuccessfulRequestsNeverRetry)
     .WithDomains(AnyRetryMethodConfig(), AnySuccessfulMetadata(),
@@ -312,7 +312,7 @@ void CommittedRequestsNeverRetry(
     internal::RetryMethodConfig policy, ServerMetadataHandle md,
     RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
   RetryState retry_state(&policy, throttle_data);
-  EXPECT_EQ(retry_state.ShouldRetry(*md, true, FuzzerDebugTag), absl::nullopt);
+  EXPECT_EQ(retry_state.ShouldRetry(*md, true, FuzzerDebugTag), std::nullopt);
 }
 FUZZ_TEST(MyTestSuite, CommittedRequestsNeverRetry)
     .WithDomains(AnyRetryMethodConfig(), AnyServerMetadata(),
@@ -323,7 +323,7 @@ void NonRetryableRequestsNeverRetry(
     RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
   RetryState retry_state(&policy, throttle_data);
   EXPECT_EQ(retry_state.ShouldRetry(*md, committed, FuzzerDebugTag),
-            absl::nullopt);
+            std::nullopt);
 }
 FUZZ_TEST(MyTestSuite, NonRetryableRequestsNeverRetry)
     .WithDomains(
@@ -340,7 +340,7 @@ void NeverExceedMaxAttempts(
   for (auto it = md.begin(); it != md.end(); ++it) {
     ++attempts_completed;
     if (retry_state.ShouldRetry(**it, (it + 1 == md.end() && committed_at_end),
-                                FuzzerDebugTag) == absl::nullopt) {
+                                FuzzerDebugTag) == std::nullopt) {
       break;
     }
   }
@@ -356,7 +356,7 @@ void NeverRetryNegativePushback(
     RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
   RetryState retry_state(&policy, nullptr);
   EXPECT_EQ(retry_state.ShouldRetry(*md, committed, FuzzerDebugTag),
-            absl::nullopt);
+            std::nullopt);
 }
 FUZZ_TEST(MyTestSuite, NeverRetryNegativePushback)
     .WithDomains(AnyRetryMethodConfig(),

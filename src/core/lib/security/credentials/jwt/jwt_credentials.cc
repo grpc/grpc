@@ -68,7 +68,7 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
     return grpc_core::Immediate(uri.status());
   }
   // See if we can return a cached jwt.
-  absl::optional<grpc_core::Slice> jwt_value;
+  std::optional<grpc_core::Slice> jwt_value;
   {
     gpr_mu_lock(&cache_mu_);
     if (cached_.has_value() && cached_->service_url == *uri &&

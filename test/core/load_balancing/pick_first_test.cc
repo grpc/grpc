@@ -25,13 +25,13 @@
 #include <chrono>
 #include <map>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -65,7 +65,7 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   }
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakePickFirstConfig(
-      absl::optional<bool> shuffle_address_list = absl::nullopt) {
+      std::optional<bool> shuffle_address_list = std::nullopt) {
     return MakeConfig(Json::FromArray({Json::FromObject(
         {{"pick_first",
           shuffle_address_list.has_value()
@@ -460,28 +460,23 @@ TEST_F(PickFirstTest, ResolverUpdateBeforeLeavingIdle) {
   // subchannels (i.e., before it can transition from IDLE to CONNECTING),
   // we send a new update.
   absl::Notification notification;
-  work_serializer_->Run(
-      [&]() {
-        // Inject second update into WorkSerializer queue before we
-        // exit idle, so that the second update gets run before the initial
-        // subchannel connectivity state notifications from the first update
-        // are delivered.
-        work_serializer_->Run(
-            [&]() {
-              // Second update.
-              absl::Status status = lb_policy()->UpdateLocked(
-                  BuildUpdate(kNewAddresses, MakePickFirstConfig(false)));
-              EXPECT_TRUE(status.ok()) << status;
-              // Trigger notification once all connectivity state
-              // notifications have been delivered.
-              work_serializer_->Run([&]() { notification.Notify(); },
-                                    DEBUG_LOCATION);
-            },
-            DEBUG_LOCATION);
-        // Exit idle.
-        lb_policy()->ExitIdleLocked();
-      },
-      DEBUG_LOCATION);
+  work_serializer_->Run([&]() {
+    // Inject second update into WorkSerializer queue before we
+    // exit idle, so that the second update gets run before the initial
+    // subchannel connectivity state notifications from the first update
+    // are delivered.
+    work_serializer_->Run([&]() {
+      // Second update.
+      absl::Status status = lb_policy()->UpdateLocked(
+          BuildUpdate(kNewAddresses, MakePickFirstConfig(false)));
+      EXPECT_TRUE(status.ok()) << status;
+      // Trigger notification once all connectivity state
+      // notifications have been delivered.
+      work_serializer_->Run([&]() { notification.Notify(); });
+    });
+    // Exit idle.
+    lb_policy()->ExitIdleLocked();
+  });
   while (!notification.HasBeenNotified()) {
     fuzzing_ee_->Tick();
   }

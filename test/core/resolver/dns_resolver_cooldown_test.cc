@@ -396,9 +396,9 @@ static void test_cooldown() {
   OnResolutionCallbackArg* res_cb_arg = new OnResolutionCallbackArg();
   res_cb_arg->uri_str = "dns:127.0.0.1";
 
-  (*g_work_serializer)
-      ->Run([res_cb_arg]() { start_test_under_work_serializer(res_cb_arg); },
-            DEBUG_LOCATION);
+  (*g_work_serializer)->Run([res_cb_arg]() {
+    start_test_under_work_serializer(res_cb_arg);
+  });
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&g_iomgr_args);
   iomgr_args_finish(&g_iomgr_args);

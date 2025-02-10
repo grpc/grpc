@@ -109,8 +109,7 @@ void PollingResolver::ScheduleNextResolutionTimer(Duration delay) {
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();
             self_ptr->work_serializer_->Run(
-                [self = std::move(self)]() { self->OnNextResolutionLocked(); },
-                DEBUG_LOCATION);
+                [self = std::move(self)]() { self->OnNextResolutionLocked(); });
           });
 }
 
@@ -141,8 +140,7 @@ void PollingResolver::MaybeCancelNextResolutionTimer() {
 void PollingResolver::OnRequestComplete(Result result) {
   Ref(DEBUG_LOCATION, "OnRequestComplete").release();
   work_serializer_->Run(
-      [this, result]() mutable { OnRequestCompleteLocked(std::move(result)); },
-      DEBUG_LOCATION);
+      [this, result]() mutable { OnRequestCompleteLocked(std::move(result)); });
 }
 
 void PollingResolver::OnRequestCompleteLocked(Result result) {

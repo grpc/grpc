@@ -165,8 +165,12 @@ if old is None:
         text += "{}: {}\n".format(key, value)
 else:
     print(cur, old)
-    call_diff_size = 0
-    channel_diff_size = 0
+    call_decrease = 0
+    call_increase = 0
+    channel_decrease = 0
+    channel_increase = 0
+    call_significant = 200
+    channel_significant = 1000
     for scenario in _SCENARIOS.keys():
         for key, value in sorted(_INTERESTING.items()):
             key = scenario + ": " + key
@@ -175,20 +179,40 @@ else:
                     text += "{}: {}\n".format(key, cur[key])
                 else:
                     text += "{}: {} -> {}\n".format(key, old[key], cur[key])
+                    diff = cur[key] - old[key]
                     if "call" in key:
-                        call_diff_size += cur[key] - old[key]
+                        if diff < -call_significant:
+                            call_decrease += 1
+                        elif diff > call_significant:
+                            call_increase += 1
                     else:
-                        channel_diff_size += cur[key] - old[key]
+                        if diff < -channel_significant:
+                            channel_decrease += 1
+                        elif diff > channel_significant:
+                            channel_increase += 1
 
-    print("CALL_DIFF_SIZE: %f" % call_diff_size)
-    print("CHANNEL_DIFF_SIZE: %f" % channel_diff_size)
-    check_on_pr.label_increase_decrease_on_pr(
-        "per-call-memory", call_diff_size, 64
+    print("CALL: %d increases, %d decreases" % (call_increase, call_decrease))
+    print(
+        "CHANNEL: %d increases, %d decreases"
+        % (channel_increase, channel_decrease)
     )
-    check_on_pr.label_increase_decrease_on_pr(
-        "per-channel-memory", channel_diff_size, 1000
-    )
-    # TODO(chennancy)Change significant value when minstack also runs for channel
+    # if anything increased ==> label it an increase
+    # otherwise if anything decreased (and nothing increased) ==> label it a decrease
+    # otherwise label it neutral
+    # -- this biases reporting towards increases, which is what we want to act on
+    #    most regularly
+    if call_increase > 0:
+        check_on_pr.label_increase_decrease_on_pr("per-call-memory", 1)
+    elif call_decrease > 0:
+        check_on_pr.label_increase_decrease_on_pr("per-call-memory", -1)
+    else:
+        check_on_pr.label_increase_decrease_on_pr("per-call-memory", 0)
+    if channel_increase > 0:
+        check_on_pr.label_increase_decrease_on_pr("per-channel-memory", 1)
+    elif channel_decrease > 0:
+        check_on_pr.label_increase_decrease_on_pr("per-channel-memory", -1)
+    else:
+        check_on_pr.label_increase_decrease_on_pr("per-channel-memory", 0)
 
 print(text)
 check_on_pr.check_on_pr("Memory Difference", "```\n%s\n```" % text)

@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -44,7 +45,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -198,10 +198,10 @@ class XdsServerConfigFetcher::ListenerWatcher final
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
     : public ServerConfigFetcher::ConnectionManager {
  public:
-  FilterChainMatchManager(RefCountedPtr<GrpcXdsClient> xds_client,
-                          XdsListenerResource::FilterChainMap filter_chain_map,
-                          absl::optional<XdsListenerResource::FilterChainData>
-                              default_filter_chain);
+  FilterChainMatchManager(
+      RefCountedPtr<GrpcXdsClient> xds_client,
+      XdsListenerResource::FilterChainMap filter_chain_map,
+      std::optional<XdsListenerResource::FilterChainData> default_filter_chain);
 
   ~FilterChainMatchManager() override {
     xds_client_.reset(DEBUG_LOCATION, "FilterChainMatchManager");
@@ -218,7 +218,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
     return filter_chain_map_;
   }
 
-  const absl::optional<XdsListenerResource::FilterChainData>&
+  const std::optional<XdsListenerResource::FilterChainData>&
   default_filter_chain() const {
     return default_filter_chain_;
   }
@@ -227,8 +227,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
   class RouteConfigWatcher;
   struct RdsUpdateState {
     RouteConfigWatcher* watcher;
-    absl::optional<
-        absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>>
+    std::optional<absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>>
         rds_update;
   };
 
@@ -257,7 +256,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
   // a pointer to the filter chain data within that LDS resource, rather
   // than copying the filter chain data here.
   XdsListenerResource::FilterChainMap filter_chain_map_;
-  absl::optional<XdsListenerResource::FilterChainData> default_filter_chain_;
+  std::optional<XdsListenerResource::FilterChainData> default_filter_chain_;
   Mutex mu_;
   size_t rds_resources_yet_to_fetch_ ABSL_GUARDED_BY(mu_) = 0;
   std::map<std::string /* resource_name */, RdsUpdateState> rds_map_
@@ -679,7 +678,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     FilterChainMatchManager(
         RefCountedPtr<GrpcXdsClient> xds_client,
         XdsListenerResource::FilterChainMap filter_chain_map,
-        absl::optional<XdsListenerResource::FilterChainData>
+        std::optional<XdsListenerResource::FilterChainData>
             default_filter_chain)
     : xds_client_(std::move(xds_client)),
       filter_chain_map_(std::move(filter_chain_map)),
@@ -730,7 +729,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(
           resource_name, WeakRefAsSubclass<FilterChainMatchManager>());
       rds_map_.emplace(resource_name, RdsUpdateState{route_config_watcher.get(),
-                                                     absl::nullopt});
+                                                     std::nullopt});
       watchers_to_start.push_back(
           WatcherToStart{resource_name, std::move(route_config_watcher)});
     }

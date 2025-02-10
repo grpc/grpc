@@ -23,6 +23,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -34,7 +35,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -197,7 +197,7 @@ class XdsClusterManagerLb final : public LoadBalancingPolicy {
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
 
     // States for delayed removal.
-    absl::optional<EventEngine::TaskHandle> delayed_removal_timer_handle_;
+    std::optional<EventEngine::TaskHandle> delayed_removal_timer_handle_;
     bool shutdown_ = false;
   };
 
@@ -503,8 +503,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
                 self_ptr->xds_cluster_manager_policy_->work_serializer()->Run(
                     [self = std::move(self)]() {
                       self->OnDelayedRemovalTimerLocked();
-                    },
-                    DEBUG_LOCATION);
+                    });
               });
 }
 

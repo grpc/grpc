@@ -20,9 +20,9 @@
 
 #include <memory>
 #include <new>
+#include <optional>
 
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -127,7 +127,7 @@ grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
 };
 
 // Tests transparent retries when the call was never sent out on the wire.
-CORE_END2END_TEST(RetryTest, RetryTransparentNotSentOnWire) {
+CORE_END2END_TEST(RetryTests, RetryTransparentNotSentOnWire) {
   SKIP_IF_V3();  // Need to convert filter
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
@@ -138,7 +138,7 @@ CORE_END2END_TEST(RetryTest, RetryTransparentNotSentOnWire) {
   });
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Start a batch containing send ops.
   c.NewBatch(1)
       .SendInitialMetadata({})
@@ -185,7 +185,7 @@ CORE_END2END_TEST(RetryTest, RetryTransparentNotSentOnWire) {
   EXPECT_EQ(server_message.payload(), "bar");
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.
-  EXPECT_EQ(s.GetInitialMetadata("grpc-previous-rpc-attempts"), absl::nullopt);
+  EXPECT_EQ(s.GetInitialMetadata("grpc-previous-rpc-attempts"), std::nullopt);
 }
 
 }  // namespace

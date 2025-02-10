@@ -195,7 +195,7 @@ TEST(PipeTest, CanSeeClosedOnSend) {
                  }),
             // Verify both that the send failed and that we executed the close.
             [](const std::tuple<bool, absl::Status>& result) {
-              EXPECT_EQ(result, std::make_tuple(false, absl::OkStatus()));
+              EXPECT_EQ(result, std::tuple(false, absl::OkStatus()));
               return absl::OkStatus();
             });
       },
@@ -363,7 +363,7 @@ TEST(PipeTest, CanCancelSendWithInterceptor) {
   MakeActivity(
       [] {
         auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
-        pipe->sender.InterceptAndMap([](int) { return absl::nullopt; });
+        pipe->sender.InterceptAndMap([](int) { return std::nullopt; });
         return Seq(
             // Concurrently:
             // - wait for a received value (will stall forever since we push
@@ -424,7 +424,7 @@ TEST(PipeTest, CanFlowControlThroughManyStages) {
                               return 2;
                             })),
                    [](std::tuple<int, bool, bool, int> result) {
-                     EXPECT_EQ(result, std::make_tuple(1, true, true, 2));
+                     EXPECT_EQ(result, std::tuple(1, true, true, 2));
                      return absl::OkStatus();
                    });
       },

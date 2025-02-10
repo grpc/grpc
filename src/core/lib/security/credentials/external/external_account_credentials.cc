@@ -397,7 +397,7 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
                           absl::StrCat("error fetching oauth2 token: ",
                                        response_body.status().message()));
   } else {
-    absl::optional<Slice> token_value;
+    std::optional<Slice> token_value;
     Duration token_lifetime;
     if (grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
             *response_body, &token_value, &token_lifetime) !=

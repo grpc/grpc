@@ -18,7 +18,6 @@
 
 #include "src/core/xds/grpc/file_watcher_certificate_provider_factory.h"
 
-#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include <algorithm>
@@ -31,6 +30,7 @@
 #include "absl/strings/str_join.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/util/down_cast.h"
 
 namespace grpc_core {
 
@@ -119,7 +119,7 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
     return nullptr;
   }
   auto* file_watcher_config =
-      static_cast<FileWatcherCertificateProviderFactory::Config*>(config.get());
+      DownCast<FileWatcherCertificateProviderFactory::Config*>(config.get());
   return MakeRefCounted<FileWatcherCertificateProvider>(
       file_watcher_config->private_key_file(),
       file_watcher_config->identity_cert_file(),

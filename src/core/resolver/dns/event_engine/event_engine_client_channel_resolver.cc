@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,7 +36,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
@@ -116,7 +116,7 @@ class EventEngineClientChannelDNSResolver final : public PollingResolver {
     // callers must release the lock and call OnRequestComplete if a Result is
     // returned. This is because OnRequestComplete may Orphan the resolver,
     // which requires taking the lock.
-    absl::optional<Resolver::Result> OnResolvedLocked()
+    std::optional<Resolver::Result> OnResolvedLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
     // Helper method to populate server addresses on resolver result.
     void MaybePopulateAddressesLocked(Resolver::Result* result)
@@ -146,7 +146,7 @@ class EventEngineClientChannelDNSResolver final : public PollingResolver {
     size_t number_of_balancer_hostnames_resolved_
         ABSL_GUARDED_BY(on_resolved_mu_) = 0;
     bool orphaned_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
-    absl::optional<EventEngine::TaskHandle> timeout_handle_
+    std::optional<EventEngine::TaskHandle> timeout_handle_
         ABSL_GUARDED_BY(on_resolved_mu_);
     std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver_;
   };
@@ -304,7 +304,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnHostnameResolved(absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
                            new_addresses) {
-  absl::optional<Resolver::Result> result;
+  std::optional<Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
     // Make sure field destroys before cleanup.
@@ -330,7 +330,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnSRVResolved(
         absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
             srv_records) {
-  absl::optional<Resolver::Result> result;
+  std::optional<Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
       resolver_->OnRequestComplete(std::move(*result));
@@ -384,7 +384,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         std::string authority,
         absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
             new_balancer_addresses) {
-  absl::optional<Resolver::Result> result;
+  std::optional<Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
       resolver_->OnRequestComplete(std::move(*result));
@@ -415,7 +415,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnTXTResolved(absl::StatusOr<std::vector<std::string>> service_config) {
-  absl::optional<Resolver::Result> result;
+  std::optional<Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
     // Make sure field destroys before cleanup.
@@ -498,9 +498,9 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
 }
 
-absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
+std::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
     EventEngineDNSRequestWrapper::OnResolvedLocked() {
-  if (orphaned_) return absl::nullopt;
+  if (orphaned_) return std::nullopt;
   // Wait for all requested queries to return.
   if (is_hostname_inflight_ || is_srv_inflight_ || is_txt_inflight_ ||
       number_of_balancer_hostnames_resolved_ !=
@@ -513,7 +513,7 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
         << ", txt: " << (is_txt_inflight_ ? "waiting" : "done")
         << ", balancer addresses: " << number_of_balancer_hostnames_resolved_
         << "/" << number_of_balancer_hostnames_initiated_ << " complete";
-    return absl::nullopt;
+    return std::nullopt;
   }
   GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
       << "(event_engine client channel resolver) DNSResolver::" << this

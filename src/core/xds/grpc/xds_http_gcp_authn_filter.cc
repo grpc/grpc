@@ -79,7 +79,7 @@ Json::Object ValidateFilterConfig(
 
 }  // namespace
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -88,7 +88,7 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfig(
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse GCP auth filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* gcp_auth =
       envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_parse(
@@ -96,19 +96,19 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfig(
           context.arena);
   if (gcp_auth == nullptr) {
     errors->AddError("could not parse GCP auth filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   return FilterConfig{ConfigProtoName(), Json::FromObject(ValidateFilterConfig(
                                              instance_name, gcp_auth, errors))};
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     XdsExtension /*extension*/, ValidationErrors* errors) const {
   errors->AddError("GCP auth filter does not support config override");
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {

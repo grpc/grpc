@@ -546,6 +546,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.h" role="src" />
@@ -942,6 +945,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c" role="src" />
@@ -1959,6 +1964,7 @@
     <file baseinstalldir="/" name="src/core/util/uuid_v4.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/validation_errors.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/validation_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/wait_for_single_owner.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/directory_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/env.cc" role="src" />
@@ -2029,6 +2035,7 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_server_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_server_grpc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_server_grpc_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/lrs_client.cc" role="src" />

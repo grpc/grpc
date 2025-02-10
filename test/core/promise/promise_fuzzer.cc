@@ -15,6 +15,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -22,7 +23,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
+#include "fuzztest/fuzztest.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
@@ -30,7 +31,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/promise/promise_fuzzer.pb.h"
 
 bool squelch = true;
@@ -323,16 +323,15 @@ class Fuzzer {
   std::function<void()> wakeup_;
   // If we are certain of the final status, then that. Otherwise, nullopt if we
   // don't know.
-  absl::optional<absl::Status> expected_status_;
+  std::optional<absl::Status> expected_status_;
   // Has on_done been called?
   bool done_ = false;
   // Wakers that may be scheduled
   std::map<int, std::vector<Waker>> wakers_;
 };
+
+void Run(promise_fuzzer::Msg msg) { Fuzzer().Run(msg); }
+FUZZ_TEST(PromiseFuzzer, Run);
+
 }  // namespace
-
 }  // namespace grpc_core
-
-DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg& msg) {
-  grpc_core::Fuzzer().Run(msg);
-}

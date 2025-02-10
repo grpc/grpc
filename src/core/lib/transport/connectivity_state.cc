@@ -59,8 +59,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
       : watcher_(std::move(watcher)), state_(state), status_(status) {
     if (work_serializer != nullptr) {
       work_serializer->Run(
-          [this]() { SendNotification(this, absl::OkStatus()); },
-          DEBUG_LOCATION);
+          [this]() { SendNotification(this, absl::OkStatus()); });
     } else {
       GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
                         grpc_schedule_on_exec_ctx);

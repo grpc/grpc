@@ -25,6 +25,7 @@
 #include <stdlib.h>
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -35,7 +36,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/poll.h"
@@ -369,12 +369,73 @@ struct SimpleIntBasedMetadata : public SimpleIntBasedMetadataBase<Int> {
 };
 
 // grpc-status metadata trait.
-struct GrpcStatusMetadata
-    : public SimpleIntBasedMetadata<grpc_status_code, GRPC_STATUS_UNKNOWN> {
+struct GrpcStatusMetadata {
+  using ValueType = grpc_status_code;
+  using MementoType = grpc_status_code;
+  static ValueType MementoToValue(MementoType value) { return value; }
+  static Slice Encode(ValueType x) { return Slice::FromInt64(x); }
+  static std::string DisplayValue(ValueType x) {
+    switch (x) {
+      case GRPC_STATUS_OK:
+        return "OK";
+      case GRPC_STATUS_CANCELLED:
+        return "CANCELLED";
+      case GRPC_STATUS_UNKNOWN:
+        return "UNKNOWN";
+      case GRPC_STATUS_INVALID_ARGUMENT:
+        return "INVALID_ARGUMENT";
+      case GRPC_STATUS_DEADLINE_EXCEEDED:
+        return "DEADLINE_EXCEEDED";
+      case GRPC_STATUS_NOT_FOUND:
+        return "NOT_FOUND";
+      case GRPC_STATUS_ALREADY_EXISTS:
+        return "ALREADY_EXISTS";
+      case GRPC_STATUS_PERMISSION_DENIED:
+        return "PERMISSION_DENIED";
+      case GRPC_STATUS_RESOURCE_EXHAUSTED:
+        return "RESOURCE_EXHAUSTED";
+      case GRPC_STATUS_FAILED_PRECONDITION:
+        return "FAILED_PRECONDITION";
+      case GRPC_STATUS_ABORTED:
+        return "ABORTED";
+      case GRPC_STATUS_OUT_OF_RANGE:
+        return "OUT_OF_RANGE";
+      case GRPC_STATUS_UNIMPLEMENTED:
+        return "UNIMPLEMENTED";
+      case GRPC_STATUS_INTERNAL:
+        return "INTERNAL";
+      case GRPC_STATUS_UNAVAILABLE:
+        return "UNAVAILABLE";
+      case GRPC_STATUS_DATA_LOSS:
+        return "DATA_LOSS";
+      case GRPC_STATUS_UNAUTHENTICATED:
+        return "UNAUTHENTICATED";
+      default:
+        return absl::StrCat("UNKNOWN(", static_cast<int>(x), ")");
+    }
+  }
+  static auto DisplayMemento(MementoType x) { return DisplayValue(x); }
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallIntegralValuesCompressor<16>;
   static absl::string_view key() { return "grpc-status"; }
+  static grpc_status_code ParseMemento(Slice value, bool,
+                                       MetadataParseErrorFn on_error) {
+    int64_t wire_value;
+    if (!absl::SimpleAtoi(value.as_string_view(), &wire_value)) {
+      on_error("not an integer", value);
+      return GRPC_STATUS_UNKNOWN;
+    }
+    if (wire_value < 0) {
+      on_error("negative value", value);
+      return GRPC_STATUS_UNKNOWN;
+    }
+    if (wire_value >= GRPC_STATUS__DO_NOT_USE) {
+      on_error("out of range", value);
+      return GRPC_STATUS_UNKNOWN;
+    }
+    return static_cast<grpc_status_code>(wire_value);
+  }
 };
 
 // grpc-previous-rpc-attempts metadata trait.
@@ -772,10 +833,10 @@ class GetStringValueHelper {
   GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
       Trait::kRepeatable == false &&
           std::is_same<Slice, typename Trait::ValueType>::value,
-      absl::optional<absl::string_view>>
+      std::optional<absl::string_view>>
   Found(Trait) {
     const auto* value = container_->get_pointer(Trait());
-    if (value == nullptr) return absl::nullopt;
+    if (value == nullptr) return std::nullopt;
     return value->as_string_view();
   }
 
@@ -783,10 +844,10 @@ class GetStringValueHelper {
   GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
       Trait::kRepeatable == true &&
           !std::is_same<Slice, typename Trait::ValueType>::value,
-      absl::optional<absl::string_view>>
+      std::optional<absl::string_view>>
   Found(Trait) {
     const auto* value = container_->get_pointer(Trait());
-    if (value == nullptr) return absl::nullopt;
+    if (value == nullptr) return std::nullopt;
     backing_->clear();
     for (const auto& v : *value) {
       if (!backing_->empty()) backing_->push_back(',');
@@ -800,15 +861,15 @@ class GetStringValueHelper {
   GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
       Trait::kRepeatable == false &&
           !std::is_same<Slice, typename Trait::ValueType>::value,
-      absl::optional<absl::string_view>>
+      std::optional<absl::string_view>>
   Found(Trait) {
     const auto* value = container_->get_pointer(Trait());
-    if (value == nullptr) return absl::nullopt;
+    if (value == nullptr) return std::nullopt;
     *backing_ = std::string(Trait::Encode(*value).as_string_view());
     return *backing_;
   }
 
-  GPR_ATTRIBUTE_NOINLINE absl::optional<absl::string_view> NotFound(
+  GPR_ATTRIBUTE_NOINLINE std::optional<absl::string_view> NotFound(
       absl::string_view key) {
     return container_->unknown_.GetStringValue(key, backing_);
   }
@@ -1113,8 +1174,8 @@ class UnknownMap {
 
   void Append(absl::string_view key, Slice value);
   void Remove(absl::string_view key);
-  absl::optional<absl::string_view> GetStringValue(absl::string_view key,
-                                                   std::string* backing) const;
+  std::optional<absl::string_view> GetStringValue(absl::string_view key,
+                                                  std::string* backing) const;
 
   BackingType::const_iterator begin() const { return unknown_.cbegin(); }
   BackingType::const_iterator end() const { return unknown_.cend(); }
@@ -1405,9 +1466,9 @@ class MetadataMap {
   // Returns nullopt if the metadata is not present.
   // Causes a compilation error if Which is not an element of Traits.
   template <typename Which>
-  absl::optional<typename Which::ValueType> get(Which) const {
+  std::optional<typename Which::ValueType> get(Which) const {
     if (auto* p = table_.template get<Value<Which>>()) return p->value;
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   // Set the value of some known metadata.
@@ -1438,8 +1499,8 @@ class MetadataMap {
   void Remove(const char* key) { Remove(absl::string_view(key)); }
 
   // Retrieve some metadata by name
-  absl::optional<absl::string_view> GetStringValue(absl::string_view name,
-                                                   std::string* buffer) const {
+  std::optional<absl::string_view> GetStringValue(absl::string_view name,
+                                                  std::string* buffer) const {
     metadata_detail::GetStringValueHelper<Derived> helper(
         static_cast<const Derived*>(this), buffer);
     return metadata_detail::NameLookup<Traits...>::Lookup(name, &helper);
@@ -1452,10 +1513,10 @@ class MetadataMap {
   //  m.Remove(T());
   template <typename Which>
   absl::enable_if_t<Which::kRepeatable == false,
-                    absl::optional<typename Which::ValueType>>
+                    std::optional<typename Which::ValueType>>
   Take(Which which) {
     if (auto* p = get_pointer(which)) {
-      absl::optional<typename Which::ValueType> value(std::move(*p));
+      std::optional<typename Which::ValueType> value(std::move(*p));
       Remove(which);
       return value;
     }

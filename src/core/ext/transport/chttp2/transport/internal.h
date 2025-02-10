@@ -30,6 +30,7 @@
 
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <variant>
 
@@ -37,7 +38,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -475,6 +475,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   ;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
+  /// Tracks any adjustments to the absolute timestamp of the next keepalive
+  /// timer callback execution.
+  grpc_core::Timestamp next_adjusted_keepalive_timestamp;
   /// grace period to wait for data after sending a ping before keepalives
   /// timeout
   grpc_core::Duration keepalive_timeout;
@@ -606,7 +609,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
-  absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
+  std::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   uint32_t* recv_message_flags = nullptr;
   bool* call_failed_before_recv_message = nullptr;
   grpc_closure* recv_message_ready = nullptr;

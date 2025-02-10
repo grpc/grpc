@@ -21,9 +21,9 @@
 
 #include <memory>
 #include <new>
+#include <optional>
 
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -127,7 +127,7 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
 // deferred at the point where recv_trailing_metadata was started from
 // the surface.  This resulted in ASAN failures caused by not unreffing
 // a grpc_error.
-CORE_END2END_TEST(RetryTest, RetryRecvMessageReplay) {
+CORE_END2END_TEST(RetryTests, RetryRecvMessageReplay) {
   SKIP_IF_V3();  // Need to convert filter
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
@@ -155,7 +155,7 @@ CORE_END2END_TEST(RetryTest, RetryRecvMessageReplay) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Start a batch containing send_initial_metadata and recv_initial_metadata.
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1).SendInitialMetadata({}).RecvInitialMetadata(

@@ -1040,10 +1040,10 @@ class SimpleLabelIterable : public grpc::internal::LabelsIterable {
       std::pair<absl::string_view, absl::string_view> label)
       : label_(label) {}
 
-  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
+  std::optional<std::pair<absl::string_view, absl::string_view>> Next()
       override {
     if (iterated_) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     iterated_ = true;
     return label_;
@@ -1133,7 +1133,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
                                            kServerCallDurationInstrumentName})
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ true, /*enabled_on_server*/ true,
-                        std::make_pair("key", "value")))));
+                        std::pair("key", "value")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1166,7 +1166,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
                                            kServerCallDurationInstrumentName})
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ true, /*enabled_on_server*/ false,
-                        std::make_pair("key", "value")))));
+                        std::pair("key", "value")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1200,7 +1200,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
                                            kServerCallDurationInstrumentName})
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ false, /*enabled_on_server*/ true,
-                        std::make_pair("key", "value")))));
+                        std::pair("key", "value")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1235,19 +1235,19 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
                                            kServerCallDurationInstrumentName})
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ true, /*enabled_on_server*/ true,
-                        std::make_pair("key1", "value1")))
+                        std::pair("key1", "value1")))
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ true, /*enabled_on_server*/ false,
-                        std::make_pair("key2", "value2")))
+                        std::pair("key2", "value2")))
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ true, /*enabled_on_server*/ false,
-                        std::make_pair("key3", "value3")))
+                        std::pair("key3", "value3")))
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ false, /*enabled_on_server*/ true,
-                        std::make_pair("key4", "value4")))
+                        std::pair("key4", "value4")))
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ false, /*enabled_on_server*/ true,
-                        std::make_pair("key5", "value5")))));
+                        std::pair("key5", "value5")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<

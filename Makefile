@@ -838,6 +838,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c \
@@ -999,6 +1000,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/service/status/v3/csds.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/matcher/v3/metadata.upbdefs.c \
@@ -1768,30 +1770,15 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
-    include/grpc/impl/call.h \
     include/grpc/impl/channel_arg_names.h \
-    include/grpc/impl/codegen/atm.h \
-    include/grpc/impl/codegen/atm_gcc_atomic.h \
-    include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_windows.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/grpc_types.h \
-    include/grpc/impl/codegen/log.h \
-    include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/sync.h \
-    include/grpc/impl/codegen/sync_abseil.h \
-    include/grpc/impl/codegen/sync_custom.h \
-    include/grpc/impl/codegen/sync_generic.h \
-    include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/compression_types.h \
     include/grpc/impl/connectivity_state.h \
     include/grpc/impl/grpc_types.h \
@@ -1802,25 +1789,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
-    include/grpc/support/alloc.h \
-    include/grpc/support/atm_gcc_atomic.h \
-    include/grpc/support/atm_gcc_sync.h \
-    include/grpc/support/atm_windows.h \
-    include/grpc/support/cpu.h \
-    include/grpc/support/json.h \
-    include/grpc/support/log.h \
-    include/grpc/support/log_windows.h \
-    include/grpc/support/metrics.h \
-    include/grpc/support/port_platform.h \
-    include/grpc/support/string_util.h \
-    include/grpc/support/sync.h \
-    include/grpc/support/sync_abseil.h \
-    include/grpc/support/sync_custom.h \
-    include/grpc/support/sync_generic.h \
-    include/grpc/support/sync_posix.h \
-    include/grpc/support/sync_windows.h \
-    include/grpc/support/thd_id.h \
-    include/grpc/support/time.h \
     include/grpc/support/workaround_list.h \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
