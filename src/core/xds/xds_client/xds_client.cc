@@ -124,7 +124,10 @@ class XdsClient::XdsChannel::AdsCall final
   // The ctor and dtor should not be used directly.
   explicit AdsCall(RefCountedPtr<RetryableCall<AdsCall>> retryable_call);
 
-  void Orphan() override;
+  // Disable thread-safety analysis because this method is called via
+  // OrphanablePtr<>, but there's no way to pass the lock annotation
+  // through there.
+  void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
   RetryableCall<AdsCall>* retryable_call() const {
     return retryable_call_.get();
@@ -136,8 +139,7 @@ class XdsClient::XdsChannel::AdsCall final
   void SubscribeLocked(const XdsResourceType* type, const XdsResourceName& name,
                        bool delay_send)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-  // Returns true if the cached resource can be removed.
-  bool UnsubscribeLocked(const XdsResourceType* type,
+  void UnsubscribeLocked(const XdsResourceType* type,
                          const XdsResourceName& name, bool delay_unsubscription)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
@@ -312,12 +314,7 @@ class XdsClient::XdsChannel::AdsCall final
                                absl::Status status) const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-  // Returns true if the message was sent synchronously, or false if the
-  // message was queued to be sent later.
-  // If remove_unsubscribed_cache_entries is true and the message is
-  // sent synchronously, removes cache entries with no watchers.
-  bool SendMessageLocked(const XdsResourceType* type,
-                         bool remove_unsubscribed_cache_entries)
+  void SendMessageLocked(const XdsResourceType* type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   struct DecodeContext {
@@ -456,8 +453,8 @@ void XdsClient::XdsChannel::SubscribeLocked(const XdsResourceType* type,
                                             const XdsResourceName& name) {
   if (ads_call_ == nullptr) {
     // Start the ADS call if this is the first request.
-    ads_call_.reset(
-        new RetryableCall<AdsCall>(WeakRef(DEBUG_LOCATION, "XdsChannel+ads")));
+    ads_call_ = MakeOrphanable<RetryableCall<AdsCall>>(
+        WeakRef(DEBUG_LOCATION, "XdsChannel+ads"));
     // Note: AdsCall's ctor will automatically subscribe to all
     // resources that the XdsClient already has watchers for, so we can
     // return here.
@@ -470,25 +467,18 @@ void XdsClient::XdsChannel::SubscribeLocked(const XdsResourceType* type,
   ads_call_->call()->SubscribeLocked(type, name, /*delay_send=*/false);
 }
 
-bool XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
+void XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
                                               const XdsResourceName& name,
                                               bool delay_unsubscription) {
   if (ads_call_ != nullptr) {
     auto* call = ads_call_->call();
     if (call != nullptr) {
-      bool cached_resource_can_be_removed =
-          call->UnsubscribeLocked(type, name, delay_unsubscription);
+      call->UnsubscribeLocked(type, name, delay_unsubscription);
       if (!call->HasSubscribedResources()) {
         ads_call_.reset();
-        // We won't actually be sending the unsubscription, so the
-        // caller should remove the cached resource immediately.
-        return true;
       }
-      return cached_resource_can_be_removed;
     }
   }
-  // No ADS call, so caller should remove the cached resource.
-  return true;
 }
 
 bool XdsClient::XdsChannel::MaybeFallbackLocked(
@@ -744,13 +734,20 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
   }
   // Send initial message if we added any subscriptions above.
   for (const auto& [type, _] : state_map_) {
-    SendMessageLocked(type, /*remove_unsubscribed_cache_entries=*/false);
+    SendMessageLocked(type);
   }
   streaming_call_->StartRecvMessage();
 }
 
 void XdsClient::XdsChannel::AdsCall::Orphan() {
   state_map_.clear();
+  // We may have unsubscriptions for which we have not yet actually sent
+  // unsubscribe messages, and now we never will, so do a pass to delete
+  // any cache entries for which we've unsubscribed.
+  for (const auto& [_, type] : xds_client()->resource_types_) {
+    xds_client()->MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
+        xds_channel(), type);
+  }
   // Note that the initial ref is held by the StreamEventHandler, which
   // will be destroyed when streaming_call_ is destroyed, which may not happen
   // here, since there may be other refs held to streaming_call_ by internal
@@ -763,16 +760,11 @@ void XdsClient::XdsChannel::AdsCall::SubscribeLocked(
   auto& state = state_map_[type].subscribed_resources[name.authority][name.key];
   if (state == nullptr) {
     state = MakeOrphanable<ResourceTimer>(type, name);
-    if (!delay_send) {
-      // We handle removing unsubscribed cache entries in this case,
-      // because callers may unsubscribe from one resource with
-      // delay_unsubscription=true and then subscribe to another resource.
-      SendMessageLocked(type, /*remove_unsubscribed_cache_entries=*/true);
-    }
+    if (!delay_send) SendMessageLocked(type);
   }
 }
 
-bool XdsClient::XdsChannel::AdsCall::UnsubscribeLocked(
+void XdsClient::XdsChannel::AdsCall::UnsubscribeLocked(
     const XdsResourceType* type, const XdsResourceName& name,
     bool delay_unsubscription) {
   auto& type_state_map = state_map_[type];
@@ -789,9 +781,8 @@ bool XdsClient::XdsChannel::AdsCall::UnsubscribeLocked(
   // resource we were subscribed to, since we'll be closing the stream
   // immediately in that case.
   if (!delay_unsubscription && HasSubscribedResources()) {
-    return SendMessageLocked(type, /*remove_unsubscribed_cache_entries=*/false);
+    SendMessageLocked(type);
   }
-  return false;
 }
 
 bool XdsClient::XdsChannel::AdsCall::HasSubscribedResources() const {
@@ -887,18 +878,16 @@ std::string XdsClient::XdsChannel::AdsCall::CreateAdsRequest(
   return SerializeDiscoveryRequest(arena.ptr(), request);
 }
 
-bool XdsClient::XdsChannel::AdsCall::SendMessageLocked(
-    const XdsResourceType* type, bool remove_unsubscribed_cache_entries)
+void XdsClient::XdsChannel::AdsCall::SendMessageLocked(
+    const XdsResourceType* type)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_pending_ != nullptr) {
     buffered_requests_.insert(type);
-    return false;
+    return;
   }
-  if (remove_unsubscribed_cache_entries) {
-    xds_client()->MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
-        xds_channel(), type);
-  }
+  xds_client()->MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(xds_channel(),
+                                                                 type);
   auto& state = state_map_[type];
   std::string serialized_message = CreateAdsRequest(
       type->type_url(), xds_channel()->resource_type_version_map_[type],
@@ -913,7 +902,6 @@ bool XdsClient::XdsChannel::AdsCall::SendMessageLocked(
   state.status = absl::OkStatus();
   streaming_call_->SendMessage(std::move(serialized_message));
   send_message_pending_ = type;
-  return true;
 }
 
 void XdsClient::XdsChannel::AdsCall::OnRequestSent(bool ok) {
@@ -943,7 +931,7 @@ void XdsClient::XdsChannel::AdsCall::OnRequestSent(bool ok) {
     // type(s).
     auto it = buffered_requests_.begin();
     if (it != buffered_requests_.end()) {
-      SendMessageLocked(*it, /*remove_unsubscribed_cache_entries=*/true);
+      SendMessageLocked(*it);
       buffered_requests_.erase(it);
     }
   }
@@ -1370,7 +1358,7 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
           std::move(context.version);
     }
     // Send ACK or NACK.
-    SendMessageLocked(context.type, /*remove_unsubscribed_cache_entries=*/true);
+    SendMessageLocked(context.type);
   }
   // Update metrics.
   if (xds_client()->metrics_reporter_ != nullptr) {
@@ -1619,7 +1607,12 @@ void XdsClient::Orphaned() {
   MutexLock lock(&mu_);
   shutting_down_ = true;
   // Clear cache and any remaining watchers that may not have been cancelled.
-  authority_state_map_.clear();
+  // Note: We move authority_state_map_ out of the way before clearing
+  // it, because clearing the map will trigger calls to
+  // MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(), which would try to
+  // modify the map while we are iterating over it.
+  auto authority_state_map = std::move(authority_state_map_);
+  authority_state_map.clear();
   invalid_watchers_.clear();
 }
 
@@ -1642,7 +1635,7 @@ bool XdsClient::HasUncachedResources(const AuthorityState& authority_state) {
     for (const auto& [_, resource_state] : resource_map) {
       if (resource_state.HasWatchers() &&
           resource_state.client_status() ==
-          ResourceState::ClientResourceStatus::REQUESTED) {
+              ResourceState::ClientResourceStatus::REQUESTED) {
         return true;
       }
     }
@@ -1770,35 +1763,22 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   ResourceState& resource_state = resource_it->second;
   // Remove watcher.
   resource_state.RemoveWatcher(watcher);
-  // Clean up empty map entries, if any.
+  // If this was the last watcher, clean up.
   if (!resource_state.HasWatchers()) {
-    // Only care about the value from the last channel, since that's the
-    // one we're actually using data from.
-    bool cached_resource_can_be_removed = false;
+    // Unsubscribe from this resource on all XdsChannels.
     for (const auto& xds_channel : authority_state.xds_channels) {
-      cached_resource_can_be_removed = xds_channel->UnsubscribeLocked(
-          type, *resource_name, delay_unsubscription);
+      xds_channel->UnsubscribeLocked(type, *resource_name,
+                                     delay_unsubscription);
     }
-    // If there is already a send_message op pending on the ADS stream,
-    // then the unsubscription request will not yet have been sent.  In
-    // that case, if we throw out the cache entry but then a new watcher
-    // is started for this resource before the pending send_message op
-    // completes, the server will never see the unusubscription, so it
-    // will never re-send the resource to the client (unless it changes
-    // at some point in the future).  In that case, we wait until we do
-    // send the unsubscription before we delete the cache entry.  But in
-    // all other cases (i.e., either the unsubscribe was sent
-    // synchronously, or there is no ADS call because we are in backoff
-    // waiting to retry), we delete the cache entry here.
-    if (cached_resource_can_be_removed) {
-      resource_map.erase(resource_it);
-      if (resource_map.empty()) {
-        authority_state.type_map.erase(type_it);
-        if (authority_state.type_map.empty()) {
-          authority_state_map_.erase(authority_it);
-        }
-      }
-    }
+    // Note: We wait to remove the cache entry until we actualle send
+    // the unsubscription message on the ADS stream, so that if a watch is
+    // stopped and then started again before we send the next request
+    // for that resource type, we don't lose the cache entry without the
+    // xDS server knowing it needs to re-send it.
+    //
+    // Note: Because the cache cleanup may have been triggered by the
+    // unsubscription, it's no longer safe to access any of the
+    // iterators that we have from above.
   }
 }
 
