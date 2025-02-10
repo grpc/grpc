@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -34,14 +33,13 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/forkable.h"
-#include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
@@ -122,9 +120,7 @@ void AsyncConnect::OnTimeoutExpired(absl::Status status) {
 
 void AsyncConnect::OnWritable(absl::Status status)
     ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  int so_error = 0;
   socklen_t so_error_size;
-  int err;
   int done;
   int consumed_refs = 1;
   EventHandle* fd;
@@ -187,14 +183,16 @@ void AsyncConnect::OnWritable(absl::Status status)
     return;
   }
 
+  int so_error = 0;
+  PosixResult err;
   do {
     so_error_size = sizeof(so_error);
-    err = getsockopt(fd->WrappedFd(), SOL_SOCKET, SO_ERROR, &so_error,
-                     &so_error_size);
-  } while (err < 0 && errno == EINTR);
-  if (err < 0) {
+    err = fd->Poller()->GetFileDescriptors().GetSockOpt(
+        fd->WrappedFd(), SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
+  } while (err.IsPosixError(EINTR));
+  if (!err.ok()) {
     status = absl::FailedPreconditionError(
-        absl::StrCat("getsockopt: ", std::strerror(errno)));
+        absl::StrCat("getsockopt: ", err.status()));
     return;
   }
 
@@ -240,16 +238,17 @@ void AsyncConnect::OnWritable(absl::Status status)
 
 EventEngine::ConnectionHandle
 PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
-    int fd, EventEngine::OnConnectCallback on_connect,
+    const FileDescriptor& fd, EventEngine::OnConnectCallback on_connect,
     const EventEngine::ResolvedAddress& addr,
     const PosixTcpOptions& tcp_options, MemoryAllocator memory_allocator,
     EventEngine::Duration timeout) {
-  int err;
+  PosixResult err;
   int connect_errno;
   do {
-    err = connect(fd, addr.address(), addr.size());
-  } while (err < 0 && errno == EINTR);
-  connect_errno = (err < 0) ? errno : 0;
+    err = poller_manager_->Poller()->GetFileDescriptors().Connect(
+        fd, addr.address(), addr.size());
+  } while (err.IsPosixError(EINTR));
+  connect_errno = err.ok() ? 0 : err.errno_value();
 
   auto addr_uri = ResolvedAddressToURI(addr);
   if (!addr_uri.ok()) {
@@ -634,15 +633,17 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   CHECK_NE(poller_manager_, nullptr);
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
-  absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult> socket =
-      PosixSocketWrapper::CreateAndPrepareTcpClientSocket(options, addr);
+  absl::StatusOr<FileDescriptors::PosixSocketCreateResult> socket =
+      poller_manager_->Poller()
+          ->GetFileDescriptors()
+          .CreateAndPrepareTcpClientSocket(options, addr);
   if (!socket.ok()) {
     Run([on_connect = std::move(on_connect),
          status = socket.status()]() mutable { on_connect(status); });
     return EventEngine::ConnectionHandle::kInvalid;
   }
   return CreateEndpointFromUnconnectedFdInternal(
-      (*socket).sock.Fd(), std::move(on_connect), (*socket).mapped_target_addr,
+      (*socket).sock, std::move(on_connect), (*socket).mapped_target_addr,
       options, std::move(memory_allocator), timeout);
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   grpc_core::Crash("EventEngine::Connect is not supported on this platform");
@@ -655,7 +656,8 @@ EventEngine::ConnectionHandle PosixEventEngine::CreateEndpointFromUnconnectedFd(
     MemoryAllocator memory_allocator, EventEngine::Duration timeout) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   return CreateEndpointFromUnconnectedFdInternal(
-      fd, std::move(on_connect), addr, TcpOptionsFromEndpointConfig(config),
+      poller_manager_->Poller()->GetFileDescriptors().Adopt(fd),
+      std::move(on_connect), addr, TcpOptionsFromEndpointConfig(config),
       std::move(memory_allocator), timeout);
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   grpc_core::Crash(
@@ -673,7 +675,8 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
   PosixEventPoller* poller = poller_manager_->Poller();
   DCHECK_NE(poller, nullptr);
   EventHandle* handle =
-      poller->CreateHandle(fd, "tcp-client", poller->CanTrackErrors());
+      poller->CreateHandle(poller->GetFileDescriptors().Adopt(fd), "tcp-client",
+                           poller->CanTrackErrors());
   return CreatePosixEndpoint(handle, nullptr, shared_from_this(),
                              std::move(memory_allocator),
                              TcpOptionsFromEndpointConfig(config));
