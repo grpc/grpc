@@ -398,6 +398,26 @@ struct RunCallImpl<
   }
 };
 
+template <typename Derived, typename Promise>
+struct RunCallImpl<
+    Promise (Derived::Call::*)(ClientMetadataHandle md, Derived* channel),
+    Derived,
+    std::enable_if_t<std::is_same_v<absl::StatusOr<ClientMetadataHandle>,
+                                    PromiseResult<Promise>>>> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  FilterCallData<Derived>* call_data) {
+    ClientMetadataHandle md = std::move(call_args.client_initial_metadata);
+    return TrySeq(call_data->call.OnClientInitialMetadata(std::move(md),
+                                                          call_data->channel),
+                  [call_args = std::move(call_args),
+                   next_promise_factory = std::move(next_promise_factory)](
+                      ClientMetadataHandle md) mutable {
+                    call_args.client_initial_metadata = std::move(md);
+                    return next_promise_factory(std::move(call_args));
+                  });
+  }
+};
+
 template <typename Interceptor, typename Derived>
 auto RunCall(Interceptor interceptor, CallArgs call_args,
              NextPromiseFactory next_promise_factory,
@@ -444,6 +464,17 @@ inline auto InterceptClientToServerMessageHandler(
     if (call_data->error_latch.is_set()) return std::nullopt;
     call_data->error_latch.Set(std::move(return_md));
     return std::nullopt;
+  };
+}
+
+template <typename Derived>
+inline auto InterceptClientToServerMessageHandler(
+    void (Derived::Call::*fn)(const Message&, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs&) {
+  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
+  return [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
+    call_data->call.OnClientToServerMessage(*msg, call_data->channel);
+    return std::move(msg);
   };
 }
 
@@ -588,6 +619,18 @@ inline void InterceptServerToClientMessage(
         if (call_data->error_latch.is_set()) return std::nullopt;
         call_data->error_latch.Set(std::move(return_md));
         return std::nullopt;
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    void (Derived::Call::*fn)(const Message&, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  DCHECK(fn == &Derived::Call::OnServerToClientMessage);
+  call_args.server_to_client_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
+        call_data->call.OnServerToClientMessage(*msg, call_data->channel);
+        return std::move(msg);
       });
 }
 

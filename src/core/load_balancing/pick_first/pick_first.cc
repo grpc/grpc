@@ -973,8 +973,7 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
                     if (subchannel_list->policy_->selected_ != nullptr) return;
                     ++subchannel_list->attempting_index_;
                     subchannel_list->StartConnectingNextSubchannel();
-                  },
-                  DEBUG_LOCATION);
+                  });
             });
   }
 }
@@ -1854,8 +1853,7 @@ void OldPickFirst::SubchannelList::SubchannelData::
                     if (subchannel_list->policy_->selected_ != nullptr) return;
                     ++subchannel_list->attempting_index_;
                     subchannel_list->StartConnectingNextSubchannel();
-                  },
-                  DEBUG_LOCATION);
+                  });
             });
   }
 }

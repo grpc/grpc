@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
 
@@ -33,16 +34,7 @@ namespace grpc_core {
 // All callbacks scheduled on a WorkSerializer instance will be executed
 // serially in a borrowed thread. The API provides a FIFO guarantee to the
 // execution of callbacks scheduled on the thread.
-// When a thread calls Run() with a callback, the thread is considered borrowed.
-// The callback might run inline, or it might run asynchronously in a different
-// thread that is already inside of Run(). If the callback runs directly inline,
-// other callbacks from other threads might also be executed before Run()
-// returns. Since an arbitrary set of callbacks might be executed when Run() is
-// called, generally no locks should be held while calling Run().
-// If a thread wants to preclude the possibility of the callback being invoked
-// inline in Run() (for example, if a mutex lock is held and executing callbacks
-// inline would cause a deadlock), it should use Schedule() instead and then
-// invoke DrainQueue() when it is safe to invoke the callback.
+// When a thread calls Run() with a callback the callback runs asynchronously.
 class ABSL_LOCKABLE WorkSerializer {
  public:
   explicit WorkSerializer(
@@ -57,16 +49,8 @@ class ABSL_LOCKABLE WorkSerializer {
 
   // Runs a given callback on the work serializer.
   //
-  // If experiment `work_serializer_dispatch` is enabled:
   // The callback will be executed as an EventEngine callback, that then
   // arranges for the next callback in the queue to execute.
-  //
-  // If experiment `work_serializer_dispatch` is NOT enabled:
-  // If there is no other thread currently executing the WorkSerializer, the
-  // callback is run immediately. In this case, the current thread is also
-  // borrowed for draining the queue for any callbacks that get added in the
-  // meantime.
-  // This behavior is deprecated and will be removed soon.
   //
   // If you want to use clang thread annotation to make sure that callback is
   // called by WorkSerializer only, you need to add the annotation to both the
@@ -79,13 +63,7 @@ class ABSL_LOCKABLE WorkSerializer {
   //         }, DEBUG_LOCATION);
   //   }
   //   void callback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) { ... }
-  void Run(std::function<void()> callback, const DebugLocation& location);
-
-  // Schedule \a callback to be run later when the queue of callbacks is
-  // drained.
-  void Schedule(std::function<void()> callback, const DebugLocation& location);
-  // Drains the queue of callbacks.
-  void DrainQueue();
+  void Run(absl::AnyInvocable<void()> callback, DebugLocation location = {});
 
 #ifndef NDEBUG
   // Returns true if the current thread is running in the WorkSerializer.
@@ -94,8 +72,6 @@ class ABSL_LOCKABLE WorkSerializer {
 
  private:
   class WorkSerializerImpl;
-  class LegacyWorkSerializer;
-  class DispatchingWorkSerializer;
 
   OrphanablePtr<WorkSerializerImpl> impl_;
 };

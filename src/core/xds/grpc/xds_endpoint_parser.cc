@@ -88,7 +88,7 @@ bool XdsEndpointHashKeyBackwardCompatEnabled() {
 void MaybeLogClusterLoadAssignment(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_ClusterLoadAssignment* cla) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(
             context.symtab);
@@ -455,14 +455,14 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
       envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(resource));
   auto eds_resource = EdsResourceParse(context, resource);
   if (!eds_resource.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(ERROR) << "[xds_client " << context.client
                  << "] invalid ClusterLoadAssignment " << *result.name << ": "
                  << eds_resource.status();
     }
     result.resource = eds_resource.status();
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(INFO) << "[xds_client " << context.client
                 << "] parsed ClusterLoadAssignment " << *result.name << ": "
                 << (*eds_resource)->ToString();

@@ -25,7 +25,6 @@ grpc_cc_test(
         "gtest",
         "absl/types:span",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -43,7 +42,6 @@ grpc_cc_test(
         "gtest",
         "absl/types:span",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -59,7 +57,6 @@ grpc_cc_test(
         "gtest",
         "absl/types:span",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

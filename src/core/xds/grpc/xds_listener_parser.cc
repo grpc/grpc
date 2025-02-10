@@ -16,7 +16,6 @@
 
 #include "src/core/xds/grpc/xds_listener_parser.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <set>
@@ -48,6 +47,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/match.h"
 #include "src/core/util/upb_utils.h"
@@ -135,7 +135,7 @@ void MaybeLogHttpConnectionManager(
     const XdsResourceType::DecodeContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_config) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
             context.symtab);
@@ -211,7 +211,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   {
     ValidationErrors::ScopedField field(errors, ".http_filters");
     const auto& http_filter_registry =
-        static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .http_filter_registry();
     size_t num_filters = 0;
     const auto* http_filters =
@@ -952,7 +952,7 @@ absl::StatusOr<std::shared_ptr<const XdsListenerResource>> LdsResourceParse(
 
 void MaybeLogListener(const XdsResourceType::DecodeContext& context,
                       const envoy_config_listener_v3_Listener* listener) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_listener_v3_Listener_getmsgdef(context.symtab);
     char buf[10240];
@@ -982,13 +982,13 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
       UpbStringToStdString(envoy_config_listener_v3_Listener_name(resource));
   auto listener = LdsResourceParse(context, resource);
   if (!listener.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(ERROR) << "[xds_client " << context.client << "] invalid Listener "
                  << *result.name << ": " << listener.status();
     }
     result.resource = listener.status();
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(INFO) << "[xds_client " << context.client << "] parsed Listener "
                 << *result.name << ": " << (*listener)->ToString();
     }

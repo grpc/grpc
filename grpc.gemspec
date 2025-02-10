@@ -39,7 +39,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.4'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.9'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -564,6 +564,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.h )
@@ -960,6 +963,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c )
@@ -1977,6 +1982,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/uuid_v4.h )
   s.files += %w( src/core/util/validation_errors.cc )
   s.files += %w( src/core/util/validation_errors.h )
+  s.files += %w( src/core/util/wait_for_single_owner.h )
   s.files += %w( src/core/util/windows/cpu.cc )
   s.files += %w( src/core/util/windows/directory_reader.cc )
   s.files += %w( src/core/util/windows/env.cc )

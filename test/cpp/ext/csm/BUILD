@@ -31,7 +31,6 @@ grpc_cc_test(
         "gtest",
         "otel/sdk/src/metrics",
     ],
-    language = "C++",
     tags = [
     ],
     deps = [
@@ -54,7 +53,6 @@ grpc_cc_test(
         "gtest",
         "otel/sdk/src/metrics",
     ],
-    language = "C++",
     tags = [
     ],
     deps = [

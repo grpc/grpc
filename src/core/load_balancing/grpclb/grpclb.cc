@@ -323,20 +323,13 @@ class GrpcLb final : public LoadBalancingPolicy {
 
    private:
     void Orphaned() override {
-      if (!IsWorkSerializerDispatchEnabled()) {
-        if (!lb_policy_->shutting_down_) {
-          lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
-        }
-        return;
-      }
       lb_policy_->work_serializer()->Run(
           [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
             if (!self->lb_policy_->shutting_down_) {
               self->lb_policy_->CacheDeletedSubchannelLocked(
                   self->wrapped_subchannel());
             }
-          },
-          DEBUG_LOCATION);
+          });
     }
 
     RefCountedPtr<GrpcLb> lb_policy_;
@@ -1024,7 +1017,7 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             grpclb_policy()->work_serializer()->Run(
-                [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
+                [this] { MaybeSendClientLoadReportLocked(); });
           });
 }
 
@@ -1097,8 +1090,7 @@ void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
                                                      grpc_error_handle error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
-      [lb_calld, error]() { lb_calld->ClientLoadReportDoneLocked(error); },
-      DEBUG_LOCATION);
+      [lb_calld, error]() { lb_calld->ClientLoadReportDoneLocked(error); });
 }
 
 void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(
@@ -1116,7 +1108,7 @@ void GrpcLb::BalancerCallState::OnInitialRequestSent(
     void* arg, grpc_error_handle /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
-      [lb_calld]() { lb_calld->OnInitialRequestSentLocked(); }, DEBUG_LOCATION);
+      [lb_calld]() { lb_calld->OnInitialRequestSentLocked(); });
 }
 
 void GrpcLb::BalancerCallState::OnInitialRequestSentLocked() {
@@ -1135,8 +1127,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceived(
     void* arg, grpc_error_handle /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
-      [lb_calld]() { lb_calld->OnBalancerMessageReceivedLocked(); },
-      DEBUG_LOCATION);
+      [lb_calld]() { lb_calld->OnBalancerMessageReceivedLocked(); });
 }
 
 void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
@@ -1293,8 +1284,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceived(
     void* arg, grpc_error_handle error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
-      [lb_calld, error]() { lb_calld->OnBalancerStatusReceivedLocked(error); },
-      DEBUG_LOCATION);
+      [lb_calld, error]() { lb_calld->OnBalancerStatusReceivedLocked(error); });
 }
 
 void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
@@ -1563,9 +1553,9 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
               ApplicationCallbackExecCtx callback_exec_ctx;
               ExecCtx exec_ctx;
               auto self_ptr = self.get();
-              self_ptr->work_serializer()->Run(
-                  [self = std::move(self)]() { self->OnFallbackTimerLocked(); },
-                  DEBUG_LOCATION);
+              self_ptr->work_serializer()->Run([self = std::move(self)]() {
+                self->OnFallbackTimerLocked();
+              });
             });
     // Start watching the channel's connectivity state.  If the channel
     // goes into state TRANSIENT_FAILURE before the timer fires, we go into
@@ -1672,11 +1662,9 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto self_ptr = self.get();
-            self_ptr->work_serializer()->Run(
-                [self = std::move(self)]() {
-                  self->OnBalancerCallRetryTimerLocked();
-                },
-                DEBUG_LOCATION);
+            self_ptr->work_serializer()->Run([self = std::move(self)]() {
+              self->OnBalancerCallRetryTimerLocked();
+            });
           });
 }
 
@@ -1837,8 +1825,7 @@ void GrpcLb::StartSubchannelCacheTimerLocked() {
             self_ptr->work_serializer()->Run(
                 [self = std::move(self)]() mutable {
                   self->OnSubchannelCacheTimerLocked();
-                },
-                DEBUG_LOCATION);
+                });
           });
 }
 

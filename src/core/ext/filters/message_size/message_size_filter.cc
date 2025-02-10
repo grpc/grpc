@@ -149,7 +149,7 @@ ServerMetadataHandle CheckPayload(const Message& msg,
       << (is_send ? "send" : "recv") << " len:" << msg.payload()->Length()
       << " max:" << *max_length;
   if (msg.payload()->Length() <= *max_length) return nullptr;
-  return ServerMetadataFromStatus(
+  return CancelledServerMetadataFromStatus(
       GRPC_STATUS_RESOURCE_EXHAUSTED,
       absl::StrFormat("%s: %s message larger than max (%u vs. %d)",
                       is_client ? "CLIENT" : "SERVER",
@@ -158,8 +158,9 @@ ServerMetadataHandle CheckPayload(const Message& msg,
 }
 }  // namespace
 
-ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
-    : limits_(filter->parsed_config_) {
+void ClientMessageSizeFilter::Call::OnClientInitialMetadata(
+    ClientMetadata&, ClientMessageSizeFilter* filter) {
+  limits_ = filter->parsed_config_;
   // Get max sizes from channel data, then merge in per-method config values.
   // Note: Per-method config is only available on the client, so we
   // apply the max request size to the send limit and the max response

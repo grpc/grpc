@@ -17,7 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTE_CONFIG_PARSER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTE_CONFIG_PARSER_H
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -33,6 +32,7 @@
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "re2/re2.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -66,7 +66,7 @@ class XdsRouteConfigResourceType final
                      upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
     const auto& cluster_specifier_plugin_registry =
-        static_cast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
+        DownCast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
             .cluster_specifier_plugin_registry();
     cluster_specifier_plugin_registry.PopulateSymtab(symtab);
   }

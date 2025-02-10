@@ -504,8 +504,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
                 self_ptr->xds_cluster_manager_policy_->work_serializer()->Run(
                     [self = std::move(self)]() {
                       self->OnDelayedRemovalTimerLocked();
-                    },
-                    DEBUG_LOCATION);
+                    });
               });
 }
 

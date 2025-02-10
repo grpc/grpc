@@ -29,7 +29,7 @@ namespace {
 
 // Tests that we can unref a call after the first attempt starts but
 // before any ops complete.  This should not cause a memory leak.
-CORE_END2END_TEST(RetryTest, RetryCancelAfterFirstAttemptStarts) {
+CORE_END2END_TEST(RetryTests, RetryCancelAfterFirstAttemptStarts) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   // This is a workaround for the flakiness that if the server ever enters
   // GracefulShutdown for whatever reason while the client has already been

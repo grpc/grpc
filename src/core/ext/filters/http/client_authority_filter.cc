@@ -73,11 +73,13 @@ void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_SUBCHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before<ClientAuthFilter>();
+      .Before<ClientAuthFilter>()
+      .Before<LegacyClientAuthFilter>();
   builder->channel_init()
       ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before<ClientAuthFilter>();
+      .Before<ClientAuthFilter>()
+      .Before<LegacyClientAuthFilter>();
 }
 
 }  // namespace grpc_core

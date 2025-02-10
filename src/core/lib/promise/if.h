@@ -99,12 +99,14 @@ ChooseIf(CallPoll call_poll, absl::StatusOr<bool> result, T* if_true,
   }
 }
 
+}  // namespace promise_detail
+
 template <typename C, typename T, typename F>
 class If {
  private:
   using TrueFactory = promise_detail::OncePromiseFactory<void, T>;
   using FalseFactory = promise_detail::OncePromiseFactory<void, F>;
-  using ConditionPromise = PromiseLike<C>;
+  using ConditionPromise = promise_detail::PromiseLike<C>;
   using TruePromise = typename TrueFactory::Promise;
   using FalsePromise = typename FalseFactory::Promise;
   using Result =
@@ -229,14 +231,8 @@ class If<bool, T, F> {
 #endif
 };
 
-}  // namespace promise_detail
-
 template <typename C, typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::If<C, T, F> If(
-    C condition, T if_true, F if_false) {
-  return promise_detail::If<C, T, F>(std::move(condition), std::move(if_true),
-                                     std::move(if_false));
-}
+If(C, T, F) -> If<C, T, F>;
 
 }  // namespace grpc_core
 
