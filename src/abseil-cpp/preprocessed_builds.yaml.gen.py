@@ -183,18 +183,22 @@ def resolve_srcs(files):
 def resolve_deps(targets):
     return [(t[2:] if t.startswith("//") else t) for t in targets]
 
+def absl_testonly(rule):
+    return rule.testonly and not rule.name in [
+        "status_matchers", "absl::status_matchers"
+    ]
 
 def generate_builds(root_path):
     """Generates builds from all BUILD files under absl directory."""
     bazel_rules = list(
         filter(
-            lambda r: r.type == "cc_library" and not r.testonly,
+            lambda r: r.type == "cc_library" and not absl_testonly(r),
             collect_bazel_rules(root_path),
         )
     )
     cmake_rules = list(
         filter(
-            lambda r: r.type == "absl_cc_library" and not r.testonly,
+            lambda r: r.type == "absl_cc_library" and not absl_testonly(r),
             collect_cmake_rules(root_path),
         )
     )
