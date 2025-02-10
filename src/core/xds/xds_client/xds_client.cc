@@ -452,11 +452,6 @@ void XdsClient::XdsChannel::Orphaned() ABSL_NO_THREAD_SAFETY_ANALYSIS {
 
 void XdsClient::XdsChannel::ResetBackoff() { transport_->ResetBackoff(); }
 
-XdsClient::XdsChannel::AdsCall* XdsClient::XdsChannel::ads_call() const {
-  if (ads_call_ == nullptr) return nullptr;
-  return ads_call_->call();
-}
-
 void XdsClient::XdsChannel::SubscribeLocked(const XdsResourceType* type,
                                             const XdsResourceName& name) {
   if (ads_call_ == nullptr) {

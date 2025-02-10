@@ -198,7 +198,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     ~XdsChannel() override;
 
     XdsClient* xds_client() const { return xds_client_.get(); }
-    AdsCall* ads_call() const;
 
     void ResetBackoff();
 
