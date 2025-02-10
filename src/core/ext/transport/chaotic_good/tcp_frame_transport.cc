@@ -226,6 +226,21 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<Frame> frames,
       [sink](absl::Status status) {
         sink->OnFrameTransportClosed(std::move(status));
       });
+  party->Spawn(
+      "tcp-read",
+      [self = RefAsSubclass<TcpFrameTransport>(), sink = sink]() {
+        return Loop([self = self.get(), sink = sink.get()]() {
+          return TrySeq(
+              self->ReadFrameBytes(),
+              [sink](IncomingFrame incoming_frame) -> LoopCtl<absl::Status> {
+                sink->OnIncomingFrame(std::move(incoming_frame));
+                return Continue{};
+              });
+        });
+      },
+      [sink](absl::Status status) {
+        sink->OnFrameTransportClosed(std::move(status));
+      });
 }
 
 }  // namespace chaotic_good

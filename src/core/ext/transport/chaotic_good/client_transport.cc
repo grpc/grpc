@@ -51,10 +51,9 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-void ChaoticGoodClientTransport::Orphan() {
-  party_.reset();
-  Unref();
-}
+ChaoticGoodClientTransport::StreamDispatch::StreamDispatch(
+    MpscSender<Frame> outgoing_frames)
+    : outgoing_frames_(std::move(outgoing_frames)) {}
 
 RefCountedPtr<ChaoticGoodClientTransport::Stream>
 ChaoticGoodClientTransport::StreamDispatch::LookupStream(uint32_t stream_id) {
@@ -239,6 +238,11 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
 }
 
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }
+
+void ChaoticGoodClientTransport::Orphan() {
+  party_.reset();
+  Unref();
+}
 
 auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                                                   CallHandler call_handler) {

@@ -38,9 +38,9 @@ class MockFrameTransport final : public FrameTransport {
   }
   void Read(Frame frame);
   void Close() {
-    if (sink_ != nullptr)
+    if (sink_ != nullptr) {
       sink_->OnFrameTransportClosed(absl::UnavailableError("tschüß!"));
-    on_read_done_(absl::UnavailableError("closed"));
+    }
     closed_.store(true);
   }
 
@@ -54,7 +54,6 @@ class MockFrameTransport final : public FrameTransport {
   std::queue<ExpectedWrite> expected_writes_;
   RefCountedPtr<FrameTransportSink> sink_;
   std::atomic<bool> closed_{false};
-  absl::AnyInvocable<void(absl::Status)> on_read_done_;
 };
 
 template <typename T>

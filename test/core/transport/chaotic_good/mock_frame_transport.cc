@@ -33,27 +33,22 @@ MockFrameTransport::~MockFrameTransport() {
         << absl::ConvertVariantTo<FrameInterface&>(w.frame).ToString();
     expected_writes_.pop();
   }
-  if (on_read_done_ != nullptr) {
-    on_read_done_(absl::OkStatus());
+  if (sink_ != nullptr) {
+    sink_->OnFrameTransportClosed(absl::OkStatus());
   }
 }
-/*
-void MockFrameTransport::StartReading(
-    Party*, absl::AnyInvocable<void(IncomingFrame)> on_incoming_frame,
-    absl::AnyInvocable<void(absl::Status)> on_done) {
-  reader_ = std::move(frames);
-  on_read_done_ = std::move(on_done);
-}
 
-void MockFrameTransport::StartWriting(
-    Party* party, MpscReceiver<Frame> frames,
-    absl::AnyInvocable<void(absl::Status)> on_done) {
+void MockFrameTransport::Start(Party* party,
+                               MpscReceiver<Frame> outgoing_frames,
+                               RefCountedPtr<FrameTransportSink> sink) {
+  CHECK(sink_ == nullptr);
+  sink_ = sink;
   party->Spawn(
       "MockFrameTransport_Writer",
-      [this, frames = std::move(frames)]() mutable {
-        return Loop([this, frames = std::move(frames)]() mutable {
+      [this, outgoing_frames = std::move(outgoing_frames)]() mutable {
+        return Loop([this, outgoing_frames = std::move(outgoing_frames)]() mutable {
           return TrySeq(
-              frames.Next(), [this](Frame frame) -> LoopCtl<absl::Status> {
+              outgoing_frames.Next(), [this](Frame frame) -> LoopCtl<absl::Status> {
                 if (closed_.load()) return absl::OkStatus();
                 if (expected_writes_.empty()) {
                   ADD_FAILURE()
@@ -71,9 +66,11 @@ void MockFrameTransport::StartWriting(
               });
         });
       },
-      std::move(on_done));
+      [sink](absl::Status status) {
+        sink->OnFrameTransportClosed(status);
+      });
 }
-*/
+
 void MockFrameTransport::Read(Frame frame) {
   SliceBuffer buffer;
   auto& frame_interface = absl::ConvertVariantTo<FrameInterface&>(frame);
