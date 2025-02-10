@@ -3640,6 +3640,7 @@ grpc_cc_library(
         "//src/core:connectivity_state",
         "//src/core:construct_destruct",
         "//src/core:context",
+        "//src/core:delay_tracker",
         "//src/core:dual_ref_counted",
         "//src/core:error",
         "//src/core:error_utils",

@@ -15,6 +15,7 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
+    'src/core/call/delay_tracker.cc',
     'src/core/call/request_buffer.cc',
     'src/core/channelz/channel_trace.cc',
     'src/core/channelz/channelz.cc',
