@@ -507,9 +507,11 @@ bool XdsClient::XdsChannel::MaybeFallbackLocked(
     authority_state.xds_channels.emplace_back(
         xds_client_->GetOrCreateXdsChannelLocked(*xds_servers[i], "fallback"));
     for (const auto& [type, resource_map] : authority_state.type_map) {
-      for (const auto& [key, _] : resource_map) {
-        authority_state.xds_channels.back()->SubscribeLocked(type,
-                                                             {authority, key});
+      for (const auto& [key, resource_state] : resource_map) {
+        if (resource_state.HasWatchers()) {
+          authority_state.xds_channels.back()->SubscribeLocked(
+              type, {authority, key});
+        }
       }
     }
     GRPC_TRACE_LOG(xds_client, INFO)
@@ -733,8 +735,10 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
     // anywhere in the list.
     if (it == authority_state.xds_channels.end()) continue;
     for (const auto& [type, resource_map] : authority_state.type_map) {
-      for (const auto& [resource_key, _] : resource_map) {
-        SubscribeLocked(type, {authority, resource_key}, /*delay_send=*/true);
+      for (const auto& [resource_key, resource_state] : resource_map) {
+        if (resource_state.HasWatchers()) {
+          SubscribeLocked(type, {authority, resource_key}, /*delay_send=*/true);
+        }
       }
     }
   }
@@ -1636,7 +1640,8 @@ RefCountedPtr<XdsClient::XdsChannel> XdsClient::GetOrCreateXdsChannelLocked(
 bool XdsClient::HasUncachedResources(const AuthorityState& authority_state) {
   for (const auto& [_, resource_map] : authority_state.type_map) {
     for (const auto& [_, resource_state] : resource_map) {
-      if (resource_state.client_status() ==
+      if (resource_state.HasWatchers() &&
+          resource_state.client_status() ==
           ResourceState::ClientResourceStatus::REQUESTED) {
         return true;
       }
