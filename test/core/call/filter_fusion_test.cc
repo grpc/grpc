@@ -75,12 +75,46 @@ class Test3 {
   };
 };
 
-using Test123 = FusedFilter<Test1, Test2, Test3>;
+class Test4 {
+ public:
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata&, Test4* filter) {
+      history.push_back("Test4::Call::OnClientInitialMetadata");
+    }
+    void OnServerInitialMetadata(ServerMetadata&, Test4* filter) {
+      history.push_back("Test4::Call::OnServerInitialMetadata");
+    }
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnServerToClientMessage;
 
-static_assert(std::is_same_v<decltype(&Test123::Call::OnClientInitialMetadata),
+   private:
+  };
+};
+
+class Test5 {
+ public:
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata&, Test5* filter) {
+      history.push_back("Test5::Call::OnClientInitialMetadata");
+    }
+    void OnServerInitialMetadata(ServerMetadata&, Test5* filter) {
+      history.push_back("Test5::Call::OnServerInitialMetadata");
+    }
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnServerToClientMessage;
+
+   private:
+  };
+};
+
+using Test123 = FusedFilter<Test1, Test2, Test3, Test4, Test5>;
+
+static_assert(!std::is_same_v<decltype(&Test123::Call::OnClientInitialMetadata),
                              const NoInterceptor*>);
-static_assert(std::is_same_v<decltype(&Test123::Call::OnServerInitialMetadata),
-                             const NoInterceptor*>);
+static_assert(!std::is_same_v<decltype(&Test123::Call::OnServerInitialMetadata),
+                              const NoInterceptor*>);
 static_assert(!std::is_same_v<decltype(&Test123::Call::OnClientToServerMessage),
                               const NoInterceptor*>);
 static_assert(!std::is_same_v<decltype(&Test123::Call::OnServerToClientMessage),
@@ -100,17 +134,28 @@ typename ServerMetadataOrHandle<T>::ValueType RunSuccessfulPromise(
 }
 
 TEST(Test123, OrderCorrect) {
+  Test123 filter;
   Test123::Call call;
   history.clear();
   auto message = Arena::MakePooled<Message>();
+  auto server_metadata_handle = Arena::MakePooled<ServerMetadata>();
+  auto client_metadata_handle = Arena::MakePooled<ClientMetadata>();
   message = RunSuccessfulPromise<Message>(
       call.OnClientToServerMessage(std::move(message)));
   RunSuccessfulPromise<Message>(
       call.OnServerToClientMessage(std::move(message)));
+  RunSuccessfulPromise<ServerMetadata>(
+      call.OnServerInitialMetadata(std::move(server_metadata_handle), &filter));
+  RunSuccessfulPromise<ClientMetadata>(
+      call.OnClientInitialMetadata(std::move(client_metadata_handle), &filter));
   EXPECT_THAT(history, ElementsAre("Test2::Call::OnClientToServerMessage",
                                    "Test3::Call::OnClientToServerMessage",
                                    "Test2::Call::OnServerToClientMessage",
-                                   "Test1::Call::OnServerToClientMessage"));
+                                   "Test1::Call::OnServerToClientMessage",
+                                   "Test5::Call::OnServerInitialMetadata",
+                                   "Test4::Call::OnServerInitialMetadata",
+                                   "Test4::Call::OnClientInitialMetadata",
+                                   "Test5::Call::OnClientInitialMetadata"));
 }
 
 }  // namespace

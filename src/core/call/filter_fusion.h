@@ -73,10 +73,32 @@ class AdaptMethod<T, void (Call::*)(T&), method> {
   Call* call_;
 };
 
+template <typename T, typename Call, typename Derived,
+          void (Call::*method)(T&, Derived*)>
+class AdaptMethod<T, void (Call::*)(T&, Derived*), method> {
+ public:
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  auto operator()(Hdl<T> x) {
+    (call_->*method)(*x, filter_);
+    return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
+  }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
 template <auto... filter_methods>
 struct FilterMethods {
   using Methods = Valuelist<filter_methods...>;
   using Idxs = std::make_index_sequence<sizeof...(filter_methods)>;
+};
+
+template <typename... Filters>
+struct FilterTypes {
+  using Types = Typelist<Filters...>;
+  using Idxs = std::make_index_sequence<sizeof...(Filters)>;
 };
 
 template <std::size_t, typename>
@@ -95,6 +117,12 @@ template <auto... filter_methods>
 struct ReverseFilterMethods {
   using Methods = ReverseValues<filter_methods...>;
   using Idxs = make_reverse_index_sequence<sizeof...(filter_methods)>;
+};
+
+template <typename... Filters>
+struct ReverseFilterTypes {
+  using Types = Reverse<Filters...>;
+  using Idxs = make_reverse_index_sequence<sizeof...(Filters)>;
 };
 
 // Combine the result of a series of filter methods into a single method.
@@ -117,62 +145,74 @@ auto ExecuteCombined(Call* call, Hdl<T> hdl) {
 }
 
 // Combine the result of a series of filter methods into a single method.
-template <typename Call, typename T, auto filter_method_0,
-          auto... filter_methods, size_t I0, size_t... Is>
+template <typename Call, typename Derived, typename T, typename Filter0,
+          typename... Filters, auto filter_method_0, auto... filter_methods,
+          size_t I0, size_t... Is>
 auto ExecuteCombinedWithChannelAccess(
-    Call* call, Hdl<T> hdl, Valuelist<filter_method_0, filter_methods...>,
+    Call* call, Derived* channel, Hdl<T> hdl, Typelist<Filter0, Filters...>,
+    Valuelist<filter_method_0, filter_methods...>,
     std::index_sequence<I0, Is...>) {
-  return TrySeq(AdaptMethod<T, decltype(filter_method_0), filter_method_0>(
-                    call->template fused_child<I0>())(std::move(hdl)),
-                AdaptMethod<T, decltype(filter_methods), filter_methods>(
-                    call->template fused_child<Is>())...);
+  return TrySeq(
+      AdaptMethod<T, decltype(filter_method_0), filter_method_0>(
+          call->template fused_child<I0>(),
+          reinterpret_cast<Filter0*>(channel))(std::move(hdl)),
+      AdaptMethod<T, decltype(filter_methods), filter_methods>(
+          call->template fused_child<Is>(),
+          reinterpret_cast<Filters*>(channel))...);
 }
 
-template <typename FilterMethods, typename Call, typename T>
-auto ExecuteCombinedWithChannelAccess(Call* call, Hdl<T> hdl) {
-  return ExecuteCombined(call, std::move(hdl), FilterMethods::Methods(),
-                         FilterMethods::Idxs());
+template <typename FilterMethods, typename FilterTypes, typename Call,
+          typename Derived, typename T>
+auto ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
+                                      Hdl<T> hdl) {
+  return ExecuteCombinedWithChannelAccess(
+      call, channel, std::move(hdl), typename FilterTypes::Types(),
+      typename FilterMethods::Methods(), typename FilterMethods::Idxs());
 }
 
-#define GRPC_FUSE_METHOD(name, type, order)                                    \
-  template <MethodVariant variant, typename Derived, typename... Filters>      \
-  class FuseImpl##name;                                                        \
-  template <typename Derived, typename... Filters>                             \
-  class FuseImpl##name<MethodVariant::kNoInterceptor, Derived, Filters...> {   \
-   public:                                                                     \
-    static inline const NoInterceptor name;                                    \
-  };                                                                           \
-  template <typename Derived, typename... Filters>                             \
-  class FuseImpl##name<MethodVariant::kSimple, Derived, Filters...> {          \
-   public:                                                                     \
-    auto name(type x) {                                                        \
-      return ExecuteCombined<order<&Filters::Call::name...>>(                  \
-          static_cast<typename Derived::Call*>(this), std::move(x));           \
-    }                                                                          \
-  };                                                                           \
-  template <typename Derived, typename... Filters>                             \
-  class FuseImpl##name<MethodVariant::kChannelAccess, Derived, Filters...> {   \
-   public:                                                                     \
-    auto name(type x, Derived* channel) {                                      \
-      return ExecuteCombinedWithChannelAccess<order<&Filters::Call::name...>>( \
-          static_cast<typename Derived::Call*>(this), channel, std::move(x));  \
-    }                                                                          \
-  };                                                                           \
-  template <typename Derived, typename... Filters>                             \
-  using Fuse##name =                                                           \
-      FuseImpl##name<MethodVariantForFilters<&Filters::Call::name...>(),       \
+#define GRPC_FUSE_METHOD(name, type, order_methods, order_types)              \
+  template <MethodVariant variant, typename Derived, typename... Filters>     \
+  class FuseImpl##name;                                                       \
+  template <typename Derived, typename... Filters>                            \
+  class FuseImpl##name<MethodVariant::kNoInterceptor, Derived, Filters...> {  \
+   public:                                                                    \
+    static inline const NoInterceptor name;                                   \
+  };                                                                          \
+  template <typename Derived, typename... Filters>                            \
+  class FuseImpl##name<MethodVariant::kSimple, Derived, Filters...> {         \
+   public:                                                                    \
+    auto name(type x) {                                                       \
+      return ExecuteCombined<order_methods<&Filters::Call::name...>>(         \
+          static_cast<typename Derived::Call*>(this), std::move(x));          \
+    }                                                                         \
+  };                                                                          \
+  template <typename Derived, typename... Filters>                            \
+  class FuseImpl##name<MethodVariant::kChannelAccess, Derived, Filters...> {  \
+   public:                                                                    \
+    auto name(type x, Derived* channel) {                                     \
+      return ExecuteCombinedWithChannelAccess<                                \
+          order_methods<&Filters::Call::name...>, order_types<Filters...>>(   \
+          static_cast<typename Derived::Call*>(this), channel, std::move(x)); \
+    }                                                                         \
+  };                                                                          \
+  template <typename Derived, typename... Filters>                            \
+  using Fuse##name =                                                          \
+      FuseImpl##name<MethodVariantForFilters<&Filters::Call::name...>(),      \
                      Derived, Filters...>
 
-GRPC_FUSE_METHOD(OnClientInitialMetadata, ClientMetadataHandle, FilterMethods);
+GRPC_FUSE_METHOD(OnClientInitialMetadata, ClientMetadataHandle, FilterMethods,
+                 FilterTypes);
 GRPC_FUSE_METHOD(OnServerInitialMetadata, ServerMetadataHandle,
-                 ReverseFilterMethods);
-GRPC_FUSE_METHOD(OnClientToServerMessage, MessageHandle, FilterMethods);
-GRPC_FUSE_METHOD(OnServerToClientMessage, MessageHandle, ReverseFilterMethods);
+                 ReverseFilterMethods, ReverseFilterTypes);
+GRPC_FUSE_METHOD(OnClientToServerMessage, MessageHandle, FilterMethods,
+                 FilterTypes);
+GRPC_FUSE_METHOD(OnServerToClientMessage, MessageHandle, ReverseFilterMethods,
+                 ReverseFilterTypes);
 
 #undef GRPC_FUSE_METHOD
 
 template <typename... Filters>
-class FusedFilter {
+class FusedFilter : public Filters... {
  public:
   class Call : public FuseOnClientInitialMetadata<FusedFilter, Filters...>,
                public FuseOnServerInitialMetadata<FusedFilter, Filters...>,
