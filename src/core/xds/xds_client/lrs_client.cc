@@ -810,7 +810,7 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
     std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
     absl::string_view cluster_name, absl::string_view eds_service_name) {
   auto key =
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+      std::pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterDropStats> cluster_drop_stats;
   {
     MutexLock lock(&mu_);
@@ -842,7 +842,7 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
           eds_service_name);
       load_report_state.drop_stats = cluster_drop_stats.get();
     }
-    server_it->second.lrs_channel->MaybeStartLrsCall();
+    server.lrs_channel->MaybeStartLrsCall();
   }
   return cluster_drop_stats;
 }
@@ -854,9 +854,10 @@ void LrsClient::RemoveClusterDropStats(
   MutexLock lock(&mu_);
   auto server_it = load_report_map_.find(lrs_server_key);
   if (server_it == load_report_map_.end()) return;
-  auto load_report_it = server_it->second.load_report_map.find(
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
-  if (load_report_it == server_it->second.load_report_map.end()) return;
+  auto& server = server_it->second;
+  auto load_report_it = server.load_report_map.find(
+      std::pair(std::string(cluster_name), std::string(eds_service_name)));
+  if (load_report_it == server.load_report_map.end()) return;
   LoadReportState& load_report_state = load_report_it->second;
   if (load_report_state.drop_stats == cluster_drop_stats) {
     // Record final snapshot in deleted_drop_stats, which will be
@@ -874,7 +875,7 @@ LrsClient::AddClusterLocalityStats(
     RefCountedPtr<XdsLocalityName> locality,
     RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation) {
   auto key =
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+      std::pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterLocalityStats> cluster_locality_stats;
   {
     MutexLock lock(&mu_);
@@ -926,9 +927,10 @@ void LrsClient::RemoveClusterLocalityStats(
   MutexLock lock(&mu_);
   auto server_it = load_report_map_.find(lrs_server_key);
   if (server_it == load_report_map_.end()) return;
-  auto load_report_it = server_it->second.load_report_map.find(
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
-  if (load_report_it == server_it->second.load_report_map.end()) return;
+  auto& server = server_it->second;
+  auto load_report_it = server.load_report_map.find(
+      std::pair(std::string(cluster_name), std::string(eds_service_name)));
+  if (load_report_it == server.load_report_map.end()) return;
   LoadReportState& load_report_state = load_report_it->second;
   auto locality_it = load_report_state.locality_stats.find(locality);
   if (locality_it == load_report_state.locality_stats.end()) return;

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/end2end/fuzzers")
 
@@ -51,20 +51,18 @@ grpc_cc_library(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_fuzz_test(
     name = "api_fuzzer",
     srcs = ["api_fuzzer.cc"],
-    corpus = "api_fuzzer_corpus",
-    end2end_fuzzer = True,
-    external_deps = ["absl/log:check"],
-    language = "C++",
-    proto = None,
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = [
         "no_mac",
         "no_windows",
     ],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "api_fuzzer_cc_proto",
         "fuzzing_common",
@@ -76,6 +74,7 @@ grpc_proto_fuzzer(
         "//test/core/end2end:ssl_test_data",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:fuzzing_channel_args",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -114,17 +113,15 @@ grpc_cc_library(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_fuzz_test(
     name = "client_fuzzer",
     srcs = ["client_fuzzer.cc"],
-    corpus = "client_fuzzer_corpus",
-    end2end_fuzzer = True,
-    external_deps = ["absl/log:check"],
-    language = "C++",
-    proto = None,
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "fuzzer_input_cc_proto",
         "fuzzing_common",
@@ -134,16 +131,21 @@ grpc_proto_fuzzer(
         "//src/core:channel_args",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
-grpc_cc_library(
+grpc_fuzz_test(
     name = "server_fuzzer",
     srcs = ["server_fuzzer.cc"],
-    hdrs = ["server_fuzzer.h"],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     deps = [
         "fuzzer_input_cc_proto",
         "fuzzing_common",
@@ -151,76 +153,24 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//src/core:chaotic_good_server",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
-grpc_proto_fuzzer(
-    name = "server_fuzzer_chttp2",
-    srcs = ["server_fuzzer_chttp2.cc"],
-    corpus = "server_fuzzer_chttp2_corpus",
-    end2end_fuzzer = True,
-    language = "C++",
-    proto = None,
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":server_fuzzer",
-        "//:grpc",
-    ],
-)
-
-grpc_proto_fuzzer(
-    name = "server_fuzzer_chttp2_fake_creds",
-    srcs = ["server_fuzzer_chttp2_fake_creds.cc"],
-    corpus = "server_fuzzer_chttp2_fake_creds_corpus",
-    end2end_fuzzer = True,
-    language = "C++",
-    proto = None,
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":server_fuzzer",
-        "//:grpc",
-    ],
-)
-
-grpc_proto_fuzzer(
-    name = "server_fuzzer_chaotic_good",
-    srcs = ["server_fuzzer_chaotic_good.cc"],
-    corpus = "server_fuzzer_chaotic_good_corpus",
-    end2end_fuzzer = True,
-    external_deps = ["absl/log:check"],
-    language = "C++",
-    proto = None,
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":server_fuzzer",
-        "//src/core:chaotic_good_server",
-    ],
-)
-
-grpc_cc_library(
+grpc_fuzz_test(
     name = "connector_fuzzer",
     srcs = ["connector_fuzzer.cc"],
-    hdrs = ["connector_fuzzer.h"],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
         "fuzzer_input_cc_proto",
         "fuzzing_common",
@@ -230,45 +180,8 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_proto_fuzzer(
-    name = "connector_fuzzer_chttp2",
-    srcs = ["connector_fuzzer_chttp2.cc"],
-    corpus = "connector_fuzzer_chttp2_corpus",
-    end2end_fuzzer = True,
-    language = "C++",
-    proto = None,
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":connector_fuzzer",
-        "//:grpc",
-    ],
-)
-
-grpc_proto_fuzzer(
-    name = "connector_fuzzer_chttp2_fakesec",
-    srcs = ["connector_fuzzer_chttp2_fakesec.cc"],
-    corpus = "connector_fuzzer_chttp2_fakesec_corpus",
-    end2end_fuzzer = True,
-    language = "C++",
-    proto = None,
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":connector_fuzzer",
-        "//:grpc",
     ],
 )

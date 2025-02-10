@@ -381,6 +381,124 @@ TEST(ArenaTest, AccurateByteCountWithAllocation) {
   arena.reset();
 }
 
+//////////////////////////////////////////////////////////////////////////
+// ArenaSpsc tests
+
+TEST(ArenaSpscTest, NoOp) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  ArenaSpsc<int> x(arena.get());
+}
+
+TEST(ArenaSpscTest, Pop1) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  ArenaSpsc<int> x(arena.get());
+  auto y = x.Pop();
+  EXPECT_FALSE(y.has_value());
+}
+
+TEST(ArenaSpscTest, Push1Pop1SingleThreaded) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  ArenaSpsc<int> x(arena.get());
+  x.Push(1);
+  auto y = x.Pop();
+  ASSERT_TRUE(y.has_value());
+  EXPECT_EQ(*y, 1);
+  y = x.Pop();
+  EXPECT_FALSE(y.has_value());
+}
+
+TEST(ArenaSpscTest, Push3Pop3SingleThreaded) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  ArenaSpsc<int> x(arena.get());
+  x.Push(1);
+  x.Push(2);
+  x.Push(3);
+  auto y = x.Pop();
+  ASSERT_TRUE(y.has_value());
+  EXPECT_EQ(*y, 1);
+  y = x.Pop();
+  ASSERT_TRUE(y.has_value());
+  EXPECT_EQ(*y, 2);
+  y = x.Pop();
+  ASSERT_TRUE(y.has_value());
+  EXPECT_EQ(*y, 3);
+  y = x.Pop();
+  EXPECT_FALSE(y.has_value());
+}
+
+TEST(ArenaSpscTest, Push1Pop1TwoThreads) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  ArenaSpsc<int> x(arena.get());
+  Thread thd("test", [&x]() { x.Push(1); });
+  thd.Start();
+  std::optional<int> y;
+  while (!y.has_value()) {
+    y = x.Pop();
+  }
+  EXPECT_EQ(*y, 1);
+  y = x.Pop();
+  EXPECT_FALSE(y.has_value());
+  thd.Join();
+}
+
+TEST(ArenaSpscTest, Push3Pop3TwoThreads) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  ArenaSpsc<int> x(arena.get());
+  Thread thd("test", [&x]() {
+    x.Push(1);
+    x.Push(2);
+    x.Push(3);
+  });
+  thd.Start();
+  std::optional<int> y;
+  while (!y.has_value()) {
+    y = x.Pop();
+  }
+  EXPECT_EQ(*y, 1);
+  y.reset();
+  while (!y.has_value()) {
+    y = x.Pop();
+  }
+  EXPECT_EQ(*y, 2);
+  y.reset();
+  while (!y.has_value()) {
+    y = x.Pop();
+  }
+  EXPECT_EQ(*y, 3);
+  thd.Join();
+  y = x.Pop();
+  EXPECT_FALSE(y.has_value());
+}
+
+TEST(ArenaSpscTest, Push1MPop1MTwoThreads) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  ArenaSpsc<std::unique_ptr<int>> x(arena.get());
+  Thread thd("test", [&x]() {
+    for (int i = 0; i < 1000000; i++) {
+      x.Push(std::make_unique<int>(i));
+    }
+  });
+  thd.Start();
+  for (int i = 0; i < 1000000; i++) {
+    std::optional<std::unique_ptr<int>> y;
+    while (!y.has_value()) {
+      y = x.Pop();
+    }
+    ASSERT_TRUE(*y != nullptr);
+    EXPECT_EQ(**y, i);
+  }
+  thd.Join();
+  EXPECT_FALSE(x.Pop().has_value());
+}
+
+TEST(ArenaSpscTest, Drain) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  ArenaSpsc<std::unique_ptr<int>> x(arena.get());
+  for (int i = 0; i < 1000000; i++) {
+    x.Push(std::make_unique<int>(i));
+  }
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char* argv[]) {

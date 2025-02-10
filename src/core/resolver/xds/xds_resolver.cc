@@ -164,11 +164,9 @@ class XdsResolver final : public Resolver {
 
     void Orphaned() override {
       XdsResolver* resolver_ptr = resolver_.get();
-      resolver_ptr->work_serializer_->Run(
-          [resolver = std::move(resolver_)]() {
-            resolver->MaybeRemoveUnusedClusters();
-          },
-          DEBUG_LOCATION);
+      resolver_ptr->work_serializer_->Run([resolver = std::move(resolver_)]() {
+        resolver->MaybeRemoveUnusedClusters();
+      });
       cluster_subscription_.reset();
     }
 
@@ -337,20 +335,19 @@ class XdsResolver final : public Resolver {
   RefCountedPtr<ClusterRef> GetOrCreateClusterRef(
       absl::string_view cluster_key, absl::string_view cluster_name) {
     auto it = cluster_ref_map_.find(cluster_key);
-    if (it == cluster_ref_map_.end()) {
-      RefCountedPtr<XdsDependencyManager::ClusterSubscription> subscription;
-      if (!cluster_name.empty()) {
-        // The cluster ref will hold a subscription to ensure that the
-        // XdsDependencyManager stays subscribed to the CDS resource as
-        // long as the cluster ref exists.
-        subscription = dependency_mgr_->GetClusterSubscription(cluster_name);
-      }
-      auto cluster = MakeRefCounted<ClusterRef>(
-          RefAsSubclass<XdsResolver>(), std::move(subscription), cluster_key);
-      cluster_ref_map_.emplace(cluster->cluster_key(), cluster->WeakRef());
-      return cluster;
+    if (it != cluster_ref_map_.end()) return it->second->Ref();
+    // Not found, so create a new one.
+    RefCountedPtr<XdsDependencyManager::ClusterSubscription> subscription;
+    if (!cluster_name.empty()) {
+      // The cluster ref will hold a subscription to ensure that the
+      // XdsDependencyManager stays subscribed to the CDS resource as
+      // long as the cluster ref exists.
+      subscription = dependency_mgr_->GetClusterSubscription(cluster_name);
     }
-    return it->second->Ref();
+    auto cluster = MakeRefCounted<ClusterRef>(
+        RefAsSubclass<XdsResolver>(), std::move(subscription), cluster_key);
+    cluster_ref_map_.emplace(cluster->cluster_key(), cluster->WeakRef());
+    return cluster;
   }
 
   void OnUpdate(absl::StatusOr<RefCountedPtr<const XdsConfig>> config);
@@ -634,15 +631,9 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
       << "[xds_resolver " << resolver_.get()
       << "] destroying XdsConfigSelector " << this;
   route_config_data_.reset();
-  if (!IsWorkSerializerDispatchEnabled()) {
-    resolver_->MaybeRemoveUnusedClusters();
-    return;
-  }
-  resolver_->work_serializer_->Run(
-      [resolver = std::move(resolver_)]() {
-        resolver->MaybeRemoveUnusedClusters();
-      },
-      DEBUG_LOCATION);
+  resolver_->work_serializer_->Run([resolver = std::move(resolver_)]() {
+    resolver->MaybeRemoveUnusedClusters();
+  });
 }
 
 std::optional<uint64_t> HeaderHashHelper(

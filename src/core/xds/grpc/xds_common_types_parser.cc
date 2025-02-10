@@ -17,7 +17,6 @@
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 
 #include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -40,6 +39,7 @@
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/upb_utils.h"
@@ -137,7 +137,7 @@ CertificateProviderInstanceParse(
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
           certificate_provider_instance_proto));
   const auto& bootstrap =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
   if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
       bootstrap.certificate_providers().end()) {
     ValidationErrors::ScopedField field(errors, ".instance_name");
@@ -162,7 +162,7 @@ CertificateProviderPluginInstanceParse(
       envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_instance_name(
           certificate_provider_plugin_instance_proto));
   const auto& bootstrap =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
   if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
       bootstrap.certificate_providers().end()) {
     ValidationErrors::ScopedField field(errors, ".instance_name");
@@ -337,22 +337,20 @@ CommonTlsContext CommonTlsContextParse(
                 errors);
       }
     }
-  } else {
-    auto* validation_context =
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
-            common_tls_context_proto);
-    if (validation_context != nullptr) {
-      ValidationErrors::ScopedField field(errors, ".validation_context");
-      common_tls_context.certificate_validation_context =
-          CertificateValidationContextParse(context, validation_context,
-                                            errors);
-    } else if (
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
-            common_tls_context_proto)) {
-      ValidationErrors::ScopedField field(
-          errors, ".validation_context_sds_secret_config");
-      errors->AddError("feature unsupported");
-    }
+  } else if (
+      auto* validation_context =
+          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
+              common_tls_context_proto);
+      validation_context != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".validation_context");
+    common_tls_context.certificate_validation_context =
+        CertificateValidationContextParse(context, validation_context, errors);
+  } else if (
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
+          common_tls_context_proto)) {
+    ValidationErrors::ScopedField field(
+        errors, ".validation_context_sds_secret_config");
+    errors->AddError("feature unsupported");
   }
   auto* tls_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_provider_instance(

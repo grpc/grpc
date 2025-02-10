@@ -190,12 +190,10 @@ class ClientChannelTest : public YodelTest {
 
     void QueueNameResolutionResult(Resolver::Result result) {
       result.args = result.args.UnionWith(args_);
-      work_serializer_->Run(
-          [self = RefAsSubclass<TestResolver>(),
-           result = std::move(result)]() mutable {
-            self->result_handler_->ReportResult(std::move(result));
-          },
-          DEBUG_LOCATION);
+      work_serializer_->Run([self = RefAsSubclass<TestResolver>(),
+                             result = std::move(result)]() mutable {
+        self->result_handler_->ReportResult(std::move(result));
+      });
     }
 
    private:

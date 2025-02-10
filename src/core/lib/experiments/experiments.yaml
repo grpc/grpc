@@ -47,12 +47,12 @@
   test_tags: []
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
-  expiry: 2025/02/01
+  expiry: 2025/06/01
   owner: roth@google.com
   test_tags: []
-- name: chaotic_good_legacy_protocol
-  description: If set, use the first version of the chaotic-good protocol when that protocol is enabled.
-  expiry: 2025/01/15
+- name: callv3_client_auth_filter
+  description: Use the CallV3 client auth filter.
+  expiry: 2025/06/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: disable_buffer_hint_on_high_memory_pressure
@@ -69,13 +69,14 @@
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2025/03/01
   owner: hork@google.com
-  requires: ["event_engine_application_callbacks"]
+  requires: ["event_engine_application_callbacks", "event_engine_client", "event_engine_listener"]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
   expiry: 2025/03/01
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
   uses_polling: true
+  allow_in_fuzzing_config: false
 - name: event_engine_dns
   description:
     If set, use EventEngine DNSResolver for client channel resolution
@@ -98,14 +99,22 @@
   owner: vigneshbabu@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
   uses_polling: true
+  allow_in_fuzzing_config: false
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
   expiry: 2025/03/31
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: keep_alive_ping_timer_batch
+  description:
+    Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
+    itself to the next ping interval.
+  expiry: 2025/03/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2025/01/30
+  expiry: 2025/04/30
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_pings_wo_data_throttle
@@ -190,7 +199,6 @@
 - name: server_listener
   description:
     If set, the new server listener classes are used.
-  requires: ["work_serializer_dispatch"]
   expiry: 2025/03/31
   owner: yashkt@google.com
   test_tags: ["xds_end2end_test", "core_end2end_test"]
@@ -208,11 +216,6 @@
   expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
-- name: time_caching_in_party
-  description: Disable time caching in exec_ctx, and enable it only in a single party execution.
-  owner: ctiller@google.com
-  expiry: 2025/01/17
-  test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
   expiry: 2025/01/30
@@ -223,11 +226,3 @@
   expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
-- name: work_serializer_dispatch
-  description:
-    Have the work serializer dispatch work to event engine for every callback,
-    instead of running things inline in the first thread that successfully
-    enqueues work.
-  expiry: 2025/01/30
-  owner: ysseung@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]

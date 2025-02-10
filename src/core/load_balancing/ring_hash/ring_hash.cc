@@ -276,14 +276,12 @@ class RingHash final : public LoadBalancingPolicy {
      private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<EndpointConnectionAttempter*>(arg);
-        self->ring_hash_->work_serializer()->Run(
-            [self]() {
-              if (!self->ring_hash_->shutdown_) {
-                self->endpoint_->RequestConnectionLocked();
-              }
-              delete self;
-            },
-            DEBUG_LOCATION);
+        self->ring_hash_->work_serializer()->Run([self]() {
+          if (!self->ring_hash_->shutdown_) {
+            self->endpoint_->RequestConnectionLocked();
+          }
+          delete self;
+        });
       }
 
       RefCountedPtr<RingHash> ring_hash_;
@@ -904,12 +902,13 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it =
           endpoint_map_.find(EndpointAddressSet(endpoints_[i].addresses()));
       CHECK(it != endpoint_map_.end());
-      if (it->second->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
+      auto& endpoint = it->second;
+      if (endpoint->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
         first_idle_index = endpoints_.size();
         break;
       }
       if (first_idle_index == endpoints_.size() &&
-          it->second->connectivity_state() == GRPC_CHANNEL_IDLE) {
+          endpoint->connectivity_state() == GRPC_CHANNEL_IDLE) {
         first_idle_index = i;
       }
     }
@@ -917,13 +916,14 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it = endpoint_map_.find(
           EndpointAddressSet(endpoints_[first_idle_index].addresses()));
       CHECK(it != endpoint_map_.end());
+      auto& endpoint = it->second;
       GRPC_TRACE_LOG(ring_hash_lb, INFO)
           << "[RH " << this
           << "] triggering internal connection attempt for endpoint "
-          << it->second.get() << " (" << endpoints_[first_idle_index].ToString()
+          << endpoint.get() << " (" << endpoints_[first_idle_index].ToString()
           << ") (index " << first_idle_index << " of " << endpoints_.size()
           << ")";
-      it->second->RequestConnectionLocked();
+      endpoint->RequestConnectionLocked();
     }
   }
 }

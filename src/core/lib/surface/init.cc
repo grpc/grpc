@@ -72,12 +72,21 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
-  builder->channel_init()
-      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
-      .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
-  builder->channel_init()
-      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
-      .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+  if (IsCallv3ClientAuthFilterEnabled()) {
+    builder->channel_init()
+        ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+    builder->channel_init()
+        ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+  } else {
+    builder->channel_init()
+        ->RegisterV2Filter<LegacyClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+    builder->channel_init()
+        ->RegisterV2Filter<LegacyClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+  }
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
@@ -229,7 +238,8 @@ bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout) {
   grpc_core::MutexLock lock(g_init_mu);
   while (g_initializations != 0) {
     if (g_shutting_down_cv->WaitWithDeadline(g_init_mu, deadline)) {
-      LOG(ERROR) << "grpc_wait_for_shutdown_with_timeout() timed out.";
+      GRPC_TRACE_LOG(api, ERROR)
+          << "grpc_wait_for_shutdown_with_timeout() timed out.";
       return false;
     }
   }

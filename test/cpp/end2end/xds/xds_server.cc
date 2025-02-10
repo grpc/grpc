@@ -112,8 +112,7 @@ void AdsServiceImpl::ProcessUnsubscriptions(
     ResourceNameMap* resource_name_map) {
   for (auto it = subscription_name_map->begin();
        it != subscription_name_map->end();) {
-    const std::string& resource_name = it->first;
-    SubscriptionState& subscription_state = it->second;
+    auto& [resource_name, subscription_state] = *it;
     if (resources_in_current_request.find(resource_name) !=
         resources_in_current_request.end()) {
       ++it;

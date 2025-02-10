@@ -31,7 +31,7 @@ TEST(JoinTest, Join1) {
                 absl::StrAppend(&execution_order, "1");
                 return 3;
               })(),
-              IsReady(std::make_tuple(3)));
+              IsReady(std::tuple(3)));
   EXPECT_STREQ(execution_order.c_str(), "1");
 }
 
@@ -46,7 +46,7 @@ TEST(JoinTest, Join2) {
                     absl::StrAppend(&execution_order, "4");
                     return 4;
                   })(),
-              IsReady(std::make_tuple(3, 4)));
+              IsReady(std::tuple(3, 4)));
   EXPECT_STREQ(execution_order.c_str(), "34");
 }
 
@@ -65,7 +65,7 @@ TEST(JoinTest, Join3) {
                     absl::StrAppend(&execution_order, "5");
                     return 5;
                   })(),
-              IsReady(std::make_tuple(3, 4, 5)));
+              IsReady(std::tuple(3, 4, 5)));
   EXPECT_STREQ(execution_order.c_str(), "345");
 }
 

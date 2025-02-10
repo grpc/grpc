@@ -290,14 +290,10 @@ TEST(WritesPerRpcTest, UnaryPingPong) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_event_engine::experimental::SetEventEngineFactory(
-      []() -> std::unique_ptr<grpc_event_engine::experimental::EventEngine> {
-        return std::make_unique<
-            grpc_event_engine::experimental::ThreadedFuzzingEventEngine>(
-            std::chrono::milliseconds(1));
-      });
-  // avoids a race around gpr_now_impl
-  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  grpc_event_engine::experimental::DefaultEventEngineScope engine_scope(
+      std::make_shared<
+          grpc_event_engine::experimental::ThreadedFuzzingEventEngine>(
+          std::chrono::milliseconds(1)));
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();

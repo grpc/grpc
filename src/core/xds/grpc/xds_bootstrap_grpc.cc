@@ -17,7 +17,6 @@
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 
 #include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <optional>
@@ -32,6 +31,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
@@ -200,7 +200,7 @@ std::string GrpcXdsBootstrap::ToString() const {
     std::vector<std::string> server_jsons;
     for (const XdsServer* server : authority.servers()) {
       server_jsons.emplace_back(
-          JsonDump(static_cast<const GrpcXdsServer*>(server)->ToJson()));
+          JsonDump(DownCast<const GrpcXdsServer*>(server)->ToJson()));
     }
     if (!server_jsons.empty()) {
       parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",

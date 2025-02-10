@@ -210,10 +210,9 @@ NextFromAttributeList(absl::Span<const RemoteAttribute> attributes,
   const size_t index = curr - start_index;
   if (index >= attributes.size()) return std::nullopt;
   const auto& attribute = attributes[index];
-  return std::make_pair(
-      attribute.otel_attribute,
-      GetStringValueFromUpbStruct(decoded_metadata,
-                                  attribute.metadata_attribute, arena));
+  return std::pair(attribute.otel_attribute,
+                   GetStringValueFromUpbStruct(
+                       decoded_metadata, attribute.metadata_attribute, arena));
 }
 
 }  // namespace

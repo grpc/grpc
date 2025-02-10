@@ -130,12 +130,10 @@ class FakeResolverTest : public ::testing::Test {
 
   void RunSynchronously(std::function<void()> callback) {
     Notification notification;
-    work_serializer_->Run(
-        [callback = std::move(callback), &notification]() {
-          callback();
-          notification.Notify();
-        },
-        DEBUG_LOCATION);
+    work_serializer_->Run([callback = std::move(callback), &notification]() {
+      callback();
+      notification.Notify();
+    });
     notification.WaitForNotification();
   }
 
