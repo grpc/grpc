@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
@@ -65,6 +65,24 @@ grpc_fuzz_test(
     ],
 )
 
+grpc_fuzz_test(
+    name = "tcp_frame_transport_test",
+    srcs = ["tcp_frame_transport_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        ":test_frame",
+        "//src/core:chaotic_good_frame_transport",
+        "//src/core:chaotic_good_tcp_frame_transport",
+        "//src/core:inter_activity_latch",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+    ],
+)
+
 grpc_cc_test(
     name = "frame_test",
     srcs = ["frame_test.cc"],
@@ -74,10 +92,13 @@ grpc_cc_test(
         "absl/status",
         "absl/status:statusor",
         "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
     deps = [
         "//:channel_create",
         "//src/core:chaotic_good_frame",
+        ":test_frame",
     ],
 )
 
@@ -257,5 +278,33 @@ grpc_fuzz_test(
         "//src/core:chaotic_good_message_chunker",
         "//src/core:status_flag",
         "//test/core/promise:poll_matcher",
+    ],
+)
+
+grpc_internal_proto_library(
+    name = "test_frame_proto",
+    srcs = ["test_frame.proto"],
+    deps = [
+        "//src/core:chaotic_good_frame_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "test_frame_cc_proto",
+    deps = [
+        ":test_frame_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_frame",
+    srcs = ["test_frame.cc"],
+    hdrs = ["test_frame.h"],
+    external_deps = [
+        "fuzztest",
+    ],
+    deps = [
+        "test_frame_cc_proto",
+        "//src/core:chaotic_good_frame",
     ],
 )

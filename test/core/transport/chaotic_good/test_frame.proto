@@ -1,0 +1,60 @@
+// Copyright 2025 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package chaotic_good_frame;
+
+import "src/core/ext/transport/chaotic_good/chaotic_good_frame.proto";
+
+message MessageFrame {
+  uint32 stream_id = 1;
+  oneof type {
+    bytes data = 2;
+    uint32 all_zeros_length = 3;
+  }
+}
+
+message ClientMetadataFrame {
+  uint32 stream_id = 1;
+  ClientMetadata payload = 2;
+}
+
+message ServerMetadataFrame {
+  uint32 stream_id = 1;
+  ServerMetadata payload = 2;
+}
+
+message BeginMessageFrame {
+  uint32 stream_id = 1;
+  BeginMessage payload = 2;
+}
+
+message EmptyStreamFrame {
+  uint32 stream_id = 1;
+}
+
+message TestFrame {
+  oneof type {
+    Settings settings = 1;
+    ClientMetadataFrame client_initial_metadata = 2;
+    ServerMetadataFrame server_initial_metadata = 3;
+    ServerMetadataFrame server_trailing_metadata = 4;
+    MessageFrame message = 5;
+    MessageFrame message_chunk = 6;
+    BeginMessageFrame begin_message = 7;
+    EmptyStreamFrame client_end_of_stream = 8;
+    EmptyStreamFrame cancel = 9;
+  }
+}

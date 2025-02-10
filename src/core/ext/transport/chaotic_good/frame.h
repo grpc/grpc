@@ -41,6 +41,10 @@ class FrameInterface {
   virtual FrameHeader MakeHeader() const = 0;
   virtual void SerializePayload(SliceBuffer& payload) const = 0;
   virtual std::string ToString() const = 0;
+  // Return true if this is a legal frame, here so that fuzzers can filter
+  // out malformed frames prior to serialization; should not be necessary
+  // in production code.
+  virtual bool IsLegal() const = 0;
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const FrameInterface& frame) {
@@ -79,6 +83,8 @@ absl::Status ReadEmptyFrame(const FrameHeader& header, uint32_t& stream_id);
 
 template <FrameType frame_type, typename Body>
 struct ProtoTransportFrame final : public FrameInterface {
+  ProtoTransportFrame() = default;
+  explicit ProtoTransportFrame(Body body) : body(std::move(body)) {}
   absl::Status Deserialize(const FrameHeader& header,
                            SliceBuffer payload) override {
     DCHECK_EQ(header.type, frame_type);
@@ -97,6 +103,7 @@ struct ProtoTransportFrame final : public FrameInterface {
   bool operator==(const ProtoTransportFrame& other) const {
     return body.ShortDebugString() == other.body.ShortDebugString();
   }
+  bool IsLegal() const override { return true; }
 
   Body body;
 };
@@ -105,6 +112,9 @@ struct ProtoTransportFrame final : public FrameInterface {
 // body.
 template <FrameType frame_type, typename Body>
 struct ProtoStreamFrame final : public FrameInterface {
+  ProtoStreamFrame() = default;
+  ProtoStreamFrame(Body body, uint32_t stream_id)
+      : body(std::move(body)), stream_id(stream_id) {}
   absl::Status Deserialize(const FrameHeader& header,
                            SliceBuffer payload) override {
     DCHECK_EQ(header.type, frame_type);
@@ -125,6 +135,7 @@ struct ProtoStreamFrame final : public FrameInterface {
     return body.ShortDebugString() == other.body.ShortDebugString() &&
            stream_id == other.stream_id;
   }
+  bool IsLegal() const override { return stream_id != 0; }
 
   Body body;
   uint32_t stream_id;
@@ -147,6 +158,7 @@ struct EmptyStreamFrame final : public FrameInterface {
   bool operator==(const EmptyStreamFrame& other) const {
     return stream_id == other.stream_id;
   }
+  bool IsLegal() const override { return stream_id != 0; }
 
   uint32_t stream_id;
 };
@@ -168,6 +180,9 @@ using ServerTrailingMetadataFrame =
 using CancelFrame = EmptyStreamFrame<FrameType::kCancel>;
 
 struct MessageFrame final : public FrameInterface {
+  MessageFrame() = default;
+  MessageFrame(uint32_t stream_id, MessageHandle message)
+      : stream_id(stream_id), message(std::move(message)) {}
   absl::Status Deserialize(const FrameHeader& header,
                            SliceBuffer payload) override;
   FrameHeader MakeHeader() const override;
@@ -178,12 +193,16 @@ struct MessageFrame final : public FrameInterface {
            message->payload()->JoinIntoString() ==
                other.message->payload()->JoinIntoString();
   }
+  bool IsLegal() const override { return stream_id != 0; }
 
   uint32_t stream_id;
   MessageHandle message;
 };
 
 struct MessageChunkFrame final : public FrameInterface {
+  MessageChunkFrame() = default;
+  MessageChunkFrame(uint32_t stream_id, SliceBuffer payload)
+      : stream_id(stream_id), payload(std::move(payload)) {}
   absl::Status Deserialize(const FrameHeader& header,
                            SliceBuffer payload) override;
   FrameHeader MakeHeader() const override;
@@ -193,6 +212,7 @@ struct MessageChunkFrame final : public FrameInterface {
     return stream_id == other.stream_id &&
            payload.JoinIntoString() == other.payload.JoinIntoString();
   }
+  bool IsLegal() const override { return stream_id != 0; }
 
   uint32_t stream_id;
   SliceBuffer payload;
@@ -203,6 +223,17 @@ using Frame =
                  ServerInitialMetadataFrame, ServerTrailingMetadataFrame,
                  MessageFrame, BeginMessageFrame, MessageChunkFrame,
                  ClientEndOfStream, CancelFrame>;
+
+inline Frame CopyFrame(const Frame& frame) {
+  return Match(
+      frame, [](const auto& frame) -> Frame { return frame; },
+      [](const MessageFrame& frame) -> Frame {
+        return MessageFrame(frame.stream_id, frame.message->Clone());
+      },
+      [](const MessageChunkFrame& frame) -> Frame {
+        return MessageChunkFrame(frame.stream_id, frame.payload.Copy());
+      });
+}
 
 inline std::ostream& operator<<(std::ostream& out, const Frame& frame) {
   return out << absl::ConvertVariantTo<FrameInterface&>(frame).ToString();
