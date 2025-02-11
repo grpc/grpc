@@ -19,9 +19,9 @@
 
 namespace grpc_core {
 
-DelayTracker::Handle DelayTracker::StartDelay(absl::string_view description) {
+DelayTracker::Handle DelayTracker::StartDelay(std::string description) {
   Handle handle = delays_.size();
-  delays_.emplace_back(description);
+  delays_.emplace_back(std::move(description));
   return handle;
 }
 

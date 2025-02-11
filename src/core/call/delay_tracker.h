@@ -35,7 +35,7 @@ class DelayTracker {
   // Starts recording a delay.  Returns a handle for the new delay.  The
   // caller needs to hold on to the handle and later pass it to EndDelay()
   // when the delay is complete.
-  Handle StartDelay(absl::string_view description);
+  Handle StartDelay(std::string description);
 
   // Ends a delay.
   void EndDelay(Handle handle);
