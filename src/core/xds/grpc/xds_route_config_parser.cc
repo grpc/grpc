@@ -17,7 +17,6 @@
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 
 #include <grpc/status.h>
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -57,6 +56,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
@@ -110,7 +110,7 @@ XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
   XdsRouteConfigResource::ClusterSpecifierPluginMap
       cluster_specifier_plugin_map;
   const auto& cluster_specifier_plugin_registry =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .cluster_specifier_plugin_registry();
   size_t num_cluster_specifier_plugins;
   const envoy_config_route_v3_ClusterSpecifierPlugin* const*
@@ -429,7 +429,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       extension_to_use = &*nested_extension;
     }
     const auto& http_filter_registry =
-        static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .http_filter_registry();
     const XdsHttpFilterImpl* filter_impl =
         http_filter_registry.GetFilterForType(extension_to_use->type);

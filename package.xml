@@ -2037,6 +2037,7 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_server_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_server_grpc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_server_grpc_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/lrs_client.cc" role="src" />

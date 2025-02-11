@@ -1,5 +1,5 @@
 //
-// Copyright 2024 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,20 +14,20 @@
 // limitations under the License.
 //
 
-#include "src/core/filter/blackboard.h"
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_SERVER_GRPC_INTERFACE_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_SERVER_GRPC_INTERFACE_H
+
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
 
-RefCountedPtr<Blackboard::Entry> Blackboard::Get(UniqueTypeName type,
-                                                 const std::string& key) const {
-  auto it = map_.find(std::pair(type, key));
-  if (it == map_.end()) return nullptr;
-  return it->second;
-}
-
-void Blackboard::Set(UniqueTypeName type, const std::string& key,
-                     RefCountedPtr<Entry> entry) {
-  map_[std::pair(type, key)] = std::move(entry);
-}
+class GrpcXdsServerInterface : public XdsBootstrap::XdsServer {
+ public:
+  virtual RefCountedPtr<ChannelCredsConfig> channel_creds_config() const = 0;
+};
 
 }  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_SERVER_GRPC_INTERFACE_H

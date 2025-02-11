@@ -2055,6 +2055,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/xds_routing.h )
   s.files += %w( src/core/xds/grpc/xds_server_grpc.cc )
   s.files += %w( src/core/xds/grpc/xds_server_grpc.h )
+  s.files += %w( src/core/xds/grpc/xds_server_grpc_interface.h )
   s.files += %w( src/core/xds/grpc/xds_transport_grpc.cc )
   s.files += %w( src/core/xds/grpc/xds_transport_grpc.h )
   s.files += %w( src/core/xds/xds_client/lrs_client.cc )

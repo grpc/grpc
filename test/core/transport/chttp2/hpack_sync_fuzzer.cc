@@ -139,7 +139,7 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
         encode_output.c_slice_at(i), i == (encode_output.Count() - 1),
         absl::BitGenRef(proto_bit_src), /*call_tracer=*/nullptr);
     if (!err.ok()) {
-      seen_errors.push_back(std::make_pair(i, err));
+      seen_errors.push_back(std::pair(i, err));
       // If we get a connection error (i.e. not a stream error), stop parsing,
       // return.
       if (!IsStreamError(err)) return;

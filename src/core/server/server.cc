@@ -1343,7 +1343,7 @@ Server::RegisteredMethod* Server::RegisterMethod(
     LOG(ERROR) << "grpc_server_register_method method string cannot be NULL";
     return nullptr;
   }
-  auto key = std::make_pair(host ? host : "", method);
+  auto key = std::pair(host ? host : "", method);
   if (registered_methods_.find(key) != registered_methods_.end()) {
     LOG(ERROR) << "duplicate registration for " << method << "@"
                << (host ? host : "*");
@@ -1697,12 +1697,12 @@ Server::RegisteredMethod* Server::GetRegisteredMethod(
     const absl::string_view& host, const absl::string_view& path) {
   if (registered_methods_.empty()) return nullptr;
   // check for an exact match with host
-  auto it = registered_methods_.find(std::make_pair(host, path));
+  auto it = registered_methods_.find(std::pair(host, path));
   if (it != registered_methods_.end()) {
     return it->second.get();
   }
   // check for wildcard method definition (no host set)
-  it = registered_methods_.find(std::make_pair("", path));
+  it = registered_methods_.find(std::pair("", path));
   if (it != registered_methods_.end()) {
     return it->second.get();
   }
