@@ -3126,7 +3126,6 @@ static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
   if (ExtendScheduledTimer(
           t, t->keepalive_ping_timer_handle, t->keepalive_time,
           [t = t->Ref()]() mutable {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
             init_keepalive_ping(std::move(t));
           })) {
