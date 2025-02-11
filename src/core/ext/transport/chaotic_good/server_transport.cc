@@ -234,19 +234,15 @@ void ChaoticGoodServerTransport::StreamDispatch::OnIncomingFrame(
   incoming_frame_spawner_->Spawn(ProcessNextFrame(std::move(incoming_frame)));
 }
 
-auto ChaoticGoodServerTransport::OnTransportActivityDone(
-    absl::string_view activity) {
-  return [self = RefAsSubclass<ChaoticGoodServerTransport>(),
-          activity](absl::Status status) {
-    GRPC_TRACE_LOG(chaotic_good, INFO)
-        << "CHAOTIC_GOOD: OnTransportActivityDone: activity=" << activity
-        << " status=" << status;
-    self->AbortWithError();
-  };
-}
-
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
-    const ChannelArgs& args, FrameTransport& frame_transport,
+    const ChannelArgs& args, RefCountedPtr<FrameTransport> frame_transport,
+    MessageChunker message_chunker)
+    : state_{std::make_unique<ConstructionParameters>(
+      args, std::move(frame_transport), std::move(message_chunker)
+    )}
+
+ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
+    const ChannelArgs& args, RefCountedPtr<FrameTransport> frame_transport,
     MessageChunker message_chunker)
     : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
@@ -273,10 +269,10 @@ event_engine_, config.MakeTransportOptions(), false);
 
 void ChaoticGoodServerTransport::SetCallDestination(
     RefCountedPtr<UnstartedCallDestination> call_destination) {
-  CHECK(call_destination_ == nullptr);
-  CHECK(call_destination != nullptr);
-  call_destination_ = call_destination;
-  got_acceptor_.Set();
+  auto construction_parameters = std::move(std::get<std::unique_ptr<ConstructionParameters>>(state_));
+  state_ = MakeRefCounted<StreamDispatch>(
+      construction_parameters->args, std::move(construction_parameters->frame_transport),
+      std::move(construction_parameters->message_chunker), std::move(call_destination));
 }
 
 void ChaoticGoodServerTransport::Orphan() {

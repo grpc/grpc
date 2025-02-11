@@ -78,7 +78,7 @@ namespace chaotic_good {
 class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(const ChannelArgs& args,
-                             FrameTransport& frame_transport,
+                             RefCounted<FrameTransport> frame_transport,
                              MessageChunker message_chunker);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -106,6 +106,11 @@ class ChaoticGoodServerTransport final : public ServerTransport {
 
   class StreamDispatch : public FrameTransportSink {
    public:
+    StreamDispatch(const ChannelArgs& args,
+                   RefCountedPtr<FrameTransport> frame_transport,
+                   MessageChunker message_chunker,
+                   RefCountedPtr<UnstartedCallDestination> call_destination);
+
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
     void OnFrameTransportClosed(absl::Status status) override;
 
@@ -142,6 +147,14 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
     const RefCountedPtr<UnstartedCallDestination> call_destination_;
     Party::SpawnSerializer* incoming_frame_spawner_;
+    MessageChunker message_chunker_;
+    MpscSender<Frame> outgoing_frames_;
+  };
+
+  struct ConstructionParameters {
+    ChannelArgs args;
+    RefCountedPtr<FrameTransport> frame_transport;
+    MessageChunker message_chunker;
   };
 
   // Read different parts of the server frame from control/data endpoints
@@ -150,11 +163,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto ReadFrameBody(Slice read_buffer);
   void SendCancel(uint32_t stream_id, absl::Status why);
 
-  InterActivityLatch<void> got_acceptor_;
-  MpscSender<Frame> outgoing_frames_;
-  RefCountedPtr<StreamDispatch> stream_dispatch_;
-  RefCountedPtr<Party> party_;
-  MessageChunker message_chunker_;
+  using State = std::variant<std::unique_ptr<ConstructionParameters>,
+                             RefCountedPtr<StreamDispatch>>;
+  State state_;
 };
 
 }  // namespace chaotic_good

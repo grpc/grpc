@@ -240,6 +240,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }
 
 void ChaoticGoodClientTransport::Orphan() {
+  LOG(INFO) << "Orphan transport";
   party_.reset();
   Unref();
 }
