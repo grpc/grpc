@@ -3123,12 +3123,11 @@ static bool ExtendScheduledTimer(grpc_chttp2_transport* t, TaskHandle& handle,
 }
 
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
-  if (ExtendScheduledTimer(
-          t, t->keepalive_ping_timer_handle, t->keepalive_time,
-          [t = t->Ref()]() mutable {
-            grpc_core::ExecCtx exec_ctx;
-            init_keepalive_ping(std::move(t));
-          })) {
+  if (ExtendScheduledTimer(t, t->keepalive_ping_timer_handle, t->keepalive_time,
+                           [t = t->Ref()]() mutable {
+                             grpc_core::ExecCtx exec_ctx;
+                             init_keepalive_ping(std::move(t));
+                           })) {
     // Cancel succeeds, resets the keepalive ping timer. Note that we don't
     // need to Ref or Unref here since we still hold the Ref.
     if (GRPC_TRACE_FLAG_ENABLED(http) ||
