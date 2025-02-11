@@ -332,8 +332,7 @@ auto ChaoticGoodServerTransport::OnTransportActivityDone(
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     const ChannelArgs& args, PromiseEndpoint control_endpoint, Config config,
     RefCountedPtr<ServerConnectionFactory>)
-    : ServerTransport("CGS"),
-      call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
+    : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator("chaotic-good"),
