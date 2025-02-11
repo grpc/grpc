@@ -832,7 +832,6 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
       << "] ejection timer will run in " << interval.ToString();
   timer_handle_ = parent_->channel_control_helper()->GetEventEngine()->RunAfter(
       interval, [self = Ref(DEBUG_LOCATION, "EjectionTimer")]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         auto self_ptr = self.get();
         self_ptr->parent_->work_serializer()->Run(

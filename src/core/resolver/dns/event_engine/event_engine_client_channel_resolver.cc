@@ -222,7 +222,6 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
               addresses) mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnHostnameResolved(std::move(addresses));
         self.reset();
@@ -238,7 +237,6 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
                 srv_records) mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnSRVResolved(std::move(srv_records));
           self.reset();
@@ -254,7 +252,6 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
             absl::StatusOr<std::vector<std::string>> service_config) mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnTXTResolved(std::move(service_config));
           self.reset();
@@ -267,7 +264,6 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                      : resolver_->query_timeout_ms_;
   timeout_handle_ = resolver_->event_engine_->RunAfter(
       timeout, [self = Ref(DEBUG_LOCATION, "OnTimeout")]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnTimeout();
         self.reset();
@@ -374,7 +370,6 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
          self = Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved")](
             absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
                 new_balancer_addresses) mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnBalancerHostnamesResolved(std::move(host),
                                             std::move(new_balancer_addresses));

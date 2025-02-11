@@ -88,7 +88,6 @@ class PromiseEndpoint {
       write_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
       completed = endpoint_->Write(
           [write_state = write_state_](absl::Status status) {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             write_state->Complete(std::move(status));
           },
@@ -149,7 +148,6 @@ class PromiseEndpoint {
       read_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
       if (endpoint_->Read(
               [read_state = read_state_, num_bytes](absl::Status status) {
-                ApplicationCallbackExecCtx callback_exec_ctx;
                 ExecCtx exec_ctx;
                 read_state->Complete(std::move(status), num_bytes);
               },

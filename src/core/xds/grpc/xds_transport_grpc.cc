@@ -299,7 +299,6 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
   // (e.g., when using one control plane to find another control plane).
   grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
       [self = WeakRefAsSubclass<GrpcXdsTransport>()]() mutable {
-        ApplicationCallbackExecCtx application_exec_ctx;
         ExecCtx exec_ctx;
         self.reset();
       });
