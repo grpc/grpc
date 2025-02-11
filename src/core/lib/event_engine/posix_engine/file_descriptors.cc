@@ -1093,12 +1093,12 @@ PosixResult FileDescriptors::PosixResultWrap(
   return PosixResultSimpleWrap(fn(*fd));
 }
 
-void FileDescriptors::AdvanceGeneration() {
+IF_POSIX_SOCKET(void FileDescriptors::AdvanceGeneration(), {
   for (int fd : descriptors_.AdvanceGeneration()) {
     if (fd > 0) {
       close(fd);
     }
   }
-}
+})
 
 }  // namespace grpc_event_engine::experimental
