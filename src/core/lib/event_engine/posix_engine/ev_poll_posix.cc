@@ -739,7 +739,7 @@ void PollPoller::AdvanceGeneration() {
   GetFileDescriptors().AdvanceGeneration();
   PollEventHandle* handle;
   {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     handle = poll_handles_list_head_;
   }
   while (handle != nullptr) {

@@ -473,8 +473,6 @@ Epoll1Poller::Epoll1Poller(Scheduler* /* engine */) {
   grpc_core::Crash("unimplemented");
 }
 
-void Epoll1Poller::Shutdown() { grpc_core::Crash("unimplemented"); }
-
 Epoll1Poller::~Epoll1Poller() { grpc_core::Crash("unimplemented"); }
 
 EventHandle* Epoll1Poller::CreateHandle(FileDescriptor /*fd*/,
@@ -505,12 +503,6 @@ void Epoll1Poller::Kick() { grpc_core::Crash("unimplemented"); }
 std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* /*scheduler*/) {
   return nullptr;
 }
-
-void Epoll1Poller::PrepareFork() {}
-
-void Epoll1Poller::PostforkParent() {}
-
-void Epoll1Poller::PostforkChild() {}
 
 }  // namespace grpc_event_engine::experimental
 
