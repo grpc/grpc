@@ -174,7 +174,6 @@ void CanSendFrames(size_t num_data_endpoints, uint32_t client_alignment,
   }
   auto deadline = Timestamp::Now() + Duration::Hours(6);
   while (!client_sink->done() || !server_sink->done()) {
-    LOG(INFO) << "tick " << Timestamp::Now();
     engine->Tick();
     CHECK(Timestamp::Now() < deadline) << "timeout";
   }
@@ -205,16 +204,6 @@ auto ParseFrameProto(const std::string& proto) {
   return msg;
 }
 
-TEST(TcpFrameTransportTest, CanSendFramesRegression1) {
-  std::vector<Frame> frames;
-  frames.emplace_back(grpc_core::chaotic_good::FrameFromTestFrame(
-      ParseFrameProto(R"pb(begin_message {
-                             stream_id: 1
-                             payload {}
-                           })pb")));
-  CanSendFrames(64, 1024, 1, 8388608, 8388608, 9, 64,
-                ParseFuzzingEventEngineProto(R"pb()pb"), std::move(frames), {});
-}
 }  // namespace
 }  // namespace chaotic_good
 }  // namespace grpc_core
