@@ -25,6 +25,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -34,7 +35,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"

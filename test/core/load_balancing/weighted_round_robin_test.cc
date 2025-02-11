@@ -25,6 +25,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,7 +36,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
 #include "src/core/load_balancing/backend_metric_data.h"
@@ -197,7 +197,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       auto& subchannel_call_tracker = subchannel_call_trackers[i];
       if (subchannel_call_tracker != nullptr) {
         subchannel_call_tracker->Start();
-        absl::optional<BackendMetricData> backend_metric_data;
+        std::optional<BackendMetricData> backend_metric_data;
         auto it = backend_metrics.find(address);
         if (it != backend_metrics.end()) {
           backend_metric_data.emplace();
@@ -858,7 +858,7 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in WRR.
-  SetExpectedTimerDuration(absl::nullopt);
+  SetExpectedTimerDuration(std::nullopt);
   constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {

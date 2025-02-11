@@ -24,9 +24,9 @@
 #include <stdint.h>
 
 #include <initializer_list>
+#include <optional>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/bitset.h"
@@ -35,14 +35,14 @@ namespace grpc_core {
 
 // Given a string naming a compression algorithm, return the corresponding enum
 // or nullopt on error.
-absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
+std::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
     absl::string_view algorithm);
 // Convert a compression algorithm to a string. Returns nullptr if a name is not
 // known.
 const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm);
 // Retrieve the default compression algorithm from channel args, return nullopt
 // if not found.
-absl::optional<grpc_compression_algorithm>
+std::optional<grpc_compression_algorithm>
 DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args);
 
 // A set of grpc_compression_algorithm values.

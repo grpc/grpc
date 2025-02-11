@@ -16,8 +16,8 @@
 Contains macros used for running bazelified tests.
 """
 
-load(":dockerimage_current_versions.bzl", "DOCKERIMAGE_CURRENT_VERSIONS")
 load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict")
+load(":dockerimage_current_versions.bzl", "DOCKERIMAGE_CURRENT_VERSIONS")
 
 def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, docker_run_as_root = False, env = {}):
     """Runs sh_test under docker either via RBE or via docker sandbox."""
@@ -245,7 +245,15 @@ def grpc_run_simple_command_test(name, args = [], data = [], size = "medium", ti
     env = {}
     _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env, docker_run_as_root = False)
 
-def grpc_build_artifact_task(name, timeout = None, artifact_deps = [], tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, build_script = None):
+def grpc_build_artifact_task(
+        name,
+        timeout = None,  # @unused
+        artifact_deps = [],
+        tags = [],
+        exec_compatible_with = [],
+        flaky = None,
+        docker_image_version = None,
+        build_script = None):
     """Execute a build artifact task and a corresponding 'build test'.
 
     The artifact is built by a genrule that always succeeds (Even if the underlying build fails)

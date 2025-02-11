@@ -43,8 +43,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 class PosixEngineListenerImpl
@@ -278,6 +277,5 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
 
 #endif
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_LISTENER_H

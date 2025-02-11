@@ -36,7 +36,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/util/directory_reader.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
@@ -120,7 +119,7 @@ class DirectoryReloaderCrlProvider
   Mutex mu_;
   absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_
       ABSL_GUARDED_BY(mu_);
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       refresh_handle_;
 };
 

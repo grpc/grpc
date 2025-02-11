@@ -15,7 +15,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_admin_v3_UnreadyTargetsDumps_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_admin_v3_UnreadyTargetsDumps__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__admin__v3__UnreadyTargetsDumps__UnreadyTargetsDump_msg_init_ptr},
 };
 
@@ -24,7 +24,7 @@ static const upb_MiniTableField envoy_admin_v3_UnreadyTargetsDumps__fields[1] = 
 };
 
 const upb_MiniTable envoy__admin__v3__UnreadyTargetsDumps_msg_init = {
-  &envoy_admin_v3_UnreadyTargetsDumps_submsgs[0],
+  &envoy_admin_v3_UnreadyTargetsDumps__submsgs[0],
   &envoy_admin_v3_UnreadyTargetsDumps__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED

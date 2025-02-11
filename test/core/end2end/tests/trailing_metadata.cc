@@ -27,7 +27,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreEnd2endTest, TrailingMetadata) {
+CORE_END2END_TEST(CoreEnd2endTests, TrailingMetadata) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;

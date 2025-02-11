@@ -44,7 +44,6 @@ grpc_cc_library(
         "absl/log:log",
         "cronet_c_for_grpc",
     ],
-    language = "c++",
     public_hdrs = [
         "client/secure/cronet_channel_create.h",
     ],

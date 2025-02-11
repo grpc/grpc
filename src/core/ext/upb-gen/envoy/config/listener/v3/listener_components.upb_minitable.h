@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -24,8 +24,6 @@ extern const upb_MiniTable envoy__config__listener__v3__FilterChainMatch_msg_ini
 extern const upb_MiniTable* envoy__config__listener__v3__FilterChainMatch_msg_init_ptr;
 extern const upb_MiniTable envoy__config__listener__v3__FilterChain_msg_init;
 extern const upb_MiniTable* envoy__config__listener__v3__FilterChain_msg_init_ptr;
-extern const upb_MiniTable envoy__config__listener__v3__FilterChain__OnDemandConfiguration_msg_init;
-extern const upb_MiniTable* envoy__config__listener__v3__FilterChain__OnDemandConfiguration_msg_init_ptr;
 extern const upb_MiniTable envoy__config__listener__v3__ListenerFilterChainMatchPredicate_msg_init;
 extern const upb_MiniTable* envoy__config__listener__v3__ListenerFilterChainMatchPredicate_msg_init_ptr;
 extern const upb_MiniTable envoy__config__listener__v3__ListenerFilterChainMatchPredicate__MatchSet_msg_init;
@@ -41,4 +39,4 @@ extern const upb_MiniTableFile envoy_config_listener_v3_listener_components_prot
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPB_H__UPB_MINITABLE_H_ */

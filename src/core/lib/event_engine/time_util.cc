@@ -18,12 +18,10 @@
 
 #include <chrono>
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 size_t Milliseconds(EventEngine::Duration d) {
   return std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

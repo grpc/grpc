@@ -42,7 +42,7 @@ struct CallInfo {
   Empty request;
   Empty response;
 
-  absl::optional<Status> WaitForStatus(
+  std::optional<Status> WaitForStatus(
       absl::Duration timeout = absl::Seconds(1)) {
     grpc_core::MutexLock lock(&mu);
     cv.WaitWithTimeout(&mu, timeout);
@@ -58,7 +58,7 @@ struct CallInfo {
  private:
   grpc_core::Mutex mu;
   grpc_core::CondVar cv;
-  absl::optional<Status> status_;
+  std::optional<Status> status_;
 };
 
 void ServerLoop(HookServiceImpl* service, int port, Server** server,

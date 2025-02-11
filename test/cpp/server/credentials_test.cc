@@ -134,7 +134,8 @@ TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedRoot) {
   key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
   StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
 }
 
 TEST(CredentialsTest,
@@ -148,7 +149,8 @@ TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedRoot) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
                                           MALFORMED_CERT_PATH, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlChecking) {

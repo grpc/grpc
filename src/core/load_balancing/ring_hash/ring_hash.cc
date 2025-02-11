@@ -27,6 +27,7 @@
 #include <cmath>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,15 +36,15 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -59,10 +60,12 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/ref_counted_string.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/work_serializer.h"
 #include "src/core/util/xxhash_inline.h"
@@ -74,53 +77,79 @@ UniqueTypeName RequestHashAttribute::TypeName() {
   return kFactory.Create();
 }
 
-// Helper Parser method
-
-const JsonLoaderInterface* RingHashConfig::JsonLoader(const JsonArgs&) {
-  static const auto* loader =
-      JsonObjectLoader<RingHashConfig>()
-          .OptionalField("minRingSize", &RingHashConfig::min_ring_size)
-          .OptionalField("maxRingSize", &RingHashConfig::max_ring_size)
-          .Finish();
-  return loader;
-}
-
-void RingHashConfig::JsonPostLoad(const Json&, const JsonArgs&,
-                                  ValidationErrors* errors) {
-  {
-    ValidationErrors::ScopedField field(errors, ".minRingSize");
-    if (!errors->FieldHasErrors() &&
-        (min_ring_size == 0 || min_ring_size > 8388608)) {
-      errors->AddError("must be in the range [1, 8388608]");
-    }
-  }
-  {
-    ValidationErrors::ScopedField field(errors, ".maxRingSize");
-    if (!errors->FieldHasErrors() &&
-        (max_ring_size == 0 || max_ring_size > 8388608)) {
-      errors->AddError("must be in the range [1, 8388608]");
-    }
-  }
-  if (min_ring_size > max_ring_size) {
-    errors->AddError("max_ring_size cannot be smaller than min_ring_size");
-  }
-}
-
 namespace {
 
 constexpr absl::string_view kRingHash = "ring_hash_experimental";
 
+bool XdsRingHashSetRequestHashKeyEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_RING_HASH_SET_REQUEST_HASH_KEY");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
+class RingHashJsonArgs final : public JsonArgs {
+ public:
+  bool IsEnabled(absl::string_view key) const override {
+    if (key == "request_hash_header") {
+      return XdsRingHashSetRequestHashKeyEnabled();
+    }
+    return true;
+  }
+};
+
 class RingHashLbConfig final : public LoadBalancingPolicy::Config {
  public:
-  RingHashLbConfig(size_t min_ring_size, size_t max_ring_size)
-      : min_ring_size_(min_ring_size), max_ring_size_(max_ring_size) {}
+  RingHashLbConfig() = default;
+
+  RingHashLbConfig(const RingHashLbConfig&) = delete;
+  RingHashLbConfig& operator=(const RingHashLbConfig&) = delete;
+
+  RingHashLbConfig(RingHashLbConfig&& other) = delete;
+  RingHashLbConfig& operator=(RingHashLbConfig&& other) = delete;
+
   absl::string_view name() const override { return kRingHash; }
   size_t min_ring_size() const { return min_ring_size_; }
   size_t max_ring_size() const { return max_ring_size_; }
+  absl::string_view request_hash_header() const { return request_hash_header_; }
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<RingHashLbConfig>()
+            .OptionalField("minRingSize", &RingHashLbConfig::min_ring_size_)
+            .OptionalField("maxRingSize", &RingHashLbConfig::max_ring_size_)
+            .OptionalField("requestHashHeader",
+                           &RingHashLbConfig::request_hash_header_,
+                           "request_hash_header")
+            .Finish();
+    return loader;
+  }
+
+  void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
+    {
+      ValidationErrors::ScopedField field(errors, ".minRingSize");
+      if (!errors->FieldHasErrors() &&
+          (min_ring_size_ == 0 || min_ring_size_ > 8388608)) {
+        errors->AddError("must be in the range [1, 8388608]");
+      }
+    }
+    {
+      ValidationErrors::ScopedField field(errors, ".maxRingSize");
+      if (!errors->FieldHasErrors() &&
+          (max_ring_size_ == 0 || max_ring_size_ > 8388608)) {
+        errors->AddError("must be in the range [1, 8388608]");
+      }
+    }
+    if (min_ring_size_ > max_ring_size_) {
+      errors->AddError("maxRingSize cannot be smaller than minRingSize");
+    }
+  }
 
  private:
-  size_t min_ring_size_;
-  size_t max_ring_size_;
+  uint64_t min_ring_size_ = 1024;
+  uint64_t max_ring_size_ = 4096;
+  std::string request_hash_header_;
 };
 
 //
@@ -217,9 +246,14 @@ class RingHash final : public LoadBalancingPolicy {
     explicit Picker(RefCountedPtr<RingHash> ring_hash)
         : ring_hash_(std::move(ring_hash)),
           ring_(ring_hash_->ring_),
-          endpoints_(ring_hash_->endpoints_.size()) {
-      for (const auto& p : ring_hash_->endpoint_map_) {
-        endpoints_[p.second->index()] = p.second->GetInfoForPicker();
+          endpoints_(ring_hash_->endpoints_.size()),
+          resolution_note_(ring_hash_->resolution_note_),
+          request_hash_header_(ring_hash_->request_hash_header_) {
+      for (const auto& [_, endpoint] : ring_hash_->endpoint_map_) {
+        endpoints_[endpoint->index()] = endpoint->GetInfoForPicker();
+        if (endpoints_[endpoint->index()].state == GRPC_CHANNEL_CONNECTING) {
+          has_endpoint_in_connecting_state_ = true;
+        }
       }
     }
 
@@ -242,14 +276,12 @@ class RingHash final : public LoadBalancingPolicy {
      private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<EndpointConnectionAttempter*>(arg);
-        self->ring_hash_->work_serializer()->Run(
-            [self]() {
-              if (!self->ring_hash_->shutdown_) {
-                self->endpoint_->RequestConnectionLocked();
-              }
-              delete self;
-            },
-            DEBUG_LOCATION);
+        self->ring_hash_->work_serializer()->Run([self]() {
+          if (!self->ring_hash_->shutdown_) {
+            self->endpoint_->RequestConnectionLocked();
+          }
+          delete self;
+        });
       }
 
       RefCountedPtr<RingHash> ring_hash_;
@@ -260,6 +292,9 @@ class RingHash final : public LoadBalancingPolicy {
     RefCountedPtr<RingHash> ring_hash_;
     RefCountedPtr<Ring> ring_;
     std::vector<RingHashEndpoint::EndpointInfo> endpoints_;
+    bool has_endpoint_in_connecting_state_ = false;
+    std::string resolution_note_;
+    RefCountedStringValue request_hash_header_;
   };
 
   ~RingHash() override;
@@ -278,9 +313,11 @@ class RingHash final : public LoadBalancingPolicy {
   // Current endpoint list, channel args, and ring.
   EndpointAddressesList endpoints_;
   ChannelArgs args_;
+  RefCountedStringValue request_hash_header_;
   RefCountedPtr<Ring> ring_;
 
   std::map<EndpointAddressSet, OrphanablePtr<RingHashEndpoint>> endpoint_map_;
+  std::string resolution_note_;
 
   // TODO(roth): If we ever change the helper UpdateState() API to not
   // need the status reported for TRANSIENT_FAILURE state (because
@@ -297,17 +334,34 @@ class RingHash final : public LoadBalancingPolicy {
 //
 
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
-  auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  auto* hash_attribute = call_state->GetCallAttribute<RequestHashAttribute>();
-  if (hash_attribute == nullptr) {
-    return PickResult::Fail(absl::InternalError("hash attribute not present"));
+  // Determine request hash.
+  bool using_random_hash = false;
+  uint64_t request_hash;
+  if (request_hash_header_.as_string_view().empty()) {
+    // Being used in xDS.  Request hash is passed in via an attribute.
+    auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
+    auto* hash_attribute = call_state->GetCallAttribute<RequestHashAttribute>();
+    if (hash_attribute == nullptr) {
+      return PickResult::Fail(
+          absl::InternalError("hash attribute not present"));
+    }
+    request_hash = hash_attribute->request_hash();
+  } else {
+    std::string buffer;
+    auto header_value = args.initial_metadata->Lookup(
+        request_hash_header_.as_string_view(), &buffer);
+    if (header_value.has_value()) {
+      request_hash = XXH64(header_value->data(), header_value->size(), 0);
+    } else {
+      request_hash = absl::Uniform<uint64_t>(absl::BitGen());
+      using_random_hash = true;
+    }
   }
-  uint64_t request_hash = hash_attribute->request_hash();
-  const auto& ring = ring_->ring();
   // Find the index in the ring to use for this RPC.
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) NOTE: The algorithm depends on using signed integers
   // for lowp, highp, and index. Do not change them!
+  const auto& ring = ring_->ring();
   int64_t lowp = 0;
   int64_t highp = ring.size();
   int64_t index = 0;
@@ -333,26 +387,50 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     }
   }
   // Find the first endpoint we can use from the selected index.
-  for (size_t i = 0; i < ring.size(); ++i) {
-    const auto& entry = ring[(index + i) % ring.size()];
-    const auto& endpoint_info = endpoints_[entry.endpoint_index];
-    switch (endpoint_info.state) {
-      case GRPC_CHANNEL_READY:
+  if (!using_random_hash) {
+    for (size_t i = 0; i < ring.size(); ++i) {
+      const auto& entry = ring[(index + i) % ring.size()];
+      const auto& endpoint_info = endpoints_[entry.endpoint_index];
+      switch (endpoint_info.state) {
+        case GRPC_CHANNEL_READY:
+          return endpoint_info.picker->Pick(args);
+        case GRPC_CHANNEL_IDLE:
+          new EndpointConnectionAttempter(
+              ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
+              endpoint_info.endpoint);
+          [[fallthrough]];
+        case GRPC_CHANNEL_CONNECTING:
+          return PickResult::Queue();
+        default:
+          break;
+      }
+    }
+  } else {
+    // Using a random hash.  We will use the first READY endpoint we
+    // find, triggering at most one endpoint to attempt connecting.
+    bool requested_connection = has_endpoint_in_connecting_state_;
+    for (size_t i = 0; i < ring.size(); ++i) {
+      const auto& entry = ring[(index + i) % ring.size()];
+      const auto& endpoint_info = endpoints_[entry.endpoint_index];
+      if (endpoint_info.state == GRPC_CHANNEL_READY) {
         return endpoint_info.picker->Pick(args);
-      case GRPC_CHANNEL_IDLE:
+      }
+      if (!requested_connection && endpoint_info.state == GRPC_CHANNEL_IDLE) {
         new EndpointConnectionAttempter(
             ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
             endpoint_info.endpoint);
-        ABSL_FALLTHROUGH_INTENDED;
-      case GRPC_CHANNEL_CONNECTING:
-        return PickResult::Queue();
-      default:
-        break;
+        requested_connection = true;
+      }
     }
+    if (requested_connection) return PickResult::Queue();
   }
-  return PickResult::Fail(absl::UnavailableError(absl::StrCat(
+  std::string message = absl::StrCat(
       "ring hash cannot find a connected endpoint; first failure: ",
-      endpoints_[ring[index].endpoint_index].status.message())));
+      endpoints_[ring[index].endpoint_index].status.message());
+  if (!resolution_note_.empty()) {
+    absl::StrAppend(&message, " (", resolution_note_, ")");
+  }
+  return PickResult::Fail(absl::UnavailableError(message));
 }
 
 //
@@ -362,7 +440,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
 RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
   // Store the weights while finding the sum.
   struct EndpointWeight {
-    std::string address;  // Key by endpoint's first address.
+    std::string hash_key;  // By default, endpoint's first address.
     // Default weight is 1 for the cases where a weight is not provided,
     // each occurrence of the address will be counted a weight value of 1.
     uint32_t weight = 1;
@@ -374,8 +452,14 @@ RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
   endpoint_weights.reserve(endpoints.size());
   for (const auto& endpoint : endpoints) {
     EndpointWeight endpoint_weight;
-    endpoint_weight.address =
-        grpc_sockaddr_to_string(&endpoint.addresses().front(), false).value();
+    auto hash_key =
+        endpoint.args().GetString(GRPC_ARG_RING_HASH_ENDPOINT_HASH_KEY);
+    if (hash_key.has_value()) {
+      endpoint_weight.hash_key = std::string(*hash_key);
+    } else {
+      endpoint_weight.hash_key =
+          grpc_sockaddr_to_string(&endpoint.addresses().front(), false).value();
+    }
     // Weight should never be zero, but ignore it just in case, since
     // that value would screw up the ring-building algorithm.
     auto weight_arg = endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT);
@@ -425,8 +509,8 @@ RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
   uint64_t min_hashes_per_host = ring_size;
   uint64_t max_hashes_per_host = 0;
   for (size_t i = 0; i < endpoints.size(); ++i) {
-    const std::string& address_string = endpoint_weights[i].address;
-    hash_key_buffer.assign(address_string.begin(), address_string.end());
+    const std::string& hash_key = endpoint_weights[i].hash_key;
+    hash_key_buffer.assign(hash_key.begin(), hash_key.end());
     hash_key_buffer.emplace_back('_');
     auto offset_start = hash_key_buffer.end();
     target_hashes += scale * endpoint_weights[i].normalized_weight;
@@ -608,8 +692,8 @@ void RingHash::ShutdownLocked() {
 }
 
 void RingHash::ResetBackoffLocked() {
-  for (const auto& p : endpoint_map_) {
-    p.second->ResetBackoffLocked();
+  for (const auto& [_, endpoint] : endpoint_map_) {
+    endpoint->ResetBackoffLocked();
   }
 }
 
@@ -622,10 +706,10 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     std::map<EndpointAddressSet, size_t> endpoint_indices;
     (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
       const EndpointAddressSet key(endpoint.addresses());
-      auto p = endpoint_indices.emplace(key, endpoints_.size());
-      if (!p.second) {
+      auto [it, inserted] = endpoint_indices.emplace(key, endpoints_.size());
+      if (!inserted) {
         // Duplicate endpoint.  Combine weights and skip the dup.
-        EndpointAddresses& prev_endpoint = endpoints_[p.first->second];
+        EndpointAddresses& prev_endpoint = endpoints_[it->second];
         int weight_arg =
             endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
         int prev_weight_arg =
@@ -652,9 +736,11 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   }
   // Save channel args.
   args_ = std::move(args.args);
+  // Save config.
+  auto* config = DownCast<RingHashLbConfig*>(args.config.get());
+  request_hash_header_ = RefCountedStringValue(config->request_hash_header());
   // Build new ring.
-  ring_ = MakeRefCounted<Ring>(
-      this, static_cast<RingHashLbConfig*>(args.config.get()));
+  ring_ = MakeRefCounted<Ring>(this, config);
   // Update endpoint map.
   std::map<EndpointAddressSet, OrphanablePtr<RingHashEndpoint>> endpoint_map;
   std::vector<std::string> errors;
@@ -676,12 +762,14 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     }
   }
   endpoint_map_ = std::move(endpoint_map);
+  // Update resolution note.
+  resolution_note_ = std::move(args.resolution_note);
   // If the address list is empty, report TRANSIENT_FAILURE.
   if (endpoints_.empty()) {
-    absl::Status status =
-        args.addresses.ok() ? absl::UnavailableError(absl::StrCat(
-                                  "empty address list: ", args.resolution_note))
-                            : args.addresses.status();
+    absl::Status status = args.addresses.ok()
+                              ? absl::UnavailableError(absl::StrCat(
+                                    "empty address list: ", resolution_note_))
+                              : args.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         MakeRefCounted<TransientFailurePicker>(status));
@@ -704,8 +792,8 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
   size_t num_connecting = 0;
   size_t num_ready = 0;
   size_t num_transient_failure = 0;
-  for (const auto& p : endpoint_map_) {
-    switch (p.second->connectivity_state()) {
+  for (const auto& [_, endpoint] : endpoint_map_) {
+    switch (endpoint->connectivity_state()) {
       case GRPC_CHANNEL_READY:
         ++num_ready;
         break;
@@ -814,12 +902,13 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it =
           endpoint_map_.find(EndpointAddressSet(endpoints_[i].addresses()));
       CHECK(it != endpoint_map_.end());
-      if (it->second->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
+      auto& endpoint = it->second;
+      if (endpoint->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
         first_idle_index = endpoints_.size();
         break;
       }
       if (first_idle_index == endpoints_.size() &&
-          it->second->connectivity_state() == GRPC_CHANNEL_IDLE) {
+          endpoint->connectivity_state() == GRPC_CHANNEL_IDLE) {
         first_idle_index = i;
       }
     }
@@ -827,13 +916,14 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it = endpoint_map_.find(
           EndpointAddressSet(endpoints_[first_idle_index].addresses()));
       CHECK(it != endpoint_map_.end());
+      auto& endpoint = it->second;
       GRPC_TRACE_LOG(ring_hash_lb, INFO)
           << "[RH " << this
           << "] triggering internal connection attempt for endpoint "
-          << it->second.get() << " (" << endpoints_[first_idle_index].ToString()
+          << endpoint.get() << " (" << endpoints_[first_idle_index].ToString()
           << ") (index " << first_idle_index << " of " << endpoints_.size()
           << ")";
-      it->second->RequestConnectionLocked();
+      endpoint->RequestConnectionLocked();
     }
   }
 }
@@ -853,11 +943,9 @@ class RingHashFactory final : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    auto config = LoadFromJson<RingHashConfig>(
-        json, JsonArgs(), "errors validating ring_hash LB policy config");
-    if (!config.ok()) return config.status();
-    return MakeRefCounted<RingHashLbConfig>(config->min_ring_size,
-                                            config->max_ring_size);
+    return LoadFromJson<RefCountedPtr<RingHashLbConfig>>(
+        json, RingHashJsonArgs(),
+        "errors validating ring_hash LB policy config");
   }
 };
 

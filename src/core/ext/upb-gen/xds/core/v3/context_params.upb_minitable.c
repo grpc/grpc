@@ -15,7 +15,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal xds_core_v3_ContextParams_submsgs[1] = {
+static const upb_MiniTableSubInternal xds_core_v3_ContextParams__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &xds__core__v3__ContextParams__ParamsEntry_msg_init_ptr},
 };
 
@@ -24,7 +24,7 @@ static const upb_MiniTableField xds_core_v3_ContextParams__fields[1] = {
 };
 
 const upb_MiniTable xds__core__v3__ContextParams_msg_init = {
-  &xds_core_v3_ContextParams_submsgs[0],
+  &xds_core_v3_ContextParams__submsgs[0],
   &xds_core_v3_ContextParams__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED

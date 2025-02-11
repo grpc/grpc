@@ -130,7 +130,17 @@ class SliceRefCount : public grpc_slice_refcount {
   size_t size_;
 };
 
+std::atomic<double> container_memory_pressure{0.0};
+
 }  // namespace
+
+void SetContainerMemoryPressure(double pressure) {
+  container_memory_pressure.store(pressure, std::memory_order_relaxed);
+}
+
+double ContainerMemoryPressure() {
+  return container_memory_pressure.load(std::memory_order_relaxed);
+}
 
 //
 // Reclaimer
@@ -168,7 +178,7 @@ struct ReclaimerQueue::State {
 
 void ReclaimerQueue::Handle::Orphan() {
   if (auto* sweep = sweep_.exchange(nullptr, std::memory_order_acq_rel)) {
-    sweep->RunAndDelete(absl::nullopt);
+    sweep->RunAndDelete(std::nullopt);
   }
   Unref();
 }
@@ -294,7 +304,7 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   }
 }
 
-absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
+std::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
     MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
   size_t scaled_size_over_min = request.max() - request.min();
@@ -437,7 +447,7 @@ void BasicMemoryQuota::Start() {
         // available.
         auto annotate = [](const char* name) {
           return [name](RefCountedPtr<ReclaimerQueue::Handle> f) {
-            return std::make_tuple(name, std::move(f));
+            return std::tuple(name, std::move(f));
           };
         };
         return Race(Map(self->reclaimers_[0].Next(), annotate("benign")),
@@ -646,7 +656,8 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   double size = quota_size;
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
-  pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
+  pressure_info.instantaneous_pressure =
+      std::max({0.0, (size - free) / size, ContainerMemoryPressure()});
   pressure_info.pressure_control_value =
       pressure_tracker_.AddSampleAndGetControlValue(
           pressure_info.instantaneous_pressure);

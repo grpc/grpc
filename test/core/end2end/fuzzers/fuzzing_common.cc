@@ -29,11 +29,11 @@
 
 #include <memory>
 #include <new>
+#include <optional>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -143,9 +143,9 @@ class Call : public std::enable_shared_from_this<Call> {
                                static_cast<size_t>(metadata.size()), m};
   }
 
-  absl::optional<grpc_op> ReadOp(
-      const api_fuzzer::BatchOp& batch_op, bool* batch_is_ok,
-      uint8_t* batch_ops, std::vector<std::function<void()>>* unwinders) {
+  std::optional<grpc_op> ReadOp(const api_fuzzer::BatchOp& batch_op,
+                                bool* batch_is_ok, uint8_t* batch_ops,
+                                std::vector<std::function<void()>>* unwinders) {
     grpc_op op;
     memset(&op, 0, sizeof(op));
     switch (batch_op.op_case()) {
@@ -343,20 +343,12 @@ Validator* ValidateConnectivityWatch(gpr_timespec deadline, int* counter) {
 }  // namespace
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-using ::grpc_event_engine::experimental::SetEventEngineFactory;
 
 BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
-    : engine_([actions]() {
-        SetEventEngineFactory(
-            [actions]() -> std::unique_ptr<
-                            grpc_event_engine::experimental::EventEngine> {
-              return std::make_unique<FuzzingEventEngine>(
-                  FuzzingEventEngine::Options(), actions);
-            });
-        return std::dynamic_pointer_cast<FuzzingEventEngine>(
-            GetDefaultEventEngine());
-      }()) {
+    : engine_(std::make_shared<FuzzingEventEngine>(
+          FuzzingEventEngine::Options(), actions)) {
+  CHECK(engine_);
+  grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
   grpc_timer_manager_set_start_threaded(false);
   grpc_init();
   {
@@ -379,6 +371,9 @@ BasicFuzzer::~BasicFuzzer() {
 
   grpc_shutdown_blocking();
   engine_->UnsetGlobalHooks();
+  // The engine ref must be released for ShutdownDefaultEventEngine to finish.
+  engine_.reset();
+  grpc_event_engine::experimental::ShutdownDefaultEventEngine();
 }
 
 void BasicFuzzer::Tick() {

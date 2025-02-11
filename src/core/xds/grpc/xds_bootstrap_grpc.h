@@ -21,12 +21,12 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -151,7 +151,7 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
 
  private:
   std::vector<GrpcXdsServer> servers_;
-  absl::optional<GrpcNode> node_;
+  std::optional<GrpcNode> node_;
   std::string client_default_listener_resource_name_template_;
   std::string server_listener_resource_name_template_;
   std::map<std::string, GrpcAuthority> authorities_;

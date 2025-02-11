@@ -1531,7 +1531,7 @@
   - third_party/abseil-cpp/absl/random/internal/mock_helpers.h
   name: absl/random/internal:mock_helpers
   src: []
-- cmake_target: ''
+- cmake_target: absl::random_internal_mock_validators
   deps:
   - absl/base:config
   - absl/base:raw_logging_internal
@@ -1821,6 +1821,19 @@
   - third_party/abseil-cpp/absl/status/internal/status_internal.cc
   - third_party/abseil-cpp/absl/status/status.cc
   - third_party/abseil-cpp/absl/status/status_payload_printer.cc
+- cmake_target: absl::status_matchers
+  deps:
+  - '@com_google_googletest//:gtest'
+  - absl/base:config
+  - absl/status:status
+  - absl/status:statusor
+  - absl/strings:string_view
+  headers:
+  - third_party/abseil-cpp/absl/status/internal/status_matchers.h
+  - third_party/abseil-cpp/absl/status/status_matchers.h
+  name: absl/status:status_matchers
+  src:
+  - third_party/abseil-cpp/absl/status/internal/status_matchers.cc
 - cmake_target: absl::statusor
   deps:
   - absl/base:base

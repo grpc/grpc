@@ -29,8 +29,7 @@
 #include <sys/socket.h>
 #endif  // GRPC_LINUX_ERRQUEUE
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_LINUX_ERRQUEUE
 
@@ -170,8 +169,7 @@ int GetSocketTcpInfo(tcp_info* info, int fd);
 // Currently allowing only linux kernels above 4.0.0
 bool KernelSupportsErrqueue();
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_TCP
 

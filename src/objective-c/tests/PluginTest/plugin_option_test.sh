@@ -16,12 +16,25 @@
 # Run this script via bazel test
 # It expects that protoc and grpc_objective_c_plugin have already been built.
 
+# shellcheck disable=SC1090
+
 set -ev
 
+# --- begin runfiles.bash initialization v3 ---
+# Copy-pasted from the Bazel Bash runfiles library v3.
+set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
+source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$0.runfiles/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
+# --- end runfiles.bash initialization v3 ---
+
 # protoc and grpc_objective_c_plugin binaries are supplied as "data" in bazel
-PROTOC=./external/com_google_protobuf/protoc
-PLUGIN=./src/compiler/grpc_objective_c_plugin
-WELL_KNOWN_PROTOS_PATH=external/com_google_protobuf/src
+PROTOC=$(rlocation com_google_protobuf/protoc)
+PLUGIN=$(rlocation com_github_grpc_grpc/src/compiler/grpc_objective_c_plugin)
+WELL_KNOWN_PROTOS_PATH=$(rlocation com_google_protobuf/src)
 RUNTIME_IMPORT_PREFIX=prefix/dir/
 
 PROTO_OUT=./proto_out
@@ -29,7 +42,7 @@ rm -rf ${PROTO_OUT}
 mkdir -p ${PROTO_OUT}
 
 $PROTOC \
-    --plugin=protoc-gen-grpc=$PLUGIN \
+    --plugin=protoc-gen-grpc="$PLUGIN" \
     --objc_out=${PROTO_OUT} \
     --grpc_out=grpc_local_import_prefix=$RUNTIME_IMPORT_PREFIX,runtime_import_prefix=$RUNTIME_IMPORT_PREFIX:${PROTO_OUT} \
     -I . \

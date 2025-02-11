@@ -481,11 +481,11 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
     // Bytes needed for framing
     buffer_needed += kFrameHeaderSize;
     // Bytes needed for frame payload
-    buffer_needed += absl::visit(SerializeExtraBytesRequired(), frame);
+    buffer_needed += std::visit(SerializeExtraBytesRequired(), frame);
   }
   SerializeHeaderAndPayload serialize(buffer_needed, out);
   for (auto& frame : frames) {
-    absl::visit(serialize, frame);
+    std::visit(serialize, frame);
   }
 }
 

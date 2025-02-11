@@ -816,16 +816,12 @@ static void cq_end_op_for_pluck(
   }
 }
 
-static void functor_callback(void* arg, grpc_error_handle error) {
-  auto* functor = static_cast<grpc_completion_queue_functor*>(arg);
-  functor->functor_run(functor, error.ok());
-}
-
 // Complete an event on a completion queue of type GRPC_CQ_CALLBACK
 static void cq_end_op_for_callback(
     grpc_completion_queue* cq, void* tag, grpc_error_handle error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool internal) {
+  (void)internal;
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
 
   if (GRPC_TRACE_FLAG_ENABLED(api) ||
@@ -851,32 +847,11 @@ static void cq_end_op_for_callback(
   }
 
   auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
-  if (grpc_core::IsEventEngineApplicationCallbacksEnabled()) {
-    // Run the callback on EventEngine threads.
-    cqd->event_engine->Run(
-        [engine = cqd->event_engine, functor, ok = error.ok()]() {
-          grpc_core::ExecCtx exec_ctx;
-          (*functor->functor_run)(functor, ok);
-        });
-    return;
-  }
-  // If possible, schedule the callback onto an existing thread-local
-  // ApplicationCallbackExecCtx, which is a work queue. This is possible for:
-  // 1. The callback is internally-generated and there is an ACEC available
-  // 2. The callback is marked inlineable and there is an ACEC available
-  // 3. We are already running in a background poller thread (which always has
-  //    an ACEC available at the base of the stack).
-  if (((internal || functor->inlineable) &&
-       grpc_core::ApplicationCallbackExecCtx::Available()) ||
-      grpc_iomgr_is_any_background_poller_thread()) {
-    grpc_core::ApplicationCallbackExecCtx::Enqueue(functor, (error.ok()));
-    return;
-  }
-
-  // Schedule the callback on a closure if not internal or triggered
-  // from a background poller thread.
-  grpc_core::Executor::Run(
-      GRPC_CLOSURE_CREATE(functor_callback, functor, nullptr), error);
+  cqd->event_engine->Run(
+      [engine = cqd->event_engine, functor, ok = error.ok()]() {
+        grpc_core::ExecCtx exec_ctx;
+        (*functor->functor_run)(functor, ok);
+      });
 }
 
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
@@ -1347,23 +1322,10 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
 
-  if (grpc_core::IsEventEngineApplicationCallbacksEnabled()) {
-    cqd->event_engine->Run([engine = cqd->event_engine, callback]() {
-      grpc_core::ExecCtx exec_ctx;
-      callback->functor_run(callback, /*true=*/1);
-    });
-    return;
-  }
-  if (grpc_iomgr_is_any_background_poller_thread()) {
-    grpc_core::ApplicationCallbackExecCtx::Enqueue(callback, true);
-    return;
-  }
-
-  // Schedule the callback on a closure if not internal or triggered
-  // from a background poller thread.
-  grpc_core::Executor::Run(
-      GRPC_CLOSURE_CREATE(functor_callback, callback, nullptr),
-      absl::OkStatus());
+  cqd->event_engine->Run([engine = cqd->event_engine, callback]() {
+    grpc_core::ExecCtx exec_ctx;
+    callback->functor_run(callback, /*true=*/1);
+  });
 }
 
 static void cq_shutdown_callback(grpc_completion_queue* cq) {
@@ -1395,7 +1357,6 @@ static void cq_shutdown_callback(grpc_completion_queue* cq) {
 // Shutdown simply drops a ref that we reserved at creation time; if we drop
 // to zero here, then enter shutdown mode and wake up any waiters
 void grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_completion_queue_shutdown(cq=" << cq << ")";

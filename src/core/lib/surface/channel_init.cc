@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <queue>
 #include <set>
 #include <string>
@@ -33,7 +34,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/crash.h"

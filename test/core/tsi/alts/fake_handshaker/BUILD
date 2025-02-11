@@ -59,7 +59,6 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
     ],
-    language = "C++",
     deps = [
         "handshaker_cc_grpc",
         "transport_security_common_cc_proto",
@@ -76,7 +75,6 @@ grpc_cc_binary(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "fake_handshaker_lib",
         "//test/core/test_util:grpc_test_util",

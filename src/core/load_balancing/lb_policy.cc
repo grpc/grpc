@@ -79,12 +79,10 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                  GRPC_CLOSURE_CREATE(
                      [](void* arg, grpc_error_handle /*error*/) {
                        auto* parent = static_cast<LoadBalancingPolicy*>(arg);
-                       parent->work_serializer()->Run(
-                           [parent]() {
-                             parent->ExitIdleLocked();
-                             parent->Unref();
-                           },
-                           DEBUG_LOCATION);
+                       parent->work_serializer()->Run([parent]() {
+                         parent->ExitIdleLocked();
+                         parent->Unref();
+                       });
                      },
                      parent, nullptr),
                  absl::OkStatus());

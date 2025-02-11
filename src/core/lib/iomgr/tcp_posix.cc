@@ -19,11 +19,12 @@
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -815,7 +816,7 @@ static void maybe_post_reclaimer(grpc_tcp* tcp)
     TCP_REF(tcp, "posted_reclaimer");
     tcp->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
-        [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
+        [tcp](std::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
             perform_reclamation(tcp);
           }

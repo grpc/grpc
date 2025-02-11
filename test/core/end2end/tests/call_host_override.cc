@@ -20,8 +20,8 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -30,7 +30,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreClientChannelTest, CallHostOverride) {
+CORE_END2END_TEST(CoreClientChannelTests, CallHostOverride) {
   InitClient(ChannelArgs().Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                "foo.test.google.fr:1234"));
   InitServer(ChannelArgs());
@@ -38,7 +38,7 @@ CORE_END2END_TEST(CoreClientChannelTest, CallHostOverride) {
                .Timeout(Duration::Seconds(30))
                .Host("foo.test.google.fr:1234")
                .Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
@@ -49,8 +49,8 @@ CORE_END2END_TEST(CoreClientChannelTest, CallHostOverride) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

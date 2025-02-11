@@ -237,8 +237,8 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     server_signal->WaitForNotification();
     ASSERT_NE(client_endpoint.get(), nullptr);
     ASSERT_NE(server_endpoint.get(), nullptr);
-    connections.push_back(std::make_tuple(std::move(client_endpoint),
-                                          std::move(server_endpoint)));
+    connections.push_back(
+        std::tuple(std::move(client_endpoint), std::move(server_endpoint)));
     delete server_signal;
     server_signal = new grpc_core::Notification();
   }

@@ -24,6 +24,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -31,7 +32,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
+#include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -39,8 +40,8 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
@@ -96,14 +97,14 @@ class FlowControlFuzzer {
 
   struct SendToRemote {
     bool bdp_ping = false;
-    absl::optional<uint32_t> initial_window_size;
+    std::optional<uint32_t> initial_window_size;
     uint32_t transport_window_update;
     std::vector<StreamPayload> stream_window_updates;
   };
 
   struct SendFromRemote {
     bool bdp_pong = false;
-    absl::optional<uint32_t> ack_initial_window_size;
+    std::optional<uint32_t> ack_initial_window_size;
     std::vector<StreamPayload> stream_writes;
   };
 
@@ -134,8 +135,8 @@ class FlowControlFuzzer {
   MemoryQuotaRefPtr memory_quota_ = MakeMemoryQuota("fuzzer");
   MemoryOwner memory_owner_ = memory_quota_->CreateMemoryOwner();
   std::unique_ptr<TransportFlowControl> tfc_;
-  absl::optional<uint32_t> queued_initial_window_size_;
-  absl::optional<uint32_t> queued_send_max_frame_size_;
+  std::optional<uint32_t> queued_initial_window_size_;
+  std::optional<uint32_t> queued_send_max_frame_size_;
   bool scheduled_write_ = false;
   bool sending_initial_window_size_ = false;
   std::deque<SendToRemote> send_to_remote_;
@@ -317,7 +318,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
       }
       sending_initial_window_size_ = true;
       send.initial_window_size =
-          std::exchange(queued_initial_window_size_, absl::nullopt);
+          std::exchange(queued_initial_window_size_, std::nullopt);
       tfc_->FlushedSettings();
     }
     std::vector<uint32_t> streams_to_update = std::move(streams_to_update_);
@@ -356,7 +357,7 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
         break;
       case FlowControlAction::Urgency::UPDATE_IMMEDIATELY:
         scheduled_write_ = true;
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case FlowControlAction::Urgency::QUEUE_UPDATE:
         f();
         break;
@@ -470,15 +471,11 @@ void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
         tfc_->announced_stream_total_over_incoming_window());
 }
 
-}  // namespace
-}  // namespace chttp2
-}  // namespace grpc_core
-
-DEFINE_PROTO_FUZZER(const flow_control_fuzzer::Msg& msg) {
-  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_core::chttp2::InitGlobals();
-  grpc_core::chttp2::FlowControlFuzzer fuzzer(msg.enable_bdp());
+void Test(flow_control_fuzzer::Msg msg) {
+  ApplyFuzzConfigVars(msg.config_vars());
+  TestOnlyReloadExperimentsFromConfigVariables();
+  chttp2::InitGlobals();
+  chttp2::FlowControlFuzzer fuzzer(msg.enable_bdp());
   for (const auto& action : msg.actions()) {
     if (!squelch) {
       fprintf(stderr, "%s\n", action.DebugString().c_str());
@@ -488,3 +485,10 @@ DEFINE_PROTO_FUZZER(const flow_control_fuzzer::Msg& msg) {
     fuzzer.AssertAnnouncedOverInitialWindowSizeCorrect();
   }
 }
+FUZZ_TEST(FlowControl, Test)
+    .WithDomains(::fuzztest::Arbitrary<flow_control_fuzzer::Msg>()
+                     .WithProtobufField("config_vars", AnyConfigVars()));
+
+}  // namespace
+}  // namespace chttp2
+}  // namespace grpc_core

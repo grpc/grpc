@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_CERTS_PROTO_UPB_MINITABLE_H_
-#define ENVOY_ADMIN_V3_CERTS_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_ADMIN_V3_CERTS_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_ADMIN_V3_CERTS_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -37,4 +37,4 @@ extern const upb_MiniTableFile envoy_admin_v3_certs_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_CERTS_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_ADMIN_V3_CERTS_PROTO_UPB_H__UPB_MINITABLE_H_ */

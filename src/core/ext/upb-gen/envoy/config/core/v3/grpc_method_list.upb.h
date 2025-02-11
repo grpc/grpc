@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H_
-#define ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -254,4 +254,4 @@ UPB_INLINE bool envoy_config_core_v3_GrpcMethodList_Service_add_method_names(env
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H__UPB_H_ */

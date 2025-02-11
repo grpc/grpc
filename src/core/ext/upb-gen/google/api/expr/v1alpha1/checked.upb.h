@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_API_EXPR_V1ALPHA1_CHECKED_PROTO_UPB_H_
-#define GOOGLE_API_EXPR_V1ALPHA1_CHECKED_PROTO_UPB_H_
+#ifndef GOOGLE_API_EXPR_V1ALPHA1_CHECKED_PROTO_UPB_H__UPB_H_
+#define GOOGLE_API_EXPR_V1ALPHA1_CHECKED_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -1896,4 +1896,4 @@ UPB_INLINE struct google_api_expr_v1alpha1_Constant* google_api_expr_v1alpha1_Re
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_API_EXPR_V1ALPHA1_CHECKED_PROTO_UPB_H_ */
+#endif  /* GOOGLE_API_EXPR_V1ALPHA1_CHECKED_PROTO_UPB_H__UPB_H_ */

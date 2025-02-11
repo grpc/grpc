@@ -18,12 +18,12 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/util/ring_buffer.h"
 #include "src/core/util/sync.h"
 
@@ -75,7 +75,7 @@ void Log::TryPullEventsAndFlush(
   mu_flushing_.Unlock();
 }
 
-absl::optional<std::string> Log::TryGenerateJson() {
+std::optional<std::string> Log::TryGenerateJson() {
   using Nanos = std::chrono::duration<unsigned long long, std::nano>;
   std::string json = "[\n";
   bool first = true;
@@ -137,7 +137,7 @@ absl::optional<std::string> Log::TryGenerateJson() {
                       ", \"batch\": ", event.batch_id, "}}");
     }
   });
-  if (callbacks == 0) return absl::nullopt;
+  if (callbacks == 0) return std::nullopt;
   absl::StrAppend(&json, "\n]");
   return json;
 }

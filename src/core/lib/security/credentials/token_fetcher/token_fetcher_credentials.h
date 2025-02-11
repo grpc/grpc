@@ -22,11 +22,11 @@
 #include <atomic>
 #include <memory>
 #include <utility>
+#include <variant>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -135,7 +135,7 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
       RefCountedPtr<FetchState> fetch_state_;
       const absl::Status status_;
-      absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
           timer_handle_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
     };
 
@@ -149,8 +149,8 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
     WeakRefCountedPtr<TokenFetcherCredentials> creds_;
     // Pending token-fetch request or backoff timer, if any.
-    absl::variant<OrphanablePtr<FetchRequest>, OrphanablePtr<BackoffTimer>,
-                  Shutdown>
+    std::variant<OrphanablePtr<FetchRequest>, OrphanablePtr<BackoffTimer>,
+                 Shutdown>
         state_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
     // Calls that are queued up waiting for the token.
     absl::flat_hash_set<RefCountedPtr<QueuedCall>> queued_calls_

@@ -28,8 +28,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // An EventEngine that spawns a thread at every available opportunity:
 // - Run() spawns a thread
@@ -98,7 +97,6 @@ class ThreadyEventEngine final : public EventEngine {
   std::shared_ptr<EventEngine> impl_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREADY_EVENT_ENGINE_THREADY_EVENT_ENGINE_H

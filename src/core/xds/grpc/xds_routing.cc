@@ -92,7 +92,7 @@ MatchType DomainPatternMatchType(absl::string_view domain_pattern) {
 
 }  // namespace
 
-absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
+std::optional<size_t> XdsRouting::FindVirtualHostForDomain(
     const VirtualHostListIterator& vhost_iterator, absl::string_view domain) {
   // Find the best matched virtual host.
   // The search order for 4 groups of domain patterns:
@@ -103,7 +103,7 @@ absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
   // Within each group, longest match wins.
   // If the same best matched domain pattern appears in multiple virtual
   // hosts, the first matched virtual host wins.
-  absl::optional<size_t> target_index;
+  std::optional<size_t> target_index;
   MatchType best_match_type = INVALID_MATCH;
   size_t longest_match = 0;
   // Check each domain pattern in each virtual host to determine the best
@@ -156,7 +156,7 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 
 }  // namespace
 
-absl::optional<size_t> XdsRouting::GetRouteForRequest(
+std::optional<size_t> XdsRouting::GetRouteForRequest(
     const RouteListIterator& route_list_iterator, absl::string_view path,
     grpc_metadata_batch* initial_metadata) {
   for (size_t i = 0; i < route_list_iterator.Size(); ++i) {
@@ -169,21 +169,21 @@ absl::optional<size_t> XdsRouting::GetRouteForRequest(
       return i;
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 bool XdsRouting::IsValidDomainPattern(absl::string_view domain_pattern) {
   return DomainPatternMatchType(domain_pattern) != INVALID_MATCH;
 }
 
-absl::optional<absl::string_view> XdsRouting::GetHeaderValue(
+std::optional<absl::string_view> XdsRouting::GetHeaderValue(
     grpc_metadata_batch* initial_metadata, absl::string_view header_name,
     std::string* concatenated_value) {
   // Note: If we ever allow binary headers here, we still need to
   // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
   // they are not visible to the LB policy in grpc-go.
   if (absl::EndsWith(header_name, "-bin")) {
-    return absl::nullopt;
+    return std::nullopt;
   } else if (header_name == "content-type") {
     return "application/grpc";
   }

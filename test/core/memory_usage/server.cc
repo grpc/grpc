@@ -327,7 +327,7 @@ int main(int argc, char** argv) {
                 send_status(&calls[k]);
               }
             }
-            ABSL_FALLTHROUGH_INTENDED;
+            [[fallthrough]];
           // no break here since we want to continue to case
           // FLING_SERVER_SEND_STATUS_SNAPSHOT to destroy the snapshot call
           case FLING_SERVER_SEND_STATUS_SNAPSHOT:

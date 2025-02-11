@@ -191,7 +191,6 @@ void DirectoryReloaderCrlProvider::UpdateAndStartTimer() {
   std::weak_ptr<DirectoryReloaderCrlProvider> self = shared_from_this();
   refresh_handle_ =
       event_engine_->RunAfter(refresh_duration_, [self = std::move(self)]() {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         if (std::shared_ptr<DirectoryReloaderCrlProvider> valid_ptr =
                 self.lock()) {

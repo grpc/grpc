@@ -107,7 +107,7 @@ std::string XdsListenerResource::FilterChainMap::ToString() const {
     for (int source_type = 0; source_type < 3; ++source_type) {
       for (const auto& source_ip :
            destination_ip.source_types_array[source_type]) {
-        for (const auto& source_port_pair : source_ip.ports_map) {
+        for (const auto& [port, filter_chain] : source_ip.ports_map) {
           std::vector<std::string> match_contents;
           if (destination_ip.prefix_range.has_value()) {
             match_contents.push_back(
@@ -126,14 +126,12 @@ std::string XdsListenerResource::FilterChainMap::ToString() const {
                 absl::StrCat("source_prefix_ranges={",
                              source_ip.prefix_range->ToString(), "}"));
           }
-          if (source_port_pair.first != 0) {
-            match_contents.push_back(
-                absl::StrCat("source_ports={", source_port_pair.first, "}"));
+          if (port != 0) {
+            match_contents.push_back(absl::StrCat("source_ports={", port, "}"));
           }
           contents.push_back(absl::StrCat(
               "{filter_chain_match={", absl::StrJoin(match_contents, ", "),
-              "}, filter_chain=", source_port_pair.second.data->ToString(),
-              "}"));
+              "}, filter_chain=", filter_chain.data->ToString(), "}"));
         }
       }
     }

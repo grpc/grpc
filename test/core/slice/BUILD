@@ -13,31 +13,20 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/slice")
 
 licenses(["notice"])
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "percent_encode_fuzzer",
     srcs = ["percent_encode_fuzzer.cc"],
-    corpus = "percent_encode_corpus",
-    external_deps = ["absl/log:check"],
-    language = "C++",
-    tags = ["no_windows"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/test_util:grpc_test_util",
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
     ],
-)
-
-grpc_fuzzer(
-    name = "percent_decode_fuzzer",
-    srcs = ["percent_decode_fuzzer.cc"],
-    corpus = "percent_decode_corpus",
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -50,7 +39,6 @@ grpc_cc_test(
     name = "percent_encoding_test",
     srcs = ["percent_encoding_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -68,7 +56,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -86,7 +73,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -114,7 +100,6 @@ grpc_cc_test(
     name = "c_slice_buffer_test",
     srcs = ["c_slice_buffer_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [

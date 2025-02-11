@@ -37,7 +37,7 @@ const upb_MiniTable grpc__lookup__v1__NameMatcher_msg_init = {
 };
 
 const upb_MiniTable* grpc__lookup__v1__NameMatcher_msg_init_ptr = &grpc__lookup__v1__NameMatcher_msg_init;
-static const upb_MiniTableSubInternal grpc_lookup_v1_GrpcKeyBuilder_submsgs[4] = {
+static const upb_MiniTableSubInternal grpc_lookup_v1_GrpcKeyBuilder__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder__Name_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__NameMatcher_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder__ExtraKeys_msg_init_ptr},
@@ -52,7 +52,7 @@ static const upb_MiniTableField grpc_lookup_v1_GrpcKeyBuilder__fields[4] = {
 };
 
 const upb_MiniTable grpc__lookup__v1__GrpcKeyBuilder_msg_init = {
-  &grpc_lookup_v1_GrpcKeyBuilder_submsgs[0],
+  &grpc_lookup_v1_GrpcKeyBuilder__submsgs[0],
   &grpc_lookup_v1_GrpcKeyBuilder__fields[0],
   UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -131,7 +131,7 @@ const upb_MiniTable grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init
 };
 
 const upb_MiniTable* grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init_ptr = &grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init;
-static const upb_MiniTableSubInternal grpc_lookup_v1_HttpKeyBuilder_submsgs[3] = {
+static const upb_MiniTableSubInternal grpc_lookup_v1_HttpKeyBuilder__submsgs[3] = {
   {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__NameMatcher_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__NameMatcher_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init_ptr},
@@ -146,7 +146,7 @@ static const upb_MiniTableField grpc_lookup_v1_HttpKeyBuilder__fields[5] = {
 };
 
 const upb_MiniTable grpc__lookup__v1__HttpKeyBuilder_msg_init = {
-  &grpc_lookup_v1_HttpKeyBuilder_submsgs[0],
+  &grpc_lookup_v1_HttpKeyBuilder__submsgs[0],
   &grpc_lookup_v1_HttpKeyBuilder__fields[0],
   UPB_SIZE(32, 48), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -186,7 +186,7 @@ const upb_MiniTable grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init
 };
 
 const upb_MiniTable* grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init_ptr = &grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init;
-static const upb_MiniTableSubInternal grpc_lookup_v1_RouteLookupConfig_submsgs[5] = {
+static const upb_MiniTableSubInternal grpc_lookup_v1_RouteLookupConfig__submsgs[5] = {
   {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__HttpKeyBuilder_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
@@ -207,7 +207,7 @@ static const upb_MiniTableField grpc_lookup_v1_RouteLookupConfig__fields[9] = {
 };
 
 const upb_MiniTable grpc__lookup__v1__RouteLookupConfig_msg_init = {
-  &grpc_lookup_v1_RouteLookupConfig_submsgs[0],
+  &grpc_lookup_v1_RouteLookupConfig__submsgs[0],
   &grpc_lookup_v1_RouteLookupConfig__fields[0],
   UPB_SIZE(64, 104), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -234,7 +234,7 @@ const upb_MiniTable grpc__lookup__v1__RouteLookupConfig_msg_init = {
 };
 
 const upb_MiniTable* grpc__lookup__v1__RouteLookupConfig_msg_init_ptr = &grpc__lookup__v1__RouteLookupConfig_msg_init;
-static const upb_MiniTableSubInternal grpc_lookup_v1_RouteLookupClusterSpecifier_submsgs[1] = {
+static const upb_MiniTableSubInternal grpc_lookup_v1_RouteLookupClusterSpecifier__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__RouteLookupConfig_msg_init_ptr},
 };
 
@@ -243,7 +243,7 @@ static const upb_MiniTableField grpc_lookup_v1_RouteLookupClusterSpecifier__fiel
 };
 
 const upb_MiniTable grpc__lookup__v1__RouteLookupClusterSpecifier_msg_init = {
-  &grpc_lookup_v1_RouteLookupClusterSpecifier_submsgs[0],
+  &grpc_lookup_v1_RouteLookupClusterSpecifier__submsgs[0],
   &grpc_lookup_v1_RouteLookupClusterSpecifier__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED

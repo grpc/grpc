@@ -24,7 +24,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [

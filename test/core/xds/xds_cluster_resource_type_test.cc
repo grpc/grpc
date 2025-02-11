@@ -21,14 +21,14 @@
 #include <grpc/grpc.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/cluster/v3/outlier_detection.pb.h"
 #include "envoy/config/core/v3/address.pb.h"
@@ -87,9 +87,9 @@ class XdsClusterTest : public ::testing::Test {
  protected:
   XdsClusterTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{
-            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
-            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
+                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
@@ -164,7 +164,7 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  auto* eds = absl::get_if<XdsClusterResource::Eds>(&resource.type);
+  auto* eds = std::get_if<XdsClusterResource::Eds>(&resource.type);
   ASSERT_NE(eds, nullptr);
   EXPECT_EQ(eds->eds_service_name, "");
   // Check defaults.
@@ -197,7 +197,7 @@ TEST_F(ClusterTypeTest, EdsConfigSourceAds) {
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  auto* eds = absl::get_if<XdsClusterResource::Eds>(&resource.type);
+  auto* eds = std::get_if<XdsClusterResource::Eds>(&resource.type);
   ASSERT_NE(eds, nullptr);
   EXPECT_EQ(eds->eds_service_name, "");
 }
@@ -219,7 +219,7 @@ TEST_F(ClusterTypeTest, EdsServiceName) {
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  auto* eds = absl::get_if<XdsClusterResource::Eds>(&resource.type);
+  auto* eds = std::get_if<XdsClusterResource::Eds>(&resource.type);
   ASSERT_NE(eds, nullptr);
   EXPECT_EQ(eds->eds_service_name, "bar");
 }
@@ -347,7 +347,7 @@ TEST_F(ClusterTypeTest, LogicalDnsValid) {
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   auto* logical_dns =
-      absl::get_if<XdsClusterResource::LogicalDns>(&resource.type);
+      std::get_if<XdsClusterResource::LogicalDns>(&resource.type);
   ASSERT_NE(logical_dns, nullptr);
   EXPECT_EQ(logical_dns->hostname, "server.example.com:443");
 }
@@ -581,7 +581,7 @@ TEST_F(ClusterTypeTest, AggregateClusterValid) {
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  auto* aggregate = absl::get_if<XdsClusterResource::Aggregate>(&resource.type);
+  auto* aggregate = std::get_if<XdsClusterResource::Aggregate>(&resource.type);
   ASSERT_NE(aggregate, nullptr);
   EXPECT_THAT(aggregate->prioritized_cluster_names,
               ::testing::ElementsAre("bar", "baz", "quux"));
@@ -936,7 +936,7 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   auto* ca_cert_provider =
-      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+      std::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
           &resource.common_tls_context.certificate_validation_context.ca_certs);
   ASSERT_NE(ca_cert_provider, nullptr);
   EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
@@ -966,7 +966,7 @@ TEST_F(TlsConfigTest, SystemRootCerts) {
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  ASSERT_TRUE(absl::holds_alternative<
+  ASSERT_TRUE(std::holds_alternative<
               CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
       resource.common_tls_context.certificate_validation_context.ca_certs));
 }
@@ -1311,7 +1311,7 @@ TEST_F(HttpConnectTest, WrappingUpstreamTlsContext) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   EXPECT_TRUE(resource.use_http_connect);
   auto* ca_cert_provider =
-      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+      std::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
           &resource.common_tls_context.certificate_validation_context.ca_certs);
   ASSERT_NE(ca_cert_provider, nullptr);
   EXPECT_EQ(ca_cert_provider->instance_name, "provider1");

@@ -23,39 +23,105 @@
 
 namespace grpc_core {
 
-TEST(MatchPromiseTest, Works) {
-  struct Int {
-    int x;
-  };
-  struct Float {
-    float x;
-  };
-  using V = absl::variant<Int, Float, std::string>;
-  auto make_promise = [](V v) -> Promise<std::string> {
+struct MatchInt {
+  int ival = -1;
+};
+
+struct MatchFloat {
+  float fval = -1.0f;
+};
+
+using V = std::variant<MatchInt, MatchFloat, std::string>;
+
+TEST(MatchPromiseTest, ThreeTypedImmediate) {
+  std::string execution_order;
+
+  auto make_promise = [&execution_order](V variant) -> Promise<std::string> {
     return MatchPromise(
-        std::move(v),
-        [](Float x) mutable {
-          return [n = 3, x]() mutable -> Poll<std::string> {
+        std::move(variant),
+        [&execution_order](MatchFloat match_float) -> Poll<std::string> {
+          absl::StrAppend(&execution_order, "F");
+          return absl::StrCat(match_float.fval);
+        },
+        [&execution_order](MatchInt match_int) -> Poll<std::string> {
+          absl::StrAppend(&execution_order, "I");
+          return absl::StrCat(match_int.ival);
+        },
+        [&execution_order](std::string match_str) {
+          absl::StrAppend(&execution_order, "S");
+          return match_str;
+        });
+  };
+
+  V float_variant = MatchFloat{3.0f};
+  auto promise = make_promise(float_variant);
+  EXPECT_THAT(promise(), IsReady("3"));
+  EXPECT_STREQ(execution_order.c_str(), "F");
+
+  execution_order.clear();
+  V int_variant = MatchInt{42};
+  promise = make_promise(int_variant);
+  EXPECT_THAT(promise(), IsReady("42"));
+  EXPECT_STREQ(execution_order.c_str(), "I");
+
+  execution_order.clear();
+  V string_variant = "hello";
+  promise = make_promise(string_variant);
+  EXPECT_THAT(promise(), IsReady("hello"));
+  EXPECT_STREQ(execution_order.c_str(), "S");
+}
+
+TEST(MatchPromiseTest, ThreeTypedPending) {
+  std::string execution_order;
+
+  auto make_promise = [&execution_order](V variant) -> Promise<std::string> {
+    return MatchPromise(
+        std::move(variant),
+        [&execution_order](MatchFloat match_float) mutable {
+          return [n = 3, match_float,
+                  &execution_order]() mutable -> Poll<std::string> {
+            absl::StrAppend(&execution_order, "F");
             --n;
-            if (n > 0) return Pending{};
-            return absl::StrCat(x.x);
+            if (n > 0) {
+              absl::StrAppend(&execution_order, "P");
+              return Pending{};
+            }
+            return absl::StrCat(match_float.fval);
           };
         },
-        [](Int x) {
-          return []() mutable -> Poll<std::string> { return Pending{}; };
+        [&execution_order](MatchInt match_int) {
+          return [&execution_order]() mutable -> Poll<std::string> {
+            absl::StrAppend(&execution_order, "I");
+            return Pending{};
+          };
         },
-        [](std::string x) { return x; });
+        [&execution_order](std::string match_str) {
+          absl::StrAppend(&execution_order, "S");
+          return match_str;
+        });
   };
-  auto promise = make_promise(V(Float{3.0f}));
+
+  V float_variant = MatchFloat{3.0f};
+  auto promise = make_promise(float_variant);
   EXPECT_THAT(promise(), IsPending());
   EXPECT_THAT(promise(), IsPending());
   EXPECT_THAT(promise(), IsReady("3"));
-  promise = make_promise(V(Int{42}));
-  for (int i = 0; i < 10000; i++) {
+  EXPECT_STREQ(execution_order.c_str(), "FPFPF");
+
+  execution_order.clear();
+  V int_variant = MatchInt{42};
+  promise = make_promise(int_variant);
+  for (int i = 0; i < 60; i++) {
     EXPECT_THAT(promise(), IsPending());
   }
-  promise = make_promise(V("hello"));
+  EXPECT_STREQ(execution_order.c_str(),
+               "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII");
+
+  execution_order.clear();
+  V string_variant = "hello";
+  promise = make_promise(string_variant);
   EXPECT_THAT(promise(), IsReady("hello"));
+  EXPECT_STREQ(execution_order.c_str(), "S");
 }
 
 }  // namespace grpc_core

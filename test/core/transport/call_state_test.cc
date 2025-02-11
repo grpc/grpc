@@ -371,6 +371,20 @@ TEST(CallStateTest, ServerSendBlockedUntilPullCompletes) {
   EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
 }
 
+TEST(CallStateTest, CanSendMessageThenInitialMetadataOnServer) {
+  // Allow messages to start prior to initial metadata to allow separate threads
+  // to perform those operations without the need for external synchronization.
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
+  state.Start();
+  state.BeginPushServerToClientMessage();
+  state.PushServerInitialMetadata();
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady());
+  state.FinishPullServerInitialMetadata();
+  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady());
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

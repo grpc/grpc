@@ -31,8 +31,7 @@
 
 #include "src/core/util/strerror.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_LINUX_ERRQUEUE
 int GetSocketTcpInfo(struct tcp_info* info, int fd) {
@@ -68,7 +67,6 @@ bool KernelSupportsErrqueue() {
   return errqueue_supported;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_TCP

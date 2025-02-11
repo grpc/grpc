@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -38,7 +39,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -191,7 +191,7 @@ static void maybe_post_reclaimer(secure_endpoint* ep) {
     ep->has_posted_reclaimer.exchange(true, std::memory_order_relaxed);
     ep->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
-        [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
+        [ep](std::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
             GRPC_TRACE_LOG(resource_quota, INFO)
                 << "secure endpoint: benign reclamation to free memory";

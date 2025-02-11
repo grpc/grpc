@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_ANNOTATIONS_V3_STATUS_PROTO_UPB_H_
-#define XDS_ANNOTATIONS_V3_STATUS_PROTO_UPB_H_
+#ifndef XDS_ANNOTATIONS_V3_STATUS_PROTO_UPB_H__UPB_H_
+#define XDS_ANNOTATIONS_V3_STATUS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -281,7 +281,7 @@ UPB_INLINE const xds_annotations_v3_FileStatusAnnotation* xds_annotations_v3_fil
   const upb_MiniTableExtension* ext = &xds_annotations_v3_file_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   const xds_annotations_v3_FileStatusAnnotation* default_val = NULL;
   const xds_annotations_v3_FileStatusAnnotation* ret;
   _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
@@ -291,7 +291,7 @@ UPB_INLINE void xds_annotations_v3_set_file_status(struct google_protobuf_FileOp
   const upb_MiniTableExtension* ext = &xds_annotations_v3_file_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
@@ -314,7 +314,7 @@ UPB_INLINE const xds_annotations_v3_MessageStatusAnnotation* xds_annotations_v3_
   const upb_MiniTableExtension* ext = &xds_annotations_v3_message_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   const xds_annotations_v3_MessageStatusAnnotation* default_val = NULL;
   const xds_annotations_v3_MessageStatusAnnotation* ret;
   _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
@@ -324,7 +324,7 @@ UPB_INLINE void xds_annotations_v3_set_message_status(struct google_protobuf_Mes
   const upb_MiniTableExtension* ext = &xds_annotations_v3_message_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
@@ -347,7 +347,7 @@ UPB_INLINE const xds_annotations_v3_FieldStatusAnnotation* xds_annotations_v3_fi
   const upb_MiniTableExtension* ext = &xds_annotations_v3_field_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   const xds_annotations_v3_FieldStatusAnnotation* default_val = NULL;
   const xds_annotations_v3_FieldStatusAnnotation* ret;
   _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
@@ -357,7 +357,7 @@ UPB_INLINE void xds_annotations_v3_set_field_status(struct google_protobuf_Field
   const upb_MiniTableExtension* ext = &xds_annotations_v3_field_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
@@ -376,4 +376,4 @@ UPB_INLINE struct xds_annotations_v3_FieldStatusAnnotation* xds_annotations_v3_m
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_ANNOTATIONS_V3_STATUS_PROTO_UPB_H_ */
+#endif  /* XDS_ANNOTATIONS_V3_STATUS_PROTO_UPB_H__UPB_H_ */

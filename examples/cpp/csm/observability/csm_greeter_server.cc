@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE pods
   opts.url = "0.0.0.0:9464";
+  opts.without_otel_scope = false;
   auto prometheus_exporter =
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =
@@ -67,6 +68,6 @@ int main(int argc, char** argv) {
               << observability.status().ToString() << std::endl;
     return static_cast<int>(observability.status().code());
   }
-  RunServer(absl::GetFlag(FLAGS_port));
+  RunXdsEnabledServer(absl::GetFlag(FLAGS_port));
   return 0;
 }

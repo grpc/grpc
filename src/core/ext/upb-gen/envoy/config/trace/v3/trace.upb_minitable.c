@@ -13,7 +13,6 @@
 #include "envoy/config/trace/v3/dynamic_ot.upb_minitable.h"
 #include "envoy/config/trace/v3/http_tracer.upb_minitable.h"
 #include "envoy/config/trace/v3/lightstep.upb_minitable.h"
-#include "envoy/config/trace/v3/opencensus.upb_minitable.h"
 #include "envoy/config/trace/v3/opentelemetry.upb_minitable.h"
 #include "envoy/config/trace/v3/service.upb_minitable.h"
 #include "envoy/config/trace/v3/zipkin.upb_minitable.h"

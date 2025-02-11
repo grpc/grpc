@@ -47,7 +47,6 @@ grpc_cc_test(
     name = "oracle_event_engine_posix_test",
     srcs = ["oracle_event_engine_posix_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "no_test_ios",
         "no_windows",

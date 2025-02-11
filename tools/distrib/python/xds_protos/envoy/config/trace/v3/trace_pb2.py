@@ -15,7 +15,6 @@ from envoy.config.trace.v3 import datadog_pb2 as envoy_dot_config_dot_trace_dot_
 from envoy.config.trace.v3 import dynamic_ot_pb2 as envoy_dot_config_dot_trace_dot_v3_dot_dynamic__ot__pb2
 from envoy.config.trace.v3 import http_tracer_pb2 as envoy_dot_config_dot_trace_dot_v3_dot_http__tracer__pb2
 from envoy.config.trace.v3 import lightstep_pb2 as envoy_dot_config_dot_trace_dot_v3_dot_lightstep__pb2
-from envoy.config.trace.v3 import opencensus_pb2 as envoy_dot_config_dot_trace_dot_v3_dot_opencensus__pb2
 from envoy.config.trace.v3 import opentelemetry_pb2 as envoy_dot_config_dot_trace_dot_v3_dot_opentelemetry__pb2
 from envoy.config.trace.v3 import service_pb2 as envoy_dot_config_dot_trace_dot_v3_dot_service__pb2
 from envoy.config.trace.v3 import zipkin_pb2 as envoy_dot_config_dot_trace_dot_v3_dot_zipkin__pb2
@@ -24,12 +23,11 @@ from envoy.config.trace.v3.datadog_pb2 import *
 from envoy.config.trace.v3.dynamic_ot_pb2 import *
 from envoy.config.trace.v3.http_tracer_pb2 import *
 from envoy.config.trace.v3.lightstep_pb2 import *
-from envoy.config.trace.v3.opencensus_pb2 import *
 from envoy.config.trace.v3.opentelemetry_pb2 import *
 from envoy.config.trace.v3.service_pb2 import *
 from envoy.config.trace.v3.zipkin_pb2 import *
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n!envoy/config/trace/v3/trace.proto\x12\x15\x65nvoy.config.trace.v3\x1a#envoy/config/trace/v3/datadog.proto\x1a&envoy/config/trace/v3/dynamic_ot.proto\x1a\'envoy/config/trace/v3/http_tracer.proto\x1a%envoy/config/trace/v3/lightstep.proto\x1a&envoy/config/trace/v3/opencensus.proto\x1a)envoy/config/trace/v3/opentelemetry.proto\x1a#envoy/config/trace/v3/service.proto\x1a\"envoy/config/trace/v3/zipkin.protoBy\n#io.envoyproxy.envoy.config.trace.v3B\nTraceProtoP\x01ZDgithub.com/envoyproxy/go-control-plane/envoy/config/trace/v3;tracev3P\x00P\x01P\x02P\x03P\x04P\x05P\x06P\x07\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n!envoy/config/trace/v3/trace.proto\x12\x15\x65nvoy.config.trace.v3\x1a#envoy/config/trace/v3/datadog.proto\x1a&envoy/config/trace/v3/dynamic_ot.proto\x1a\'envoy/config/trace/v3/http_tracer.proto\x1a%envoy/config/trace/v3/lightstep.proto\x1a)envoy/config/trace/v3/opentelemetry.proto\x1a#envoy/config/trace/v3/service.proto\x1a\"envoy/config/trace/v3/zipkin.protoBy\n#io.envoyproxy.envoy.config.trace.v3B\nTraceProtoP\x01ZDgithub.com/envoyproxy/go-control-plane/envoy/config/trace/v3;tracev3P\x00P\x01P\x02P\x03P\x04P\x05P\x06\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)

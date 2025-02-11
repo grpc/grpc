@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H_
-#define ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H_
+#ifndef ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPB_H_
+#define ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -52,7 +52,9 @@ typedef enum {
   envoy_admin_v3_REQUESTED = 1,
   envoy_admin_v3_DOES_NOT_EXIST = 2,
   envoy_admin_v3_ACKED = 3,
-  envoy_admin_v3_NACKED = 4
+  envoy_admin_v3_NACKED = 4,
+  envoy_admin_v3_RECEIVED_ERROR = 5,
+  envoy_admin_v3_TIMEOUT = 6
 } envoy_admin_v3_ClientResourceStatus;
 
 
@@ -2957,4 +2959,4 @@ UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_set_client_status
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H_ */
+#endif  /* ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPB_H_ */

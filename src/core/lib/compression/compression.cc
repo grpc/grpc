@@ -23,7 +23,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -39,7 +40,7 @@ int grpc_compression_algorithm_is_stream(grpc_compression_algorithm) {
 
 int grpc_compression_algorithm_parse(grpc_slice name,
                                      grpc_compression_algorithm* algorithm) {
-  absl::optional<grpc_compression_algorithm> alg =
+  std::optional<grpc_compression_algorithm> alg =
       grpc_core::ParseCompressionAlgorithm(
           grpc_core::StringViewFromSlice(name));
   if (alg.has_value()) {

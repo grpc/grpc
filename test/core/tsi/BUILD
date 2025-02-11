@@ -39,7 +39,6 @@ grpc_cc_test(
     name = "fake_transport_security_test",
     srcs = ["fake_transport_security_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         ":transport_security_test_lib",
         "//:gpr",
@@ -55,7 +54,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -79,7 +77,6 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -115,7 +112,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     shard_count = 5,
     tags = ["no_windows"],
     deps = [
@@ -154,7 +150,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
@@ -172,7 +167,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

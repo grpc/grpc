@@ -27,8 +27,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/host_port.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 void DNSServiceResolverImpl::LookupHostname(
     EventEngine::DNSResolver::LookupHostnameCallback on_resolve,
@@ -226,9 +225,7 @@ void DNSServiceResolverImpl::Shutdown() {
     auto requests = std::exchange(that->requests_, {});
     lock.Release();
 
-    for (auto& kv : requests) {
-      auto& sdRef = kv.first;
-      auto& request = kv.second;
+    for (auto& [sdRef, request] : requests) {
       GRPC_TRACE_LOG(event_engine_dns, INFO)
           << "DNSServiceResolverImpl::Shutdown sdRef: " << sdRef
           << ", this: " << thatPtr;
@@ -239,8 +236,7 @@ void DNSServiceResolverImpl::Shutdown() {
   });
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

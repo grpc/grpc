@@ -18,13 +18,26 @@
 
 # Simple test - compare generated output to expected files
 
+# shellcheck disable=SC1090
+
 set -x
 
 TESTNAME=simple
 
+# --- begin runfiles.bash initialization v3 ---
+# Copy-pasted from the Bazel Bash runfiles library v3.
+set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
+source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$0.runfiles/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
+# --- end runfiles.bash initialization v3 ---
+
 # protoc and grpc_csharp_plugin binaries are supplied as "data" in bazel
-PROTOC=./external/com_google_protobuf/protoc
-PLUGIN=./src/compiler/grpc_csharp_plugin
+PROTOC=$(rlocation com_google_protobuf/protoc)
+PLUGIN=$(rlocation com_github_grpc_grpc/src/compiler/grpc_csharp_plugin)
 
 # where to find the test data
 DATA_DIR=./test/csharp/codegen/${TESTNAME}
@@ -36,7 +49,7 @@ mkdir -p ${PROTO_OUT}
 
 # run protoc and the plugin
 $PROTOC \
-    --plugin=protoc-gen-grpc=$PLUGIN \
+    --plugin=protoc-gen-grpc="$PLUGIN" \
     --csharp_out=${PROTO_OUT} \
     --grpc_out=${PROTO_OUT} \
     -I ${DATA_DIR}/proto \

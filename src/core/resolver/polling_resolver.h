@@ -21,10 +21,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -98,7 +98,7 @@ class PollingResolver : public Resolver {
   /// min time between DNS requests
   Duration min_time_between_resolutions_;
   /// timestamp of last DNS request
-  absl::optional<Timestamp> last_resolution_timestamp_;
+  std::optional<Timestamp> last_resolution_timestamp_;
   /// retry backoff state
   BackOff backoff_;
   /// state for handling interactions between re-resolution requests and
@@ -110,7 +110,7 @@ class PollingResolver : public Resolver {
   };
   ResultStatusState result_status_state_ = ResultStatusState::kNone;
   /// next resolution timer
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       next_resolution_timer_handle_;
 };
 

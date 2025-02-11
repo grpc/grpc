@@ -19,7 +19,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_extensions_upstreams_http_v3_HttpProtocolOptions_submsgs[7] = {
+static const upb_MiniTableSubInternal envoy_extensions_upstreams_http_v3_HttpProtocolOptions__submsgs[7] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HttpProtocolOptions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__UpstreamHttpProtocolOptions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init_ptr},
@@ -40,7 +40,7 @@ static const upb_MiniTableField envoy_extensions_upstreams_http_v3_HttpProtocolO
 };
 
 const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init = {
-  &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_submsgs[0],
+  &envoy_extensions_upstreams_http_v3_HttpProtocolOptions__submsgs[0],
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions__fields[0],
   UPB_SIZE(40, 56), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -59,7 +59,7 @@ const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions_
 };
 
 const upb_MiniTable* envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init_ptr = &envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init;
-static const upb_MiniTableSubInternal envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_submsgs[3] = {
+static const upb_MiniTableSubInternal envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig__submsgs[3] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http1ProtocolOptions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http2ProtocolOptions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http3ProtocolOptions_msg_init_ptr},
@@ -72,7 +72,7 @@ static const upb_MiniTableField envoy_extensions_upstreams_http_v3_HttpProtocolO
 };
 
 const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init = {
-  &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_submsgs[0],
+  &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig__submsgs[0],
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig__fields[0],
   UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -87,7 +87,7 @@ const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions_
 };
 
 const upb_MiniTable* envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init_ptr = &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init;
-static const upb_MiniTableSubInternal envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_submsgs[3] = {
+static const upb_MiniTableSubInternal envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig__submsgs[3] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http1ProtocolOptions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http2ProtocolOptions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http3ProtocolOptions_msg_init_ptr},
@@ -100,7 +100,7 @@ static const upb_MiniTableField envoy_extensions_upstreams_http_v3_HttpProtocolO
 };
 
 const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions__UseDownstreamHttpConfig_msg_init = {
-  &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_submsgs[0],
+  &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig__submsgs[0],
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig__fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -109,7 +109,7 @@ const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions_
 };
 
 const upb_MiniTable* envoy__extensions__upstreams__http__v3__HttpProtocolOptions__UseDownstreamHttpConfig_msg_init_ptr = &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__UseDownstreamHttpConfig_msg_init;
-static const upb_MiniTableSubInternal envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_submsgs[4] = {
+static const upb_MiniTableSubInternal envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http1ProtocolOptions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http2ProtocolOptions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http3ProtocolOptions_msg_init_ptr},
@@ -124,7 +124,7 @@ static const upb_MiniTableField envoy_extensions_upstreams_http_v3_HttpProtocolO
 };
 
 const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions__AutoHttpConfig_msg_init = {
-  &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_submsgs[0],
+  &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig__submsgs[0],
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig__fields[0],
   UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED

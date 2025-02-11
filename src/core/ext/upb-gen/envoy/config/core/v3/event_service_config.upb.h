@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CORE_V3_EVENT_SERVICE_CONFIG_PROTO_UPB_H_
-#define ENVOY_CONFIG_CORE_V3_EVENT_SERVICE_CONFIG_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_CORE_V3_EVENT_SERVICE_CONFIG_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_CORE_V3_EVENT_SERVICE_CONFIG_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -113,4 +113,4 @@ UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_core_v3_EventSe
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CORE_V3_EVENT_SERVICE_CONFIG_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_CORE_V3_EVENT_SERVICE_CONFIG_PROTO_UPB_H__UPB_H_ */

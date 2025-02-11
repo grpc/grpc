@@ -38,7 +38,7 @@ const upb_MiniTable udpa__annotations__StatusAnnotation_msg_init = {
 const upb_MiniTable* udpa__annotations__StatusAnnotation_msg_init_ptr = &udpa__annotations__StatusAnnotation_msg_init;
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension udpa_annotations_file_status_ext = {
-  {222707719, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {222707719, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__FileOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &udpa__annotations__StatusAnnotation_msg_init},
 

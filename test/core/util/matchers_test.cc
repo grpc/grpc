@@ -139,7 +139,7 @@ TEST(HeaderMatcherTest, StringMatcher) {
   EXPECT_TRUE(header_matcher->Match("exact"));
   EXPECT_FALSE(header_matcher->Match("Exact"));
   EXPECT_FALSE(header_matcher->Match("exacz"));
-  EXPECT_FALSE(header_matcher->Match(absl::nullopt));
+  EXPECT_FALSE(header_matcher->Match(std::nullopt));
 }
 
 TEST(HeaderMatcherTest, StringMatcherCaseInsensitive) {
@@ -152,7 +152,7 @@ TEST(HeaderMatcherTest, StringMatcherCaseInsensitive) {
   EXPECT_TRUE(header_matcher->Match("exact"));
   EXPECT_TRUE(header_matcher->Match("Exact"));
   EXPECT_FALSE(header_matcher->Match("exacz"));
-  EXPECT_FALSE(header_matcher->Match(absl::nullopt));
+  EXPECT_FALSE(header_matcher->Match(std::nullopt));
 }
 
 TEST(HeaderMatcherTest, StringMatcherWithInvertMatch) {
@@ -165,7 +165,7 @@ TEST(HeaderMatcherTest, StringMatcherWithInvertMatch) {
   EXPECT_FALSE(header_matcher->Match("exact"));
   EXPECT_TRUE(header_matcher->Match("Exact"));
   EXPECT_TRUE(header_matcher->Match("exacz"));
-  EXPECT_FALSE(header_matcher->Match(absl::nullopt));
+  EXPECT_FALSE(header_matcher->Match(std::nullopt));
 }
 
 TEST(HeaderMatcherTest, InvalidRegex) {
@@ -192,7 +192,7 @@ TEST(HeaderMatcherTest, RangeMatcherValidRange) {
   EXPECT_TRUE(header_matcher->Match("10"));
   EXPECT_FALSE(header_matcher->Match("3"));
   EXPECT_FALSE(header_matcher->Match("20"));
-  EXPECT_FALSE(header_matcher->Match(absl::nullopt));
+  EXPECT_FALSE(header_matcher->Match(std::nullopt));
 }
 
 TEST(HeaderMatcherTest, RangeMatcherValidRangeWithInvertMatch) {
@@ -205,7 +205,7 @@ TEST(HeaderMatcherTest, RangeMatcherValidRangeWithInvertMatch) {
   EXPECT_FALSE(header_matcher->Match("10"));
   EXPECT_TRUE(header_matcher->Match("3"));
   EXPECT_TRUE(header_matcher->Match("20"));
-  EXPECT_FALSE(header_matcher->Match(absl::nullopt));
+  EXPECT_FALSE(header_matcher->Match(std::nullopt));
 }
 
 TEST(HeaderMatcherTest, RangeMatcherInvalidRange) {
@@ -227,7 +227,7 @@ TEST(HeaderMatcherTest, PresentMatcherTrue) {
                             /*range_end=*/0, /*present_match=*/true);
   ASSERT_TRUE(header_matcher.ok());
   EXPECT_TRUE(header_matcher->Match("any_value"));
-  EXPECT_FALSE(header_matcher->Match(absl::nullopt));
+  EXPECT_FALSE(header_matcher->Match(std::nullopt));
 }
 
 TEST(HeaderMatcherTest, PresentMatcherTrueWithInvertMatch) {
@@ -237,7 +237,7 @@ TEST(HeaderMatcherTest, PresentMatcherTrueWithInvertMatch) {
       /*range_end=*/0, /*present_match=*/true, /*invert_match=*/true);
   ASSERT_TRUE(header_matcher.ok());
   EXPECT_FALSE(header_matcher->Match("any_value"));
-  EXPECT_TRUE(header_matcher->Match(absl::nullopt));
+  EXPECT_TRUE(header_matcher->Match(std::nullopt));
 }
 
 TEST(HeaderMatcherTest, PresentMatcherFalse) {
@@ -247,7 +247,7 @@ TEST(HeaderMatcherTest, PresentMatcherFalse) {
                             /*range_end=*/0, /*present_match=*/false);
   ASSERT_TRUE(header_matcher.ok());
   EXPECT_FALSE(header_matcher->Match("any_value"));
-  EXPECT_TRUE(header_matcher->Match(absl::nullopt));
+  EXPECT_TRUE(header_matcher->Match(std::nullopt));
 }
 
 TEST(HeaderMatcherTest, PresentMatcherFalseWithInvertMatch) {
@@ -257,7 +257,7 @@ TEST(HeaderMatcherTest, PresentMatcherFalseWithInvertMatch) {
       /*range_end=*/0, /*present_match=*/false, /*invert_match=*/true);
   ASSERT_TRUE(header_matcher.ok());
   EXPECT_TRUE(header_matcher->Match("any_value"));
-  EXPECT_FALSE(header_matcher->Match(absl::nullopt));
+  EXPECT_FALSE(header_matcher->Match(std::nullopt));
 }
 
 }  // namespace grpc_core

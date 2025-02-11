@@ -31,8 +31,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/status_helper.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 constexpr size_t kDefaultTargetReadSize = 8192;
@@ -386,7 +385,6 @@ WindowsEndpoint::AsyncIOState::~AsyncIOState() {
   socket->Shutdown(DEBUG_LOCATION, "~AsyncIOState");
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

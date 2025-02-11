@@ -23,9 +23,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -136,20 +136,20 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
 
   Type http_type() const { return type_; }
   gpr_timespec time() const { return time_; }
-  absl::optional<chttp2::TransportFlowControl::Stats> transport_stats() const {
+  std::optional<chttp2::TransportFlowControl::Stats> transport_stats() const {
     return transport_stats_;
   }
-  absl::optional<chttp2::StreamFlowControl::Stats> stream_stats() const {
+  std::optional<chttp2::StreamFlowControl::Stats> stream_stats() const {
     return stream_stats_;
   }
-  absl::optional<WriteStats> write_stats() const { return write_stats_; }
+  std::optional<WriteStats> write_stats() const { return write_stats_; }
 
  private:
   const Type type_;
   const gpr_timespec time_;
-  absl::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
-  absl::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
-  absl::optional<WriteStats> write_stats_;
+  std::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
+  std::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
+  std::optional<WriteStats> write_stats_;
 };
 
 }  // namespace grpc_core

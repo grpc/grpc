@@ -30,7 +30,6 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     visibility = [
         "//test:__subpackages__",
         "@grpc:endpoint_tests",
@@ -50,7 +49,6 @@ grpc_cc_test(
     exec_properties = LARGE_MACHINE,
     external_deps = ["gtest"],
     flaky = True,
-    language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         "//:gpr",
@@ -68,7 +66,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "endpoint_test",
         "event_engine_client_test",
@@ -89,7 +86,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -105,7 +101,6 @@ grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.cc"],
     external_deps = ["absl/log:check"],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -122,7 +117,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -136,7 +130,6 @@ grpc_cc_test(
     name = "grpc_ipv6_loopback_available_test",
     srcs = ["grpc_ipv6_loopback_available_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -158,7 +151,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -181,7 +173,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -200,7 +191,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -220,7 +210,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -238,7 +227,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -255,7 +243,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "endpoint_test",
         "event_engine_client_test",
@@ -278,7 +265,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "endpoint_test",
         "event_engine_listener_test",
@@ -303,7 +289,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -315,7 +300,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "pollset_windows_starvation_test",
     srcs = ["pollset_windows_starvation_test.cc"],
-    language = "C++",
     tags = [
         "no_linux",
         "no_mac",
@@ -334,7 +318,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "event_engine_listener_test",
         "no_windows",
@@ -354,25 +337,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "timer_list_test",
-    srcs = ["timer_list_test.cc"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [

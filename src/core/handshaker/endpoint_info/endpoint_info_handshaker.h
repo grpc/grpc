@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 
 // Set by the handshaker to indicate the local address of the endpoint.
 #define GRPC_ARG_ENDPOINT_LOCAL_ADDRESS "grpc.internal.endpoint_local_address"

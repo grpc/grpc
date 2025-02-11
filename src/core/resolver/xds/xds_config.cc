@@ -56,18 +56,18 @@ std::string XdsConfig::ToString() const {
       "}\n  route_config: {", route_config->ToString(),
       "}\n  virtual_host: {", virtual_host->ToString(),
       "}\n  clusters: {\n"};
-  for (const auto& p : clusters) {
-    parts.push_back(absl::StrCat("    \"", p.first, "\": "));
-    if (!p.second.ok()) {
-      parts.push_back(p.second.status().ToString());
+  for (const auto& [name, cluster_config] : clusters) {
+    parts.push_back(absl::StrCat("    \"", name, "\": "));
+    if (!cluster_config.ok()) {
+      parts.push_back(cluster_config.status().ToString());
       parts.push_back("\n");
     } else {
       parts.push_back(
           absl::StrCat("      {\n"
                        "        cluster: {",
-                       p.second->cluster->ToString(), "}\n"));
+                       cluster_config->cluster->ToString(), "}\n"));
       Match(
-          p.second->children,
+          cluster_config->children,
           [&](const ClusterConfig::EndpointConfig& endpoint_config) {
             parts.push_back(
                 absl::StrCat("        endpoints: {",

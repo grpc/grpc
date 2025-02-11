@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -29,9 +30,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
@@ -168,12 +168,12 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
       uint32_t weight =
           endpoint.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT).value_or(0);
       if (locality_name != nullptr && weight > 0) {
-        auto p = locality_weights.emplace(
+        auto [it, inserted] = locality_weights.emplace(
             locality_name->human_readable_string(), weight);
-        if (!p.second && p.first->second != weight) {
+        if (!inserted && it->second != weight) {
           LOG(ERROR) << "INTERNAL ERROR: xds_wrr_locality found different "
                         "weights for locality "
-                     << p.first->first.c_str() << " (" << p.first->second
+                     << it->first.as_string_view() << " (" << it->second
                      << " vs " << weight << "); using first value";
         }
       }
@@ -181,14 +181,12 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   }
   // Construct the config for the weighted_target policy.
   Json::Object weighted_targets;
-  for (const auto& p : locality_weights) {
-    absl::string_view locality_name = p.first.as_string_view();
-    uint32_t weight = p.second;
-    // Add weighted target entry.
-    weighted_targets[std::string(locality_name)] = Json::FromObject({
-        {"weight", Json::FromNumber(weight)},
-        {"childPolicy", config->child_config()},
-    });
+  for (const auto& [locality_name, weight] : locality_weights) {
+    weighted_targets[std::string(locality_name.as_string_view())] =
+        Json::FromObject({
+            {"weight", Json::FromNumber(weight)},
+            {"childPolicy", config->child_config()},
+        });
   }
   Json child_config_json = Json::FromArray({
       Json::FromObject({

@@ -26,9 +26,9 @@
 
 namespace grpc_core {
 
-absl::optional<std::string> GetEnv(const char* name) {
+std::optional<std::string> GetEnv(const char* name) {
   char* result = getenv(name);
-  if (result == nullptr) return absl::nullopt;
+  if (result == nullptr) return std::nullopt;
   return result;
 }
 

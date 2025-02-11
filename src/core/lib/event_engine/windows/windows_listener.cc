@@ -29,8 +29,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // ---- SinglePortSocketListener::AsyncIOState ----
 
@@ -397,7 +396,6 @@ WindowsEventEngineListener::AddSinglePortSocketListener(
   return single_port_listener_ptr;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

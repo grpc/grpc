@@ -26,20 +26,12 @@
 namespace grpc_core {
 namespace dump_args_detail {
 
-// Helper function... just ignore the initializer list passed into it.
-// Allows doing 'statements' via parameter pack expansion in C++11 - given
-// template <typename... Ts>:
-//  do_these_things({foo<Ts>()...});
-// will execute foo<T>() for each T in Ts.
-template <typename T>
-void do_these_things(std::initializer_list<T>) {}
-
 class DumpArgs {
  public:
   template <typename... Args>
   explicit DumpArgs(const char* arg_string, const Args&... args)
       : arg_string_(arg_string) {
-    do_these_things({AddDumper(&args)...});
+    (AddDumper(&args), ...);
   }
 
   template <typename Sink>

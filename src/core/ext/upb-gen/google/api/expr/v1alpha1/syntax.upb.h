@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_API_EXPR_V1ALPHA1_SYNTAX_PROTO_UPB_H_
-#define GOOGLE_API_EXPR_V1ALPHA1_SYNTAX_PROTO_UPB_H_
+#ifndef GOOGLE_API_EXPR_V1ALPHA1_SYNTAX_PROTO_UPB_H__UPB_H_
+#define GOOGLE_API_EXPR_V1ALPHA1_SYNTAX_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -2354,4 +2354,4 @@ UPB_INLINE void google_api_expr_v1alpha1_SourcePosition_set_column(google_api_ex
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_API_EXPR_V1ALPHA1_SYNTAX_PROTO_UPB_H_ */
+#endif  /* GOOGLE_API_EXPR_V1ALPHA1_SYNTAX_PROTO_UPB_H__UPB_H_ */

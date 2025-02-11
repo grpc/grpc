@@ -78,7 +78,6 @@ ExternalAccountCredentials::NoOpFetchBody::NoOpFetchBody(
     : FetchBody(std::move(on_done)) {
   event_engine.Run([self = RefAsSubclass<NoOpFetchBody>(),
                     result = std::move(result)]() mutable {
-    ApplicationCallbackExecCtx application_exec_ctx;
     ExecCtx exec_ctx;
     self->Finish(std::move(result));
   });
@@ -398,7 +397,7 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
                           absl::StrCat("error fetching oauth2 token: ",
                                        response_body.status().message()));
   } else {
-    absl::optional<Slice> token_value;
+    std::optional<Slice> token_value;
     Duration token_lifetime;
     if (grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
             *response_body, &token_value, &token_lifetime) !=
@@ -411,7 +410,6 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
   }
   creds_->event_engine().Run([on_done = std::exchange(on_done_, nullptr),
                               result = std::move(result)]() mutable {
-    ApplicationCallbackExecCtx application_exec_ctx;
     ExecCtx exec_ctx;
     std::exchange(on_done, nullptr)(std::move(result));
   });

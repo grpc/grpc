@@ -6,12 +6,13 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_API_HTTP_PROTO_UPB_H_
-#define GOOGLE_API_HTTP_PROTO_UPB_H_
+#ifndef GOOGLE_API_HTTP_PROTO_UPB_H__UPB_H_
+#define GOOGLE_API_HTTP_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
 #include "google/api/http.upb_minitable.h"
+
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -520,4 +521,4 @@ UPB_INLINE void google_api_CustomHttpPattern_set_path(google_api_CustomHttpPatte
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_API_HTTP_PROTO_UPB_H_ */
+#endif  /* GOOGLE_API_HTTP_PROTO_UPB_H__UPB_H_ */

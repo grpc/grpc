@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CORE_V3_GRPC_SERVICE_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_CORE_V3_GRPC_SERVICE_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_CORE_V3_GRPC_SERVICE_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_CORE_V3_GRPC_SERVICE_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -55,4 +55,4 @@ extern const upb_MiniTableFile envoy_config_core_v3_grpc_service_proto_upb_file_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CORE_V3_GRPC_SERVICE_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_CORE_V3_GRPC_SERVICE_PROTO_UPB_H__UPB_MINITABLE_H_ */

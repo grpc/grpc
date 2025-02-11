@@ -74,7 +74,7 @@ def proto_library_objc_wrapper(
         name,
         srcs,
         deps = [],
-        use_well_known_protos = False):
+        use_well_known_protos = False):  # @unused
     """proto_library for adding dependencies to google/protobuf protos.
 
     Args:

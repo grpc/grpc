@@ -20,11 +20,11 @@
 #include <gtest/gtest.h>
 
 #include <thread>
+#include <variant>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"

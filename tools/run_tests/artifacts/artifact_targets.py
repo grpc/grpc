@@ -200,11 +200,19 @@ class PythonArtifact:
             )
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
-            environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
             environ["GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX"] = "TRUE"
 
-            if self.arch == "x86":
+            if self.arch in ("x86", "aarch64"):
                 environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+
+            if self.arch == "aarch64":
+                # As we won't strip the binary with auditwheel (see below), strip
+                # it at link time.
+                environ["LDFLAGS"] = "-s"
+                # We're using musllinux aarch64 image to build this artifact so no crosscompiling required.
+                environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
+            else:
+                environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
 
             return create_docker_jobspec(
                 self.name,
@@ -212,7 +220,7 @@ class PythonArtifact:
                 % (self.platform, self.arch),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
             )
         elif self.platform == "windows":
             environ["EXT_COMPILER"] = "msvc"
@@ -275,7 +283,7 @@ class RubyArtifact:
                 self.gem_platform,
             ],
             use_workspace=True,
-            timeout_seconds=120 * 60,
+            timeout_seconds=180 * 60,
             environ=environ,
         )
 
@@ -354,7 +362,7 @@ class ProtocArtifact:
                 )
             else:
                 environ["CXXFLAGS"] += (
-                    " -std=c++14 -stdlib=libc++ %s" % _MACOS_COMPAT_FLAG
+                    " -std=c++17 -stdlib=libc++ %s" % _MACOS_COMPAT_FLAG
                 )
                 return create_jobspec(
                     self.name,
@@ -452,6 +460,16 @@ def targets():
             PythonArtifact(
                 "musllinux_1_1", "x86", "cp313-cp313", presubmit=True
             ),
+            PythonArtifact(
+                "musllinux_1_1", "aarch64", "cp38-cp38", presubmit=True
+            ),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp39-cp39"),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp310-cp310"),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp311-cp311"),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp312-cp312"),
+            PythonArtifact(
+                "musllinux_1_1", "aarch64", "cp313-cp313", presubmit=True
+            ),
             PythonArtifact("macos", "x64", "python3.8", presubmit=True),
             PythonArtifact("macos", "x64", "python3.9"),
             PythonArtifact("macos", "x64", "python3.10"),
@@ -471,10 +489,10 @@ def targets():
             PythonArtifact("windows", "x64", "Python312"),
             PythonArtifact("windows", "x64", "Python313", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
-            RubyArtifact("linux", "x64-mingw32", presubmit=True),
+            RubyArtifact("linux", "x64-mingw32"),
             RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
             RubyArtifact("linux", "x86_64-linux", presubmit=True),
-            RubyArtifact("linux", "x86-linux", presubmit=True),
+            RubyArtifact("linux", "x86-linux"),
             RubyArtifact("linux", "aarch64-linux", presubmit=True),
             RubyArtifact("linux", "x86_64-darwin", presubmit=True),
             RubyArtifact("linux", "arm64-darwin", presubmit=True),

@@ -178,6 +178,6 @@ iwyu_build/
 # fuzzer logs
 fuzz-*.log
 
-# bazel module files (MODULE.bazel will need to be removed here)
-MODULE.bazel
+# bazel module files
+third_party/**/MODULE.bazel
 MODULE.bazel.lock

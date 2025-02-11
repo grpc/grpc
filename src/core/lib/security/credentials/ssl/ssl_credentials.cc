@@ -24,12 +24,12 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -86,7 +86,7 @@ grpc_ssl_credentials::create_security_connector(
                   "must have root certs.";
     return nullptr;
   }
-  absl::optional<std::string> overridden_target_name =
+  std::optional<std::string> overridden_target_name =
       args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
   auto* ssl_session_cache = args->GetObject<tsi::SslSessionLRUCache>();
   tsi_ssl_session_cache* session_cache =

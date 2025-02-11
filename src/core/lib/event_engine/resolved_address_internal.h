@@ -18,8 +18,7 @@
 
 #include "src/core/lib/iomgr/resolved_address.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 EventEngine::ResolvedAddress CreateResolvedAddress(
     const grpc_resolved_address& addr);
@@ -27,7 +26,6 @@ EventEngine::ResolvedAddress CreateResolvedAddress(
 grpc_resolved_address CreateGRPCResolvedAddress(
     const EventEngine::ResolvedAddress& ra);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H

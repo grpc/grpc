@@ -64,7 +64,6 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",

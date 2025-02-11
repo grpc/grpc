@@ -37,7 +37,7 @@ const upb_MiniTable envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_in
 };
 
 const upb_MiniTable* envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init_ptr = &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init;
-static const upb_MiniTableSubInternal envoy_config_core_v3_ProxyProtocolConfig_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_core_v3_ProxyProtocolConfig__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init_ptr},
 };
 
@@ -47,7 +47,7 @@ static const upb_MiniTableField envoy_config_core_v3_ProxyProtocolConfig__fields
 };
 
 const upb_MiniTable envoy__config__core__v3__ProxyProtocolConfig_msg_init = {
-  &envoy_config_core_v3_ProxyProtocolConfig_submsgs[0],
+  &envoy_config_core_v3_ProxyProtocolConfig__submsgs[0],
   &envoy_config_core_v3_ProxyProtocolConfig__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED

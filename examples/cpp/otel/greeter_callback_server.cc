@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
   // exporter.
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   opts.url = absl::GetFlag(FLAGS_prometheus_endpoint);
+  opts.without_otel_scope = false;
   auto prometheus_exporter =
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =

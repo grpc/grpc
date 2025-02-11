@@ -43,10 +43,10 @@ class ClientLoadReportingFilter final
     void OnClientInitialMetadata(ClientMetadata& client_initial_metadata);
     void OnServerInitialMetadata(ServerMetadata& server_initial_metadata);
     void OnServerTrailingMetadata(ServerMetadata& server_trailing_metadata);
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnFinalize;
 
    private:
     RefCountedPtr<GrpcLbClientStats> client_stats_;

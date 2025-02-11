@@ -20,8 +20,7 @@
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 BasicWorkQueue::BasicWorkQueue(void* owner) : owner_(owner) {}
 
@@ -61,5 +60,4 @@ void BasicWorkQueue::Add(absl::AnyInvocable<void()> invocable) {
   q_.push_back(SelfDeletingClosure::Create(std::move(invocable)));
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

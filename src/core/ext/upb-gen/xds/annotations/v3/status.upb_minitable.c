@@ -92,21 +92,21 @@ const upb_MiniTable xds__annotations__v3__StatusAnnotation_msg_init = {
 const upb_MiniTable* xds__annotations__v3__StatusAnnotation_msg_init_ptr = &xds__annotations__v3__StatusAnnotation_msg_init;
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension xds_annotations_v3_file_status_ext = {
-  {226829418, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {226829418, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__FileOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &xds__annotations__v3__FileStatusAnnotation_msg_init},
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension xds_annotations_v3_message_status_ext = {
-  {226829418, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {226829418, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__MessageOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &xds__annotations__v3__MessageStatusAnnotation_msg_init},
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension xds_annotations_v3_field_status_ext = {
-  {226829418, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {226829418, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__FieldOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &xds__annotations__v3__FieldStatusAnnotation_msg_init},
 

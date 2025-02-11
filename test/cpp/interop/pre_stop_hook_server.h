@@ -57,7 +57,7 @@ class HookServiceImpl final : public HookService::CallbackService {
   grpc_core::CondVar request_var_ ABSL_GUARDED_BY(&mu_);
   std::vector<ServerUnaryReactor*> pending_requests_ ABSL_GUARDED_BY(&mu_);
   std::vector<Status> pending_statuses_ ABSL_GUARDED_BY(&mu_);
-  absl::optional<Status> respond_all_status_ ABSL_GUARDED_BY(&mu_);
+  std::optional<Status> respond_all_status_ ABSL_GUARDED_BY(&mu_);
 };
 
 // Implementation of the pre-stop hook server. An instance is created to start

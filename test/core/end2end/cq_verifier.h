@@ -27,11 +27,11 @@
 
 #include <functional>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/types/variant.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/time.h"
 
@@ -61,7 +61,7 @@ class CqVerifier {
   };
 
   using ExpectedResult =
-      absl::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
+      std::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
 
   // Captures information about one failure
   struct Failure {

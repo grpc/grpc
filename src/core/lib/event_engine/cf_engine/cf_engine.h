@@ -29,8 +29,7 @@
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class CFEventEngine : public EventEngine,
                       public Scheduler,
@@ -80,8 +79,7 @@ class CFEventEngine : public EventEngine,
   TimerManager timer_manager_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

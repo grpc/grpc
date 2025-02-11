@@ -23,10 +23,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -61,7 +61,7 @@ class LegacyChannel final : public Channel {
   grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
                         grpc_completion_queue* cq,
                         grpc_pollset_set* pollset_set_alternative, Slice path,
-                        absl::optional<Slice> authority, Timestamp deadline,
+                        std::optional<Slice> authority, Timestamp deadline,
                         bool registered_method) override;
 
   void StartCall(UnstartedCallHandler) override {

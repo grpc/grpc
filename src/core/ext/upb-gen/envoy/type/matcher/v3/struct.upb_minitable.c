@@ -18,7 +18,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_type_matcher_v3_StructMatcher_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_type_matcher_v3_StructMatcher__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StructMatcher__PathSegment_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__ValueMatcher_msg_init_ptr},
 };
@@ -29,7 +29,7 @@ static const upb_MiniTableField envoy_type_matcher_v3_StructMatcher__fields[2] =
 };
 
 const upb_MiniTable envoy__type__matcher__v3__StructMatcher_msg_init = {
-  &envoy_type_matcher_v3_StructMatcher_submsgs[0],
+  &envoy_type_matcher_v3_StructMatcher__submsgs[0],
   &envoy_type_matcher_v3_StructMatcher__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED

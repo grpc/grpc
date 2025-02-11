@@ -22,7 +22,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_route_v3_RouteConfiguration_submsgs[10] = {
+static const upb_MiniTableSubInternal envoy_config_route_v3_RouteConfiguration__submsgs[10] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__VirtualHost_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
@@ -56,7 +56,7 @@ static const upb_MiniTableField envoy_config_route_v3_RouteConfiguration__fields
 };
 
 const upb_MiniTable envoy__config__route__v3__RouteConfiguration_msg_init = {
-  &envoy_config_route_v3_RouteConfiguration_submsgs[0],
+  &envoy_config_route_v3_RouteConfiguration__submsgs[0],
   &envoy_config_route_v3_RouteConfiguration__fields[0],
   UPB_SIZE(80, 136), 17, kUpb_ExtMode_NonExtendable, 17, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -83,7 +83,7 @@ const upb_MiniTable envoy__config__route__v3__RouteConfiguration_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__route__v3__RouteConfiguration_msg_init_ptr = &envoy__config__route__v3__RouteConfiguration_msg_init;
-static const upb_MiniTableSubInternal envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
@@ -93,7 +93,7 @@ static const upb_MiniTableField envoy_config_route_v3_RouteConfiguration_TypedPe
 };
 
 const upb_MiniTable envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init = {
-  &envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_submsgs[0],
+  &envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry__submsgs[0],
   &envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -106,7 +106,7 @@ const upb_MiniTable envoy__config__route__v3__RouteConfiguration__TypedPerFilter
 };
 
 const upb_MiniTable* envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init_ptr = &envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init;
-static const upb_MiniTableSubInternal envoy_config_route_v3_Vhds_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_route_v3_Vhds__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
 };
 
@@ -115,7 +115,7 @@ static const upb_MiniTableField envoy_config_route_v3_Vhds__fields[1] = {
 };
 
 const upb_MiniTable envoy__config__route__v3__Vhds_msg_init = {
-  &envoy_config_route_v3_Vhds_submsgs[0],
+  &envoy_config_route_v3_Vhds__submsgs[0],
   &envoy_config_route_v3_Vhds__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED

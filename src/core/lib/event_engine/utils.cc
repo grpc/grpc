@@ -23,8 +23,7 @@
 #include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::string HandleToStringInternal(uintptr_t a, uintptr_t b) {
   return absl::StrCat("{", absl::Hex(a, absl::kZeroPad16), ",",
@@ -54,5 +53,4 @@ LookupHostnameBlocking(EventEngine::DNSResolver* dns_resolver,
   return results;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

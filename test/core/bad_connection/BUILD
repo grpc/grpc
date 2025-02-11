@@ -27,7 +27,6 @@ grpc_cc_binary(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",

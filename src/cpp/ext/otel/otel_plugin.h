@@ -27,6 +27,7 @@
 
 #include <bitset>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -34,7 +35,6 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "opentelemetry/metrics/async_instruments.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/observer_result.h"
@@ -53,9 +53,9 @@ class LabelsIterable {
  public:
   virtual ~LabelsIterable() = default;
 
-  // Returns the key-value label at the current position or absl::nullopt if the
+  // Returns the key-value label at the current position or std::nullopt if the
   // iterator has reached the end.
-  virtual absl::optional<std::pair<absl::string_view, absl::string_view>>
+  virtual std::optional<std::pair<absl::string_view, absl::string_view>>
   Next() = 0;
 
   virtual size_t Size() const = 0;
@@ -384,8 +384,8 @@ class OpenTelemetryPluginImpl
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey key);
 
   // Returns the OptionalLabelKey form of \a key if \a key is recognized and
-  // is public, absl::nullopt otherwise.
-  static absl::optional<
+  // is public, std::nullopt otherwise.
+  static std::optional<
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
   OptionalLabelStringToKey(absl::string_view key);
 
@@ -487,13 +487,14 @@ class OpenTelemetryPluginImpl
   OptionalLabelsBitSet per_call_optional_label_bits_;
   // Instruments for non-per-call metrics.
   struct Disabled {};
-  using Instrument = absl::variant<
-      Disabled, std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
-      std::unique_ptr<opentelemetry::metrics::Counter<double>>,
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
-      std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
-      std::unique_ptr<CallbackGaugeState<int64_t>>,
-      std::unique_ptr<CallbackGaugeState<double>>>;
+  using Instrument =
+      std::variant<Disabled,
+                   std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
+                   std::unique_ptr<opentelemetry::metrics::Counter<double>>,
+                   std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
+                   std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
+                   std::unique_ptr<CallbackGaugeState<int64_t>>,
+                   std::unique_ptr<CallbackGaugeState<double>>>;
   struct InstrumentData {
     Instrument instrument;
     OptionalLabelsBitSet optional_labels_bits;

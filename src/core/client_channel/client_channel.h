@@ -74,7 +74,7 @@ class ClientChannel : public Channel {
   grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
                         grpc_completion_queue* cq,
                         grpc_pollset_set* /*pollset_set_alternative*/,
-                        Slice path, absl::optional<Slice> authority,
+                        Slice path, std::optional<Slice> authority,
                         Timestamp deadline, bool registered_method) override;
 
   void StartCall(UnstartedCallHandler unstarted_handler) override;
@@ -139,7 +139,7 @@ class ClientChannel : public Channel {
 
   absl::Status CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-      const absl::optional<std::string>& health_check_service_name,
+      const std::optional<std::string>& health_check_service_name,
       Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const ChannelArgs& args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);

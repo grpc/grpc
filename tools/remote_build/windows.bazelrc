@@ -12,7 +12,7 @@ build --shell_executable=C:\\msys64\\usr\\bin\\bash.exe
 build --python_path="C:\\Program Files\\Python310\\python.exe"
 
 build --test_tag_filters=-no_windows
-build --build_tag_filters=-no_windows
+build --build_tag_filters=-no_windows,-grpc-fuzztest
 
 build --jobs=100
 

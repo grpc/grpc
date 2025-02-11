@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include <new>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -39,7 +40,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
@@ -454,7 +454,6 @@ static void convert_cronet_array_to_metadata(
 //
 static void on_failed(bidirectional_stream* stream, int net_error) {
   LOG(ERROR) << "on_failed(" << stream << ", " << net_error << ")";
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
@@ -482,7 +481,6 @@ static void on_failed(bidirectional_stream* stream, int net_error) {
 //
 static void on_canceled(bidirectional_stream* stream) {
   GRPC_TRACE_VLOG(cronet, 2) << "on_canceled(" << stream << ")";
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
@@ -509,7 +507,6 @@ static void on_canceled(bidirectional_stream* stream) {
 //
 static void on_succeeded(bidirectional_stream* stream) {
   GRPC_TRACE_VLOG(cronet, 2) << "on_succeeded(" << stream << ")";
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
@@ -528,7 +525,6 @@ static void on_succeeded(bidirectional_stream* stream) {
 //
 static void on_stream_ready(bidirectional_stream* stream) {
   GRPC_TRACE_VLOG(cronet, 2) << "W: on_stream_ready(" << stream << ")";
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   grpc_cronet_transport* t = s->curr_ct;
@@ -560,7 +556,6 @@ static void on_response_headers_received(
     bidirectional_stream* stream,
     const bidirectional_stream_header_array* headers,
     const char* negotiated_protocol) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_VLOG(cronet, 2)
       << "R: on_response_headers_received(" << stream << ", " << headers << ", "
@@ -598,7 +593,6 @@ static void on_response_headers_received(
 // Cronet callback
 //
 static void on_write_completed(bidirectional_stream* stream, const char* data) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   GRPC_TRACE_VLOG(cronet, 2)
@@ -618,7 +612,6 @@ static void on_write_completed(bidirectional_stream* stream, const char* data) {
 //
 static void on_read_completed(bidirectional_stream* stream, char* data,
                               int count) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   GRPC_TRACE_VLOG(cronet, 2) << "R: on_read_completed(" << stream << ", "
@@ -659,7 +652,6 @@ static void on_read_completed(bidirectional_stream* stream, char* data,
 static void on_response_trailers_received(
     bidirectional_stream* stream,
     const bidirectional_stream_header_array* trailers) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_VLOG(cronet, 2) << "R: on_response_trailers_received(" << stream
                              << ", " << trailers << ")";

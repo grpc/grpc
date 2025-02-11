@@ -94,10 +94,10 @@ class ClientLoggingFilter final
     void OnClientToServerMessage(const Message& message);
     void OnClientToServerHalfClose();
     void OnServerToClientMessage(const Message& message);
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnFinalize;
 
    private:
-    absl::optional<logging_filter_detail::CallData> call_data_;
+    std::optional<logging_filter_detail::CallData> call_data_;
   };
 
  private:
@@ -122,10 +122,10 @@ class ServerLoggingFilter final
     void OnClientToServerMessage(const Message& message);
     void OnClientToServerHalfClose();
     void OnServerToClientMessage(const Message& message);
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnFinalize;
 
    private:
-    absl::optional<logging_filter_detail::CallData> call_data_;
+    std::optional<logging_filter_detail::CallData> call_data_;
   };
 };
 

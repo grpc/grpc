@@ -19,10 +19,10 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_THROTTLE_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_THROTTLE_H
 
-#include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
+#include <atomic>
 #include <map>
 #include <string>
 
@@ -58,11 +58,11 @@ class ServerRetryThrottleData final
 
   const uintptr_t max_milli_tokens_;
   const uintptr_t milli_token_ratio_;
-  gpr_atm milli_tokens_;
+  std::atomic<intptr_t> milli_tokens_;
   // A pointer to the replacement for this ServerRetryThrottleData entry.
   // If non-nullptr, then this entry is stale and must not be used.
   // We hold a reference to the replacement.
-  gpr_atm replacement_ = 0;
+  std::atomic<ServerRetryThrottleData*> replacement_{nullptr};
 };
 
 /// Global map of server name to retry throttle data.

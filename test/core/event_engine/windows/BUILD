@@ -23,9 +23,7 @@ grpc_cc_test(
     external_deps = [
         "absl/log:log",
         "gtest",
-        "absl/types:variant",
     ],
-    language = "C++",
     tags = [
         "no_linux",
         "no_mac",
@@ -48,7 +46,6 @@ grpc_cc_test(
     timeout = "short",
     srcs = ["win_socket_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "no_linux",
         "no_mac",
@@ -70,7 +67,6 @@ grpc_cc_test(
     timeout = "short",
     srcs = ["windows_endpoint_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "no_linux",
         "no_mac",
@@ -96,7 +92,6 @@ grpc_cc_library(
         "absl/log:log",
         "absl/status",
     ],
-    language = "C++",
     tags = [
         "no_linux",
         "no_mac",

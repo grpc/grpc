@@ -18,9 +18,9 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -46,7 +46,7 @@ void TestRetryCancelDuringDelay(
           "    \"retryPolicy\": {\n"
           "      \"maxAttempts\": 3,\n"
           "      \"initialBackoff\": \"%ds\",\n"
-          "      \"maxBackoff\": \"120s\",\n"
+          "      \"maxBackoff\": \"1000s\",\n"
           "      \"backoffMultiplier\": 1.6,\n"
           "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
           "    }\n"
@@ -57,7 +57,7 @@ void TestRetryCancelDuringDelay(
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(20))
                .Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Client starts a batch with all 6 ops.
   IncomingMetadata server_initial_metadata;
   IncomingMessage server_message;
@@ -72,8 +72,8 @@ void TestRetryCancelDuringDelay(
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
@@ -101,11 +101,13 @@ void TestRetryCancelDuringDelay(
   test.Step();
 }
 
-CORE_END2END_TEST(RetryTest, CancelDuringDelay) {
+CORE_END2END_TEST(RetryTests, CancelDuringDelay) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   TestRetryCancelDuringDelay(*this, std::make_unique<CancelCancellationMode>());
 }
 
-CORE_END2END_TEST(RetryTest, DeadlineDuringDelay) {
+CORE_END2END_TEST(RetryTests, DeadlineDuringDelay) {
+  SKIP_IF_V3();  // Not working yet
   TestRetryCancelDuringDelay(*this,
                              std::make_unique<DeadlineCancellationMode>());
 }

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_TRACING_V3_CUSTOM_TAG_PROTO_UPBDEFS_H_
-#define ENVOY_TYPE_TRACING_V3_CUSTOM_TAG_PROTO_UPBDEFS_H_
+#ifndef ENVOY_TYPE_TRACING_V3_CUSTOM_TAG_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_TYPE_TRACING_V3_CUSTOM_TAG_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -50,4 +50,4 @@ UPB_INLINE const upb_MessageDef *envoy_type_tracing_v3_CustomTag_Metadata_getmsg
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_TRACING_V3_CUSTOM_TAG_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_TYPE_TRACING_V3_CUSTOM_TAG_PROTO_UPB_H__UPBDEFS_H_ */

@@ -42,6 +42,7 @@
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
@@ -49,7 +50,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -157,7 +157,6 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     timer_handle_ = event_engine_->RunAfter(
         args_.deadline - Timestamp::Now(),
         [self = RefAsSubclass<Chttp2Connector>()]() mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnTimeout();
           // Ensure the Chttp2Connector is deleted under an ExecCtx.
@@ -256,7 +255,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
           "security connector already present in channel args.");
     }
     // Find the authority to use in the security connector.
-    absl::optional<std::string> authority =
+    std::optional<std::string> authority =
         args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
     if (!authority.has_value()) {
       return absl::InternalError("authority not present in channel args");

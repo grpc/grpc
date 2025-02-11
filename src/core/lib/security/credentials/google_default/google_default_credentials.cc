@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/log/check.h"
@@ -37,7 +38,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -106,7 +106,7 @@ struct metadata_server_detector {
 
 namespace {
 
-bool IsXdsNonCfeCluster(absl::optional<absl::string_view> xds_cluster) {
+bool IsXdsNonCfeCluster(std::optional<absl::string_view> xds_cluster) {
   if (!xds_cluster.has_value()) return false;
   if (absl::StartsWith(*xds_cluster, "google_cfe_")) return false;
   if (!absl::StartsWith(*xds_cluster, "xdstp:")) return true;

@@ -27,7 +27,7 @@
 #include "absl/base/call_once.h"
 #include "absl/strings/str_cat.h"
 #include "opencensus/stats/stats.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/test_config.h"

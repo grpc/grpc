@@ -50,12 +50,12 @@ class ServerLoadReportingFilter
    public:
     void OnClientInitialMetadata(ClientMetadata& md,
                                  ServerLoadReportingFilter* filter);
-    static const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerInitialMetadata;
     void OnServerTrailingMetadata(ServerMetadata& md,
                                   ServerLoadReportingFilter* filter);
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
     void OnFinalize(const grpc_call_final_info* final_info,
                     ServerLoadReportingFilter* filter);
 

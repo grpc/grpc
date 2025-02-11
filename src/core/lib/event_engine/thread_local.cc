@@ -15,8 +15,7 @@
 
 #include <grpc/support/port_platform.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 thread_local bool g_thread_local{false};
@@ -25,5 +24,4 @@ thread_local bool g_thread_local{false};
 void ThreadLocal::SetIsEventEngineThread(bool is) { g_thread_local = is; }
 bool ThreadLocal::IsEventEngineThread() { return g_thread_local; }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

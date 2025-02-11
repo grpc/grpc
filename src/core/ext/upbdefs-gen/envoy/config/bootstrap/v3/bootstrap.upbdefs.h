@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPBDEFS_H_
-#define ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPBDEFS_H_
+#ifndef ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -140,4 +140,4 @@ UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_MemoryAllocatorManage
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_H__UPBDEFS_H_ */

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_MINITABLE_H_
-#define ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -31,4 +31,4 @@ extern const upb_MiniTableFile envoy_service_load_stats_v3_lrs_proto_upb_file_la
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_H__UPB_MINITABLE_H_ */

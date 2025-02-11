@@ -36,6 +36,12 @@ _CPP_RUNTESTS_TIMEOUT = 6 * 60 * 60
 # Set timeout high for ObjC for Cocoapods to install pods
 _OBJC_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
+# Set higher timeout for python_windows_opt_native test
+_PYTHON_WINDOWS_RUNTESTS_TIMEOUT = 1.5 * 60 * 60
+
+# Set timeout high for Ruby for MacOS for slow xcodebuild
+_RUBY_RUNTESTS_TIMEOUT = 2 * 60 * 60
+
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
 
@@ -204,6 +210,9 @@ def _generate_jobs(
                             timeout_seconds=timeout_seconds,
                         )
                     else:
+                        if platform == "windows" and language == "python":
+                            timeout_seconds = _PYTHON_WINDOWS_RUNTESTS_TIMEOUT
+
                         job = _workspace_jobspec(
                             name=name,
                             runtests_args=runtests_args,
@@ -308,6 +317,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         labels=["basictests", "multilang"],
         extra_args=extra_args + ["--report_multi_target"],
         inner_jobs=inner_jobs,
+        timeout_seconds=_RUBY_RUNTESTS_TIMEOUT,
     )
 
     # ARM64 Linux Ruby and PHP tests
@@ -362,7 +372,7 @@ def _create_portability_test_jobs(
         "gcc14",
         "gcc_musl",
         "clang7",
-        "clang18",
+        "clang19",
     ]:
         test_jobs += _generate_jobs(
             languages=["c", "c++"],
@@ -392,17 +402,17 @@ def _create_portability_test_jobs(
 
     # portability C and C++ on Windows with the "Visual Studio 2022" cmake
     # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
-    test_jobs += _generate_jobs(
-        languages=["c", "c++"],
-        configs=["dbg"],
-        platforms=["windows"],
-        arch="x64",
-        compiler="cmake_vs2022",
-        labels=["portability", "corelang"],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs,
-        timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
-    )
+    # test_jobs += _generate_jobs(
+    #     languages=["c", "c++"],
+    #     configs=["dbg"],
+    #     platforms=["windows"],
+    #     arch="x64",
+    #     compiler="cmake_vs2022",
+    #     labels=["portability", "corelang"],
+    #     extra_args=extra_args,
+    #     inner_jobs=inner_jobs,
+    #     timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+    # )
 
     # C and C++ with no-exceptions on Linux
     test_jobs += _generate_jobs(

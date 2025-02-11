@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <optional>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -29,7 +30,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -76,7 +76,7 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
 // empty string if not found.
 std::string GetProjectIdFromGcpEnvVar() {
   // First check GCP_PROJECT
-  absl::optional<std::string> project_id = grpc_core::GetEnv("GCP_PROJECT");
+  std::optional<std::string> project_id = grpc_core::GetEnv("GCP_PROJECT");
   if (project_id.has_value() && !project_id->empty()) {
     return project_id.value();
   }

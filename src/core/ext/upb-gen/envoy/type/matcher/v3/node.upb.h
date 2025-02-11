@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_MATCHER_V3_NODE_PROTO_UPB_H_
-#define ENVOY_TYPE_MATCHER_V3_NODE_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_MATCHER_V3_NODE_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_MATCHER_V3_NODE_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -172,4 +172,4 @@ UPB_INLINE struct envoy_type_matcher_v3_StructMatcher* envoy_type_matcher_v3_Nod
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_MATCHER_V3_NODE_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_MATCHER_V3_NODE_PROTO_UPB_H__UPB_H_ */

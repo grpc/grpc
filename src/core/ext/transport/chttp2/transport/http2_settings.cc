@@ -132,12 +132,12 @@ grpc_http2_error_code Http2Settings::Apply(uint16_t key, uint32_t value) {
   return GRPC_HTTP2_NO_ERROR;
 }
 
-absl::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
+std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
   switch (update_state_) {
     case UpdateState::kSending:
-      return absl::nullopt;
+      return std::nullopt;
     case UpdateState::kIdle:
-      if (local_ == sent_) return absl::nullopt;
+      if (local_ == sent_) return std::nullopt;
       break;
     case UpdateState::kFirst:
       break;

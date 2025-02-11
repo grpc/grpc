@@ -22,16 +22,16 @@
 
 #include <memory>
 #include <string>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "src/core/client_channel/lb_metadata.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -226,7 +226,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       // Do pick.
       PickResult result = delegate_picker_->Pick(args);
       // Intercept trailing metadata.
-      auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+      auto* complete_pick = std::get_if<PickResult::Complete>(&result.result);
       if (complete_pick != nullptr) {
         complete_pick->subchannel_call_tracker =
             std::make_unique<SubchannelCallTracker>(cb_);
@@ -757,7 +757,7 @@ class AuthorityOverrideLoadBalancingPolicy
     PickResult Pick(PickArgs args) override {
       auto pick_result = picker_->Pick(args);
       auto* complete_pick =
-          absl::get_if<PickResult::Complete>(&pick_result.result);
+          std::get_if<PickResult::Complete>(&pick_result.result);
       if (complete_pick != nullptr) {
         complete_pick->authority_override = authority_override_.Ref();
       }

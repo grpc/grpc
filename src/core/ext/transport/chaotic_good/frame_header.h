@@ -34,28 +34,20 @@ enum class FrameType : uint8_t {
   kServerInitialMetadata = 0x91,
   kServerTrailingMetadata = 0x92,
   kMessage = 0xa0,
+  kBeginMessage = 0xa1,
+  kMessageChunk = 0xa2,
   kCancel = 0xff,
 };
 
+std::string FrameTypeString(FrameType type);
+
 inline std::ostream& operator<<(std::ostream& out, FrameType type) {
-  switch (type) {
-    case FrameType::kSettings:
-      return out << "Settings";
-    case FrameType::kClientInitialMetadata:
-      return out << "ClientInitialMetadata";
-    case FrameType::kClientEndOfStream:
-      return out << "ClientEndOfStream";
-    case FrameType::kMessage:
-      return out << "Message";
-    case FrameType::kServerInitialMetadata:
-      return out << "ServerInitialMetadata";
-    case FrameType::kServerTrailingMetadata:
-      return out << "ServerTrailingMetadata";
-    case FrameType::kCancel:
-      return out << "Cancel";
-    default:
-      return out << "Unknown[" << static_cast<int>(type) << "]";
-  }
+  return out << FrameTypeString(type);
+}
+
+template <typename Sink>
+void AbslStringify(Sink& sink, FrameType type) {
+  sink.Append(FrameTypeString(type));
 }
 
 struct FrameHeader {

@@ -33,24 +33,20 @@ TEST(PromiseMutexTest, Basic) {
   bool done = false;
   MakeActivity(
       [&]() {
-        return Seq(Join(Seq(mutex.Acquire(),
-                            [](PromiseMutex<int>::Lock l) {
-                              EXPECT_EQ(*l, 1);
-                              *l = 2;
-                              return Empty{};
-                            }),
-                        Seq(mutex.Acquire(),
-                            [](PromiseMutex<int>::Lock l) {
-                              EXPECT_EQ(*l, 2);
-                              *l = 3;
-                              return Empty{};
-                            }),
-                        Seq(mutex.Acquire(),
-                            [](PromiseMutex<int>::Lock l) {
-                              EXPECT_EQ(*l, 3);
-                              return Empty{};
-                            })),
-                   []() { return absl::OkStatus(); });
+        return Seq(
+            Join(Seq(mutex.Acquire(),
+                     [](PromiseMutex<int>::Lock l) {
+                       EXPECT_EQ(*l, 1);
+                       *l = 2;
+                     }),
+                 Seq(mutex.Acquire(),
+                     [](PromiseMutex<int>::Lock l) {
+                       EXPECT_EQ(*l, 2);
+                       *l = 3;
+                     }),
+                 Seq(mutex.Acquire(),
+                     [](PromiseMutex<int>::Lock l) { EXPECT_EQ(*l, 3); })),
+            []() { return absl::OkStatus(); });
       },
       InlineWakeupScheduler(),
       [&done](absl::Status status) {

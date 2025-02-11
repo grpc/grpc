@@ -20,7 +20,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_cluster_v3_CircuitBreakers_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_config_cluster_v3_CircuitBreakers__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init_ptr},
 };
@@ -31,7 +31,7 @@ static const upb_MiniTableField envoy_config_cluster_v3_CircuitBreakers__fields[
 };
 
 const upb_MiniTable envoy__config__cluster__v3__CircuitBreakers_msg_init = {
-  &envoy_config_cluster_v3_CircuitBreakers_submsgs[0],
+  &envoy_config_cluster_v3_CircuitBreakers__submsgs[0],
   &envoy_config_cluster_v3_CircuitBreakers__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -46,7 +46,7 @@ const upb_MiniTable envoy__config__cluster__v3__CircuitBreakers_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__cluster__v3__CircuitBreakers_msg_init_ptr = &envoy__config__cluster__v3__CircuitBreakers_msg_init;
-static const upb_MiniTableSubInternal envoy_config_cluster_v3_CircuitBreakers_Thresholds_submsgs[6] = {
+static const upb_MiniTableSubInternal envoy_config_cluster_v3_CircuitBreakers_Thresholds__submsgs[6] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
@@ -67,7 +67,7 @@ static const upb_MiniTableField envoy_config_cluster_v3_CircuitBreakers_Threshol
 };
 
 const upb_MiniTable envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init = {
-  &envoy_config_cluster_v3_CircuitBreakers_Thresholds_submsgs[0],
+  &envoy_config_cluster_v3_CircuitBreakers_Thresholds__submsgs[0],
   &envoy_config_cluster_v3_CircuitBreakers_Thresholds__fields[0],
   UPB_SIZE(48, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -86,7 +86,7 @@ const upb_MiniTable envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_
 };
 
 const upb_MiniTable* envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init_ptr = &envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init;
-static const upb_MiniTableSubInternal envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
 };
@@ -97,7 +97,7 @@ static const upb_MiniTableField envoy_config_cluster_v3_CircuitBreakers_Threshol
 };
 
 const upb_MiniTable envoy__config__cluster__v3__CircuitBreakers__Thresholds__RetryBudget_msg_init = {
-  &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_submsgs[0],
+  &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget__submsgs[0],
   &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED

@@ -118,8 +118,8 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     ~TlsCertificatesTestWatcher() override { state_->watcher = nullptr; }
 
     void OnCertificatesChanged(
-        absl::optional<absl::string_view> root_certs,
-        absl::optional<PemKeyCertPairList> key_cert_pairs) override {
+        std::optional<absl::string_view> root_certs,
+        std::optional<PemKeyCertPairList> key_cert_pairs) override {
       MutexLock lock(&state_->mu);
       std::string updated_root;
       if (root_certs.has_value()) {
@@ -169,8 +169,8 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
 
   WatcherState* MakeWatcher(
       RefCountedPtr<grpc_tls_certificate_distributor> distributor,
-      absl::optional<std::string> root_cert_name,
-      absl::optional<std::string> identity_cert_name) {
+      std::optional<std::string> root_cert_name,
+      std::optional<std::string> identity_cert_name) {
     MutexLock lock(&mu_);
     distributor_ = distributor;
     watchers_.emplace_back();
@@ -221,13 +221,13 @@ TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
-      MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
+      MakeWatcher(provider.distributor(), kCertName, std::nullopt);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
-      MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
+      MakeWatcher(provider.distributor(), std::nullopt, kCertName);
   EXPECT_THAT(
       watcher_state_3->GetCredentialQueue(),
       ::testing::ElementsAre(CredentialInfo(
@@ -248,7 +248,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
       malformed_cert_,
       MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -257,7 +258,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
       root_cert_,
       MakeCertKeyPairs(private_key_.c_str(), malformed_cert_.c_str()));
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse certificate chain as PEM: Invalid PEM."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -266,7 +268,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
       root_cert_,
       MakeCertKeyPairs(malformed_key_.c_str(), cert_chain_.c_str()));
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::NotFoundError("No private key found."));
+            absl::NotFoundError(
+                "Failed to parse private key as PEM: No private key found."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -283,13 +286,13 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
-      MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
+      MakeWatcher(provider.distributor(), kCertName, std::nullopt);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
-      MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
+      MakeWatcher(provider.distributor(), std::nullopt, kCertName);
   EXPECT_THAT(
       watcher_state_3->GetCredentialQueue(),
       ::testing::ElementsAre(CredentialInfo(
@@ -309,7 +312,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2, SERVER_CERT_PATH_2,
                                           MALFORMED_CERT_PATH, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -317,7 +321,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
   FileWatcherCertificateProvider provider(
       SERVER_KEY_PATH_2, MALFORMED_CERT_PATH, CA_CERT_PATH_2, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse certificate chain as PEM: Invalid PEM."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -325,7 +330,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
   FileWatcherCertificateProvider provider(
       MALFORMED_KEY_PATH, SERVER_CERT_PATH_2, CA_CERT_PATH_2, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::NotFoundError("No private key found."));
+            absl::NotFoundError(
+                "Failed to parse private key as PEM: No private key found."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -341,14 +347,14 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
-      MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
+      MakeWatcher(provider.distributor(), kCertName, std::nullopt);
   EXPECT_THAT(watcher_state_2->GetErrorQueue(),
               ::testing::ElementsAre(ErrorInfo(kRootError, "")));
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
-      MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
+      MakeWatcher(provider.distributor(), std::nullopt, kCertName);
   EXPECT_THAT(watcher_state_3->GetErrorQueue(),
               ::testing::ElementsAre(ErrorInfo("", kIdentityError)));
   EXPECT_THAT(watcher_state_3->GetCredentialQueue(), ::testing::ElementsAre());

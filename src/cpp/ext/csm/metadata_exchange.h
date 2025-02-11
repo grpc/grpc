@@ -93,7 +93,7 @@ class MeshLabelsIterable : public LabelsIterable {
           local_labels,
       grpc_core::Slice remote_metadata);
 
-  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
+  std::optional<std::pair<absl::string_view, absl::string_view>> Next()
       override;
 
   size_t Size() const override;

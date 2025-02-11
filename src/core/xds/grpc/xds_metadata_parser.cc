@@ -17,10 +17,10 @@
 
 #include <memory>
 #include <utility>
+#include <variant>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/address.upbdefs.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
@@ -53,7 +53,7 @@ std::unique_ptr<XdsMetadataValue> ParseGcpAuthnAudience(
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) {
   absl::string_view* serialized_proto =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_proto == nullptr) {
     errors->AddError("could not parse audience metadata");
     return nullptr;
@@ -64,7 +64,7 @@ std::unique_ptr<XdsMetadataValue> ParseGcpAuthnAudience(
     errors->AddError("could not parse audience metadata");
     return nullptr;
   }
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_extensions_filters_http_gcp_authn_v3_Audience_getmsgdef(
             context.symtab);
@@ -88,7 +88,7 @@ std::unique_ptr<XdsMetadataValue> ParseAddress(
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) {
   absl::string_view* serialized_proto =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_proto == nullptr) {
     errors->AddError("could not parse address metadata");
     return nullptr;
@@ -99,7 +99,7 @@ std::unique_ptr<XdsMetadataValue> ParseAddress(
     errors->AddError("could not parse address metadata");
     return nullptr;
   }
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_core_v3_Address_getmsgdef(context.symtab);
     char buf[10240];

@@ -57,4 +57,8 @@ address_sorting_cc_library(
     includes = [
         "include",
     ],
+    linkopts = select({
+        "@platforms//os:windows": ["-defaultlib:ws2_32.lib"],
+        "//conditions:default": [],
+    }),
 )

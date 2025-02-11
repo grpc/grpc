@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H_
-#define XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H_
+#ifndef XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -117,4 +117,4 @@ UPB_INLINE struct google_protobuf_Struct* xds_type_v3_TypedStruct_mutable_value(
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H__UPB_H_ */

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H_
-#define ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -325,4 +325,4 @@ UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_se
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H__UPB_H_ */

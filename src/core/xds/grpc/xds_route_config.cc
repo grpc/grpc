@@ -16,15 +16,15 @@
 
 #include "src/core/xds/grpc/xds_route_config.h"
 
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "re2/re2.h"
 #include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
@@ -155,9 +155,7 @@ XdsRouteConfigResource::Route::RouteAction::ClusterWeight::ToString() const {
   contents.push_back(absl::StrCat("weight=", weight));
   if (!typed_per_filter_config.empty()) {
     std::vector<std::string> parts;
-    for (const auto& p : typed_per_filter_config) {
-      const std::string& key = p.first;
-      const auto& config = p.second;
+    for (const auto& [key, config] : typed_per_filter_config) {
       parts.push_back(absl::StrCat(key, "=", config.ToString()));
     }
     contents.push_back(absl::StrCat("typed_per_filter_config={",
@@ -199,6 +197,7 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
   }
+  if (auto_host_rewrite) contents.push_back("auto_host_rewrite=true");
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
@@ -210,10 +209,10 @@ std::string XdsRouteConfigResource::Route::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(matchers.ToString());
   auto* route_action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&action);
   if (route_action != nullptr) {
     contents.push_back(absl::StrCat("route=", route_action->ToString()));
-  } else if (absl::holds_alternative<
+  } else if (std::holds_alternative<
                  XdsRouteConfigResource::Route::NonForwardingAction>(action)) {
     contents.push_back("non_forwarding_action={}");
   } else {
@@ -221,9 +220,7 @@ std::string XdsRouteConfigResource::Route::ToString() const {
   }
   if (!typed_per_filter_config.empty()) {
     contents.push_back("typed_per_filter_config={");
-    for (const auto& p : typed_per_filter_config) {
-      const std::string& name = p.first;
-      const auto& config = p.second;
+    for (const auto& [name, config] : typed_per_filter_config) {
       contents.push_back(absl::StrCat("  ", name, "=", config.ToString()));
     }
     contents.push_back("}");
@@ -250,9 +247,7 @@ std::string XdsRouteConfigResource::VirtualHost::ToString() const {
   }
   parts.push_back("  ]\n");
   parts.push_back("  typed_per_filter_config={\n");
-  for (const auto& p : typed_per_filter_config) {
-    const std::string& name = p.first;
-    const auto& config = p.second;
+  for (const auto& [name, config] : typed_per_filter_config) {
     parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
   }
   parts.push_back("  }\n");
@@ -271,8 +266,8 @@ std::string XdsRouteConfigResource::ToString() const {
     parts.push_back(vhost.ToString());
   }
   parts.push_back("cluster_specifier_plugins={\n");
-  for (const auto& it : cluster_specifier_plugin_map) {
-    parts.push_back(absl::StrFormat("%s={%s}\n", it.first, it.second));
+  for (const auto& [name, plugin] : cluster_specifier_plugin_map) {
+    parts.push_back(absl::StrFormat("%s={%s}\n", name, plugin));
   }
   parts.push_back("}");
   return absl::StrJoin(parts, "");

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_CORE_V3_CIDR_PROTO_UPB_H_
-#define XDS_CORE_V3_CIDR_PROTO_UPB_H_
+#ifndef XDS_CORE_V3_CIDR_PROTO_UPB_H__UPB_H_
+#define XDS_CORE_V3_CIDR_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -119,4 +119,4 @@ UPB_INLINE struct google_protobuf_UInt32Value* xds_core_v3_CidrRange_mutable_pre
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_CORE_V3_CIDR_PROTO_UPB_H_ */
+#endif  /* XDS_CORE_V3_CIDR_PROTO_UPB_H__UPB_H_ */

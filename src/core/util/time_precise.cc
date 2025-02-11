@@ -28,7 +28,6 @@
 #include <algorithm>
 
 #include "absl/log/log.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/time_precise.h"
 
 #ifndef GPR_CYCLE_COUNTER_CUSTOM

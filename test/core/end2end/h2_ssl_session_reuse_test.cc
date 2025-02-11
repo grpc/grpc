@@ -28,12 +28,12 @@
 #include <gtest/gtest.h>
 #include <string.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/log/check.h"
-#include "absl/types/optional.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/host_port.h"

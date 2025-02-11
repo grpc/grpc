@@ -1,5 +1,3 @@
-//
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
 #ifndef GRPC_SRC_CORE_UTIL_USEFUL_H
 #define GRPC_SRC_CORE_UTIL_USEFUL_H
@@ -22,11 +18,12 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstddef>
+#include <limits>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/numeric/bits.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 
 /// useful utilities that don't belong anywhere else
 
@@ -69,12 +66,12 @@ int QsortCompare(const T& a, const T& b) {
 }
 
 template <typename... X>
-int QsortCompare(const absl::variant<X...>& a, const absl::variant<X...>& b) {
+int QsortCompare(const std::variant<X...>& a, const std::variant<X...>& b) {
   const int index = QsortCompare(a.index(), b.index());
   if (index != 0) return index;
-  return absl::visit(
+  return std::visit(
       [&](const auto& x) {
-        return QsortCompare(x, absl::get<absl::remove_cvref_t<decltype(x)>>(b));
+        return QsortCompare(x, std::get<absl::remove_cvref_t<decltype(x)>>(b));
       },
       a);
 }
@@ -103,15 +100,16 @@ constexpr size_t HashPointer(T* p, size_t range) {
 }
 
 // Compute a+b.
-// If the result is greater than INT64_MAX, return INT64_MAX.
-// If the result is less than INT64_MIN, return INT64_MIN.
-inline int64_t SaturatingAdd(int64_t a, int64_t b) {
+// If the result is greater than MAX, return MAX.
+// If the result is less than MIN, return MIN.
+template <typename T>
+inline T SaturatingAdd(T a, T b) {
   if (a > 0) {
-    if (b > INT64_MAX - a) {
-      return INT64_MAX;
+    if (b > std::numeric_limits<T>::max() - a) {
+      return std::numeric_limits<T>::max();
     }
-  } else if (b < INT64_MIN - a) {
-    return INT64_MIN;
+  } else if (b < std::numeric_limits<T>::min() - a) {
+    return std::numeric_limits<T>::min();
   }
   return a + b;
 }

@@ -17,9 +17,9 @@
 #include <grpc/support/log.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/promise/activity.h"
@@ -189,6 +189,18 @@ TEST(MpscTest, ImmediateSendWorks) {
   EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(7)));
   auto receive2 = receiver.Next();
   EXPECT_THAT(receive2(), IsPending());
+  activity.Deactivate();
+}
+
+TEST(MpscTest, CloseFailsNext) {
+  StrictMock<MockActivity> activity;
+  MpscReceiver<Payload> receiver(1);
+  activity.Activate();
+  auto next = receiver.Next();
+  EXPECT_THAT(next(), IsPending());
+  EXPECT_CALL(activity, WakeupRequested());
+  receiver.MarkClosed();
+  EXPECT_THAT(next(), IsReady(Failure{}));
   activity.Deactivate();
 }
 

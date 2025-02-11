@@ -144,7 +144,7 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token) {
 
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
-    absl::string_view body, absl::optional<grpc_core::Slice>* token_value,
+    absl::string_view body, std::optional<grpc_core::Slice>* token_value,
     grpc_core::Duration* token_lifetime) {
   auto json = grpc_core::JsonParse(body);
   if (!json.ok()) {
@@ -187,9 +187,9 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const grpc_http_response* response,
-    absl::optional<grpc_core::Slice>* token_value,
+    std::optional<grpc_core::Slice>* token_value,
     grpc_core::Duration* token_lifetime) {
-  *token_value = absl::nullopt;
+  *token_value = std::nullopt;
   if (response == nullptr) {
     LOG(ERROR) << "Received NULL response.";
     return GRPC_CREDENTIALS_ERROR;
@@ -241,7 +241,7 @@ class Oauth2TokenFetcherCredentials::HttpFetchRequest final
       return;
     }
     // Parse oauth2 token.
-    absl::optional<Slice> access_token_value;
+    std::optional<Slice> access_token_value;
     Duration token_lifetime;
     grpc_credentials_status status =
         grpc_oauth2_token_fetcher_credentials_parse_server_response(

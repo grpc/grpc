@@ -81,7 +81,7 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
         initiator.FinishSends();
         return initiator.PullServerInitialMetadata();
       },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_THAT(LowerMetadata(***md),
@@ -103,7 +103,6 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
         EXPECT_TRUE(md.ok());
         EXPECT_THAT(LowerMetadata(**md),
                     UnorderedElementsAreArray(server_trailing_metadata));
-        return Empty{};
       });
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -137,7 +136,6 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         FillMetadata(server_trailing_metadata, *md);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
   WaitForAllPendingWork();
 }

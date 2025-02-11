@@ -201,12 +201,12 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordSendMessage(const grpc_core::SliceBuffer& /*send_message*/) {
+    RecordSendMessage(const grpc_core::Message& /*send_message*/) {
   ++sent_message_count_;
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordReceivedMessage(const grpc_core::SliceBuffer& /*recv_message*/) {
+    RecordReceivedMessage(const grpc_core::Message& /*recv_message*/) {
   ++recv_message_count_;
 }
 

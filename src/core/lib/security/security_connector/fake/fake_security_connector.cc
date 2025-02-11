@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -35,7 +36,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -200,9 +200,9 @@ class grpc_fake_channel_security_connector final
   }
 
   char* target_;
-  absl::optional<std::string> expected_targets_;
+  std::optional<std::string> expected_targets_;
   bool is_lb_channel_;
-  absl::optional<std::string> target_name_override_;
+  std::optional<std::string> target_name_override_;
 };
 
 void fake_check_peer(grpc_security_connector* /*sc*/, tsi_peer peer,

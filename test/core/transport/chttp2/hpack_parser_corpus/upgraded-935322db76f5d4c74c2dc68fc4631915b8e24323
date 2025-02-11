@@ -1,4 +1,0 @@
-frames {
-  max_metadata_length: 4096
-  parse: "\xa4\x0f\xa4\xdb\xf0\xa4\x31\x83"
-}

@@ -32,8 +32,7 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/util/crash.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 struct CFEventEngine::Closure final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
@@ -213,8 +212,7 @@ EventEngine::TaskHandle CFEventEngine::RunAfterInternal(
   return handle;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

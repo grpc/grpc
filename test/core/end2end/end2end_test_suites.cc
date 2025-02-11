@@ -29,6 +29,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <regex>
 #include <string>
 #include <utility>
@@ -41,7 +42,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
@@ -320,7 +320,7 @@ class HttpProxyFilter : public CoreTestFixture {
   grpc_channel* MakeClient(const ChannelArgs& args,
                            grpc_completion_queue*) override {
     // If testing for proxy auth, add credentials to proxy uri
-    absl::optional<std::string> proxy_auth_str =
+    std::optional<std::string> proxy_auth_str =
         args.GetOwnedString(GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
     std::string proxy_uri;
     if (!proxy_auth_str.has_value()) {
@@ -516,11 +516,14 @@ class FixtureWithTracing final : public CoreTestFixture {
   std::unique_ptr<CoreTestFixture> fixture_;
 };
 
-class ChaoticGoodFixture final : public CoreTestFixture {
+class ChaoticGoodFixture : public CoreTestFixture {
  public:
-  explicit ChaoticGoodFixture(std::string localaddr = JoinHostPort(
+  explicit ChaoticGoodFixture(int data_connections = 1, int chunk_size = 0,
+                              std::string localaddr = JoinHostPort(
                                   "localhost", grpc_pick_unused_port_or_die()))
-      : localaddr_(std::move(localaddr)) {}
+      : data_connections_(data_connections),
+        chunk_size_(chunk_size),
+        localaddr_(std::move(localaddr)) {}
 
  protected:
   const std::string& localaddr() const { return localaddr_; }
@@ -529,7 +532,13 @@ class ChaoticGoodFixture final : public CoreTestFixture {
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
-    auto* server = grpc_server_create(args.ToC().get(), nullptr);
+    auto* server = grpc_server_create(
+        args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, data_connections_)
+            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
+            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
+            .ToC()
+            .get(),
+        nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     CHECK(grpc_server_add_chaotic_good_port(server, localaddr_.c_str()));
     pre_server_start(server);
@@ -541,11 +550,32 @@ class ChaoticGoodFixture final : public CoreTestFixture {
                            grpc_completion_queue*) override {
     auto* client = grpc_chaotic_good_channel_create(
         localaddr_.c_str(),
-        args.Set(GRPC_ARG_ENABLE_RETRIES, false).ToC().get());
+        args.Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
+            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
+            .SetIfUnset(GRPC_ARG_ENABLE_RETRIES, IsRetryInCallv3Enabled())
+            .ToC()
+            .get());
     return client;
   }
 
+  int data_connections_;
+  int chunk_size_;
   std::string localaddr_;
+};
+
+class ChaoticGoodSingleConnectionFixture final : public ChaoticGoodFixture {
+ public:
+  ChaoticGoodSingleConnectionFixture() : ChaoticGoodFixture(1) {}
+};
+
+class ChaoticGoodManyConnectionFixture final : public ChaoticGoodFixture {
+ public:
+  ChaoticGoodManyConnectionFixture() : ChaoticGoodFixture(16) {}
+};
+
+class ChaoticGoodOneByteChunkFixture final : public ChaoticGoodFixture {
+ public:
+  ChaoticGoodOneByteChunkFixture() : ChaoticGoodFixture(1, 1) {}
 };
 
 #ifdef GRPC_POSIX_WAKEUP_FD
@@ -597,7 +627,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           "Chttp2FakeSecurityFullstack",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE |
-              FEATURE_MASK_IS_HTTP2,
+              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_GTEST,
           nullptr,
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<FakesecFixture>();
@@ -609,12 +639,14 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
              const ChannelArgs& /*server_args*/) {
             return std::make_unique<InsecureFixture>();
           }},
-      CoreTestConfiguration{
-          "Chttp2FullstackCompression",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<CompressionFixture>();
-          }},
+      CoreTestConfiguration{"Chttp2FullstackCompression",
+                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                FEATURE_MASK_IS_HTTP2 |
+                                FEATURE_MASK_DO_NOT_GTEST,
+                            nullptr,
+                            [](const ChannelArgs&, const ChannelArgs&) {
+                              return std::make_unique<CompressionFixture>();
+                            }},
 #ifdef GPR_LINUX
       CoreTestConfiguration{
           "Chttp2FullstackLocalAbstractUdsPercentEncoded",
@@ -704,21 +736,23 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
                 UDS);
           }},
 #endif
-      CoreTestConfiguration{"Chttp2FullstackNoRetry",
+      CoreTestConfiguration{
+          "Chttp2FullstackNoRetry",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY | FEATURE_MASK_DO_NOT_GTEST,
+          nullptr,
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<NoRetryFixture>();
+          }},
+      CoreTestConfiguration{"Chttp2FullstackWithCensus",
                             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                 FEATURE_MASK_IS_HTTP2 |
-                                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
+                                FEATURE_MASK_DO_NOT_GTEST,
                             nullptr,
-                            [](const ChannelArgs& /*client_args*/,
-                               const ChannelArgs& /*server_args*/) {
-                              return std::make_unique<NoRetryFixture>();
+                            [](const ChannelArgs&, const ChannelArgs&) {
+                              return std::make_unique<CensusFixture>();
                             }},
-      CoreTestConfiguration{
-          "Chttp2FullstackWithCensus",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<CensusFixture>();
-          }},
       CoreTestConfiguration{
           "Chttp2FullstackWithProxy",
           FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
@@ -750,7 +784,9 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           "Chttp2InsecureCredentials",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE |
-              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+              FEATURE_MASK_IS_HTTP2 |
+              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+              FEATURE_MASK_DO_NOT_GTEST,
           nullptr,
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<InsecureCredsFixture>();
@@ -760,7 +796,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           "Chttp2SimpleSslWithOauth2FullstackTls12",
           FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+              FEATURE_MASK_DO_NOT_GTEST,
           "foo.test.google.fr",
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<Oauth2Fixture>(grpc_tls_version::TLS1_2);
@@ -768,7 +805,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
       CoreTestConfiguration{
           "Chttp2SimpleSslWithOauth2FullstackTls13",
           FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+              FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+              FEATURE_MASK_DO_NOT_GTEST,
           "foo.test.google.fr",
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<Oauth2Fixture>(grpc_tls_version::TLS1_3);
@@ -777,7 +815,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           "Chttp2SimplSslFullstackTls12",
           FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+              FEATURE_MASK_DO_NOT_GTEST,
           "foo.test.google.fr",
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_2);
@@ -787,7 +826,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST |
-              FEATURE_MASK_IS_HTTP2,
+              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_GTEST,
           "foo.test.google.fr",
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_3);
@@ -823,7 +862,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           }},
       CoreTestConfiguration{
           "Inproc",
-          FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
+          FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_DO_NOT_GTEST,
           nullptr,
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<InprocFixture>(false);
@@ -832,7 +872,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
       CoreTestConfiguration{
           "InprocWithPromises",
           FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3,
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
           nullptr,
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<InprocFixture>(true);
@@ -842,7 +882,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           "Chttp2SslCredReloadTls12",
           FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+              FEATURE_MASK_DO_NOT_GTEST,
           "foo.test.google.fr",
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<SslCredReloadFixture>(TLS1_2);
@@ -852,7 +893,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           FEATURE_MASK_IS_SECURE | FEATURE_MASK_IS_HTTP2 |
               FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST,
+              FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST |
+              FEATURE_MASK_DO_NOT_GTEST,
           "foo.test.google.fr",
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<SslCredReloadFixture>(TLS1_3);
@@ -984,20 +1026,63 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
             return std::make_unique<InsecureFixtureWithPipeForWakeupFd>();
           }},
 #endif
+#ifndef GPR_WINDOWS
       CoreTestConfiguration{"ChaoticGoodFullStack",
                             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
                                 FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
                                 FEATURE_MASK_IS_CALL_V3,
                             nullptr,
                             [](const ChannelArgs& /*client_args*/,
                                const ChannelArgs& /*server_args*/) {
                               return std::make_unique<ChaoticGoodFixture>();
-                            }}};
+                            }},
+      CoreTestConfiguration{
+          "ChaoticGoodManyConnections",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3,
+          nullptr,
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodManyConnectionFixture>();
+          }},
+      CoreTestConfiguration{
+          "ChaoticGoodSingleConnection",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
+          nullptr,
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodSingleConnectionFixture>();
+          }},
+      CoreTestConfiguration{
+          "ChaoticGoodOneByteChunk",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_1BYTE_AT_A_TIME |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
+          nullptr,
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodOneByteChunkFixture>();
+          }},
+#endif  // GPR_WINDOWS
+  };
 }
 
 std::vector<CoreTestConfiguration> AllConfigs() {
   std::vector<CoreTestConfiguration> configs = DefaultConfigs();
+  for (const auto& config : configs) {
+    // Setting both no gtest && no fuzz == no config -- better to delete it
+    CHECK_NE(config.feature_mask &
+                 (FEATURE_MASK_DO_NOT_FUZZ | FEATURE_MASK_DO_NOT_GTEST),
+             static_cast<uint32_t>(FEATURE_MASK_DO_NOT_FUZZ |
+                                   FEATURE_MASK_DO_NOT_GTEST))
+        << "Config specified with no fuzz, no gtest: " << config.name;
+  }
   std::sort(configs.begin(), configs.end(),
             [](const CoreTestConfiguration& a, const CoreTestConfiguration& b) {
               return strcmp(a.name, b.name) < 0;
@@ -1005,13 +1090,28 @@ std::vector<CoreTestConfiguration> AllConfigs() {
   return configs;
 }
 
+static NoDestruct<std::vector<CoreTestConfiguration>> kConfigs(AllConfigs());
+
+const CoreTestConfiguration* CoreTestConfigurationNamed(
+    absl::string_view name) {
+  for (const CoreTestConfiguration& config : *kConfigs) {
+    if (config.name == name) return &config;
+  }
+  return nullptr;
+}
+
 // A ConfigQuery queries a database a set of test configurations
 // that match some criteria.
 class ConfigQuery {
  public:
-  ConfigQuery() {
+  explicit ConfigQuery(bool fuzzing) {
     if (GetEnv("GRPC_CI_EXPERIMENTS").has_value()) {
       exclude_features_ |= FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS;
+    }
+    if (fuzzing) {
+      exclude_features_ |= FEATURE_MASK_DO_NOT_FUZZ;
+    } else {
+      exclude_features_ |= FEATURE_MASK_DO_NOT_GTEST;
     }
   }
   ConfigQuery(const ConfigQuery&) = delete;
@@ -1041,8 +1141,6 @@ class ConfigQuery {
   }
 
   auto Run() const {
-    static NoDestruct<std::vector<CoreTestConfiguration>> kConfigs(
-        AllConfigs());
     std::vector<const CoreTestConfiguration*> out;
     for (const CoreTestConfiguration& config : *kConfigs) {
       if ((config.feature_mask & enforce_features_) == enforce_features_ &&
@@ -1075,75 +1173,79 @@ class ConfigQuery {
   std::vector<std::regex> excluded_names_;
 };
 
-CORE_END2END_TEST_SUITE(CoreEnd2endTest, ConfigQuery().Run());
+CORE_END2END_TEST_SUITE(CoreEnd2endTests, ConfigQuery(fuzzing).Run());
 
 CORE_END2END_TEST_SUITE(
-    SecureEnd2endTest,
-    ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run());
+    SecureEnd2endTests,
+    ConfigQuery(fuzzing).EnforceFeatures(FEATURE_MASK_IS_SECURE).Run());
 
-CORE_END2END_TEST_SUITE(CoreLargeSendTest,
-                        ConfigQuery()
+CORE_END2END_TEST_SUITE(CoreLargeSendTests,
+                        ConfigQuery(fuzzing)
                             .ExcludeFeatures(FEATURE_MASK_1BYTE_AT_A_TIME |
                                              FEATURE_MASK_ENABLES_TRACES)
                             .Run());
 
 CORE_END2END_TEST_SUITE(
-    CoreDeadlineTest,
-    ConfigQuery().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run());
+    CoreDeadlineTests,
+    ConfigQuery(fuzzing).ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run());
 
 CORE_END2END_TEST_SUITE(
-    CoreDeadlineSingleHopTest,
-    ConfigQuery()
+    CoreDeadlineSingleHopTests,
+    ConfigQuery(fuzzing)
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                          FEATURE_MASK_IS_MINSTACK)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    CoreClientChannelTest,
-    ConfigQuery().EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL).Run());
+    CoreClientChannelTests,
+    ConfigQuery(fuzzing)
+        .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+        .Run());
 
 CORE_END2END_TEST_SUITE(
-    Http2SingleHopTest,
-    ConfigQuery()
+    Http2SingleHopTests,
+    ConfigQuery(fuzzing)
         .EnforceFeatures(FEATURE_MASK_IS_HTTP2)
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                          FEATURE_MASK_ENABLES_TRACES)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    Http2FullstackSingleHopTest,
-    ConfigQuery()
+    Http2FullstackSingleHopTests,
+    ConfigQuery(fuzzing)
         .EnforceFeatures(FEATURE_MASK_IS_HTTP2)
         .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    RetryTest, ConfigQuery()
-                   .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
-                   .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)
-                   .Run());
+    RetryTests, ConfigQuery(fuzzing)
+                    .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+                    .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)
+                    .Run());
 
 CORE_END2END_TEST_SUITE(
-    WriteBufferingTest,
-    ConfigQuery()
+    WriteBufferingTests,
+    ConfigQuery(fuzzing)
         .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    Http2Test, ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run());
+    Http2Tests,
+    ConfigQuery(fuzzing).EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run());
 
 CORE_END2END_TEST_SUITE(
-    RetryHttp2Test, ConfigQuery()
-                        .EnforceFeatures(FEATURE_MASK_IS_HTTP2 |
-                                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
-                        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-                                         FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
-                        .Run());
+    RetryHttp2Tests,
+    ConfigQuery(fuzzing)
+        .EnforceFeatures(FEATURE_MASK_IS_HTTP2 |
+                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                         FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
+        .Run());
 
 CORE_END2END_TEST_SUITE(
-    ResourceQuotaTest,
-    ConfigQuery()
+    ResourceQuotaTests,
+    ConfigQuery(fuzzing)
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                          FEATURE_MASK_1BYTE_AT_A_TIME)
         .ExcludeName("Chttp2.*Uds.*")
@@ -1151,24 +1253,24 @@ CORE_END2END_TEST_SUITE(
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    PerCallCredsTest,
-    ConfigQuery()
+    PerCallCredsTests,
+    ConfigQuery(fuzzing)
         .EnforceFeatures(FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    PerCallCredsOnInsecureTest,
-    ConfigQuery()
+    PerCallCredsOnInsecureTests,
+    ConfigQuery(fuzzing)
         .EnforceFeatures(
             FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    NoLoggingTest,
-    ConfigQuery().ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES).Run());
+    NoLoggingTests,
+    ConfigQuery(fuzzing).ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES).Run());
 
-CORE_END2END_TEST_SUITE(ProxyAuthTest,
-                        ConfigQuery().AllowName("Chttp2HttpProxy").Run());
+CORE_END2END_TEST_SUITE(
+    ProxyAuthTests, ConfigQuery(fuzzing).AllowName("Chttp2HttpProxy").Run());
 
 void EnsureSuitesLinked() {}
 

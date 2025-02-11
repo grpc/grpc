@@ -45,8 +45,6 @@ grpc_cc_library(
         "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
-        "absl/types:optional",
-        "absl/types:variant",
         "google_cloud_cpp:opentelemetry",
         "otel/api",
         "otel/sdk/src/metrics",
@@ -54,7 +52,6 @@ grpc_cc_library(
         "@com_google_protobuf//upb:base",
         "@com_google_protobuf//upb:mem",
     ],
-    language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
         "//:call_tracer",

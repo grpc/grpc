@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <new>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -27,7 +28,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
@@ -58,7 +58,7 @@ class InterceptorList {
     // Poll a promise constructed at memory.
     // Resolves to an optional<T> -- if nullopt it means terminate the chain and
     // resolve.
-    virtual Poll<absl::optional<T>> PollOnce(void* memory) = 0;
+    virtual Poll<std::optional<T>> PollOnce(void* memory) = 0;
     virtual ~Map() = default;
 
     // Update the next pointer stored with this map.
@@ -83,7 +83,7 @@ class InterceptorList {
   // The result of Run: a promise that will execute the entire chain.
   class RunPromise {
    public:
-    RunPromise(size_t memory_required, Map** factory, absl::optional<T> value) {
+    RunPromise(size_t memory_required, Map** factory, std::optional<T> value) {
       if (!value.has_value() || *factory == nullptr) {
         GRPC_TRACE_VLOG(promise_primitives, 2)
             << "InterceptorList::RunPromise[" << this << "]: create immediate";
@@ -133,14 +133,14 @@ class InterceptorList {
 
     RunPromise& operator=(RunPromise&& other) noexcept = delete;
 
-    Poll<absl::optional<T>> operator()() {
+    Poll<std::optional<T>> operator()() {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "InterceptorList::RunPromise[" << this << "]: " << DebugString();
       if (is_immediately_resolved_) return std::move(result_);
       while (true) {
         if (*async_resolution_.first_factory == nullptr) {
           // Cancelled whilst polling
-          return absl::nullopt;
+          return std::nullopt;
         }
         auto r = async_resolution_.current_factory->PollOnce(
             async_resolution_.space.get());
@@ -194,7 +194,7 @@ class InterceptorList {
     };
     union {
       AsyncResolution async_resolution_;
-      absl::optional<T> result_;
+      std::optional<T> result_;
     };
     // If true, the result_ union is valid, otherwise async_resolution_ is.
     // Indicates whether the promise resolved immediately at construction or if
@@ -207,7 +207,7 @@ class InterceptorList {
   InterceptorList& operator=(const InterceptorList&) = delete;
   ~InterceptorList() { DeleteFactories(); }
 
-  RunPromise Run(absl::optional<T> initial_value) {
+  RunPromise Run(std::optional<T> initial_value) {
     return RunPromise(promise_memory_required_, &first_map_,
                       std::move(initial_value));
   }
@@ -263,8 +263,8 @@ class InterceptorList {
     void Destroy(void* memory) override {
       static_cast<Promise*>(memory)->~Promise();
     }
-    Poll<absl::optional<T>> PollOnce(void* memory) override {
-      return poll_cast<absl::optional<T>>((*static_cast<Promise*>(memory))());
+    Poll<std::optional<T>> PollOnce(void* memory) override {
+      return poll_cast<std::optional<T>>((*static_cast<Promise*>(memory))());
     }
 
    private:

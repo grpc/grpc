@@ -22,7 +22,6 @@ grpc_cc_test(
     name = "call_tracer_test",
     srcs = ["call_tracer_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -39,7 +38,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -56,7 +54,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "cpu:10",
     ],
@@ -73,7 +70,6 @@ grpc_cc_test(
     name = "trace_flags_test",
     srcs = ["trace_flags_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [

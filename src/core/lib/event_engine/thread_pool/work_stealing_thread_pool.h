@@ -39,8 +39,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class WorkStealingThreadPool final : public ThreadPool {
  public:
@@ -220,7 +219,6 @@ class WorkStealingThreadPool final : public ThreadPool {
   const std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_WORK_STEALING_THREAD_POOL_H

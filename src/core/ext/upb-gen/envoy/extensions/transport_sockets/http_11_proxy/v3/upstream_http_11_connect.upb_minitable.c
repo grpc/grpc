@@ -11,13 +11,12 @@
 #include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.h"
 #include "envoy/config/core/v3/base.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
-#include "validate/validate.upb_minitable.h"
 
 // Must be last.
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TransportSocket_msg_init_ptr},
 };
 
@@ -26,7 +25,7 @@ static const upb_MiniTableField envoy_extensions_transport_sockets_http_11_proxy
 };
 
 const upb_MiniTable envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init = {
-  &envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_submsgs[0],
+  &envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__submsgs[0],
   &envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED

@@ -18,11 +18,11 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <optional>
 #include <utility>
 
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "upb/base/string_view.h"
 #include "upb/message/map.h"
@@ -89,9 +89,9 @@ CelAuthorizationEngine::CelAuthorizationEngine(
           google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
                                               arena_.ptr());
       if (envoy_config_rbac_v3_RBAC_action(rbac_policy) == kAllow) {
-        allow_if_matched_.insert(std::make_pair(policy_name, parsed_condition));
+        allow_if_matched_.insert(std::pair(policy_name, parsed_condition));
       } else {
-        deny_if_matched_.insert(std::make_pair(policy_name, parsed_condition));
+        deny_if_matched_.insert(std::pair(policy_name, parsed_condition));
       }
     }
   }
@@ -124,7 +124,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
           header_items;
       for (const auto& header_key : header_keys_) {
         std::string temp_value;
-        absl::optional<absl::string_view> header_value =
+        std::optional<absl::string_view> header_value =
             args.GetHeaderValue(header_key, &temp_value);
         if (header_value.has_value()) {
           header_items.push_back(

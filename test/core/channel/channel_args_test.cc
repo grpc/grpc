@@ -63,11 +63,11 @@ TEST(ChannelArgsTest, SetGetRemove) {
   EXPECT_EQ(*b.Get("answer"), ChannelArgs::Value(42));
   EXPECT_EQ(*c.Get("answer"), ChannelArgs::Value(42));
   EXPECT_EQ(c.GetInt("answer"), 42);
-  EXPECT_EQ(c.GetString("answer"), absl::nullopt);
+  EXPECT_EQ(c.GetString("answer"), std::nullopt);
   EXPECT_EQ(f.Get("answer"), nullptr);
   EXPECT_EQ(*c.Get("foo"), ChannelArgs::Value("bar"));
   EXPECT_EQ(c.GetString("foo"), "bar");
-  EXPECT_EQ(c.GetString("answer"), absl::nullopt);
+  EXPECT_EQ(c.GetString("answer"), std::nullopt);
   EXPECT_EQ(*d.Get("ptr"),
             ChannelArgs::Value(ChannelArgs::Pointer(ptr, &malloc_vtable)));
   EXPECT_EQ(*e.Get("alpha"), ChannelArgs::Value("beta"));
@@ -82,8 +82,8 @@ TEST(ChannelArgsTest, RemoveAllKeysWithPrefix) {
   args = args.Set("bar", 4);
   ChannelArgs modified = args.RemoveAllKeysWithPrefix("foo.");
   EXPECT_EQ(modified.GetInt("foo"), 1);
-  EXPECT_EQ(modified.GetInt("foo.bar"), absl::nullopt);
-  EXPECT_EQ(modified.GetInt("foo.baz"), absl::nullopt);
+  EXPECT_EQ(modified.GetInt("foo.bar"), std::nullopt);
+  EXPECT_EQ(modified.GetInt("foo.baz"), std::nullopt);
   EXPECT_EQ(modified.GetInt("bar"), 4);
 }
 

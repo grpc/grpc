@@ -21,12 +21,12 @@
 #include <stddef.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/json/json.h"
@@ -50,7 +50,7 @@ class ClientChannelGlobalParsedConfig final
     return parsed_deprecated_lb_policy_;
   }
 
-  const absl::optional<std::string>& health_check_service_name() const {
+  const std::optional<std::string>& health_check_service_name() const {
     return health_check_config_.service_name;
   }
 
@@ -60,7 +60,7 @@ class ClientChannelGlobalParsedConfig final
 
  private:
   struct HealthCheckConfig {
-    absl::optional<std::string> service_name;
+    std::optional<std::string> service_name;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   };
@@ -75,13 +75,13 @@ class ClientChannelMethodParsedConfig final
  public:
   Duration timeout() const { return timeout_; }
 
-  absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
+  std::optional<bool> wait_for_ready() const { return wait_for_ready_; }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
  private:
   Duration timeout_;
-  absl::optional<bool> wait_for_ready_;
+  std::optional<bool> wait_for_ready_;
 };
 
 class ClientChannelServiceConfigParser final

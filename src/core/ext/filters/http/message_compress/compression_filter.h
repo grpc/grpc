@@ -24,9 +24,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
+
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -65,7 +66,7 @@ class ChannelCompression {
 
   struct DecompressArgs {
     grpc_compression_algorithm algorithm;
-    absl::optional<uint32_t> max_recv_message_length;
+    std::optional<uint32_t> max_recv_message_length;
   };
 
   grpc_compression_algorithm default_compression_algorithm() const {
@@ -91,7 +92,7 @@ class ChannelCompression {
 
  private:
   // Max receive message length, if set.
-  absl::optional<uint32_t> max_recv_size_;
+  std::optional<uint32_t> max_recv_size_;
   size_t message_size_service_config_parser_index_;
   // The default, channel-level, compression algorithm.
   grpc_compression_algorithm default_compression_algorithm_;
@@ -129,9 +130,9 @@ class ClientCompressionFilter final
     absl::StatusOr<MessageHandle> OnServerToClientMessage(
         MessageHandle message, ClientCompressionFilter* filter);
 
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
 
    private:
     grpc_compression_algorithm compression_algorithm_;
@@ -168,9 +169,9 @@ class ServerCompressionFilter final
     MessageHandle OnServerToClientMessage(MessageHandle message,
                                           ServerCompressionFilter* filter);
 
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
 
    private:
     ChannelCompression::DecompressArgs decompress_args_;

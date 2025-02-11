@@ -59,7 +59,7 @@ class ClientCall final
  public:
   ClientCall(grpc_call* parent_call, uint32_t propagation_mask,
              grpc_completion_queue* cq, Slice path,
-             absl::optional<Slice> authority, bool registered_method,
+             std::optional<Slice> authority, bool registered_method,
              Timestamp deadline, grpc_compression_options compression_options,
              RefCountedPtr<Arena> arena,
              RefCountedPtr<UnstartedCallDestination> destination);
@@ -128,9 +128,22 @@ class ClientCall final
                    bool is_notify_tag_closure);
   template <typename Batch>
   void ScheduleCommittedBatch(Batch batch);
-  void StartCall(const grpc_op& send_initial_metadata_op);
+  Party::WakeupHold StartCall(const grpc_op& send_initial_metadata_op);
+  // Attempt to start the call and send handler down the stack; returns true if
+  // state was updated, false otherwise (with cur_state updated to the new
+  // current state).
+  // If this function returns false, it's guaranteed that handler is not
+  // touched.
+  // Should be called repeatedly until it returns true.
+  bool StartCallMaybeUpdateState(uintptr_t& cur_state,
+                                 UnstartedCallHandler& handler);
 
   std::string DebugTag() { return absl::StrFormat("CLIENT_CALL[%p]: ", this); }
+  void OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
+                        grpc_status_code* out_status,
+                        grpc_slice* out_status_details,
+                        const char** out_error_string,
+                        grpc_metadata_array* out_trailing_metadata);
 
   // call_state_ is one of:
   // 1. kUnstarted - call has not yet been started
@@ -168,7 +181,7 @@ class ClientCall final
 
 grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
                           grpc_completion_queue* cq, Slice path,
-                          absl::optional<Slice> authority,
+                          std::optional<Slice> authority,
                           bool registered_method, Timestamp deadline,
                           grpc_compression_options compression_options,
                           RefCountedPtr<Arena> arena,

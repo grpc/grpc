@@ -72,7 +72,7 @@ class Reader final : public grpc::ClientReadReactor<helloworld::HelloReply> {
 
  private:
   absl::Mutex mu_;
-  absl::optional<grpc::Status> result_;
+  std::optional<grpc::Status> result_;
   helloworld::HelloReply res_;
 };
 

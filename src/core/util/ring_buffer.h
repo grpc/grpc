@@ -20,8 +20,7 @@
 #include <array>
 #include <cstddef>
 #include <iterator>
-
-#include "absl/types/optional.h"
+#include <optional>
 
 namespace grpc_core {
 
@@ -93,9 +92,9 @@ class RingBuffer {
   }
 
   // Returns the data of the first element in the buffer and removes it from
-  // the buffer. If the buffer is empty, returns absl::nullopt.
-  absl::optional<T> PopIfNotEmpty() {
-    if (!size_) return absl::nullopt;
+  // the buffer. If the buffer is empty, returns std::nullopt.
+  std::optional<T> PopIfNotEmpty() {
+    if (!size_) return std::nullopt;
     T data = std::move(data_[head_]);
     --size_;
     head_ = (head_ + 1) % kCapacity;

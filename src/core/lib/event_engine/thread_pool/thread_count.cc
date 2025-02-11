@@ -25,8 +25,7 @@
 #include "absl/time/time.h"
 #include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // -------- LivingThreadCount --------
 
@@ -72,5 +71,4 @@ size_t LivingThreadCount::WaitForCountChange(size_t desired_threads,
   return count;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

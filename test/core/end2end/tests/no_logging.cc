@@ -21,6 +21,7 @@
 
 #include <atomic>
 #include <map>
+#include <optional>
 #include <regex>
 #include <string>
 #include <utility>
@@ -33,7 +34,6 @@
 #include "absl/log/log_sink_registry.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/time.h"
@@ -89,15 +89,20 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // We should be very conservative while adding new entries to this list,
     // because this has potential to cause massive log noise. Several users are
     // using INFO log level setting for production.
-    static const auto* const allowed_logs_by_module =
-        new std::map<absl::string_view, std::regex>(
-            {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
-             {"chaotic_good_server.cc",
-              std::regex("Failed to bind some addresses for.*")},
-             {"log.cc",
-              std::regex("Prefer WARNING or ERROR. However if you see this "
-                         "message in a debug environment or test environment "
-                         "it is safe to ignore this message.")}});
+    static const auto* const allowed_logs_by_module = new std::map<
+        absl::string_view, std::regex>(
+        {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
+         {"chaotic_good_server.cc",
+          std::regex("Failed to bind some addresses for.*")},
+         {"log.cc",
+          std::regex(
+              "Prefer WARNING or ERROR. However if you see this "
+              "message in a debug environment or test environment "
+              "it is safe to ignore this message.|Unknown log verbosity:.*")},
+         {"chttp2_server.cc",
+          std::regex(
+              "Only [0-9]+ addresses added out of total [0-9]+ resolved")},
+         {"trace.cc", std::regex("Unknown tracer:.*")}});
 
     if (IsVlogWithVerbosityMoreThan1(entry)) {
       return;
@@ -133,7 +138,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
 
 void SimpleRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
   c.NewBatch(1)
@@ -144,8 +149,8 @@ void SimpleRequest(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
@@ -160,7 +165,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
+CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
 // This test makes sure that we don't get log noise when making an rpc
 // especially when rpcs are successful.
 
@@ -174,6 +179,18 @@ CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
   for (int i = 0; i < 10; i++) {
     SimpleRequest(*this);
   }
+}
+
+TEST(Fuzzers, NoLoggingTestRegression1) {
+  NoLoggingTests_NoLoggingTest(
+      CoreTestConfigurationNamed("Chttp2FullstackCompression"),
+      ParseTestProto(R"pb(config_vars { verbosity: "\000" trace: "" })pb"));
+}
+
+TEST(Fuzzers, NoLoggingTestRegression2) {
+  NoLoggingTests_NoLoggingTest(
+      CoreTestConfigurationNamed("Chttp2Fullstack"),
+      ParseTestProto(R"pb(config_vars { trace: "\177 " })pb"));
 }
 
 }  // namespace grpc_core

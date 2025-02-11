@@ -300,7 +300,7 @@ class FilterStackCall final : public Call {
   grpc_call_final_info final_info_;
 
   SliceBuffer send_slice_buffer_;
-  absl::optional<SliceBuffer> receiving_slice_buffer_;
+  std::optional<SliceBuffer> receiving_slice_buffer_;
   uint32_t receiving_stream_flags_;
   uint32_t test_only_last_message_flags_ = 0;
   // Compression algorithm for *incoming* data

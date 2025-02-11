@@ -36,8 +36,7 @@
 
 struct iovec;
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class GrpcPolledFdWindows;
 
@@ -65,8 +64,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 

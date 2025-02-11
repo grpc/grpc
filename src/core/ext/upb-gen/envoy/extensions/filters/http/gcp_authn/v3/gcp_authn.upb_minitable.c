@@ -21,7 +21,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_submsgs[5] = {
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig__submsgs[5] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HttpUri_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init_ptr},
@@ -39,7 +39,7 @@ static const upb_MiniTableField envoy_extensions_filters_http_gcp_authn_v3_GcpAu
 };
 
 const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init = {
-  &envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_submsgs[0],
+  &envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig__submsgs[0],
   &envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig__fields[0],
   UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -76,7 +76,7 @@ const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__Audience_m
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init_ptr = &envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init;
-static const upb_MiniTableSubInternal envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
 };
 
@@ -85,7 +85,7 @@ static const upb_MiniTableField envoy_extensions_filters_http_gcp_authn_v3_Token
 };
 
 const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init = {
-  &envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_submsgs[0],
+  &envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig__submsgs[0],
   &envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED

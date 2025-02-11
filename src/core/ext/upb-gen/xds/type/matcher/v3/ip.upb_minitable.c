@@ -18,7 +18,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal xds_type_matcher_v3_IPMatcher_submsgs[1] = {
+static const upb_MiniTableSubInternal xds_type_matcher_v3_IPMatcher__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__IPMatcher__IPRangeMatcher_msg_init_ptr},
 };
 
@@ -27,7 +27,7 @@ static const upb_MiniTableField xds_type_matcher_v3_IPMatcher__fields[1] = {
 };
 
 const upb_MiniTable xds__type__matcher__v3__IPMatcher_msg_init = {
-  &xds_type_matcher_v3_IPMatcher_submsgs[0],
+  &xds_type_matcher_v3_IPMatcher__submsgs[0],
   &xds_type_matcher_v3_IPMatcher__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -40,7 +40,7 @@ const upb_MiniTable xds__type__matcher__v3__IPMatcher_msg_init = {
 };
 
 const upb_MiniTable* xds__type__matcher__v3__IPMatcher_msg_init_ptr = &xds__type__matcher__v3__IPMatcher_msg_init;
-static const upb_MiniTableSubInternal xds_type_matcher_v3_IPMatcher_IPRangeMatcher_submsgs[2] = {
+static const upb_MiniTableSubInternal xds_type_matcher_v3_IPMatcher_IPRangeMatcher__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &xds__core__v3__CidrRange_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher__OnMatch_msg_init_ptr},
 };
@@ -52,7 +52,7 @@ static const upb_MiniTableField xds_type_matcher_v3_IPMatcher_IPRangeMatcher__fi
 };
 
 const upb_MiniTable xds__type__matcher__v3__IPMatcher__IPRangeMatcher_msg_init = {
-  &xds_type_matcher_v3_IPMatcher_IPRangeMatcher_submsgs[0],
+  &xds_type_matcher_v3_IPMatcher_IPRangeMatcher__submsgs[0],
   &xds_type_matcher_v3_IPMatcher_IPRangeMatcher__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED

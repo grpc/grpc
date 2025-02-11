@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <queue>
 #include <set>
 #include <thread>
@@ -38,8 +39,8 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/event_engine/time_util.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -237,7 +238,7 @@ class FuzzingEventEngine : public EventEngine {
     // The sizes of each accepted write, as determined by the fuzzer actions.
     std::queue<size_t> write_sizes[2] ABSL_GUARDED_BY(mu_);
     // The next read that's pending (or nullopt).
-    absl::optional<PendingRead> pending_read[2] ABSL_GUARDED_BY(mu_);
+    std::optional<PendingRead> pending_read[2] ABSL_GUARDED_BY(mu_);
 
     // Helper to take some bytes from data and queue them into pending[index].
     // Returns true if all bytes were consumed, false if more writes are needed.
@@ -299,6 +300,23 @@ class FuzzingEventEngine : public EventEngine {
 
   bool IsIdleLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  // Called whenever the time is incremented, and used by
+  // ThreadedFuzzingEventEngine to insert a sleep so that real time passes at
+  // approximately the same rate as FuzzingEventEngine time.
+  // TODO(ctiller): This is very approximate and unsound and we should probably
+  // evaluate whether we want to continue supporting ThreadedFuzzingEventEngine
+  // at all.
+  virtual void OnClockIncremented(Duration) {}
+
+  // We need everything EventEngine to do reasonable timer steps -- without it
+  // we need to do a bunch of evil to make sure both timer systems are ticking
+  // each step.
+  static bool IsSaneTimerEnvironment() {
+    return grpc_core::IsEventEngineClientEnabled() &&
+           grpc_core::IsEventEngineListenerEnabled() &&
+           grpc_core::IsEventEngineDnsEnabled();
+  }
+
   // For the next connection being built, query the list of fuzzer selected
   // write size limits.
   std::queue<size_t> WriteSizesForConnection()
@@ -313,12 +331,13 @@ class FuzzingEventEngine : public EventEngine {
   static grpc_core::NoDestruct<grpc_core::Mutex> now_mu_
       ABSL_ACQUIRED_AFTER(mu_);
 
-  Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
-      std::chrono::milliseconds(1);
   const Duration max_delay_[2];
-  intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
-  intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_);
-  Time now_ ABSL_GUARDED_BY(now_mu_);
+  intptr_t next_task_id_ ABSL_GUARDED_BY(mu_) = 1;
+  // Start at 5 seconds after the epoch.
+  // This needs to be more than 1, and otherwise is kind of arbitrary.
+  // The grpc_core::Timer code special cases the zero second time period after
+  // epoch to allow for some fancy atomic stuff.
+  Time now_ ABSL_GUARDED_BY(now_mu_) = Time() + std::chrono::seconds(5);
   std::queue<Duration> task_delays_ ABSL_GUARDED_BY(mu_);
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
@@ -338,6 +357,12 @@ class FuzzingEventEngine : public EventEngine {
   std::atomic<size_t> outstanding_writes_{0};
   std::atomic<size_t> outstanding_reads_{0};
 
+  // TODO(ctiller): these can be removed when IsSaneTimerEnvironment() is
+  // guaranteed to be true.
+  Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
+      std::chrono::milliseconds(1);
+  intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_) = 0;
+
   grpc_core::Mutex run_after_duration_callback_mu_;
   absl::AnyInvocable<void(Duration)> run_after_duration_callback_
       ABSL_GUARDED_BY(run_after_duration_callback_mu_);
@@ -353,11 +378,7 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
                            fuzzing_event_engine::Actions()),
         main_([this, max_time]() {
           while (!done_.load()) {
-            if (max_time > Duration::zero()) {
-              absl::SleepFor(absl::Milliseconds(
-                  grpc_event_engine::experimental::Milliseconds(max_time)));
-            }
-            Tick();
+            Tick(max_time);
           }
         }) {}
 
@@ -367,6 +388,11 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
   }
 
  private:
+  void OnClockIncremented(Duration duration) override {
+    absl::SleepFor(absl::Milliseconds(
+        1 + grpc_event_engine::experimental::Milliseconds(duration)));
+  }
+
   std::atomic<bool> done_{false};
   std::thread main_;
 };

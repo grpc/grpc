@@ -25,8 +25,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::string HandleToStringInternal(uintptr_t a, uintptr_t b);
 
@@ -43,7 +42,6 @@ absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
 LookupHostnameBlocking(EventEngine::DNSResolver* dns_resolver,
                        absl::string_view name, absl::string_view default_port);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_UTILS_H

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H_
-#define ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -242,4 +242,4 @@ UPB_INLINE void envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit_set_time_uni
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_H_ */

@@ -370,7 +370,6 @@ void Call::ResetDeadline() {
 }
 
 void Call::Run() {
-  ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
   GRPC_TRACE_LOG(call, INFO)
       << "call deadline expired "
@@ -414,7 +413,6 @@ grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
   if (call == nullptr) {
     return GRPC_CALL_ERROR;
   }
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Call::FromC(call)->CancelWithError(absl::CancelledError());
   return GRPC_CALL_OK;
@@ -431,7 +429,6 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
   if (c == nullptr) {
     return GRPC_CALL_ERROR;
   }
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Call::FromC(c)->CancelWithStatus(status, description);
   return GRPC_CALL_OK;
@@ -474,7 +471,6 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
   if (reserved != nullptr || call == nullptr) {
     return GRPC_CALL_ERROR;
   } else {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     return grpc_core::Call::FromC(call)->StartBatch(ops, nops, tag, false);
   }

@@ -18,13 +18,13 @@
 #define GRPC_SRC_CORE_UTIL_LRU_CACHE_H
 
 #include <list>
+#include <optional>
 #include <tuple>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -39,7 +39,7 @@ class LruCache {
   }
 
   // Returns the value for key, or nullopt if not present.
-  absl::optional<Value> Get(Key key);
+  std::optional<Value> Get(Key key);
 
   // If key is present in the cache, returns the corresponding value.
   // Otherwise, inserts a new entry in the map, calling create() to
@@ -72,9 +72,9 @@ class LruCache {
 //
 
 template <typename Key, typename Value>
-absl::optional<Value> LruCache<Key, Value>::Get(Key key) {
+std::optional<Value> LruCache<Key, Value>::Get(Key key) {
   auto it = cache_.find(key);
-  if (it == cache_.end()) return absl::nullopt;
+  if (it == cache_.end()) return std::nullopt;
   // Found the entry.  Move the entry to the end of the LRU list.
   auto new_lru_it = lru_list_.insert(lru_list_.end(), *it->second.lru_iterator);
   lru_list_.erase(it->second.lru_iterator);

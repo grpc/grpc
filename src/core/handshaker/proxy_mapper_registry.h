@@ -23,11 +23,11 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/handshaker/proxy_mapper.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -57,10 +57,10 @@ class ProxyMapperRegistry {
   ProxyMapperRegistry(ProxyMapperRegistry&&) = default;
   ProxyMapperRegistry& operator=(ProxyMapperRegistry&&) = default;
 
-  absl::optional<std::string> MapName(absl::string_view server_uri,
-                                      ChannelArgs* args) const;
+  std::optional<std::string> MapName(absl::string_view server_uri,
+                                     ChannelArgs* args) const;
 
-  absl::optional<grpc_resolved_address> MapAddress(
+  std::optional<grpc_resolved_address> MapAddress(
       const grpc_resolved_address& address, ChannelArgs* args) const;
 
  private:

@@ -21,10 +21,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 
 namespace grpc_core {
@@ -46,7 +46,7 @@ class StaticStrideScheduler final {
   // number, which may wrap. `float_weights` does not need to live beyond the
   // function. Caller is responsible for ensuring `next_sequence_func` remains
   // valid for all calls to `Pick()`.
-  static absl::optional<StaticStrideScheduler> Make(
+  static std::optional<StaticStrideScheduler> Make(
       absl::Span<const float> float_weights,
       absl::AnyInvocable<uint32_t()> next_sequence_func);
 

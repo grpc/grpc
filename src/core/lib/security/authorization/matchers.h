@@ -19,10 +19,10 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/rbac_policy.h"
@@ -158,13 +158,13 @@ class PortAuthorizationMatcher : public AuthorizationMatcher {
 // or DNS SAN in that order, otherwise uses subject field.
 class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit AuthenticatedAuthorizationMatcher(absl::optional<StringMatcher> auth)
+  explicit AuthenticatedAuthorizationMatcher(std::optional<StringMatcher> auth)
       : matcher_(std::move(auth)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
  private:
-  const absl::optional<StringMatcher> matcher_;
+  const std::optional<StringMatcher> matcher_;
 };
 
 // Perform a match against the request server from the client's connection

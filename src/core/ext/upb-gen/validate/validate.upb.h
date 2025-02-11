@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef VALIDATE_VALIDATE_PROTO_UPB_H_
-#define VALIDATE_VALIDATE_PROTO_UPB_H_
+#ifndef VALIDATE_VALIDATE_PROTO_UPB_H__UPB_H_
+#define VALIDATE_VALIDATE_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -6729,7 +6729,7 @@ UPB_INLINE const validate_FieldRules* validate_rules(const struct google_protobu
   const upb_MiniTableExtension* ext = &validate_rules_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   const validate_FieldRules* default_val = NULL;
   const validate_FieldRules* ret;
   _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
@@ -6739,7 +6739,7 @@ UPB_INLINE void validate_set_rules(struct google_protobuf_FieldOptions* msg, con
   const upb_MiniTableExtension* ext = &validate_rules_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
@@ -6758,4 +6758,4 @@ UPB_INLINE struct validate_FieldRules* validate_mutable_rules(struct google_prot
 
 #include "upb/port/undef.inc"
 
-#endif  /* VALIDATE_VALIDATE_PROTO_UPB_H_ */
+#endif  /* VALIDATE_VALIDATE_PROTO_UPB_H__UPB_H_ */

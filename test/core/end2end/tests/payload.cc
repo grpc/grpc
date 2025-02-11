@@ -77,11 +77,11 @@ void RequestResponseWithPayload(CoreEnd2endTest& test) {
 
 // Client sends a request with payload, server reads then returns a response
 // payload and status.
-CORE_END2END_TEST(CoreLargeSendTest, RequestResponseWithPayload) {
+CORE_END2END_TEST(CoreLargeSendTests, RequestResponseWithPayload) {
   RequestResponseWithPayload(*this);
 }
 
-CORE_END2END_TEST(CoreLargeSendTest, RequestResponseWithPayload10Times) {
+CORE_END2END_TEST(CoreLargeSendTests, RequestResponseWithPayload10Times) {
   for (int i = 0; i < 10; i++) {
     RequestResponseWithPayload(*this);
   }

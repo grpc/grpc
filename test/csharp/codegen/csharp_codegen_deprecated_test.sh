@@ -18,13 +18,26 @@
 
 # Simple test - compare generated output to expected files
 
+# shellcheck disable=SC1090
+
 set -x
 
 TESTNAME=deprecated
 
+# --- begin runfiles.bash initialization v3 ---
+# Copy-pasted from the Bazel Bash runfiles library v3.
+set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
+source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$0.runfiles/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
+# --- end runfiles.bash initialization v3 ---
+
 # protoc and grpc_csharp_plugin binaries are supplied as "data" in bazel
-PROTOC=./external/com_google_protobuf/protoc
-PLUGIN=./src/compiler/grpc_csharp_plugin
+PROTOC=$(rlocation com_google_protobuf/protoc)
+PLUGIN=$(rlocation com_github_grpc_grpc/src/compiler/grpc_csharp_plugin)
 
 # where to find the test data
 DATA_DIR=./test/csharp/codegen/${TESTNAME}
@@ -36,7 +49,7 @@ mkdir -p ${PROTO_OUT}
 
 # run protoc and the plugin
 $PROTOC \
-    --plugin=protoc-gen-grpc=$PLUGIN \
+    --plugin=protoc-gen-grpc="$PLUGIN" \
     --csharp_out=${PROTO_OUT} \
     --grpc_out=${PROTO_OUT} \
     -I ${DATA_DIR}/proto \
@@ -53,7 +66,7 @@ ls -l ./proto_out
 # codegen changes are made.
 
 # For depnothing.proto there should zero "ObsoleteAttribute" found
-nmatches=$(grep -c ObsoleteAttribute ${PROTO_OUT}/DepnothingGrpc.cs)
+nmatches=$(grep -c ObsoleteAttribute ${PROTO_OUT}/DepnothingGrpc.cs || true)
 if [ "$nmatches" -ne 0 ]
 then
     echo >&2 "Unexpected ObsoleteAttribute in DepnothingGrpc.cs"
@@ -62,7 +75,7 @@ fi
 
 # For depservice.proto need to check ObsoleteAttribute added to three classes.
 # First check ObsoleteAttribute exists in output
-nmatches=$(grep -c ObsoleteAttribute ${PROTO_OUT}/DepserviceGrpc.cs)
+nmatches=$(grep -c ObsoleteAttribute ${PROTO_OUT}/DepserviceGrpc.cs || true)
 if [ "$nmatches" -eq 0 ]
 then
     echo >&2 "Missing ObsoleteAttribute in DepserviceGrpc.cs"
@@ -70,24 +83,24 @@ then
 fi
 
 # capture context after ObsoleteAttribute for further checking
-CTX=$(grep -A 2 ObsoleteAttribute ${PROTO_OUT}/DepserviceGrpc.cs)
+CTX=$(grep -A 2 ObsoleteAttribute ${PROTO_OUT}/DepserviceGrpc.cs || true)
 
 # Check ObsoleteAttribute before class GreeterServiceLevelDep
-nmatches=$(echo "$CTX" | grep -c "class GreeterServiceLevelDep$" )
+nmatches=$(echo "$CTX" | grep -c "class GreeterServiceLevelDep$" || true)
 if [ "$nmatches" -ne 1 ]
 then
     echo >&2 "Missing ObsoleteAttribute on class GreeterServiceLevelDep"
     exit 1
 fi
 # Check ObsoleteAttribute before class GreeterServiceLevelDepBase
-nmatches=$(echo "$CTX" | grep -c "class GreeterServiceLevelDepBase$" )
+nmatches=$(echo "$CTX" | grep -c "class GreeterServiceLevelDepBase$" || true)
 if [ "$nmatches" -ne 1 ]
 then
     echo >&2 "Missing ObsoleteAttribute on class GreeterServiceLevelDepBase"
     exit 1
 fi
 # Check ObsoleteAttribute before class GreeterServiceLevelDepClient
-nmatches=$(echo "$CTX" | grep -c "class GreeterServiceLevelDepClient" )
+nmatches=$(echo "$CTX" | grep -c "class GreeterServiceLevelDepClient" || true)
 if [ "$nmatches" -ne 1 ]
 then
     echo >&2 "Missing ObsoleteAttribute on class GreeterServiceLevelDepClient"
@@ -96,14 +109,14 @@ fi
 
 # For depmethod.proto need to check ObsoleteAttribute added in five places for SayHello method.
 # Check ObsoleteAttribute exists in output
-nmatches=$(grep -c ObsoleteAttribute ${PROTO_OUT}/DepmethodGrpc.cs)
+nmatches=$(grep -c ObsoleteAttribute ${PROTO_OUT}/DepmethodGrpc.cs || true)
 if [ "$nmatches" -eq 0 ]
 then
     echo >&2 "Missing ObsoleteAttribute in DepmethodGrpc.cs"
     exit 1
 fi
 # Check ObsoleteAttribute before SayHello methods
-nmatches=$(grep -A 2 ObsoleteAttribute ${PROTO_OUT}/DepmethodGrpc.cs | grep -c SayHello)
+nmatches=$(grep -A 2 ObsoleteAttribute ${PROTO_OUT}/DepmethodGrpc.cs | grep -c SayHello || true)
 if [ "$nmatches" -ne 5 ]
 then
     echo >&2 "Missing ObsoleteAttribute on SayHello method"

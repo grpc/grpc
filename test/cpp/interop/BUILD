@@ -32,7 +32,6 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:flag",
     ],
-    language = "C++",
     deps = [
         "//test/cpp/util:test_util",
     ],
@@ -49,7 +48,6 @@ grpc_cc_binary(
         "absl/log:log",
         "absl/time:time",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:grpc++",
@@ -70,7 +68,6 @@ grpc_cc_binary(
         "absl/flags:flag",
         "absl/log:check",
     ],
-    language = "C++",
     deps = [
         ":interop_server_lib",
         "//:grpc++",
@@ -86,7 +83,6 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
     ],
-    language = "C++",
     deps = [
         ":server_helper_lib",
         "//:grpcpp_orca_service",
@@ -112,7 +108,6 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         ":backend_metrics_lb_policy",
         "//src/proto/grpc/testing:empty_cc_proto",
@@ -132,7 +127,6 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:flag",
     ],
-    language = "C++",
     deps = [
         ":client_helper_lib",
     ],
@@ -141,7 +135,6 @@ grpc_cc_library(
 grpc_cc_binary(
     name = "interop_client",
     external_deps = ["absl/log:check"],
-    language = "C++",
     deps = [
         ":interop_client_main",
         "//:grpc++",
@@ -155,7 +148,6 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
     ],
-    language = "C++",
     deps = [
         "//:grpc++",
         "//test/core/test_util:grpc_test_util",
@@ -189,7 +181,6 @@ grpc_cc_binary(
         "absl/flags:flag",
         "absl/log:check",
     ],
-    language = "C++",
     deps = [
         ":interop_server_lib",
         "//:grpc++",
@@ -455,7 +446,6 @@ grpc_cc_binary(
         "absl/flags:flag",
         "absl/log:check",
     ],
-    language = "C++",
     deps = [
         ":client_helper_lib",
         "//:grpc++",
@@ -471,7 +461,6 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
     ],
-    language = "C++",
     tags = ["nobuilder"],
     deps = [
         ":interop_server_lib",
@@ -491,7 +480,6 @@ grpc_cc_library(
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
     ],
-    language = "C++",
     tags = ["nobuilder"],
     deps = [
         ":client_helper_lib",
@@ -502,7 +490,6 @@ grpc_cc_library(
 
 grpc_cc_binary(
     name = "observability_interop_client",
-    language = "C++",
     tags = ["nobuilder"],
     deps = [
         ":observability_interop_client_main",
@@ -546,7 +533,6 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
     ],
-    language = "C++",
     tags = ["nobuilder"],
     deps = [
         "//:grpc",
@@ -582,7 +568,6 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
     ],
-    language = "C++",
     tags = ["nobuilder"],
     deps = [
         "//:grpc",

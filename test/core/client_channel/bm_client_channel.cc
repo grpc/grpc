@@ -121,12 +121,10 @@ class TestResolver final : public Resolver {
         work_serializer_(std::move(work_serializer)) {}
 
   void StartLocked() override {
-    work_serializer_->Run(
-        [self = RefAsSubclass<TestResolver>()] {
-          self->result_handler_->ReportResult(
-              self->MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
-        },
-        DEBUG_LOCATION);
+    work_serializer_->Run([self = RefAsSubclass<TestResolver>()] {
+      self->result_handler_->ReportResult(
+          self->MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
+    });
   }
   void ShutdownLocked() override {}
 

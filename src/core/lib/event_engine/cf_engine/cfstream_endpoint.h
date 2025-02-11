@@ -32,8 +32,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class CFStreamEndpointImpl
     : public grpc_core::RefCounted<CFStreamEndpointImpl> {
@@ -138,8 +137,7 @@ class CFStreamEndpoint : public EventEngine::Endpoint {
   grpc_core::RefCountedPtr<CFStreamEndpointImpl> impl_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

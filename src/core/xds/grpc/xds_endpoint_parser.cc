@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <set>
 #include <vector>
 
@@ -32,7 +33,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
@@ -45,8 +45,11 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/load_balancing/ring_hash/ring_hash.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
@@ -72,10 +75,20 @@ bool XdsDualstackEndpointsEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(roth): Flip the default to false once this proves stable, then
+// remove it entirely at some point in the future.
+bool XdsEndpointHashKeyBackwardCompatEnabled() {
+  auto value = GetEnv("GRPC_XDS_ENDPOINT_HASH_KEY_BACKWARD_COMPAT");
+  if (!value.has_value()) return true;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 void MaybeLogClusterLoadAssignment(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_ClusterLoadAssignment* cla) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(
             context.symtab);
@@ -87,24 +100,25 @@ void MaybeLogClusterLoadAssignment(
   }
 }
 
-std::string GetProxyAddressFromMetadata(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_config_core_v3_Metadata* metadata, ValidationErrors* errors) {
-  if (XdsHttpConnectEnabled() && metadata != nullptr) {
-    XdsMetadataMap metadata_map =
-        ParseXdsMetadataMap(context, metadata, errors);
-    auto* proxy_address_entry =
-        metadata_map.Find("envoy.http11_proxy_transport_socket.proxy_address");
-    if (proxy_address_entry != nullptr &&
-        proxy_address_entry->type() == XdsAddressMetadataValue::Type()) {
-      return DownCast<const XdsAddressMetadataValue*>(proxy_address_entry)
-          ->address();
-    }
-  }
-  return "";
+std::string GetProxyAddressFromMetadata(const XdsMetadataMap& metadata_map) {
+  auto* proxy_address_entry = metadata_map.FindType<XdsAddressMetadataValue>(
+      "envoy.http11_proxy_transport_socket.proxy_address");
+  if (proxy_address_entry == nullptr) return "";
+  return proxy_address_entry->address();
 }
 
-absl::optional<EndpointAddresses> EndpointAddressesParse(
+std::string GetHashKeyFromMetadata(const XdsMetadataMap& metadata_map) {
+  auto* hash_key_entry =
+      metadata_map.FindType<XdsStructMetadataValue>("envoy.lb");
+  if (hash_key_entry == nullptr) return "";
+  ValidationErrors unused_errors;
+  return LoadJsonObjectField<std::string>(hash_key_entry->json().object(),
+                                          JsonArgs(), "hash_key",
+                                          &unused_errors)
+      .value_or("");
+}
+
+std::optional<EndpointAddresses> EndpointAddressesParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_LbEndpoint* lb_endpoint,
     absl::string_view locality_proxy_address, ValidationErrors* errors) {
@@ -112,7 +126,7 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
   const int32_t health_status =
       envoy_config_endpoint_v3_LbEndpoint_health_status(lb_endpoint);
   auto status = XdsHealthStatus::FromUpb(health_status);
-  if (!status.has_value()) return absl::nullopt;
+  if (!status.has_value()) return std::nullopt;
   // load_balancing_weight
   uint32_t weight;
   {
@@ -126,9 +140,19 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
     }
   }
   // metadata
-  std::string proxy_address = GetProxyAddressFromMetadata(
-      context, envoy_config_endpoint_v3_LbEndpoint_metadata(lb_endpoint),
-      errors);
+  std::string proxy_address;
+  std::string hash_key;
+  if (XdsHttpConnectEnabled() || !XdsEndpointHashKeyBackwardCompatEnabled()) {
+    XdsMetadataMap metadata_map = ParseXdsMetadataMap(
+        context, envoy_config_endpoint_v3_LbEndpoint_metadata(lb_endpoint),
+        errors);
+    if (XdsHttpConnectEnabled()) {
+      proxy_address = GetProxyAddressFromMetadata(metadata_map);
+    }
+    if (!XdsEndpointHashKeyBackwardCompatEnabled()) {
+      hash_key = GetHashKeyFromMetadata(metadata_map);
+    }
+  }
   // endpoint
   std::vector<grpc_resolved_address> addresses;
   absl::string_view hostname;
@@ -138,7 +162,7 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
         envoy_config_endpoint_v3_LbEndpoint_endpoint(lb_endpoint);
     if (endpoint == nullptr) {
       errors->AddError("field not present");
-      return absl::nullopt;
+      return std::nullopt;
     }
     {
       ValidationErrors::ScopedField field(errors, ".address");
@@ -164,7 +188,7 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
     hostname =
         UpbStringToAbsl(envoy_config_endpoint_v3_Endpoint_hostname(endpoint));
   }
-  if (addresses.empty()) return absl::nullopt;
+  if (addresses.empty()) return std::nullopt;
   // Convert to EndpointAddresses.
   auto args = ChannelArgs()
                   .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
@@ -176,6 +200,9 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
     args = args.Set(GRPC_ARG_XDS_HTTP_PROXY, proxy_address);
   } else if (!locality_proxy_address.empty()) {
     args = args.Set(GRPC_ARG_XDS_HTTP_PROXY, locality_proxy_address);
+  }
+  if (!hash_key.empty()) {
+    args = args.Set(GRPC_ARG_RING_HASH_ENDPOINT_HASH_KEY, hash_key);
   }
   return EndpointAddresses(addresses, args);
 }
@@ -195,7 +222,7 @@ struct ResolvedAddressLessThan {
 using ResolvedAddressSet =
     std::set<grpc_resolved_address, ResolvedAddressLessThan>;
 
-absl::optional<ParsedLocality> LocalityParse(
+std::optional<ParsedLocality> LocalityParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
     ResolvedAddressSet* address_set, ValidationErrors* errors) {
@@ -209,7 +236,7 @@ absl::optional<ParsedLocality> LocalityParse(
           envoy_config_endpoint_v3_LocalityLbEndpoints_load_balancing_weight(
               locality_lb_endpoints))
           .value_or(0);
-  if (parsed_locality.locality.lb_weight == 0) return absl::nullopt;
+  if (parsed_locality.locality.lb_weight == 0) return std::nullopt;
   // locality
   const envoy_config_core_v3_Locality* locality =
       envoy_config_endpoint_v3_LocalityLbEndpoints_locality(
@@ -217,7 +244,7 @@ absl::optional<ParsedLocality> LocalityParse(
   if (locality == nullptr) {
     ValidationErrors::ScopedField field(errors, ".locality");
     errors->AddError("field not present");
-    return absl::nullopt;
+    return std::nullopt;
   }
   // region
   std::string region =
@@ -231,11 +258,15 @@ absl::optional<ParsedLocality> LocalityParse(
   parsed_locality.locality.name = MakeRefCounted<XdsLocalityName>(
       std::move(region), std::move(zone), std::move(sub_zone));
   // metadata
-  std::string proxy_address = GetProxyAddressFromMetadata(
-      context,
-      envoy_config_endpoint_v3_LocalityLbEndpoints_metadata(
-          locality_lb_endpoints),
-      errors);
+  std::string proxy_address;
+  if (XdsHttpConnectEnabled()) {
+    XdsMetadataMap metadata_map = ParseXdsMetadataMap(
+        context,
+        envoy_config_endpoint_v3_LocalityLbEndpoints_metadata(
+            locality_lb_endpoints),
+        errors);
+    proxy_address = GetProxyAddressFromMetadata(metadata_map);
+  }
   // lb_endpoints
   size_t size;
   const envoy_config_endpoint_v3_LbEndpoint* const* lb_endpoints =
@@ -263,7 +294,7 @@ absl::optional<ParsedLocality> LocalityParse(
       envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
           locality_lb_endpoints);
   // Return result.
-  if (original_error_size != errors->size()) return absl::nullopt;
+  if (original_error_size != errors->size()) return std::nullopt;
   return parsed_locality;
 }
 
@@ -364,8 +395,8 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
         // Check that the sum of the locality weights in this priority
         // does not exceed the max value for a uint32.
         uint64_t total_weight = 0;
-        for (const auto& p : priority.localities) {
-          total_weight += p.second.lb_weight;
+        for (const auto& [_, locality] : priority.localities) {
+          total_weight += locality.lb_weight;
           if (total_weight > std::numeric_limits<uint32_t>::max()) {
             errors.AddError(
                 absl::StrCat("sum of locality weights for priority ", i,
@@ -424,14 +455,14 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
       envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(resource));
   auto eds_resource = EdsResourceParse(context, resource);
   if (!eds_resource.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(ERROR) << "[xds_client " << context.client
                  << "] invalid ClusterLoadAssignment " << *result.name << ": "
                  << eds_resource.status();
     }
     result.resource = eds_resource.status();
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(INFO) << "[xds_client " << context.client
                 << "] parsed ClusterLoadAssignment " << *result.name << ": "
                 << (*eds_resource)->ToString();

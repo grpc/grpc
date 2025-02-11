@@ -21,8 +21,7 @@
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/util/no_destruct.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 grpc_core::NoDestruct<ObjectGroupForkHandler> g_thread_pool_fork_manager;
@@ -44,5 +43,4 @@ std::shared_ptr<ThreadPool> MakeThreadPool(size_t reserve_threads) {
   return thread_pool;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

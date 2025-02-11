@@ -1,7 +1,0 @@
-channel_args {
-  args {
-    key: "grpc.service_config_disable_resolution"
-    i: 0
-  }
-}
-should_orphan_at_step: DURING_LOOKUP_TXT

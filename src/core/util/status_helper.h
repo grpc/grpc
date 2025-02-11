@@ -22,13 +22,13 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "src/core/util/debug_location.h"
 
 extern "C" {
@@ -92,15 +92,15 @@ void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value);
 
 /// Gets the int property from the status
 GRPC_MUST_USE_RESULT
-absl::optional<intptr_t> StatusGetInt(const absl::Status& status,
-                                      StatusIntProperty key);
+std::optional<intptr_t> StatusGetInt(const absl::Status& status,
+                                     StatusIntProperty key);
 
 /// Sets the str property to the status
 void StatusSetStr(absl::Status* status, StatusStrProperty key,
                   absl::string_view value);
 
 /// Gets the str property from the status
-GRPC_MUST_USE_RESULT absl::optional<std::string> StatusGetStr(
+GRPC_MUST_USE_RESULT std::optional<std::string> StatusGetStr(
     const absl::Status& status, StatusStrProperty key);
 
 /// Sets the time property to the status
@@ -108,7 +108,7 @@ void StatusSetTime(absl::Status* status, StatusTimeProperty key,
                    absl::Time time);
 
 /// Gets the time property from the status
-GRPC_MUST_USE_RESULT absl::optional<absl::Time> StatusGetTime(
+GRPC_MUST_USE_RESULT std::optional<absl::Time> StatusGetTime(
     const absl::Status& status, StatusTimeProperty key);
 
 /// Adds a child status to status

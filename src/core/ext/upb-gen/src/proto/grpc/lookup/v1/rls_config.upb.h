@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_LOOKUP_V1_RLS_CONFIG_PROTO_UPB_H_
-#define SRC_PROTO_GRPC_LOOKUP_V1_RLS_CONFIG_PROTO_UPB_H_
+#ifndef SRC_PROTO_GRPC_LOOKUP_V1_RLS_CONFIG_PROTO_UPB_H__UPB_H_
+#define SRC_PROTO_GRPC_LOOKUP_V1_RLS_CONFIG_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -1413,4 +1413,4 @@ UPB_INLINE struct grpc_lookup_v1_RouteLookupConfig* grpc_lookup_v1_RouteLookupCl
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_LOOKUP_V1_RLS_CONFIG_PROTO_UPB_H_ */
+#endif  /* SRC_PROTO_GRPC_LOOKUP_V1_RLS_CONFIG_PROTO_UPB_H__UPB_H_ */

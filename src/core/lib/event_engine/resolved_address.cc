@@ -23,8 +23,7 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
                                               socklen_t size)
@@ -58,5 +57,4 @@ grpc_resolved_address CreateGRPCResolvedAddress(
   return grpc_addr;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

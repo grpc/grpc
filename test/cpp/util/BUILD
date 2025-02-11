@@ -343,7 +343,6 @@ grpc_cc_binary(
         "absl/log:log",
         "absl/strings",
     ],
-    language = "c++",
     tags = [
         "no_windows",  # unistd.h
     ],
@@ -444,7 +443,6 @@ grpc_cc_library(
         "get_grpc_test_runfile_dir.h",
     ],
     external_deps = [
-        "absl/types:optional",
     ],
     deps = [
         "//src/core:env",

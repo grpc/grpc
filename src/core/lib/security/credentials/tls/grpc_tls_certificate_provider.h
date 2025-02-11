@@ -23,13 +23,13 @@
 #include <stdint.h>
 
 #include <map>
+#include <optional>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/util/ref_counted.h"
@@ -166,11 +166,11 @@ class FileWatcherCertificateProvider final
   // Force an update from the file system regardless of the interval.
   void ForceUpdate();
   // Read the root certificates from files and update the distributor.
-  absl::optional<std::string> ReadRootCertificatesFromFile(
+  std::optional<std::string> ReadRootCertificatesFromFile(
       const std::string& root_cert_full_path);
   // Read the private key and the certificate chain from files and update the
   // distributor.
-  absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
+  std::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
       const std::string& private_key_path,
       const std::string& identity_certificate_path);
 

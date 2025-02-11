@@ -26,11 +26,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -64,8 +65,8 @@ typedef struct grpc_call_create_args {
 
   const void* server_transport_data;
 
-  absl::optional<grpc_core::Slice> path;
-  absl::optional<grpc_core::Slice> authority;
+  std::optional<grpc_core::Slice> path;
+  std::optional<grpc_core::Slice> authority;
 
   grpc_core::Timestamp send_deadline;
   bool registered_method;  // client_only

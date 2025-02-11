@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_MINITABLE_H_
-#define SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_MINITABLE_H_
+#ifndef SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H__UPB_MINITABLE_H_
+#define SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -31,4 +31,4 @@ extern const upb_MiniTableFile src_proto_grpc_gcp_altscontext_proto_upb_file_lay
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_MINITABLE_H_ */
+#endif  /* SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H__UPB_MINITABLE_H_ */

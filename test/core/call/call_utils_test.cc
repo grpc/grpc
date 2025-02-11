@@ -38,8 +38,6 @@ TEST(CallUtils, AreInitialMetadataFlagsValid) {
 }
 
 namespace {
-void do_these_things(std::initializer_list<int>) {}
-
 template <typename... T>
 std::vector<grpc_op> TestOps(T... ops) {
   std::vector<grpc_op> out;
@@ -49,7 +47,7 @@ std::vector<grpc_op> TestOps(T... ops) {
     out.push_back(op);
     return 1;
   };
-  do_these_things({add_op(ops)...});
+  (add_op(ops), ...);
   return out;
 }
 }  // namespace

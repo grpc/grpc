@@ -26,8 +26,8 @@ using ByteBufferUniquePtr =
     std::unique_ptr<grpc_byte_buffer, void (*)(grpc_byte_buffer*)>;
 ByteBufferUniquePtr ByteBufferFromSlice(Slice slice);
 
-absl::optional<std::string> FindInMetadataArray(const grpc_metadata_array& md,
-                                                absl::string_view key);
+std::optional<std::string> FindInMetadataArray(const grpc_metadata_array& md,
+                                               absl::string_view key);
 
 // Receiving container for incoming metadata.
 class IncomingMetadata final : public CqVerifier::SuccessfulStateString {
@@ -38,7 +38,7 @@ class IncomingMetadata final : public CqVerifier::SuccessfulStateString {
   }
 
   // Lookup a metadata value by key.
-  absl::optional<std::string> Get(absl::string_view key) const;
+  std::optional<std::string> Get(absl::string_view key) const;
 
   // Make a GRPC_RECV_INITIAL_METADATA op - intended for the framework, not
   // for tests.
@@ -114,7 +114,7 @@ class IncomingStatusOnClient final : public CqVerifier::SuccessfulStateString {
     return data_->error_string == nullptr ? "" : data_->error_string;
   }
   // Get a trailing metadata value by key.
-  absl::optional<std::string> GetTrailingMetadata(absl::string_view key) const;
+  std::optional<std::string> GetTrailingMetadata(absl::string_view key) const;
 
   std::string GetSuccessfulStateString() override;
 
@@ -174,7 +174,7 @@ class BatchBuilder {
   BatchBuilder& SendInitialMetadata(
       std::initializer_list<std::pair<absl::string_view, absl::string_view>> md,
       uint32_t flags = 0,
-      absl::optional<grpc_compression_level> compression_level = absl::nullopt);
+      std::optional<grpc_compression_level> compression_level = std::nullopt);
 
   // Add a GRPC_OP_SEND_MESSAGE op.
   BatchBuilder& SendMessage(Slice payload, uint32_t flags = 0);

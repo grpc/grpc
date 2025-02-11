@@ -29,7 +29,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreEnd2endTest, EarlyServerShutdownFinishesInflightCalls) {
+CORE_END2END_TEST(CoreEnd2endTests, EarlyServerShutdownFinishesInflightCalls) {
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
 

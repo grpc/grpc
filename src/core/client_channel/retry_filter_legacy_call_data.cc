@@ -154,7 +154,6 @@ RetryFilter::LegacyCallData::CallAttempt::CallAttempt(
     Ref(DEBUG_LOCATION, "OnPerAttemptRecvTimer").release();
     per_attempt_recv_timer_handle_ = calld_->chand_->event_engine()->RunAfter(
         per_attempt_recv_timeout, [this] {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           OnPerAttemptRecvTimer();
         });
@@ -529,8 +528,8 @@ void RetryFilter::LegacyCallData::CallAttempt::CancelFromSurface(
 }
 
 bool RetryFilter::LegacyCallData::CallAttempt::ShouldRetry(
-    absl::optional<grpc_status_code> status,
-    absl::optional<Duration> server_pushback) {
+    std::optional<grpc_status_code> status,
+    std::optional<Duration> server_pushback) {
   // If no retry policy, don't retry.
   if (calld_->retry_policy_ == nullptr) return false;
   // Check status.
@@ -657,12 +656,12 @@ void RetryFilter::LegacyCallData::CallAttempt::OnPerAttemptRecvTimerLocked(
           StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED),
       &closures);
   // Check whether we should retry.
-  if (call_attempt->ShouldRetry(/*status=*/absl::nullopt,
-                                /*server_pushback_ms=*/absl::nullopt)) {
+  if (call_attempt->ShouldRetry(/*status=*/std::nullopt,
+                                /*server_pushback_ms=*/std::nullopt)) {
     // Mark current attempt as abandoned.
     call_attempt->Abandon();
     // We are retrying.  Start backoff timer.
-    calld->StartRetryTimer(/*server_pushback=*/absl::nullopt);
+    calld->StartRetryTimer(/*server_pushback=*/std::nullopt);
   } else {
     // Not retrying, so commit the call.
     calld->RetryCommit(call_attempt);
@@ -953,9 +952,9 @@ namespace {
 // and error.
 void GetCallStatus(
     Timestamp deadline, grpc_metadata_batch* md_batch, grpc_error_handle error,
-    grpc_status_code* status, absl::optional<Duration>* server_pushback,
+    grpc_status_code* status, std::optional<Duration>* server_pushback,
     bool* is_lb_drop,
-    absl::optional<GrpcStreamNetworkState::ValueType>* stream_network_state) {
+    std::optional<GrpcStreamNetworkState::ValueType>* stream_network_state) {
   if (!error.ok()) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
     intptr_t value = 0;
@@ -1092,9 +1091,9 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
   call_attempt->MaybeCancelPerAttemptRecvTimer();
   // Get the call's status and check for server pushback metadata.
   grpc_status_code status = GRPC_STATUS_OK;
-  absl::optional<Duration> server_pushback;
+  std::optional<Duration> server_pushback;
   bool is_lb_drop = false;
-  absl::optional<GrpcStreamNetworkState::ValueType> stream_network_state;
+  std::optional<GrpcStreamNetworkState::ValueType> stream_network_state;
   grpc_metadata_batch* md_batch =
       batch_data->batch_.payload->recv_trailing_metadata.recv_trailing_metadata;
   GetCallStatus(calld->deadline_, md_batch, error, &status, &server_pushback,
@@ -1880,7 +1879,7 @@ void RetryFilter::LegacyCallData::RetryCommit(CallAttempt* call_attempt) {
 }
 
 void RetryFilter::LegacyCallData::StartRetryTimer(
-    absl::optional<Duration> server_pushback) {
+    std::optional<Duration> server_pushback) {
   // Reset call attempt.
   call_attempt_.reset(DEBUG_LOCATION, "StartRetryTimer");
   // Compute backoff delay.
@@ -1899,7 +1898,6 @@ void RetryFilter::LegacyCallData::StartRetryTimer(
   GRPC_CALL_STACK_REF(owning_call_, "OnRetryTimer");
   retry_timer_handle_ =
       chand_->event_engine()->RunAfter(next_attempt_timeout, [this] {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         OnRetryTimer();
       });

@@ -27,12 +27,12 @@
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -251,9 +251,10 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
       suffix.Append(Slice::FromCopiedString(frame.payload_raw_bytes()));
       break;
     case fuzzer_input::ChaoticGoodFrame::kPayloadEmptyOfLength:
-      h.payload_length = frame.payload_empty_of_length();
-      suffix.Append(Slice::FromCopiedString(
-          std::string(frame.payload_empty_of_length(), 'a')));
+      h.payload_length =
+          std::min<uint32_t>(65536, frame.payload_empty_of_length());
+      suffix.Append(
+          Slice::FromCopiedString(std::string(h.payload_length, 'a')));
       break;
     case fuzzer_input::ChaoticGoodFrame::kPayloadOtherConnectionId:
       h.payload_connection_id =

@@ -38,8 +38,7 @@
 // clang-format on
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class WindowsEventEngineListener : public EventEngine::Listener {
  public:
@@ -161,8 +160,7 @@ class WindowsEventEngineListener : public EventEngine::Listener {
   bool listeners_shutdown_ ABSL_GUARDED_BY(port_listeners_mu_) = false;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif
 

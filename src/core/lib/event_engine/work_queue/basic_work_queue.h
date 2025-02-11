@@ -24,8 +24,7 @@
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // A basic WorkQueue implementation that guards an std::deque with a Mutex
 //
@@ -65,7 +64,6 @@ class BasicWorkQueue : public WorkQueue {
   const void* const owner_ = nullptr;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_BASIC_WORK_QUEUE_H

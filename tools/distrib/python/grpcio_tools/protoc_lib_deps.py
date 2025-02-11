@@ -145,6 +145,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/arenastring.cc',
     'third_party/protobuf/src/google/protobuf/arenaz_sampler.cc',
     'third_party/protobuf/src/google/protobuf/compiler/code_generator.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/code_generator_lite.cc',
     'third_party/protobuf/src/google/protobuf/compiler/command_line_interface.cc',
     'third_party/protobuf/src/google/protobuf/compiler/cpp/enum.cc',
     'third_party/protobuf/src/google/protobuf/compiler/cpp/extension.cc',
@@ -204,7 +205,6 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/java/helpers.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/internal_helpers.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/java_features.pb.cc',
-    'third_party/protobuf/src/google/protobuf/compiler/java/kotlin_generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/lite/enum.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/lite/enum_field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/lite/extension.cc',
@@ -220,6 +220,9 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/java/name_resolver.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/names.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/shared_code_generator.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/kotlin/file.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/kotlin/generator.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/kotlin/message.cc',
     'third_party/protobuf/src/google/protobuf/compiler/main.cc',
     'third_party/protobuf/src/google/protobuf/compiler/objectivec/enum.cc',
     'third_party/protobuf/src/google/protobuf/compiler/objectivec/enum_field.cc',
@@ -252,10 +255,12 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/default_value.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/map.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/repeated_field.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_cord.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_message.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_scalar.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_string.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/unsupported_field.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/with_presence.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/context.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/crate_mapping.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/enum.cc',
@@ -266,6 +271,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/rust/relative_path.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/rust_field_type.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/rust_keywords.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/upb_helpers.cc',
     'third_party/protobuf/src/google/protobuf/compiler/subprocess.cc',
     'third_party/protobuf/src/google/protobuf/compiler/versions.cc',
     'third_party/protobuf/src/google/protobuf/compiler/zip_writer.cc',
@@ -316,7 +322,9 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/wire_format_lite.cc',
     'third_party/protobuf/third_party/utf8_range/utf8_range.c',
     'third_party/protobuf/third_party/utf8_range/utf8_validity.cc',
-    'third_party/protobuf/upb_generator/mangle.cc'
+    'third_party/protobuf/upb_generator/common/names.cc',
+    'third_party/protobuf/upb_generator/minitable/names.cc',
+    'third_party/protobuf/upb_generator/minitable/names_internal.cc'
 ]
 
 PROTO_FILES=[
@@ -343,4 +351,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="10ef3f77683f77fb3c059bf47725c27b3ff41e63"
+PROTOBUF_SUBMODULE_VERSION="2d4414f384dc499af113b5991ce3eaa9df6dd931"

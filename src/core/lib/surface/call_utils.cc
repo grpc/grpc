@@ -122,7 +122,7 @@ Poll<Empty> WaitForCqEndOp::operator()() {
   GRPC_TRACE_LOG(promise_primitives, INFO)
       << Activity::current()->DebugTag() << "WaitForCqEndOp[" << this << "] "
       << StateString(state_);
-  if (auto* n = absl::get_if<NotStarted>(&state_)) {
+  if (auto* n = std::get_if<NotStarted>(&state_)) {
     if (n->is_closure) {
       ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(n->tag),
                    std::move(n->error));
@@ -142,7 +142,7 @@ Poll<Empty> WaitForCqEndOp::operator()() {
           &started, &started.completion);
     }
   }
-  auto& started = absl::get<Started>(state_);
+  auto& started = std::get<Started>(state_);
   if (started.done.load(std::memory_order_acquire)) {
     return Empty{};
   } else {
