@@ -239,18 +239,18 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     MessageChunker message_chunker)
     : state_{std::make_unique<ConstructionParameters>(
       args, std::move(frame_transport), std::move(message_chunker)
-    )}
+    )}{}
 
 ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
     const ChannelArgs& args, RefCountedPtr<FrameTransport> frame_transport,
-    MessageChunker message_chunker)
-    : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
+    MessageChunker message_chunker, RefCountedPtr<UnstartedCallDestination> call_destination)
+    : event_engine_(
+          args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+      call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator("chaotic-good"),
           1024)),
-      event_engine_(
-          args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       message_chunker_(message_chunker) {
   /*
 auto transport = MakeRefCounted<ChaoticGoodTransport>(
@@ -263,8 +263,8 @@ event_engine_, config.MakeTransportOptions(), false);
   party_ = Party::Make(std::move(party_arena));
   MpscReceiver<Frame> outgoing_pipe(8);
   outgoing_frames_ = outgoing_pipe.MakeSender();
-  frame_transport.Start(party_.get(), std::move(outgoing_pipe),
-                        RefCountedPtr<FrameTransportSink> sink);
+  frame_transport->Start(party_.get(), std::move(outgoing_pipe),
+                        Ref());
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(
@@ -276,21 +276,18 @@ void ChaoticGoodServerTransport::SetCallDestination(
 }
 
 void ChaoticGoodServerTransport::Orphan() {
-  AbortWithError();
-  RefCountedPtr<Party> party;
-  {
-    MutexLock lock(&mu_);
-    party = std::move(party_);
+  if (auto* p = std::get_if<RefCountedPtr<StreamDispatch>>(&state_); p != nullptr) {
+    (*p)->OnFrameTransportClosed(absl::UnavailableError("Transport closed"));
   }
-  party.reset();
+  state_ = Orphaned{};
   Unref();
 }
 
-void ChaoticGoodServerTransport::AbortWithError() {
+void ChaoticGoodServerTransport::StreamDispatch::OnFrameTransportClosed(absl::Status status) {
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
   ReleasableMutexLock lock(&mu_);
-  aborted_with_error_ = true;
+  last_seen_new_stream_id_ = std::numeric_limits<uint32_t>::max();
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
@@ -307,7 +304,7 @@ void ChaoticGoodServerTransport::AbortWithError() {
 }
 
 RefCountedPtr<ChaoticGoodServerTransport::Stream>
-ChaoticGoodServerTransport::LookupStream(uint32_t stream_id) {
+ChaoticGoodServerTransport::StreamDispatch::LookupStream(uint32_t stream_id) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " LookupStream " << stream_id;
   MutexLock lock(&mu_);
@@ -317,7 +314,7 @@ ChaoticGoodServerTransport::LookupStream(uint32_t stream_id) {
 }
 
 RefCountedPtr<ChaoticGoodServerTransport::Stream>
-ChaoticGoodServerTransport::ExtractStream(uint32_t stream_id) {
+ChaoticGoodServerTransport::StreamDispatch::ExtractStream(uint32_t stream_id) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " ExtractStream " << stream_id;
   MutexLock lock(&mu_);
@@ -328,14 +325,11 @@ ChaoticGoodServerTransport::ExtractStream(uint32_t stream_id) {
   return r;
 }
 
-absl::Status ChaoticGoodServerTransport::NewStream(
+absl::Status ChaoticGoodServerTransport::StreamDispatch::AddStream(
     uint32_t stream_id, CallInitiator call_initiator) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " NewStream " << stream_id;
   MutexLock lock(&mu_);
-  if (aborted_with_error_) {
-    return absl::UnavailableError("Transport closed");
-  }
   auto it = stream_map_.find(stream_id);
   if (it != stream_map_.end()) {
     return absl::InternalError("Stream already exists");
@@ -344,7 +338,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
     return absl::InternalError("Stream id is not increasing");
   }
   const bool on_done_added = call_initiator.OnDone(
-      [self = RefAsSubclass<ChaoticGoodServerTransport>(), stream_id](bool) {
+      [self = RefAsSubclass<StreamDispatch>(), stream_id](bool) {
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD " << self.get() << " OnDone " << stream_id;
         auto stream = self->ExtractStream(stream_id);

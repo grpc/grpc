@@ -78,7 +78,7 @@ namespace chaotic_good {
 class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(const ChannelArgs& args,
-                             RefCounted<FrameTransport> frame_transport,
+                             RefCountedPtr<FrameTransport> frame_transport,
                              MessageChunker message_chunker);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -149,6 +149,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     Party::SpawnSerializer* incoming_frame_spawner_;
     MessageChunker message_chunker_;
     MpscSender<Frame> outgoing_frames_;
+    RefCountedPtr<Party> party_;
   };
 
   struct ConstructionParameters {
@@ -163,8 +164,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto ReadFrameBody(Slice read_buffer);
   void SendCancel(uint32_t stream_id, absl::Status why);
 
+  struct Orphaned{};
   using State = std::variant<std::unique_ptr<ConstructionParameters>,
-                             RefCountedPtr<StreamDispatch>>;
+                             RefCountedPtr<StreamDispatch>, Orphaned>;
   State state_;
 };
 
