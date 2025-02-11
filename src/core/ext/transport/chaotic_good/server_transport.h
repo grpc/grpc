@@ -114,6 +114,11 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
     void OnFrameTransportClosed(absl::Status status) override;
 
+    void StartConnectivityWatch(
+        grpc_connectivity_state state,
+        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+    void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
+
    private:
     absl::Status NewStream(
         uint32_t stream_id,

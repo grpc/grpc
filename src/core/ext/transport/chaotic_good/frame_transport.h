@@ -43,6 +43,8 @@ class IncomingFrame {
 
   const FrameHeader& header() { return header_; }
 
+  // Returns a promise that resolves to StatusOr<SliceBuffer> - with the slice
+  // buffer being the payload for this frame.
   auto Payload() {
     return Map(MatchPromise(
                    std::move(payload_),
@@ -59,8 +61,8 @@ class IncomingFrame {
 
  private:
   FrameHeader header_;
-  absl::variant<absl::StatusOr<SliceBuffer>,
-                Promise<absl::StatusOr<SliceBuffer>>>
+  std::variant<absl::StatusOr<SliceBuffer>,
+               Promise<absl::StatusOr<SliceBuffer>>>
       payload_;
 };
 

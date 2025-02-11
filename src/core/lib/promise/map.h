@@ -255,7 +255,7 @@ auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
 // Empty (discarding the result)
 template <typename Promise>
 auto DiscardResult(Promise promise) {
-  return Map(promise, [](auto x) {});
+  return Map(std::move(promise), [](auto x) {});
 }
 
 }  // namespace grpc_core

@@ -101,7 +101,7 @@ void ChaoticGoodServerTransport::StreamDispatch::DispatchFrame(
                       [stream = std::move(stream), this](Frame frame) mutable {
                         auto& call = stream->call;
                         return call.CancelIfFails(PushFrameIntoCall(
-                            std::move(stream), std::move(absl::get<T>(frame))));
+                            std::move(stream), std::move(std::get<T>(frame))));
                       });
       });
 }
@@ -358,17 +358,33 @@ absl::Status ChaoticGoodServerTransport::StreamDispatch::AddStream(
   return absl::OkStatus();
 }
 
+void ChaoticGoodServerTransport::StreamDispatch::StartConnectivityWatch(
+    grpc_connectivity_state state,
+    OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+  MutexLock lock(&mu_);
+  state_tracker_.AddWatcher(state, std::move(watcher));
+}
+
+void ChaoticGoodServerTransport::StreamDispatch::StopConnectivityWatch(
+    ConnectivityStateWatcherInterface* watcher) {
+  MutexLock lock(&mu_);
+  state_tracker_.RemoveWatcher(watcher);
+}
+
 void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   RefCountedPtr<Party> cancelled_party;
-  MutexLock lock(&mu_);
   bool did_stuff = false;
+  auto stream_dispatch = [this]() {
+    return std::get<RefCountedPtr<StreamDispatch>>(state_);
+  };
   if (op->start_connectivity_watch != nullptr) {
-    state_tracker_.AddWatcher(op->start_connectivity_watch_state,
-                              std::move(op->start_connectivity_watch));
+    stream_dispatch()->StartConnectivityWatch(
+        op->start_connectivity_watch_state,
+        std::move(op->start_connectivity_watch));
     did_stuff = true;
   }
   if (op->stop_connectivity_watch != nullptr) {
-    state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
+    stream_dispatch()->StopConnectivityWatch(op->stop_connectivity_watch);
     did_stuff = true;
   }
   if (op->set_accept_stream) {
@@ -380,10 +396,8 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
     did_stuff = true;
   }
   if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
-    cancelled_party = std::move(party_);
-    state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
-                            absl::UnavailableError("transport closed"),
-                            "transport closed");
+    stream_dispatch()->OnFrameTransportClosed(
+        absl::UnavailableError("transport closed"));
     did_stuff = true;
   }
   if (!did_stuff) {

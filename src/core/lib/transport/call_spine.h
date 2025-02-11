@@ -324,6 +324,9 @@ class CallInitiator {
   explicit CallInitiator(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
+  // Wrap a promise so that if it returns failure it automatically cancels
+  // the rest of the call.
+  // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
     return spine_->CancelIfFails(std::move(promise));
@@ -442,6 +445,9 @@ class CallHandler {
     return spine_->OnDone(std::move(fn));
   }
 
+  // Wrap a promise so that if it returns failure it automatically cancels
+  // the rest of the call.
+  // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
     return spine_->CancelIfFails(std::move(promise));
