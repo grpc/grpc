@@ -57,7 +57,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
@@ -251,7 +251,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
 namespace {
 
 RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
-                                        const GrpcXdsServer& server) {
+                                        const GrpcXdsServerInterface& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_config());
@@ -271,8 +271,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
       key_(server.Key()) {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[GrpcXdsTransport " << this << "] created";
-  channel_ =
-      CreateXdsChannel(factory_->args_, DownCast<const GrpcXdsServer&>(server));
+  channel_ = CreateXdsChannel(factory_->args_,
+                              DownCast<const GrpcXdsServerInterface&>(server));
   CHECK(channel_ != nullptr);
   if (channel_->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");
@@ -299,7 +299,6 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
   // (e.g., when using one control plane to find another control plane).
   grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
       [self = WeakRefAsSubclass<GrpcXdsTransport>()]() mutable {
-        ApplicationCallbackExecCtx application_exec_ctx;
         ExecCtx exec_ctx;
         self.reset();
       });

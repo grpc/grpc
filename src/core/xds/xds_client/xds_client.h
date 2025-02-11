@@ -198,7 +198,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     ~XdsChannel() override;
 
     XdsClient* xds_client() const { return xds_client_.get(); }
-    AdsCall* ads_call() const;
 
     void ResetBackoff();
 
@@ -358,7 +357,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   struct AuthorityState {
     std::vector<RefCountedPtr<XdsChannel>> xds_channels;
     std::map<const XdsResourceType*, std::map<XdsResourceKey, ResourceState>>
-        resource_map;
+        type_map;
   };
 
   absl::Status AppendNodeToStatus(const absl::Status& status) const;
@@ -390,6 +389,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   bool HasUncachedResources(const AuthorityState& authority_state);
+
+  void MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
+      XdsChannel* xds_channel, const XdsResourceType* type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);

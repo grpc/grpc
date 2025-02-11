@@ -190,7 +190,6 @@ void WorkSerializer::WorkSerializerImpl::Run() {
   GRPC_LATENT_SEE_PARENT_SCOPE("WorkSerializer::Run");
   flow_.End();
   // TODO(ctiller): remove these when we can deprecate ExecCtx
-  ApplicationCallbackExecCtx app_exec_ctx;
   ExecCtx exec_ctx;
   // Grab the last element of processing_ - which is the next item in our
   // queue since processing_ is stored in reverse order.

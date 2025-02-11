@@ -63,8 +63,6 @@ inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
-inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
@@ -104,8 +102,6 @@ inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
-inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -148,8 +144,6 @@ inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
-inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -192,7 +186,6 @@ enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
   kExperimentIdCallv3ClientAuthFilter,
   kExperimentIdDisableBufferHintOnHighMemoryPressure,
-  kExperimentIdEventEngineApplicationCallbacks,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineDnsNonClientChannel,
@@ -236,10 +229,6 @@ inline bool IsCallv3ClientAuthFilterEnabled() {
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() {
   return IsExperimentEnabled<
       kExperimentIdDisableBufferHintOnHighMemoryPressure>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
-inline bool IsEventEngineApplicationCallbacksEnabled() {
-  return IsExperimentEnabled<kExperimentIdEventEngineApplicationCallbacks>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {

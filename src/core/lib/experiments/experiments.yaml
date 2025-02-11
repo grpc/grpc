@@ -61,15 +61,11 @@
   expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: []
-- name: event_engine_application_callbacks
-  description: Run application callbacks in EventEngine threads, instead of on the thread-local ApplicationCallbackExecCtx
-  expiry: 2025/03/01
-  owner: hork@google.com
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2025/03/01
   owner: hork@google.com
-  requires: ["event_engine_application_callbacks", "event_engine_client", "event_engine_listener"]
+  requires: ["event_engine_client", "event_engine_listener"]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
   expiry: 2025/03/01
