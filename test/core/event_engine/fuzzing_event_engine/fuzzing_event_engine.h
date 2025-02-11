@@ -156,8 +156,9 @@ class FuzzingEventEngine : public EventEngine {
     IoToken(IoToken&& other) noexcept
         : manifest_(std::exchange(other.manifest_, Manifest{})) {}
     IoToken& operator=(IoToken&& other) noexcept {
-      if (manifest_.refs != nullptr)
+      if (manifest_.refs != nullptr) {
         manifest_.refs->fetch_sub(1, std::memory_order_relaxed);
+      }
       manifest_ = std::exchange(other.manifest_, Manifest{});
       return *this;
     }
