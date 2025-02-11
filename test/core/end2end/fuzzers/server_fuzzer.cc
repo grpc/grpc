@@ -237,5 +237,73 @@ TEST(ServerFuzzers, Chttp2Regression1) {
       )pb"));
 }
 
+TEST(ServerFuzzers, ChaoticGoodRegression2) {
+  ChaoticGood(ParseTestProto(
+      R"pb(network_input {
+             connect_timeout_ms: -1
+             endpoint_config { args {} }
+           }
+           network_input {
+             input_segments {
+               segments {
+                 chaotic_good {
+                   known_type: SETTINGS
+                   server_metadata {
+                     status: 4294967295
+                     message: ""
+                     unknown_metadata { key: "\363\267\223\200" value: "q" }
+                     unknown_metadata {}
+                   }
+                 }
+               }
+               segments {
+                 delay_ms: 2147483647
+                 chaotic_good {
+                   stream_id: 4294967295
+                   known_type: CLIENT_INITIAL_METADATA
+                   client_metadata {
+                     path: "\364\217\277\277"
+                     authority: ""
+                     unknown_metadata {}
+                   }
+                 }
+               }
+               segments {
+                 chaotic_good {
+                   stream_id: 4294967295
+                   payload_other_connection_id {
+                     connection_id: 1
+                     length: 2147483647
+                   }
+                 }
+               }
+               segments {
+                 settings {
+                   ack: true
+                   settings { value: 1 }
+                 }
+               }
+             }
+           }
+           network_input {
+             single_read_bytes: ""
+             connect_delay_ms: -20457793
+             connect_timeout_ms: -1
+             endpoint_config {
+               args {
+                 key: "\356\200\200"
+                 resource_quota {}
+               }
+             }
+           }
+           channel_args {
+             args {
+               key: "\001"
+               resource_quota {}
+             }
+           }
+      )pb"));
+}
+
 }  // namespace testing
 }  // namespace grpc_core

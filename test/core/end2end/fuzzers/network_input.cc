@@ -259,7 +259,8 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
     case fuzzer_input::ChaoticGoodFrame::kPayloadOtherConnectionId:
       h.payload_connection_id =
           frame.payload_other_connection_id().connection_id();
-      h.payload_length = frame.payload_other_connection_id().length();
+      h.payload_length = std::min<uint32_t>(
+          32 * 1024 * 1024, frame.payload_other_connection_id().length());
       break;
     case fuzzer_input::ChaoticGoodFrame::kSettings:
       proto_payload(frame.settings());
