@@ -177,7 +177,10 @@ WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads)
   pool_->Start();
 }
 
-void WorkStealingThreadPool::Quiesce() { pool_->Quiesce(); }
+void WorkStealingThreadPool::Quiesce(
+    absl::AnyInvocable<void() const> preshutdown) {
+  pool_->Quiesce(std::move(preshutdown));
+}
 
 WorkStealingThreadPool::~WorkStealingThreadPool() {
   CHECK(pool_->IsQuiesced());
@@ -262,13 +265,15 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
       .Start();
 }
 
-void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce(
+    absl::AnyInvocable<void() const> preshutdown) {
   SetShutdown(true);
   // Wait until all threads have exited.
   // Note that if this is a threadpool thread then we won't exit this thread
   // until all other threads have exited, so we need to wait for just one thread
   // running instead of zero.
   bool is_threadpool_thread = g_local_queue != nullptr;
+  preshutdown();
   work_signal()->SignalAll();
   auto threads_were_shut_down = living_thread_count_.BlockUntilThreadCount(
       is_threadpool_thread ? 1 : 0, "shutting down",
