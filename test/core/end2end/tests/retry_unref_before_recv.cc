@@ -31,7 +31,7 @@ namespace {
 // Tests that we can unref a call while recv ops are started but before
 // they complete.  This ensures that we don't drop callbacks or cause a
 // memory leak.
-CORE_END2END_TEST(RetryTest, UnrefBeforeRecv) {
+CORE_END2END_TEST(RetryTests, UnrefBeforeRecv) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
@@ -82,7 +82,7 @@ CORE_END2END_TEST(RetryTest, UnrefBeforeRecv) {
       .SendStatusFromServer(GRPC_STATUS_FAILED_PRECONDITION, "xyz", {})
       .RecvCloseOnServer(client_close);
   // Server ops complete and client recv ops complete.
-  if (GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) {
+  if (test_config()->feature_mask & FEATURE_MASK_IS_CALL_V3) {
     // Call-v3 behavior change: the cancellation used to signal different
     // behavior, but we're effectively just returning a trailers-only response -
     // and a trailers only response succeeds here, so we're normalizing that.

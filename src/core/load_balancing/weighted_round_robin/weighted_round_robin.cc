@@ -667,7 +667,6 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
       config_->weight_update_period(),
       [self = WeakRefAsSubclass<Picker>(),
        work_serializer = wrr_->work_serializer()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         {
           MutexLock lock(&self->timer_mu_);
@@ -677,11 +676,6 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
                 << "] timer fired";
             self->BuildSchedulerAndStartTimerLocked();
           }
-        }
-        if (!IsWorkSerializerDispatchEnabled()) {
-          // Release the picker ref inside the WorkSerializer.
-          work_serializer->Run([self = std::move(self)]() {}, DEBUG_LOCATION);
-          return;
         }
         self.reset();
       });

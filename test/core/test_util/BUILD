@@ -57,7 +57,6 @@ grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "cmdline.cc",
-        "fuzzer_util.cc",
         "grpc_profiler.cc",
         "histogram.cc",
         "mock_endpoint.cc",
@@ -69,7 +68,6 @@ grpc_cc_library(
     hdrs = [
         "cmdline.h",
         "evaluate_args_test_util.h",
-        "fuzzer_util.h",
         "grpc_profiler.h",
         "histogram.h",
         "mock_endpoint.h",
@@ -449,9 +447,12 @@ grpc_cc_library(
     name = "fuzz_config_vars",
     srcs = ["fuzz_config_vars.cc"],
     hdrs = ["fuzz_config_vars.h"],
+    tags = [
+        "grpc-fuzztest",
+        "no_windows",
+    ],
     deps = [
         "fuzz_config_vars_cc_proto",
-        "fuzz_config_vars_helpers",
         "//:config_vars",
         "//:gpr_platform",
     ],
@@ -459,11 +460,21 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "fuzz_config_vars_helpers",
+    testonly = 1,
     srcs = ["fuzz_config_vars_helpers.cc"],
     hdrs = ["fuzz_config_vars_helpers.h"],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/strings",
+        "fuzztest",
+    ],
+    tags = [
+        "grpc-fuzztest",
+        "no_windows",
+    ],
     deps = [
+        "fuzz_config_vars_cc_proto",
         "//:gpr_platform",
+        "//:grpc_trace",
         "//src/core:experiments",
     ],
 )

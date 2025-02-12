@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/promise/promise.h"
 #include "test/core/promise/poll_matcher.h"
@@ -36,7 +37,7 @@ TEST(MapTest, JustElem) {
 
 TEST(CheckDelayedTest, SeesImmediate) {
   auto x = CheckDelayed([]() { return 42; });
-  EXPECT_THAT(x(), IsReady(std::make_tuple(42, false)));
+  EXPECT_THAT(x(), IsReady(std::tuple(42, false)));
 }
 
 TEST(CheckDelayedTest, SeesDelayed) {
@@ -46,7 +47,7 @@ TEST(CheckDelayedTest, SeesDelayed) {
     return Pending{};
   });
   EXPECT_THAT(x(), IsPending());
-  EXPECT_THAT(x(), IsReady(std::make_tuple(42, true)));
+  EXPECT_THAT(x(), IsReady(std::tuple(42, true)));
 }
 
 TEST(MapError, DoesntMapOk) {

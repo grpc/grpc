@@ -35,7 +35,7 @@ namespace {
 // - first attempt does not receive a response until after perAttemptRecvTimeout
 // - second attempt returns ABORTED
 // - third attempt returns OK
-CORE_END2END_TEST(RetryTest, RetryPerAttemptRecvTimeout) {
+CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeout) {
   SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(

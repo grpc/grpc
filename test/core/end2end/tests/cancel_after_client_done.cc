@@ -65,11 +65,11 @@ void CancelAfterClientDone(
   EXPECT_TRUE(client_close.was_cancelled());
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, CancelAfterClientDone) {
+CORE_END2END_TEST(CoreEnd2endTests, CancelAfterClientDone) {
   CancelAfterClientDone(*this, std::make_unique<CancelCancellationMode>());
 }
 
-CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterClientDone) {
+CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterClientDone) {
   CancelAfterClientDone(*this, std::make_unique<DeadlineCancellationMode>());
 }
 

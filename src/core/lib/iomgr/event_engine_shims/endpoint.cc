@@ -132,7 +132,6 @@ class EventEngineEndpointWrapper {
     grpc_closure* cb = pending_read_cb_;
     pending_read_cb_ = nullptr;
     if (grpc_core::ExecCtx::Get() == nullptr) {
-      grpc_core::ApplicationCallbackExecCtx app_ctx;
       grpc_core::ExecCtx exec_ctx;
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
     } else {
@@ -178,7 +177,6 @@ class EventEngineEndpointWrapper {
     grpc_closure* cb = pending_write_cb_;
     pending_write_cb_ = nullptr;
     if (grpc_core::ExecCtx::Get() == nullptr) {
-      grpc_core::ApplicationCallbackExecCtx app_ctx;
       grpc_core::ExecCtx exec_ctx;
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
     } else {

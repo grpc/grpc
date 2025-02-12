@@ -328,7 +328,6 @@ void Server::ListenerState::MaybeStartNewGraceTimerLocked() {
   drain_grace_timer_handle_ = event_engine()->RunAfter(
       connections_to_be_drained_list_.front().timestamp - Timestamp::Now(),
       [self = Ref()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnDrainGraceTimer();
         // resetting within an active ExecCtx
@@ -1085,71 +1084,71 @@ absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
 }
 }  // namespace
 
+auto Server::MatchRequestAndMaybeReadFirstMessage(CallHandler call_handler,
+                                                  ClientMetadataHandle md) {
+  auto* registered_method = static_cast<RegisteredMethod*>(
+      md->get(GrpcRegisteredMethod()).value_or(nullptr));
+  RequestMatcherInterface* rm;
+  grpc_server_register_method_payload_handling payload_handling =
+      GRPC_SRM_PAYLOAD_NONE;
+  if (registered_method == nullptr) {
+    rm = unregistered_request_matcher_.get();
+  } else {
+    payload_handling = registered_method->payload_handling;
+    rm = registered_method->matcher.get();
+  }
+  using FirstMessageResult = ValueOrFailure<std::optional<MessageHandle>>;
+  auto maybe_read_first_message = If(
+      payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
+      [call_handler]() mutable {
+        return Map(
+            call_handler.PullMessage(),
+            [](ClientToServerNextMessage next_msg) -> FirstMessageResult {
+              if (!next_msg.ok()) return Failure{};
+              if (!next_msg.has_value()) {
+                return FirstMessageResult(std::nullopt);
+              }
+              return FirstMessageResult(next_msg.TakeValue());
+            });
+      },
+      []() -> FirstMessageResult { return FirstMessageResult(std::nullopt); });
+  return TryJoin<absl::StatusOr>(
+      std::move(maybe_read_first_message), rm->MatchRequest(0),
+      [md = std::move(md)]() mutable {
+        return ValueOrFailure<ClientMetadataHandle>(std::move(md));
+      });
+}
+
 auto Server::MatchAndPublishCall(CallHandler call_handler) {
-  call_handler.SpawnGuardedUntilCallCompletes(
-      "request_matcher", [this, call_handler]() mutable {
-        return TrySeq(
+  call_handler.SpawnGuarded("request_matcher", [this, call_handler]() mutable {
+    return TrySeq(
+        call_handler.UntilCallCompletes(TrySeq(
             // Wait for initial metadata to pass through all filters
             Map(call_handler.PullClientInitialMetadata(), CheckClientMetadata),
             // Match request with requested call
             [this, call_handler](ClientMetadataHandle md) mutable {
-              auto* registered_method = static_cast<RegisteredMethod*>(
-                  md->get(GrpcRegisteredMethod()).value_or(nullptr));
-              RequestMatcherInterface* rm;
-              grpc_server_register_method_payload_handling payload_handling =
-                  GRPC_SRM_PAYLOAD_NONE;
-              if (registered_method == nullptr) {
-                rm = unregistered_request_matcher_.get();
-              } else {
-                payload_handling = registered_method->payload_handling;
-                rm = registered_method->matcher.get();
-              }
-              using FirstMessageResult =
-                  ValueOrFailure<std::optional<MessageHandle>>;
-              auto maybe_read_first_message = If(
-                  payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-                  [call_handler]() mutable {
-                    return Map(
-                        call_handler.PullMessage(),
-                        [](ClientToServerNextMessage next_msg)
-                            -> FirstMessageResult {
-                          if (!next_msg.ok()) return Failure{};
-                          if (!next_msg.has_value()) {
-                            return FirstMessageResult(std::nullopt);
-                          }
-                          return FirstMessageResult(next_msg.TakeValue());
-                        });
-                  },
-                  []() -> FirstMessageResult {
-                    return FirstMessageResult(std::nullopt);
-                  });
-              return TryJoin<absl::StatusOr>(
-                  std::move(maybe_read_first_message), rm->MatchRequest(0),
-                  [md = std::move(md)]() mutable {
-                    return ValueOrFailure<ClientMetadataHandle>(std::move(md));
-                  });
-            },
-            // Publish call to cq
-            [call_handler,
-             this](std::tuple<std::optional<MessageHandle>,
-                              RequestMatcherInterface::MatchResult,
-                              ClientMetadataHandle>
-                       r) {
-              RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
-              auto md = std::move(std::get<2>(r));
-              auto* rc = mr.TakeCall();
-              rc->Complete(std::move(std::get<0>(r)), *md);
-              grpc_call* call =
-                  MakeServerCall(call_handler, std::move(md), this,
-                                 rc->cq_bound_to_call, rc->initial_metadata);
-              *rc->call = call;
-              return Map(
-                  WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
-                  [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
-                    return absl::OkStatus();
-                  });
-            });
-      });
+              return MatchRequestAndMaybeReadFirstMessage(
+                  std::move(call_handler), std::move(md));
+            })),
+        // Publish call to cq
+        [call_handler, this](std::tuple<std::optional<MessageHandle>,
+                                        RequestMatcherInterface::MatchResult,
+                                        ClientMetadataHandle>
+                                 r) {
+          RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
+          auto md = std::move(std::get<2>(r));
+          auto* rc = mr.TakeCall();
+          rc->Complete(std::move(std::get<0>(r)), *md);
+          grpc_call* call =
+              MakeServerCall(call_handler, std::move(md), this,
+                             rc->cq_bound_to_call, rc->initial_metadata);
+          *rc->call = call;
+          return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
+                     [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
+                       return absl::OkStatus();
+                     });
+        });
+  });
 }
 
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
@@ -1343,7 +1342,7 @@ Server::RegisteredMethod* Server::RegisterMethod(
     LOG(ERROR) << "grpc_server_register_method method string cannot be NULL";
     return nullptr;
   }
-  auto key = std::make_pair(host ? host : "", method);
+  auto key = std::pair(host ? host : "", method);
   if (registered_methods_.find(key) != registered_methods_.end()) {
     LOG(ERROR) << "duplicate registration for " << method << "@"
                << (host ? host : "*");
@@ -1697,12 +1696,12 @@ Server::RegisteredMethod* Server::GetRegisteredMethod(
     const absl::string_view& host, const absl::string_view& path) {
   if (registered_methods_.empty()) return nullptr;
   // check for an exact match with host
-  auto it = registered_methods_.find(std::make_pair(host, path));
+  auto it = registered_methods_.find(std::pair(host, path));
   if (it != registered_methods_.end()) {
     return it->second.get();
   }
   // check for wildcard method definition (no host set)
-  it = registered_methods_.find(std::make_pair("", path));
+  it = registered_methods_.find(std::pair("", path));
   if (it != registered_methods_.end()) {
     return it->second.get();
   }
@@ -2111,7 +2110,6 @@ void grpc_server_start(grpc_server* server) {
 
 void grpc_server_shutdown_and_notify(grpc_server* server,
                                      grpc_completion_queue* cq, void* tag) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_shutdown_and_notify(server=" << server << ", cq=" << cq
@@ -2120,7 +2118,6 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
 }
 
 void grpc_server_cancel_all_calls(grpc_server* server) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_cancel_all_calls(server=" << server << ")";
@@ -2128,7 +2125,6 @@ void grpc_server_cancel_all_calls(grpc_server* server) {
 }
 
 void grpc_server_destroy(grpc_server* server) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO) << "grpc_server_destroy(server=" << server << ")";
   grpc_core::Server::FromC(server)->Orphan();
@@ -2139,7 +2135,6 @@ grpc_call_error grpc_server_request_call(
     grpc_metadata_array* request_metadata,
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_request_call(" << "server=" << server << ", call=" << call
@@ -2157,7 +2152,6 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_byte_buffer** optional_payload,
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag_new) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   auto* rm =
       static_cast<grpc_core::Server::RegisteredMethod*>(registered_method);
@@ -2176,7 +2170,6 @@ grpc_call_error grpc_server_request_registered_call(
 
 void grpc_server_set_config_fetcher(
     grpc_server* server, grpc_server_config_fetcher* server_config_fetcher) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_set_config_fetcher(server=" << server
@@ -2188,7 +2181,6 @@ void grpc_server_set_config_fetcher(
 
 void grpc_server_config_fetcher_destroy(
     grpc_server_config_fetcher* server_config_fetcher) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_config_fetcher_destroy(config_fetcher="

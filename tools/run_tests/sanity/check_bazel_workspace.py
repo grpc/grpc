@@ -38,13 +38,6 @@ git_submodule_hashes = {
 _BAZEL_SKYLIB_DEP_NAME = "bazel_skylib"
 _BAZEL_TOOLCHAINS_DEP_NAME = "bazel_toolchains"
 _BAZEL_COMPDB_DEP_NAME = "bazel_compdb"
-_TWISTED_TWISTED_DEP_NAME = "com_github_twisted_twisted"
-_YAML_PYYAML_DEP_NAME = "com_github_yaml_pyyaml"
-_TWISTED_INCREMENTAL_DEP_NAME = "com_github_twisted_incremental"
-_ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME = (
-    "com_github_zopefoundation_zope_interface"
-)
-_TWISTED_CONSTANTLY_DEP_NAME = "com_github_twisted_constantly"
 
 _GRPC_DEP_NAMES = [
     "platforms",
@@ -63,11 +56,6 @@ _GRPC_DEP_NAMES = [
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,
-    _TWISTED_TWISTED_DEP_NAME,
-    _YAML_PYYAML_DEP_NAME,
-    _TWISTED_INCREMENTAL_DEP_NAME,
-    _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
-    _TWISTED_CONSTANTLY_DEP_NAME,
     "bazel_features",
     "rules_proto",
     "io_bazel_rules_go",
@@ -94,11 +82,6 @@ _GRPC_BAZEL_ONLY_DEPS = [
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,
-    _TWISTED_TWISTED_DEP_NAME,
-    _YAML_PYYAML_DEP_NAME,
-    _TWISTED_INCREMENTAL_DEP_NAME,
-    _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
-    _TWISTED_CONSTANTLY_DEP_NAME,
     "bazel_features",
     "rules_proto",
     "io_bazel_rules_go",
@@ -163,6 +146,11 @@ with open(os.path.join("bazel", "grpc_deps.bzl"), "r") as f:
     names_and_urls = {}
     eval_state = BazelEvalState(names_and_urls)
     bazel_file = f.read()
+
+# Remove bzlmod specific functions
+bazel_file = re.sub(
+    r"^grpc_repo_deps_ext.*$", "", bazel_file, flags=re.MULTILINE
+)
 
 # grpc_deps.bzl only defines 'grpc_deps' and 'grpc_test_only_deps', add these
 # lines to call them.

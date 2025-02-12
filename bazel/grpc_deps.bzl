@@ -202,11 +202,11 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "aed4389a9cf7777df7811185770dca7352f19a2fd68a41ae04e47071dada31eb",
-            strip_prefix = "data-plane-api-88a37373e3cb5e1ab09e75dfb302b083168e6654",
+            sha256 = "cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f",
+            strip_prefix = "data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz",
             ],
         )
 
@@ -347,25 +347,16 @@ def grpc_deps():
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
-            sha256 = "fb7c38e82ce5a5dcad70be7eafe0d3d4f439e3ef822b414a99db7514580ddac4",
-            strip_prefix = "opentelemetry-cpp-955a807c0461544560429c2414b8967f6023e590",
+            sha256 = "a85a22521de7426c3e019d50e18d0af16e0391e0353923308eb168b3e624aea1",
+            strip_prefix = "opentelemetry-cpp-ced79860f8c8a091a2eabfee6d47783f828a9b59",
             urls = [
-                # v1.18.0
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/955a807c0461544560429c2414b8967f6023e590.tar.gz",
-                "https://github.com/open-telemetry/opentelemetry-cpp/archive/955a807c0461544560429c2414b8967f6023e590.tar.gz",
+                # v1.19.0
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/ced79860f8c8a091a2eabfee6d47783f828a9b59.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/ced79860f8c8a091a2eabfee6d47783f828a9b59.tar.gz",
             ],
         )
 
-    if "google_cloud_cpp" not in native.existing_rules():
-        http_archive(
-            name = "google_cloud_cpp",
-            sha256 = "e53ba3799c052d97acac9a6a6b27af24ce822dbde7bfde973bac9e5da714e6b2",
-            strip_prefix = "google-cloud-cpp-2.33.0",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
-                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.33.0.tar.gz",
-            ],
-        )
+    grpc_module_deps()
 
     grpc_python_deps()
 
@@ -376,66 +367,6 @@ def grpc_test_only_deps():
 
     Loads dependencies that are only needed to run grpc library's tests.
     """
-
-    if "com_github_twisted_twisted" not in native.existing_rules():
-        http_archive(
-            name = "com_github_twisted_twisted",
-            sha256 = "ca17699d0d62eafc5c28daf2c7d0a18e62ae77b4137300b6c7d7868b39b06139",
-            strip_prefix = "twisted-twisted-17.5.0",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/twisted/twisted/archive/twisted-17.5.0.zip",
-                "https://github.com/twisted/twisted/archive/twisted-17.5.0.zip",
-            ],
-            build_file = "@com_github_grpc_grpc//third_party:twisted.BUILD",
-        )
-
-    if "com_github_yaml_pyyaml" not in native.existing_rules():
-        http_archive(
-            name = "com_github_yaml_pyyaml",
-            sha256 = "e34d97db6d846f5e2ad51417fd646e7ce6a3a70726ccea2a857e0580a7155f39",
-            strip_prefix = "pyyaml-6.0.1",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/yaml/pyyaml/archive/6.0.1.zip",
-                "https://github.com/yaml/pyyaml/archive/6.0.1.zip",
-            ],
-            build_file = "@com_github_grpc_grpc//third_party:yaml.BUILD",
-        )
-
-    if "com_github_twisted_incremental" not in native.existing_rules():
-        http_archive(
-            name = "com_github_twisted_incremental",
-            sha256 = "f0ca93359ee70243ff7fbf2d904a6291810bd88cb80ed4aca6fa77f318a41a36",
-            strip_prefix = "incremental-incremental-17.5.0",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/twisted/incremental/archive/incremental-17.5.0.zip",
-                "https://github.com/twisted/incremental/archive/incremental-17.5.0.zip",
-            ],
-            build_file = "@com_github_grpc_grpc//third_party:incremental.BUILD",
-        )
-
-    if "com_github_zopefoundation_zope_interface" not in native.existing_rules():
-        http_archive(
-            name = "com_github_zopefoundation_zope_interface",
-            sha256 = "e9579fc6149294339897be3aa9ecd8a29217c0b013fe6f44fcdae00e3204198a",
-            strip_prefix = "zope.interface-4.4.3",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/zopefoundation/zope.interface/archive/4.4.3.zip",
-                "https://github.com/zopefoundation/zope.interface/archive/4.4.3.zip",
-            ],
-            build_file = "@com_github_grpc_grpc//third_party:zope_interface.BUILD",
-        )
-
-    if "com_github_twisted_constantly" not in native.existing_rules():
-        http_archive(
-            name = "com_github_twisted_constantly",
-            sha256 = "2702cd322161a579d2c0dbf94af4e57712eedc7bd7bbbdc554a230544f7d346c",
-            strip_prefix = "constantly-15.1.0",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/twisted/constantly/archive/15.1.0.zip",
-                "https://github.com/twisted/constantly/archive/15.1.0.zip",
-            ],
-            build_file = "@com_github_grpc_grpc//third_party:constantly.BUILD",
-        )
 
     if "com_google_libprotobuf_mutator" not in native.existing_rules():
         http_archive(
@@ -448,3 +379,17 @@ def grpc_test_only_deps():
             strip_prefix = "libprotobuf-mutator-1f95f8083066f5b38fd2db172e7e7f9aa7c49d2d",
             build_file = "@com_github_grpc_grpc//third_party:libprotobuf_mutator.BUILD",
         )
+
+def grpc_module_deps():
+    if "google_cloud_cpp" not in native.existing_rules():
+        http_archive(
+            name = "google_cloud_cpp",
+            sha256 = "81ea28cf9e5bb032d356b0187409f30b1035f8ea5b530675ea248c8a6c0070aa",
+            strip_prefix = "google-cloud-cpp-2.35.0",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+            ],
+        )
+
+grpc_repo_deps_ext = module_extension(implementation = lambda ctx: grpc_module_deps())
