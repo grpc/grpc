@@ -334,7 +334,7 @@ ServerNode::~ServerNode() {}
 
 void ServerNode::AddChildSocket(RefCountedPtr<SocketNode> node) {
   MutexLock lock(&child_mu_);
-  child_sockets_.insert(std::make_pair(node->uuid(), std::move(node)));
+  child_sockets_.insert(std::pair(node->uuid(), std::move(node)));
 }
 
 void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
@@ -344,7 +344,7 @@ void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
 
 void ServerNode::AddChildListenSocket(RefCountedPtr<ListenSocketNode> node) {
   MutexLock lock(&child_mu_);
-  child_listen_sockets_.insert(std::make_pair(node->uuid(), std::move(node)));
+  child_listen_sockets_.insert(std::pair(node->uuid(), std::move(node)));
 }
 
 void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {

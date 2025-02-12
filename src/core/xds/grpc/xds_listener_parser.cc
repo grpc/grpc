@@ -16,7 +16,6 @@
 
 #include "src/core/xds/grpc/xds_listener_parser.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <set>
@@ -48,6 +47,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/match.h"
 #include "src/core/util/upb_utils.h"
@@ -211,7 +211,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   {
     ValidationErrors::ScopedField field(errors, ".http_filters");
     const auto& http_filter_registry =
-        static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .http_filter_registry();
     size_t num_filters = 0;
     const auto* http_filters =

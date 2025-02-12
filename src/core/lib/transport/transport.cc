@@ -49,7 +49,6 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
     // Throw this over to the executor (on a core-owned thread) and process it
     // there.
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run([refcount] {
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
       grpc_core::ExecCtx exec_ctx;
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,
                               absl::OkStatus());

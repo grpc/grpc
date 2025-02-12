@@ -44,7 +44,6 @@ FileExternalAccountCredentials::FileFetchBody::FileFetchBody(
   // Start work asynchronously, since we can't invoke the callback
   // synchronously without causing a deadlock.
   creds->event_engine().Run([self = RefAsSubclass<FileFetchBody>()]() mutable {
-    ApplicationCallbackExecCtx application_exec_ctx;
     ExecCtx exec_ctx;
     self->ReadFile();
     self.reset();

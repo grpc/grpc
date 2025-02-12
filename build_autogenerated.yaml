@@ -1235,6 +1235,7 @@ libs:
   - src/core/xds/grpc/xds_route_config_parser.h
   - src/core/xds/grpc/xds_routing.h
   - src/core/xds/grpc/xds_server_grpc.h
+  - src/core/xds/grpc/xds_server_grpc_interface.h
   - src/core/xds/grpc/xds_transport_grpc.h
   - src/core/xds/xds_client/lrs_client.h
   - src/core/xds/xds_client/xds_api.h
@@ -3812,6 +3813,8 @@ libs:
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
   - include/grpcpp/passive_listener.h
+  - include/grpcpp/ports_def.inc
+  - include/grpcpp/ports_undef.inc
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
@@ -4206,6 +4209,8 @@ libs:
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
   - include/grpcpp/passive_listener.h
+  - include/grpcpp/ports_def.inc
+  - include/grpcpp/ports_undef.inc
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h

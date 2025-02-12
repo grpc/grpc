@@ -528,7 +528,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
     auto bind_result = listener->Bind(ee_addr);
     if (!bind_result.ok()) {
       error_list.push_back(
-          std::make_pair(std::move(addr_str), bind_result.status()));
+          std::pair(std::move(addr_str), bind_result.status()));
       continue;
     }
     if (port_num == 0) {
