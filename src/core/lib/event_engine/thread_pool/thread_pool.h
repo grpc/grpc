@@ -36,8 +36,7 @@ class ThreadPool {
   virtual void Run(EventEngine::Closure* closure) = 0;
 
   virtual void PrepareFork() = 0;
-  virtual void PostforkChild() = 0;
-  virtual void PostforkParent() = 0;
+  virtual void PostFork() = 0;
 };
 
 // Creates a default thread pool.

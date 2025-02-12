@@ -18,6 +18,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/port_platform.h>
+#include <pthread.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -27,6 +28,7 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
@@ -76,6 +78,50 @@
 using namespace std::chrono_literals;
 
 namespace grpc_event_engine::experimental {
+
+namespace {
+// Fork support - mutex and global list of event engines
+grpc_core::Mutex fork_mu;
+std::unordered_set<PosixEventEngine*> event_engines_for_fork_
+    ABSL_GUARDED_BY(&fork_mu);
+
+void PrepareFork() {
+  grpc_core::MutexLock lock(&fork_mu);
+  for (PosixEventEngine* engine : event_engines_for_fork_) {
+    engine->BeforeFork();
+  }
+}
+
+void PostForkInParent() {
+  grpc_core::MutexLock lock(&fork_mu);
+  for (PosixEventEngine* engine : event_engines_for_fork_) {
+    engine->AfterForkInParent();
+  }
+}
+
+void PostForkInChild() {
+  grpc_core::MutexLock lock(&fork_mu);
+  for (PosixEventEngine* engine : event_engines_for_fork_) {
+    engine->AfterForkInChild();
+  }
+}
+
+void RegisterEventEngineForFork(PosixEventEngine* engine) {
+  grpc_core::MutexLock lock(&fork_mu);
+  event_engines_for_fork_.emplace(engine);
+  static bool handlers_installed = false;
+  if (!handlers_installed) {
+    pthread_atfork(PrepareFork, PostForkInParent, PostForkInChild);
+    handlers_installed = true;
+  }
+}
+
+void UnregisterEventEngineForFork(PosixEventEngine* engine) {
+  grpc_core::MutexLock lock(&fork_mu);
+  event_engines_for_fork_.erase(engine);
+}
+
+}  // namespace
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -347,6 +393,7 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  RegisterEventEngineForFork(this);
   poller_manager_ =
       std::make_shared<PosixEnginePollerManager>(poller, executor_);
 #endif
@@ -359,6 +406,7 @@ PosixEventEngine::PosixEventEngine()
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  RegisterEventEngineForFork(this);
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
   // The threadpool must be instantiated after the poller otherwise, the
   // process will deadlock when forking.
@@ -425,6 +473,7 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
 
 PosixEventEngine::~PosixEventEngine() {
   {
+    UnregisterEventEngineForFork(this);
     grpc_core::MutexLock lock(&mu_);
     if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
       for (auto handle : known_handles_) {
@@ -721,6 +770,7 @@ PosixEventEngine::CreatePosixListener(
 #ifdef GRPC_POSIX_SOCKET
 
 void PosixEventEngine::BeforeFork() {
+  LOG(INFO) << "Before work";
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   poller_manager_->Poller()->Kick();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
@@ -728,7 +778,8 @@ void PosixEventEngine::BeforeFork() {
 }
 
 void PosixEventEngine::AfterForkInParent() {
-  executor_->PostforkParent();
+  executor_->PostFork();
+  LOG(INFO) << "After fork, parent";
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   executor_->Run([poller_manager = poller_manager_]() {
     PollerWorkInternal(poller_manager);
@@ -737,7 +788,8 @@ void PosixEventEngine::AfterForkInParent() {
 }
 
 void PosixEventEngine::AfterForkInChild() {
-  executor_->PostforkParent();
+  LOG(INFO) << "After fork, child";
+  executor_->PostFork();
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   poller_manager_->Poller()->AdvanceGeneration();
   executor_->Run([poller_manager = poller_manager_]() {
