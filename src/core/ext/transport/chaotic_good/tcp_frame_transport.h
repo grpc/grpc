@@ -22,6 +22,7 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -73,6 +74,7 @@ class TcpFrameTransport final : public FrameTransport {
 
   void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
              RefCountedPtr<FrameTransportSink> sink) override;
+  void Orphan() override;
 
  private:
   auto WriteFrame(const FrameInterface& frame);
@@ -80,10 +82,13 @@ class TcpFrameTransport final : public FrameTransport {
   // Read frame header and payloads for control and data portions of one frame.
   // Resolves to StatusOr<IncomingFrame>.
   auto ReadFrameBytes();
+  template <typename Promise>
+  auto UntilClosed(Promise promise);
 
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
   const Options options_;
+  InterActivityLatch<void> closed_;
 };
 
 }  // namespace chaotic_good

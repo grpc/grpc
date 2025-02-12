@@ -237,7 +237,7 @@ void ChaoticGoodServerTransport::StreamDispatch::OnIncomingFrame(
 }
 
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
-    const ChannelArgs& args, RefCountedPtr<FrameTransport> frame_transport,
+    const ChannelArgs& args, OrphanablePtr<FrameTransport> frame_transport,
     MessageChunker message_chunker)
     : state_{std::make_unique<ConstructionParameters>(
           args, std::move(frame_transport), message_chunker)} {}

@@ -19,6 +19,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 
@@ -88,7 +89,8 @@ TcpFrameTransport::TcpFrameTransport(
     Options options, PromiseEndpoint control_endpoint,
     std::vector<PendingConnection> pending_data_endpoints,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : control_endpoint_(std::move(control_endpoint), event_engine.get()),
+    : FrameTransport("TcpFrameTransport"),
+      control_endpoint_(std::move(control_endpoint), event_engine.get()),
       data_endpoints_(std::move(pending_data_endpoints), event_engine.get(),
                       options.enable_tracing),
       options_(options) {}
@@ -215,13 +217,22 @@ auto TcpFrameTransport::ReadFrameBytes() {
       });
 }
 
+template <typename Promise>
+auto TcpFrameTransport::UntilClosed(Promise promise) {
+  return Race(Map(closed_.Wait(),
+                  [self = RefAsSubclass<TcpFrameTransport>()](Empty) {
+                    return absl::UnavailableError("Frame transport closed");
+                  }),
+              std::move(promise));
+}
+
 void TcpFrameTransport::Start(Party* party, MpscReceiver<Frame> frames,
                               RefCountedPtr<FrameTransportSink> sink) {
   party->Spawn(
       "tcp-write",
       [self = RefAsSubclass<TcpFrameTransport>(),
        frames = std::move(frames)]() mutable {
-        return self->WriteLoop(std::move(frames));
+        return self->UntilClosed(self->WriteLoop(std::move(frames)));
       },
       [sink](absl::Status status) {
         sink->OnFrameTransportClosed(std::move(status));
@@ -229,18 +240,23 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<Frame> frames,
   party->Spawn(
       "tcp-read",
       [self = RefAsSubclass<TcpFrameTransport>(), sink = sink]() {
-        return Loop([self = self.get(), sink = sink.get()]() {
+        return self->UntilClosed(Loop([self = self.get(), sink = sink.get()]() {
           return TrySeq(
               self->ReadFrameBytes(),
               [sink](IncomingFrame incoming_frame) -> LoopCtl<absl::Status> {
                 sink->OnIncomingFrame(std::move(incoming_frame));
                 return Continue{};
               });
-        });
+        }));
       },
       [sink](absl::Status status) {
         sink->OnFrameTransportClosed(std::move(status));
       });
+}
+
+void TcpFrameTransport::Orphan() {
+  closed_.Set();
+  Unref();
 }
 
 }  // namespace chaotic_good

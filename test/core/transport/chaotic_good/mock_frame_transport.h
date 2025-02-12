@@ -43,6 +43,10 @@ class MockFrameTransport final : public FrameTransport {
     }
     closed_.store(true);
   }
+  void Orphan() override {
+    Close();
+    Unref();
+  }
 
  private:
   struct ExpectedWrite {

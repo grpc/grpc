@@ -138,12 +138,12 @@ void CanSendFrames(size_t num_data_endpoints, uint32_t client_alignment,
     pending_connections_server.emplace_back(std::move(server));
   }
   auto [client, server] = CreatePromiseEndpointPair(engine);
-  auto client_transport = MakeRefCounted<TcpFrameTransport>(
+  auto client_transport = MakeOrphanable<TcpFrameTransport>(
       TcpFrameTransport::Options{server_alignment, client_alignment,
                                  server_inlined_payload_size_threshold},
       std::move(client), std::move(pending_connections_client),
       std::static_pointer_cast<EventEngine>(engine));
-  auto server_transport = MakeRefCounted<TcpFrameTransport>(
+  auto server_transport = MakeOrphanable<TcpFrameTransport>(
       TcpFrameTransport::Options{client_alignment, server_alignment,
                                  client_inlined_payload_size_threshold},
       std::move(server), std::move(pending_connections_server),
@@ -177,6 +177,9 @@ void CanSendFrames(size_t num_data_endpoints, uint32_t client_alignment,
     engine->Tick();
     CHECK(Timestamp::Now() < deadline) << "timeout";
   }
+  client_transport.reset();
+  server_transport.reset();
+  engine->TickUntilIdle();
 }
 FUZZ_TEST(TcpFrameTransportTest, CanSendFrames)
     .WithDomains(/* num_data_endpoints */ InRange<size_t>(0, 64),

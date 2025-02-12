@@ -217,7 +217,7 @@ void ChaoticGoodClientTransport::StreamDispatch::StopConnectivityWatch(
 }
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
-    const ChannelArgs& args, RefCountedPtr<FrameTransport> frame_transport,
+    const ChannelArgs& args, OrphanablePtr<FrameTransport> frame_transport,
     MessageChunker message_chunker)
     : event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),

@@ -8041,6 +8041,8 @@ grpc_cc_library(
         "if",
         "loop",
         "seq",
+        "race",
+        "inter_activity_latch",
         "try_seq",
     ],
 )

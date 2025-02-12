@@ -72,8 +72,10 @@ class FrameTransportSink : public RefCounted<FrameTransportSink> {
   virtual void OnFrameTransportClosed(absl::Status status) = 0;
 };
 
-class FrameTransport : public RefCounted<FrameTransport> {
+class FrameTransport : public InternallyRefCounted<FrameTransport> {
  public:
+  using InternallyRefCounted::InternallyRefCounted;
+
   virtual void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
                      RefCountedPtr<FrameTransportSink> sink) = 0;
 };

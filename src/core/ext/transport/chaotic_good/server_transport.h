@@ -79,7 +79,7 @@ namespace chaotic_good {
 class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(const ChannelArgs& args,
-                             RefCountedPtr<FrameTransport> frame_transport,
+                             OrphanablePtr<FrameTransport> frame_transport,
                              MessageChunker message_chunker);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
