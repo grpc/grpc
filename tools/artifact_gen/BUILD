@@ -13,10 +13,10 @@
 # limitations under the License.
 
 cc_library(
-    name="extract_metadata_from_bazel_xml",
-    srcs=["extract_metadata_from_bazel_xml.cc"],
-    hdrs=["extract_metadata_from_bazel_xml.h"],
-    deps=[
+    name = "extract_metadata_from_bazel_xml",
+    srcs = ["extract_metadata_from_bazel_xml.cc"],
+    hdrs = ["extract_metadata_from_bazel_xml.h"],
+    deps = [
         "@abseil-cpp//absl/algorithm:container",
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/log",
@@ -28,23 +28,11 @@ cc_library(
 )
 
 cc_library(
-    name="metadata_for_wrapped_languages",
-    srcs=["metadata_for_wrapped_languages.cc"],
-    hdrs=["metadata_for_wrapped_languages.h"],
-    deps=[
-        "@abseil-cpp//absl/log",
-        "@abseil-cpp//absl/log:check",
-        "@abseil-cpp//absl/strings",
-        "@nlohmann_json//:json",
+    name = "metadata_for_wrapped_languages",
+    srcs = ["metadata_for_wrapped_languages.cc"],
+    hdrs = ["metadata_for_wrapped_languages.h"],
+    deps = [
         "utils",
-    ],
-)
-
-cc_library(
-    name="boringssl",
-    srcs=["boringssl.cc"],
-    hdrs=["boringssl.h"],
-    deps=[
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/strings",
@@ -53,10 +41,22 @@ cc_library(
 )
 
 cc_library(
-    name="utils",
-    srcs=["utils.cc"],
-    hdrs=["utils.h"],
-    deps=[
+    name = "boringssl",
+    srcs = ["boringssl.cc"],
+    hdrs = ["boringssl.h"],
+    deps = [
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
+        "@nlohmann_json//:json",
+    ],
+)
+
+cc_library(
+    name = "utils",
+    srcs = ["utils.cc"],
+    hdrs = ["utils.h"],
+    deps = [
         "@abseil-cpp//absl/log",
         "@nlohmann_json//:json",
         "@yaml-cpp//:yaml-cpp",
@@ -64,10 +64,10 @@ cc_library(
 )
 
 cc_library(
-    name="render",
-    srcs=["render.cc"],
-    hdrs=["render.h"],
-    deps=[
+    name = "render",
+    srcs = ["render.cc"],
+    hdrs = ["render.h"],
+    deps = [
         ":utils",
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/log",
@@ -79,11 +79,11 @@ cc_library(
 )
 
 cc_binary(
-    name="artifact_gen",
-    srcs=["artifact_gen.cc"],
-    deps=[
-        ":metadata_for_wrapped_languages",
+    name = "artifact_gen",
+    srcs = ["artifact_gen.cc"],
+    deps = [
         ":extract_metadata_from_bazel_xml",
+        ":metadata_for_wrapped_languages",
         ":render",
         ":utils",
         "@abseil-cpp//absl/flags:parse",
