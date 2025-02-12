@@ -39,7 +39,6 @@ if test "$PHP_GRPC" != "no"; then
   esac
 
   PHP_SUBST(GRPC_SHARED_LIBADD)
-
   PHP_NEW_EXTENSION(grpc,
     src/core/call/request_buffer.cc \
     src/core/channelz/channel_trace.cc \
@@ -1417,7 +1416,6 @@ if test "$PHP_GRPC" != "no"; then
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
     -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.71.0dev\""')
-
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)

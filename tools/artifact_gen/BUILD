@@ -12,16 +12,81 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cc_binary(
-    name = "artifact_gen",
-    srcs = ["artifact_gen.cc"],
-    deps = [
-        "@abseil-cpp//absl/strings",
-        "@abseil-cpp//absl/log:check",
-        "@abseil-cpp//absl/log",
+cc_library(
+    name="extract_metadata_from_bazel_xml",
+    srcs=["extract_metadata_from_bazel_xml.cc"],
+    hdrs=["extract_metadata_from_bazel_xml.h"],
+    deps=[
         "@abseil-cpp//absl/algorithm:container",
-        "@pugixml//:pugixml",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
+        "@nlohmann_json//:json",
+        "@pugixml",
+    ],
+)
+
+cc_library(
+    name="metadata_for_wrapped_languages",
+    srcs=["metadata_for_wrapped_languages.cc"],
+    hdrs=["metadata_for_wrapped_languages.h"],
+    deps=[
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
+        "@nlohmann_json//:json",
+        "utils",
+    ],
+)
+
+cc_library(
+    name="boringssl",
+    srcs=["boringssl.cc"],
+    hdrs=["boringssl.h"],
+    deps=[
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
+        "@nlohmann_json//:json",
+    ],
+)
+
+cc_library(
+    name="utils",
+    srcs=["utils.cc"],
+    hdrs=["utils.h"],
+    deps=[
+        "@abseil-cpp//absl/log",
+        "@nlohmann_json//:json",
+        "@yaml-cpp//:yaml-cpp",
+    ],
+)
+
+cc_library(
+    name="render",
+    srcs=["render.cc"],
+    hdrs=["render.h"],
+    deps=[
+        ":utils",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
+        "@nlohmann_json//:json",
         "@pantor_inja//:inja",
-        "@nlohmann_json//:json"
+    ],
+)
+
+cc_binary(
+    name="artifact_gen",
+    srcs=["artifact_gen.cc"],
+    deps=[
+        ":metadata_for_wrapped_languages",
+        ":extract_metadata_from_bazel_xml",
+        ":render",
+        ":utils",
+        "@abseil-cpp//absl/flags:parse",
+        "@pantor_inja//:inja",
     ],
 )
