@@ -2379,12 +2379,14 @@ class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
 
 namespace {
 
-void CreateCallAttemptTracer(Arena* arena, bool is_transparent_retry) {
+ClientCallTracer::CallAttemptTracer* CreateCallAttemptTracer(
+    Arena* arena, bool is_transparent_retry) {
   auto* call_tracer = DownCast<ClientCallTracer*>(
       arena->GetContext<CallTracerAnnotationInterface>());
-  if (call_tracer == nullptr) return;
+  if (call_tracer == nullptr) return nullptr;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
   arena->SetContext<CallTracerInterface>(tracer);
+  return tracer;
 }
 
 }  // namespace
@@ -2396,9 +2398,10 @@ ClientChannelFilter::LoadBalancedCall::LoadBalancedCall(
                                ? "LoadBalancedCall"
                                : nullptr),
       chand_(chand),
+      call_attempt_tracer_(
+          CreateCallAttemptTracer(arena, is_transparent_retry)),
       on_commit_(std::move(on_commit)),
       arena_(arena) {
-  CreateCallAttemptTracer(arena, is_transparent_retry);
   GRPC_TRACE_LOG(client_channel_lb_call, INFO)
       << "chand=" << chand_ << " lb_call=" << this << ": created";
 }
