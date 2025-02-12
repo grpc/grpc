@@ -48,6 +48,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/time.h"
@@ -299,7 +300,7 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
       envoy_config_cluster_v3_Cluster_load_balancing_policy(cluster);
   if (load_balancing_policy != nullptr) {
     const auto& registry =
-        static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .lb_policy_registry();
     ValidationErrors::ScopedField field(errors, ".load_balancing_policy");
     const size_t original_error_count = errors->size();
@@ -509,7 +510,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       errors.AddError("ConfigSource is not self");
     }
     cds_update->lrs_load_reporting_server = std::make_shared<GrpcXdsServer>(
-        static_cast<const GrpcXdsServer&>(context.server));
+        DownCast<const GrpcXdsServer&>(context.server));
   }
   // Record LRS metric propagation.
   auto propagation = MakeRefCounted<BackendMetricPropagation>();

@@ -121,6 +121,7 @@ def generate_cc_impl(ctx):
             ctx.attr.flags,
             dir_out,
             ctx.attr.generate_mocks,
+            ctx.attr.allow_deprecated,
         )
         tools = [ctx.executable.plugin]
     else:
@@ -183,6 +184,10 @@ _generate_cc = rule(
         ),
         "well_known_protos": attr.label(mandatory = False),
         "generate_mocks": attr.bool(
+            default = False,
+            mandatory = False,
+        ),
+        "allow_deprecated": attr.bool(
             default = False,
             mandatory = False,
         ),

@@ -26,6 +26,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 
@@ -38,6 +39,9 @@ constexpr absl::string_view kServerFeatureIgnoreResourceDeletion =
 
 constexpr absl::string_view kServerFeatureFailOnDataErrors =
     "fail_on_data_errors";
+
+constexpr absl::string_view kServerFeatureResourceTimerIsTransientFailure =
+    "resource_timer_is_transient_error";
 
 constexpr absl::string_view kServerFeatureTrustedXdsServer =
     "trusted_xds_server";
@@ -54,13 +58,19 @@ bool GrpcXdsServer::FailOnDataErrors() const {
          server_features_.end();
 }
 
+bool GrpcXdsServer::ResourceTimerIsTransientFailure() const {
+  return server_features_.find(
+             std::string(kServerFeatureResourceTimerIsTransientFailure)) !=
+         server_features_.end();
+}
+
 bool GrpcXdsServer::TrustedXdsServer() const {
   return server_features_.find(std::string(kServerFeatureTrustedXdsServer)) !=
          server_features_.end();
 }
 
 bool GrpcXdsServer::Equals(const XdsServer& other) const {
-  const auto& o = static_cast<const GrpcXdsServer&>(other);
+  const auto& o = DownCast<const GrpcXdsServer&>(other);
   return (server_uri_ == o.server_uri_ &&
           channel_creds_config_->type() == o.channel_creds_config_->type() &&
           channel_creds_config_->Equals(*o.channel_creds_config_) &&
@@ -135,6 +145,8 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
           if (feature_json.type() == Json::Type::kString &&
               (feature_json.string() == kServerFeatureIgnoreResourceDeletion ||
                feature_json.string() == kServerFeatureFailOnDataErrors ||
+               feature_json.string() ==
+                   kServerFeatureResourceTimerIsTransientFailure ||
                feature_json.string() == kServerFeatureTrustedXdsServer)) {
             server_features_.insert(feature_json.string());
           }

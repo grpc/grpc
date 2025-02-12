@@ -618,7 +618,7 @@ grpc_cc_test(
     name = "sleep_test",
     srcs = ["sleep_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log",
         "gtest",
     ],
     tags = ["promise_test"],
@@ -627,10 +627,11 @@ grpc_cc_test(
     deps = [
         "test_wakeup_schedulers",
         "//:exec_ctx",
-        "//:gpr",
         "//:grpc",
         "//:orphanable",
+        "//src/core:arena",
         "//src/core:default_event_engine",
+        "//src/core:event_engine_context",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:notification",
         "//src/core:race",

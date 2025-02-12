@@ -1053,12 +1053,10 @@ RlsLb::Cache::Entry::BackoffTimer::BackoffTimer(RefCountedPtr<Entry> entry,
   backoff_timer_task_handle_ =
       entry_->lb_policy_->channel_control_helper()->GetEventEngine()->RunAfter(
           delay, [self = Ref(DEBUG_LOCATION, "BackoffTimer")]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto self_ptr = self.get();
             self_ptr->entry_->lb_policy_->work_serializer()->Run(
-                [self = std::move(self)]() { self->OnBackoffTimerLocked(); },
-                DEBUG_LOCATION);
+                [self = std::move(self)]() { self->OnBackoffTimerLocked(); });
           });
 }
 
@@ -1386,14 +1384,12 @@ void RlsLb::Cache::StartCleanupTimer() {
           kCacheCleanupTimerInterval,
           [this, lb_policy = lb_policy_->Ref(DEBUG_LOCATION,
                                              "CacheCleanupTimer")]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             lb_policy_->work_serializer()->Run(
                 [this, lb_policy = std::move(lb_policy)]() {
                   // The lb_policy ref is held until the callback completes
                   OnCleanupTimer();
-                },
-                DEBUG_LOCATION);
+                });
           });
 }
 
@@ -1661,12 +1657,10 @@ void RlsLb::RlsRequest::Orphan() {
 
 void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle /*error*/) {
   auto* request = static_cast<RlsRequest*>(arg);
-  request->lb_policy_->work_serializer()->Run(
-      [request]() {
-        request->StartCallLocked();
-        request->Unref(DEBUG_LOCATION, "StartCall");
-      },
-      DEBUG_LOCATION);
+  request->lb_policy_->work_serializer()->Run([request]() {
+    request->StartCallLocked();
+    request->Unref(DEBUG_LOCATION, "StartCall");
+  });
 }
 
 void RlsLb::RlsRequest::StartCallLocked() {
@@ -1714,12 +1708,10 @@ void RlsLb::RlsRequest::StartCallLocked() {
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
   auto* request = static_cast<RlsRequest*>(arg);
-  request->lb_policy_->work_serializer()->Run(
-      [request, error]() {
-        request->OnRlsCallCompleteLocked(error);
-        request->Unref(DEBUG_LOCATION, "OnRlsCallComplete");
-      },
-      DEBUG_LOCATION);
+  request->lb_policy_->work_serializer()->Run([request, error]() {
+    request->OnRlsCallCompleteLocked(error);
+    request->Unref(DEBUG_LOCATION, "OnRlsCallComplete");
+  });
 }
 
 void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
@@ -2078,13 +2070,11 @@ void RlsLb::UpdatePickerAsync() {
 
 void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
   auto* rls_lb = static_cast<RlsLb*>(arg);
-  rls_lb->work_serializer()->Run(
-      [rls_lb]() {
-        RefCountedPtr<RlsLb> lb_policy(rls_lb);
-        lb_policy->UpdatePickerLocked();
-        lb_policy.reset(DEBUG_LOCATION, "UpdatePickerCallback");
-      },
-      DEBUG_LOCATION);
+  rls_lb->work_serializer()->Run([rls_lb]() {
+    RefCountedPtr<RlsLb> lb_policy(rls_lb);
+    lb_policy->UpdatePickerLocked();
+    lb_policy.reset(DEBUG_LOCATION, "UpdatePickerCallback");
+  });
 }
 
 void RlsLb::UpdatePickerLocked() {

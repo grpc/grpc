@@ -81,12 +81,12 @@ class TestFilter {
     void OnClientInitialMetadata(ClientMetadata& md) {
       AnnotatePassedThrough(md, I);
     }
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
   };
 
   static absl::StatusOr<std::unique_ptr<TestFilter<I>>> Create(
@@ -99,19 +99,6 @@ class TestFilter {
   std::unique_ptr<int> i_ = std::make_unique<int>(I);
 };
 
-template <int I>
-const NoInterceptor TestFilter<I>::Call::OnServerInitialMetadata;
-template <int I>
-const NoInterceptor TestFilter<I>::Call::OnClientToServerMessage;
-template <int I>
-const NoInterceptor TestFilter<I>::Call::OnClientToServerHalfClose;
-template <int I>
-const NoInterceptor TestFilter<I>::Call::OnServerToClientMessage;
-template <int I>
-const NoInterceptor TestFilter<I>::Call::OnServerTrailingMetadata;
-template <int I>
-const NoInterceptor TestFilter<I>::Call::OnFinalize;
-
 ///////////////////////////////////////////////////////////////////////////////
 // Test call filter that fails to instantiate
 
@@ -120,13 +107,13 @@ class FailsToInstantiateFilter {
  public:
   class Call {
    public:
-    static const NoInterceptor OnClientInitialMetadata;
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientInitialMetadata;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
   };
 
   static absl::StatusOr<std::unique_ptr<FailsToInstantiateFilter<I>>> Create(
@@ -135,22 +122,6 @@ class FailsToInstantiateFilter {
     return absl::InternalError(absl::StrCat("👊 failed to instantiate ", I));
   }
 };
-
-template <int I>
-const NoInterceptor FailsToInstantiateFilter<I>::Call::OnClientInitialMetadata;
-template <int I>
-const NoInterceptor FailsToInstantiateFilter<I>::Call::OnServerInitialMetadata;
-template <int I>
-const NoInterceptor FailsToInstantiateFilter<I>::Call::OnClientToServerMessage;
-template <int I>
-const NoInterceptor
-    FailsToInstantiateFilter<I>::Call::OnClientToServerHalfClose;
-template <int I>
-const NoInterceptor FailsToInstantiateFilter<I>::Call::OnServerToClientMessage;
-template <int I>
-const NoInterceptor FailsToInstantiateFilter<I>::Call::OnServerTrailingMetadata;
-template <int I>
-const NoInterceptor FailsToInstantiateFilter<I>::Call::OnFinalize;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Test call interceptor - consumes calls
@@ -279,7 +250,8 @@ class InterceptionChainTest : public ::testing::Test {
       metadata_ = Arena::MakePooledForOverwrite<ClientMetadata>();
       *metadata_ =
           unstarted_call_handler.UnprocessedClientInitialMetadata().Copy();
-      unstarted_call_handler.PushServerTrailingMetadata(
+      auto handler = unstarted_call_handler.StartCall();
+      handler.PushServerTrailingMetadata(
           ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "👊 cancelled"));
     }
 
@@ -433,6 +405,38 @@ TEST_F(InterceptionChainTest, CreationOrderCorrect) {
                                CreationLogEntry{1, 1}, CreationLogEntry{1, 2},
                                CreationLogEntry{1, 3}, CreationLogEntry{1, 4},
                                CreationLogEntry{2, 1}));
+}
+
+TEST_F(InterceptionChainTest, AddOnServerTrailingMetadataForEachInterceptor) {
+  CreationLog log;
+  auto r =
+      InterceptionChainBuilder(ChannelArgs())
+          .AddOnServerTrailingMetadata([](ServerMetadata& md) {
+            md.Set(
+                GrpcMessageMetadata(),
+                Slice::FromCopiedString(absl::StrCat(
+                    "0",
+                    md.get_pointer(GrpcMessageMetadata())->as_string_view())));
+          })
+          .AddOnServerTrailingMetadataForEachInterceptor(
+              [](ServerMetadata& md) {
+                md.Set(GrpcMessageMetadata(),
+                       Slice::FromCopiedString(absl::StrCat(
+                           "x", md.get_pointer(GrpcMessageMetadata())
+                                    ->as_string_view())));
+              })
+          .Add<TestPassThroughInterceptor<1>>()
+          .Add<TestPassThroughInterceptor<2>>()
+          .Add<TestPassThroughInterceptor<3>>()
+          .Build(destination());
+  ASSERT_TRUE(r.ok()) << r.status();
+  auto finished_call = RunCall(r.value().get());
+  EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
+            GRPC_STATUS_INTERNAL);
+  EXPECT_EQ(finished_call.server_metadata->get_pointer(GrpcMessageMetadata())
+                ->as_string_view(),
+            "0xxx👊 cancelled");
+  EXPECT_NE(finished_call.client_metadata, nullptr);
 }
 
 }  // namespace

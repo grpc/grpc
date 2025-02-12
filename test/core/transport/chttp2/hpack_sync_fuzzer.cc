@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <google/protobuf/text_format.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +45,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
@@ -137,7 +139,7 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
         encode_output.c_slice_at(i), i == (encode_output.Count() - 1),
         absl::BitGenRef(proto_bit_src), /*call_tracer=*/nullptr);
     if (!err.ok()) {
-      seen_errors.push_back(std::make_pair(i, err));
+      seen_errors.push_back(std::pair(i, err));
       // If we get a connection error (i.e. not a stream error), stop parsing,
       // return.
       if (!IsStreamError(err)) return;
@@ -223,7 +225,29 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
     }
   }
 }
-FUZZ_TEST(HpackSyncFuzzer, FuzzOneInput);
+FUZZ_TEST(HpackSyncFuzzer, FuzzOneInput)
+    .WithDomains(::fuzztest::Arbitrary<hpack_sync_fuzzer::Msg>()
+                     .WithProtobufField("config_vars", AnyConfigVars()));
+
+auto ParseTestProto(const std::string& proto) {
+  hpack_sync_fuzzer::Msg msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  return msg;
+}
+
+TEST(HpackSyncFuzzer, FuzzOneInputRegression1) {
+  FuzzOneInput(ParseTestProto(
+      R"pb(
+        headers { literal_not_idx { key: "grpc-status" value: "72" } }
+      )pb"));
+}
+
+TEST(HpackSyncFuzzer, FuzzOneInputRegression2) {
+  FuzzOneInput(ParseTestProto(
+      R"pb(
+        headers { literal_not_idx { key: "grpc-status" value: "-1" } }
+      )pb"));
+}
 
 }  // namespace
 }  // namespace grpc_core

@@ -276,14 +276,12 @@ class RingHash final : public LoadBalancingPolicy {
      private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<EndpointConnectionAttempter*>(arg);
-        self->ring_hash_->work_serializer()->Run(
-            [self]() {
-              if (!self->ring_hash_->shutdown_) {
-                self->endpoint_->RequestConnectionLocked();
-              }
-              delete self;
-            },
-            DEBUG_LOCATION);
+        self->ring_hash_->work_serializer()->Run([self]() {
+          if (!self->ring_hash_->shutdown_) {
+            self->endpoint_->RequestConnectionLocked();
+          }
+          delete self;
+        });
       }
 
       RefCountedPtr<RingHash> ring_hash_;

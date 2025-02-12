@@ -333,12 +333,10 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
      private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<SubchannelConnectionRequester*>(arg);
-        self->subchannel_->policy()->work_serializer()->Run(
-            [self]() {
-              self->subchannel_->RequestConnection();
-              delete self;
-            },
-            DEBUG_LOCATION);
+        self->subchannel_->policy()->work_serializer()->Run([self]() {
+          self->subchannel_->RequestConnection();
+          delete self;
+        });
       }
 
       RefCountedPtr<SubchannelWrapper> subchannel_;
@@ -515,8 +513,7 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
         [policy = policy_,
          address = std::string(address_with_no_subchannel)]() {
           policy->CreateSubchannelForAddress(address);
-        },
-        DEBUG_LOCATION);
+        });
     return PickResult::Queue();
   }
   // No entry found that was not in TRANSIENT_FAILURE.
@@ -571,12 +568,10 @@ XdsOverrideHostLb::IdleTimer::IdleTimer(RefCountedPtr<XdsOverrideHostLb> policy,
       << ": subchannel cleanup pass will run in " << duration;
   timer_handle_ = policy_->channel_control_helper()->GetEventEngine()->RunAfter(
       duration, [self = RefAsSubclass<IdleTimer>()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         auto self_ptr = self.get();
         self_ptr->policy_->work_serializer()->Run(
-            [self = std::move(self)]() { self->OnTimerLocked(); },
-            DEBUG_LOCATION);
+            [self = std::move(self)]() { self->OnTimerLocked(); });
       });
 }
 
@@ -1038,8 +1033,7 @@ void XdsOverrideHostLb::SubchannelWrapper::Orphaned() {
           self->subchannel_entry_->OnSubchannelWrapperOrphan(
               self.get(), self->policy()->connection_idle_timeout_);
         }
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
