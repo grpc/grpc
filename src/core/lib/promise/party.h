@@ -80,8 +80,8 @@ namespace grpc_core {
 //
 // Execution of Spawned Promises
 // A Participant spawned on a party will get executed by that party.
-// Whenever the party wakes up, it will executed all unresolved Party
-// Participants atleast once. After any Party Participant is resolved, its slot
+// Whenever the party wakes up, it will execute all unresolved Party
+// Participants at least once. After any Party Participant is resolved, its slot
 // is freed up to make place for new participants.
 //
 // When these Party Participants are executed (polled), they can either
@@ -109,10 +109,10 @@ namespace grpc_core {
 // Party Cancellation
 // A Party can be cancelled using party_.reset() method.
 //
-// Gurantees of a Party
-// 1. All Participant spawned on one party are guranteed to be run serially.
+// Guarantees of a Party
+// 1. All Participant spawned on one party are guaranteed to be run serially.
 // Their execution will not happen in parallel.
-// 2. If a promise is executed, its on_complete is guranteed to be executed as
+// 2. If a promise is executed, its on_complete is guaranteed to be executed as
 // long as the party is not cancelled.
 // 3. Once a party is cancelled, Participants that were Spawned onto the party,
 // but not yet executed, will not get executed.
@@ -125,16 +125,16 @@ namespace grpc_core {
 // promise combinators is allowed.
 // 7. You can re-use the same party to spawn new Participants as long as the
 // older Participants have been resolved.
-// 8. We gurantee safe working of up to 16 un-resolved participatns
+// 8. We guarantee safe working of up to 16 un-resolved participants
 // on a party at a time.
 //
-// Non-Gurantees of a Party
-// 1. Promises spawned on one party are not guranteed to execute in the same
+// Non-Guarantees of a Party
+// 1. Promises spawned on one party are not guaranteed to execute in the same
 // order. They can execute in any order. If you need the promises to be executed
 // in a specific order, use a SpawnSerializer. If that is not feasible for some
 // reason, then either consider the use of a promise combinator, or order the
 // execution of promises using Notifications or Latches.
-// 2. A party cannot gurantee which thread a party Participant will execute on.
+// 2. A party cannot guarantee which thread a party Participant will execute on.
 // It could either execute on the current thread, or an event engine thread or
 // any other thread.
 // 3. Say, we spawned promises P1_1, P1_2, P1_3 on party1. Then promise P1_1 in
@@ -145,8 +145,8 @@ namespace grpc_core {
 namespace party_detail {
 
 // Number of bits reserved for wakeups gives us the maximum number of
-// participants. This can change in the future and we dont gurantee this number
-// to be 16 always.
+// participants. This can change in the future and we don't guarantee this
+// number to be 16 always.
 static constexpr size_t kMaxParticipants = 16;
 
 }  // namespace party_detail
