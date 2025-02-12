@@ -217,7 +217,7 @@ void ChaoticGoodClientTransport::StreamDispatch::StopConnectivityWatch(
 }
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
-    const ChannelArgs& args, FrameTransport& frame_transport,
+    const ChannelArgs& args, RefCountedPtr<FrameTransport> frame_transport,
     MessageChunker message_chunker)
     : event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
@@ -233,8 +233,8 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   outgoing_frames_ = outgoing_frames.MakeSender();
   stream_dispatch_ =
       MakeRefCounted<StreamDispatch>(outgoing_frames.MakeSender());
-  frame_transport.Start(party_.get(), std::move(outgoing_frames),
-                        stream_dispatch_);
+  frame_transport->Start(party_.get(), std::move(outgoing_frames),
+                         stream_dispatch_);
 }
 
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }

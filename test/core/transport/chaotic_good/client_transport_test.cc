@@ -96,7 +96,7 @@ ChannelArgs MakeChannelArgs(
 }
 
 TEST_F(TransportTest, AddOneStream) {
-  MockFrameTransport frame_transport;
+  auto frame_transport = MakeRefCounted<MockFrameTransport>();
   static const std::string many_as(1024 * 1024, 'a');
   auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
@@ -104,10 +104,10 @@ TEST_F(TransportTest, AddOneStream) {
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
-  frame_transport.ExpectWrite(MakeProtoFrame<ClientInitialMetadataFrame>(
+  frame_transport->ExpectWrite(MakeProtoFrame<ClientInitialMetadataFrame>(
       1, "path: '/demo.Service/Step'"));
-  frame_transport.ExpectWrite(MakeMessageFrame(1, "0"));
-  frame_transport.ExpectWrite(ClientEndOfStream(1));
+  frame_transport->ExpectWrite(MakeMessageFrame(1, "0"));
+  frame_transport->ExpectWrite(ClientEndOfStream(1));
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
@@ -145,10 +145,10 @@ TEST_F(TransportTest, AddOneStream) {
               on_done.Call();
             });
       });
-  frame_transport.Read(
+  frame_transport->Read(
       MakeProtoFrame<ServerInitialMetadataFrame>(1, "message: 'hello'"));
-  frame_transport.Read(MakeMessageFrame(1, many_as));
-  frame_transport.Read(
+  frame_transport->Read(MakeMessageFrame(1, many_as));
+  frame_transport->Read(
       MakeProtoFrame<ServerTrailingMetadataFrame>(1, "status: 0"));
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
@@ -156,18 +156,18 @@ TEST_F(TransportTest, AddOneStream) {
 }
 
 TEST_F(TransportTest, AddOneStreamMultipleMessages) {
-  MockFrameTransport frame_transport;
+  auto frame_transport = MakeRefCounted<MockFrameTransport>();
   auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       channel_args, frame_transport, MessageChunker(0, 1));
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
-  frame_transport.ExpectWrite(MakeProtoFrame<ClientInitialMetadataFrame>(
+  frame_transport->ExpectWrite(MakeProtoFrame<ClientInitialMetadataFrame>(
       1, "path: '/demo.Service/Step'"));
-  frame_transport.ExpectWrite(MakeMessageFrame(1, "0"));
-  frame_transport.ExpectWrite(MakeMessageFrame(1, "1"));
-  frame_transport.ExpectWrite(ClientEndOfStream(1));
+  frame_transport->ExpectWrite(MakeMessageFrame(1, "0"));
+  frame_transport->ExpectWrite(MakeMessageFrame(1, "1"));
+  frame_transport->ExpectWrite(ClientEndOfStream(1));
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
@@ -204,10 +204,10 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
               on_done.Call();
             });
       });
-  frame_transport.Read(MakeProtoFrame<ServerInitialMetadataFrame>(1, ""));
-  frame_transport.Read(MakeMessageFrame(1, "12345678"));
-  frame_transport.Read(MakeMessageFrame(1, "87654321"));
-  frame_transport.Read(
+  frame_transport->Read(MakeProtoFrame<ServerInitialMetadataFrame>(1, ""));
+  frame_transport->Read(MakeMessageFrame(1, "12345678"));
+  frame_transport->Read(MakeMessageFrame(1, "87654321"));
+  frame_transport->Read(
       MakeProtoFrame<ServerTrailingMetadataFrame>(1, "status: 0"));
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
@@ -215,10 +215,10 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
 }
 
 TEST_F(TransportTest, CheckFailure) {
-  MockFrameTransport frame_transport;
+  auto frame_transport = MakeRefCounted<MockFrameTransport>();
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       MakeChannelArgs(event_engine()), frame_transport, MessageChunker(0, 1));
-  frame_transport.Close();
+  frame_transport->Close();
   auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",

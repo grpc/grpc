@@ -380,7 +380,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             self->connection_->args().GetObjectRef<EventEngine>());
         return self->connection_->listener_->server_->SetupTransport(
             new ChaoticGoodServerTransport(self->connection_->args(),
-                                           *frame_transport,
+                                           frame_transport,
                                            config.MakeMessageChunker()),
             nullptr, self->connection_->args(), nullptr);
       });

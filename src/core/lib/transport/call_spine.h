@@ -134,10 +134,7 @@ class CallSpine final : public Party {
     DCHECK(GetContext<Activity>() == this);
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
-    return Map(std::move(promise), [this](ResultType r) {
-      CancelIfFailed(r);
-      return r;
-    });
+    return Map(std::move(promise), [this](ResultType r) { CancelIfFailed(r); });
   }
 
   template <typename StatusType>
@@ -220,18 +217,16 @@ class CallSpine final : public Party {
   void SpawnPushServerToClientMessage(MessageHandle msg) {
     server_to_client_serializer()->Spawn(
         [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
-          return Map(self->CancelIfFails(
-                         self->PushServerToClientMessage(std::move(msg))),
-                     [](auto) { return Empty{}; });
+          return self->CancelIfFails(
+              self->PushServerToClientMessage(std::move(msg)));
         });
   }
 
   void SpawnPushClientToServerMessage(MessageHandle msg) {
     client_to_server_serializer()->Spawn(
         [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
-          return Map(self->CancelIfFails(
-                         self->PushClientToServerMessage(std::move(msg))),
-                     [](auto) { return Empty{}; });
+          return self->CancelIfFails(
+              self->PushClientToServerMessage(std::move(msg)));
         });
   }
 

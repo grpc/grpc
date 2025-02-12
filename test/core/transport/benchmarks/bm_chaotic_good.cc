@@ -19,6 +19,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "test/core/test_util/passthrough_endpoint.h"
 #include "test/core/transport/call_spine_benchmarks.h"
@@ -46,14 +47,22 @@ class ChaoticGoodTraits {
     server_config.ServerAddPendingDataEndpoint(
         chaotic_good::ImmediateConnection(
             "foo", PromiseEndpoint(std::move(data.server), SliceBuffer())));
+    auto client_transport = MakeRefCounted<chaotic_good::TcpFrameTransport>(
+        client_config.MakeTcpFrameTransportOptions(),
+        PromiseEndpoint(std::move(control.client), SliceBuffer()),
+        client_config.TakePendingDataEndpoints(),
+        channel_args
+            .GetObjectRef<grpc_event_engine::experimental::EventEngine>());
+    auto server_transport = MakeRefCounted<chaotic_good::TcpFrameTransport>(
+        client_config.MakeTcpFrameTransportOptions(),
+        PromiseEndpoint(std::move(control.server), SliceBuffer()),
+        server_config.TakePendingDataEndpoints(),
+        channel_args
+            .GetObjectRef<grpc_event_engine::experimental::EventEngine>());
     auto client = MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
-        channel_args, PromiseEndpoint(std::move(control.client), SliceBuffer()),
-        std::move(client_config),
-        MakeRefCounted<FakeClientConnectionFactory>());
+        channel_args, client_transport, client_config.MakeMessageChunker());
     auto server = MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
-        channel_args, PromiseEndpoint(std::move(control.server), SliceBuffer()),
-        std::move(server_config),
-        MakeRefCounted<FakeServerConnectionFactory>());
+        channel_args, server_transport, server_config.MakeMessageChunker());
     return {std::move(client), std::move(server)};
   }
 

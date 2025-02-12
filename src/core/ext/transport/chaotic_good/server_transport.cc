@@ -97,12 +97,14 @@ void ChaoticGoodServerTransport::StreamDispatch::DispatchFrame(
   if (stream == nullptr) return;
   stream->spawn_serializer->Spawn(
       [this, stream, frame = std::move(frame)]() mutable {
-        return TrySeq(frame.Payload(),
-                      [stream = std::move(stream), this](Frame frame) mutable {
-                        auto& call = stream->call;
-                        return call.CancelIfFails(PushFrameIntoCall(
-                            std::move(stream), std::move(std::get<T>(frame))));
-                      });
+        auto& call = stream->call;
+        return call.CancelIfFails(TrySeq(
+            frame.Payload(),
+            [stream = std::move(stream), this](Frame frame) mutable {
+              return PushFrameIntoCall(std::move(stream),
+                                       std::move(std::get<T>(frame)));
+            },
+            []() { return absl::OkStatus(); }));
       });
 }
 

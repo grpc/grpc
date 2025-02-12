@@ -41,6 +41,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "message_chunker.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -158,6 +159,12 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   };
 
   struct ConstructionParameters {
+    ConstructionParameters(const ChannelArgs& args,
+                           RefCountedPtr<FrameTransport> frame_transport,
+                           MessageChunker message_chunker)
+        : args(args),
+          frame_transport(std::move(frame_transport)),
+          message_chunker(message_chunker) {}
     ChannelArgs args;
     RefCountedPtr<FrameTransport> frame_transport;
     MessageChunker message_chunker;

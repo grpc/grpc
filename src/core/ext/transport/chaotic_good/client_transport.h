@@ -68,7 +68,7 @@ namespace chaotic_good {
 class ChaoticGoodClientTransport final : public ClientTransport {
  public:
   ChaoticGoodClientTransport(const ChannelArgs& args,
-                             FrameTransport& frame_transport,
+                             RefCountedPtr<FrameTransport> frame_transport,
                              MessageChunker message_chunker);
   ~ChaoticGoodClientTransport() override;
 

@@ -7741,6 +7741,7 @@ grpc_cc_library(
         "slice_buffer",
         "status_helper",
         "switch",
+        "status_flag",
         "//:gpr_platform",
         "//:grpc_base",
     ],
