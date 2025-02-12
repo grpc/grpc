@@ -332,7 +332,7 @@ def grpc_deps():
             strip_prefix = "protoc-gen-validate-1.2.1",
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip",
-                "https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip"
+                "https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip",
             ],
         )
 
