@@ -41,11 +41,11 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "message_chunker.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
+#include "src/core/ext/transport/chaotic_good/message_chunker.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
@@ -176,7 +176,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto ReadFrameBody(Slice read_buffer);
   void SendCancel(uint32_t stream_id, absl::Status why);
 
-  struct Orphaned{};
+  struct Orphaned {};
   using State = std::variant<std::unique_ptr<ConstructionParameters>,
                              RefCountedPtr<StreamDispatch>, Orphaned>;
   State state_;

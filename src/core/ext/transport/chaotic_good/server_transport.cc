@@ -240,12 +240,12 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     const ChannelArgs& args, RefCountedPtr<FrameTransport> frame_transport,
     MessageChunker message_chunker)
     : state_{std::make_unique<ConstructionParameters>(
-      args, std::move(frame_transport), std::move(message_chunker)
-    )}{}
+          args, std::move(frame_transport), message_chunker)} {}
 
 ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
     const ChannelArgs& args, RefCountedPtr<FrameTransport> frame_transport,
-    MessageChunker message_chunker, RefCountedPtr<UnstartedCallDestination> call_destination)
+    MessageChunker message_chunker,
+    RefCountedPtr<UnstartedCallDestination> call_destination)
     : event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
@@ -265,27 +265,30 @@ event_engine_, config.MakeTransportOptions(), false);
   party_ = Party::Make(std::move(party_arena));
   MpscReceiver<Frame> outgoing_pipe(8);
   outgoing_frames_ = outgoing_pipe.MakeSender();
-  frame_transport->Start(party_.get(), std::move(outgoing_pipe),
-                        Ref());
+  frame_transport->Start(party_.get(), std::move(outgoing_pipe), Ref());
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(
     RefCountedPtr<UnstartedCallDestination> call_destination) {
-  auto construction_parameters = std::move(std::get<std::unique_ptr<ConstructionParameters>>(state_));
+  auto construction_parameters =
+      std::move(std::get<std::unique_ptr<ConstructionParameters>>(state_));
   state_ = MakeRefCounted<StreamDispatch>(
-      construction_parameters->args, std::move(construction_parameters->frame_transport),
-      std::move(construction_parameters->message_chunker), std::move(call_destination));
+      construction_parameters->args,
+      std::move(construction_parameters->frame_transport),
+      construction_parameters->message_chunker, std::move(call_destination));
 }
 
 void ChaoticGoodServerTransport::Orphan() {
-  if (auto* p = std::get_if<RefCountedPtr<StreamDispatch>>(&state_); p != nullptr) {
+  if (auto* p = std::get_if<RefCountedPtr<StreamDispatch>>(&state_);
+      p != nullptr) {
     (*p)->OnFrameTransportClosed(absl::UnavailableError("Transport closed"));
   }
   state_ = Orphaned{};
   Unref();
 }
 
-void ChaoticGoodServerTransport::StreamDispatch::OnFrameTransportClosed(absl::Status status) {
+void ChaoticGoodServerTransport::StreamDispatch::OnFrameTransportClosed(
+    absl::Status status) {
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
   ReleasableMutexLock lock(&mu_);
