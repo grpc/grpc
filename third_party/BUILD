@@ -208,15 +208,3 @@ alias(
     actual = "@com_google_googleapis//google/logging/v2:logging_cc_proto",
     tags = ["manual"],
 )
-
-alias(
-    name = "twisted",
-    actual = "@com_github_twisted_twisted//:twisted",
-    tags = ["manual"],
-)
-
-alias(
-    name = "yaml",
-    actual = "@com_github_yaml_pyyaml//:yaml",
-    tags = ["manual"],
-)

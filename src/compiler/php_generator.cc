@@ -16,7 +16,7 @@
  *
  */
 
-#include <google/protobuf/compiler/php/php_generator.h>
+#include <google/protobuf/compiler/php/names.h>
 
 #include <map>
 

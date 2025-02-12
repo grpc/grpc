@@ -1531,7 +1531,7 @@
   - third_party/abseil-cpp/absl/random/internal/mock_helpers.h
   name: absl/random/internal:mock_helpers
   src: []
-- cmake_target: ''
+- cmake_target: absl::random_internal_mock_validators
   deps:
   - absl/base:config
   - absl/base:raw_logging_internal
