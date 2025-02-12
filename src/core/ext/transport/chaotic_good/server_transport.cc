@@ -239,11 +239,11 @@ void ChaoticGoodServerTransport::StreamDispatch::OnIncomingFrame(
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     const ChannelArgs& args, OrphanablePtr<FrameTransport> frame_transport,
     MessageChunker message_chunker)
-    : state_{std::make_unique<ConstructionParameters>(
-          args, std::move(frame_transport), message_chunker)} {}
+    : state_{std::make_unique<ConstructionParameters>(args, message_chunker)},
+      frame_transport_(std::move(frame_transport)) {}
 
 ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
-    const ChannelArgs& args, RefCountedPtr<FrameTransport> frame_transport,
+    const ChannelArgs& args, FrameTransport* frame_transport,
     MessageChunker message_chunker,
     RefCountedPtr<UnstartedCallDestination> call_destination)
     : event_engine_(
@@ -254,11 +254,6 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
               ->CreateMemoryAllocator("chaotic-good"),
           1024)),
       message_chunker_(message_chunker) {
-  /*
-auto transport = MakeRefCounted<ChaoticGoodTransport>(
-std::move(control_endpoint), config.TakePendingDataEndpoints(),
-event_engine_, config.MakeTransportOptions(), false);
-*/
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
@@ -273,8 +268,7 @@ void ChaoticGoodServerTransport::SetCallDestination(
   auto construction_parameters =
       std::move(std::get<std::unique_ptr<ConstructionParameters>>(state_));
   state_ = MakeRefCounted<StreamDispatch>(
-      construction_parameters->args,
-      std::move(construction_parameters->frame_transport),
+      construction_parameters->args, frame_transport_.get(),
       construction_parameters->message_chunker, std::move(call_destination));
 }
 

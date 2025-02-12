@@ -47,22 +47,24 @@ class ChaoticGoodTraits {
     server_config.ServerAddPendingDataEndpoint(
         chaotic_good::ImmediateConnection(
             "foo", PromiseEndpoint(std::move(data.server), SliceBuffer())));
-    auto client_transport = MakeRefCounted<chaotic_good::TcpFrameTransport>(
-        client_config.MakeTcpFrameTransportOptions(),
-        PromiseEndpoint(std::move(control.client), SliceBuffer()),
-        client_config.TakePendingDataEndpoints(),
-        channel_args
-            .GetObjectRef<grpc_event_engine::experimental::EventEngine>());
-    auto server_transport = MakeRefCounted<chaotic_good::TcpFrameTransport>(
-        client_config.MakeTcpFrameTransportOptions(),
-        PromiseEndpoint(std::move(control.server), SliceBuffer()),
-        server_config.TakePendingDataEndpoints(),
-        channel_args
-            .GetObjectRef<grpc_event_engine::experimental::EventEngine>());
     auto client = MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
-        channel_args, client_transport, client_config.MakeMessageChunker());
+        channel_args,
+        MakeOrphanable<chaotic_good::TcpFrameTransport>(
+            client_config.MakeTcpFrameTransportOptions(),
+            PromiseEndpoint(std::move(control.client), SliceBuffer()),
+            client_config.TakePendingDataEndpoints(),
+            channel_args
+                .GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+        client_config.MakeMessageChunker());
     auto server = MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
-        channel_args, server_transport, server_config.MakeMessageChunker());
+        channel_args,
+        MakeOrphanable<chaotic_good::TcpFrameTransport>(
+            client_config.MakeTcpFrameTransportOptions(),
+            PromiseEndpoint(std::move(control.server), SliceBuffer()),
+            server_config.TakePendingDataEndpoints(),
+            channel_args
+                .GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+        server_config.MakeMessageChunker());
     return {std::move(client), std::move(server)};
   }
 

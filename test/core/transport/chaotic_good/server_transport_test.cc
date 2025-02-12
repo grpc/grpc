@@ -109,12 +109,13 @@ class MockServerConnectionFactory : public ServerConnectionFactory {
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
-  auto frame_transport = MakeRefCounted<MockFrameTransport>();
+  auto owned_frame_transport = MakeOrphanable<MockFrameTransport>();
+  auto* frame_transport = owned_frame_transport.get();
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
   EXPECT_CALL(*call_destination, Orphaned()).Times(1);
   auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
-      channel_args, frame_transport, MessageChunker(0, 1));
+      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1));
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(*call_destination, StartCall(_))
       .WillOnce(WithArgs<0>([&on_done](

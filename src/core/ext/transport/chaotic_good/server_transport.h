@@ -107,8 +107,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
 
   class StreamDispatch : public FrameTransportSink {
    public:
-    StreamDispatch(const ChannelArgs& args,
-                   RefCountedPtr<FrameTransport> frame_transport,
+    StreamDispatch(const ChannelArgs& args, FrameTransport* frame_transport,
                    MessageChunker message_chunker,
                    RefCountedPtr<UnstartedCallDestination> call_destination);
 
@@ -160,13 +159,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
 
   struct ConstructionParameters {
     ConstructionParameters(const ChannelArgs& args,
-                           RefCountedPtr<FrameTransport> frame_transport,
                            MessageChunker message_chunker)
-        : args(args),
-          frame_transport(std::move(frame_transport)),
-          message_chunker(message_chunker) {}
+        : args(args), message_chunker(message_chunker) {}
     ChannelArgs args;
-    RefCountedPtr<FrameTransport> frame_transport;
     MessageChunker message_chunker;
   };
 
@@ -180,6 +175,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   using State = std::variant<std::unique_ptr<ConstructionParameters>,
                              RefCountedPtr<StreamDispatch>, Orphaned>;
   State state_;
+  OrphanablePtr<FrameTransport> frame_transport_;
 };
 
 }  // namespace chaotic_good

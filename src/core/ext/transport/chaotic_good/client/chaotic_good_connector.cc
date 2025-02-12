@@ -250,14 +250,15 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
               if (!parse_status.ok()) {
                 return parse_status;
               }
-              auto frame_transport = MakeRefCounted<TcpFrameTransport>(
+              auto frame_transport = MakeOrphanable<TcpFrameTransport>(
                   result_notifier_ptr->config.MakeTcpFrameTransportOptions(),
                   std::move(result.connect_result.endpoint),
                   result_notifier_ptr->config.TakePendingDataEndpoints(),
                   result_notifier_ptr->args.channel_args
                       .GetObjectRef<EventEngine>());
               auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-                  result_notifier_ptr->args.channel_args, frame_transport,
+                  result_notifier_ptr->args.channel_args,
+                  std::move(frame_transport),
                   result_notifier_ptr->config.MakeMessageChunker());
               result_notifier_ptr->result->transport = transport.release();
               result_notifier_ptr->result->channel_args =

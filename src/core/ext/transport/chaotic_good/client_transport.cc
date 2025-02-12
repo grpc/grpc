@@ -224,7 +224,8 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
       allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
-      message_chunker_(message_chunker) {
+      message_chunker_(message_chunker),
+      frame_transport_(std::move(frame_transport)) {
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
@@ -233,8 +234,8 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   outgoing_frames_ = outgoing_frames.MakeSender();
   stream_dispatch_ =
       MakeRefCounted<StreamDispatch>(outgoing_frames.MakeSender());
-  frame_transport->Start(party_.get(), std::move(outgoing_frames),
-                         stream_dispatch_);
+  frame_transport_->Start(party_.get(), std::move(outgoing_frames),
+                          stream_dispatch_);
 }
 
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }
@@ -242,6 +243,7 @@ ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }
 void ChaoticGoodClientTransport::Orphan() {
   LOG(INFO) << "Orphan transport";
   party_.reset();
+  frame_transport_.reset();
   Unref();
 }
 

@@ -147,6 +147,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   MpscSender<Frame> outgoing_frames_;
   RefCountedPtr<Party> party_;
   MessageChunker message_chunker_;
+  OrphanablePtr<FrameTransport> frame_transport_;
 };
 
 }  // namespace chaotic_good
