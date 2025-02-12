@@ -48,8 +48,11 @@ class StaticCrlProvider : public CrlProvider {
   // Each element of the input vector is expected to be the raw contents of a
   // CRL file.
   explicit StaticCrlProvider(
-      absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls)
-      : crls_(std::move(crls)) {}
+      absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls,
+      bool deny_undetermined = false)
+      : crls_(std::move(crls)) {
+    deny_undetermined_ = deny_undetermined;
+  }
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
 
  private:
@@ -98,7 +101,8 @@ class DirectoryReloaderCrlProvider
       std::chrono::seconds duration, std::function<void(absl::Status)> callback,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
-      std::shared_ptr<DirectoryReader> directory_impl);
+      std::shared_ptr<DirectoryReader> directory_impl,
+      bool deny_undetermined = false);
 
   ~DirectoryReloaderCrlProvider() override;
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;

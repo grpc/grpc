@@ -465,6 +465,44 @@ TEST_P(CrlSslTransportSecurityTest, CrlFromBadCa) {
                                         *provider, false, false, false);
   fixture->Run();
 }
+TEST_P(CrlSslTransportSecurityTest,
+       CrlProviderGoodCertMissingCrlDenyUndetermined) {
+  // Create a provider with no CRLs
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
+      provider = grpc_core::experimental::CreateStaticCrlProvider(
+          /*crls=*/{}, /*deny_undetermined=*/true);
+  ASSERT_TRUE(provider.ok());
+
+  // Because we have no CRLs, every certificate will be seen as Undetermined.
+  // Regardless of the fact that it's not revoked, because we set
+  // deny_undetermined to true, it will stop connection establishment
+  auto* fixture = new SslTsiTestFixture(
+      kValidKeyPath, kValidCertPath, kValidKeyPath, kValidCertPath,
+      /*crl_directory=*/nullptr, *provider, /*expect_server_success=*/false,
+      /*expect_client_success_1_2=*/false, /*expect_client_success_1_3=*/false);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest,
+       CrlProviderRevokedIntermediateMissingRootCrlDenyUndetermined) {
+  std::string intermediate_crl =
+      grpc_core::testing::GetFileContents(kIntermediateCrlPath);
+
+  // The CRL that would revoke the intermediate CRL is missing. Because we
+  // explicitly set deny_undetermined to true, this will result in a failure to
+  // connect
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
+      provider = grpc_core::experimental::CreateStaticCrlProvider(
+          /*crls=*/{intermediate_crl}, /*deny_undetermined=*/true);
+  ASSERT_TRUE(provider.ok());
+
+  auto* fixture = new SslTsiTestFixture(
+      kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
+      kValidCertPath, /*crl_directory=*/nullptr, /*crl_provider=*/*provider,
+      /*expect_server_success=*/false, /*expect_client_success_1_2=*/false,
+      /*expect_client_success_1_3=*/false);
+  fixture->Run();
+}
 
 // TODO(gtcooke94) Add nullptr issuer test cases - this is not simple to test
 // the way the code is currently designed - we plan to refactor ways the OpenSSL

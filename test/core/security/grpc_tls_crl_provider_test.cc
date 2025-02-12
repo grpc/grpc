@@ -200,6 +200,20 @@ TEST_F(CrlProviderTest, StaticCrlProviderLookupIssuerNotFound) {
   EXPECT_EQ(crl, nullptr);
 }
 
+TEST_F(CrlProviderTest, StaticCrlProviderDenyUndeterminedDefault) {
+  absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
+      experimental::CreateStaticCrlProvider({});
+  ASSERT_TRUE(provider.ok()) << provider.status();
+  EXPECT_FALSE((*provider)->DenyUndetermined());
+}
+
+TEST_F(CrlProviderTest, StaticCrlProviderDenyUndeterminedTrue) {
+  absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
+      experimental::CreateStaticCrlProvider({}, true);
+  ASSERT_TRUE(provider.ok()) << provider.status();
+  EXPECT_TRUE((*provider)->DenyUndetermined());
+}
+
 TEST_F(DirectoryReloaderCrlProviderTest, CrlLookupGood) {
   auto provider =
       CreateCrlProvider(kCrlDirectory, std::chrono::seconds(60), nullptr);

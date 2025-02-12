@@ -1086,8 +1086,9 @@ static int CheckCertRevocation(grpc_core::experimental::CrlProvider* provider,
   // analogue for not finding the Crl from the provider, thus the certificate in
   // question is Undetermined.
   if (absl::IsNotFound(crl.status())) {
-    // TODO(gtcooke94) knob for undetermined being revoked or unrevoked. By
-    // default, unrevoked.
+    if (provider->DenyUndetermined()) {
+      return 0;
+    }
     return 1;
   } else if (!crl.ok()) {
     // This is an unexpected error, return false
