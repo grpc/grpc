@@ -957,7 +957,6 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
             p->connection_attempt_delay_,
             [subchannel_list =
                  subchannel_list_->Ref(DEBUG_LOCATION, "timer")]() mutable {
-              ApplicationCallbackExecCtx application_exec_ctx;
               ExecCtx exec_ctx;
               auto* sl = subchannel_list.get();
               sl->policy_->work_serializer()->Run(
@@ -973,8 +972,7 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
                     if (subchannel_list->policy_->selected_ != nullptr) return;
                     ++subchannel_list->attempting_index_;
                     subchannel_list->StartConnectingNextSubchannel();
-                  },
-                  DEBUG_LOCATION);
+                  });
             });
   }
 }
@@ -1838,7 +1836,6 @@ void OldPickFirst::SubchannelList::SubchannelData::
             p->connection_attempt_delay_,
             [subchannel_list =
                  subchannel_list_->Ref(DEBUG_LOCATION, "timer")]() mutable {
-              ApplicationCallbackExecCtx application_exec_ctx;
               ExecCtx exec_ctx;
               auto* sl = subchannel_list.get();
               sl->policy_->work_serializer()->Run(
@@ -1854,8 +1851,7 @@ void OldPickFirst::SubchannelList::SubchannelData::
                     if (subchannel_list->policy_->selected_ != nullptr) return;
                     ++subchannel_list->attempting_index_;
                     subchannel_list->StartConnectingNextSubchannel();
-                  },
-                  DEBUG_LOCATION);
+                  });
             });
   }
 }

@@ -15,11 +15,33 @@
 
 set -ex
 
+# Test if public targets are buildable without dev dependencies.
 tools/bazel \
     build \
     --enable_bzlmod=true \
     --enable_workspace=false \
-    :grpc \
-    :grpc_unsecure \
-    :grpc++ \
-    :grpc++_unsecure
+    --ignore_dev_dependency \
+    -- \
+    :all \
+    -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
+
+# Test if examples are buildable without dev dependencies.
+tools/bazel \
+    build \
+    --enable_bzlmod=true \
+    --enable_workspace=false \
+    --ignore_dev_dependency \
+    -- \
+    //examples/cpp/... \
+    -//examples/cpp/csm/...  # Needs grpcpp_csm_observability
+
+# Test if a few basic tests can pass.
+# This is a temporary sanity check covering essential features,
+# to be replaced by a comprehensive test suite once the bzlmod migration is finished.
+tools/bazel \
+    test \
+    --enable_bzlmod=true \
+    --enable_workspace=false \
+    -- \
+    //test/core/config:all \
+    //test/cpp/common:all

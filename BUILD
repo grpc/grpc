@@ -528,6 +528,8 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/codegen/sync_stream.h",
     "include/grpcpp/impl/codegen/time.h",
     "include/grpcpp/impl/codegen/sync.h",
+    "include/grpcpp/ports_def.inc",
+    "include/grpcpp/ports_undef.inc",
 ]
 
 grpc_cc_library(
@@ -2858,6 +2860,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/log",
         "absl/log:check",
+        "absl/functional:any_invocable",
     ],
     visibility = ["@grpc:client_channel"],
     deps = [

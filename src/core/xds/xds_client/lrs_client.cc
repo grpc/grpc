@@ -506,7 +506,6 @@ void LrsClient::LrsChannel::RetryableCall<T>::StartRetryTimerLocked() {
   timer_handle_ = lrs_channel()->lrs_client()->engine()->RunAfter(
       delay,
       [self = this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start")]() {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnRetryTimer();
       });
@@ -544,13 +543,12 @@ void LrsClient::LrsChannel::LrsCall::Timer::ScheduleNextReportLocked() {
       << lrs_call_->lrs_channel()->server_->server_uri()
       << ": scheduling next load report in "
       << lrs_call_->load_reporting_interval_;
-  timer_handle_ = lrs_client()->engine()->RunAfter(
-      lrs_call_->load_reporting_interval_,
-      [self = Ref(DEBUG_LOCATION, "timer")]() {
-        ApplicationCallbackExecCtx callback_exec_ctx;
-        ExecCtx exec_ctx;
-        self->OnNextReportTimer();
-      });
+  timer_handle_ =
+      lrs_client()->engine()->RunAfter(lrs_call_->load_reporting_interval_,
+                                       [self = Ref(DEBUG_LOCATION, "timer")]() {
+                                         ExecCtx exec_ctx;
+                                         self->OnNextReportTimer();
+                                       });
 }
 
 void LrsClient::LrsChannel::LrsCall::Timer::OnNextReportTimer() {
@@ -810,7 +808,7 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
     std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
     absl::string_view cluster_name, absl::string_view eds_service_name) {
   auto key =
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+      std::pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterDropStats> cluster_drop_stats;
   {
     MutexLock lock(&mu_);
@@ -856,7 +854,7 @@ void LrsClient::RemoveClusterDropStats(
   if (server_it == load_report_map_.end()) return;
   auto& server = server_it->second;
   auto load_report_it = server.load_report_map.find(
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
+      std::pair(std::string(cluster_name), std::string(eds_service_name)));
   if (load_report_it == server.load_report_map.end()) return;
   LoadReportState& load_report_state = load_report_it->second;
   if (load_report_state.drop_stats == cluster_drop_stats) {
@@ -875,7 +873,7 @@ LrsClient::AddClusterLocalityStats(
     RefCountedPtr<XdsLocalityName> locality,
     RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation) {
   auto key =
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+      std::pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterLocalityStats> cluster_locality_stats;
   {
     MutexLock lock(&mu_);
@@ -929,7 +927,7 @@ void LrsClient::RemoveClusterLocalityStats(
   if (server_it == load_report_map_.end()) return;
   auto& server = server_it->second;
   auto load_report_it = server.load_report_map.find(
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
+      std::pair(std::string(cluster_name), std::string(eds_service_name)));
   if (load_report_it == server.load_report_map.end()) return;
   LoadReportState& load_report_state = load_report_it->second;
   auto locality_it = load_report_state.locality_stats.find(locality);

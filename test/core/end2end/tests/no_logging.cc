@@ -184,25 +184,13 @@ CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
 TEST(Fuzzers, NoLoggingTestRegression1) {
   NoLoggingTests_NoLoggingTest(
       CoreTestConfigurationNamed("Chttp2FullstackCompression"),
-      ParseTestProto(R"pb(config_vars {
-                            verbosity: "\000"
-                            dns_resolver: ""
-                            trace: ""
-                            experiments: 9223372036854775807
-                          })pb"));
+      ParseTestProto(R"pb(config_vars { verbosity: "\000" trace: "" })pb"));
 }
 
 TEST(Fuzzers, NoLoggingTestRegression2) {
   NoLoggingTests_NoLoggingTest(
       CoreTestConfigurationNamed("Chttp2Fullstack"),
-      ParseTestProto(R"pb(event_engine_actions {
-                            run_delay: 18446744073709551615
-                          }
-                          config_vars {
-                            verbosity: ""
-                            dns_resolver: ""
-                            trace: "\177"
-                          })pb"));
+      ParseTestProto(R"pb(config_vars { trace: "\177 " })pb"));
 }
 
 }  // namespace grpc_core

@@ -126,7 +126,6 @@ static grpc_error_handle CreateEventEngineListener(
         [s](int listener_fd, std::unique_ptr<EventEngine::Endpoint> ep,
             bool is_external, MemoryAllocator /*allocator*/,
             SliceBuffer* pending_data) {
-          grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_pollset* read_notifier_pollset;
           grpc_tcp_server_acceptor* acceptor;
@@ -213,7 +212,6 @@ static grpc_error_handle CreateEventEngineListener(
   } else {
     EventEngine::Listener::AcceptCallback accept_cb =
         [s](std::unique_ptr<EventEngine::Endpoint> ep, MemoryAllocator) {
-          grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           void* cb_arg;
           {
@@ -636,7 +634,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
             }
             DCHECK_GT(*listen_fd, 0);
             s->listen_fd_to_index_map.insert_or_assign(
-                *listen_fd, std::make_tuple(s->n_bind_ports, fd_index++));
+                *listen_fd, std::tuple(s->n_bind_ports, fd_index++));
           });
     } else {
       port = s->ee_listener->Bind(

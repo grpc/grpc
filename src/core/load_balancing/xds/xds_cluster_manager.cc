@@ -498,14 +498,12 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
           ->RunAfter(
               kChildRetentionInterval,
               [self = Ref(DEBUG_LOCATION, "ClusterChild+timer")]() mutable {
-                ApplicationCallbackExecCtx application_exec_ctx;
                 ExecCtx exec_ctx;
                 auto* self_ptr = self.get();  // Avoid use-after-move problem.
                 self_ptr->xds_cluster_manager_policy_->work_serializer()->Run(
                     [self = std::move(self)]() {
                       self->OnDelayedRemovalTimerLocked();
-                    },
-                    DEBUG_LOCATION);
+                    });
               });
 }
 

@@ -5441,6 +5441,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "certificate_provider_factory",
+        "down_cast",
         "grpc_tls_credentials",
         "json",
         "json_args",
@@ -5567,6 +5568,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_server_grpc_interface",
+    hdrs = [
+        "xds/grpc/xds_server_grpc_interface.h",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_creds_registry",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_server_grpc",
     srcs = [
         "xds/grpc/xds_server_grpc.cc",
@@ -5580,12 +5594,14 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "channel_creds_registry",
+        "down_cast",
         "json",
         "json_args",
         "json_object_loader",
         "json_reader",
         "json_writer",
         "validation_errors",
+        "xds_server_grpc_interface",
         "//:config",
         "//:ref_counted_ptr",
         "//:xds_client",
@@ -5708,7 +5724,6 @@ grpc_cc_library(
         "xds/grpc/xds_metadata_parser.cc",
         "xds/grpc/xds_route_config_parser.cc",
         "xds/grpc/xds_routing.cc",
-        "xds/grpc/xds_transport_grpc.cc",
     ],
     hdrs = [
         "xds/grpc/xds_audit_logger_registry.h",
@@ -5728,7 +5743,6 @@ grpc_cc_library(
         "xds/grpc/xds_metadata_parser.h",
         "xds/grpc/xds_route_config_parser.h",
         "xds/grpc/xds_routing.h",
-        "xds/grpc/xds_transport_grpc.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5880,6 +5894,7 @@ grpc_cc_library(
         "xds_metadata",
         "xds_route_config",
         "xds_server_grpc",
+        "xds_transport_grpc",
         "xds_type_upb",
         "xds_type_upbdefs",
         "//:channel",
@@ -5906,6 +5921,61 @@ grpc_cc_library(
         "//:tsi_ssl_credentials",
         "//:uri",
         "//:work_serializer",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_transport_grpc",
+    srcs = [
+        "xds/grpc/xds_transport_grpc.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_transport_grpc.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/log:check",
+        "absl/status",
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_args",
+        "channel_creds_registry",
+        "channel_fwd",
+        "closure",
+        "connectivity_state",
+        "default_event_engine",
+        "down_cast",
+        "error",
+        "init_internally",
+        "iomgr_fwd",
+        "metadata_batch",
+        "pollset_set",
+        "slice",
+        "slice_refcount",
+        "sync",
+        "time",
+        "useful",
+        "xds_server_grpc_interface",
+        "//:channel",
+        "//:channel_arg_names",
+        "//:config",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:grpc_core_credentials_header",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:grpc_trace",
+        "//:iomgr",
+        "//:iomgr_timer",
+        "//:orphanable",
+        "//:ref_counted_ptr",
         "//:xds_client",
     ],
 )
