@@ -3128,10 +3128,10 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/copy.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/accessors.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/array.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/message/internal/compare_unknown.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/message/internal/compare_unknown.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/extension.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/extension.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/internal/iterator.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/internal/iterator.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/map.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/map_entry.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/map_sorter.h" role="src" />
@@ -3257,6 +3257,8 @@
     <file baseinstalldir="/" name="third_party/upb/upb/wire/types.h" role="src" />
     <file baseinstalldir="/" name="third_party/utf8_range/utf8_range.c" role="src" />
     <file baseinstalldir="/" name="third_party/utf8_range/utf8_range.h" role="src" />
+    <file baseinstalldir="/" name="third_party/utf8_range/utf8_range_neon.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/utf8_range/utf8_range_sse.inc" role="src" />
     <file baseinstalldir="/" name="third_party/xxhash/xxhash.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />
