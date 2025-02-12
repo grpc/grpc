@@ -404,13 +404,13 @@ UPB_INLINE bool envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_clear_is_optional(envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE bool envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_is_optional(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg) {
   bool default_val = false;
   bool ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -430,7 +430,7 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_rbac_v
   return sub;
 }
 UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_set_is_optional(envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig *msg, bool value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
