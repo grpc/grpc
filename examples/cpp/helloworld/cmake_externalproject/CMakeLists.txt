@@ -50,6 +50,7 @@ ExternalProject_Add(utf8_range
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/utf8_range
         -DCMAKE_CXX_STANDARD:STRING=17
         -Dutf8_range_ENABLE_TESTS:BOOL=OFF
+        -Dprotobuf_VERSION:STRING=0.0.1
         -Dabsl_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/absl/lib/cmake/absl
   DEPENDS absl
 )
