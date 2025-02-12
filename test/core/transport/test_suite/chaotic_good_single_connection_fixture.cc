@@ -33,7 +33,7 @@ TRANSPORT_FIXTURE(ChaoticGoodSingleConnection) {
   auto client_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
           channel_args,
-          MakeRefCounted<chaotic_good::TcpFrameTransport>(
+          MakeOrphanable<chaotic_good::TcpFrameTransport>(
               client_config.MakeTcpFrameTransportOptions(),
               std::move(control_endpoints.client),
               client_config.TakePendingDataEndpoints(),
@@ -43,7 +43,7 @@ TRANSPORT_FIXTURE(ChaoticGoodSingleConnection) {
   auto server_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
           channel_args,
-          MakeRefCounted<chaotic_good::TcpFrameTransport>(
+          MakeOrphanable<chaotic_good::TcpFrameTransport>(
               server_config.MakeTcpFrameTransportOptions(),
               std::move(control_endpoints.server),
               server_config.TakePendingDataEndpoints(),

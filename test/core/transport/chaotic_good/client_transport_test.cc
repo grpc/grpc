@@ -96,11 +96,12 @@ ChannelArgs MakeChannelArgs(
 }
 
 TEST_F(TransportTest, AddOneStream) {
-  auto frame_transport = MakeRefCounted<MockFrameTransport>();
+  auto owned_frame_transport = MakeOrphanable<MockFrameTransport>();
+  auto* frame_transport = owned_frame_transport.get();
   static const std::string many_as(1024 * 1024, 'a');
   auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      channel_args, frame_transport, MessageChunker(0, 1));
+      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1));
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -156,10 +157,11 @@ TEST_F(TransportTest, AddOneStream) {
 }
 
 TEST_F(TransportTest, AddOneStreamMultipleMessages) {
-  auto frame_transport = MakeRefCounted<MockFrameTransport>();
+  auto owned_frame_transport = MakeOrphanable<MockFrameTransport>();
+  auto* frame_transport = owned_frame_transport.get();
   auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      channel_args, frame_transport, MessageChunker(0, 1));
+      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1));
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -215,9 +217,11 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
 }
 
 TEST_F(TransportTest, CheckFailure) {
-  auto frame_transport = MakeRefCounted<MockFrameTransport>();
+  auto owned_frame_transport = MakeOrphanable<MockFrameTransport>();
+  auto* frame_transport = owned_frame_transport.get();
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      MakeChannelArgs(event_engine()), frame_transport, MessageChunker(0, 1));
+      MakeChannelArgs(event_engine()), std::move(owned_frame_transport),
+      MessageChunker(0, 1));
   frame_transport->Close();
   auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.StartCall());
