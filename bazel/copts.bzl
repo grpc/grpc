@@ -158,6 +158,9 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
     "-Wno-switch-enum",
     "-Wno-c99-extensions",
     "-Wno-unused-private-field",  # GRPC_UNUSED does not appear to work for private fields
+
+    # This comes from protobuf using __forceinline
+    "-Wno-language-extension-token",
 ]
 
 GRPC_DEFAULT_COPTS = select({
