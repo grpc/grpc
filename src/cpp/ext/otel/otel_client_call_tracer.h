@@ -55,6 +55,8 @@ class OpenTelemetryPluginImpl::ClientCallTracer
                       uint64_t attempt_num, bool is_transparent_retry,
                       bool arena_allocated);
 
+    ~CallAttemptTracer() override { LOG(ERROR) << "destroyed " << this; }
+
     std::string TraceId() override {
       // Not implemented
       return "";

@@ -19,6 +19,7 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
 
+#include "absl/synchronization/notification.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "opentelemetry/exporters/memory/in_memory_span_exporter_factory.h"
@@ -26,9 +27,12 @@
 #include "opentelemetry/sdk/trace/tracer.h"
 #include "opentelemetry/sdk/trace/tracer_provider.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/host_port.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 #include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/port.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
@@ -65,17 +69,28 @@ class OTelTracingTest : public ::testing::Test {
                 OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator())
             .BuildAndRegisterGlobal()
             .ok());
-    grpc::ServerBuilder builder;
-    int port;
-    // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
-    builder.AddListeningPort("0.0.0.0:0", grpc::InsecureServerCredentials(),
-                             &port);
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-    server_address_ = absl::StrCat("localhost:", port);
+    port_ = grpc_pick_unused_port_or_die();
+    server_address_ = absl::StrCat("localhost:", port_);
+    RestartServer();
     auto channel = grpc::CreateChannel(server_address_,
                                        grpc::InsecureChannelCredentials());
     stub_ = EchoTestService::NewStub(channel);
+  }
+
+  void RestartServer() {
+    if (server_) {
+      server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+    }
+    grpc::ServerBuilder builder;
+    // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
+    builder.AddListeningPort(grpc_core::JoinHostPort("0.0.0.0", port_),
+                             grpc::InsecureServerCredentials(), nullptr);
+    // Allow only one stream at a time.
+    builder.AddChannelArgument(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1);
+    builder.AddChannelArgument(
+        GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false);
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
   }
 
   void TearDown() override {
@@ -114,6 +129,7 @@ class OTelTracingTest : public ::testing::Test {
   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> tracer_;
   std::shared_ptr<opentelemetry::exporter::memory::InMemorySpanData> data_;
   CallbackTestServiceImpl service_;
+  int port_;
   std::string server_address_;
   std::unique_ptr<grpc::Server> server_;
   std::unique_ptr<EchoTestService::Stub> stub_;
@@ -540,6 +556,54 @@ TEST_F(OTelTracingTest, Retries) {
   }
   EXPECT_THAT(attempt_seq_nums, ElementsAre(0, 1, 2));
   EXPECT_EQ(server_span_count, 3);
+}
+
+TEST_F(OTelTracingTest, TransparentRetries) {
+  {
+    // Start a bidi stream to make sure there is an ongoing RPC at the server.
+    grpc::ClientContext bidi_stream_context;
+    std::unique_ptr<ClientReaderWriterInterface<EchoRequest, EchoResponse>>
+        stream = stub_->BidiStream(&bidi_stream_context);
+    EchoRequest request;
+    request.set_message("foo");
+    EchoResponse bidi_response;
+    EXPECT_TRUE(stream->Write(request));
+    EXPECT_TRUE(stream->Read(&bidi_response));
+    // Start a new echo RPC which will remain pending till the bidi stream ends.
+    ClientContext echo_context;
+    EchoResponse echo_response;
+    absl::Notification notify;
+    stub_->async()->Echo(&echo_context, &request, &echo_response,
+                         [&notify](Status s) {
+                           LOG(ERROR) << "RPC finished";
+                           EXPECT_TRUE(s.ok());
+                           notify.Notify();
+                         });
+    // Restart the server which will result in the bidi stream failing and the
+    // new echo RPC starting.
+    RestartServer();
+    stream->WritesDone();
+    EXPECT_FALSE(stream->Read(&bidi_response));
+    EXPECT_EQ(stream->Finish().error_code(), StatusCode::UNAVAILABLE);
+    // The Echo RPC should have been transparently retried and finished
+    // successfully.
+    notify.WaitForNotificationWithTimeout(absl::Seconds(5));
+    LOG(ERROR) << "exiting";
+  }
+  LOG(ERROR) << "exited";
+  // auto spans = GetSpans(3);
+  // EXPECT_EQ(spans.size(), 7);  // 1 client span, 3 attempt spans, 3 server
+  // spans std::vector<uint64_t> attempt_seq_nums; uint64_t server_span_count =
+  // 0; for (const auto& span : spans) {
+  //   if (span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo") {
+  //     attempt_seq_nums.push_back(std::get<uint64_t>(
+  //         span->GetAttributes().at("previous-rpc-attempts")));
+  //   } else if (span->GetName() == "Recv.grpc.testing.EchoTestService/Echo") {
+  //     ++server_span_count;
+  //   }
+  // }
+  // EXPECT_THAT(attempt_seq_nums, ElementsAre(0, 1, 2));
+  // EXPECT_EQ(server_span_count, 3);
 }
 
 }  // namespace
