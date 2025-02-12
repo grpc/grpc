@@ -100,8 +100,7 @@ namespace grpc_event_engine::experimental {
 namespace {
 
 // Comma in the type is not friendly with macros
-using StatusOrPipeEnds =
-    absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>>;
+using PipeEnds = std::pair<FileDescriptor, FileDescriptor>;
 
 // This way if constexpr can be used and also macro nesting is not needed
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -621,7 +620,7 @@ IF_POSIX_SOCKET(FileDescriptorResult FileDescriptors::Socket(int domain,
                       socket(domain, type, protocol));
                 })
 
-IF_POSIX_SOCKET(StatusOrPipeEnds FileDescriptors::Pipe(), {
+IF_POSIX_SOCKET(absl::StatusOr<PipeEnds> FileDescriptors::Pipe(), {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
@@ -634,7 +633,7 @@ IF_POSIX_SOCKET(StatusOrPipeEnds FileDescriptors::Pipe(), {
   if (!status.ok()) {
     return status;
   }
-  return std::make_pair(Adopt(pipefd[0]), Adopt(pipefd[1]));
+  return PipeEnds(Adopt(pipefd[0]), Adopt(pipefd[1]));
 })
 
 FileDescriptorResult FileDescriptors::EventFd(int initval, int flags) {
