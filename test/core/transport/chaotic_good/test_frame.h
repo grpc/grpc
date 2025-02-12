@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_FRAME_H
-#define TEST_FRAME_H
+#ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TEST_FRAME_H
+#define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TEST_FRAME_H
 
 #include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -36,4 +36,4 @@ inline auto AnyFrame() {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TEST_FRAME_H

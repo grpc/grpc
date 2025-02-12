@@ -17949,6 +17949,7 @@ add_executable(h2_ssl_cert_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc

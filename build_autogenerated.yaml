@@ -11720,7 +11720,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -11728,11 +11727,13 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -11775,6 +11776,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc

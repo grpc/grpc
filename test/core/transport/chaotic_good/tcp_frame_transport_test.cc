@@ -81,7 +81,7 @@ class TestSink : public FrameTransportSink {
 
   bool done() const { return expected_frames_.empty(); }
 
-  void OnIncomingFrame(IncomingFrame incoming_frame) {
+  void OnIncomingFrame(IncomingFrame incoming_frame) override {
     const size_t frame_id = next_frame_;
     ++next_frame_;
     CHECK_EQ(expected_frames_.count(frame_id), 1);
@@ -108,7 +108,7 @@ class TestSink : public FrameTransportSink {
     parties_.push_back(party);
   }
 
-  void OnFrameTransportClosed(absl::Status status) {
+  void OnFrameTransportClosed(absl::Status status) override {
     LOG(INFO) << "transport closed: " << status;
   }
 

@@ -96,9 +96,9 @@ grpc_cc_test(
         "fuzztest_main",
     ],
     deps = [
+        ":test_frame",
         "//:channel_create",
         "//src/core:chaotic_good_frame",
-        ":test_frame",
     ],
 )
 
