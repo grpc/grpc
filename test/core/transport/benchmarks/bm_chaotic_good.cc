@@ -67,7 +67,9 @@ class ChaoticGoodTraits {
     return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
-  MessageHandle MakePayload() { return Arena::MakePooled<Message>(); }
+  MessageHandle MakePayload(uint32_t flags) {
+    return Arena::MakePooled<Message>(SliceBuffer{}, flags);
+  }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
     auto md = Arena::MakePooledForOverwrite<ServerMetadata>();

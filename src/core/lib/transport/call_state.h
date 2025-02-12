@@ -48,9 +48,10 @@ class CallState {
 
   // Begin a message push.
   void BeginPushClientToServerMessage();
-
-  // Poll for the push to be completed (up to FinishPullClientToServerMessage).
-  Poll<StatusFlag> PollPushClientToServerMessage();
+  // Poll for a push to be ready to start:
+  // - either the first push, or the last push has completed past
+  // FinishPullClientToServerMessage.
+  Poll<StatusFlag> PollReadyForPushClientToServerMessage();
 
   // Note that the client has half-closed the stream.
   void ClientToServerHalfClose();
@@ -82,7 +83,7 @@ class CallState {
   // Begin a message push.
   void BeginPushServerToClientMessage();
   // Poll for the push to be completed (up to FinishPullServerToClientMessage).
-  Poll<StatusFlag> PollPushServerToClientMessage();
+  Poll<StatusFlag> PollReadyForPushServerToClientMessage();
   // Push server trailing metadata.
   // This is idempotent: only the first call will have any effect.
   // Returns true if this is the first call.
@@ -387,9 +388,9 @@ CallState::BeginPushClientToServerMessage() {
 }
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<StatusFlag>
-CallState::PollPushClientToServerMessage() {
+CallState::PollReadyForPushClientToServerMessage() {
   GRPC_TRACE_LOG(call_state, INFO)
-      << "[call_state] PollPushClientToServerMessage: "
+      << "[call_state] PollReadyForPushClientToServerMessage: "
       << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
   switch (client_to_server_push_state_) {
     case ClientToServerPushState::kIdle:
@@ -654,23 +655,20 @@ CallState::BeginPushServerToClientMessage() {
 }
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<StatusFlag>
-CallState::PollPushServerToClientMessage() {
+CallState::PollReadyForPushServerToClientMessage() {
   GRPC_TRACE_LOG(call_state, INFO)
-      << "[call_state] PollPushServerToClientMessage: "
+      << "[call_state] PollReadyForPushServerToClientMessage: "
       << GRPC_DUMP_ARGS(this, server_to_client_push_state_);
   switch (server_to_client_push_state_) {
-    case ServerToClientPushState::kStart:
-    case ServerToClientPushState::kPushedServerInitialMetadata:
-      LOG(FATAL) << "PollPushServerToClientMessage called before "
-                 << "PushServerInitialMetadata; "
-                 << GRPC_DUMP_ARGS(server_to_client_push_state_);
     case ServerToClientPushState::kTrailersOnly:
       return false;
     case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
     case ServerToClientPushState::kPushedMessage:
     case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
       return server_to_client_push_waiter_.pending();
+    case ServerToClientPushState::kPushedServerInitialMetadata:
     case ServerToClientPushState::kIdle:
+    case ServerToClientPushState::kStart:
       return Success{};
     case ServerToClientPushState::kFinished:
       return Failure{};
