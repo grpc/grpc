@@ -766,12 +766,6 @@ std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
 
 namespace grpc_event_engine::experimental {
 
-PollPoller::PollPoller(Scheduler* /* engine */) {
-  grpc_core::Crash("unimplemented");
-}
-
-void PollPoller::Shutdown() { grpc_core::Crash("unimplemented"); }
-
 PollPoller::~PollPoller() { grpc_core::Crash("unimplemented"); }
 
 EventHandle* PollPoller::CreateHandle(FileDescriptor /*fd*/,
@@ -794,10 +788,6 @@ std::shared_ptr<PollPoller> MakePollPoller(Scheduler* /*scheduler*/,
                                            bool /* use_phony_poll */) {
   return nullptr;
 }
-
-void PollPoller::PrepareFork() { grpc_core::Crash("unimplemented"); }
-void PollPoller::PostforkParent() { grpc_core::Crash("unimplemented"); }
-void PollPoller::PostforkChild() { grpc_core::Crash("unimplemented"); }
 
 void PollPoller::Close() { grpc_core::Crash("unimplemented"); }
 
