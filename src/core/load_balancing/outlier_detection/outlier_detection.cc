@@ -31,6 +31,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -41,11 +42,10 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -209,25 +209,17 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
       WeakRefCountedPtr<SubchannelWrapper> subchannel_wrapper_;
       std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
-      absl::optional<grpc_connectivity_state> last_seen_state_;
+      std::optional<grpc_connectivity_state> last_seen_state_;
       absl::Status last_seen_status_;
       bool ejected_;
     };
 
     void Orphaned() override {
-      if (!IsWorkSerializerDispatchEnabled()) {
-        if (subchannel_state_ != nullptr) {
-          subchannel_state_->RemoveSubchannel(this);
+      work_serializer_->Run([self = WeakRefAsSubclass<SubchannelWrapper>()]() {
+        if (self->subchannel_state_ != nullptr) {
+          self->subchannel_state_->RemoveSubchannel(self.get());
         }
-        return;
-      }
-      work_serializer_->Run(
-          [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
-            if (self->subchannel_state_ != nullptr) {
-              self->subchannel_state_->RemoveSubchannel(self.get());
-            }
-          },
-          DEBUG_LOCATION);
+      });
     }
 
     std::shared_ptr<WorkSerializer> work_serializer_;
@@ -295,11 +287,11 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
       active_bucket_.store(current_bucket_.get());
     }
 
-    absl::optional<std::pair<double, uint64_t>> GetSuccessRateAndVolume() {
+    std::optional<std::pair<double, uint64_t>> GetSuccessRateAndVolume() {
       uint64_t total_request =
           backup_bucket_->successes + backup_bucket_->failures;
       if (total_request == 0) {
-        return absl::nullopt;
+        return std::nullopt;
       }
       double success_rate =
           backup_bucket_->successes * 100.0 /
@@ -312,7 +304,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
 
     void AddFailureCount() { active_bucket_.load()->failures.fetch_add(1); }
 
-    absl::optional<Timestamp> ejection_time() const { return ejection_time_; }
+    std::optional<Timestamp> ejection_time() const { return ejection_time_; }
 
     void Eject(const Timestamp& time) {
       ejection_time_ = time;
@@ -369,7 +361,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     // Points to either current_bucket or active_bucket.
     std::atomic<Bucket*> active_bucket_{current_bucket_.get()};
     uint32_t multiplier_ = 0;
-    absl::optional<Timestamp> ejection_time_;
+    std::optional<Timestamp> ejection_time_;
   };
 
   // A picker that wraps the picker from the child to perform outlier detection.
@@ -413,7 +405,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     void OnTimerLocked();
 
     RefCountedPtr<OutlierDetectionLb> parent_;
-    absl::optional<EventEngine::TaskHandle> timer_handle_;
+    std::optional<EventEngine::TaskHandle> timer_handle_;
     Timestamp start_time_;
     absl::BitGen bit_gen_;
   };
@@ -551,7 +543,7 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
   }
   // Delegate to child picker
   PickResult result = picker_->Pick(args);
-  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  auto* complete_pick = std::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
     auto* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
@@ -632,8 +624,8 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         << "[outlier_detection_lb " << this << "] starting timer";
     ejection_timer_ = MakeOrphanable<EjectionTimer>(
         RefAsSubclass<OutlierDetectionLb>(), Timestamp::Now());
-    for (const auto& p : endpoint_state_map_) {
-      p.second->RotateBucket();  // Reset call counters.
+    for (const auto& [_, endpoint_state] : endpoint_state_map_) {
+      endpoint_state->RotateBucket();  // Reset call counters.
     }
   } else if (old_config->outlier_detection_config().interval !=
              config_->outlier_detection_config().interval) {
@@ -696,17 +688,18 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     // Remove any entries we no longer need in the subchannel map.
     for (auto it = subchannel_state_map_.begin();
          it != subchannel_state_map_.end();) {
-      if (current_addresses.find(it->first) == current_addresses.end()) {
+      auto& [address, subchannel_state] = *it;
+      if (current_addresses.find(address) == current_addresses.end()) {
         if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
           std::string address_str =
-              grpc_sockaddr_to_string(&it->first, false).value_or("<unknown>");
+              grpc_sockaddr_to_string(&address, false).value_or("<unknown>");
           LOG(INFO) << "[outlier_detection_lb " << this
                     << "] removing subchannel map entry " << address_str;
         }
         // Don't hold a ref to the corresponding EndpointState object,
         // because there could be subchannel wrappers keeping this alive
         // for a while, and we don't need them to do any call tracking.
-        it->second->set_endpoint_state(nullptr);
+        subchannel_state->set_endpoint_state(nullptr);
         it = subchannel_state_map_.erase(it);
       } else {
         ++it;
@@ -715,10 +708,13 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     // Remove any entries we no longer need in the endpoint map.
     for (auto it = endpoint_state_map_.begin();
          it != endpoint_state_map_.end();) {
-      if (current_endpoints.find(it->first) == current_endpoints.end()) {
+      auto& endpoint_addresses = it->first;
+      if (current_endpoints.find(endpoint_addresses) ==
+          current_endpoints.end()) {
         GRPC_TRACE_LOG(outlier_detection_lb, INFO)
             << "[outlier_detection_lb " << this
-            << "] removing endpoint map entry " << it->first.ToString();
+            << "] removing endpoint map entry "
+            << endpoint_addresses.ToString();
         it = endpoint_state_map_.erase(it);
       } else {
         ++it;
@@ -836,12 +832,10 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
       << "] ejection timer will run in " << interval.ToString();
   timer_handle_ = parent_->channel_control_helper()->GetEventEngine()->RunAfter(
       interval, [self = Ref(DEBUG_LOCATION, "EjectionTimer")]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         auto self_ptr = self.get();
         self_ptr->parent_->work_serializer()->Run(
-            [self = std::move(self)]() { self->OnTimerLocked(); },
-            DEBUG_LOCATION);
+            [self = std::move(self)]() { self->OnTimerLocked(); });
       });
 }
 
@@ -865,33 +859,28 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
   double success_rate_sum = 0;
   auto time_now = Timestamp::Now();
   auto& config = parent_->config_->outlier_detection_config();
-  for (auto& state : parent_->endpoint_state_map_) {
-    auto* endpoint_state = state.second.get();
+  for (auto& [_, endpoint_state] : parent_->endpoint_state_map_) {
     // For each address, swap the call counter's buckets in that address's
     // map entry.
     endpoint_state->RotateBucket();
     // Gather data to run success rate algorithm or failure percentage
     // algorithm.
-    if (endpoint_state->ejection_time().has_value()) {
-      ++ejected_host_count;
-    }
-    absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
+    if (endpoint_state->ejection_time().has_value()) ++ejected_host_count;
+    std::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
         endpoint_state->GetSuccessRateAndVolume();
-    if (!host_success_rate_and_volume.has_value()) {
-      continue;
-    }
-    double success_rate = host_success_rate_and_volume->first;
-    uint64_t request_volume = host_success_rate_and_volume->second;
+    if (!host_success_rate_and_volume.has_value()) continue;
+    auto [success_rate, request_volume] = *host_success_rate_and_volume;
     if (config.success_rate_ejection.has_value()) {
       if (request_volume >= config.success_rate_ejection->request_volume) {
-        success_rate_ejection_candidates[endpoint_state] = success_rate;
+        success_rate_ejection_candidates[endpoint_state.get()] = success_rate;
         success_rate_sum += success_rate;
       }
     }
     if (config.failure_percentage_ejection.has_value()) {
       if (request_volume >=
           config.failure_percentage_ejection->request_volume) {
-        failure_percentage_ejection_candidates[endpoint_state] = success_rate;
+        failure_percentage_ejection_candidates[endpoint_state.get()] =
+            success_rate;
       }
     }
   }
@@ -917,23 +906,24 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     // (success_rate_ejection.stdev_factor / 1000))
     double mean = success_rate_sum / success_rate_ejection_candidates.size();
     double variance = 0;
-    for (const auto& p : success_rate_ejection_candidates) {
-      variance += std::pow(p.second - mean, 2);
+    for (const auto& [_, success_rate] : success_rate_ejection_candidates) {
+      variance += std::pow(success_rate - mean, 2);
     }
     variance /= success_rate_ejection_candidates.size();
     double stdev = std::sqrt(variance);
     const double success_rate_stdev_factor =
         static_cast<double>(config.success_rate_ejection->stdev_factor) / 1000;
-    double ejection_threshold = mean - stdev * success_rate_stdev_factor;
+    double ejection_threshold = mean - (stdev * success_rate_stdev_factor);
     GRPC_TRACE_LOG(outlier_detection_lb, INFO)
         << "[outlier_detection_lb " << parent_.get() << "] stdev=" << stdev
         << ", ejection_threshold=" << ejection_threshold;
-    for (auto& candidate : success_rate_ejection_candidates) {
+    for (auto& [endpoint_state, success_rate] :
+         success_rate_ejection_candidates) {
       GRPC_TRACE_LOG(outlier_detection_lb, INFO)
           << "[outlier_detection_lb " << parent_.get()
-          << "] checking candidate " << candidate.first
-          << ": success_rate=" << candidate.second;
-      if (candidate.second < ejection_threshold) {
+          << "] checking candidate " << endpoint_state
+          << ": success_rate=" << success_rate;
+      if (success_rate < ejection_threshold) {
         uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
         double current_percent =
             100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
@@ -950,7 +940,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           GRPC_TRACE_LOG(outlier_detection_lb, INFO)
               << "[outlier_detection_lb " << parent_.get()
               << "] ejecting candidate";
-          candidate.first->Eject(time_now);
+          endpoint_state->Eject(time_now);
           ++ejected_host_count;
         }
       }
@@ -966,15 +956,16 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
         << config.failure_percentage_ejection->threshold
         << ", enforcement_percentage="
         << config.failure_percentage_ejection->enforcement_percentage;
-    for (auto& candidate : failure_percentage_ejection_candidates) {
+    for (auto& [endpoint_state, success_rate] :
+         failure_percentage_ejection_candidates) {
       GRPC_TRACE_LOG(outlier_detection_lb, INFO)
           << "[outlier_detection_lb " << parent_.get()
-          << "] checking candidate " << candidate.first
-          << ": success_rate=" << candidate.second;
+          << "] checking candidate " << endpoint_state
+          << ": success_rate=" << success_rate;
       // Extra check to make sure success rate algorithm didn't already
       // eject this backend.
-      if (candidate.first->ejection_time().has_value()) continue;
-      if ((100.0 - candidate.second) >
+      if (endpoint_state->ejection_time().has_value()) continue;
+      if ((100.0 - success_rate) >
           config.failure_percentage_ejection->threshold) {
         uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
         double current_percent =
@@ -993,7 +984,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           GRPC_TRACE_LOG(outlier_detection_lb, INFO)
               << "[outlier_detection_lb " << parent_.get()
               << "] ejecting candidate";
-          candidate.first->Eject(time_now);
+          endpoint_state->Eject(time_now);
           ++ejected_host_count;
         }
       }
@@ -1005,14 +996,13 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
   //   current time is after ejection_timestamp + min(base_ejection_time *
   //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
   //   address.
-  for (auto& state : parent_->endpoint_state_map_) {
-    auto* endpoint_state = state.second.get();
+  for (auto& [address_set, endpoint_state] : parent_->endpoint_state_map_) {
     const bool unejected = endpoint_state->MaybeUneject(
         config.base_ejection_time.millis(), config.max_ejection_time.millis());
     if (unejected && GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
       LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                << "] unejected endpoint " << state.first.ToString() << " ("
-                << endpoint_state << ")";
+                << "] unejected endpoint " << address_set.ToString() << " ("
+                << endpoint_state.get() << ")";
     }
   }
   parent_->ejection_timer_ =
@@ -1046,15 +1036,14 @@ class OutlierDetectionLbFactory final : public LoadBalancingPolicyFactory {
         auto it = json.object().find("childPolicy");
         if (it == json.object().end()) {
           errors.AddError("field not present");
+        } else if (auto child_policy_config =
+                       CoreConfiguration::Get()
+                           .lb_policy_registry()
+                           .ParseLoadBalancingConfig(it->second);
+                   !child_policy_config.ok()) {
+          errors.AddError(child_policy_config.status().message());
         } else {
-          auto child_policy_config = CoreConfiguration::Get()
-                                         .lb_policy_registry()
-                                         .ParseLoadBalancingConfig(it->second);
-          if (!child_policy_config.ok()) {
-            errors.AddError(child_policy_config.status().message());
-          } else {
-            child_policy = std::move(*child_policy_config);
-          }
+          child_policy = std::move(*child_policy_config);
         }
       }
     }

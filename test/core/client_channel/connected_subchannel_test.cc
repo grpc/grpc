@@ -22,8 +22,8 @@
 #include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/local_subchannel_pool.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "test/core/call/yodel/yodel_test.h"
 
 namespace grpc_core {
@@ -144,8 +144,8 @@ class ConnectedSubchannelTest : public YodelTest {
 
   void Shutdown() override {}
 
-  absl::optional<CallHandler> PopHandler() {
-    if (handlers_.empty()) return absl::nullopt;
+  std::optional<CallHandler> PopHandler() {
+    if (handlers_.empty()) return std::nullopt;
     auto handler = std::move(handlers_.front());
     handlers_.pop();
     return handler;
@@ -165,7 +165,6 @@ CONNECTED_SUBCHANNEL_CHANNEL_TEST(StartCall) {
   SpawnTestSeq(
       call.handler, "start-call", [channel, handler = call.handler]() mutable {
         channel->unstarted_call_destination()->StartCall(std::move(handler));
-        return Empty{};
       });
   auto handler = TickUntilCallStarted();
   WaitForAllPendingWork();

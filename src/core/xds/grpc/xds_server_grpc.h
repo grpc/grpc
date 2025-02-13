@@ -26,15 +26,18 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
 
-class GrpcXdsServer final : public XdsBootstrap::XdsServer {
+class GrpcXdsServer final : public GrpcXdsServerInterface {
  public:
   const std::string& server_uri() const override { return server_uri_; }
 
   bool IgnoreResourceDeletion() const override;
+  bool FailOnDataErrors() const override;
+  bool ResourceTimerIsTransientFailure() const override;
 
   bool TrustedXdsServer() const;
 
@@ -42,7 +45,7 @@ class GrpcXdsServer final : public XdsBootstrap::XdsServer {
 
   std::string Key() const override;
 
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config() const {
+  RefCountedPtr<ChannelCredsConfig> channel_creds_config() const override {
     return channel_creds_config_;
   }
 

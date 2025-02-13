@@ -83,6 +83,7 @@ bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
         allow_list.insert(std::string(LbTokenMetadata::key()));
         allow_list.insert(std::string(TeMetadata::key()));
         allow_list.insert(std::string(UserAgentMetadata::key()));
+        allow_list.insert(std::string(W3CTraceParentMetadata::key()));
         allow_list.insert(std::string(XEnvoyPeerMetadata::key()));
         // go/keep-sorted end
         // go/keep-sorted start
@@ -113,9 +114,9 @@ void UnknownMap::Remove(absl::string_view key) {
                  unknown_.end());
 }
 
-absl::optional<absl::string_view> UnknownMap::GetStringValue(
+std::optional<absl::string_view> UnknownMap::GetStringValue(
     absl::string_view key, std::string* backing) const {
-  absl::optional<absl::string_view> out;
+  std::optional<absl::string_view> out;
   for (const auto& p : unknown_) {
     if (p.first.as_string_view() == key) {
       if (!out.has_value()) {

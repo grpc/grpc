@@ -30,14 +30,14 @@
 
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <utility>
+#include <variant>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -475,6 +475,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   ;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
+  /// Tracks any adjustments to the absolute timestamp of the next keepalive
+  /// timer callback execution.
+  grpc_core::Timestamp next_adjusted_keepalive_timestamp;
   /// grace period to wait for data after sending a ping before keepalives
   /// timeout
   grpc_core::Duration keepalive_timeout;
@@ -548,10 +551,15 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   /// True if we count stream allocation (instead of HTTP2 concurrency) for
   /// MAX_CONCURRENT_STREAMS
   bool max_concurrent_streams_overload_protection = false;
+  bool max_concurrent_streams_reject_on_client = false;
 
   // What percentage of rst_stream frames on the server should cause a ping
   // frame to be generated.
   uint8_t ping_on_rst_stream_percent;
+
+  // The last time a transport window update was received.
+  grpc_core::Timestamp last_window_update_time =
+      grpc_core::Timestamp::InfPast();
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };
@@ -601,7 +609,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
-  absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
+  std::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   uint32_t* recv_message_flags = nullptr;
   bool* call_failed_before_recv_message = nullptr;
   grpc_closure* recv_message_ready = nullptr;
@@ -688,6 +696,10 @@ struct grpc_chttp2_stream {
 
   /// Whether the bytes needs to be traced using Fathom
   bool traced = false;
+
+  // The last time a stream window update was received.
+  grpc_core::Timestamp last_window_update_time =
+      grpc_core::Timestamp::InfPast();
 };
 
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
@@ -697,6 +709,11 @@ struct grpc_chttp2_stream {
 // against MAX_CONCURRENT_STREAMS
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
   "grpc.http.overload_protection"
+
+// EXPERIMENTAL: Fail requests at the client if the client is over max
+// concurrent streams, so they may be retried elsewhere.
+#define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
+  "grpc.http.max_concurrent_streams_reject_on_client"
 
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to
@@ -730,7 +747,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error);
 ///  - a count of parsed bytes in the event of a partial read: the caller should
 ///    offload responsibilities to another thread to continue parsing.
 ///  - or a status in the case of a completed read
-absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
+std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started);
 

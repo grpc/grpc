@@ -20,7 +20,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_cluster_v3_OutlierDetection_submsgs[24] = {
+static const upb_MiniTableSubInternal envoy_config_cluster_v3_OutlierDetection__submsgs[24] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
@@ -76,7 +76,7 @@ static const upb_MiniTableField envoy_config_cluster_v3_OutlierDetection__fields
 };
 
 const upb_MiniTable envoy__config__cluster__v3__OutlierDetection_msg_init = {
-  &envoy_config_cluster_v3_OutlierDetection_submsgs[0],
+  &envoy_config_cluster_v3_OutlierDetection__submsgs[0],
   &envoy_config_cluster_v3_OutlierDetection__fields[0],
   UPB_SIZE(112, 208), 25, kUpb_ExtMode_NonExtendable, 25, UPB_FASTTABLE_MASK(248), 0,
 #ifdef UPB_TRACING_ENABLED

@@ -95,6 +95,10 @@ class PublishToAppEncoder {
     Append(LbTokenMetadata::key(), slice);
   }
 
+  void Encode(W3CTraceParentMetadata, const Slice& slice) {
+    Append(W3CTraceParentMetadata::key(), slice);
+  }
+
  private:
   void Append(absl::string_view key, int64_t value) {
     Append(StaticSlice::FromStaticString(key).c_slice(),
@@ -193,14 +197,18 @@ class OpHandlerImpl {
   Poll<StatusFlag> operator()() {
     switch (state_) {
       case State::kDismissed:
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "Dismissed " << OpName();
         return Success{};
       case State::kPromiseFactory: {
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "Construct " << OpName();
         auto promise = promise_factory_.Make();
         Destruct(&promise_factory_);
         Construct(&promise_, std::move(promise));
         state_ = State::kPromise;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kPromise: {
         GRPC_TRACE_LOG(call, INFO)
             << Activity::current()->DebugTag() << "BeginPoll " << OpName();
@@ -269,6 +277,8 @@ class BatchOpIndex {
     return idxs_[op_type] == 255 ? nullptr : &ops_[idxs_[op_type]];
   }
 
+  bool has_op(grpc_op_type op_type) const { return idxs_[op_type] != 255; }
+
  private:
   const grpc_op* const ops_;
   std::array<uint8_t, 8> idxs_{255, 255, 255, 255, 255, 255, 255, 255};
@@ -288,11 +298,11 @@ class WaitForCqEndOp {
   WaitForCqEndOp(const WaitForCqEndOp&) = delete;
   WaitForCqEndOp& operator=(const WaitForCqEndOp&) = delete;
   WaitForCqEndOp(WaitForCqEndOp&& other) noexcept
-      : state_(std::move(absl::get<NotStarted>(other.state_))) {
+      : state_(std::move(std::get<NotStarted>(other.state_))) {
     other.state_.emplace<Invalid>();
   }
   WaitForCqEndOp& operator=(WaitForCqEndOp&& other) noexcept {
-    state_ = std::move(absl::get<NotStarted>(other.state_));
+    state_ = std::move(std::get<NotStarted>(other.state_));
     other.state_.emplace<Invalid>();
     return *this;
   }
@@ -311,7 +321,7 @@ class WaitForCqEndOp {
     std::atomic<bool> done{false};
   };
   struct Invalid {};
-  using State = absl::variant<NotStarted, Started, Invalid>;
+  using State = std::variant<NotStarted, Started, Invalid>;
 
   static std::string StateString(const State& state);
 

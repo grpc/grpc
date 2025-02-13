@@ -29,7 +29,7 @@
 #include <memory>
 #include <thread>
 
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -113,7 +113,7 @@ TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {
   SimpleResponse res;
   grpc_core::Mutex mu;
   grpc_core::CondVar cond;
-  absl::optional<Status> status;
+  std::optional<Status> status;
 
   stub.async()->UnaryCall(&ctx, &req, &res, [&](auto s) {
     grpc_core::MutexLock lock(&mu);

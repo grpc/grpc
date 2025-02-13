@@ -49,7 +49,6 @@ TEST_UTILS_THAT_USE_GRPC_H_HEADERS = [
 
 grpc_cc_library(
     name = "proto_bit_gen",
-    language = "c++",
     public_hdrs = ["proto_bit_gen.h"],
     deps = ["//:gpr_platform"],
 )
@@ -58,7 +57,6 @@ grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "cmdline.cc",
-        "fuzzer_util.cc",
         "grpc_profiler.cc",
         "histogram.cc",
         "mock_endpoint.cc",
@@ -70,7 +68,6 @@ grpc_cc_library(
     hdrs = [
         "cmdline.h",
         "evaluate_args_test_util.h",
-        "fuzzer_util.h",
         "grpc_profiler.h",
         "histogram.h",
         "mock_endpoint.h",
@@ -87,7 +84,6 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/types:span",
     ],
-    language = "C++",
     tags = ["nofixdeps"],
     deps = [
         "//:debug_location",
@@ -128,7 +124,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    language = "C++",
     deps = [
         "build",
         "stack_tracer",
@@ -176,7 +171,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    language = "C++",
     deps = [
         "build",
         "stack_tracer",
@@ -212,7 +206,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -252,7 +245,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = ["nofixdeps"],
     uses_event_engine = False,
     uses_polling = False,
@@ -261,11 +253,6 @@ grpc_cc_test(
         "grpc_test_util_base",
         "//:gpr",
     ],
-)
-
-sh_library(
-    name = "fuzzer_one_entry_runner",
-    srcs = ["fuzzer_one_entry_runner.sh"],
 )
 
 grpc_cc_library(
@@ -280,7 +267,6 @@ grpc_cc_library(
         "absl/debugging:stacktrace",
         "absl/debugging:symbolize",
     ],
-    language = "C++",
     deps = [
         "//:gpr_platform",
         "//src/core:examine_stack",
@@ -297,7 +283,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
     tags = ["no_windows"],
     uses_event_engine = False,
@@ -320,7 +305,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/types:variant",
     ],
     deps = [
         "//:config",
@@ -362,7 +346,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
     ],
-    language = "C++",
     deps = [
         "grpc_test_util",
         "//:gpr",
@@ -380,7 +363,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
     ],
-    language = "C++",
     deps = [
         "grpc_test_util_unsecure",
         "//:gpr",
@@ -399,7 +381,6 @@ grpc_cc_library(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "grpc_test_util",
         "//:gpr",
@@ -414,7 +395,6 @@ grpc_cc_library(
     srcs = ["socket_use_after_close_detector.cc"],
     hdrs = ["socket_use_after_close_detector.h"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "grpc_test_util_unsecure",
         "//:gpr",
@@ -467,10 +447,12 @@ grpc_cc_library(
     name = "fuzz_config_vars",
     srcs = ["fuzz_config_vars.cc"],
     hdrs = ["fuzz_config_vars.h"],
-    external_deps = ["absl/types:optional"],
+    tags = [
+        "grpc-fuzztest",
+        "no_windows",
+    ],
     deps = [
         "fuzz_config_vars_cc_proto",
-        "fuzz_config_vars_helpers",
         "//:config_vars",
         "//:gpr_platform",
     ],
@@ -478,11 +460,21 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "fuzz_config_vars_helpers",
+    testonly = 1,
     srcs = ["fuzz_config_vars_helpers.cc"],
     hdrs = ["fuzz_config_vars_helpers.h"],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/strings",
+        "fuzztest",
+    ],
+    tags = [
+        "grpc-fuzztest",
+        "no_windows",
+    ],
     deps = [
+        "fuzz_config_vars_cc_proto",
         "//:gpr_platform",
+        "//:grpc_trace",
         "//src/core:experiments",
     ],
 )
@@ -538,7 +530,6 @@ grpc_cc_library(
         "absl/log:log",
         "absl/status",
         "absl/strings",
-        "absl/types:optional",
         "absl/types:span",
         "gtest",
     ],

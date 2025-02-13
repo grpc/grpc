@@ -33,7 +33,6 @@ grpc_cc_library(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:oob_backend_metric",
         "//src/core:client_channel_internal_header",
@@ -49,7 +48,6 @@ grpc_cc_test(
     name = "pick_first_test",
     srcs = ["pick_first_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -69,7 +67,6 @@ grpc_cc_test(
     name = "round_robin_test",
     srcs = ["round_robin_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -89,7 +86,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -110,7 +106,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -129,7 +124,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -149,7 +143,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -169,7 +162,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -188,7 +180,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -217,7 +208,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -237,7 +227,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -254,7 +243,6 @@ grpc_cc_test(
     name = "ring_hash_test",
     srcs = ["ring_hash_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -265,6 +253,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_ring_hash",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 

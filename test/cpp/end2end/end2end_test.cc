@@ -42,7 +42,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/crash.h"
@@ -165,7 +165,7 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
     EXPECT_TRUE(channel_auth_context.IsPeerAuthenticated());
     EXPECT_TRUE(metadata != nullptr);
     if (is_successful_) {
-      metadata->insert(std::make_pair(metadata_key_, metadata_value_));
+      metadata->insert(std::pair(metadata_key_, metadata_value_));
       return Status::OK;
     } else {
       return Status(StatusCode::NOT_FOUND, kTestCredsPluginErrorMsg);
@@ -229,9 +229,9 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
     if (auth_md_value == kGoodGuy) {
       context->AddProperty(kIdentityPropName, kGoodGuy);
       context->SetPeerIdentityPropertyName(kIdentityPropName);
-      consumed_auth_metadata->insert(std::make_pair(
-          string(auth_md->first.data(), auth_md->first.length()),
-          string(auth_md->second.data(), auth_md->second.length())));
+      consumed_auth_metadata->insert(
+          std::pair(string(auth_md->first.data(), auth_md->first.length()),
+                    string(auth_md->second.data(), auth_md->second.length())));
       return Status::OK;
     } else {
       return Status(StatusCode::UNAUTHENTICATED,

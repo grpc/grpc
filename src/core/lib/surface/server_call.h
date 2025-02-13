@@ -80,7 +80,6 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
         [self = WeakRefAsSubclass<ServerCall>(), error = std::move(error)] {
           self->call_handler_.PushServerTrailingMetadata(
               CancelledServerMetadataFromStatus(error));
-          return Empty{};
         });
   }
   bool is_trailers_only() const override {
@@ -151,6 +150,8 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   std::string DebugTag() { return absl::StrFormat("SERVER_CALL[%p]: ", this); }
 
   CallHandler call_handler_;
+  std::atomic<bool> sent_server_initial_metadata_batch_{false};
+  Latch<void> server_initial_metadata_scheduled_;
   MessageReceiver message_receiver_;
   ClientMetadataHandle client_initial_metadata_stored_;
   grpc_completion_queue* const cq_;

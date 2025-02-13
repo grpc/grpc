@@ -28,6 +28,47 @@
 
 namespace grpc_core {
 
+// Seq Promise combinator.
+//
+// Seq stands for sequence.
+//
+// Input :
+// 1. The seq combinator needs minimum one promise as input.
+// 2. The first input to seq combinator is a promise.
+// 3. The remaining inputs to seq combinator are promise factories. The input
+// type of the Nth functor should be the return value of the (N-1)th promise.
+//
+// Return :
+// Polling the Seq Promise combinator returns Poll<T> where T is the type
+// returned by the last promise in the list of input promises.
+//
+// Polling the Seq combinator works in the following way :
+// Run the first promise. If it returns Pending{}, nothing else is executed.
+// If the first promise returns a value, pass this result to the second functor,
+// and run the returned promise. If it returns Pending{}, nothing else is
+// executed. If it returns a value, pass this result to the third, and run the
+// returned promise. etc. Return the final value.
+//
+// If any of the promises in the Seq chain returns a failure status, Seq will
+// still proceed with the execution of the remaining promises. If you want the
+// execution to stop when a failure status is received, use the TrySeq
+// combinator instead.
+//
+// Promises in the Seq combinator are run in order, serially and on the same
+// thread.
+//
+// Example :
+//
+// TEST(SeqTest, TwoThens) {
+//   auto initial = [] { return std::string("a"); };
+//   auto next1 = [](std::string i) { return [i]() { return i + "b"; }; };
+//   auto next2 = [](std::string i) { return [i]() { return i + "c"; }; };
+//   EXPECT_EQ(Seq(initial, next1, next2)(), Poll<std::string>("abc"));
+// }
+//
+// For a complete understanding of all possible uses and nuances of Seq look at
+// ThreeTypedPendingThens in file seq_test.cc
+
 namespace promise_detail {
 
 template <typename T>
@@ -46,12 +87,6 @@ struct SeqTraits {
   template <typename R>
   static R ReturnValue(T&&) {
     abort();
-  }
-  template <typename F, typename Elem>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallSeqFactory(F& f,
-                                                                  Elem&& elem,
-                                                                  T&& value) {
-    return f(std::forward<Elem>(elem), std::forward<T>(value));
   }
   template <typename Result, typename PriorResult, typename RunNext>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
@@ -77,34 +112,11 @@ class Seq {
   SeqState<SeqTraits, P, Fs...> state_;
 };
 
-template <typename I, typename F, typename Arg>
-struct SeqIterTraits {
-  using Iter = I;
-  using Factory = F;
-  using Argument = Arg;
-  using IterValue = decltype(*std::declval<Iter>());
-  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                                  std::declval<Arg>()));
-  using State = PromiseLike<StateCreated>;
-  using Wrapped = typename State::Result;
-
-  using Traits = SeqTraits<Wrapped>;
-};
-
 template <typename Iter, typename Factory, typename Argument>
-struct SeqIterResultTraits {
-  using IterTraits = SeqIterTraits<Iter, Factory, Argument>;
-  using Result = BasicSeqIter<IterTraits>;
-};
+using SeqIter = BasicSeqIter<SeqTraits, Iter, Factory, Argument>;
 
 }  // namespace promise_detail
 
-// Sequencing combinator.
-// Run the first promise.
-// Pass its result to the second, and run the returned promise.
-// Pass its result to the third, and run the returned promise.
-// etc
-// Return the final value.
 template <typename F>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F Seq(F functor) {
   return functor;
@@ -227,11 +239,11 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-typename promise_detail::SeqIterResultTraits<Iter, Factory, Argument>::Result
-SeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
-  using Result = typename promise_detail::SeqIterResultTraits<Iter, Factory,
-                                                              Argument>::Result;
-  return Result(begin, end, std::move(factory), std::move(argument));
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqIter(Iter begin, Iter end,
+                                                  Argument argument,
+                                                  Factory factory) {
+  return promise_detail::SeqIter<Iter, Factory, Argument>(
+      begin, end, std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core

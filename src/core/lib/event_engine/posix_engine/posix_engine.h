@@ -48,8 +48,7 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif  // GRPC_POSIX_SOCKET_TCP
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 // A helper class to handle asynchronous connect operations.
@@ -132,8 +131,6 @@ class PosixEnginePollerManager
 
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-// TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
-// EventEngine is shut down before we shut down iomgr.
 class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                                public grpc_core::KeepsGrpcInitialized {
  public:
@@ -262,7 +259,6 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 #endif  // GRPC_POSIX_SOCKET_TCP
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H

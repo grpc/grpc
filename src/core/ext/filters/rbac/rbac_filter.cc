@@ -24,10 +24,10 @@
 #include <utility>
 
 #include "absl/status/status.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/promise.h"
@@ -40,13 +40,6 @@
 #include "src/core/util/latent_see.h"
 
 namespace grpc_core {
-
-const NoInterceptor RbacFilter::Call::OnServerInitialMetadata;
-const NoInterceptor RbacFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor RbacFilter::Call::OnClientToServerMessage;
-const NoInterceptor RbacFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor RbacFilter::Call::OnServerToClientMessage;
-const NoInterceptor RbacFilter::Call::OnFinalize;
 
 absl::Status RbacFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
                                                        RbacFilter* filter) {

@@ -41,6 +41,7 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_UnaryPingPong(benchmark::State& state) {
+  GRPC_LATENT_SEE_PARENT_SCOPE("BM_UnaryPingPong");
   EchoTestService::AsyncService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
   EchoRequest send_request;
@@ -74,6 +75,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
   for (auto _ : state) {
+    GRPC_LATENT_SEE_PARENT_SCOPE("OneRequest");
     recv_response.Clear();
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
@@ -82,33 +84,42 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     void* t;
     bool ok;
-    CHECK(fixture->cq()->Next(&t, &ok));
+    {
+      GRPC_LATENT_SEE_INNER_SCOPE("WaitForRequest");
+      CHECK(fixture->cq()->Next(&t, &ok));
+    }
     CHECK(ok);
     CHECK(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     ServerContextMutator svr_ctx_mut(&senv->ctx);
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
-    for (int i = (1 << 3) | (1 << 4); i != 0;) {
-      CHECK(fixture->cq()->Next(&t, &ok));
-      CHECK(ok);
-      int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
-      CHECK(i & (1 << tagnum));
-      i -= 1 << tagnum;
+    {
+      GRPC_LATENT_SEE_INNER_SCOPE("WaitForCqs");
+      for (int i = (1 << 3) | (1 << 4); i != 0;) {
+        CHECK(fixture->cq()->Next(&t, &ok));
+        CHECK(ok);
+        int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
+        CHECK(i & (1 << tagnum));
+        i -= 1 << tagnum;
+      }
+      CHECK(recv_status.ok());
     }
-    CHECK(recv_status.ok());
-
-    senv->~ServerEnv();
-    senv = new (senv) ServerEnv();
-    service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
-                        fixture->cq(), fixture->cq(), tag(slot));
+    {
+      GRPC_LATENT_SEE_INNER_SCOPE("RequestEcho");
+      senv->~ServerEnv();
+      senv = new (senv) ServerEnv();
+      service.RequestEcho(&senv->ctx, &senv->recv_request,
+                          &senv->response_writer, fixture->cq(), fixture->cq(),
+                          tag(slot));
+    }
   }
   stub.reset();
   fixture.reset();
   server_env[0]->~ServerEnv();
   server_env[1]->~ServerEnv();
-  state.SetBytesProcessed(state.range(0) * state.iterations() +
-                          state.range(1) * state.iterations());
+  state.SetBytesProcessed((state.range(0) * state.iterations()) +
+                          (state.range(1) * state.iterations()));
 }
 }  // namespace testing
 }  // namespace grpc

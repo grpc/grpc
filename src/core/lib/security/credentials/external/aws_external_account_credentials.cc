@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <map>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -34,7 +35,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/env.h"
@@ -110,7 +110,6 @@ void AwsExternalAccountCredentials::AwsFetchBody::AsyncFinish(
     absl::StatusOr<std::string> result) {
   creds_->event_engine().Run(
       [this, self = Ref(), result = std::move(result)]() mutable {
-        ApplicationCallbackExecCtx application_exec_ctx;
         ExecCtx exec_ctx;
         Finish(std::move(result));
         self.reset();

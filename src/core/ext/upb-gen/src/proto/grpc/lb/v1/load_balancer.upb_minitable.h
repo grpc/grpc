@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_MINITABLE_H_
-#define SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_MINITABLE_H_
+#ifndef SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H__UPB_MINITABLE_H_
+#define SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -45,4 +45,4 @@ extern const upb_MiniTableFile src_proto_grpc_lb_v1_load_balancer_proto_upb_file
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_MINITABLE_H_ */
+#endif  /* SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H__UPB_MINITABLE_H_ */

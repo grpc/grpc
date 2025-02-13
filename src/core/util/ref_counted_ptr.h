@@ -20,8 +20,8 @@
 #define GRPC_SRC_CORE_UTIL_REF_COUNTED_PTR_H
 
 #include <grpc/support/port_platform.h>
-#include <stddef.h>
 
+#include <cstddef>
 #include <iosfwd>
 #include <type_traits>
 #include <utility>

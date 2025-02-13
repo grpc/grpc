@@ -21,16 +21,16 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
+#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -220,7 +220,7 @@ ArenaPromise<ServerMetadataHandle> LegacyChannelIdleFilter::MakeCallPromise(
   return ArenaPromise<ServerMetadataHandle>(
       [decrementer = Decrementer(this),
        next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
+          -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool LegacyChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {

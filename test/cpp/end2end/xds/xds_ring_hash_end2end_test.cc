@@ -24,15 +24,16 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
 #include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/util/env.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -40,7 +41,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::cluster::v3::CustomClusterType;
 using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 
@@ -127,7 +127,7 @@ TEST_P(RingHashTest, AggregateClusterFallBackFromRingHashAtStartup) {
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -193,7 +193,7 @@ TEST_P(RingHashTest,
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kEdsClusterName);
@@ -261,7 +261,7 @@ TEST_P(RingHashTest,
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kEdsClusterName);
@@ -456,6 +456,160 @@ TEST_P(RingHashTest, HeaderHashingWithRegexRewrite) {
   EXPECT_TRUE(found);
 }
 
+TEST_P(RingHashTest, HashKeysInEds) {
+  grpc_core::testing::ScopedEnvVar env(
+      "GRPC_XDS_ENDPOINT_HASH_KEY_BACKWARD_COMPAT", "false");
+  CreateAndStartBackends(4);
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  EdsResourceArgs args(
+      {{"locality0",
+        {
+            CreateEndpoint(0,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"foo\"}"}}),
+            CreateEndpoint(1,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"bar\"}"}}),
+            CreateEndpoint(2,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"baz\"}"}}),
+            CreateEndpoint(3,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"quux\"}"}}),
+        }}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Note each type of RPC will contains a header value that will always be
+  // hashed to a specific backend as the header value matches the value used
+  // to create the entry in the ring.
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", "foo_0"}};
+  std::vector<std::pair<std::string, std::string>> metadata1 = {
+      {"address_hash", "bar_0"}};
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash", "baz_0"}};
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash", "quux_0"}};
+  const auto rpc_options =
+      RpcOptions().set_metadata(std::move(metadata)).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
+  const auto rpc_options2 =
+      RpcOptions().set_metadata(std::move(metadata2)).set_timeout_ms(5000);
+  const auto rpc_options3 =
+      RpcOptions().set_metadata(std::move(metadata3)).set_timeout_ms(5000);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 2, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options3);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options3);
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(100, backends_[i]->backend_service()->request_count());
+  }
+}
+
+TEST_P(RingHashTest, HashKeysInEdsNotEnabled) {
+  CreateAndStartBackends(4);
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  EdsResourceArgs args(
+      {{"locality0",
+        {
+            CreateEndpoint(0,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"foo\"}"}}),
+            CreateEndpoint(1,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"bar\"}"}}),
+            CreateEndpoint(2,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"baz\"}"}}),
+            CreateEndpoint(3,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"quux\"}"}}),
+        }}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Note each type of RPC will contains a header value that will always be
+  // hashed to a specific backend as the header value matches the value used
+  // to create the entry in the ring.
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
+  std::vector<std::pair<std::string, std::string>> metadata1 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
+  const auto rpc_options =
+      RpcOptions().set_metadata(std::move(metadata)).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
+  const auto rpc_options2 =
+      RpcOptions().set_metadata(std::move(metadata2)).set_timeout_ms(5000);
+  const auto rpc_options3 =
+      RpcOptions().set_metadata(std::move(metadata3)).set_timeout_ms(5000);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 2, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options3);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options3);
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(100, backends_[i]->backend_service()->request_count());
+  }
+}
+
 // Tests that ring hash policy that hashes using a random value.
 TEST_P(RingHashTest, NoHashPolicy) {
   CreateAndStartBackends(2);
@@ -642,7 +796,7 @@ TEST_P(RingHashTest, UnsupportedHashPolicyDefaultToRandomHashing) {
 }
 
 // Tests that ring hash policy that hashes using a random value can spread
-// RPCs across all the backends according to locality weight.
+// RPCs across all the backends according to endpoint weight.
 TEST_P(RingHashTest, RandomHashingDistributionAccordingToEndpointWeight) {
   CreateAndStartBackends(2);
   const size_t kWeight1 = 1;
@@ -681,7 +835,7 @@ TEST_P(RingHashTest, RandomHashingDistributionAccordingToEndpointWeight) {
 }
 
 // Tests that ring hash policy that hashes using a random value can spread
-// RPCs across all the backends according to locality weight.
+// RPCs across all the backends according to locality and endpoint weight.
 TEST_P(RingHashTest,
        RandomHashingDistributionAccordingToLocalityAndEndpointWeight) {
   CreateAndStartBackends(2);
@@ -1106,7 +1260,7 @@ TEST_P(RingHashTest, ReattemptWhenGoingFromTransientFailureToIdle) {
   // Channel should fail RPCs and go into TRANSIENT_FAILURE.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "empty address list: EDS resource eds_service_name contains empty "
+      "empty address list: EDS resource eds_service_name: contains empty "
       "localities: \\[\\{region=\"xds_default_locality_region\", "
       "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]",
       RpcOptions().set_timeout_ms(kConnectionTimeoutMilliseconds));

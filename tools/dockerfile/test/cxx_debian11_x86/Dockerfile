@@ -118,7 +118,5 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 RUN mkdir /var/local/jenkins
 
 
-# docker is running on a 64-bit machine, so we need to
-# override "uname -m" to report i686 instead of x86_64, otherwise
-# cmake will choose a wrong option to build.
-ENTRYPOINT ["linux32"]
+# Define the default command.
+CMD ["bash"]

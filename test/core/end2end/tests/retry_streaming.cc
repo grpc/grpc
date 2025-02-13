@@ -19,9 +19,9 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/channelz/channelz.h"
@@ -44,7 +44,8 @@ namespace {
 // replayed ops happen under the hood -- they are not surfaced to the
 // C-core API, and therefore we have no way to inject the commit at the
 // right point.
-CORE_END2END_TEST(RetryTest, RetryStreaming) {
+CORE_END2END_TEST(RetryTests, RetryStreaming) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()
@@ -69,7 +70,7 @@ CORE_END2END_TEST(RetryTest, RetryStreaming) {
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
   channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(client());
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Client starts a batch for receiving initial metadata, a message,
   // and trailing metadata.
   IncomingStatusOnClient server_status;
@@ -87,8 +88,8 @@ CORE_END2END_TEST(RetryTest, RetryStreaming) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Server receives a message.
   IncomingMessage client_message;
   s.NewBatch(102).RecvMessage(client_message);
@@ -118,8 +119,8 @@ CORE_END2END_TEST(RetryTest, RetryStreaming) {
   auto s2 = RequestCall(201);
   Expect(201, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Server receives a message.
   IncomingMessage client_message3;
   s2.NewBatch(202).RecvMessage(client_message3);

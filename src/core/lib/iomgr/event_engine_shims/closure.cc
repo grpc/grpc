@@ -30,7 +30,6 @@ void RunEventEngineClosure(grpc_closure* closure, grpc_error_handle error) {
   if (closure == nullptr) {
     return;
   }
-  grpc_core::ApplicationCallbackExecCtx app_ctx;
   grpc_core::ExecCtx exec_ctx;
 #ifndef NDEBUG
   closure->scheduled = false;

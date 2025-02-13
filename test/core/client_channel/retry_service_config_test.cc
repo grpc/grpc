@@ -24,8 +24,8 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/service_config/service_config_parser.h"
@@ -142,7 +142,7 @@ TEST_F(RetryParserTest, ValidRetryPolicy) {
   EXPECT_EQ(parsed_config->initial_backoff(), Duration::Seconds(1));
   EXPECT_EQ(parsed_config->max_backoff(), Duration::Minutes(2));
   EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
-  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), absl::nullopt);
+  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), std::nullopt);
   EXPECT_TRUE(
       parsed_config->retryable_status_codes().Contains(GRPC_STATUS_ABORTED));
 }
@@ -571,7 +571,7 @@ TEST_F(RetryParserTest,
   EXPECT_EQ(parsed_config->initial_backoff(), Duration::Seconds(1));
   EXPECT_EQ(parsed_config->max_backoff(), Duration::Minutes(2));
   EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
-  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), absl::nullopt);
+  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), std::nullopt);
   EXPECT_TRUE(
       parsed_config->retryable_status_codes().Contains(GRPC_STATUS_ABORTED));
 }

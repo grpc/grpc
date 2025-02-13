@@ -17,15 +17,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
 namespace grpc_core {
 
 struct RbacPolicies {
-  absl::optional<Rbac> deny_policy;
+  std::optional<Rbac> deny_policy;
   Rbac allow_policy;
 };
 

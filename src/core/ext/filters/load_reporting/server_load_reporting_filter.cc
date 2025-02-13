@@ -28,6 +28,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -38,16 +39,15 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -69,11 +69,6 @@ namespace grpc_core {
 constexpr char kEncodedIpv4AddressLengthString[] = "08";
 constexpr char kEncodedIpv6AddressLengthString[] = "32";
 constexpr char kEmptyAddressLengthString[] = "00";
-
-const NoInterceptor ServerLoadReportingFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ServerLoadReportingFilter::Call::OnClientToServerMessage;
-const NoInterceptor ServerLoadReportingFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerLoadReportingFilter::Call::OnServerToClientMessage;
 
 absl::StatusOr<std::unique_ptr<ServerLoadReportingFilter>>
 ServerLoadReportingFilter::Create(const ChannelArgs& channel_args,
