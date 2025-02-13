@@ -722,6 +722,7 @@ void BasicFuzzer::TryShutdown() {
   if (server() != nullptr) {
     if (!server_shutdown_called()) {
       ShutdownServer();
+      CancelAllCallsIfShutdown();
     }
     if (server_finished_shutting_down()) {
       DestroyServer();

@@ -83,20 +83,21 @@ class PromiseLike<
     F, absl::enable_if_t<!std::is_void<std::invoke_result_t<F>>::value>> {
  private:
   GPR_NO_UNIQUE_ADDRESS RemoveCVRef<F> f_;
+  using OriginalResult = decltype(f_());
+  using WrappedResult = decltype(WrapInPoll(std::declval<OriginalResult>()));
 
  public:
   // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION PromiseLike(F&& f)
       : f_(std::forward<F>(f)) {}
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()()
-      -> decltype(WrapInPoll(f_())) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION WrappedResult operator()() {
     return WrapInPoll(f_());
   }
   PromiseLike(const PromiseLike&) = default;
   PromiseLike& operator=(const PromiseLike&) = default;
   PromiseLike(PromiseLike&&) = default;
   PromiseLike& operator=(PromiseLike&&) = default;
-  using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
+  using Result = typename PollTraits<WrappedResult>::Type;
 };
 
 template <typename F>
