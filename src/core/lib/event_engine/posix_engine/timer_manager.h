@@ -58,8 +58,7 @@ class TimerManager final {
   void Shutdown();
 
   void PrepareFork();
-  void PostforkParent();
-  void PostforkChild();
+  void PostFork();
 
  private:
   class Host final : public TimerListHost {

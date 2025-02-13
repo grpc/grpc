@@ -80,8 +80,10 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       grpc::ServerBuilder builder;
       builder.AddListeningPort(addr, grpc::InsecureServerCredentials());
       builder.RegisterService(&impl);
+      LOG(INFO) << "\n#\n#\n#\n#\n#";
       std::unique_ptr<Server> server(builder.BuildAndStart());
       server->Wait();
+      LOG(INFO) << "\n#\n#\n#\n#\n#";
       return;
     }
     default:  // post-fork parent
