@@ -14649,7 +14649,6 @@ targets:
   language: c++
   headers:
   - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
   src:
   - test/core/promise/party_test.cc
