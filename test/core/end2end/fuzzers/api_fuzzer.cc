@@ -534,5 +534,35 @@ TEST(MyTestSuite, RunApiFuzzerRegression1) {
       )pb"));
 }
 
+TEST(MyTestSuite, RunApiFuzzerRegression2) {
+  RunApiFuzzer(ParseTestProto(
+      R"pb(actions { create_server { http2_ports { server_creds {} } } }
+           actions { request_call {} }
+           actions {
+             create_channel {
+               channel_args {}
+               inproc: true
+             }
+           }
+           actions {
+             create_call {
+               method { value: "\364\217\277\277\355\237\277" }
+               timeout: -1482173017
+             }
+           }
+           actions { poll_cq {} }
+           actions {
+             queue_batch {
+               operations {
+                 send_status_from_server {
+                   status_code: 4294967295
+                   status_details { value: "_" }
+                 }
+               }
+             }
+           }
+      )pb"));
+}
+
 }  // namespace testing
 }  // namespace grpc_core
