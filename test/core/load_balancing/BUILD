@@ -17,8 +17,8 @@ load(
     "grpc_cc_library",
     "grpc_cc_proto_library",
     "grpc_cc_test",
-    "grpc_package",
     "grpc_internal_proto_library",
+    "grpc_package",
 )
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
@@ -96,10 +96,10 @@ grpc_fuzz_test(
     tags = ["no_windows"],
     deps = [
         ":pick_first_fuzzer_cc_proto",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzzing_channel_args",
         "//test/core/test_util:grpc_test_util",
-        "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine:event_engine_test_utils",
     ],
 )
 
