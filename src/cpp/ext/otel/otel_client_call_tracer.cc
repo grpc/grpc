@@ -338,6 +338,10 @@ OpenTelemetryPluginImpl::ClientCallTracer::ClientCallTracer(
     // on the context to avoid introducing a new type for opentelemetry inside
     // gRPC Core. There's no risk of collisions since we do not allow multiple
     // tracing systems active for the same call.
+    // TODO(yashykt) : We might want to allow multiple tracing systems. A
+    // potential idea is to expose arena based contexts via ServerContext and
+    // ClientContext to the application, allowing us to propagate multiple span
+    // contexts for the same call.
     auto* parent_span = reinterpret_cast<opentelemetry::trace::Span*>(
         arena->GetContext<census_context>());
     if (parent_span != nullptr) {
