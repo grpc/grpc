@@ -71,5 +71,12 @@ CORE_END2END_TEST(CoreEnd2endTests, SimpleMetadata) {
   EXPECT_EQ(server_status.GetTrailingMetadata("key6"), "val6");
 }
 
+TEST(Fuzzers, CoreEnd2endTests_SimpleMetadataRegression) {
+  CoreEnd2endTests_SimpleMetadata(
+    CoreTestConfigurationNamed("ChaoticGoodOneByteChunk"),
+    ParseTestProto(R"pb(config_vars { trace: "promise_primitives" })pb")
+  );
+}
+
 }  // namespace
 }  // namespace grpc_core
