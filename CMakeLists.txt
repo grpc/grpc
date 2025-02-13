@@ -15377,7 +15377,6 @@ add_executable(filter_fusion_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
