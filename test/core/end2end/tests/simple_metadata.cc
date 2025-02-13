@@ -73,9 +73,8 @@ CORE_END2END_TEST(CoreEnd2endTests, SimpleMetadata) {
 
 TEST(Fuzzers, CoreEnd2endTestsSimpleMetadataRegression1) {
   CoreEnd2endTests_SimpleMetadata(
-    CoreTestConfigurationNamed("ChaoticGoodOneByteChunk"),
-    ParseTestProto(R"pb(config_vars { trace: "promise_primitives" })pb")
-  );
+      CoreTestConfigurationNamed("ChaoticGoodOneByteChunk"),
+      ParseTestProto(R"pb(config_vars { trace: "promise_primitives" })pb"));
 }
 
 }  // namespace
