@@ -41,6 +41,7 @@ EXPERIMENT_ENABLES = {
     "retry_in_callv3": "retry_in_callv3",
     "rq_fast_reject": "rq_fast_reject",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
+    "server_global_callbacks_ownership": "server_global_callbacks_ownership",
     "server_listener": "server_listener",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
