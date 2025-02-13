@@ -393,7 +393,9 @@ void OpenTelemetryPluginImpl::ServerBuilderOption::UpdateArguments(
 namespace {
 opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> MaybeMakeTracer(
     opentelemetry::trace::TracerProvider* tracer_provider) {
-  if (tracer_provider == nullptr) return opentelemetry::nostd::shared_ptr();
+  if (tracer_provider == nullptr) {
+    return opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer>();
+  }
   return tracer_provider->GetTracer("grpc-c++", GRPC_CPP_VERSION_STRING);
 }
 }  // namespace

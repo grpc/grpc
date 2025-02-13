@@ -622,7 +622,8 @@ TEST_F(OTelTracingTest, TransparentRetries) {
 // An Echo Service that propagates an Echo request to another server.
 class PropagatingEchoTestServiceImpl : public EchoTestService::CallbackService {
  public:
-  explicit PropagatingEchoTestServiceImpl(EchoTestService::Stub* stub) : stub_(stub) {}
+  explicit PropagatingEchoTestServiceImpl(EchoTestService::Stub* stub)
+      : stub_(stub) {}
 
   ServerUnaryReactor* Echo(CallbackServerContext* context,
                            const EchoRequest* request,
