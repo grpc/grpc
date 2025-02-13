@@ -704,7 +704,7 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    tags = ["promise_test"],
+    tags = ["party_mpsc_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
