@@ -89,7 +89,6 @@ CoreEnd2endTest::CoreEnd2endTest(
     SetCqVerifierStepFn(
         [engine = std::move(engine)](
             grpc_event_engine::experimental::EventEngine::Duration max_step) {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           engine->Tick(max_step);
           grpc_timer_manager_tick();

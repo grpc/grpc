@@ -164,7 +164,6 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   RunCallbackOnDefaultEventEngine([on_resolved] {
-    ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up SRV records"));
@@ -179,7 +178,6 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     absl::string_view /* name_server */) {
   // Not supported
   RunCallbackOnDefaultEventEngine([on_resolved] {
-    ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up TXT records"));

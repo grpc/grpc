@@ -530,7 +530,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
               &on_receive_settings_, nullptr, on_close);
           timer_handle_ = connection_->event_engine_->RunAfter(
               deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
-                ApplicationCallbackExecCtx callback_exec_ctx;
                 ExecCtx exec_ctx;
                 self->OnTimeout();
                 // HandshakingState deletion might require an active ExecCtx.
@@ -614,7 +613,6 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
                              GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
                          .value_or(Duration::Minutes(10))),
             [self = Ref(DEBUG_LOCATION, "drain_grace_timer")]() mutable {
-              ApplicationCallbackExecCtx callback_exec_ctx;
               ExecCtx exec_ctx;
               self->OnDrainGraceTimeExpiry();
               self.reset(DEBUG_LOCATION, "drain_grace_timer");
@@ -1097,7 +1095,6 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
       timer_handle_ = connection_->listener_state_->event_engine()->RunAfter(
           deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
             // HandshakingState deletion might require an active ExecCtx.
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();
             self_ptr->connection_->work_serializer_.Run(

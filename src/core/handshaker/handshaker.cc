@@ -53,7 +53,6 @@ void Handshaker::InvokeOnHandshakeDone(
     absl::Status status) {
   args->event_engine->Run([on_handshake_done = std::move(on_handshake_done),
                            status = std::move(status)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     on_handshake_done(std::move(status));
     // Destroy callback while ExecCtx is still in scope.
@@ -122,7 +121,6 @@ void HandshakeManager::DoHandshake(
   const Duration time_to_deadline = deadline - Timestamp::Now();
   deadline_timer_handle_ =
       args_.event_engine->RunAfter(time_to_deadline, [self = Ref()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
         // HandshakeManager deletion might require an active ExecCtx.
@@ -175,7 +173,6 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
     if (!error.ok()) result = std::move(error);
     args_.event_engine->Run([on_handshake_done = std::move(on_handshake_done_),
                              result = std::move(result)]() mutable {
-      ApplicationCallbackExecCtx callback_exec_ctx;
       ExecCtx exec_ctx;
       on_handshake_done(std::move(result));
       // Destroy callback while ExecCtx is still in scope.

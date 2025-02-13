@@ -432,12 +432,15 @@ struct FilterMethods {
   using Idxs = std::make_index_sequence<sizeof...(filter_methods)>;
 };
 
+<<<<<<< HEAD
 template <typename... Filters>
 struct FilterTypes {
   using Types = Typelist<Filters...>;
   using Idxs = std::make_index_sequence<sizeof...(Filters)>;
 };
 
+=======
+>>>>>>> master
 template <std::size_t, typename>
 struct make_reverse_index_sequence_helper;
 
