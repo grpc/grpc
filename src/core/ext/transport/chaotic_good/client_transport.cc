@@ -161,6 +161,7 @@ void ChaoticGoodClientTransport::StreamDispatch::OnIncomingFrame(
 
 void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
     absl::Status status) {
+  LOG(INFO) << "CGC::StreamDispatch::OnFrameTransportClosed: " << status;
   // Mark transport as unavailable when the endpoint write/read failed.
   ReleasableMutexLock lock(&mu_);
   StreamMap stream_map = std::move(stream_map_);
@@ -183,6 +184,7 @@ void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
 uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
     CallHandler call_handler) {
   MutexLock lock(&mu_);
+  LOG(INFO) << "MakeStream: next=" << next_stream_id_;
   if (next_stream_id_ == kClosedTransportStreamId) return 0;
   const uint32_t stream_id = next_stream_id_++;
   const bool on_done_added = call_handler.OnDone(
@@ -293,10 +295,10 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
             self->stream_dispatch_->MakeStream(call_handler);
         return If(
             stream_id != 0,
-            [stream_id, call_handler = std::move(call_handler),
-             self = std::move(self)]() {
+            [stream_id, &call_handler,
+             self = std::move(self)]() mutable {
               return Map(
-                  self->CallOutboundLoop(stream_id, call_handler),
+                  self->CallOutboundLoop(stream_id, std::move(call_handler)),
                   [self, stream_id](StatusFlag result) -> StatusFlag {
                     GRPC_TRACE_LOG(chaotic_good, INFO)
                         << "CHAOTIC_GOOD: Call " << stream_id
@@ -314,7 +316,10 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
                     return result;
                   });
             },
-            []() -> Poll<StatusFlag> { return Success{}; });
+            [&call_handler]() -> Poll<StatusFlag> { 
+              call_handler.PushServerTrailingMetadata(
+                CancelledServerMetadataFromStatus(absl::UnavailableError("Transport closed.")));
+              return Success{}; });
       });
 }
 
