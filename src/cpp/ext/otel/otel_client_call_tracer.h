@@ -55,8 +55,6 @@ class OpenTelemetryPluginImpl::ClientCallTracer
                       uint64_t attempt_num, bool is_transparent_retry,
                       bool arena_allocated);
 
-    ~CallAttemptTracer() override { LOG(ERROR) << "destroyed " << this; }
-
     std::string TraceId() override {
       // Not implemented
       return "";
@@ -160,7 +158,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   OpenTelemetryPluginImpl* otel_plugin_;
   std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config_;
   grpc_core::Mutex mu_;
-  // Non-transparent attempts per call
+  // Non-transparent attempts per call (including first attempt)
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
   // Transparent retries per call
   uint64_t transparent_retries_ ABSL_GUARDED_BY(&mu_) = 0;

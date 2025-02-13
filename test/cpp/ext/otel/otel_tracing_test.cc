@@ -42,6 +42,7 @@ namespace {
 using opentelemetry::sdk::trace::SpanData;
 using opentelemetry::sdk::trace::SpanDataEvent;
 using ::testing::ElementsAre;
+using ::testing::FieldsAre;
 using ::testing::Lt;
 using ::testing::MatchesRegex;
 using ::testing::Pair;
@@ -101,12 +102,12 @@ class OTelTracingTest : public ::testing::Test {
         ResetGlobalStatsPluginRegistry();
   }
 
-  void SendRPC() {
+  void SendRPC(EchoTestService::Stub* stub) {
     EchoRequest request;
     request.set_message("foo");
     EchoResponse response;
     grpc::ClientContext context;
-    grpc::Status status = stub_->Echo(&context, request, &response);
+    grpc::Status status = stub->Echo(&context, request, &response);
   }
 
   // Waits for \a timeout for \a expected_size number of spans and returns them.
@@ -136,7 +137,7 @@ class OTelTracingTest : public ::testing::Test {
 };
 
 TEST_F(OTelTracingTest, Basic) {
-  SendRPC();
+  SendRPC(stub_.get());
   auto spans = GetSpans(3);
   SpanData* client_span;
   SpanData* attempt_span;
@@ -218,7 +219,7 @@ TEST_F(OTelTracingTest, TestApplicationContextFlows) {
   {
     auto span = tracer_->StartSpan("TestSpan");
     auto scope = opentelemetry::sdk::trace::Tracer::WithActiveSpan(span);
-    SendRPC();
+    SendRPC(stub_.get());
   }
   auto spans = GetSpans(4);
   EXPECT_EQ(spans.size(), 4);
@@ -550,6 +551,8 @@ TEST_F(OTelTracingTest, Retries) {
     if (span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo") {
       attempt_seq_nums.push_back(std::get<uint64_t>(
           span->GetAttributes().at("previous-rpc-attempts")));
+      EXPECT_EQ(std::get<bool>(span->GetAttributes().at("transparent-retry")),
+                false);
     } else if (span->GetName() == "Recv.grpc.testing.EchoTestService/Echo") {
       ++server_span_count;
     }
@@ -571,11 +574,11 @@ TEST_F(OTelTracingTest, TransparentRetries) {
     EXPECT_TRUE(stream->Read(&bidi_response));
     // Start a new echo RPC which will remain pending till the bidi stream ends.
     ClientContext echo_context;
+    echo_context.set_wait_for_ready(true);
     EchoResponse echo_response;
     absl::Notification notify;
     stub_->async()->Echo(&echo_context, &request, &echo_response,
                          [&notify](Status s) {
-                           LOG(ERROR) << "RPC finished";
                            EXPECT_TRUE(s.ok());
                            notify.Notify();
                          });
@@ -588,22 +591,137 @@ TEST_F(OTelTracingTest, TransparentRetries) {
     // The Echo RPC should have been transparently retried and finished
     // successfully.
     notify.WaitForNotificationWithTimeout(absl::Seconds(5));
-    LOG(ERROR) << "exiting";
   }
-  LOG(ERROR) << "exited";
-  // auto spans = GetSpans(3);
-  // EXPECT_EQ(spans.size(), 7);  // 1 client span, 3 attempt spans, 3 server
-  // spans std::vector<uint64_t> attempt_seq_nums; uint64_t server_span_count =
-  // 0; for (const auto& span : spans) {
-  //   if (span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo") {
-  //     attempt_seq_nums.push_back(std::get<uint64_t>(
-  //         span->GetAttributes().at("previous-rpc-attempts")));
-  //   } else if (span->GetName() == "Recv.grpc.testing.EchoTestService/Echo") {
-  //     ++server_span_count;
-  //   }
-  // }
-  // EXPECT_THAT(attempt_seq_nums, ElementsAre(0, 1, 2));
-  // EXPECT_EQ(server_span_count, 3);
+  auto spans = GetSpans(7);
+  EXPECT_EQ(spans.size(),
+            7);  // 2 client spans, 3 attempt spans, 2 server spans
+  struct AttemptAttributes {
+    uint64_t previous_rpc_attempts;
+    bool transparent_retry;
+  };
+  std::vector<AttemptAttributes> attempt_attributes;
+  uint64_t server_span_count = 0;
+  for (const auto& span : spans) {
+    if (span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo") {
+      attempt_attributes.push_back(
+          {std::get<uint64_t>(
+               span->GetAttributes().at("previous-rpc-attempts")),
+           std::get<bool>(span->GetAttributes().at("transparent-retry"))});
+    } else if (span->GetName() == "Recv.grpc.testing.EchoTestService/Echo") {
+      ++server_span_count;
+    }
+  }
+  EXPECT_THAT(
+      attempt_attributes,
+      ElementsAre(
+          FieldsAre(/*previous-rpc-attempts=*/0, /*transparent-retry=*/false),
+          FieldsAre(/*previous-rpc-attempts=*/0, /*transparent-retry=*/true)));
+  EXPECT_EQ(server_span_count, 1);
+}
+
+// An Echo Service that propagates an Echo request to another server.
+class PropagatingEchoTestServiceImpl : public EchoTestService::CallbackService {
+ public:
+  PropagatingEchoTestServiceImpl(EchoTestService::Stub* stub) : stub_(stub) {}
+
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override {
+    auto* reactor = context->DefaultReactor();
+    ClientContext* child_context =
+        ClientContext::FromCallbackServerContext(*context).release();
+    stub_->async()->Echo(child_context, request, response,
+                         [child_context, reactor](Status s) mutable {
+                           EXPECT_TRUE(s.ok());
+                           reactor->Finish(s);
+                           delete child_context;
+                         });
+    return reactor;
+  }
+
+ private:
+  EchoTestService::Stub* const stub_;
+};
+
+// Tests that spans are propagated from parent call to child call.
+TEST_F(OTelTracingTest, PropagationParentToChild) {
+  {
+    // Start a propagating echo service that propagates the echo request to the
+    // actual server.
+    grpc::ServerBuilder builder;
+    int port = grpc_pick_unused_port_or_die();
+    // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
+    builder.AddListeningPort(grpc_core::JoinHostPort("0.0.0.0", port),
+                             grpc::InsecureServerCredentials(), nullptr);
+    PropagatingEchoTestServiceImpl service(stub_.get());
+    builder.RegisterService(&service);
+    auto server = builder.BuildAndStart();
+    auto channel = grpc::CreateChannel(absl::StrCat("localhost:", port),
+                                       grpc::InsecureChannelCredentials());
+    auto stub = EchoTestService::NewStub(channel);
+    auto span = tracer_->StartSpan("TestSpan");
+    auto scope = opentelemetry::sdk::trace::Tracer::WithActiveSpan(span);
+    SendRPC(stub.get());
+  }
+  auto spans =
+      GetSpans(7);  // test span, client span, attempt span, server span at
+                    // propagating echo service, child client span at
+                    // propagating echo service, attempt span at propagating
+                    // echo service and server span at actual echo service.
+  EXPECT_EQ(spans.size(), 7);
+  const auto test_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "TestSpan";
+      });
+  ASSERT_NE(test_span, spans.end());
+  const auto client_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Sent.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() == (*test_span)->GetSpanId();
+      });
+  ASSERT_NE(client_span, spans.end());
+  EXPECT_EQ((*client_span)->GetTraceId(), (*test_span)->GetTraceId());
+  const auto attempt_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() == (*client_span)->GetSpanId();
+      });
+  ASSERT_NE(attempt_span, spans.end());
+  EXPECT_EQ((*attempt_span)->GetTraceId(), (*test_span)->GetTraceId());
+  const auto propagating_server_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Recv.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() == (*attempt_span)->GetSpanId();
+      });
+  ASSERT_NE(propagating_server_span, spans.end());
+  EXPECT_EQ((*propagating_server_span)->GetTraceId(),
+            (*test_span)->GetTraceId());
+  const auto propagating_client_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Sent.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() ==
+                   (*propagating_server_span)->GetSpanId();
+      });
+  ASSERT_NE(propagating_client_span, spans.end());
+  EXPECT_EQ((*propagating_client_span)->GetTraceId(),
+            (*test_span)->GetTraceId());
+  const auto propagating_attempt_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() ==
+                   (*propagating_client_span)->GetSpanId();
+      });
+  ASSERT_NE(propagating_attempt_span, spans.end());
+  EXPECT_EQ((*propagating_attempt_span)->GetTraceId(),
+            (*test_span)->GetTraceId());
+  const auto server_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Recv.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() ==
+                   (*propagating_attempt_span)->GetSpanId();
+      });
+  ASSERT_NE(server_span, spans.end());
+  EXPECT_EQ((*server_span)->GetTraceId(), (*test_span)->GetTraceId());
 }
 
 }  // namespace

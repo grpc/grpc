@@ -71,7 +71,6 @@ OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::CallAttemptTracer(
     : parent_(parent),
       arena_allocated_(arena_allocated),
       start_time_(absl::Now()) {
-  LOG(ERROR) << "new attempt " << this;
   if (parent_->otel_plugin_->client_.attempt.started != nullptr) {
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
         additional_labels = {
@@ -268,7 +267,6 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordCancel(
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
-  LOG(ERROR) << "recording end for " << this;
   if (span_ != nullptr) {
     span_->End();
   }
@@ -362,7 +360,6 @@ OpenTelemetryPluginImpl::ClientCallTracer::~ClientCallTracer() {
 OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer*
 OpenTelemetryPluginImpl::ClientCallTracer::StartNewAttempt(
     bool is_transparent_retry) {
-  LOG(ERROR) << "start new attempt";
   // We allocate the first attempt on the arena and all subsequent attempts
   // on the heap, so that in the common case we don't require a heap
   // allocation, nor do we unnecessarily grow the arena.
@@ -373,12 +370,12 @@ OpenTelemetryPluginImpl::ClientCallTracer::StartNewAttempt(
     if (transparent_retries_ != 0 || retries_ != 0) {
       is_first_attempt = false;
     }
-    attempt_num = retries_;
     if (is_transparent_retry) {
       ++transparent_retries_;
     } else {
       ++retries_;
     }
+    attempt_num = retries_ - 1;  // Sequence starts at 0
   }
   if (is_first_attempt) {
     return arena_->New<CallAttemptTracer>(
