@@ -14630,6 +14630,19 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: party_mpsc_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/wait_set.h
+  src:
+  - test/core/promise/party_mpsc_test.cc
+  deps:
+  - gtest
+  - grpc_unsecure
+  uses_polling: false
 - name: party_test
   gtest: true
   build: test
