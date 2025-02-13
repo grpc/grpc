@@ -230,12 +230,6 @@ class ValueOrFailure {
   ValueOrFailure(Failure) {}
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrFailure(StatusFlag status) { CHECK(!status.ok()); }
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  ValueOrFailure(absl::StatusOr<T>&& status_or) {
-    if (status_or.ok()) {
-      value_ = std::move(*status_or);
-    }
-  }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure FromOptional(
       std::optional<T> value) {
