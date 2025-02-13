@@ -68,6 +68,8 @@ class IncomingFrame {
 
 class FrameTransportSink : public RefCounted<FrameTransportSink> {
  public:
+  using RefCounted::RefCounted;
+
   virtual void OnIncomingFrame(IncomingFrame incoming_frame) = 0;
   virtual void OnFrameTransportClosed(absl::Status status) = 0;
 };

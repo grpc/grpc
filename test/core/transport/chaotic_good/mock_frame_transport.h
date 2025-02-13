@@ -40,8 +40,9 @@ class MockFrameTransport final : public FrameTransport {
   void Close() {
     if (sink_ != nullptr) {
       sink_->OnFrameTransportClosed(absl::UnavailableError("tschüß!"));
+      sink_.reset();
     }
-    closed_.store(true);
+    closed_.Set();
   }
   void Orphan() override {
     Close();
@@ -57,7 +58,7 @@ class MockFrameTransport final : public FrameTransport {
   };
   std::queue<ExpectedWrite> expected_writes_;
   RefCountedPtr<FrameTransportSink> sink_;
-  std::atomic<bool> closed_{false};
+  InterActivityLatch<void> closed_;
 };
 
 template <typename T>

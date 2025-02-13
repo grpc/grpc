@@ -46,27 +46,31 @@ void MockFrameTransport::Start(Party* party,
   party->Spawn(
       "MockFrameTransport_Writer",
       [this, outgoing_frames = std::move(outgoing_frames)]() mutable {
-        return Loop(
-            [this, outgoing_frames = std::move(outgoing_frames)]() mutable {
-              return TrySeq(
-                  outgoing_frames.Next(),
-                  [this](Frame frame) -> LoopCtl<absl::Status> {
-                    if (closed_.load()) return absl::OkStatus();
-                    if (expected_writes_.empty()) {
-                      ADD_FAILURE()
-                          << "Unexpected write of "
-                          << absl::ConvertVariantTo<FrameInterface&>(frame)
-                                 .ToString();
-                      return Continue{};
-                    }
-                    auto expected = std::move(expected_writes_.front());
-                    expected_writes_.pop();
-                    EXPECT_EQ(expected.frame, frame)
-                        << " from " << expected.whence.file() << ":"
-                        << expected.whence.line();
-                    return Continue{};
-                  });
-            });
+        return Race(
+            Map(closed_.Wait(),
+                [self = RefAsSubclass<MockFrameTransport>()](auto) {
+                  return absl::UnavailableError("transport closed");
+                }),
+            Loop(
+                [this, outgoing_frames = std::move(outgoing_frames)]() mutable {
+                  return TrySeq(
+                      outgoing_frames.Next(),
+                      [this](Frame frame) -> LoopCtl<absl::Status> {
+                        if (expected_writes_.empty()) {
+                          ADD_FAILURE()
+                              << "Unexpected write of "
+                              << absl::ConvertVariantTo<FrameInterface&>(frame)
+                                     .ToString();
+                          return Continue{};
+                        }
+                        auto expected = std::move(expected_writes_.front());
+                        expected_writes_.pop();
+                        EXPECT_EQ(expected.frame, frame)
+                            << " from " << expected.whence.file() << ":"
+                            << expected.whence.line();
+                        return Continue{};
+                      });
+                }));
       },
       [sink](absl::Status status) { sink->OnFrameTransportClosed(status); });
 }

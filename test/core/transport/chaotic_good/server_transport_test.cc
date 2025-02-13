@@ -96,6 +96,7 @@ Config MakeConfig(const ChannelArgs& channel_args,
 
 class MockCallDestination : public UnstartedCallDestination {
  public:
+  MockCallDestination() : UnstartedCallDestination("MockCallDestination") {}
   ~MockCallDestination() override = default;
   MOCK_METHOD(void, Orphaned, (), (override));
   MOCK_METHOD(void, StartCall, (UnstartedCallHandler unstarted_call_handler),
@@ -159,18 +160,20 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
               });
         });
       }));
-  transport->SetCallDestination(call_destination);
+  transport->SetCallDestination(std::move(call_destination));
   frame_transport->ExpectWrite(
       MakeProtoFrame<ServerInitialMetadataFrame>(1, "message: \"hello\""));
   frame_transport->ExpectWrite(MakeMessageFrame(1, "87654321"));
   frame_transport->ExpectWrite(
       MakeProtoFrame<ServerTrailingMetadataFrame>(1, "status: 0"));
+  EXPECT_CALL(on_done, Call());
   frame_transport->Read(MakeProtoFrame<ClientInitialMetadataFrame>(
       1, "path: '/demo.Service/Step'"));
   frame_transport->Read(MakeMessageFrame(1, "12345678"));
   frame_transport->Read(ClientEndOfStream(1));
-  EXPECT_CALL(on_done, Call());
   // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }

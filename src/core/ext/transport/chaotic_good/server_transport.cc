@@ -192,7 +192,6 @@ absl::Status ChaoticGoodServerTransport::StreamDispatch::NewStream(
 
 auto ChaoticGoodServerTransport::StreamDispatch::ProcessNextFrame(
     IncomingFrame incoming_frame) {
-  LOG(INFO) << "ProcessNextFrame: " << incoming_frame.header().ToString();
   return Switch(
       incoming_frame.header().type,
       Case<FrameType::kClientInitialMetadata>([&, this]() {
@@ -253,11 +252,13 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
               ->memory_quota()
               ->CreateMemoryAllocator("chaotic-good"),
           1024)),
+      call_destination_(std::move(call_destination)),
       message_chunker_(message_chunker) {
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
   party_ = Party::Make(std::move(party_arena));
+  incoming_frame_spawner_ = party_->MakeSpawnSerializer();
   MpscReceiver<Frame> outgoing_pipe(8);
   outgoing_frames_ = outgoing_pipe.MakeSender();
   frame_transport->Start(party_.get(), std::move(outgoing_pipe), Ref());
@@ -277,6 +278,7 @@ void ChaoticGoodServerTransport::Orphan() {
       p != nullptr) {
     (*p)->OnFrameTransportClosed(absl::UnavailableError("Transport closed"));
   }
+  frame_transport_.reset();
   state_ = Orphaned{};
   Unref();
 }
