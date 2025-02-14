@@ -227,14 +227,6 @@ namespace {
 using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
-grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
-  auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
-  if (call_tracer == nullptr || !call_tracer->IsSampled()) {
-    return nullptr;
-  }
-  return call_tracer;
-}
-
 std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
     grpc_chttp2_stream* s) {
   if (!grpc_core::IsTraceRecordCallopsEnabled()) {
@@ -1648,10 +1640,21 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_chttp2_transport* t = s->t.get();
 
   s->traced = op->is_traced;
-  if (op->send_initial_metadata) {
-    s->call_tracer = CallTracerIfSampled(s);
-    s->tcp_tracer = TcpTracerIfSampled(s);
+  // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
+  // https://github.com/grpc/grpc/pull/38729 for more information.) On the
+  // client, the call attempt tracer will be available for use when the
+  // send_initial_metadata op arrives.
+  if (s->t->is_client && op->send_initial_metadata) {
+    s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
+  } else {
+    // On the server, the call tracer will be available for use after initial
+    // metadata is received from the client, so try to fill in the call_tracer
+    // as soon as it is available.
+    if (s->call_tracer == nullptr) {
+      s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
+    }
   }
+  s->tcp_tracer = TcpTracerIfSampled(s);
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op
               << "]: " << grpc_transport_stream_op_batch_string(op, false)
