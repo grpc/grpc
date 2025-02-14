@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_CALL_FILTER_FUSION_H
 #define GRPC_SRC_CORE_CALL_FILTER_FUSION_H
 
+#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/transport/call_filters.h"
@@ -48,7 +49,17 @@ constexpr MethodVariant MethodVariantForFilters() {
 template <typename T>
 using Hdl = Arena::PoolPtr<T>;
 
-template <typename T, typename MethodType, MethodType method>
+template <typename T, typename A>
+constexpr bool IsSameExcludingCVRef =
+    std::is_same<promise_detail::RemoveCVRef<A>, T>::value;
+
+template <typename T, typename A>
+using EnableIfSameExcludingCVRef =
+    std::enable_if_t<std::is_same<promise_detail::RemoveCVRef<A>, T>::value,
+                     void>;
+
+template <typename T, typename MethodType, MethodType method,
+          typename Ignored = void>
 class AdaptMethod;
 
 template <typename T, const NoInterceptor* method>
@@ -60,10 +71,13 @@ class AdaptMethod<T, const NoInterceptor*, method> {
   }
 };
 
-template <typename T, typename Call, void (Call::*method)(T&)>
-class AdaptMethod<T, void (Call::*)(T&), method> {
+// Overrides for Filter methods with void Return types.
+template <typename T, typename A, typename Call, void (Call::*method)(A)>
+class AdaptMethod<T, void (Call::*)(A), method,
+                  EnableIfSameExcludingCVRef<T, A>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
+
   auto operator()(Hdl<T> x) {
     (call_->*method)(*x);
     return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
@@ -73,10 +87,357 @@ class AdaptMethod<T, void (Call::*)(T&), method> {
   Call* call_;
 };
 
+template <typename T, typename Call, void (Call::*method)()>
+class AdaptMethod<T, void (Call::*)(), method> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
+  auto operator()(Hdl<T> x) {
+    (call_->*method)();
+    return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
+  }
+
+ private:
+  Call* call_;
+};
+
+template <typename T, typename A, typename Call, typename Derived,
+          void (Call::*method)(A, Derived*)>
+class AdaptMethod<T, void (Call::*)(A, Derived*), method,
+                  EnableIfSameExcludingCVRef<T, A>> {
+ public:
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  auto operator()(Hdl<T> x) {
+    (call_->*method)(*x, filter_);
+    return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
+  }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
+template <typename T, typename AnyType = void>
+struct TakeValueExists {
+  static constexpr bool value = false;
+};
+
+template <typename T>
+struct TakeValueExists<T,
+                       absl::void_t<decltype(TakeValue(std::declval<T>()))>> {
+  static constexpr bool value = true;
+};
+
+template <typename T, typename AnyType = void>
+struct StatusType {
+  static constexpr bool value = false;
+};
+
+template <typename T>
+struct StatusType<
+    T, absl::enable_if_t<
+           std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
+               !std::is_same<T, ServerMetadataHandle>::value &&
+               !TakeValueExists<T>::value,
+           void>> {
+  static constexpr bool value = true;
+};
+
+template <typename T, typename = void>
+struct HasStatusMethod {
+  static constexpr bool value = false;
+};
+
+template <typename T>
+struct HasStatusMethod<
+    T, std::enable_if_t<!std::is_void_v<decltype(std::declval<T>().status())>,
+                        void>> {
+  static constexpr bool value = true;
+};
+
+// For types T which are of the form StatusOr<U>. Type TakeValue on Type T must
+// return a value of type U. Further type T must have a method called status()
+// and must return a bool when IsStatusOk is called on an object of type T.
+template <typename T, typename U, typename AnyType = void>
+struct StatusOrType {
+  static constexpr bool value = false;
+};
+template <typename T, typename U>
+struct StatusOrType<
+    T, U,
+    absl::enable_if_t<
+        std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
+            TakeValueExists<T>::value && HasStatusMethod<T>::value &&
+            std::is_same<decltype(TakeValue(std::declval<T>())), U>::value,
+        void>> {
+  static constexpr bool value = true;
+};
+
+// Overrides for Filter methods with a Return type supporting a bool ok()
+// method without holding a value within e.g., for absl::Status or StatusFlag
+// return types.
+template <typename T, typename A, typename R, typename Call,
+          R (Call::*method)(A)>
+class AdaptMethod<
+    T, R (Call::*)(A), method,
+    absl::enable_if_t<StatusType<R>::value && IsSameExcludingCVRef<T, A>,
+                      void>> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
+  auto operator()(Hdl<T> x) {
+    R result = (call_->*method)(*x);
+    if (IsStatusOk(result)) {
+      return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
+    }
+    return Immediate(
+        ServerMetadataOrHandle<T>::Failure(ServerMetadataFromStatus(result)));
+  }
+
+ private:
+  Call* call_;
+};
+
+template <typename T, typename R, typename Call, R (Call::*method)()>
+class AdaptMethod<T, R (Call::*)(), method,
+                  absl::enable_if_t<StatusType<R>::value, void>> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
+  auto operator()(Hdl<T> x) {
+    R result = (call_->*method)();
+    if (IsStatusOk(result)) {
+      return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
+    };
+    return Immediate(
+        ServerMetadataOrHandle<T>::Failure(ServerMetadataFromStatus(result)));
+  }
+
+ private:
+  Call* call_;
+};
+
+template <typename T, typename A, typename R, typename Call, typename Derived,
+          R (Call::*method)(A, Derived*)>
+class AdaptMethod<
+    T, R (Call::*)(A, Derived*), method,
+    absl::enable_if_t<StatusType<R>::value && IsSameExcludingCVRef<T, A>,
+                      void>> {
+ public:
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  auto operator()(Hdl<T> x) {
+    R result = (call_->*method)(*x, filter_);
+    if (IsStatusOk(result)) {
+      return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
+    }
+    return Immediate(
+        ServerMetadataOrHandle<T>::Failure(ServerMetadataFromStatus(result)));
+  }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
+// Overrides for Filter methods with a Return type supporting a bool ok()
+// method and holding a value within e.g., for absl::StatusOr<T> return types.
+template <typename T, typename A, typename R, typename Call,
+          R (Call::*method)(A)>
+class AdaptMethod<
+    T, R (Call::*)(A), method,
+    absl::enable_if_t<StatusOrType<R, T>::value && IsSameExcludingCVRef<T, A>,
+                      void>> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
+  auto operator()(Hdl<T> x) {
+    R result = (call_->*method)(*x);
+    if (IsStatusOk(result)) {
+      return Immediate(
+          ServerMetadataOrHandle<T>::Ok(TakeValue(std::move(result))));
+    }
+    return Immediate(ServerMetadataOrHandle<T>::Failure(
+        ServerMetadataFromStatus(std::move(result.status()))));
+  }
+
+ private:
+  Call* call_;
+};
+
+template <typename T, typename R, typename Call, R (Call::*method)()>
+class AdaptMethod<T, R (Call::*)(), method,
+                  absl::enable_if_t<StatusOrType<R, T>::value, void>> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
+  auto operator()(Hdl<T> x) {
+    R result = (call_->*method)();
+    if (IsStatusOk(result)) {
+      return Immediate(
+          ServerMetadataOrHandle<T>::Ok(TakeValue(std::move(result))));
+    }
+    return Immediate(ServerMetadataOrHandle<T>::Failure(
+        ServerMetadataFromStatus(std::move(result.status()))));
+  }
+
+ private:
+  Call* call_;
+};
+
+template <typename T, typename A, typename R, typename Call, typename Derived,
+          R (Call::*method)(A, Derived*)>
+class AdaptMethod<
+    T, R (Call::*)(A, Derived*), method,
+    absl::enable_if_t<StatusOrType<R, T>::value && IsSameExcludingCVRef<T, A>,
+                      void>> {
+ public:
+  using UnwrappedType = decltype(TakeValue(std::declval<R>()));
+  static_assert(std::is_same<UnwrappedType, T>::value);
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  auto operator()(Hdl<T> x) {
+    R result = (call_->*method)(*x, filter_);
+    if (IsStatusOk(result)) {
+      return Immediate(
+          ServerMetadataOrHandle<T>::Ok(TakeValue(std::move(result))));
+    }
+    return Immediate(ServerMetadataOrHandle<T>::Failure(
+        ServerMetadataFromStatus(std::move(result.status()))));
+  }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
+// Overrides for filter methods which take a Hdl<T> type or void as input and
+// return a StatusOr<Hdl<T>> type as output
+template <typename T, typename R, typename Call, R (Call::*method)(Hdl<T>)>
+class AdaptMethod<T, R (Call::*)(Hdl<T>), method,
+                  absl::enable_if_t<StatusOrType<R, Hdl<T>>::value, void>> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
+  auto operator()(Hdl<T> x) {
+    R result = (call_->*method)(std::move(x));
+    if (IsStatusOk(result)) {
+      return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(*result)));
+    }
+
+    return Immediate(ServerMetadataOrHandle<T>::Failure(
+        ServerMetadataFromStatus(result.status())));
+  }
+
+ private:
+  Call* call_;
+};
+
+template <typename T, typename R, typename Call, R (Call::*method)()>
+class AdaptMethod<T, R (Call::*)(), method,
+                  absl::enable_if_t<StatusOrType<R, Hdl<T>>::value, void>> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
+  auto operator()(Hdl<T> /*x*/) {
+    R result = (call_->*method)();
+    if (IsStatusOk(result)) {
+      return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(*result)));
+    }
+
+    return Immediate(ServerMetadataOrHandle<T>::Failure(
+        ServerMetadataFromStatus(result.status())));
+  }
+
+ private:
+  Call* call_;
+};
+
+template <typename T, typename R, typename Call, typename Derived,
+          R (Call::*method)(Hdl<T>, Derived*)>
+class AdaptMethod<T, R (Call::*)(Hdl<T>, Derived*), method,
+                  absl::enable_if_t<StatusOrType<R, Hdl<T>>::value, void>> {
+ public:
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  auto operator()(Hdl<T> x) {
+    R result = (call_->*method)(std::move(x), filter_);
+    if (IsStatusOk(result)) {
+      return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(*result)));
+    }
+
+    return Immediate(ServerMetadataOrHandle<T>::Failure(
+        ServerMetadataFromStatus(result.status())));
+  }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
+// Overrides for filter methods which return a ServerMetadataHandle type as
+// output.
+template <typename T, typename A, typename Call,
+          ServerMetadataHandle (Call::*method)(A)>
+class AdaptMethod<T, ServerMetadataHandle (Call::*)(A), method,
+                  EnableIfSameExcludingCVRef<T, A>> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
+  auto operator()(Hdl<T> x) {
+    ServerMetadataHandle handle = (call_->*method)(*x);
+    if (handle == nullptr) {
+      return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
+    }
+
+    return Immediate(ServerMetadataOrHandle<T>::Failure(std::move(handle)));
+  }
+
+ private:
+  Call* call_;
+};
+
+template <typename T, typename Call, ServerMetadataHandle (Call::*method)()>
+class AdaptMethod<T, ServerMetadataHandle (Call::*)(), method> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
+  auto operator()(Hdl<T> x) {
+    ServerMetadataHandle handle = (call_->*method)();
+    if (handle == nullptr) {
+      return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
+    }
+
+    return Immediate(ServerMetadataOrHandle<T>::Failure(std::move(handle)));
+  }
+
+ private:
+  Call* call_;
+};
+
+template <typename T, typename A, typename Call, typename Derived,
+          ServerMetadataHandle (Call::*method)(A, Derived*)>
+class AdaptMethod<T, ServerMetadataHandle (Call::*)(A, Derived*), method,
+                  EnableIfSameExcludingCVRef<T, A>> {
+ public:
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  auto operator()(Hdl<T> x) {
+    ServerMetadataHandle handle = (call_->*method)(*x, filter_);
+    if (handle == nullptr) {
+      return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
+    }
+
+    return Immediate(ServerMetadataOrHandle<T>::Failure(std::move(handle)));
+  }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
 template <auto... filter_methods>
 struct FilterMethods {
   using Methods = Valuelist<filter_methods...>;
   using Idxs = std::make_index_sequence<sizeof...(filter_methods)>;
+};
+
+template <typename... Filters>
+struct FilterTypes {
+  using Types = Typelist<Filters...>;
+  using Idxs = std::make_index_sequence<sizeof...(Filters)>;
 };
 
 template <std::size_t, typename>
@@ -97,6 +458,14 @@ struct ReverseFilterMethods {
   using Idxs = make_reverse_index_sequence<sizeof...(filter_methods)>;
 };
 
+template <typename... Filters>
+struct ReverseFilterTypes {
+  using Types = Reverse<Filters...>;
+  using Idxs = make_reverse_index_sequence<sizeof...(Filters)>;
+  template <bool forward, auto... filter_methods>
+  struct ForwardOrReverse;
+};
+
 template <bool forward, auto... filter_methods>
 struct ForwardOrReverse;
 
@@ -108,6 +477,19 @@ struct ForwardOrReverse<true, filter_methods...> {
 template <auto... filter_methods>
 struct ForwardOrReverse<false, filter_methods...> {
   using OrderMethod = ReverseFilterMethods<filter_methods...>;
+};
+
+template <bool forward, typename... filter_types>
+struct ForwardOrReverseTypes;
+
+template <typename... filter_types>
+struct ForwardOrReverseTypes<true, filter_types...> {
+  using OrderMethod = FilterTypes<filter_types...>;
+};
+
+template <typename... filter_types>
+struct ForwardOrReverseTypes<false, filter_types...> {
+  using OrderMethod = ReverseFilterTypes<filter_types...>;
 };
 
 // Combine the result of a series of filter methods into a single method.
@@ -130,21 +512,28 @@ auto ExecuteCombined(Call* call, Hdl<T> hdl) {
 }
 
 // Combine the result of a series of filter methods into a single method.
-template <typename Call, typename T, auto filter_method_0,
-          auto... filter_methods, size_t I0, size_t... Is>
+template <typename Call, typename Derived, typename T, typename Filter0,
+          typename... Filters, auto filter_method_0, auto... filter_methods,
+          size_t I0, size_t... Is>
 auto ExecuteCombinedWithChannelAccess(
-    Call* call, Hdl<T> hdl, Valuelist<filter_method_0, filter_methods...>,
+    Call* call, Derived* channel, Hdl<T> hdl, Typelist<Filter0, Filters...>,
+    Valuelist<filter_method_0, filter_methods...>,
     std::index_sequence<I0, Is...>) {
   return TrySeq(AdaptMethod<T, decltype(filter_method_0), filter_method_0>(
-                    call->template fused_child<I0>())(std::move(hdl)),
+                    call->template fused_child<I0>(),
+                    reinterpret_cast<Filter0*>(channel))(std::move(hdl)),
                 AdaptMethod<T, decltype(filter_methods), filter_methods>(
-                    call->template fused_child<Is>())...);
+                    call->template fused_child<Is>(),
+                    reinterpret_cast<Filters*>(channel))...);
 }
 
-template <typename FilterMethods, typename Call, typename T>
-auto ExecuteCombinedWithChannelAccess(Call* call, Hdl<T> hdl) {
-  return ExecuteCombined(call, std::move(hdl), FilterMethods::Methods(),
-                         FilterMethods::Idxs());
+template <typename FilterMethods, typename FilterTypes, typename Call,
+          typename Derived, typename T>
+auto ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
+                                      Hdl<T> hdl) {
+  return ExecuteCombinedWithChannelAccess(
+      call, channel, std::move(hdl), typename FilterTypes::Types(),
+      typename FilterMethods::Methods(), typename FilterMethods::Idxs());
 }
 
 #define GRPC_FUSE_METHOD(name, type, forward)                                 \
@@ -168,8 +557,10 @@ auto ExecuteCombinedWithChannelAccess(Call* call, Hdl<T> hdl) {
   class FuseImpl##name<MethodVariant::kChannelAccess, Derived, Filters...> {  \
    public:                                                                    \
     auto name(type x, Derived* channel) {                                     \
-      return ExecuteCombinedWithChannelAccess<typename ForwardOrReverse<      \
-          forward, &Filters::Call::name...>::OrderMethod>(                    \
+      return ExecuteCombinedWithChannelAccess<                                \
+          typename ForwardOrReverse<forward,                                  \
+                                    &Filters::Call::name...>::OrderMethod,    \
+          typename ForwardOrReverseTypes<forward, Filters...>::OrderMethod>(  \
           static_cast<typename Derived::Call*>(this), channel, std::move(x)); \
     }                                                                         \
   };                                                                          \
@@ -186,7 +577,7 @@ GRPC_FUSE_METHOD(OnServerToClientMessage, MessageHandle, false);
 #undef GRPC_FUSE_METHOD
 
 template <typename... Filters>
-class FusedFilter {
+class FusedFilter : public Filters... {
  public:
   class Call : public FuseOnClientInitialMetadata<FusedFilter, Filters...>,
                public FuseOnServerInitialMetadata<FusedFilter, Filters...>,

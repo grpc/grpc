@@ -312,6 +312,12 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
 }
 
 template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
+    absl::StatusOr<T>&& value) {
+  return std::move(*value);
+}
+
+template <typename T>
 struct StatusCastImpl<absl::StatusOr<T>, ValueOrFailure<T>> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
       ValueOrFailure<T> value) {
