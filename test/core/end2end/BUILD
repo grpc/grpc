@@ -555,10 +555,10 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:sockaddr_utils",
         "//src/core:error",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:iomgr_port",
-        "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],
 )
