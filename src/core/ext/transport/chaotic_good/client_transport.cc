@@ -295,8 +295,7 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
             self->stream_dispatch_->MakeStream(call_handler);
         return If(
             stream_id != 0,
-            [stream_id, &call_handler,
-             self = std::move(self)]() mutable {
+            [stream_id, &call_handler, self = std::move(self)]() mutable {
               return Map(
                   self->CallOutboundLoop(stream_id, std::move(call_handler)),
                   [self, stream_id](StatusFlag result) -> StatusFlag {
@@ -316,10 +315,11 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
                     return result;
                   });
             },
-            [&call_handler]() -> Poll<StatusFlag> { 
+            [&call_handler]() {
               call_handler.PushServerTrailingMetadata(
                 CancelledServerMetadataFromStatus(absl::UnavailableError("Transport closed.")));
-              return Success{}; });
+              return []() -> Poll<StatusFlag> { return Success{}; };
+            });
       });
 }
 
