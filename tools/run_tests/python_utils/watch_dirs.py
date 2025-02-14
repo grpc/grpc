@@ -16,14 +16,12 @@
 import os
 import time
 
-from six import string_types
 
-
-class DirWatcher(object):
+class DirWatcher:
     """Helper to watch a (set) of directories for modifications."""
 
     def __init__(self, paths):
-        if isinstance(paths, string_types):
+        if isinstance(paths, str):
             paths = [paths]
         self._done = False
         self.paths = list(paths)
