@@ -27,11 +27,13 @@ namespace grpc_core {
 TEST(LoopTest, CountToFive) {
   std::string execution_order;
   int i = 0;
-  Poll<int> retval = Loop([&execution_order, &i]() -> LoopCtl<int> {
-    absl::StrAppend(&execution_order, i);
-    i++;
-    if (i < 5) return Continue();
-    return i;
+  Poll<int> retval = Loop([&execution_order, &i]() {
+    return [&execution_order, &i]() -> LoopCtl<int> {
+      absl::StrAppend(&execution_order, i);
+      i++;
+      if (i < 5) return Continue();
+      return i;
+    };
   })();
   EXPECT_TRUE(retval.ready());
   EXPECT_EQ(retval.value(), 5);
@@ -42,14 +44,16 @@ TEST(LoopTest, CountToFive) {
 TEST(LoopTest, CountToFivePoll) {
   std::string execution_order;
   int i = 0;
-  Poll<int> retval = Loop([&execution_order, &i]() -> Poll<LoopCtl<int>> {
-    absl::StrAppend(&execution_order, i);
-    i++;
-    if (i == 5) {
-      absl::StrAppend(&execution_order, "P");
-      return Pending{};
+  Poll<int> retval = Loop([&execution_order, &i]() {
+    return [&execution_order, &i]() -> Poll<LoopCtl<int>> {
+      absl::StrAppend(&execution_order, i);
+      i++;
+      if (i == 5) {
+        absl::StrAppend(&execution_order, "P");
+        return Pending{};
+      };
+      return Continue();
     };
-    return Continue();
   })();
   EXPECT_TRUE(retval.pending());
   EXPECT_EQ(i, 5);
