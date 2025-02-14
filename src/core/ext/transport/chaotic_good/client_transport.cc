@@ -161,7 +161,6 @@ void ChaoticGoodClientTransport::StreamDispatch::OnIncomingFrame(
 
 void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
     absl::Status status) {
-  LOG(INFO) << "CGC::StreamDispatch::OnFrameTransportClosed: " << status;
   // Mark transport as unavailable when the endpoint write/read failed.
   ReleasableMutexLock lock(&mu_);
   StreamMap stream_map = std::move(stream_map_);
@@ -184,7 +183,6 @@ void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
 uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
     CallHandler call_handler) {
   MutexLock lock(&mu_);
-  LOG(INFO) << "MakeStream: next=" << next_stream_id_;
   if (next_stream_id_ == kClosedTransportStreamId) return 0;
   const uint32_t stream_id = next_stream_id_++;
   const bool on_done_added = call_handler.OnDone(
@@ -243,7 +241,6 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }
 
 void ChaoticGoodClientTransport::Orphan() {
-  LOG(INFO) << "Orphan transport";
   party_.reset();
   frame_transport_.reset();
   Unref();
