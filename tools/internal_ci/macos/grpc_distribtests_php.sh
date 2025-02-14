@@ -27,7 +27,7 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 # Build all PHP macos artifacts
 tools/run_tests/task_runner.py -f artifact macos php ${TASK_RUNNER_EXTRA_FILTERS} -j 4 -x build_artifacts/sponge_log.xml || FAILED="true"
 
-# PHP's "build_package" step is basically just a passthough, so the build artifacts can be used
+# PHP's "build_package" step is basically just a passthrough, so the build artifacts can be used
 # directly by the "distribtests" step (and we skip the "build_package" phase entirely on mac).
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.

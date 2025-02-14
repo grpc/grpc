@@ -130,7 +130,7 @@ prebuilt_example() {
     echo "Created example: ${outputdir}/${outputfile}"
 }
 
-# PSM basic examples are intended to be runnable with only subsituding the
+# PSM basic examples are intended to be runnable with only substituting the
 # xds-server and sidecar images, so substitution keys for xds-server and 
 # sidecar images are kept. 
 psm_basic_example() {
