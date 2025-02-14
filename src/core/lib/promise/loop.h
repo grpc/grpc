@@ -123,6 +123,8 @@ struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
 template <typename F>
 class Loop {
  private:
+  static_assert(promise_detail::kIsRepeatedPromiseFactory<void, F>);
+
   using Factory = promise_detail::RepeatedPromiseFactory<void, F>;
   using PromiseType = decltype(std::declval<Factory>().Make());
   using PromiseResult = typename PromiseType::Result;

@@ -119,8 +119,8 @@ class Curried {
 //
 // Prevents bugs of the class:
 // Loop(Seq(AccidentallyCallNonRepeatableThing()))
-struct RepeatableToken{};
-struct OnceToken{};
+struct RepeatableToken {};
+struct OnceToken {};
 
 // Promote a callable(A) -> T | Poll<T> to a PromiseFactory(A) -> Promise<T> by
 // capturing A.
@@ -193,8 +193,8 @@ class OncePromiseFactory {
 
  public:
   using Arg = A;
-  using Promise =
-      decltype(PromiseFactoryImpl(OnceToken{}, std::move(f_), std::declval<A>()));
+  using Promise = decltype(PromiseFactoryImpl(OnceToken{}, std::move(f_),
+                                              std::declval<A>()));
   static constexpr bool kInstantaneousPromise = Promise::kInstantaneous;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit OncePromiseFactory(F f)
@@ -246,7 +246,8 @@ class RepeatedPromiseFactory {
 
  public:
   using Arg = A;
-  using Promise = decltype(PromiseFactoryImpl(RepeatableToken{}, f_, std::declval<A>()));
+  using Promise =
+      decltype(PromiseFactoryImpl(RepeatableToken{}, f_, std::declval<A>()));
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit RepeatedPromiseFactory(F f)
       : f_(std::move(f)) {}
@@ -278,6 +279,17 @@ class RepeatedPromiseFactory<void, F> {
     return PromiseFactoryImpl(RepeatableToken{}, f_);
   }
 };
+
+template <typename A, typename F, typename = void>
+constexpr const bool kIsRepeatedPromiseFactory = false;
+
+template <typename A, typename F>
+constexpr const bool kIsRepeatedPromiseFactory<
+    A, F, std::void_t<decltype(PromiseFactoryImpl(RepeatableToken{}, std::declval<F&&>(), std::declval<A>()))>> = true;
+
+    template <typename F>
+    constexpr const bool kIsRepeatedPromiseFactory<
+        void, F, std::void_t<decltype(PromiseFactoryImpl(RepeatableToken{}, std::declval<F&&>()))>> = true;
 
 }  // namespace promise_detail
 }  // namespace grpc_core
