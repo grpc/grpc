@@ -1124,10 +1124,14 @@ grpc_cc_library(
     name = "wait_set",
     external_deps = [
         "absl/container:flat_hash_set",
+        "absl/strings",
         "absl/hash",
     ],
-    public_hdrs = [
+    hdrs = [
         "lib/promise/wait_set.h",
+    ],
+    srcs = [
+        "lib/promise/wait_set.cc",
     ],
     deps = [
         "activity",

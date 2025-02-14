@@ -74,11 +74,7 @@ class WaitSet final {
     }
   }
 
-  std::string ToString() {
-    return absl::StrJoin(pending_, ", ", [](std::string* out, const Waker& waker) {
-      absl::StrAppend(out, waker.DebugString());
-    });
-  }
+  std::string ToString();
 
  private:
   // Handles to activities that need to be awoken.
