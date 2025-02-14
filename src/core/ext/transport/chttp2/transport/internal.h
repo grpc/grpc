@@ -672,10 +672,9 @@ struct grpc_chttp2_stream {
 
   grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
 
-  /// Only set when enabled.
   // TODO(roth): Remove this when the call_tracer_in_transport
-  // experiment finishes rolling out.
-  grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
+  // experiment finishes rolling out, and after call v3 is supported.
+  grpc_core::CallTracerInterface* call_tracer = nullptr;
 
   /// Only set when enabled.
   std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;

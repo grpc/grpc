@@ -229,9 +229,6 @@ using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
     grpc_chttp2_stream* s) {
-  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
-    return nullptr;
-  }
   auto* call_tracer =
       s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   if (call_tracer == nullptr || !call_tracer->IsSampled()) {
@@ -1387,23 +1384,12 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
 }
 
 static void trace_annotations(grpc_chttp2_stream* s) {
-  if (!grpc_core::IsCallTracerInTransportEnabled()) {
-    if (s->call_tracer != nullptr) {
-      s->call_tracer->RecordAnnotation(
-          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
-                                    gpr_now(GPR_CLOCK_REALTIME))
-              .Add(s->t->flow_control.stats())
-              .Add(s->flow_control.stats()));
-    }
-  } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
-    auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
-    if (call_tracer != nullptr && call_tracer->IsSampled()) {
-      call_tracer->RecordAnnotation(
-          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
-                                    gpr_now(GPR_CLOCK_REALTIME))
-              .Add(s->t->flow_control.stats())
-              .Add(s->flow_control.stats()));
-    }
+  if (grpc_core::IsTraceRecordCallopsEnabled() && s->call_tracer != nullptr) {
+    s->call_tracer->RecordAnnotation(
+        grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
+                                  gpr_now(GPR_CLOCK_REALTIME))
+            .Add(s->t->flow_control.stats())
+            .Add(s->flow_control.stats()));
   }
 }
 
@@ -1664,10 +1650,10 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_chttp2_transport* t = s->t.get();
 
   s->traced = op->is_traced;
-  if (!grpc_core::IsCallTracerInTransportEnabled()) {
+  if (op->send_initial_metadata) {
     s->call_tracer = CallTracerIfSampled(s);
+    s->tcp_tracer = TcpTracerIfSampled(s);
   }
-  s->tcp_tracer = TcpTracerIfSampled(s);
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op
               << "]: " << grpc_transport_stream_op_batch_string(op, false)
