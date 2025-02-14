@@ -15,4 +15,4 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpc_version.py.template`!!!
 
 VERSION = '1.72.0.dev0'
-PROTOBUF_VERSION = '3.29.0'
+PROTOBUF_VERSION = '4.30.0'
