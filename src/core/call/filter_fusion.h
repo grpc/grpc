@@ -18,7 +18,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/util/type_list.h"
@@ -122,6 +121,7 @@ template <typename T, typename AnyType = void>
 struct TakeValueExists {
   static constexpr bool value = false;
 };
+
 template <typename T>
 struct TakeValueExists<T,
                        absl::void_t<decltype(TakeValue(std::declval<T>()))>> {
@@ -132,6 +132,7 @@ template <typename T, typename AnyType = void>
 struct StatusType {
   static constexpr bool value = false;
 };
+
 template <typename T>
 struct StatusType<
     T, absl::enable_if_t<
@@ -405,6 +406,7 @@ class AdaptMethod<T, ServerMetadataHandle (Call::*)(), method> {
  private:
   Call* call_;
 };
+
 template <typename T, typename A, typename Call, typename Derived,
           ServerMetadataHandle (Call::*method)(A, Derived*)>
 class AdaptMethod<T, ServerMetadataHandle (Call::*)(A, Derived*), method,
