@@ -18,7 +18,6 @@
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
-#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/promise/detail/basic_seq.h"
@@ -81,11 +80,6 @@ struct SeqTraits {
                                                                T&& value) {
     return next->Make(std::forward<T>(value));
   }
-  template <typename Next>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactoryThenPromise(
-      Next* next, T&& value) {
-    return MakeAndCall(std::forward<T>(value), *next);
-  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const T&) {
     return true;
   }
@@ -102,11 +96,21 @@ struct SeqTraits {
 };
 
 template <typename P, typename... Fs>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(P&& promise, Fs&&... factories,
-                                              DebugLocation whence) {
-  return Simplify<SeqTraits>(std::forward<P>(promise),
-                             std::forward<Fs>(factories)..., whence);
-}
+class Seq {
+ public:
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Seq(P&& promise,
+                                                    Fs&&... factories,
+                                                    DebugLocation whence)
+      : state_(std::forward<P>(promise), std::forward<Fs>(factories)...,
+               whence) {}
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() {
+    return state_.PollOnce();
+  }
+
+ private:
+  SeqState<SeqTraits, P, Fs...> state_;
+};
 
 template <typename Iter, typename Factory, typename Argument>
 using SeqIter = BasicSeqIter<SeqTraits, Iter, Factory, Argument>;
@@ -119,28 +123,29 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F Seq(F functor) {
 }
 
 template <typename F0, typename F1>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1> Seq(
     F0 f0, F1 f1, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1>(std::move(f0), std::move(f1), whence);
 }
 
 template <typename F0, typename F1, typename F2>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2> Seq(
     F0 f0, F1 f1, F2 f2, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2>(std::move(f0), std::move(f1),
                                          std::move(f2), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
-    F0 f0, F1 f1, F2 f2, F3 f3, DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2, F3>
+Seq(F0 f0, F1 f1, F2 f2, F3 f3, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
-    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2, F3,
+                                                                F4>
+Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3, F4>(std::move(f0), std::move(f1),
                                                  std::move(f2), std::move(f3),
                                                  std::move(f4), whence);
@@ -148,8 +153,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
-    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2, F3,
+                                                                F4, F5>
+Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3, F4, F5>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       std::move(f5), whence);
@@ -157,9 +163,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
-                                              F5 f5, F6 f6,
-                                              DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6>
+    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6,
+        DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       std::move(f5), std::move(f6), whence);
@@ -167,9 +174,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
-                                              F5 f5, F6 f6, F7 f7,
-                                              DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7>
+    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7,
+        DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       std::move(f5), std::move(f6), std::move(f7), whence);
@@ -177,9 +185,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7, typename F8>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
-                                              F5 f5, F6 f6, F7 f7, F8 f8,
-                                              DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8>
+    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8,
+        DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       std::move(f5), std::move(f6), std::move(f7), std::move(f8), whence);
@@ -187,9 +196,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7, typename F8, typename F9>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
-                                              F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-                                              DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>
+    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
+        DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       std::move(f5), std::move(f6), std::move(f7), std::move(f8), std::move(f9),
@@ -199,10 +209,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7, typename F8, typename F9,
           typename F10>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
-                                              F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-                                              F10 f10,
-                                              DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>
+    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
+        F10 f10, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       std::move(f5), std::move(f6), std::move(f7), std::move(f8), std::move(f9),
@@ -212,10 +222,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7, typename F8, typename F9,
           typename F10, typename F11>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
-                                              F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-                                              F10 f10, F11 f11,
-                                              DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11>
+    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
+        F10 f10, F11 f11, DebugLocation whence = {}) {
   return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       std::move(f5), std::move(f6), std::move(f7), std::move(f8), std::move(f9),

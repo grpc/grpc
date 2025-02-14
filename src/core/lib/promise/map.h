@@ -99,23 +99,25 @@ class FusedFns {
   GPR_NO_UNIQUE_ADDRESS WrappedFn<Fn1, InnerResult> fn1_;
 };
 
+}  // namespace promise_detail
+
 // Mapping combinator.
 // Takes a promise, and a synchronous function to mutate its result, and
 // returns a promise.
 template <typename Promise, typename Fn>
-class MapPromise {
+class Map {
   using PromiseType = promise_detail::PromiseLike<Promise>;
 
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION MapPromise(Promise promise, Fn fn)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
 
-  MapPromise(const MapPromise&) = delete;
-  MapPromise& operator=(const MapPromise&) = delete;
+  Map(const Map&) = delete;
+  Map& operator=(const Map&) = delete;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  MapPromise(MapPromise&& other) = default;
+  Map(Map&& other) = default;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  MapPromise& operator=(MapPromise&& other) = default;
+  Map& operator=(Map&& other) = default;
 
   using PromiseResult = typename PromiseType::Result;
   using Result = typename promise_detail::WrappedFn<Fn, PromiseResult>::Result;
@@ -130,34 +132,33 @@ class MapPromise {
 
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
-  friend class MapPromise;
+  friend class Map;
 
   GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
   GPR_NO_UNIQUE_ADDRESS promise_detail::WrappedFn<Fn, PromiseResult> fn_;
 };
 
 template <typename Promise, typename Fn0, typename Fn1>
-class MapPromise<MapPromise<Promise, Fn0>, Fn1> {
-  using InnerMapFn = decltype(std::declval<MapPromise<Promise, Fn0>>().fn_);
+class Map<Map<Promise, Fn0>, Fn1> {
+  using InnerMapFn = decltype(std::declval<Map<Promise, Fn0>>().fn_);
   using FusedFn =
-      promise_detail::FusedFns<typename MapPromise<Promise, Fn0>::PromiseResult,
+      promise_detail::FusedFns<typename Map<Promise, Fn0>::PromiseResult,
                                InnerMapFn, Fn1>;
-  using PromiseType = typename MapPromise<Promise, Fn0>::PromiseType;
+  using PromiseType = typename Map<Promise, Fn0>::PromiseType;
 
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION MapPromise(MapPromise<Promise, Fn0> map,
-                                                  Fn1 fn1)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Map<Promise, Fn0> map, Fn1 fn1)
       : promise_(std::move(map.promise_)),
         fn_(FusedFn(std::move(map.fn_), std::move(fn1))) {}
 
-  MapPromise(const MapPromise&) = delete;
-  MapPromise& operator=(const MapPromise&) = delete;
+  Map(const Map&) = delete;
+  Map& operator=(const Map&) = delete;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  MapPromise(MapPromise&& other) = default;
+  Map(Map&& other) = default;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  MapPromise& operator=(MapPromise&& other) = default;
+  Map& operator=(Map&& other) = default;
 
-  using PromiseResult = typename MapPromise<Promise, Fn0>::PromiseResult;
+  using PromiseResult = typename Map<Promise, Fn0>::PromiseResult;
   using Result = typename FusedFn::Result;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
@@ -170,26 +171,14 @@ class MapPromise<MapPromise<Promise, Fn0>, Fn1> {
 
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
-  friend class MapPromise;
+  friend class Map;
 
   GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
   GPR_NO_UNIQUE_ADDRESS FusedFn fn_;
 };
 
-}  // namespace promise_detail
-
 template <typename Promise, typename Fn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Map(Promise promise, Fn fn) {
-  if constexpr (promise_detail::PromiseLike<Promise>::kInstantaneous) {
-    return [promise = promise_detail::PromiseLike<Promise>(std::move(promise)),
-            fn = std::move(fn)]() mutable {
-      return fn(promise.CallUnderlyingFn());
-    };
-  } else {
-    return promise_detail::MapPromise<Promise, Fn>(std::move(promise),
-                                                   std::move(fn));
-  }
-}
+Map(Promise, Fn) -> Map<Promise, Fn>;
 
 // Maps a promise to a new promise that returns a tuple of the original result
 // and a bool indicating whether there was ever a Pending{} value observed from
