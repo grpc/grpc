@@ -37,7 +37,6 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/manual_constructor.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -114,10 +113,6 @@ class Center : public InterceptorList<T> {
     value_state_ = ValueState::kEmpty;
   }
 
-  ~Center() {
-    if (has_value()) value_.Destroy();
-  }
-
   // Add one ref to this object, and return this.
   void IncrementRefCount() {
     GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -161,7 +156,7 @@ class Center : public InterceptorList<T> {
         return on_empty_.pending();
       case ValueState::kEmpty:
         value_state_ = ValueState::kReady;
-        value_.Init(std::move(*value));
+        value_ = std::move(*value);
         on_full_.Wake();
         return true;
     }
@@ -203,18 +198,12 @@ class Center : public InterceptorList<T> {
       case ValueState::kWaitingForAck:
       case ValueState::kWaitingForAckAndClosed:
         return on_full_.pending();
-      case ValueState::kReadyClosed: {
+      case ValueState::kReadyClosed:
         value_state_ = ValueState::kWaitingForAckAndClosed;
-        auto r = std::move(*value_);
-        value_.Destroy();
-        return std::move(r);
-      }
-      case ValueState::kReady: {
+        return std::move(value_);
+      case ValueState::kReady:
         value_state_ = ValueState::kWaitingForAck;
-        auto r = std::move(*value_);
-        value_.Destroy();
-        return std::move(r);
-      }
+        return std::move(value_);
       case ValueState::kClosed:
       case ValueState::kCancelled:
         return std::nullopt;
@@ -358,29 +347,9 @@ class Center : public InterceptorList<T> {
   }
 
   bool cancelled() { return value_state_ == ValueState::kCancelled; }
-  bool has_value() {
-    switch (value_state_) {
-      case ValueState::kEmpty:
-      case ValueState::kCancelled:
-      case ValueState::kWaitingForAck:
-      case ValueState::kWaitingForAckAndClosed:
-      case ValueState::kAcked:
-        return false;
-      case ValueState::kReady:
-      case ValueState::kClosed:
-      case ValueState::kReadyClosed:
-        return true;
-    }
-  }
 
-  T& value() {
-    DCHECK(has_value()) << ValueStateName(value_state_);
-    return *value_;
-  }
-  const T& value() const {
-    DCHECK(has_value()) << ValueStateName(value_state_);
-    return *value_;
-  }
+  T& value() { return value_; }
+  const T& value() const { return value_; }
 
   std::string DebugTag() {
     if (auto* activity = GetContext<Activity>()) {
@@ -445,7 +414,7 @@ class Center : public InterceptorList<T> {
     GPR_UNREACHABLE_CODE(return "unknown");
   }
 
-  ManualConstructor<T> value_;
+  T value_;
   // Number of refs
   uint8_t refs_;
   // Current state of the value.
@@ -565,7 +534,6 @@ class Next {
 template <typename T>
 class PipeReceiver {
  public:
-  PipeReceiver() = default;
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
   PipeReceiver(PipeReceiver&& other) noexcept = default;
@@ -753,9 +721,6 @@ struct Pipe {
   Pipe& operator=(const Pipe&) = delete;
   Pipe(Pipe&&) noexcept = default;
   Pipe& operator=(Pipe&&) noexcept = default;
-
-  using Sender = PipeSender<T>;
-  using Receiver = PipeReceiver<T>;
 
   PipeSender<T> sender;
   PipeReceiver<T> receiver;

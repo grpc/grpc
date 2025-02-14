@@ -134,7 +134,7 @@ TEST_F(PartyMpscTest, MpscManySendersManyPartyIntegrationStressTest) {
             "send",
             [&sender, &order, value = j]() {
               auto send_promise = sender.Send(MakePayload(value));
-              Poll<bool> send_result = send_promise();
+              Poll<StatusFlag> send_result = send_promise();
               absl::StrAppend(&order, "S", value);
             },
             OnCompleteNoop());
