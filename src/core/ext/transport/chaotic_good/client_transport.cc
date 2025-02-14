@@ -314,7 +314,8 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
             },
             [&call_handler]() {
               call_handler.PushServerTrailingMetadata(
-                CancelledServerMetadataFromStatus(absl::UnavailableError("Transport closed.")));
+                  CancelledServerMetadataFromStatus(
+                      absl::UnavailableError("Transport closed.")));
               return []() -> Poll<StatusFlag> { return Success{}; };
             });
       });

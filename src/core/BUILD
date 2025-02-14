@@ -1120,16 +1120,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "wait_set",
-    external_deps = [
-        "absl/container:flat_hash_set",
-        "absl/strings",
-        "absl/hash",
+    srcs = [
+        "lib/promise/wait_set.cc",
     ],
     hdrs = [
         "lib/promise/wait_set.h",
     ],
-    srcs = [
-        "lib/promise/wait_set.cc",
+    external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/strings",
+        "absl/hash",
     ],
     deps = [
         "activity",
@@ -8043,10 +8043,10 @@ grpc_cc_library(
         "chaotic_good_pending_connection",
         "event_engine_tcp_socket_utils",
         "if",
-        "loop",
-        "seq",
-        "race",
         "inter_activity_latch",
+        "loop",
+        "race",
+        "seq",
         "try_seq",
     ],
 )
