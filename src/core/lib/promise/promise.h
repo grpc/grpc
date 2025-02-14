@@ -94,6 +94,12 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto WithResult(F f) ->
   return f;
 }
 
+template <typename T, typename F>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto WithResult(F f) ->
+    typename std::enable_if<std::is_same<decltype(f()), T>::value, F>::type {
+  return f;
+}
+
 template <typename Promise>
 using PromiseResult = typename PollTraits<
     typename promise_detail::PromiseLike<Promise>::Result>::Type;

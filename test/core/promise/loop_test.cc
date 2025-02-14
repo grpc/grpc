@@ -75,15 +75,17 @@ TEST(LoopTest, FactoryCountToFive) {
 
 TEST(LoopTest, LoopOfSeq) {
   std::string execution_order;
-  Poll<int> retval = Loop(Seq(
-      [&execution_order]() mutable -> Poll<int> {
-        absl::StrAppend(&execution_order, "a");
-        return 42;
-      },
-      [&execution_order](int i) mutable -> LoopCtl<int> {
-        absl::StrAppend(&execution_order, i);
-        return i;
-      }))();
+  Poll<int> retval = Loop([&execution_order]() {
+    return Seq(
+        [&execution_order]() mutable -> Poll<int> {
+          absl::StrAppend(&execution_order, "a");
+          return 42;
+        },
+        [&execution_order](int i) mutable -> LoopCtl<int> {
+          absl::StrAppend(&execution_order, i);
+          return i;
+        });
+  })();
   EXPECT_TRUE(retval.ready());
   EXPECT_EQ(retval, Poll<int>(42));
   EXPECT_STREQ(execution_order.c_str(), "a42");
@@ -91,16 +93,18 @@ TEST(LoopTest, LoopOfSeq) {
 
 TEST(LoopTest, LoopOfSeqMultiple) {
   std::string execution_order;
-  Poll<int> retval = Loop(Seq(
-      [&execution_order]() mutable -> Poll<int> {
-        absl::StrAppend(&execution_order, "a");
-        return execution_order.length();
-      },
-      [&execution_order](int i) mutable -> LoopCtl<int> {
-        absl::StrAppend(&execution_order, i);
-        if (i < 9) return Continue();
-        return i;
-      }))();
+  Poll<int> retval = Loop([&execution_order]() {
+    return Seq(
+        [&execution_order]() mutable -> Poll<int> {
+          absl::StrAppend(&execution_order, "a");
+          return execution_order.length();
+        },
+        [&execution_order](int i) mutable -> LoopCtl<int> {
+          absl::StrAppend(&execution_order, i);
+          if (i < 9) return Continue();
+          return i;
+        });
+  })();
   EXPECT_TRUE(retval.ready());
   EXPECT_EQ(retval, Poll<int>(9));
   EXPECT_STREQ(execution_order.c_str(), "a1a3a5a7a9");
