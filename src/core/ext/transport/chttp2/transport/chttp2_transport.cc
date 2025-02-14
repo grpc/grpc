@@ -227,10 +227,8 @@ namespace {
 using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
-grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
-    grpc_chttp2_stream* s) {
-  auto* call_tracer =
-      s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
+grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
+  auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
   if (call_tracer == nullptr || !call_tracer->IsSampled()) {
     return nullptr;
   }
