@@ -489,7 +489,7 @@ if(WIN32)
   set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ws2_32 crypt32)
   set(_gRPC_STATIC_WIN32 STATIC)
 endif()
-  
+
 if(BUILD_SHARED_LIBS AND WIN32)
 
 # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
@@ -2131,7 +2131,6 @@ target_link_libraries(gpr
   absl::strings
   absl::synchronization
   absl::time
-  absl::optional
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
@@ -3878,7 +3877,6 @@ target_link_libraries(gtest
   absl::flags_usage
   absl::strings
   absl::any
-  absl::optional
   absl::variant
 )
 

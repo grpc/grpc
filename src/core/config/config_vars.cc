@@ -20,9 +20,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
 #include "absl/flags/flag.h"
 #include "absl/strings/escaping.h"
-#include "absl/types/optional.h"
 #include "src/core/config/load_config.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
@@ -38,7 +39,7 @@
 ABSL_FLAG(std::vector<std::string>, grpc_experiments, {},
           "A comma separated list of currently active experiments. Experiments "
           "may be prefixed with a '-' to disable them.");
-ABSL_FLAG(absl::optional<int32_t>, grpc_client_channel_backup_poll_interval_ms,
+ABSL_FLAG(std::optional<int32_t>, grpc_client_channel_backup_poll_interval_ms,
           {},
           "Declares the interval in ms between two backup polls on client "
           "channels. These polls are run in the timer thread so that gRPC can "
@@ -46,33 +47,33 @@ ABSL_FLAG(absl::optional<int32_t>, grpc_client_channel_backup_poll_interval_ms,
           "thread. They help reconnect disconnected client channels (mostly "
           "due to idleness), so that the next RPC on this channel won't fail. "
           "Set to 0 to turn off the backup polls.");
-ABSL_FLAG(absl::optional<std::string>, grpc_dns_resolver, {},
+ABSL_FLAG(std::optional<std::string>, grpc_dns_resolver, {},
           "Declares which DNS resolver to use. The default is ares if gRPC is "
           "built with c-ares support. Otherwise, the value of this environment "
           "variable is ignored.");
 ABSL_FLAG(std::vector<std::string>, grpc_trace, {},
           "A comma separated list of tracers that provide additional insight "
           "into how gRPC C core is processing requests via debug logs.");
-ABSL_FLAG(absl::optional<std::string>, grpc_verbosity, {},
+ABSL_FLAG(std::optional<std::string>, grpc_verbosity, {},
           "Logging verbosity.");
-ABSL_FLAG(absl::optional<bool>, grpc_enable_fork_support, {},
+ABSL_FLAG(std::optional<bool>, grpc_enable_fork_support, {},
           "Enable fork support");
-ABSL_FLAG(absl::optional<std::string>, grpc_poll_strategy, {},
+ABSL_FLAG(std::optional<std::string>, grpc_poll_strategy, {},
           "Declares which polling engines to try when starting gRPC. This is a "
           "comma-separated list of engines, which are tried in priority order "
           "first -> last.");
-ABSL_FLAG(absl::optional<bool>, grpc_abort_on_leaks, {},
+ABSL_FLAG(std::optional<bool>, grpc_abort_on_leaks, {},
           "A debugging aid to cause a call to abort() when gRPC objects are "
           "leaked past grpc_shutdown()");
-ABSL_FLAG(absl::optional<std::string>, grpc_system_ssl_roots_dir, {},
+ABSL_FLAG(std::optional<std::string>, grpc_system_ssl_roots_dir, {},
           "Custom directory to SSL Roots");
-ABSL_FLAG(absl::optional<std::string>, grpc_default_ssl_roots_file_path, {},
+ABSL_FLAG(std::optional<std::string>, grpc_default_ssl_roots_file_path, {},
           "Path to the default SSL roots file.");
-ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, {},
+ABSL_FLAG(std::optional<bool>, grpc_not_use_system_ssl_roots, {},
           "Disable loading system root certificates.");
-ABSL_FLAG(absl::optional<std::string>, grpc_ssl_cipher_suites, {},
+ABSL_FLAG(std::optional<std::string>, grpc_ssl_cipher_suites, {},
           "A colon separated list of cipher suites to use with OpenSSL");
-ABSL_FLAG(absl::optional<bool>, grpc_cpp_experimental_disable_reflection, {},
+ABSL_FLAG(std::optional<bool>, grpc_cpp_experimental_disable_reflection, {},
           "EXPERIMENTAL. Only respected when there is a dependency on "
           ":grpc++_reflection. If true, no reflection server will be "
           "automatically added.");

@@ -21,7 +21,6 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "client_call_tracer.h"
 #include "constants.h"
 #include "python_observability_context.h"

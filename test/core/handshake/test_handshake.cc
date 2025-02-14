@@ -44,7 +44,7 @@ namespace {
 void Handshake(HandshakerType handshaker_type,
                OrphanablePtr<grpc_endpoint> endpoint,
                const ChannelArgs& channel_args,
-               absl::optional<absl::StatusOr<ChannelArgs>>* output) {
+               std::optional<absl::StatusOr<ChannelArgs>>* output) {
   auto handshake_mgr = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       handshaker_type, channel_args, nullptr, handshake_mgr.get());
@@ -89,7 +89,7 @@ absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>> TestHandshake(
   server_args = server_args.SetObject<EventEngine>(
       std::static_pointer_cast<EventEngine>(engine));
   // Start listening
-  absl::optional<absl::StatusOr<ChannelArgs>> output_server_args;
+  std::optional<absl::StatusOr<ChannelArgs>> output_server_args;
   auto listener = engine->CreateListener(
       [output_server_args = &output_server_args, server_args](
           std::unique_ptr<EventEngine::Endpoint> endpoint, MemoryAllocator) {
@@ -107,7 +107,7 @@ absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>> TestHandshake(
   auto listen_status = (*listener)->Start();
   if (!listen_status.ok()) return listen_status;
   // Connect client
-  absl::optional<absl::StatusOr<ChannelArgs>> output_client_args;
+  std::optional<absl::StatusOr<ChannelArgs>> output_client_args;
   Handshake(HANDSHAKER_CLIENT, nullptr, client_args, &output_client_args);
   // Await completion
   std::optional<absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>>> result;

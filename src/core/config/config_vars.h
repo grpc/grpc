@@ -27,26 +27,25 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 
 class GPR_DLL ConfigVars {
  public:
   struct Overrides {
-    absl::optional<int32_t> client_channel_backup_poll_interval_ms;
-    absl::optional<bool> enable_fork_support;
-    absl::optional<bool> abort_on_leaks;
-    absl::optional<bool> not_use_system_ssl_roots;
-    absl::optional<bool> cpp_experimental_disable_reflection;
-    absl::optional<std::string> dns_resolver;
-    absl::optional<std::string> verbosity;
-    absl::optional<std::string> poll_strategy;
-    absl::optional<std::string> system_ssl_roots_dir;
-    absl::optional<std::string> default_ssl_roots_file_path;
-    absl::optional<std::string> ssl_cipher_suites;
-    absl::optional<std::string> experiments;
-    absl::optional<std::string> trace;
+    std::optional<int32_t> client_channel_backup_poll_interval_ms;
+    std::optional<bool> enable_fork_support;
+    std::optional<bool> abort_on_leaks;
+    std::optional<bool> not_use_system_ssl_roots;
+    std::optional<bool> cpp_experimental_disable_reflection;
+    std::optional<std::string> dns_resolver;
+    std::optional<std::string> verbosity;
+    std::optional<std::string> poll_strategy;
+    std::optional<std::string> system_ssl_roots_dir;
+    std::optional<std::string> default_ssl_roots_file_path;
+    std::optional<std::string> ssl_cipher_suites;
+    std::optional<std::string> experiments;
+    std::optional<std::string> trace;
   };
   ConfigVars(const ConfigVars&) = delete;
   ConfigVars& operator=(const ConfigVars&) = delete;
@@ -120,8 +119,8 @@ class GPR_DLL ConfigVars {
   std::string ssl_cipher_suites_;
   std::string experiments_;
   std::string trace_;
-  absl::optional<std::string> override_system_ssl_roots_dir_;
-  absl::optional<std::string> override_default_ssl_roots_file_path_;
+  std::optional<std::string> override_system_ssl_roots_dir_;
+  std::optional<std::string> override_default_ssl_roots_file_path_;
 };
 
 }  // namespace grpc_core

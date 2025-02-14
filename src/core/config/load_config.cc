@@ -67,7 +67,7 @@ bool LoadConfigFromEnv(absl::string_view environment_variable,
 
 std::string LoadConfig(const absl::Flag<std::vector<std::string>>& flag,
                        absl::string_view environment_variable,
-                       const absl::optional<std::string>& override,
+                       const std::optional<std::string>& override,
                        const char* default_value) {
   if (override.has_value()) return *override;
   auto from_flag = absl::GetFlag(flag);
