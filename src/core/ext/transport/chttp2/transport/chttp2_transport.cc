@@ -1374,8 +1374,8 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
 }
 
 static void trace_annotations(grpc_chttp2_stream* s) {
-  if (grpc_core::IsTraceRecordCallopsEnabled() && s->call_tracer != nullptr) {
-    s->call_tracer->RecordAnnotation(
+  if (grpc_core::IsTraceRecordCallopsEnabled() && s->CallTracer() != nullptr) {
+    s->CallTracer()->RecordAnnotation(
         grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
                                   gpr_now(GPR_CLOCK_REALTIME))
             .Add(s->t->flow_control.stats())
@@ -1646,13 +1646,6 @@ static void perform_stream_op_locked(void* stream_op,
   // send_initial_metadata op arrives.
   if (s->t->is_client && op->send_initial_metadata) {
     s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
-  } else {
-    // On the server, the call tracer will be available for use after initial
-    // metadata is received from the client, so try to fill in the call_tracer
-    // as soon as it is available.
-    if (s->call_tracer == nullptr) {
-      s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
-    }
   }
   s->tcp_tracer = TcpTracerIfSampled(s);
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
