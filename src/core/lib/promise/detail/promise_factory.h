@@ -285,11 +285,16 @@ constexpr const bool kIsRepeatedPromiseFactory = false;
 
 template <typename A, typename F>
 constexpr const bool kIsRepeatedPromiseFactory<
-    A, F, std::void_t<decltype(PromiseFactoryImpl(RepeatableToken{}, std::declval<F&&>(), std::declval<A>()))>> = true;
+    A, F,
+    std::void_t<decltype(PromiseFactoryImpl(
+        RepeatableToken{}, std::declval<F&&>(), std::declval<A>()))>> = true;
 
-    template <typename F>
-    constexpr const bool kIsRepeatedPromiseFactory<
-        void, F, std::void_t<decltype(PromiseFactoryImpl(RepeatableToken{}, std::declval<F&&>()))>> = true;
+template <typename F>
+constexpr const bool
+    kIsRepeatedPromiseFactory<void, F,
+                              std::void_t<decltype(PromiseFactoryImpl(
+                                  RepeatableToken{}, std::declval<F&&>()))>> =
+        true;
 
 }  // namespace promise_detail
 }  // namespace grpc_core
