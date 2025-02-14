@@ -69,7 +69,8 @@ class ChaoticGoodClientTransport final : public ClientTransport {
  public:
   ChaoticGoodClientTransport(const ChannelArgs& args,
                              OrphanablePtr<FrameTransport> frame_transport,
-                             MessageChunker message_chunker);
+                             MessageChunker message_chunker,
+                             FlowControlConfig flow_control_config);
   ~ChaoticGoodClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -97,12 +98,14 @@ class ChaoticGoodClientTransport final : public ClientTransport {
 
   class StreamDispatch final : public FrameTransportSink {
    public:
-    explicit StreamDispatch(MpscSender<Frame> outgoing_frames);
+    StreamDispatch(MpscSender<Frame> outgoing_frames,
+                   FlowControlConfig flow_control_config);
 
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
     void OnFrameTransportClosed(absl::Status status) override;
 
-    uint32_t MakeStream(CallHandler call_handler);
+    auto MakeStream(CallHandler call_handler,
+                    ClientMetadataHandle client_initial_metadata);
 
     void StartConnectivityWatch(
         grpc_connectivity_state state,
@@ -113,6 +116,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
     template <typename T>
     void DispatchFrame(IncomingFrame incoming_frame);
     RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
+    void FinishCall(uint32_t stream_id, bool cancelled);
 
     // Push one frame into a call
     static auto PushFrameIntoCall(ServerInitialMetadataFrame frame,
@@ -131,12 +135,15 @@ class ChaoticGoodClientTransport final : public ClientTransport {
 
     Mutex mu_;
     uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
+    uint32_t max_stream_id_ ABSL_GUARDED_BY(mu_) = 0;
+    WaitSet waiting_for_stream_flow_control_ ABSL_GUARDED_BY(mu_);
     // Map of stream incoming server frames, key
     // is stream_id.
     StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
         "chaotic_good_client", GRPC_CHANNEL_READY};
     MpscSender<Frame> outgoing_frames_;
+    const FlowControlConfig flow_control_config_;
   };
 
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);

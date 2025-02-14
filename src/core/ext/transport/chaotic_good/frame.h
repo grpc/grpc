@@ -165,6 +165,9 @@ struct EmptyStreamFrame final : public FrameInterface {
 
 using SettingsFrame =
     ProtoTransportFrame<FrameType::kSettings, chaotic_good_frame::Settings>;
+using ServerSetNewStreamStateFrame =
+    ProtoTransportFrame<FrameType::kServerSetNewStreamState,
+                        chaotic_good_frame::ServerSetNewStreamState>;
 using ClientInitialMetadataFrame =
     ProtoStreamFrame<FrameType::kClientInitialMetadata,
                      chaotic_good_frame::ClientMetadata>;
@@ -219,10 +222,10 @@ struct MessageChunkFrame final : public FrameInterface {
 };
 
 using Frame =
-    std::variant<SettingsFrame, ClientInitialMetadataFrame,
-                 ServerInitialMetadataFrame, ServerTrailingMetadataFrame,
-                 MessageFrame, BeginMessageFrame, MessageChunkFrame,
-                 ClientEndOfStream, CancelFrame>;
+    std::variant<SettingsFrame, ServerSetNewStreamStateFrame,
+                 ClientInitialMetadataFrame, ServerInitialMetadataFrame,
+                 ServerTrailingMetadataFrame, MessageFrame, BeginMessageFrame,
+                 MessageChunkFrame, ClientEndOfStream, CancelFrame>;
 
 inline Frame CopyFrame(const Frame& frame) {
   return Match(

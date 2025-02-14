@@ -101,7 +101,8 @@ TEST_F(TransportTest, AddOneStream) {
   static const std::string many_as(1024 * 1024, 'a');
   auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1));
+      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1),
+      FlowControlConfig{false});
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -161,7 +162,8 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
   auto* frame_transport = owned_frame_transport.get();
   auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1));
+      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1),
+      FlowControlConfig{false});
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -221,7 +223,7 @@ TEST_F(TransportTest, CheckFailure) {
   auto* frame_transport = owned_frame_transport.get();
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       MakeChannelArgs(event_engine()), std::move(owned_frame_transport),
-      MessageChunker(0, 1));
+      MessageChunker(0, 1), FlowControlConfig{false});
   frame_transport->Close();
   auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.StartCall());

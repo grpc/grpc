@@ -52,8 +52,9 @@ namespace grpc_core {
 namespace chaotic_good {
 
 ChaoticGoodClientTransport::StreamDispatch::StreamDispatch(
-    MpscSender<Frame> outgoing_frames)
-    : outgoing_frames_(std::move(outgoing_frames)) {}
+    MpscSender<Frame> outgoing_frames, FlowControlConfig flow_control_config)
+    : outgoing_frames_(std::move(outgoing_frames)),
+      flow_control_config_(flow_control_config) {}
 
 RefCountedPtr<ChaoticGoodClientTransport::Stream>
 ChaoticGoodClientTransport::StreamDispatch::LookupStream(uint32_t stream_id) {
@@ -166,6 +167,7 @@ void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
   next_stream_id_ = kClosedTransportStreamId;
+  waiting_for_stream_flow_control_.WakeupAsync();
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
                           absl::UnavailableError("transport closed"),
                           "transport closed");
@@ -180,27 +182,46 @@ void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
   }
 }
 
-uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
-    CallHandler call_handler) {
+void ChaoticGoodClientTransport::StreamDispatch::FinishCall(uint32_t stream_id,
+                                                            bool cancelled) {
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: Client call " << this << " id=" << stream_id
+      << " done: cancelled=" << cancelled;
+  if (cancelled) {
+    outgoing_frames_.UnbufferedImmediateSend(CancelFrame{stream_id});
+  }
   MutexLock lock(&mu_);
-  if (next_stream_id_ == kClosedTransportStreamId) return 0;
-  const uint32_t stream_id = next_stream_id_++;
-  const bool on_done_added = call_handler.OnDone(
-      [self = RefAsSubclass<StreamDispatch>(), stream_id](bool cancelled) {
-        GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CHAOTIC_GOOD: Client call " << self.get() << " id=" << stream_id
-            << " done: cancelled=" << cancelled;
-        if (cancelled) {
-          self->outgoing_frames_.UnbufferedImmediateSend(
-              CancelFrame{stream_id});
+  stream_map_.erase(stream_id);
+}
+
+auto ChaoticGoodClientTransport::StreamDispatch::MakeStream(
+    CallHandler call_handler, ClientMetadataHandle client_initial_metadata) {
+  return
+      [this, call_handler = std::move(call_handler),
+       client_initial_metadata = std::move(client_initial_metadata)]() mutable
+          -> Poll<absl::StatusOr<uint32_t>> {
+        MutexLock lock(&mu_);
+        if (next_stream_id_ == kClosedTransportStreamId) {
+          return absl::UnavailableError("Transport closed");
         }
-        MutexLock lock(&self->mu_);
-        self->stream_map_.erase(stream_id);
-      });
-  if (!on_done_added) return 0;
-  stream_map_.emplace(stream_id,
-                      MakeRefCounted<Stream>(std::move(call_handler)));
-  return stream_id;
+        if (flow_control_config_.new_stream_flow_control &&
+            next_stream_id_ > max_stream_id_) {
+          return waiting_for_stream_flow_control_.AddPending(
+              GetContext<Activity>()->MakeNonOwningWaker());
+        }
+        const uint32_t stream_id = next_stream_id_++;
+        const bool on_done_added = call_handler.OnDone(
+            [self = RefAsSubclass<StreamDispatch>(), stream_id](
+                bool cancelled) { self->FinishCall(stream_id, cancelled); });
+        if (!on_done_added) return absl::CancelledError();
+        ClientInitialMetadataFrame frame;
+        frame.body = ClientMetadataProtoFromGrpc(*client_initial_metadata);
+        frame.stream_id = stream_id;
+        outgoing_frames_.UnbufferedImmediateSend(std::move(frame));
+        stream_map_.emplace(stream_id,
+                            MakeRefCounted<Stream>(std::move(call_handler)));
+        return stream_id;
+      };
 }
 
 void ChaoticGoodClientTransport::StreamDispatch::StartConnectivityWatch(
@@ -218,7 +239,7 @@ void ChaoticGoodClientTransport::StreamDispatch::StopConnectivityWatch(
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     const ChannelArgs& args, OrphanablePtr<FrameTransport> frame_transport,
-    MessageChunker message_chunker)
+    MessageChunker message_chunker, FlowControlConfig flow_control_config)
     : event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       allocator_(args.GetObject<ResourceQuota>()
@@ -232,8 +253,8 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   party_ = Party::Make(std::move(party_arena));
   MpscReceiver<Frame> outgoing_frames{8};
   outgoing_frames_ = outgoing_frames.MakeSender();
-  stream_dispatch_ =
-      MakeRefCounted<StreamDispatch>(outgoing_frames.MakeSender());
+  stream_dispatch_ = MakeRefCounted<StreamDispatch>(
+      outgoing_frames.MakeSender(), flow_control_config);
   frame_transport_->Start(party_.get(), std::move(outgoing_frames),
                           stream_dispatch_);
 }
@@ -260,16 +281,6 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
   return GRPC_LATENT_SEE_PROMISE(
       "CallOutboundLoop",
       TrySeq(
-          // Wait for initial metadata then send it out.
-          call_handler.PullClientInitialMetadata(),
-          [send_fragment](ClientMetadataHandle md) mutable {
-            GRPC_TRACE_LOG(chaotic_good, INFO)
-                << "CHAOTIC_GOOD: Sending initial metadata: "
-                << md->DebugString();
-            ClientInitialMetadataFrame frame;
-            frame.body = ClientMetadataProtoFromGrpc(*md);
-            return send_fragment(std::move(frame));
-          },
           // Continuously send client frame with client to server messages.
           ForEach(MessagesFrom(call_handler), std::move(send_message)),
           [send_fragment]() mutable {
@@ -288,35 +299,25 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
   call_handler.SpawnGuarded(
       "outbound_loop", [self = RefAsSubclass<ChaoticGoodClientTransport>(),
                         call_handler]() mutable {
-        const uint32_t stream_id =
-            self->stream_dispatch_->MakeStream(call_handler);
-        return If(
-            stream_id != 0,
-            [stream_id, &call_handler, self = std::move(self)]() mutable {
-              return Map(
-                  self->CallOutboundLoop(stream_id, std::move(call_handler)),
-                  [self, stream_id](StatusFlag result) -> StatusFlag {
-                    GRPC_TRACE_LOG(chaotic_good, INFO)
-                        << "CHAOTIC_GOOD: Call " << stream_id
-                        << " finished with " << result.ToString();
-                    if (!result.ok()) {
-                      GRPC_TRACE_LOG(chaotic_good, INFO)
-                          << "CHAOTIC_GOOD: Send cancel";
-                      if (!self->outgoing_frames_
-                               .UnbufferedImmediateSend(CancelFrame{stream_id})
-                               .ok()) {
-                        GRPC_TRACE_LOG(chaotic_good, INFO)
-                            << "CHAOTIC_GOOD: Send cancel failed";
-                      }
-                    }
-                    return result;
+        return Seq(
+            TrySeq(call_handler.PullClientInitialMetadata(),
+                   [call_handler, self](ClientMetadataHandle md) mutable {
+                     return self->stream_dispatch_->MakeStream(
+                         std::move(call_handler), std::move(md));
+                   }),
+            [call_handler, self](absl::StatusOr<uint32_t> stream_id) mutable {
+              return If(
+                  stream_id.ok(),
+                  [&stream_id, &call_handler,
+                   self = std::move(self)]() mutable {
+                    return self->CallOutboundLoop(*stream_id,
+                                                  std::move(call_handler));
+                  },
+                  [&call_handler, &stream_id]() {
+                    call_handler.PushServerTrailingMetadata(
+                        CancelledServerMetadataFromStatus(stream_id.status()));
+                    return Immediate<StatusFlag>(Success{});
                   });
-            },
-            [&call_handler]() {
-              call_handler.PushServerTrailingMetadata(
-                  CancelledServerMetadataFromStatus(
-                      absl::UnavailableError("Transport closed.")));
-              return []() -> Poll<StatusFlag> { return Success{}; };
             });
       });
 }
