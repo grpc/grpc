@@ -30,6 +30,7 @@
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
 
 #ifdef GRPC_LINUX_EPOLL
@@ -46,7 +47,7 @@ class Epoll1EventHandle;
 class Epoll1Poller : public PosixEventPoller {
  public:
   explicit Epoll1Poller(Scheduler* scheduler);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
+  EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
@@ -54,7 +55,6 @@ class Epoll1Poller : public PosixEventPoller {
   std::string Name() override { return "epoll1"; }
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
-  void Shutdown() override;
   bool CanTrackErrors() const override {
 #ifdef GRPC_POSIX_SOCKET_TCP
     return KernelSupportsErrqueue();
@@ -64,12 +64,10 @@ class Epoll1Poller : public PosixEventPoller {
   }
   ~Epoll1Poller() override;
 
-  // Forkable
-  void PrepareFork() override;
-  void PostforkParent() override;
-  void PostforkChild() override;
-
   void Close();
+
+  // Fork support
+  void AdvanceGeneration() override { grpc_core::Crash("Not implemented"); }
 
  private:
   // This initial vector size may need to be tuned
@@ -100,7 +98,7 @@ class Epoll1Poller : public PosixEventPoller {
   friend class Epoll1EventHandle;
 #ifdef GRPC_LINUX_EPOLL
   struct EpollSet {
-    int epfd = -1;
+    FileDescriptor epfd;
 
     // The epoll_events after the last call to epoll_wait()
     struct epoll_event events[MAX_EPOLL_EVENTS]{};

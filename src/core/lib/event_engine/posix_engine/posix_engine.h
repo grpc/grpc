@@ -28,7 +28,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -101,8 +100,8 @@ class PosixEnginePollerManager
  public:
   explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
   explicit PosixEnginePollerManager(
-      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
-          poller);
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller,
+      std::shared_ptr<ThreadPool> executor);
   grpc_event_engine::experimental::PosixEventPoller* Poller() {
     return poller_.get();
   }
@@ -117,8 +116,6 @@ class PosixEnginePollerManager
            PollerState::kShuttingDown;
   }
   void TriggerShutdown();
-
-  ~PosixEnginePollerManager() override;
 
  private:
   enum class PollerState { kExternal, kOk, kShuttingDown };
@@ -219,6 +216,11 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
           test_only_poller) {
     return std::make_shared<PosixEventEngine>(std::move(test_only_poller));
   }
+
+  // Called before fork is executed
+  void BeforeFork();
+  void AfterForkInParent();
+  void AfterForkInChild();
 #endif  // GRPC_POSIX_SOCKET_TCP
 
  private:
@@ -238,7 +240,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
       std::shared_ptr<PosixEnginePollerManager> poller_manager);
 
   ConnectionHandle CreateEndpointFromUnconnectedFdInternal(
-      int fd, EventEngine::OnConnectCallback on_connect,
+      const FileDescriptor& fd, EventEngine::OnConnectCallback on_connect,
       const EventEngine::ResolvedAddress& addr, const PosixTcpOptions& options,
       MemoryAllocator memory_allocator, EventEngine::Duration timeout);
 
