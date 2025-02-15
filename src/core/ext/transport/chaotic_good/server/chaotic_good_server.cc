@@ -381,7 +381,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         return self->connection_->listener_->server_->SetupTransport(
             new ChaoticGoodServerTransport(self->connection_->args(),
                                            std::move(frame_transport),
-                                           config.MakeMessageChunker()),
+                                           config.MakeMessageChunker(),
+                                           config.flow_control_config()),
             nullptr, self->connection_->args(), nullptr);
       });
 }

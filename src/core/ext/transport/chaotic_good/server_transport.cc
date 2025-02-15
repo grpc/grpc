@@ -237,13 +237,13 @@ void ChaoticGoodServerTransport::StreamDispatch::OnIncomingFrame(
 
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     const ChannelArgs& args, OrphanablePtr<FrameTransport> frame_transport,
-    MessageChunker message_chunker)
-    : state_{std::make_unique<ConstructionParameters>(args, message_chunker)},
+    MessageChunker message_chunker, FlowControlConfig flow_control_config)
+    : state_{std::make_unique<ConstructionParameters>(args, message_chunker, flow_control_config)},
       frame_transport_(std::move(frame_transport)) {}
 
 ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
     const ChannelArgs& args, FrameTransport* frame_transport,
-    MessageChunker message_chunker,
+    MessageChunker message_chunker, FlowControlConfig flow_control_config,
     RefCountedPtr<UnstartedCallDestination> call_destination)
     : event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
@@ -253,7 +253,8 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
               ->CreateMemoryAllocator("chaotic-good"),
           1024)),
       call_destination_(std::move(call_destination)),
-      message_chunker_(message_chunker) {
+      message_chunker_(message_chunker), flow_control_config_(flow_control_config),
+     max_concurrent_streams_(std::max<int>(1, args.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS).value_or(std::numeric_limits<int>::max()))) {
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
@@ -270,7 +271,8 @@ void ChaoticGoodServerTransport::SetCallDestination(
       std::move(std::get<std::unique_ptr<ConstructionParameters>>(state_));
   state_ = MakeRefCounted<StreamDispatch>(
       construction_parameters->args, frame_transport_.get(),
-      construction_parameters->message_chunker, std::move(call_destination));
+      construction_parameters->message_chunker,
+      construction_parameters->flow_control_config, std::move(call_destination));
 }
 
 void ChaoticGoodServerTransport::Orphan() {
@@ -329,7 +331,7 @@ ChaoticGoodServerTransport::StreamDispatch::ExtractStream(uint32_t stream_id) {
       (max_stream_id_ - last_sent_max_stream_id_ >
            max_concurrent_streams_ / 2 ||
        Timestamp::Now() - last_sent_max_stream_id_time_ >
-           Duration::Milliseconds(10))) {
+           Duration::Milliseconds(100))) {
     ServerSetNewStreamStateFrame frame;
     frame.body.set_max_stream_id(max_stream_id_);
     outgoing_frames_.UnbufferedImmediateSend(std::move(frame));

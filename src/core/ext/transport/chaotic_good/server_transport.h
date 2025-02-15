@@ -80,7 +80,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(const ChannelArgs& args,
                              OrphanablePtr<FrameTransport> frame_transport,
-                             MessageChunker message_chunker);
+                             MessageChunker message_chunker,
+                             FlowControlConfig flow_control_config);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -108,7 +109,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   class StreamDispatch : public FrameTransportSink {
    public:
     StreamDispatch(const ChannelArgs& args, FrameTransport* frame_transport,
-                   MessageChunker message_chunker,
+                   MessageChunker message_chunker, FlowControlConfig flow_control_config,
                    RefCountedPtr<UnstartedCallDestination> call_destination);
 
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
@@ -165,10 +166,12 @@ class ChaoticGoodServerTransport final : public ServerTransport {
 
   struct ConstructionParameters {
     ConstructionParameters(const ChannelArgs& args,
-                           MessageChunker message_chunker)
+                           MessageChunker message_chunker,
+                           FlowControlConfig flow_control_config)
         : args(args), message_chunker(message_chunker) {}
     ChannelArgs args;
     MessageChunker message_chunker;
+    FlowControlConfig flow_control_config;
   };
 
   // Read different parts of the server frame from control/data endpoints
