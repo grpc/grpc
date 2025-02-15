@@ -2511,10 +2511,8 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_variant_access.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_variant_access.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/compare.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/internal/optional.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/internal/span.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/internal/variant.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/optional.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/span.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/variant.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/utility/utility.h" role="src" />

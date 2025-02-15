@@ -2328,21 +2328,6 @@
   - third_party/abseil-cpp/absl/types/compare.h
   name: absl/types:compare
   src: []
-- cmake_target: absl::optional
-  deps:
-  - absl/base:base_internal
-  - absl/base:config
-  - absl/base:core_headers
-  - absl/base:nullability
-  - absl/memory:memory
-  - absl/meta:type_traits
-  - absl/types:bad_optional_access
-  - absl/utility:utility
-  headers:
-  - third_party/abseil-cpp/absl/types/internal/optional.h
-  - third_party/abseil-cpp/absl/types/optional.h
-  name: absl/types:optional
-  src: []
 - cmake_target: absl::span
   deps:
   - absl/algorithm:algorithm
