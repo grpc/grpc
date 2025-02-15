@@ -455,14 +455,23 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src AND 
     opencensus-proto-0.3.0/src
   )
 endif()
-# Setup external proto library at third_party/protoc-gen-validate if it doesn't exist
+# Setup external proto library at third_party/protoc-gen-validate with 2 download URLs
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.0.4.zip
-    9372f9ecde8fbadf83c8c7de3dbb49b11067aa26fb608c501106d0b4bf06c28f
-    protoc-gen-validate-1.0.4
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
+    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
+    protoc-gen-validate-1.2.1
+  )
+endif()
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
+    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
+    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
+    protoc-gen-validate-1.2.1
   )
 endif()
 # Setup external proto library at third_party/xds with 2 download URLs
@@ -4068,7 +4077,6 @@ add_library(upb_message_lib
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
   third_party/upb/upb/message/compat.c
-  third_party/upb/upb/message/internal/compare_unknown.c
   third_party/upb/upb/message/internal/extension.c
   third_party/upb/upb/message/internal/message.c
   third_party/upb/upb/message/map.c
@@ -4077,8 +4085,6 @@ add_library(upb_message_lib
   third_party/upb/upb/mini_table/extension_registry.c
   third_party/upb/upb/mini_table/internal/message.c
   third_party/upb/upb/mini_table/message.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_message_lib PUBLIC cxx_std_17)
@@ -4269,9 +4275,12 @@ endif()
 
 
 add_library(upb_wire_lib
+  third_party/upb/upb/message/internal/iterator.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_wire_lib PUBLIC cxx_std_17)
