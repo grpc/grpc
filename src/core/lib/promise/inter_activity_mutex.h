@@ -123,6 +123,7 @@ class InterActivityMutex {
             if (state_.compare_exchange_weak(prev_state, State::kAcquired,
                                              std::memory_order_release,
                                              std::memory_order_relaxed)) {
+              waker_.Wakeup();
               return;
             }
             break;

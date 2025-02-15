@@ -726,13 +726,11 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "inter_activity_mutex_test",
     srcs = ["inter_activity_mutex_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = ["gtest", "fuzztest", "fuzztest_main"],
     tags = ["promise_test"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = ["//src/core:inter_activity_mutex", "poll_matcher"],
 )
 

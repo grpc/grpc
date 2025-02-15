@@ -19,10 +19,14 @@
 #include "gtest/gtest.h"
 #include "test/core/promise/poll_matcher.h"
 
+using ::testing::Mock;
 using ::testing::StrictMock;
 
 namespace grpc_core {
 namespace {
+
+int unused = (grpc_tracer_init(), 0);
+
 // A mock activity that can be activated and deactivated.
 class MockActivity : public Activity, public Wakeable {
  public:
@@ -82,7 +86,7 @@ TEST(InterActivityMutexTest, TwoAcquires) {
   EXPECT_THAT(lock2, IsPending());
   lock2 = acq2();
   EXPECT_THAT(lock2, IsPending());
-  Drop(std::move(lock1.value()));
+  EXPECT_WAKEUP(activity, Drop(std::move(lock1.value())));
   lock2 = acq2();
   EXPECT_THAT(lock2, IsReady());
   EXPECT_EQ(*lock2.value(), 43);
@@ -102,12 +106,12 @@ TEST(InterActivityMutexTest, ThreeAcquires) {
   EXPECT_THAT(lock2, IsPending());
   EXPECT_THAT(lock3, IsPending());
   EXPECT_EQ(*lock1.value(), 42);
-  Drop(std::move(lock1.value()));
+  EXPECT_WAKEUP(activity, Drop(std::move(lock1.value())));
   lock3 = acq3();
   lock2 = acq2();
   EXPECT_THAT(lock2, IsReady());
   EXPECT_THAT(lock3, IsPending());
-  Drop(std::move(lock2.value()));
+  EXPECT_WAKEUP(activity, Drop(std::move(lock2.value())));
   lock3 = acq3();
   EXPECT_THAT(lock3, IsReady());
   EXPECT_EQ(*lock3.value(), 42);
@@ -127,8 +131,8 @@ TEST(InterActivityMutexTest, ThreeAcquiresWithCancelledAcquisition) {
   EXPECT_THAT(lock2, IsPending());
   EXPECT_THAT(lock3, IsPending());
   EXPECT_EQ(*lock1.value(), 42);
-  Drop(std::move(lock1));
-  Drop(std::move(acq2));
+  EXPECT_WAKEUP(activity, Drop(std::move(lock1)));
+  EXPECT_WAKEUP(activity, Drop(std::move(acq2)));
   lock3 = acq3();
   EXPECT_THAT(lock3, IsReady());
   EXPECT_EQ(*lock3.value(), 42);
@@ -136,9 +140,3 @@ TEST(InterActivityMutexTest, ThreeAcquiresWithCancelledAcquisition) {
 
 }  // namespace
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc_tracer_init();
-  return RUN_ALL_TESTS();
-}
