@@ -17,7 +17,6 @@ settings:
   g_stands_for: gears
   protobuf_version: 3.29.0
   supported_python_versions:
-  - '3.8'
   - '3.9'
   - '3.10'
   - '3.11'
