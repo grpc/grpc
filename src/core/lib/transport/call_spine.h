@@ -106,7 +106,8 @@ class CallSpine final : public Party {
 
   void PushServerTrailingMetadata(ServerMetadataHandle md) {
     GRPC_TRACE_LOG(call_state, INFO)
-        << "[call_state] PushServerTrailingMetadata: " << md->DebugString();
+        << "[call_state] PushServerTrailingMetadata: " << this << " "
+        << md->DebugString();
     call_filters().PushServerTrailingMetadata(std::move(md));
   }
 
@@ -134,10 +135,7 @@ class CallSpine final : public Party {
     DCHECK(GetContext<Activity>() == this);
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
-    return Map(std::move(promise), [this](ResultType r) {
-      CancelIfFailed(r);
-      return r;
-    });
+    return Map(std::move(promise), [this](ResultType r) { CancelIfFailed(r); });
   }
 
   template <typename StatusType>
@@ -220,18 +218,16 @@ class CallSpine final : public Party {
   void SpawnPushServerToClientMessage(MessageHandle msg) {
     server_to_client_serializer()->Spawn(
         [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
-          return Map(self->CancelIfFails(
-                         self->PushServerToClientMessage(std::move(msg))),
-                     [](auto) { return Empty{}; });
+          return self->CancelIfFails(
+              self->PushServerToClientMessage(std::move(msg)));
         });
   }
 
   void SpawnPushClientToServerMessage(MessageHandle msg) {
     client_to_server_serializer()->Spawn(
         [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
-          return Map(self->CancelIfFails(
-                         self->PushClientToServerMessage(std::move(msg))),
-                     [](auto) { return Empty{}; });
+          return self->CancelIfFails(
+              self->PushClientToServerMessage(std::move(msg)));
         });
   }
 
@@ -324,6 +320,9 @@ class CallInitiator {
   explicit CallInitiator(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
+  // Wrap a promise so that if it returns failure it automatically cancels
+  // the rest of the call.
+  // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
     return spine_->CancelIfFails(std::move(promise));
@@ -442,6 +441,9 @@ class CallHandler {
     return spine_->OnDone(std::move(fn));
   }
 
+  // Wrap a promise so that if it returns failure it automatically cancels
+  // the rest of the call.
+  // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
     return spine_->CancelIfFails(std::move(promise));
@@ -551,6 +553,7 @@ class UnstartedCallHandler {
   }
 
   CallHandler StartCall() {
+    LOG(INFO) << "start: " << spine_.get();
     spine_->call_filters().Start();
     return CallHandler(std::move(spine_));
   }
