@@ -107,6 +107,8 @@ class ChaoticGoodClientTransport final : public ClientTransport {
     auto MakeStream(CallHandler call_handler,
                     ClientMetadataHandle client_initial_metadata);
 
+    void UpdateMaxStreamId(uint32_t max_stream_id);
+
     void StartConnectivityWatch(
         grpc_connectivity_state state,
         OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
@@ -144,6 +146,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
         "chaotic_good_client", GRPC_CHANNEL_READY};
     MpscSender<Frame> outgoing_frames_;
     const FlowControlConfig flow_control_config_;
+    Party::SpawnSerializer* transport_frame_serializer_;
   };
 
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
