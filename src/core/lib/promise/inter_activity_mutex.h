@@ -88,6 +88,9 @@ class InterActivityMutex {
     void AcquisitionCancelled() {
       State prev_state = State::kWaiting;
       while (true) {
+        GRPC_TRACE_LOG(promise_primitives, INFO)
+            << "[mutex " << mutex_ << " waiter " << this
+            << "] AcquisitionCancelled: " << GRPC_DUMP_ARGS(prev_state);
         switch (prev_state) {
           case State::kWaiting:
             if (state_.compare_exchange_weak(
@@ -160,6 +163,21 @@ class InterActivityMutex {
       kAcquired,
     };
 
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, State state) {
+      switch (state) {
+        case State::kWaiting:
+          sink.Append("Waiting");
+          break;
+        case State::kAcquisitionCancelled:
+          sink.Append("AcquisitionCancelled");
+          break;
+        case State::kAcquired:
+          sink.Append("Acquired");
+          break;
+      }
+    }
+
     std::atomic<State> state_{State::kWaiting};
     InterActivityMutex* const mutex_;
     Waiter* next_;
@@ -196,7 +214,15 @@ class InterActivityMutex {
           break;
       }
     }
-
+    Acquirer(const Acquirer&) = delete;
+    Acquirer& operator=(const Acquirer&) = delete;
+    Acquirer(Acquirer&& other) noexcept
+        : mutex_(other.mutex_),
+          prev_state_(other.prev_state_),
+          state_(std::exchange(other.state_, State::kMovedFrom)),
+          f_(std::move(other.f_)),
+          waiter_(other.waiter_) {}
+    Acquirer& operator=(Acquirer&& other) noexcept = delete;
     Poll<Lock> operator()() {
       GRPC_TRACE_LOG(promise_primitives, INFO)
           << "[mutex " << mutex_ << " aquirerer " << this

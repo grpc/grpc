@@ -88,6 +88,52 @@ TEST(InterActivityMutexTest, TwoAcquires) {
   EXPECT_EQ(*lock2.value(), 43);
 }
 
+TEST(InterActivityMutexTest, ThreeAcquires) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  InterActivityMutex<int> mutex(42);
+  auto acq1 = mutex.Acquire();
+  auto acq2 = mutex.Acquire();
+  auto acq3 = mutex.Acquire();
+  auto lock1 = acq1();
+  auto lock2 = acq2();
+  auto lock3 = acq3();
+  EXPECT_THAT(lock1, IsReady());
+  EXPECT_THAT(lock2, IsPending());
+  EXPECT_THAT(lock3, IsPending());
+  EXPECT_EQ(*lock1.value(), 42);
+  Drop(std::move(lock1.value()));
+  lock3 = acq3();
+  lock2 = acq2();
+  EXPECT_THAT(lock2, IsReady());
+  EXPECT_THAT(lock3, IsPending());
+  Drop(std::move(lock2.value()));
+  lock3 = acq3();
+  EXPECT_THAT(lock3, IsReady());
+  EXPECT_EQ(*lock3.value(), 42);
+}
+
+TEST(InterActivityMutexTest, ThreeAcquiresWithCancelledAcquisition) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  InterActivityMutex<int> mutex(42);
+  auto acq1 = mutex.Acquire();
+  auto acq2 = mutex.Acquire();
+  auto acq3 = mutex.Acquire();
+  auto lock1 = acq1();
+  auto lock2 = acq2();
+  auto lock3 = acq3();
+  EXPECT_THAT(lock1, IsReady());
+  EXPECT_THAT(lock2, IsPending());
+  EXPECT_THAT(lock3, IsPending());
+  EXPECT_EQ(*lock1.value(), 42);
+  Drop(std::move(lock1));
+  Drop(std::move(acq2));
+  lock3 = acq3();
+  EXPECT_THAT(lock3, IsReady());
+  EXPECT_EQ(*lock3.value(), 42);
+}
+
 }  // namespace
 }  // namespace grpc_core
 
