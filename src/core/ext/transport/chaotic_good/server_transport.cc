@@ -323,6 +323,19 @@ ChaoticGoodServerTransport::StreamDispatch::ExtractStream(uint32_t stream_id) {
   if (it == stream_map_.end()) return nullptr;
   auto r = std::move(it->second);
   stream_map_.erase(it);
+  max_stream_id_ =
+      max_concurrent_streams_ - stream_map_.size() + last_seen_new_stream_id_;
+  if (flow_control_config_.new_stream_flow_control &&
+      (max_stream_id_ - last_sent_max_stream_id_ >
+           max_concurrent_streams_ / 2 ||
+       Timestamp::Now() - last_sent_max_stream_id_time_ >
+           Duration::Milliseconds(10))) {
+    ServerSetNewStreamStateFrame frame;
+    frame.body.set_max_stream_id(max_stream_id_);
+    outgoing_frames_.UnbufferedImmediateSend(std::move(frame));
+    last_sent_max_stream_id_ = max_stream_id_;
+    last_sent_max_stream_id_time_ = Timestamp::Now();
+  }
   return r;
 }
 
@@ -331,12 +344,19 @@ absl::Status ChaoticGoodServerTransport::StreamDispatch::AddStream(
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " NewStream " << stream_id;
   MutexLock lock(&mu_);
+  if (stream_id <= last_seen_new_stream_id_) {
+    return absl::InternalError("Stream id is not increasing");
+  }
+  if (flow_control_config_.new_stream_flow_control) {
+    last_seen_new_stream_id_ = stream_id;
+    if (stream_id > max_stream_id_) {
+      return absl::InternalError(absl::StrCat(
+          "Stream id ", stream_id, " exceeds server maximum ", max_stream_id_));
+    }
+  }
   auto it = stream_map_.find(stream_id);
   if (it != stream_map_.end()) {
     return absl::InternalError("Stream already exists");
-  }
-  if (stream_id <= last_seen_new_stream_id_) {
-    return absl::InternalError("Stream id is not increasing");
   }
   const bool on_done_added = call_initiator.OnDone(
       [self = RefAsSubclass<StreamDispatch>(), stream_id](bool) {

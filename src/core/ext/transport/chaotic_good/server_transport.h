@@ -145,6 +145,10 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     Mutex mu_;
     StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
     uint32_t last_seen_new_stream_id_ ABSL_GUARDED_BY(mu_) = 0;
+    uint32_t max_stream_id_ ABSL_GUARDED_BY(mu_) = 0;
+    uint32_t last_sent_max_stream_id_ ABSL_GUARDED_BY(mu_) = 0;
+    Timestamp last_sent_max_stream_id_time_ ABSL_GUARDED_BY(mu_) =
+        Timestamp::ProcessEpoch();
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
         "chaotic_good_server", GRPC_CHANNEL_READY};
     const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
@@ -155,6 +159,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     MessageChunker message_chunker_;
     MpscSender<Frame> outgoing_frames_;
     RefCountedPtr<Party> party_;
+    const FlowControlConfig flow_control_config_;
+    const uint32_t max_concurrent_streams_;
   };
 
   struct ConstructionParameters {
