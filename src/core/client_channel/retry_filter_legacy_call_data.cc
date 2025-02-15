@@ -990,6 +990,8 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
     call_attempt_->recv_trailing_metadata_error_ = error;
     return;
   }
+  // Set delay tracker in call context back to the parent tracker.
+  calld->arena_->SetContext<DelayTracker>(calld->parent_delay_tracker_);
   // Copy transport stats to be delivered up to the surface.
   grpc_transport_move_stats(
       &call_attempt_->collect_stats_,
@@ -1089,6 +1091,17 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
   }
   // Cancel per-attempt recv timer, if any.
   call_attempt->MaybeCancelPerAttemptRecvTimer();
+  // If the attempt recorded any delay info, save it in the parent call.
+  if (DelayTracker* tracker = calld->arena_->GetContext<DelayTracker>();
+      tracker != nullptr) {
+    if (calld->parent_delay_tracker_ == nullptr) {
+      calld->parent_delay_tracker_ = calld->arena_->ManagedNew<DelayTracker>();
+    }
+    calld->parent_delay_tracker_->AddChild(
+        absl::StrCat("retry attempt ", calld->num_attempts_completed_),
+        std::move(*tracker));
+    calld->arena_->SetContext<DelayTracker>(nullptr);
+  }
   // Get the call's status and check for server pushback metadata.
   grpc_status_code status = GRPC_STATUS_OK;
   std::optional<Duration> server_pushback;
@@ -1611,6 +1624,11 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
     // Otherwise, create a call attempt.
     // The attempt will automatically start any necessary replays or
     // pending batches.
+    // Move the delay tracker state out of the call context, since each
+    // call attempt will create its own tracker.  We will re-populate
+    // the delay tracker before we finish the parent call.
+    parent_delay_tracker_ = arena_->GetContext<DelayTracker>();
+    arena_->SetContext<DelayTracker>(nullptr);
     GRPC_TRACE_LOG(retry, INFO)
         << "chand=" << chand_ << " calld=" << this << ": creating call attempt";
     retry_codepath_started_ = true;

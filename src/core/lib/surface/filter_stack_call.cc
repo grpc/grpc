@@ -461,7 +461,15 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
             StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
       }
       auto grpc_message = b->Take(GrpcMessageMetadata());
-      if (grpc_message.has_value()) {
+      DelayTracker* delay_tracker = nullptr;
+      if (status_code == GRPC_STATUS_DEADLINE_EXCEEDED &&
+          (delay_tracker = b->get_pointer(GrpcDelayTracker())) != nullptr) {
+        std::string msg = absl::StrCat(
+            grpc_message.has_value() ? grpc_message->as_string_view()
+                                     : "Deadline Exceeded",
+            " (", delay_tracker->GetDelayInfo(), ")");
+        error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage, msg);
+      } else if (grpc_message.has_value()) {
         error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
                                    grpc_message->as_string_view());
       } else if (!error.ok()) {
@@ -703,6 +711,12 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
 
 void FilterStackCall::BatchControl::ReceivingTrailingMetadataReady(
     grpc_error_handle error) {
+  // Before leaving the call combiner, move the delay tracker from call
+  // context to server trailing metadata.
+  if (DelayTracker* tracker = call_->arena()->GetContext<DelayTracker>();
+      tracker != nullptr) {
+    call_->recv_trailing_metadata_.Set(GrpcDelayTracker(), std::move(*tracker));
+  }
   GRPC_CALL_COMBINER_STOP(call_->call_combiner(),
                           "recv_trailing_metadata_ready");
   grpc_metadata_batch* md = &call_->recv_trailing_metadata_;

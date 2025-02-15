@@ -45,6 +45,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/delay_tracker.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/client_channel/config_selector.h"
@@ -871,21 +872,23 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
                 ->value;
         return Map(
             // Wait for the resolver result.
-            CheckDelayed(self->resolver_data_for_calls_.NextWhen(
-                [wait_for_ready](
-                    const absl::StatusOr<ResolverDataForCalls> result) {
-                  bool got_result = false;
-                  // If the resolver reports an error but the call is
-                  // wait_for_ready, keep waiting for the next result
-                  // instead of failing the call.
-                  if (!result.ok()) {
-                    got_result = !wait_for_ready;
-                  } else {
-                    // Not an error.  Make sure we actually have a result.
-                    got_result = result->config_selector != nullptr;
-                  }
-                  return got_result;
-                })),
+            TrackDelay(
+                "Name resolver",
+                CheckDelayed(self->resolver_data_for_calls_.NextWhen(
+                    [wait_for_ready](
+                        const absl::StatusOr<ResolverDataForCalls> result) {
+                      bool got_result = false;
+                      // If the resolver reports an error but the call is
+                      // wait_for_ready, keep waiting for the next result
+                      // instead of failing the call.
+                      if (!result.ok()) {
+                        got_result = !wait_for_ready;
+                      } else {
+                        // Not an error.  Make sure we actually have a result.
+                        got_result = result->config_selector != nullptr;
+                      }
+                      return got_result;
+                    }))),
             // Handle resolver result.
             [self, unstarted_handler](
                 std::tuple<absl::StatusOr<ResolverDataForCalls>, bool>
@@ -1274,6 +1277,14 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   auto new_blackboard = MakeRefCounted<Blackboard>();
   InterceptionChainBuilder builder(new_args, blackboard_.get(),
                                    new_blackboard.get());
+  // At the top of each stack segment, move the delay tracker from call
+  // context into server trailing metadata.
+  builder.AddOnServerTrailingMetadataForEachInterceptor([](ServerMetadata& md) {
+    DelayTracker* tracker = MaybeGetContext<DelayTracker>();
+    if (tracker != nullptr) {
+      md.Set(GrpcDelayTracker(), std::move(*tracker));
+    }
+  });
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();

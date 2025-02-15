@@ -95,6 +95,19 @@ grpc_cc_benchmark(
 )
 
 grpc_cc_test(
+    name = "delay_tracker_test",
+    srcs = [
+        "delay_tracker_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        "//src/core:delay_tracker",
+        "//test/core/promise:poll_matcher",
+        "//test/core/promise:test_context",
+    ],
+)
+
+grpc_cc_test(
     name = "request_buffer_test",
     srcs = [
         "request_buffer_test.cc",

@@ -6,6 +6,7 @@ ARG_WITH("grpc", "grpc support", "no");
 if (PHP_GRPC != "no") {
 
   EXTENSION("grpc",
+    "src\\core\\call\\delay_tracker.cc " +
     "src\\core\\call\\request_buffer.cc " +
     "src\\core\\channelz\\channel_trace.cc " +
     "src\\core\\channelz\\channelz.cc " +
