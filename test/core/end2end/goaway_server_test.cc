@@ -81,87 +81,57 @@ static void set_resolve_port(int port) {
 
 namespace {
 
-class TestDNSResolver : public grpc_core::DNSResolver {
+using grpc_event_engine::experimental::EventEngine;
+
+class TestDNSResolver : public EventEngine::DNSResolver {
  public:
-  explicit TestDNSResolver(
-      std::shared_ptr<grpc_core::DNSResolver> default_resolver)
-      : default_resolver_(std::move(default_resolver)),
-        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
-  TaskHandle LookupHostname(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_resolved,
-      absl::string_view name, absl::string_view default_port,
-      grpc_core::Duration timeout, grpc_pollset_set* interested_parties,
-      absl::string_view name_server) override {
+  TestDNSResolver()
+      : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
+        default_resolver_(engine_->GetDNSResolver(
+            EventEngine::DNSResolver::ResolverOptions())) {}
+
+  void LookupHostname(LookupHostnameCallback on_resolve, absl::string_view name,
+                      absl::string_view default_port) override {
+    CHECK(default_resolver_.ok());
     if (name != "test") {
-      return default_resolver_->LookupHostname(std::move(on_resolved), name,
-                                               default_port, timeout,
-                                               interested_parties, name_server);
+      return (*default_resolver_)
+          ->LookupHostname(std::move(on_resolve), name, default_port);
     }
-    MakeDNSRequest(std::move(on_resolved));
-    return kNullHandle;
-  }
-
-  absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
-      absl::string_view name, absl::string_view default_port) override {
-    return default_resolver_->LookupHostnameBlocking(name, default_port);
-  }
-
-  TaskHandle LookupSRV(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_resolved,
-      absl::string_view /* name */, grpc_core::Duration /* timeout */,
-      grpc_pollset_set* /* interested_parties */,
-      absl::string_view /* name_server */) override {
-    engine_->Run([on_resolved] {
-      grpc_core::ExecCtx exec_ctx;
-      on_resolved(absl::UnimplementedError(
-          "The Testing DNS resolver does not support looking up SRV records"));
-    });
-    return {-1, -1};
-  };
-
-  TaskHandle LookupTXT(
-      std::function<void(absl::StatusOr<std::string>)> on_resolved,
-      absl::string_view /* name */, grpc_core::Duration /* timeout */,
-      grpc_pollset_set* /* interested_parties */,
-      absl::string_view /* name_server */) override {
-    // Not supported
-    engine_->Run([on_resolved] {
-      grpc_core::ExecCtx exec_ctx;
-      on_resolved(absl::UnimplementedError(
-          "The Testing DNS resolver does not support looking up TXT records"));
-    });
-    return {-1, -1};
-  };
-
-  bool Cancel(TaskHandle /*handle*/) override { return false; }
-
- private:
-  void MakeDNSRequest(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) {
     gpr_mu_lock(&g_mu);
     if (g_resolve_port < 0) {
       gpr_mu_unlock(&g_mu);
-      new grpc_core::DNSCallbackExecCtxScheduler(
-          std::move(on_done), absl::UnknownError("Forced Failure"));
+      engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
+        on_resolve(absl::UnknownError("Forced Failure"));
+      });
     } else {
-      std::vector<grpc_resolved_address> addrs;
-      grpc_resolved_address addr;
-      grpc_sockaddr_in* sa = reinterpret_cast<grpc_sockaddr_in*>(&addr);
-      sa->sin_family = GRPC_AF_INET;
-      sa->sin_addr.s_addr = 0x100007f;
-      sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-      addr.len = static_cast<socklen_t>(sizeof(*sa));
-      addrs.push_back(addr);
+      std::vector<EventEngine::ResolvedAddress> addrs;
+      struct sockaddr_in in;
+      in.sin_family = GRPC_AF_INET;
+      in.sin_addr.s_addr = 0x100007f;
+      in.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
+      addrs.push_back(EventEngine::ResolvedAddress(
+          reinterpret_cast<const sockaddr*>(&in), sizeof(struct sockaddr_in)));
       gpr_mu_unlock(&g_mu);
-      new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done),
-                                                 std::move(addrs));
+      engine_->Run([on_resolve = std::move(on_resolve),
+                    addrs = std::move(addrs)]() mutable {
+        on_resolve(std::move(addrs));
+      });
     }
   }
-  std::shared_ptr<grpc_core::DNSResolver> default_resolver_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
+  void LookupSRV(LookupSRVCallback on_resolve,
+                 absl::string_view name) override {
+    CHECK(default_resolver_.ok());
+    return (*default_resolver_)->LookupSRV(std::move(on_resolve), name);
+  }
+  void LookupTXT(LookupTXTCallback on_resolve,
+                 absl::string_view name) override {
+    CHECK(default_resolver_.ok());
+    return (*default_resolver_)->LookupTXT(std::move(on_resolve), name);
+  }
+
+ private:
+  std::shared_ptr<EventEngine> engine_;
+  absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> default_resolver_;
 };
 
 }  // namespace
