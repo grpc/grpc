@@ -96,7 +96,7 @@ class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
                                  ClientAuthFilter* filter) {
       filter->InstallContext();
       auto* host = md->get_pointer(HttpAuthorityMetadata());
-      return WithResult<absl::StatusOr<ClientMetadataHandle>>(If(
+      return AssertResultType<absl::StatusOr<ClientMetadataHandle>>(If(
           host == nullptr,
           [&md]() mutable -> absl::StatusOr<ClientMetadataHandle> {
             return std::move(md);
