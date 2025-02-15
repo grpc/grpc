@@ -726,6 +726,16 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "inter_activity_mutex_test",
+    srcs = ["inter_activity_mutex_test.cc"],
+    external_deps = ["gtest"],
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:inter_activity_mutex", "poll_matcher"],
+)
+
 grpc_cc_benchmark(
     name = "bm_party",
     srcs = ["bm_party.cc"],
