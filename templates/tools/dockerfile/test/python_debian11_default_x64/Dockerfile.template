@@ -19,7 +19,6 @@
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../run_tests_addons.include"/>
 
-  <%include file="../../compile_python_38.include"/>
   <%include file="../../compile_python_310.include"/>
   <%include file="../../compile_python_311.include"/>
   <%include file="../../compile_python_312.include"/>
