@@ -372,9 +372,14 @@ class InterActivityMutex {
               << "[mutex " << mutex_
               << "] DrainSeenWaiters acquisition cancelled: "
               << GRPC_DUMP_ARGS(prev_waiter_, waiter_);
-          prev_waiter_->next_ = waiter_->next_;
+          Waiter* next = waiter_->next_;
+          if (prev_waiter_ == nullptr) {
+            mutex_->waiters_ = next;
+          } else {
+            prev_waiter_->next_ = next;
+          }
           waiter_->RemovedFromQueue();
-          waiter_ = prev_waiter_->next_;
+          waiter_ = next;
           continue;
         }
         if (waiter_->CanAcquire()) {
