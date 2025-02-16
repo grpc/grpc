@@ -19,9 +19,15 @@
 
 #include <limits>
 #include <optional>
+#include <thread>
 
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/notification.h"
 #include "test/core/promise/inter_activity_mutex_test.pb.h"
 #include "test/core/promise/poll_matcher.h"
 
@@ -170,6 +176,64 @@ TEST(InterActivityMutexTest, ThreeAcquireWhens) {
   lock2 = acq2();
   EXPECT_THAT(lock2, IsReady());
   EXPECT_EQ(*lock2.value(), 200);
+}
+
+TEST(InterActivityMutexTest, MultiPartyStressTest) {
+  grpc_init();
+  std::vector<std::thread> threads;
+  InterActivityMutex<uint32_t> mutex(0);
+  for (int i = 0; i < 1000; ++i) {
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext(
+        grpc_event_engine::experimental::GetDefaultEventEngine().get());
+    auto party = Party::Make(arena);
+    threads.emplace_back([party, &mutex]() {
+      Notification n;
+      party->Spawn(
+          "test",
+          [&mutex]() {
+            return Seq(
+                mutex.Acquire(), [](auto lock) { ++*lock; },
+                []() { return absl::OkStatus(); });
+          },
+          [party, &n](absl::Status) { n.Notify(); });
+      n.WaitForNotification();
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+  grpc_shutdown();
+  EXPECT_EQ(*NowOrNever(mutex.Acquire()).value(), 1000);
+}
+
+TEST(InterActivityMutexTest, MultiPartyStressTestAcquireWhen) {
+  grpc_init();
+  std::vector<std::thread> threads;
+  InterActivityMutex<uint32_t> mutex(0);
+  for (int i = 0; i < 1000; ++i) {
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext(
+        grpc_event_engine::experimental::GetDefaultEventEngine().get());
+    auto party = Party::Make(arena);
+    threads.emplace_back([party, &mutex, i]() {
+      Notification n;
+      party->Spawn(
+          "test",
+          [&mutex, i]() {
+            return Seq(
+                mutex.AcquireWhen([i](uint32_t x) { return x == i; }),
+                [](auto lock) { ++*lock; }, []() { return absl::OkStatus(); });
+          },
+          [party, &n](absl::Status) { n.Notify(); });
+      n.WaitForNotification();
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+  grpc_shutdown();
+  EXPECT_EQ(*NowOrNever(mutex.Acquire()).value(), 1000);
 }
 
 class AlwaysFairFuzzer {
