@@ -59,9 +59,18 @@ class InterActivityMutex {
   };
 
   InterActivityMutex() = default;
+  ~InterActivityMutex() {
+    while (waiters_ != nullptr) {
+      Waiter* next = waiters_->next_;
+      waiters_->RemovedFromQueue();
+      waiters_ = next;
+    }
+  }
   explicit InterActivityMutex(T value) : value_(std::move(value)) {}
 
  private:
+  template <typename F>
+  class Acquirer;
   class Unlocker;
 
   class Waiter {
@@ -156,7 +165,10 @@ class InterActivityMutex {
     virtual ~Waiter() = default;
 
    private:
+    template <typename F>
+    friend class Acquirer;
     friend class Unlocker;
+    friend class InterActivityMutex;
 
     enum State {
       kWaiting,
@@ -304,8 +316,17 @@ class InterActivityMutex {
         state_ = State::kMovedFrom;
         return Lock(mutex_);
       }
-      waiter_ = new WaiterImpl<F>(mutex_, mutex_->waiters_, std::move(f_));
-      mutex_->waiters_ = waiter_;
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << "[mutex " << mutex_ << " acquirer " << this
+          << "]: PollFastLocked but not ready: insert waiter @ tail";
+      waiter_ = new WaiterImpl<F>(mutex_, nullptr, std::move(f_));
+      if (mutex_->waiters_ == nullptr) {
+        mutex_->waiters_ = waiter_;
+      } else {
+        Waiter* w = mutex_->waiters_;
+        while (w->next_ != nullptr) w = w->next_;
+        w->next_ = waiter_;
+      }
       state_ = State::kWaiting;
       if (mutex_->state_.compare_exchange_strong(prev_state_, kUnlocked,
                                                  std::memory_order_release,
@@ -373,9 +394,12 @@ class InterActivityMutex {
               << "] DrainSeenWaiters acquisition cancelled: "
               << GRPC_DUMP_ARGS(prev_waiter_, waiter_);
           Waiter* next = waiter_->next_;
+          DCHECK_NE(next, waiter_);
           if (prev_waiter_ == nullptr) {
+            DCHECK_EQ(mutex_->waiters_, waiter_);
             mutex_->waiters_ = next;
           } else {
+            DCHECK_EQ(prev_waiter_->next_, waiter_);
             prev_waiter_->next_ = next;
           }
           waiter_->RemovedFromQueue();

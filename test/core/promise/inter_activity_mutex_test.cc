@@ -182,17 +182,7 @@ class AlwaysFairFuzzer {
     switch (op.type_case()) {
       case Op::kPoll: {
         if (op.poll().id() >= kNumSlots) return;
-        auto& slot = slots_[op.poll().id()];
-        auto poll = slot.poll();
-        // If a lock is returned, we should not have a lock already.
-        if (poll.ready()) {
-          CHECK(!lock_.has_value());
-          CHECK_EQ(op.poll().id(), ExpectedVictor());
-          lock_.emplace(std::move(poll.value()));
-          slot.poll = []() { return Pending{}; };
-          slot.trigger = None{};
-        }
-        // TODO: check fairness
+        Poll(op.poll().id());
       } break;
       case Op::kDrop: {
         if (op.drop().id() >= kNumSlots) return;
@@ -202,19 +192,11 @@ class AlwaysFairFuzzer {
       } break;
       case Op::kAcquire: {
         if (op.acquire().id() >= kNumSlots) return;
-        auto& slot = slots_[op.acquire().id()];
-        slot.poll = mutex_.Acquire();
-        slot.trigger = Always{};
-        slot.acquire_order = next_acquire_order_++;
+        Acquire(op.acquire().id());
       } break;
       case Op::kAcquireWhen: {
         if (op.acquire_when().id() >= kNumSlots) return;
-        auto& slot = slots_[op.acquire_when().id()];
-        slot.poll =
-            mutex_.AcquireWhen([trigger = op.acquire_when().when()](
-                                   uint32_t x) { return trigger == x; });
-        slot.trigger = op.acquire_when().when();
-        slot.acquire_order = next_acquire_order_++;
+        AcquireWhen(op.acquire_when().id(), op.acquire_when().when());
       } break;
       case Op::kDropLock: {
         lock_.reset();
@@ -241,15 +223,44 @@ class AlwaysFairFuzzer {
     absl::AnyInvocable<Poll<Lock>()> poll = []() { return Pending{}; };
   };
 
+  void Poll(uint32_t id) {
+    auto& slot = slots_[id];
+    auto poll = slot.poll();
+    // If a lock is returned, we should not have a lock already.
+    if (poll.ready()) {
+      CHECK(!lock_.has_value());
+      CHECK_EQ(id, ExpectedVictor()) << ExpectedQueue();
+      lock_.emplace(std::move(poll.value()));
+      slot.poll = []() { return Pending{}; };
+      slot.trigger = None{};
+    }
+  }
+
+  void Acquire(uint32_t id) {
+    auto& slot = slots_[id];
+    slot.poll = mutex_.Acquire();
+    slot.trigger = Always{};
+    slot.acquire_order = next_acquire_order_++;
+    Poll(id);
+  }
+
+  void AcquireWhen(uint32_t id, uint32_t when) {
+    auto& slot = slots_[id];
+    slot.poll = mutex_.AcquireWhen([when](uint32_t x) { return x == when; });
+    slot.trigger = when;
+    slot.acquire_order = next_acquire_order_++;
+    Poll(id);
+  }
+
   uint32_t ExpectedVictor() const {
     const Slot* ordered_slots[kNumSlots];
     for (size_t i = 0; i < kNumSlots; ++i) {
       ordered_slots[i] = &slots_[i];
     }
-    std::sort(ordered_slots, ordered_slots + kNumSlots,
-              [](const Slot* a, const Slot* b) {
-                return a->acquire_order < b->acquire_order;
-              });
+    std::stable_sort(ordered_slots, ordered_slots + kNumSlots,
+                     [](const Slot* a, const Slot* b) {
+                       return a->acquire_order < b->acquire_order;
+                     });
     for (size_t i = 0; i < kNumSlots; ++i) {
       const Slot& slot = *ordered_slots[i];
       size_t index = ordered_slots[i] - slots_;
@@ -260,9 +271,36 @@ class AlwaysFairFuzzer {
     return std::numeric_limits<uint32_t>::max();
   }
 
-  Slot slots_[kNumSlots];
+  std::string ExpectedQueue() const {
+    std::vector<std::string> wtf;
+    wtf.push_back(absl::StrCat("lock_value=", lock_value_));
+    const Slot* ordered_slots[kNumSlots];
+    for (size_t i = 0; i < kNumSlots; ++i) {
+      ordered_slots[i] = &slots_[i];
+    }
+    std::stable_sort(ordered_slots, ordered_slots + kNumSlots,
+                     [](const Slot* a, const Slot* b) {
+                       return a->acquire_order < b->acquire_order;
+                     });
+    for (size_t i = 0; i < kNumSlots; ++i) {
+      const Slot& slot = *ordered_slots[i];
+      size_t index = ordered_slots[i] - slots_;
+      if (std::holds_alternative<None>(slot.trigger)) continue;
+      if (std::holds_alternative<Always>(slot.trigger)) {
+        wtf.push_back(
+            absl::StrCat("[", index, "]: Always order=", slot.acquire_order));
+        continue;
+      }
+      wtf.push_back(absl::StrCat(
+          "[", index, "]: trigger=", std::get<uint32_t>(slot.trigger),
+          ", order=", slot.acquire_order));
+    }
+    return absl::StrJoin(wtf, "\n");
+  }
+
   uint32_t lock_value_ = 0;
   Mutex mutex_{lock_value_};
+  Slot slots_[kNumSlots];
   std::optional<Lock> lock_;
   uint64_t next_acquire_order_ = 1;
 };
@@ -295,10 +333,12 @@ TEST(InterActivityMutexTest, AlwaysFairRegression2) {
   AlwaysFair({ParseTestProto(R"pb(acquire_when {})pb"),
               ParseTestProto(R"pb(acquire { id: 1 })pb"),
               ParseTestProto(R"pb(acquire {})pb"),
-              ParseTestProto(R"pb(poll {})pb"),
-              ParseTestProto(R"pb(acquire_when { when: 4294967292 })pb"),
-              ParseTestProto(R"pb(poll {})pb"),
-              ParseTestProto(R"pb(drop_lock {})pb")});
+              ParseTestProto(R"pb(poll {})pb")});
+}
+
+TEST(InterActivityMutexTest, AlwaysFairRegression3) {
+  AlwaysFair({ParseTestProto(R"pb(acquire_when { when: 4294967295 })pb"),
+              ParseTestProto(R"pb(acquire_when { when: 1 })pb")});
 }
 
 }  // namespace
