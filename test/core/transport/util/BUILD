@@ -43,7 +43,6 @@ grpc_cc_library(
     ],
     deps = [
         "//:chttp2_frame",
-        "//grpc:chttp2_frame",
         "//src/core:default_event_engine",
         "//src/core:grpc_promise_endpoint",
         "//src/core:slice",
