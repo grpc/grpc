@@ -20,6 +20,7 @@
 
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "test/core/transport/util/http2_frame_test_helper.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 
 using grpc_core::chaotic_good::testing::MockPromiseEndpoint;
@@ -30,6 +31,7 @@ namespace http2 {
 namespace testing {
 
 TEST(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
+  Http2FrameTestHelper helper;
   MockPromiseEndpoint endpoint(1);
   std::shared_ptr<EventEngine> event_engine =
       grpc_event_engine::experimental::GetDefaultEventEngine();
