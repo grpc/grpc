@@ -84,11 +84,6 @@ struct TrySeqTraitsWithSfinae {
                                                                T&& value) {
     return next->Make(std::forward<T>(value));
   }
-  template <typename Next>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactoryThenPromise(
-      Next* next, T&& value) {
-    return MakeAndCall(std::forward<T>(value), *next);
-  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const T&) {
     return true;
   }
@@ -112,11 +107,6 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactory(
       Next* next, absl::StatusOr<T>&& status) {
     return next->Make(std::move(*status));
-  }
-  template <typename Next>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactoryThenPromise(
-      Next* next, absl::StatusOr<T>&& status) {
-    return MakeAndCall(std::move(*status), *next);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(
       const absl::StatusOr<T>& status) {
@@ -178,11 +168,6 @@ struct TrySeqTraitsWithSfinae<
                                                                T&&) {
     return next->Make();
   }
-  template <typename Next>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactoryThenPromise(
-      Next* next, T&&) {
-    return MakeAndCall(*next);
-  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const T& status) {
     return IsStatusOk(status);
   }
@@ -214,11 +199,6 @@ struct TrySeqTraitsWithSfinae<
                                                                T&& status) {
     return next->Make(TakeValue(std::forward<T>(status)));
   }
-  template <typename Next>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactoryThenPromise(
-      Next* next, T&& status) {
-    return MakeAndCall(TakeValue(std::forward<T>(status)), *next);
-  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const T& status) {
     return IsStatusOk(status);
   }
@@ -247,11 +227,6 @@ struct TrySeqTraitsWithSfinae<absl::Status> {
                                                                absl::Status&&) {
     return next->Make();
   }
-  template <typename Next>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactoryThenPromise(
-      Next* next, absl::Status&&) {
-    return MakeAndCall(*next);
-  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(
       const absl::Status& status) {
     return status.ok();
@@ -276,11 +251,21 @@ template <typename T>
 using TrySeqTraits = TrySeqTraitsWithSfinae<T>;
 
 template <typename P, typename... Fs>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeq(P&& promise, Fs&&... factories,
-                                                 DebugLocation whence) {
-  return Simplify<TrySeqTraits>(std::forward<P>(promise),
-                                std::forward<Fs>(factories)..., whence);
-}
+class TrySeq {
+ public:
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit TrySeq(P&& promise,
+                                                       Fs&&... factories,
+                                                       DebugLocation whence)
+      : state_(std::forward<P>(promise), std::forward<Fs>(factories)...,
+               whence) {}
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() {
+    return state_.PollOnce();
+  }
+
+ private:
+  SeqState<TrySeqTraits, P, Fs...> state_;
+};
 
 template <typename Iter, typename Factory, typename Argument>
 using TrySeqIter = BasicSeqIter<TrySeqTraits, Iter, Factory, Argument>;
@@ -316,28 +301,30 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F TrySeq(F functor) {
 }
 
 template <typename F0, typename F1>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrySeq(
-    F0 f0, F1 f1, DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TrySeq<F0, F1>
+TrySeq(F0 f0, F1 f1, DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1>(std::move(f0), std::move(f1), whence);
 }
 
 template <typename F0, typename F1, typename F2>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrySeq(
-    F0 f0, F1 f1, F2 f2, DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TrySeq<F0, F1, F2>
+TrySeq(F0 f0, F1 f1, F2 f2, DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1, F2>(std::move(f0), std::move(f1),
                                             std::move(f2), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrySeq(
-    F0 f0, F1 f1, F2 f2, F3 f3, DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TrySeq<F0, F1, F2,
+                                                                   F3>
+TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1, F2, F3>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrySeq(
-    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TrySeq<F0, F1, F2,
+                                                                   F3, F4>
+TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1, F2, F3, F4>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       whence);
@@ -345,9 +332,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrySeq(
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeq(F0 f0, F1 f1, F2 f2, F3 f3,
-                                                 F4 f4, F5 f5,
-                                                 DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    promise_detail::TrySeq<F0, F1, F2, F3, F4, F5>
+    TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5,
+           DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1, F2, F3, F4, F5>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       std::move(f5), whence);
@@ -355,9 +343,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeq(F0 f0, F1 f1, F2 f2, F3 f3,
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeq(F0 f0, F1 f1, F2 f2, F3 f3,
-                                                 F4 f4, F5 f5, F6 f6,
-                                                 DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6>
+    TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6,
+           DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       std::move(f5), std::move(f6), whence);
@@ -365,9 +354,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeq(F0 f0, F1 f1, F2 f2, F3 f3,
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeq(F0 f0, F1 f1, F2 f2, F3 f3,
-                                                 F4 f4, F5 f5, F6 f6, F7 f7,
-                                                 DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6, F7>
+    TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7,
+           DebugLocation whence = {}) {
   return promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6, F7>(
       std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
       std::move(f5), std::move(f6), std::move(f7), whence);

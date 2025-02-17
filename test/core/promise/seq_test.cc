@@ -205,7 +205,7 @@ TEST(SeqTest, TwoThens) {
   auto initial = [] { return std::string("a"); };
   auto next1 = [](std::string i) { return [i]() { return i + "b"; }; };
   auto next2 = [](std::string i) { return [i]() { return i + "c"; }; };
-  EXPECT_EQ(Seq(initial, next1, next2)(), "abc");
+  EXPECT_EQ(Seq(initial, next1, next2)(), Poll<std::string>("abc"));
 }
 
 TEST(SeqTest, ThreeThens) {
@@ -224,7 +224,7 @@ TEST(SeqTest, ThreeThens) {
                std::make_unique<int>(1)](std::string i) {
             return [i, y = std::make_unique<int>(4)]() { return i + "d"; };
           })(),
-      "abcd");
+      Poll<std::string>("abcd"));
 }
 
 struct Big {

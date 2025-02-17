@@ -722,6 +722,9 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
   };                                                                           \
   void suite##_##name(const grpc_core::CoreTestConfiguration* config,          \
                       core_end2end_test_fuzzer::Msg msg) {                     \
+    if (config == nullptr) {                                                   \
+      GTEST_SKIP() << "config not available on this platform";                 \
+    }                                                                          \
     if (absl::StartsWith(#name, "DISABLED_")) GTEST_SKIP() << "disabled test"; \
     if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled() ||    \
         !IsEventEngineDnsEnabled()) {                                          \
