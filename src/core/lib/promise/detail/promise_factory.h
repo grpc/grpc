@@ -141,12 +141,37 @@ PromiseFactoryImpl(OnceToken, F f, A&&) {
   return PromiseLike<F>(std::move(f));
 }
 
-// Promote a callable() -> T|Poll<T> to a PromiseFactory() -> Promise<T>
+// Promote a callable() -> Poll<T> to a PromiseFactory() -> Promise<T>
 template <typename F>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::enable_if_t<
-    !IsVoidCallable<ResultOf<F()>>::value, PromiseLike<RemoveCVRef<F>>>
+    !IsVoidCallable<ResultOf<F()>>::value &&
+        PollTraits<ResultOf<F()>>::is_poll(),
+    PromiseLike<RemoveCVRef<F>>>
 PromiseFactoryImpl(OnceToken, F f) {
   return PromiseLike<F>(std::move(f));
+}
+
+// Promote a callable() -> T to a PromiseFactory() -> Immediate<T>
+template <typename F>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto PromiseFactoryImpl(
+    std::enable_if_t<!IsVoidCallable<ResultOf<F()>>::value &&
+                         !PollTraits<ResultOf<F()>>::is_poll() &&
+                         !std::is_same_v<ResultOf<F()>, void>,
+                     OnceToken>,
+    F f) {
+  auto f2 = [x = f()]() mutable { return std::move(x); };
+  return PromiseLike<decltype(f2)>(std::move(f2));
+}
+template <typename F>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto PromiseFactoryImpl(
+    std::enable_if_t<!IsVoidCallable<ResultOf<F()>>::value &&
+                         !PollTraits<ResultOf<F()>>::is_poll() &&
+                         std::is_same_v<ResultOf<F()>, void>,
+                     OnceToken>,
+    F f) {
+  f();
+  auto f2 = []() { return Empty{}; };
+  return PromiseLike<decltype(f2)>(std::move(f2));
 }
 
 // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
