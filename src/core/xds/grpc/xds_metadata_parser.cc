@@ -19,12 +19,8 @@
 #include <utility>
 #include <variant>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "envoy/config/core/v3/address.upb.h"
-#include "envoy/config/core/v3/address.upbdefs.h"
-#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
-#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/struct.upb.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/util/env.h"
 #include "src/core/util/string.h"
@@ -33,6 +29,13 @@
 #include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "envoy/config/core/v3/address.upb.h"
+#include "envoy/config/core/v3/address.upbdefs.h"
+#include "envoy/config/core/v3/base.upb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
 #include "upb/base/string_view.h"
 #include "upb/text/encode.h"
 
@@ -127,6 +130,7 @@ XdsMetadataMap ParseXdsMetadataMap(
   if (metadata == nullptr) return metadata_map;  // Not present == empty.
   // First, try typed_filter_metadata.
   size_t iter = kUpb_Map_Begin;
+  // grpc-oss-only-begin
   const envoy_config_core_v3_Metadata_TypedFilterMetadataEntry* typed_entry;
   while (
       (typed_entry = envoy_config_core_v3_Metadata_typed_filter_metadata_next(
@@ -141,6 +145,21 @@ XdsMetadataMap ParseXdsMetadataMap(
         envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_value(
             typed_entry),
         errors);
+  // grpc-oss-only-end
+  /* grpc-google-only-begin
+  // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+  // v30.0.
+  upb_StringView typed_filter_metadata_key_view;
+  const google_protobuf_Any* typed_filter_metadata_val;
+  while (envoy_config_core_v3_Metadata_typed_filter_metadata_next(
+      metadata, &typed_filter_metadata_key_view, &typed_filter_metadata_val,
+      &iter)) {
+    absl::string_view key = UpbStringToAbsl(typed_filter_metadata_key_view);
+    ValidationErrors::ScopedField field(
+        errors, absl::StrCat(".typed_filter_metadata[", key, "]"));
+    auto extension =
+        ExtractXdsExtension(context, typed_filter_metadata_val, errors);
+  grpc-google-only-end */
     if (!extension.has_value()) continue;
     // TODO(roth): If we start to need a lot of types here, refactor
     // this into a separate registry.
@@ -159,6 +178,7 @@ XdsMetadataMap ParseXdsMetadataMap(
   }
   // Then, try filter_metadata.
   iter = kUpb_Map_Begin;
+  // grpc-oss-only-begin
   const envoy_config_core_v3_Metadata_FilterMetadataEntry* entry;
   while ((entry = envoy_config_core_v3_Metadata_filter_metadata_next(
               metadata, &iter)) != nullptr) {
@@ -167,6 +187,17 @@ XdsMetadataMap ParseXdsMetadataMap(
     auto json = ParseProtobufStructToJson(
         context,
         envoy_config_core_v3_Metadata_FilterMetadataEntry_value(entry));
+  // grpc-oss-only-end
+  /* grpc-google-only-begin
+  // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+  // v30.0.
+  upb_StringView filter_metadata_key_view;
+  const google_protobuf_Struct* filter_metadata_val;
+  while (envoy_config_core_v3_Metadata_filter_metadata_next(
+      metadata, &filter_metadata_key_view, &filter_metadata_val, &iter)) {
+    absl::string_view key = UpbStringToAbsl(filter_metadata_key_view);
+    auto json = ParseProtobufStructToJson(context, filter_metadata_val);
+  grpc-google-only-end */
     if (!json.ok()) {
       ValidationErrors::ScopedField field(
           errors, absl::StrCat(".filter_metadata[", key, "]"));
