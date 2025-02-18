@@ -857,7 +857,6 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       // Prefixes added for context
       "(Failed to connect to remote host: )?"
       "(Timeout occurred: )?"
-      "(Endpoint closing)?"
       // Syscall
       "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
       // strerror() output or other message
@@ -865,7 +864,8 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "|Connection reset by peer"
       "|Socket closed"
       "|Broken pipe"
-      "|FD shutdown)"
+      "|FD shutdown"
+      "|Endpoint closing)"
       // errno value
       "( \\([0-9]+\\))?",
       // xDS node ID
