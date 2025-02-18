@@ -20,11 +20,11 @@
 
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "test/core/transport/chttp2/http2_frame_test_helper.h"
+// #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 
 using grpc_core::chaotic_good::testing::MockPromiseEndpoint;
-using grpc_core::transport::testing::Http2FrameTestHelper;
+// using grpc_core::transport::testing::Http2FrameTestHelper;
 using grpc_event_engine::experimental::EventEngine;
 
 namespace grpc_core {
