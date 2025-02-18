@@ -187,6 +187,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 }
 
 template <typename A, typename F>
+// One instance of promise factory of the type OncePromiseFactory can be used to
+// generate a promise only once. If you need one instance of a promise factory
+// to return promises multiple times use RepeatedPromiseFactory.
 class OncePromiseFactory {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
@@ -222,6 +225,10 @@ class OncePromiseFactory<void, F> {
 };
 
 template <typename A, typename F>
+// One instance of promise factory of the type RepeatedPromiseFactory can be
+// used to multiple times to return promises. If you need one instance of a
+// promise factory to return only one promise in its lifetime use
+// OncePromiseFactory.
 class RepeatedPromiseFactory {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
