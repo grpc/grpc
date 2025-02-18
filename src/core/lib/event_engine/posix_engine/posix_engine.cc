@@ -466,12 +466,20 @@ void PosixEventEngine::PollerWorkInternal(
   // this can be improved by setting the timeout to the next expiring timer.
   PosixEventPoller* poller = poller_manager->Poller();
   ThreadPool* executor = poller_manager->Executor();
-  auto result = poller->Work(24h, [executor, &poller_manager]() {
+  std::atomic_bool scheduled{false};
+  absl::Cleanup cleanup = [&]() {
+    if (!scheduled) {
+      LOG(INFO) << "[" << getpid() << "] scheduled: " << scheduled;
+    }
+  };
+  auto result = poller->Work(24h, [executor, &poller_manager, &scheduled]() {
+    scheduled = true;
     executor->Run([poller_manager]() mutable {
       PollerWorkInternal(std::move(poller_manager));
     });
   });
   if (result == Poller::WorkResult::kDeadlineExceeded) {
+    LOG(INFO) << "[" << getpid() << "] \n\n\n!!!\n\n";
     // The EventEngine is not shutting down but the next asynchronous
     // PollerWorkInternal did not get scheduled. Schedule it now.
     executor->Run([poller_manager = std::move(poller_manager)]() {
@@ -479,14 +487,16 @@ void PosixEventEngine::PollerWorkInternal(
     });
   } else if (result == Poller::WorkResult::kKicked &&
              poller_manager->IsShuttingDown()) {
+    LOG(INFO) << "[" << getpid() << "] " << poller_manager.use_count();
     // The Poller Got Kicked and poller_state_ is set to
     // PollerState::kShuttingDown. This can currently happen only from the
-    // EventEngine destructor. Sample the use_count of poller_manager. If the
-    // sampled use_count is > 1, there is one more instance of Work(...)
+    // EventEngine destructor. Sample the use_count of poller_manager. If
+    // the sampled use_count is > 1, there is one more instance of Work(...)
     // which hasn't returned yet. Send another Kick to be safe to ensure the
-    // pending instance of Work(..) also breaks out. Its possible that the other
-    // instance of Work(..) had already broken out before this Kick is sent. In
-    // that case, the Kick is spurious but it shouldn't cause any side effects.
+    // pending instance of Work(..) also breaks out. Its possible that the
+    // other instance of Work(..) had already broken out before this Kick is
+    // sent. In that case, the Kick is spurious but it shouldn't cause any
+    // side effects.
     if (poller_manager.use_count() > 1) {
       poller->Kick();
     }

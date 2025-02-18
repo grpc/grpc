@@ -70,7 +70,9 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
   int port = grpc_pick_unused_port_or_die();
   std::string addr = absl::StrCat("localhost:", port);
 
+  LOG(INFO) << "[" << getpid() << "] Before fork 1";
   pid_t server_pid = fork();
+  LOG(INFO) << "[" << getpid() << "] After fork 1";
   switch (server_pid) {
     case -1:  // fork failed
       GTEST_FAIL() << "failure forking";
@@ -80,10 +82,8 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       grpc::ServerBuilder builder;
       builder.AddListeningPort(addr, grpc::InsecureServerCredentials());
       builder.RegisterService(&impl);
-      LOG(INFO) << "\n#\n#\n#\n#\n#";
       std::unique_ptr<Server> server(builder.BuildAndStart());
       server->Wait();
-      LOG(INFO) << "\n#\n#\n#\n#\n#";
       return;
     }
     default:  // post-fork parent
@@ -107,7 +107,9 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
     ASSERT_EQ(response.message(), request.message());
   }
   // Fork and do round trips in the post-fork parent and child.
+  LOG(INFO) << "[" << getpid() << "] Before fork 2";
   pid_t child_client_pid = fork();
+  LOG(INFO) << "[" << getpid() << "] After fork 2";
   switch (child_client_pid) {
     case -1:  // fork failed
       GTEST_FAIL() << "fork failed";
