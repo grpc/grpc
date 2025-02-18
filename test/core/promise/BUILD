@@ -748,7 +748,13 @@ grpc_fuzz_test(
     deps = [
         "inter_activity_mutex_test_cc_proto",
         "poll_matcher",
+        "//:grpc",
+        "//src/core:1999",
         "//src/core:inter_activity_mutex",
+        "//src/core:notification",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:time",
     ],
 )
 

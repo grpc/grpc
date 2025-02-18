@@ -26,6 +26,13 @@
 
 namespace grpc_core {
 
+// An async mutex that can be used to synchronize between activities.
+// Acquire() returns a promise that resolves to a Lock object that allows
+// mutating the protected state.
+// AcquireWhen() additionally takes a predicate that must be satisfied to
+// acquire the lock.
+// The lock is fair in that it will be granted to the oldest waiter that can
+// acquire the lock.
 template <typename T>
 class InterActivityMutex {
  public:
@@ -60,8 +67,13 @@ class InterActivityMutex {
 
   InterActivityMutex() = default;
   ~InterActivityMutex() {
+    // There should be no waiters at this point, but we may have some cancelled
+    // waiters that need to be cleaned up.
     while (waiters_ != nullptr) {
       Waiter* next = waiters_->next_;
+      // Asserts that the waiter is cancelled.
+      // If this is not the case, then there's a bug in the caller keeping
+      // an acquire promise alive after the mutex has been destroyed.
       waiters_->RemovedFromQueue();
       waiters_ = next;
     }
@@ -73,27 +85,45 @@ class InterActivityMutex {
   class Acquirer;
   class Unlocker;
 
+  // Polymorphic waiter for the mutex.
+  // Created only after we can't acquire the mutex on the fast path (with a
+  // CAS). May outlive the acquire promise - if the acquisition is cancelled
+  // this object will still remain until the unlock path can see the
+  // cancellation and remove this object.
   class Waiter {
    public:
     explicit Waiter(InterActivityMutex* mutex, Waiter* next = nullptr)
         : mutex_(mutex), next_(next) {}
 
+    // Returns true if the waiter was cancelled.
     bool WasAcquisitionCancelled() {
       return state_.load(std::memory_order_relaxed) ==
              State::kAcquisitionCancelled;
     }
+
+    // Returns true if the waiter can acquire the mutex (the predicate is
+    // satisfied).
     virtual bool CanAcquire() = 0;
 
+    // Notify that the CAS to add this to the waiter queue failed - deletes the
+    // waiter after checking internal invariants.
     void FailedAddToQueue() {
       DCHECK_EQ(state_, State::kWaiting);
       delete this;
     }
 
+    // Notify that the waiter has been removed from the queue - deletes the
+    // waiter after checking internal invariants.
     void RemovedFromQueue() {
       DCHECK_EQ(state_, State::kAcquisitionCancelled);
       delete this;
     }
 
+    // Notify that the acquisition promise has been cancelled.
+    // If still waiting, this marks the waiter as cancelled. It will be
+    // later deleted by the unlock path.
+    // If already acquired, this unlocks the mutex, finds a new owner, and
+    // deletes the waiter.
     void AcquisitionCancelled() {
       State prev_state = State::kWaiting;
       while (true) {
@@ -118,12 +148,20 @@ class InterActivityMutex {
         }
       }
     }
+
+    // Returns true if the waiter has acquired the mutex.
+    // If so, deletes the waiter.
     bool CheckAcquired() {
       bool acquired =
           state_.load(std::memory_order_acquire) == State::kAcquired;
       if (acquired) delete this;
       return acquired;
     }
+
+    // Notify that the waiter has acquired the mutex.
+    // If still waiting, this marks the waiter as acquired.
+    // If already cancelled, this unlocks the mutex, finds a new owner, and
+    // deletes the waiter.
     void BecomeAcquired() {
       State prev_state = State::kWaiting;
       while (true) {
@@ -147,7 +185,12 @@ class InterActivityMutex {
       }
     }
 
+    // Reverse the order of waiters in a subqueue.
+    // When waiters are added to the wait list, they are added in LIFO order
+    // to keep the CAS loop simple. To maintain fairness, we need them in FIFO
+    // order. This function reverses the order of the waiters in the subqueue.
     Waiter* Reverse() {
+      // Use a vector to avoid a large recursion.
       std::vector<Waiter*> waiters;
       for (Waiter* waiter = this; waiter != nullptr; waiter = waiter->next_) {
         waiters.push_back(waiter);
@@ -171,8 +214,11 @@ class InterActivityMutex {
     friend class InterActivityMutex;
 
     enum State {
+      // Waiter is waiting in the wait list
       kWaiting,
+      // Acquirer has cancelled the acquisition promise.
       kAcquisitionCancelled,
+      // Waiter has acquired the mutex.
       kAcquired,
     };
 
@@ -214,6 +260,9 @@ class InterActivityMutex {
     explicit Acquirer(InterActivityMutex* mutex, F f)
         : mutex_(mutex), f_(std::move(f)) {}
     ~Acquirer() {
+      // Acquirer destroyed - but we may already hold the lock if we were never
+      // polled and acquired the fast path, or we may have a waiter in the wait
+      // queue that needs to be cancelled.
       switch (state_) {
         case State::kStart:
           break;
@@ -253,7 +302,17 @@ class InterActivityMutex {
     }
 
    private:
-    enum class State : uint8_t { kStart, kFastLocked, kWaiting, kMovedFrom };
+    enum class State : uint8_t {
+      // Initial state if fast cas failed
+      kStart,
+      // Fast path succeeded, but we haven't checked if we can acquire the
+      // lock yet.
+      kFastLocked,
+      // Waiter is waiting in the wait list
+      kWaiting,
+      // Acquirer has been moved from
+      kMovedFrom
+    };
 
     template <typename Sink>
     friend void AbslStringify(Sink& sink, State state) {
@@ -279,12 +338,15 @@ class InterActivityMutex {
             << "[mutex " << mutex_ << " aquirerer " << this
             << "] PollStart: " << GRPC_DUMP_ARGS(prev_state_);
         if (prev_state_ == kUnlocked) {
+          // Fast path - try to acquire the lock.
           if (mutex_->state_.compare_exchange_weak(prev_state_, kLocked,
                                                    std::memory_order_acquire,
                                                    std::memory_order_relaxed)) {
             return PollFastLocked();
           }
         } else if (prev_state_ == kLocked) {
+          // Lock is already acquired - but no waiters yet, try to add ourselves
+          // to the wait list
           waiter_ = new WaiterImpl<F>(mutex_, nullptr, std::move(f_));
           state_ = State::kWaiting;
           if (mutex_->state_.compare_exchange_weak(
@@ -295,6 +357,7 @@ class InterActivityMutex {
           state_ = State::kStart;
           waiter_->FailedAddToQueue();
         } else {
+          // Lock is already acquired, try to add ourselves to the wait list
           waiter_ = new WaiterImpl<F>(
               mutex_, reinterpret_cast<Waiter*>(prev_state_), std::move(f_));
           state_ = State::kWaiting;
