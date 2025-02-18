@@ -15,9 +15,10 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_UTIL_HTTP2_FRAME_TEST_HELPER_H
 #define GRPC_TEST_CORE_TRANSPORT_UTIL_HTTP2_FRAME_TEST_HELPER_H
 
+#include <grpc/slice.h>
+
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "include/grpc/slice.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/slice/slice.h"

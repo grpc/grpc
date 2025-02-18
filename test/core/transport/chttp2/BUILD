@@ -569,3 +569,20 @@ grpc_fuzz_test(
         "//src/core:time",
     ],
 )
+
+grpc_cc_library(
+    name = "http2_frame_test_helper",
+    testonly = 1,
+    hdrs = ["http2_frame_test_helper.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_promise_endpoint",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+    ],
+)
