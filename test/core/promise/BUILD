@@ -739,9 +739,17 @@ grpc_cc_proto_library(
 grpc_fuzz_test(
     name = "inter_activity_mutex_test",
     srcs = ["inter_activity_mutex_test.cc"],
-    external_deps = ["gtest", "fuzztest", "fuzztest_main"],
+    external_deps = [
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["promise_test"],
-    deps = ["//src/core:inter_activity_mutex", "poll_matcher", "inter_activity_mutex_test_cc_proto"],
+    deps = [
+        "inter_activity_mutex_test_cc_proto",
+        "poll_matcher",
+        "//src/core:inter_activity_mutex",
+    ],
 )
 
 grpc_cc_benchmark(

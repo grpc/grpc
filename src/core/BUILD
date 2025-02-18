@@ -1237,7 +1237,10 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/inter_activity_mutex.h",
     ],
-    external_deps = ["absl/log:check", "absl/log"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log",
+    ],
     deps = [
         "activity",
         "poll",
