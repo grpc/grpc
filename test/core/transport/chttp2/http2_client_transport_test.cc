@@ -32,7 +32,7 @@ namespace http2 {
 namespace testing {
 
 TEST(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
-  Http2FrameTestHelper helper;
+  // Http2FrameTestHelper helper;
   MockPromiseEndpoint endpoint(1);
   std::shared_ptr<EventEngine> event_engine =
       grpc_event_engine::experimental::GetDefaultEventEngine();
