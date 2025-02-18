@@ -55,10 +55,6 @@
   expiry: 2025/06/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
-- name: event_engine_application_callbacks
-  description: Run application callbacks in EventEngine threads, instead of on the thread-local ApplicationCallbackExecCtx
-  expiry: 2025/05/01
-  owner: hork@google.com
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2025/05/01
