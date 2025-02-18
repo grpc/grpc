@@ -37,7 +37,7 @@ TEST(MapTest, JustElem) {
 
 TEST(CheckDelayedTest, SeesImmediate) {
   auto x = CheckDelayed([]() { return 42; });
-  EXPECT_THAT(x(), IsReady(std::make_tuple(42, false)));
+  EXPECT_THAT(x(), IsReady(std::tuple(42, false)));
 }
 
 TEST(CheckDelayedTest, SeesDelayed) {
@@ -47,7 +47,7 @@ TEST(CheckDelayedTest, SeesDelayed) {
     return Pending{};
   });
   EXPECT_THAT(x(), IsPending());
-  EXPECT_THAT(x(), IsReady(std::make_tuple(42, true)));
+  EXPECT_THAT(x(), IsReady(std::tuple(42, true)));
 }
 
 TEST(MapError, DoesntMapOk) {

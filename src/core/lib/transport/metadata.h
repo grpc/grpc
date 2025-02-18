@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -30,6 +31,93 @@ using ServerMetadataHandle = Arena::PoolPtr<ServerMetadata>;
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
 using ClientMetadata = grpc_metadata_batch;
 using ClientMetadataHandle = Arena::PoolPtr<ClientMetadata>;
+
+template <typename T>
+class ServerMetadataOrHandle {
+ public:
+  using ValueType = Arena::PoolPtr<T>;
+
+  static ServerMetadataOrHandle Ok(ValueType value) {
+    return ServerMetadataOrHandle{nullptr, std::move(value)};
+  }
+  static ServerMetadataOrHandle Failure(ServerMetadataHandle server_metadata) {
+    return ServerMetadataOrHandle{std::move(server_metadata), nullptr};
+  }
+
+  bool ok() const { return server_metadata_ == nullptr; }
+  ServerMetadataHandle& metadata() {
+    CHECK(!ok());
+    return server_metadata_;
+  }
+  ValueType& operator*() {
+    CHECK(ok());
+    return value_;
+  }
+  const ServerMetadataHandle& metadata() const {
+    CHECK(!ok());
+    return server_metadata_;
+  }
+  const ValueType& operator*() const {
+    CHECK(ok());
+    return value_;
+  }
+
+ private:
+  ServerMetadataOrHandle(ServerMetadataHandle server_metadata, ValueType value)
+      : server_metadata_(std::move(server_metadata)),
+        value_(std::move(value)) {}
+
+  ServerMetadataHandle server_metadata_;
+  ValueType value_;
+};
+
+template <typename T>
+struct FailureStatusCastImpl<ServerMetadataOrHandle<T>, ServerMetadataHandle> {
+  static ServerMetadataOrHandle<T> Cast(ServerMetadataHandle t) {
+    return ServerMetadataOrHandle<T>::Failure(std::move(t));
+  }
+};
+
+template <typename T>
+struct FailureStatusCastImpl<ServerMetadataOrHandle<T>, ServerMetadataHandle&> {
+  static ServerMetadataOrHandle<T> Cast(ServerMetadataHandle& t) {
+    return ServerMetadataOrHandle<T>::Failure(std::move(t));
+  }
+};
+
+template <typename T>
+inline bool IsStatusOk(const ServerMetadataOrHandle<T>& x) {
+  return x.ok();
+}
+
+namespace promise_detail {
+template <typename T>
+struct AllowGenericTrySeqTraits<ServerMetadataOrHandle<T>> {
+  static constexpr bool value = false;
+};
+template <typename T>
+struct TrySeqTraitsWithSfinae<ServerMetadataOrHandle<T>> {
+  using UnwrappedType = Arena::PoolPtr<T>;
+  using WrappedType = ServerMetadataOrHandle<T>;
+  template <typename Next>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactory(
+      Next* next, ServerMetadataOrHandle<T>&& status) {
+    return next->Make(std::move(*status));
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(
+      const ServerMetadataOrHandle<T>& status) {
+    return status.ok();
+  }
+  static std::string ErrorString(const ServerMetadataOrHandle<T>& status) {
+    return status.metadata()->DebugString();
+  }
+  template <typename R>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R ReturnValue(
+      ServerMetadataOrHandle<T>&& status) {
+    return FailureStatusCast<R>(status.metadata());
+  }
+};
+}  // namespace promise_detail
 
 // TODO(ctiller): separate when we have different types for client/server
 // metadata.

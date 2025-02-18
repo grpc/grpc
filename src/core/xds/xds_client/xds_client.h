@@ -198,7 +198,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     ~XdsChannel() override;
 
     XdsClient* xds_client() const { return xds_client_.get(); }
-    AdsCall* ads_call() const;
 
     void ResetBackoff();
 
@@ -278,9 +277,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ACKED,
       // Client received this resource and replied with NACK.
       NACKED,
+      // Server sent an error for the resource.
+      RECEIVED_ERROR,
       // Client encountered timeout getting resource from server.
-      // TODO(roth): Remove explicit value when adding RECEIVED_ERROR.
-      TIMEOUT = 6,
+      TIMEOUT,
     };
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
                   ClientResourceStatus::REQUESTED);
@@ -291,6 +291,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
                   ClientResourceStatus::ACKED);
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
                   ClientResourceStatus::NACKED);
+    static_assert(
+        static_cast<ClientResourceStatus>(envoy_admin_v3_RECEIVED_ERROR) ==
+        ClientResourceStatus::RECEIVED_ERROR);
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_TIMEOUT) ==
                   ClientResourceStatus::TIMEOUT);
 
@@ -308,6 +311,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
                   Timestamp update_time);
     void SetNacked(const std::string& version, absl::string_view details,
                    Timestamp update_time, bool drop_cached_resource);
+    void SetReceivedError(const std::string& version, absl::Status status,
+                          Timestamp update_time, bool drop_cached_resource);
     void SetDoesNotExistOnLdsOrCdsDeletion(const std::string& version,
                                            Timestamp update_time,
                                            bool drop_cached_resource);
@@ -352,7 +357,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   struct AuthorityState {
     std::vector<RefCountedPtr<XdsChannel>> xds_channels;
     std::map<const XdsResourceType*, std::map<XdsResourceKey, ResourceState>>
-        resource_map;
+        type_map;
   };
 
   absl::Status AppendNodeToStatus(const absl::Status& status) const;
@@ -384,6 +389,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   bool HasUncachedResources(const AuthorityState& authority_state);
+
+  void MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
+      XdsChannel* xds_channel, const XdsResourceType* type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);

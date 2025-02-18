@@ -703,7 +703,6 @@ class ExternalStateWatcher : public RefCounted<ExternalStateWatcher> {
     const Duration timeout = deadline - Timestamp::Now();
     timer_handle_ =
         channel_->event_engine()->RunAfter(timeout, [self = Ref()]() mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->MaybeStartCompletion(absl::DeadlineExceededError(
               "Timed out waiting for connection state change"));

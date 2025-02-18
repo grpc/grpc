@@ -1235,6 +1235,7 @@ libs:
   - src/core/xds/grpc/xds_route_config_parser.h
   - src/core/xds/grpc/xds_routing.h
   - src/core/xds/grpc/xds_server_grpc.h
+  - src/core/xds/grpc/xds_server_grpc_interface.h
   - src/core/xds/grpc/xds_transport_grpc.h
   - src/core/xds/xds_client/lrs_client.h
   - src/core/xds/xds_client/xds_api.h
@@ -3812,6 +3813,8 @@ libs:
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
   - include/grpcpp/passive_listener.h
+  - include/grpcpp/ports_def.inc
+  - include/grpcpp/ports_undef.inc
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
@@ -4206,6 +4209,8 @@ libs:
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
   - include/grpcpp/passive_listener.h
+  - include/grpcpp/ports_def.inc
+  - include/grpcpp/ports_undef.inc
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
@@ -5869,7 +5874,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -5897,7 +5901,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -6111,7 +6114,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -6139,7 +6141,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -6321,7 +6322,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -6349,7 +6349,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -6569,7 +6568,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -6597,7 +6595,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -7282,7 +7279,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -7310,7 +7306,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -7365,7 +7360,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -7393,7 +7387,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -7449,7 +7442,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -7477,7 +7469,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -7532,7 +7523,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -7560,7 +7550,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -7632,7 +7621,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -7660,7 +7648,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -7817,7 +7804,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -7845,7 +7831,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -7901,7 +7886,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -7929,7 +7913,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -8938,7 +8921,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -8966,7 +8948,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -9129,7 +9110,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -9157,7 +9137,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -9314,7 +9293,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -9342,7 +9320,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -9513,7 +9490,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -9541,7 +9517,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -9637,7 +9612,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -9665,7 +9639,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -9808,7 +9781,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -9836,7 +9808,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -10356,7 +10327,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -10384,7 +10354,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -10392,6 +10361,159 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
+- name: filter_fusion_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/call/filter_fusion.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/lib/channel/channel_args.h
+  - src/core/lib/compression/compression_internal.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/for_each.h
+  - src/core/lib/promise/if.h
+  - src/core/lib/promise/latch.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/status_flag.h
+  - src/core/lib/promise/try_seq.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/surface/channel_stack_type.h
+  - src/core/lib/transport/call_filters.h
+  - src/core/lib/transport/call_final_info.h
+  - src/core/lib/transport/call_state.h
+  - src/core/lib/transport/custom_metadata.h
+  - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/message.h
+  - src/core/lib/transport/metadata.h
+  - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/metadata_compression_traits.h
+  - src/core/lib/transport/parsed_metadata.h
+  - src/core/lib/transport/simple_slice_based_metadata.h
+  - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/timeout_encoding.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/avl.h
+  - src/core/util/bitset.h
+  - src/core/util/chunked_vector.h
+  - src/core/util/cpp_impl_of.h
+  - src/core/util/down_cast.h
+  - src/core/util/dual_ref_counted.h
+  - src/core/util/dump_args.h
+  - src/core/util/glob.h
+  - src/core/util/if_list.h
+  - src/core/util/latent_see.h
+  - src/core/util/manual_constructor.h
+  - src/core/util/orphanable.h
+  - src/core/util/packed_table.h
+  - src/core/util/per_cpu.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ref_counted_string.h
+  - src/core/util/ring_buffer.h
+  - src/core/util/sorted_pack.h
+  - src/core/util/spinlock.h
+  - src/core/util/status_helper.h
+  - src/core/util/table.h
+  - src/core/util/time.h
+  - src/core/util/type_list.h
+  - third_party/upb/upb/generated_code_support.h
+  src:
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/lib/channel/channel_args.cc
+  - src/core/lib/compression/compression.cc
+  - src/core/lib/compression/compression_internal.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
+  - src/core/lib/iomgr/closure.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/slice/percent_encoding.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/surface/channel_stack_type.cc
+  - src/core/lib/transport/call_filters.cc
+  - src/core/lib/transport/call_final_info.cc
+  - src/core/lib/transport/call_state.cc
+  - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/message.cc
+  - src/core/lib/transport/metadata.cc
+  - src/core/lib/transport/metadata_batch.cc
+  - src/core/lib/transport/parsed_metadata.cc
+  - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/timeout_encoding.cc
+  - src/core/util/dump_args.cc
+  - src/core/util/glob.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/per_cpu.cc
+  - src/core/util/ref_counted_string.cc
+  - src/core/util/status_helper.cc
+  - src/core/util/time.cc
+  - test/core/call/filter_fusion_test.cc
+  deps:
+  - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/base:config
+  - absl/base:no_destructor
+  - absl/container:flat_hash_map
+  - absl/container:inlined_vector
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/utility:utility
+  - gpr
 - name: filter_init_fails_test
   gtest: true
   build: test
@@ -10439,7 +10561,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -10467,7 +10588,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -10540,7 +10660,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -10568,7 +10687,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -11103,7 +11221,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -11131,7 +11248,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -11316,7 +11432,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -11344,7 +11459,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -11759,7 +11873,6 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -11789,7 +11902,6 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   deps:
   - gtest
   - protobuf
@@ -11944,7 +12056,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -11972,7 +12083,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -12150,7 +12260,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -12178,7 +12287,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -12216,6 +12324,7 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   src:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
@@ -12325,7 +12434,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -12353,7 +12461,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -12800,7 +12907,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -12828,7 +12934,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -13024,7 +13129,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -13052,7 +13156,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -13119,7 +13222,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -13147,7 +13249,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -13574,7 +13675,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -13602,7 +13702,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -13657,7 +13756,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -13685,7 +13783,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -13740,7 +13837,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -13768,7 +13864,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -13823,7 +13918,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -13851,7 +13945,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -14151,7 +14244,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -14179,7 +14271,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -14246,7 +14337,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -14274,7 +14364,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -14329,7 +14418,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -14357,7 +14445,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -14697,6 +14784,19 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: party_mpsc_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/wait_set.h
+  src:
+  - test/core/promise/party_mpsc_test.cc
+  deps:
+  - gtest
+  - grpc_unsecure
+  uses_polling: false
 - name: party_test
   gtest: true
   build: test
@@ -14757,7 +14857,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -14785,7 +14884,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -15010,7 +15108,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -15038,7 +15135,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -15121,7 +15217,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -15149,7 +15244,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -15725,7 +15819,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -15753,7 +15846,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -16006,7 +16098,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -16034,7 +16125,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -16270,7 +16360,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -16298,7 +16387,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -16353,7 +16441,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -16381,7 +16468,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -16580,7 +16666,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -16608,7 +16693,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -16674,7 +16758,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -16702,7 +16785,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -16757,7 +16839,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -16785,7 +16866,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -16840,7 +16920,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -16868,7 +16947,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -16923,7 +17001,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -16951,7 +17028,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17006,7 +17082,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17034,7 +17109,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17089,7 +17163,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17117,7 +17190,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17172,7 +17244,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17200,7 +17271,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17255,7 +17325,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17283,7 +17352,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17338,7 +17406,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17366,7 +17433,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17421,7 +17487,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17449,7 +17514,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17504,7 +17568,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17532,7 +17595,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17587,7 +17649,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17615,7 +17676,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17670,7 +17730,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17698,7 +17757,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17753,7 +17811,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17781,7 +17838,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17836,7 +17892,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17864,7 +17919,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -17919,7 +17973,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -17947,7 +18000,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18002,7 +18054,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18030,7 +18081,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18085,7 +18135,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18113,7 +18162,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18168,7 +18216,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18196,7 +18243,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18251,7 +18297,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18279,7 +18324,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18334,7 +18378,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18362,7 +18405,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18417,7 +18459,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18445,7 +18486,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18500,7 +18540,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18528,7 +18567,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18594,7 +18632,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18622,7 +18659,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18677,7 +18713,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18705,7 +18740,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18760,7 +18794,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18788,7 +18821,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18843,7 +18875,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18871,7 +18902,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -18937,7 +18967,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -18965,7 +18994,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -19020,7 +19048,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -19048,7 +19075,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -19103,7 +19129,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -19131,7 +19156,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -19186,7 +19210,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -19214,7 +19237,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -19269,7 +19291,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -19297,7 +19318,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -19352,7 +19372,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -19380,7 +19399,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -19435,7 +19453,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -19463,7 +19480,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -19887,7 +19903,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -19915,7 +19930,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -20062,7 +20076,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -20090,7 +20103,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -20213,7 +20225,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -20241,7 +20252,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -20296,7 +20306,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -20324,7 +20333,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -20398,7 +20406,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -20426,7 +20433,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -20481,7 +20487,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -20509,7 +20514,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -20578,7 +20582,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -20606,7 +20609,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -20945,7 +20947,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -20973,7 +20974,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -21344,7 +21344,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -21372,7 +21371,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -21810,7 +21808,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -21838,7 +21835,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -22082,7 +22078,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -22110,7 +22105,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -22528,7 +22522,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -22556,7 +22549,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
@@ -22611,7 +22603,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -22639,7 +22630,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
-load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
@@ -44,6 +44,7 @@ grpc_fuzz_test(
         "hpack_parser_fuzzer_cc_proto",
         "//:grpc",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:proto_bit_gen",
     ],
@@ -73,6 +74,7 @@ grpc_fuzz_test(
         "hpack_sync_fuzzer_cc_proto",
         "//:grpc",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:proto_bit_gen",
     ],
@@ -103,6 +105,7 @@ grpc_fuzz_test(
         "//:gpr",
         "//src/core:chttp2_flow_control",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
     ],
 )
 
@@ -495,6 +498,7 @@ grpc_cc_test(
         "//src/core:http2_client_transport",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/transport/chttp2:http2_frame_test_helper",
         "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
@@ -563,5 +567,22 @@ grpc_fuzz_test(
         "//src/core:resource_quota",
         "//src/core:slice_buffer",
         "//src/core:time",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_frame_test_helper",
+    testonly = 1,
+    hdrs = ["http2_frame_test_helper.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_promise_endpoint",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
     ],
 )

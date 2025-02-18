@@ -109,15 +109,7 @@ tail${i}:
     Destruct(&${"prior."*(n-1-i)}next_factory);
 % endfor
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&${"prior."*(n-1)}current_promise,
-            other.${"prior."*(n-1)}current_promise);
-% for i in range(0,n-1):
-    Construct(&${"prior."*(n-1-i)}next_factory,
-              other.${"prior."*(n-1-i)}next_factory);
-% endfor
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept : state(other.state), whence(other.whence) {
     DCHECK(state == State::kState0);

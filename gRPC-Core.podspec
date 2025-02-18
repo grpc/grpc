@@ -200,7 +200,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.38'
+    ss.dependency 'BoringSSL-GRPC', '0.0.39'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -2167,6 +2167,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/xds_routing.h',
                       'src/core/xds/grpc/xds_server_grpc.cc',
                       'src/core/xds/grpc/xds_server_grpc.h',
+                      'src/core/xds/grpc/xds_server_grpc_interface.h',
                       'src/core/xds/grpc/xds_transport_grpc.cc',
                       'src/core/xds/grpc/xds_transport_grpc.h',
                       'src/core/xds/xds_client/lrs_client.cc',
@@ -3500,6 +3501,7 @@ Pod::Spec.new do |s|
                               'src/core/xds/grpc/xds_route_config_parser.h',
                               'src/core/xds/grpc/xds_routing.h',
                               'src/core/xds/grpc/xds_server_grpc.h',
+                              'src/core/xds/grpc/xds_server_grpc_interface.h',
                               'src/core/xds/grpc/xds_transport_grpc.h',
                               'src/core/xds/xds_client/lrs_client.h',
                               'src/core/xds/xds_client/xds_api.h',

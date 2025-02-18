@@ -53,7 +53,7 @@ class OverrideHostTest : public XdsEnd2endTest {
     std::set<std::string> attributes;
 
     std::pair<std::string, std::string> Header() const {
-      return std::make_pair("cookie", absl::StrFormat("%s=%s", name, value));
+      return std::pair("cookie", absl::StrFormat("%s=%s", name, value));
     }
 
     template <typename Sink>

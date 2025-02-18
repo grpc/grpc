@@ -58,7 +58,6 @@ CFStreamHandle* CFStreamHandle::CreateStreamHandle(
 void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
                                   CFStreamEventType type,
                                   void* client_callback_info) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle error;
   CFErrorRef stream_error;
@@ -91,7 +90,6 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
 void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
                                    CFStreamEventType type,
                                    void* clientCallBackInfo) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle error;
   CFErrorRef stream_error;

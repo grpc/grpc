@@ -118,7 +118,7 @@ struct JoinTraits {
   template <typename... A>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static std::tuple<A...> FinalReturn(
       A... a) {
-    return std::make_tuple(std::move(a)...);
+    return std::tuple(std::move(a)...);
   }
 };
 
@@ -138,7 +138,7 @@ class Join {
 struct WrapInTuple {
   template <typename T>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION std::tuple<T> operator()(T x) {
-    return std::make_tuple(std::move(x));
+    return std::tuple(std::move(x));
   }
 };
 

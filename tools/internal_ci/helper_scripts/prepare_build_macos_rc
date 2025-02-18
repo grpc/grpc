@@ -125,26 +125,6 @@ then
   time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
 
-  # Force reinstall of python3.7 to upgrade its patch version.
-  # Kokoro mac workers come with python 3.7.3 and that version
-  # suffers from https://bugs.python.org/issue22490.
-  # See https://github.com/grpc/grpc/pull/28963.
-  time curl -O https://www.python.org/ftp/python/3.7.9/python-3.7.9-macosx10.9.pkg
-  echo "bf54a14eef23467991e8c7a88c7307762e484c024a94ec1ee292ac1db3d41fc9  python-3.7.9-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
-  shasum -c /tmp/python_installer_checksum.sha256
-  time sudo installer -pkg ./python-3.7.9-macosx10.9.pkg -target /
-  python3.7 --version
-
-  # Force reinstall of python3.8 to upgrade its patch version.
-  # Kokoro mac workers come with python 3.8.2 and that version
-  # suffers from https://bugs.python.org/issue22490.
-  # See https://github.com/grpc/grpc/pull/28963.
-  time curl -O https://www.python.org/ftp/python/3.8.10/python-3.8.10-macosx10.9.pkg
-  echo "4c65bc7534d5f07edacbe0fbd609b5734dbf3ac02f5444f9bd97963d589d8afd  python-3.8.10-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
-  shasum -c /tmp/python_installer_checksum.sha256
-  time sudo installer -pkg ./python-3.8.10-macosx10.9.pkg -target /
-  python3.8 --version
-
   # Install Python 3.9 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.9" ]; then
     time curl -O https://www.python.org/ftp/python/3.9.10/python-3.9.10-macosx10.9.pkg

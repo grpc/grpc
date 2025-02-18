@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2025 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# this an aarch64 image, qemu emulator will be used to run the tests
-FROM arm64v8/python:3.8-buster
+licenses(["notice"])
 
-RUN python3 -m pip install virtualenv
+cc_library(
+    name = "inja",
+    hdrs = ["include/inja/inja.hpp"],
+    visibility = ["//visibility:public"],
+    deps = [":internal", "@nlohmann_json//:json"],
+)
+
+cc_library(
+    name = "internal",
+    includes = ["include"],
+    textual_hdrs = glob(
+        ["include/inja/*.hpp"],
+        exclude = ["include/inja/inja.hpp"],
+    ),
+    deps = ["@nlohmann_json//:json"]
+)
