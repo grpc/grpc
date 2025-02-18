@@ -98,7 +98,7 @@
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
     itself to the next ping interval.
-  expiry: 2025/03/01
+  expiry: 2025/06/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: local_connector_secure
@@ -173,7 +173,7 @@
   test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2025/03/01
+  expiry: 2025/06/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: server_listener
@@ -187,12 +187,12 @@
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  expiry: 2025/03/01
+  expiry: 2025/06/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  expiry: 2025/03/01
+  expiry: 2025/06/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: unconstrained_max_quota_buffer_size
