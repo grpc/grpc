@@ -14,10 +14,14 @@
 
 #include "src/core/call/filter_fusion.h"
 
+#include <grpc/impl/grpc_types.h>
+
 #include <type_traits>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/transport/call_final_info.h"
+#include "src/core/lib/transport/transport.h"
 
 using testing::ElementsAre;
 
@@ -40,9 +44,28 @@ class Test1 {
     void OnServerToClientMessage(Message&) {
       history.push_back("Test1::Call::OnServerToClientMessage");
     }
+    void OnClientToServerHalfClose(Test1*) {
+      history.push_back("Test1::Call::OnClientToServerHalfClose");
+    }
+    void OnFinalize(grpc_call_final_info*, Test1*) {
+      history.push_back("Test1::Call::OnFinalize");
+    }
+    void OnServerTrailingMetadata(ServerMetadata&) {
+      history.push_back("Test1::Call::OnServerTrailingMetaData");
+    }
 
    private:
   };
+
+  bool StartTransportOp(grpc_transport_op* op) {
+    history.push_back("Test1::StartTransportOp");
+    return false;
+  }
+
+  bool GetChannelInfo(const grpc_channel_info* info) {
+    history.push_back("Test1::GetChannelInfo");
+    return false;
+  }
 };
 
 class Test2 {
@@ -59,9 +82,26 @@ class Test2 {
     void OnServerToClientMessage(Message&) {
       history.push_back("Test2::Call::OnServerToClientMessage");
     }
+    void OnClientToServerHalfClose() {
+      history.push_back("Test2::Call::OnClientToServerHalfClose");
+    }
+    void OnServerTrailingMetadata(ServerMetadata&, Test2*) {
+      history.push_back("Test2::Call::OnServerTrailingMetaData");
+    }
+    static inline const NoInterceptor OnFinalize;
 
    private:
   };
+
+  bool StartTransportOp(grpc_transport_op* op) {
+    history.push_back("Test2::StartTransportOp");
+    return false;
+  }
+
+  bool GetChannelInfo(const grpc_channel_info* info) {
+    history.push_back("Test2::GetChannelInfo");
+    return false;
+  }
 };
 
 class Test3 {
@@ -83,9 +123,26 @@ class Test3 {
       history.push_back("Test3::Call::OnServerToClientMessage");
       return handle;
     }
+    void OnServerTrailingMetadata(ServerMetadata&) {
+      history.push_back("Test3::Call::OnServerTrailingMetaData");
+    }
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    void OnFinalize(const grpc_call_final_info*) {
+      history.push_back("Test3::Call::OnFinalize");
+    }
 
    private:
   };
+
+  bool StartTransportOp(grpc_transport_op* op) {
+    history.push_back("Test3:StartTransportOp");
+    return false;
+  }
+
+  bool GetChannelInfo(const grpc_channel_info* info) {
+    history.push_back("Test3::GetChannelInfo");
+    return false;
+  }
 };
 
 class Test4 {
@@ -102,9 +159,24 @@ class Test4 {
     }
     static inline const NoInterceptor OnClientToServerMessage;
     static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    void OnFinalize(grpc_call_final_info*, Test4*) {
+      history.push_back("Test4::Call::OnFinalize");
+    }
 
    private:
   };
+
+  bool StartTransportOp(grpc_transport_op* op) {
+    history.push_back("Test4::StartTransportOp");
+    return false;
+  }
+
+  bool GetChannelInfo(const grpc_channel_info* info) {
+    history.push_back("Test4::GetChannelInfo");
+    return false;
+  }
 };
 
 class Test5 {
@@ -119,20 +191,45 @@ class Test5 {
     }
     static inline const NoInterceptor OnClientToServerMessage;
     static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
 
    private:
   };
+
+  bool StartTransportOp(grpc_transport_op* op) {
+    history.push_back("Test5::StartTransportOp");
+    return true;
+  }
+
+  bool GetChannelInfo(const grpc_channel_info* info) {
+    history.push_back("Test5::GetChannelInfo");
+    return true;
+  }
 };
 
-using Test123 = FusedFilter<Test1, Test2, Test3, Test4, Test5>;
+using TestFusedClient = FusedClientFilter<Test1, Test2, Test3, Test4, Test5>;
 
-static_assert(!std::is_same_v<decltype(&Test123::Call::OnClientInitialMetadata),
-                              const NoInterceptor*>);
-static_assert(!std::is_same_v<decltype(&Test123::Call::OnServerInitialMetadata),
-                              const NoInterceptor*>);
-static_assert(!std::is_same_v<decltype(&Test123::Call::OnClientToServerMessage),
-                              const NoInterceptor*>);
-static_assert(!std::is_same_v<decltype(&Test123::Call::OnServerToClientMessage),
+static_assert(
+    !std::is_same_v<decltype(&TestFusedClient::Call::OnClientInitialMetadata),
+                    const NoInterceptor*>);
+static_assert(
+    !std::is_same_v<decltype(&TestFusedClient::Call::OnServerInitialMetadata),
+                    const NoInterceptor*>);
+static_assert(
+    !std::is_same_v<decltype(&TestFusedClient::Call::OnClientToServerMessage),
+                    const NoInterceptor*>);
+static_assert(
+    !std::is_same_v<decltype(&TestFusedClient::Call::OnServerToClientMessage),
+                    const NoInterceptor*>);
+static_assert(
+    !std::is_same_v<decltype(&TestFusedClient::Call::OnClientToServerHalfClose),
+                    const NoInterceptor*>);
+static_assert(
+    !std::is_same_v<decltype(&TestFusedClient::Call::OnServerTrailingMetadata),
+                    const NoInterceptor*>);
+static_assert(!std::is_same_v<decltype(&TestFusedClient::Call::OnFinalize),
                               const NoInterceptor*>);
 
 template <typename T>
@@ -149,8 +246,8 @@ typename ServerMetadataOrHandle<T>::ValueType RunSuccessfulPromise(
 }
 
 TEST(Test123, OrderCorrect) {
-  Test123 filter;
-  Test123::Call call;
+  TestFusedClient filter;
+  TestFusedClient::Call call;
   history.clear();
   auto message = Arena::MakePooled<Message>();
   auto server_metadata_handle = Arena::MakePooled<ServerMetadata>();
@@ -165,11 +262,11 @@ TEST(Test123, OrderCorrect) {
       call.OnClientInitialMetadata(std::move(client_metadata_handle), &filter));
   EXPECT_THAT(history, ElementsAre("Test2::Call::OnClientToServerMessage",
                                    "Test3::Call::OnClientToServerMessage",
-                                   "Test3::Call::OnServerToClientMessage",
-                                   "Test2::Call::OnServerToClientMessage",
                                    "Test1::Call::OnServerToClientMessage",
-                                   "Test5::Call::OnServerInitialMetadata",
+                                   "Test2::Call::OnServerToClientMessage",
+                                   "Test3::Call::OnServerToClientMessage",
                                    "Test4::Call::OnServerInitialMetadata",
+                                   "Test5::Call::OnServerInitialMetadata",
                                    "Test1::Call::OnClientInitialMetadata",
                                    "Test2::Call::OnClientInitialMetadata",
                                    "Test3::Call::OnClientInitialMetadata",
