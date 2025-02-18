@@ -12324,6 +12324,7 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   src:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
