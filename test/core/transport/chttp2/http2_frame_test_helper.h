@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TRANSPORT_UTIL_HTTP2_FRAME_TEST_HELPER_H
-#define GRPC_TEST_CORE_TRANSPORT_UTIL_HTTP2_FRAME_TEST_HELPER_H
+#ifndef GRPC_TEST_CORE_TRANSPORT_CHTTP2_HTTP2_FRAME_TEST_HELPER_H
+#define GRPC_TEST_CORE_TRANSPORT_CHTTP2_HTTP2_FRAME_TEST_HELPER_H
 
 #include <grpc/slice.h>
 
@@ -59,4 +59,4 @@ class Http2FrameTestHelper {
 }  // namespace transport
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_TRANSPORT_UTIL_HTTP2_FRAME_TEST_HELPER_H
+#endif  // GRPC_TEST_CORE_TRANSPORT_UTIL_CHTTP2_FRAME_TEST_HELPER_H
