@@ -97,6 +97,7 @@ void ChaoticGoodServerTransport::StreamDispatch::DispatchFrame(
   if (stream == nullptr) return;
   stream->spawn_serializer->Spawn(
       [this, stream, frame = std::move(frame)]() mutable {
+        DCHECK_NE(stream.get(), nullptr);
         auto& call = stream->call;
         return call.CancelIfFails(call.UntilCallCompletes(TrySeq(
             frame.Payload(),
@@ -228,7 +229,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::ProcessNextFrame(
             << "Cancel stream " << incoming_frame.header().stream_id
             << (stream != nullptr ? " (active)" : " (not found)");
         if (stream == nullptr) return;
-        auto c = std::move(stream->call);
+        auto& c = stream->call;
         c.SpawnInfallible("cancel", [c]() mutable { c.Cancel(); });
       }),
       Default([&]() {
