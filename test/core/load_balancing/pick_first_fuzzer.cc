@@ -149,9 +149,9 @@ class Fuzzer {
       LOG(INFO) << "Last update has no endpoints; sending new update";
       LoadBalancingPolicy::UpdateArgs update_args;
       update_args.config = MakeLbConfig("{}").value();
-      update_args.addresses = std::make_shared<SingleEndpointIterator>(
-          EndpointAddresses(MakeAddress("ipv4:127.0.0.1:1024").value(),
-                            ChannelArgs()));
+      update_args.addresses =
+          std::make_shared<SingleEndpointIterator>(EndpointAddresses(
+              MakeAddress("ipv4:127.0.0.1:1024").value(), ChannelArgs()));
       absl::Status status = lb_policy_->UpdateLocked(std::move(update_args));
       LOG(INFO) << "UpdateLocked() returned status: " << status;
     }
@@ -559,8 +559,8 @@ class Fuzzer {
     return true;
   }
 
-  static std::optional<RefCountedPtr<LoadBalancingPolicy::Config>>
-  MakeLbConfig(absl::string_view config_string) {
+  static std::optional<RefCountedPtr<LoadBalancingPolicy::Config>> MakeLbConfig(
+      absl::string_view config_string) {
     auto json =
         JsonParse(absl::StrCat("[{\"pick_first\":", config_string, "}]"));
     if (!json.ok()) return std::nullopt;
