@@ -35,7 +35,6 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "pick_first_new": "pick_first_new",
     "posix_ee_skip_grpc_init": "posix_ee_skip_grpc_init",
-    "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
@@ -45,7 +44,6 @@ EXPERIMENT_ENABLES = {
     "server_listener": "server_listener",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
-    "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
 }
 
