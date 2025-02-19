@@ -386,5 +386,5 @@ void ChaoticGoodClientTransport::PerformOp(grpc_transport_op* op) {
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
 }
 
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core

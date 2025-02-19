@@ -69,5 +69,5 @@ ControlEndpoint::ControlEndpoint(
       [](absl::Status) {});
 }
 
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core

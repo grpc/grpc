@@ -246,7 +246,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   const Options options_;
 };
 
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CHAOTIC_GOOD_TRANSPORT_H
