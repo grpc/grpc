@@ -157,10 +157,7 @@ class AdaptMethod<
  public:
   explicit AdaptMethod(Call* call, Derived* filter)
       : call_(call), filter_(filter) {}
-  auto operator()(A* arg) {
-    (call_->*method)(arg, filter_);
-    return Immediate<A*>(arg);
-  }
+  void operator()(A* arg) { (call_->*method)(arg, filter_); }
 
  private:
   Call* call_;
@@ -186,10 +183,7 @@ class AdaptMethod<A, void (Call::*)(A*), method,
                   std::enable_if_t<!kHasCallMember<A>, void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/) : call_(call) {}
-  auto operator()(A* arg) {
-    (call_->*method)(arg);
-    return Immediate<A*>(arg);
-  }
+  void operator()(A* arg) { (call_->*method)(arg); }
 
  private:
   Call* call_;
