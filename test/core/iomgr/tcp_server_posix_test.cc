@@ -711,7 +711,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 // return true for special interfaces
 // For Mac these interfaces are not allowed to bind and listen
 // these would not be used in below test
-static bool FilterSpecialInterfaces(const char *ifname) {
+static bool FilterSpecialInterfaces(const char* ifname) {
   // skip unnamed interface
   if (!ifname) return true;
   // skip utun[0-9] interface, Mac VPN interfaces
