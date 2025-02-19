@@ -72,9 +72,9 @@ grpc_internal_proto_library(
         "pick_first_fuzzer.proto",
     ],
     deps = [
-        "@com_google_protobuf//:struct_proto",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "//test/core/test_util:fuzzing_channel_args_proto",
+        "@com_google_protobuf//:struct_proto",
     ],
 )
 
