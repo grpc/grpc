@@ -864,7 +864,8 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "|Connection reset by peer"
       "|Socket closed"
       "|Broken pipe"
-      "|FD shutdown)"
+      "|FD shutdown"
+      "|Endpoint closing)"
       // errno value
       "( \\([0-9]+\\))?",
       // xDS node ID

@@ -199,7 +199,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gears"  # @unused
 
-core_version = "45.0.0"  # @unused
+core_version = "46.0.0"  # @unused
 
 version = "1.71.0-dev"  # @unused
 
