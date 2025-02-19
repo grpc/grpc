@@ -18,6 +18,7 @@ syntax = "proto3";
 
 package pick_first_fuzzer;
 
+import "google/protobuf/struct.proto";
 import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
 import "test/core/test_util/fuzzing_channel_args.proto";
 
@@ -46,7 +47,10 @@ message Update {
     EndpointList endpoint_list = 1;
     Status endpoint_error = 2;
   }
-  string config = 3;
+  oneof config_oneof {
+    string config_string = 3;
+    google.protobuf.Struct config_json = 4;
+  }
   grpc.testing.FuzzingChannelArgs channel_args = 5;
 }
 

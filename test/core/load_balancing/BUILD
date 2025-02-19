@@ -72,6 +72,7 @@ grpc_internal_proto_library(
         "pick_first_fuzzer.proto",
     ],
     deps = [
+        "@com_google_protobuf//:struct_proto",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "//test/core/test_util:fuzzing_channel_args_proto",
     ],
@@ -96,6 +97,7 @@ grpc_fuzz_test(
     tags = ["no_windows"],
     deps = [
         ":pick_first_fuzzer_cc_proto",
+        "//:grpc++_config_proto",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzzing_channel_args",

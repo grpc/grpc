@@ -17,6 +17,7 @@
 #include <google/protobuf/text_format.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include <map>
 #include <memory>
@@ -479,8 +480,21 @@ class Fuzzer {
       const pick_first_fuzzer::Update& update) {
     LoadBalancingPolicy::UpdateArgs update_args;
     // Config.
+    std::string config_string;
+    switch (update.config_oneof_case()) {
+      case pick_first_fuzzer::Update::kConfigString:
+        config_string = update.config_string();
+        break;
+      case pick_first_fuzzer::Update::kConfigJson:
+        CHECK_OK(grpc::protobuf::json::MessageToJsonString(
+            update.config_json(), &config_string,
+            grpc::protobuf::json::JsonPrintOptions()));
+        break;
+      case pick_first_fuzzer::Update::CONFIG_ONEOF_NOT_SET:
+        break;
+    }
     auto json =
-        JsonParse(absl::StrCat("[{\"pick_first\":{", update.config(), "}}]"));
+        JsonParse(absl::StrCat("[{\"pick_first\":", config_string, "}]"));
     if (!json.ok()) return std::nullopt;
     auto config =
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
