@@ -241,7 +241,8 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }
 
 void ChaoticGoodClientTransport::Orphan() {
-  stream_dispatch_->OnFrameTransportClosed(absl::UnavailableError("Transport closed"));
+  stream_dispatch_->OnFrameTransportClosed(
+      absl::UnavailableError("Transport closed"));
   party_.reset();
   frame_transport_.reset();
   Unref();
