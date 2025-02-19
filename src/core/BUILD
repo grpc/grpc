@@ -8529,7 +8529,7 @@ grpc_cc_library(
         "chaotic_good_legacy_client_transport",
         "chaotic_good_legacy_config",
         "chaotic_good_legacy_frame",
-        "chaotic_good_legacy_frame_cc_proto",
+        "chaotic_good_frame_cc_proto",
         "chaotic_good_legacy_frame_header",
         "closure",
         "context",

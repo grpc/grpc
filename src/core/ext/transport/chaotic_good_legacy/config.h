@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
-#include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_frame.pb.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good_legacy/message_chunker.h"
 #include "src/core/ext/transport/chaotic_good_legacy/pending_connection.h"

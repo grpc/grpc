@@ -26,7 +26,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_frame.pb.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"

@@ -521,7 +521,7 @@ int grpc_server_add_chaotic_good_legacy_port(grpc_server* server,
   std::vector<std::pair<std::string, absl::Status>> error_list;
   for (const auto& ee_addr : results.value()) {
     auto listener = grpc_core::MakeOrphanable<
-        grpc_core::chaotic_good::ChaoticGoodServerListener>(
+        grpc_core::chaotic_good_legacy::ChaoticGoodServerListener>(
         grpc_core::Server::FromC(server), core_server->channel_args());
     std::string addr_str =
         *grpc_event_engine::experimental::ResolvedAddressToString(ee_addr);
