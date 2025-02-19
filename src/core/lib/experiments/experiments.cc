@@ -32,6 +32,9 @@ const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
+const char* const description_chaotic_good_framing_layer =
+    "Enable the chaotic good framing layer.";
+const char* const additional_constraints_chaotic_good_framing_layer = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -145,6 +148,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
+    {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
+     true},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -229,6 +235,9 @@ const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
+const char* const description_chaotic_good_framing_layer =
+    "Enable the chaotic good framing layer.";
+const char* const additional_constraints_chaotic_good_framing_layer = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -342,6 +351,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
+    {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
+     true},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -426,6 +438,9 @@ const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
+const char* const description_chaotic_good_framing_layer =
+    "Enable the chaotic good framing layer.";
+const char* const additional_constraints_chaotic_good_framing_layer = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -539,6 +554,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
+    {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
+     true},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
