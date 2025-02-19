@@ -711,14 +711,13 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 // return true for special interfaces
 // For Mac these interfaces are not allowed to bind and listen
 // these would not be used in below test
-static bool filter_special_interfaces(const char *ifname)
-{
+static bool FilterSpecialInterfaces(const char *ifname) {
   // skip unnamed interface
   if (!ifname) return true;
-  // skip utun[0-9] interface, Mac VPN interfaces 
-  if (strstr(ifname, "utun")) return true;
+  // skip utun[0-9] interface, Mac VPN interfaces
+  if (absl::StrContains(ifname, "utun")) return true;
   // skip awdl0 interface, Used for peer-peer b/w apple devices
-  if (strstr(ifname, "awdl")) return true;
+  if (absl::StrContains(ifname, "awdl")) return true;
   return false;
 }
 
@@ -761,7 +760,7 @@ TEST(TcpServerPosixTest, MainTest) {
          ifa_it = ifa_it->ifa_next) {
       if (ifa_it->ifa_addr == nullptr) {
         continue;
-      } else if (filter_special_interfaces(ifa_it->ifa_name)) {
+      } else if (FilterSpecialInterfaces(ifa_it->ifa_name)) {
         continue;
       } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
         dst_addrs->addrs[dst_addrs->naddrs].addr.len =
