@@ -135,7 +135,10 @@ class CallSpine final : public Party {
     DCHECK(GetContext<Activity>() == this);
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
-    return Map(std::move(promise), [this](ResultType r) { CancelIfFailed(r); });
+    return Map(std::move(promise),
+               [self = RefAsSubclass<CallSpine>()](ResultType r) {
+                 self->CancelIfFailed(r);
+               });
   }
 
   template <typename StatusType>
