@@ -102,7 +102,8 @@ auto ChaoticGoodServerTransport::DispatchFrame(
         return stream->call.SpawnWaitable(
             "push-frame", [this, stream, frame = std::move(frame),
                            transport = std::move(transport)]() mutable {
-              return TrySeq(
+              auto& call = stream->call;
+              return call.UntilCallCompletes(TrySeq(
                   frame.Payload(),
                   [transport = std::move(transport),
                    header = frame.header()](SliceBuffer payload) {
@@ -114,7 +115,7 @@ auto ChaoticGoodServerTransport::DispatchFrame(
                     return Map(call.CancelIfFails(PushFrameIntoCall(
                                    std::move(stream), std::move(frame))),
                                [](auto) { return absl::OkStatus(); });
-                  });
+                  }));
             });
       },
       []() { return absl::OkStatus(); });

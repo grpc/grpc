@@ -33,8 +33,8 @@ namespace grpc_core {
 //
 // Input:
 //
-// 1. A Loop combinator takes as input only one promise or promise factory.
-// 2. This input promise or promise factory should have a return type of either
+// 1. A Loop combinator takes as input only one promise factory.
+// 2. This input promise factory should have a return type of either
 //    a.  LoopCtl<T> which is an alias for std::variant<Continue, T>
 //    b.  Or Poll<LoopCtl<T>>
 //
@@ -123,6 +123,8 @@ struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
 template <typename F>
 class Loop {
  private:
+  static_assert(promise_detail::kIsRepeatedPromiseFactory<void, F>);
+
   using Factory = promise_detail::RepeatedPromiseFactory<void, F>;
   using PromiseType = decltype(std::declval<Factory>().Make());
   using PromiseResult = typename PromiseType::Result;

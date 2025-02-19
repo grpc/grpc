@@ -541,8 +541,6 @@ void StressTestAsserts(std::vector<Timestamp>& start_times,
 
   LOG(INFO) << "Small thread run time : " << fastest_thread_run_time;
 
-  // TODO(tjagtap) : Too many ways to check the same thing. Explore what we
-  // want to keep and what to remove. Just presenting all the options here.
   Duration total_sleep_time =
       Duration::Milliseconds(kNumThreads * kNumSpawns * average_sleep_ms);
   float run_time_by_sleep_time = 3.5;

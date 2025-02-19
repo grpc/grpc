@@ -118,12 +118,8 @@ struct SeqState<Traits, P, F0> {
   tail0:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&prior.current_promise, other.prior.current_promise);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -242,13 +238,8 @@ struct SeqState<Traits, P, F0, F1> {
   tail1:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&prior.prior.current_promise, other.prior.prior.current_promise);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -418,16 +409,8 @@ struct SeqState<Traits, P, F0, F1, F2> {
   tail2:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&prior.prior.prior.current_promise,
-              other.prior.prior.prior.current_promise);
-    Construct(&prior.prior.prior.next_factory,
-              other.prior.prior.prior.next_factory);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -646,18 +629,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   tail3:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&prior.prior.prior.prior.current_promise,
-              other.prior.prior.prior.prior.current_promise);
-    Construct(&prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.next_factory,
-              other.prior.prior.prior.next_factory);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -934,20 +907,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   tail4:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&prior.prior.prior.prior.prior.current_promise,
-              other.prior.prior.prior.prior.prior.current_promise);
-    Construct(&prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.next_factory,
-              other.prior.prior.prior.next_factory);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -1277,22 +1238,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   tail5:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&prior.prior.prior.prior.prior.prior.current_promise,
-              other.prior.prior.prior.prior.prior.prior.current_promise);
-    Construct(&prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.next_factory,
-              other.prior.prior.prior.next_factory);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -1677,24 +1624,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   tail6:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.current_promise,
-              other.prior.prior.prior.prior.prior.prior.prior.current_promise);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.next_factory,
-              other.prior.prior.prior.next_factory);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -2137,28 +2068,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   tail7:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.next_factory,
-              other.prior.prior.prior.next_factory);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -2661,33 +2572,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
   tail8:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.prior
-            .current_promise);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.prior
-            .next_factory);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.next_factory,
-              other.prior.prior.prior.next_factory);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -3253,37 +3139,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
   tail9:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                   .current_promise,
-              other.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .current_promise);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                   .next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next_factory);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.prior
-            .next_factory);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.next_factory,
-              other.prior.prior.prior.next_factory);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -3912,41 +3769,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
   tail10:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                   .current_promise,
-              other.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.current_promise);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                   .next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                   .next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next_factory);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.prior
-            .next_factory);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.next_factory,
-              other.prior.prior.prior.next_factory);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
@@ -4641,45 +4465,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
   tail11:
     Destruct(&prior.next_factory);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
-      : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                   .prior.current_promise,
-              other.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.current_promise);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                   .prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                   .next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                   .next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next_factory);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.prior
-            .next_factory);
-    Construct(
-        &prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
-        other.prior.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.prior.next_factory,
-              other.prior.prior.prior.prior.next_factory);
-    Construct(&prior.prior.prior.next_factory,
-              other.prior.prior.prior.next_factory);
-    Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
-    Construct(&prior.next_factory, other.prior.next_factory);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(
+      const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
