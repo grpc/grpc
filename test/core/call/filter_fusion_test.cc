@@ -297,9 +297,7 @@ TEST(FusedFilterTest, ClientFilterTest) {
       std::move(server_trailing_metadata_handle), &filter));
   RunSuccessfulPromise<ServerMetadata>(call.OnClientToServerHalfClose(
       std::move(server_trailing_metadata_handle_half_close)));
-  auto p = call.OnFinalize(&info, &filter)();
-  EXPECT_TRUE(p.ready());
-  EXPECT_EQ(*p.value(), &info);
+  call.OnFinalize(&info, &filter);
   EXPECT_THAT(history,
               ElementsAre("Test2::Call::OnClientToServerMessage",
                           "Test3::Call::OnClientToServerMessage",
@@ -356,9 +354,7 @@ TEST(FusedFilterTest, ServerFilterTest) {
       std::move(server_trailing_metadata_handle), &filter));
   RunSuccessfulPromise<ServerMetadata>(call.OnClientToServerHalfClose(
       std::move(server_trailing_metadata_handle_half_close)));
-  auto p = call.OnFinalize(&info, &filter)();
-  EXPECT_TRUE(p.ready());
-  EXPECT_EQ(*p.value(), &info);
+  call.OnFinalize(&info, &filter);
   EXPECT_THAT(history,
               ElementsAre("Test3::Call::OnClientToServerMessage",
                           "Test2::Call::OnClientToServerMessage",

@@ -73,7 +73,7 @@ class AdaptMethod<T, const NoInterceptor*, method> {
   auto operator()(Hdl<T> x) {
     return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
   }
-  auto operator()(T* x) { return Immediate<T*>(x); }
+  void operator()(T* /*x*/) {}
 };
 
 // Overrides for Filter methods with void Return types.
@@ -122,18 +122,13 @@ class AdaptMethod<T, void (Call::*)(A, Derived*), method,
   Derived* filter_;
 };
 
-template <class T>
-struct Void {
-  typedef void type;
-};
-
 // primary template handles types that have no nested ::Call member:
 template <class, class = void>
-struct has_call_member : std::false_type {};
+constexpr const bool kHasCallMember = false;
 
-// specialization recognizes types that do have a nested ::type member:
+// specialization recognizes types that have a nested ::Call member:
 template <class T>
-struct has_call_member<T, std::void_t<typename T::Call>> : std::true_type {};
+constexpr const bool kHasCallMember<T, std::void_t<typename T::Call>> = true;
 
 // Override for filter method types that take a pointer to the filter along
 // with another arbitrary pointer type. Expected to be used to handle
@@ -146,10 +141,7 @@ class AdaptMethod<
  public:
   explicit AdaptMethod(Call* call, Derived* filter)
       : call_(call), filter_(filter) {}
-  auto operator()(A* arg) {
-    (call_->*method)(arg, filter_);
-    return Immediate<A*>(arg);
-  }
+  void operator()(A* arg) { (call_->*method)(arg, filter_); }
 
  private:
   Call* call_;
@@ -179,13 +171,10 @@ class AdaptMethod<
 // Expected to be used to handle OnFinalize methods.
 template <typename A, typename Call, void (Call::*method)(const A*)>
 class AdaptMethod<A, void (Call::*)(const A*), method,
-                  std::enable_if_t<!has_call_member<A>::value, void>> {
+                  std::enable_if_t<!kHasCallMember<A>, void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/) : call_(call) {}
-  auto operator()(A* arg) {
-    (call_->*method)(arg);
-    return Immediate<A*>(arg);
-  }
+  void operator()(A* arg) { (call_->*method)(arg); }
 
  private:
   Call* call_;
@@ -194,7 +183,7 @@ class AdaptMethod<A, void (Call::*)(const A*), method,
 // Same as above with the const qualifiers removed.
 template <typename A, typename Call, void (Call::*method)(A*)>
 class AdaptMethod<A, void (Call::*)(A*), method,
-                  std::enable_if_t<!has_call_member<A>::value, void>> {
+                  std::enable_if_t<!kHasCallMember<A>, void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/) : call_(call) {}
   auto operator()(A* arg) {
@@ -628,27 +617,34 @@ auto ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
 
 // Combine the result of a series of OnFinalize filter methods into a single
 // method.
+template <typename Call, typename Derived, typename T>
+void ExecuteCombinedOnFinalizeWithChannelAccess(Call* /*call*/,
+                                                Derived* /*channel*/,
+                                                T* /*call_final_info*/,
+                                                Typelist<>, Valuelist<>,
+                                                std::index_sequence<>) {}
+
 template <typename Call, typename Derived, typename T, typename Filter0,
           typename... Filters, auto filter_method_0, auto... filter_methods,
           size_t I0, size_t... Is>
-auto ExecuteCombinedOnFinalizeWithChannelAccess(
+void ExecuteCombinedOnFinalizeWithChannelAccess(
     Call* call, Derived* channel, T* call_final_info,
     Typelist<Filter0, Filters...>,
     Valuelist<filter_method_0, filter_methods...>,
     std::index_sequence<I0, Is...>) {
-  return TrySeq(AdaptMethod<T, decltype(filter_method_0), filter_method_0>(
-                    call->template fused_child<I0>(),
-                    reinterpret_cast<Filter0*>(channel))(call_final_info),
-                AdaptMethod<T, decltype(filter_methods), filter_methods>(
-                    call->template fused_child<Is>(),
-                    reinterpret_cast<Filters*>(channel))...);
+  AdaptMethod<T, decltype(filter_method_0), filter_method_0>(
+      call->template fused_child<I0>(),
+      reinterpret_cast<Filter0*>(channel))(call_final_info);
+  ExecuteCombinedOnFinalizeWithChannelAccess(
+      call, channel, call_final_info, Typelist<Filters...>(),
+      Valuelist<filter_methods...>(), std::index_sequence<Is...>());
 }
 
 template <typename FilterMethods, typename FilterTypes, typename Call,
           typename Derived, typename T>
-auto ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
+void ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
                                       T* call_final_info) {
-  return ExecuteCombinedOnFinalizeWithChannelAccess(
+  ExecuteCombinedOnFinalizeWithChannelAccess(
       call, channel, call_final_info, typename FilterTypes::Types(),
       typename FilterMethods::Methods(), typename FilterMethods::Idxs());
 }
