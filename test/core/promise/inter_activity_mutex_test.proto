@@ -1,0 +1,51 @@
+// Copyright 2025 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package inter_activity_mutex_test;
+
+message Op {
+  message Poll {
+    uint32 id = 1;
+  }
+
+  message Drop {
+    uint32 id = 1;
+  }
+
+  message Acquire {
+    uint32 id = 1;
+  }
+
+  message AcquireWhen {
+    uint32 id = 1;
+    uint32 when = 2;
+  }
+
+  message DropLock {}
+
+  message SetLock {
+    uint32 value = 1;
+  }
+
+  oneof type {
+    Poll poll = 1;
+    Drop drop = 2;
+    Acquire acquire = 3;
+    AcquireWhen acquire_when = 4;
+    DropLock drop_lock = 5;
+    SetLock set_lock = 6;
+  }
+}
