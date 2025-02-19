@@ -57,11 +57,8 @@ struct JoinState<Traits, P0, P1> {
     Construct(&promise0, std::forward<P0>(p0));
     Construct(&promise1, std::forward<P1>(p1));
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) {
-    DCHECK(other.ready.none());
-    Construct(&promise0, other.promise0);
-    Construct(&promise1, other.promise1);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) =
+      delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
@@ -163,12 +160,8 @@ struct JoinState<Traits, P0, P1, P2> {
     Construct(&promise1, std::forward<P1>(p1));
     Construct(&promise2, std::forward<P2>(p2));
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) {
-    DCHECK(other.ready.none());
-    Construct(&promise0, other.promise0);
-    Construct(&promise1, other.promise1);
-    Construct(&promise2, other.promise2);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) =
+      delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
@@ -307,13 +300,8 @@ struct JoinState<Traits, P0, P1, P2, P3> {
     Construct(&promise2, std::forward<P2>(p2));
     Construct(&promise3, std::forward<P3>(p3));
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) {
-    DCHECK(other.ready.none());
-    Construct(&promise0, other.promise0);
-    Construct(&promise1, other.promise1);
-    Construct(&promise2, other.promise2);
-    Construct(&promise3, other.promise3);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) =
+      delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
@@ -488,14 +476,8 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
     Construct(&promise3, std::forward<P3>(p3));
     Construct(&promise4, std::forward<P4>(p4));
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) {
-    DCHECK(other.ready.none());
-    Construct(&promise0, other.promise0);
-    Construct(&promise1, other.promise1);
-    Construct(&promise2, other.promise2);
-    Construct(&promise3, other.promise3);
-    Construct(&promise4, other.promise4);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) =
+      delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
@@ -706,15 +688,8 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
     Construct(&promise4, std::forward<P4>(p4));
     Construct(&promise5, std::forward<P5>(p5));
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) {
-    DCHECK(other.ready.none());
-    Construct(&promise0, other.promise0);
-    Construct(&promise1, other.promise1);
-    Construct(&promise2, other.promise2);
-    Construct(&promise3, other.promise3);
-    Construct(&promise4, other.promise4);
-    Construct(&promise5, other.promise5);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) =
+      delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
@@ -961,16 +936,8 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
     Construct(&promise5, std::forward<P5>(p5));
     Construct(&promise6, std::forward<P6>(p6));
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) {
-    DCHECK(other.ready.none());
-    Construct(&promise0, other.promise0);
-    Construct(&promise1, other.promise1);
-    Construct(&promise2, other.promise2);
-    Construct(&promise3, other.promise3);
-    Construct(&promise4, other.promise4);
-    Construct(&promise5, other.promise5);
-    Construct(&promise6, other.promise6);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) =
+      delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
@@ -1253,17 +1220,8 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
     Construct(&promise6, std::forward<P6>(p6));
     Construct(&promise7, std::forward<P7>(p7));
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) {
-    DCHECK(other.ready.none());
-    Construct(&promise0, other.promise0);
-    Construct(&promise1, other.promise1);
-    Construct(&promise2, other.promise2);
-    Construct(&promise3, other.promise3);
-    Construct(&promise4, other.promise4);
-    Construct(&promise5, other.promise5);
-    Construct(&promise6, other.promise6);
-    Construct(&promise7, other.promise7);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) =
+      delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
@@ -1581,18 +1539,8 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
     Construct(&promise7, std::forward<P7>(p7));
     Construct(&promise8, std::forward<P8>(p8));
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) {
-    DCHECK(other.ready.none());
-    Construct(&promise0, other.promise0);
-    Construct(&promise1, other.promise1);
-    Construct(&promise2, other.promise2);
-    Construct(&promise3, other.promise3);
-    Construct(&promise4, other.promise4);
-    Construct(&promise5, other.promise5);
-    Construct(&promise6, other.promise6);
-    Construct(&promise7, other.promise7);
-    Construct(&promise8, other.promise8);
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) =
+      delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {

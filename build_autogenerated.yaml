@@ -12324,6 +12324,7 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   src:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
@@ -14782,6 +14783,19 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
+- name: party_mpsc_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/wait_set.h
+  src:
+  - test/core/promise/party_mpsc_test.cc
+  deps:
+  - gtest
+  - grpc_unsecure
   uses_polling: false
 - name: party_test
   gtest: true

@@ -793,4 +793,4 @@ using FusedServerFilter = filters_detail::FusedServerFilter<Filters...>;
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_CALL_FILTER_FUSION_H
