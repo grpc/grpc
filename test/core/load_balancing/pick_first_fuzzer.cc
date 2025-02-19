@@ -138,6 +138,86 @@ class Fuzzer {
     }
   }
 
+  void CheckCanBecomeReady() {
+    if (lb_policy_ == nullptr) return;
+    if (state_ == GRPC_CHANNEL_READY) return;
+    LOG(INFO) << "Checking that the policy can become READY";
+    ExecCtx exec_ctx;
+    // If the last update didn't contain any addresses, send an update
+    // with one address.
+    if (last_update_num_endpoints_ == 0) {
+      LOG(INFO) << "Last update has no endpoints; sending new update";
+      LoadBalancingPolicy::UpdateArgs update_args;
+      update_args.config = MakeLbConfig("{}").value();
+      update_args.addresses = std::make_shared<SingleEndpointIterator>(
+          EndpointAddresses(MakeAddress("ipv4:127.0.0.1:1024").value(),
+                            ChannelArgs()));
+      absl::Status status = lb_policy_->UpdateLocked(std::move(update_args));
+      LOG(INFO) << "UpdateLocked() returned status: " << status;
+    }
+    // Drain any subchannel connectivity state notifications that may be
+    // in the WorkSerializer queue.
+    event_engine_->TickUntilIdle();
+    // If LB policy is IDLE, trigger it to start connecting.
+    if (state_ == GRPC_CHANNEL_IDLE) lb_policy_->ExitIdleLocked();
+    // Find the first entry in the subchannel pool that actually has a
+    // subchannel.
+    SubchannelState* subchannel = nullptr;
+    for (auto& [_, subchannel_state] : subchannel_pool_) {
+      if (subchannel_state.num_subchannels() > 0) {
+        subchannel = &subchannel_state;
+        break;
+      }
+    }
+    CHECK_NE(subchannel, nullptr);
+    // Advance the subchannel through the connectivity states until it
+    // gets to READY.
+    LOG(INFO) << "Found subchannel for " << subchannel->address()
+              << ", current state is "
+              << ConnectivityStateName(subchannel->connectivity_state());
+    switch (subchannel->connectivity_state()) {
+      case GRPC_CHANNEL_TRANSIENT_FAILURE:
+        LOG(INFO) << "Advancing state to IDLE";
+        subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+        event_engine_->TickUntilIdle();
+        [[fallthrough]];
+      case GRPC_CHANNEL_IDLE:
+        LOG(INFO) << "Advancing state to CONNECTING";
+        subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+        event_engine_->TickUntilIdle();
+        [[fallthrough]];
+      case GRPC_CHANNEL_CONNECTING:
+        LOG(INFO) << "Advancing state to READY";
+        subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+        event_engine_->TickUntilIdle();
+        [[fallthrough]];
+      case GRPC_CHANNEL_READY:
+      default:
+        break;
+    }
+    // Make sure the LB policy is now reporting READY state.
+    ASSERT_EQ(state_, GRPC_CHANNEL_READY);
+    // Make sure the picker is returning the selected subchannel.
+    LOG(INFO) << "Checking pick result";
+    FakeMetadata md({});
+    FakeCallState call_state({});
+    auto result = picker_->Pick({"/service/method", &md, &call_state});
+    Match(
+        result.result,
+        [&](const LoadBalancingPolicy::PickResult::Complete& complete) {
+          EXPECT_EQ(complete.subchannel->address(), subchannel->address());
+        },
+        [&](const LoadBalancingPolicy::PickResult::Queue&) {
+          FAIL() << "Pick returned Queue";
+        },
+        [&](const LoadBalancingPolicy::PickResult::Fail& fail) {
+          FAIL() << "Pick returned Fail: " << fail.status;
+        },
+        [&](const LoadBalancingPolicy::PickResult::Drop& drop) {
+          FAIL() << "Pick returned Drop: " << drop.status;
+        });
+  }
+
  private:
   // Channel-level subchannel state for a specific address and channel args.
   // This is analogous to the real subchannel in the ClientChannel code.
@@ -285,6 +365,8 @@ class Fuzzer {
     grpc_connectivity_state connectivity_state() const {
       return state_tracker_.state();
     }
+
+    uint64_t num_subchannels() const { return num_subchannels_; }
 
     // Sets the connectivity state for this subchannel.  The updated state
     // will be reported to all associated SubchannelInterface objects.
@@ -464,6 +546,7 @@ class Fuzzer {
     lb_policy_ =
         CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
             "pick_first", std::move(args));
+    last_update_num_endpoints_ = 0;
   }
 
   bool Update(const pick_first_fuzzer::Update& update) {
@@ -472,11 +555,23 @@ class Fuzzer {
     if (!update_args.has_value()) return false;
     ExecCtx exec_ctx;
     absl::Status status = lb_policy_->UpdateLocked(std::move(*update_args));
-    LOG(INFO) << "Pick returned status: " << status;
+    LOG(INFO) << "UpdateLocked() returned status: " << status;
     return true;
   }
 
-  static std::optional<LoadBalancingPolicy::UpdateArgs> MakeUpdateArgs(
+  static std::optional<RefCountedPtr<LoadBalancingPolicy::Config>>
+  MakeLbConfig(absl::string_view config_string) {
+    auto json =
+        JsonParse(absl::StrCat("[{\"pick_first\":", config_string, "}]"));
+    if (!json.ok()) return std::nullopt;
+    auto config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            *json);
+    if (!config.ok()) return std::nullopt;
+    return *config;
+  }
+
+  std::optional<LoadBalancingPolicy::UpdateArgs> MakeUpdateArgs(
       const pick_first_fuzzer::Update& update) {
     LoadBalancingPolicy::UpdateArgs update_args;
     // Config.
@@ -485,21 +580,19 @@ class Fuzzer {
       case pick_first_fuzzer::Update::kConfigString:
         config_string = update.config_string();
         break;
-      case pick_first_fuzzer::Update::kConfigJson:
-        CHECK_OK(grpc::protobuf::json::MessageToJsonString(
+      case pick_first_fuzzer::Update::kConfigJson: {
+        auto status = grpc::protobuf::json::MessageToJsonString(
             update.config_json(), &config_string,
-            grpc::protobuf::json::JsonPrintOptions()));
+            grpc::protobuf::json::JsonPrintOptions());
+        if (!status.ok()) return std::nullopt;
         break;
+      }
       case pick_first_fuzzer::Update::CONFIG_ONEOF_NOT_SET:
+        config_string = "{}";
         break;
     }
-    auto json =
-        JsonParse(absl::StrCat("[{\"pick_first\":", config_string, "}]"));
-    if (!json.ok()) return std::nullopt;
-    auto config =
-        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            *json);
-    if (!config.ok()) return std::nullopt;
+    auto config = MakeLbConfig(config_string);
+    if (!config.has_value()) return std::nullopt;
     update_args.config = std::move(*config);
     // Addresses.
     if (update.has_endpoint_error()) {
@@ -507,8 +600,10 @@ class Fuzzer {
       if (status.ok()) return std::nullopt;
       update_args.addresses = std::move(status);
     } else {
+      auto endpoint_addresses_list = MakeEndpointList(update.endpoint_list());
+      last_update_num_endpoints_ = endpoint_addresses_list.size();
       update_args.addresses = std::make_shared<EndpointAddressesListIterator>(
-          MakeEndpointList(update.endpoint_list()));
+          std::move(endpoint_addresses_list));
     }
     // Channel args.
     update_args.args = CreateChannelArgsFromFuzzingConfiguration(
@@ -632,11 +727,11 @@ class Fuzzer {
     Match(
         result.result,
         [&](const LoadBalancingPolicy::PickResult::Complete& complete) {
+          CHECK_NE(complete.subchannel.get(), nullptr);
           LOG(INFO) << "Pick returned Complete: "
                     << complete.subchannel->address();
           EXPECT_EQ(state_, GRPC_CHANNEL_READY)
               << ConnectivityStateName(*state_);
-          EXPECT_NE(complete.subchannel, nullptr);
         },
         [&](const LoadBalancingPolicy::PickResult::Queue&) {
           LOG(INFO) << "Pick returned Queue";
@@ -662,6 +757,7 @@ class Fuzzer {
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
   uint64_t num_subchannels_ = 0;
   uint64_t num_subchannels_connecting_ = 0;
+  uint64_t last_update_num_endpoints_ = 0;
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
   std::string target_ = "dns:server.example.com";
   std::string authority_ = "server.example.com";
@@ -713,12 +809,13 @@ void Fuzz(const pick_first_fuzzer::Msg& message) {
   for (const auto& action : message.actions()) {
     fuzzer.Act(action);
   }
+  fuzzer.CheckCanBecomeReady();
 }
 FUZZ_TEST(PickFirstFuzzer, Fuzz)
     .WithDomains(::fuzztest::Arbitrary<pick_first_fuzzer::Msg>().WithSeeds(
         {ParseTestProto(kBasicCase)}));
 
-TEST(XdsClientFuzzer, IgnoresOkStatusForEndpointError) {
+TEST(PickFirstFuzzer, IgnoresOkStatusForEndpointError) {
   Fuzz(ParseTestProto(R"pb(
     actions { update { endpoint_error {} } }
   )pb"));
