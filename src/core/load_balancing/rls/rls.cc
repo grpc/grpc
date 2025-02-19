@@ -2055,12 +2055,11 @@ void RlsLb::ShutdownLocked() {
 }
 
 void RlsLb::UpdatePickerAsync() {
-  work_serializer()->Run(
-      [self = RefAsSubclass<RlsLb>(DEBUG_LOCATION, "UpdatePickerAsync")]()
-          mutable {
-        self->UpdatePickerLocked();
-        self.reset(DEBUG_LOCATION, "UpdatePickerAsync");
-      });
+  work_serializer()->Run([self = RefAsSubclass<RlsLb>(
+                              DEBUG_LOCATION, "UpdatePickerAsync")]() mutable {
+    self->UpdatePickerLocked();
+    self.reset(DEBUG_LOCATION, "UpdatePickerAsync");
+  });
 }
 
 void RlsLb::UpdatePickerLocked() {
