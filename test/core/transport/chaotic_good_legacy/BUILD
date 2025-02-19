@@ -18,7 +18,7 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 licenses(["notice"])
 
 grpc_package(
-    name = "test/core/transport/chaotic_good",
+    name = "test/core/transport/chaotic_good_legacy",
     visibility = "tests",
 )
 
