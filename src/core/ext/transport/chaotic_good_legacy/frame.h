@@ -186,7 +186,7 @@ using ServerFrame =
     std::variant<ServerInitialMetadataFrame, MessageFrame, BeginMessageFrame,
                  MessageChunkFrame, ServerTrailingMetadataFrame>;
 
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_FRAME_H

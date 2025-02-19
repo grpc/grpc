@@ -112,7 +112,7 @@ class MessageReassembly {
   std::unique_ptr<ChunkReceiver> chunk_receiver_;
 };
 
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_MESSAGE_REASSEMBLY_H

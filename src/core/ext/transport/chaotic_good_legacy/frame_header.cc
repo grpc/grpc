@@ -93,5 +93,5 @@ std::string FrameTypeString(FrameType type) {
   return absl::StrCat("Unknown[", static_cast<int>(type), "]");
 }
 
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core

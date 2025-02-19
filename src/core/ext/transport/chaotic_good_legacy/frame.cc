@@ -287,5 +287,5 @@ std::string MessageChunkFrame::ToString() const {
                       ", payload=", payload.Length(), "b}");
 }
 
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core

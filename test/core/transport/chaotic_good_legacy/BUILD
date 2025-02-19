@@ -292,8 +292,8 @@ grpc_fuzz_test(
         "gtest",
     ],
     deps = [
-        "//src/core:chaotic_good_legacy_config",
         "//src/core:chaotic_good_frame_cc_proto",
+        "//src/core:chaotic_good_legacy_config",
     ],
 )
 

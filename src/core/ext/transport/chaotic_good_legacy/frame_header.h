@@ -86,7 +86,7 @@ inline std::ostream& operator<<(std::ostream& out, const FrameHeader& h) {
   return out << h.ToString();
 }
 
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_FRAME_HEADER_H
