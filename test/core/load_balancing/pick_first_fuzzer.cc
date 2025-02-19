@@ -125,8 +125,9 @@ class Fuzzer {
         DoPick();
         break;
       case pick_first_fuzzer::Action::kTick:
-        event_engine_->TickForDuration(
-            Duration::Milliseconds(action.tick().ms()));
+        event_engine_->TickForDuration(Duration::Milliseconds(
+            // Cap to 10 hours.
+            std::min(action.tick().ms(), 36000000)));
         break;
       case pick_first_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;
