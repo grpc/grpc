@@ -136,9 +136,11 @@ void ChaoticGoodClientTransport::StreamDispatch::DispatchFrame(
       });
 }
 
-void ChaoticGoodClientTransport::StreamDispatch::UpdateMaxStreamId(uint32_t stream_id) {
+void ChaoticGoodClientTransport::StreamDispatch::UpdateMaxStreamId(
+    uint32_t stream_id) {
   MutexLock lock(&mu_);
-  if (max_stream_id_ < stream_id) waiting_for_stream_flow_control_.WakeupAsync();
+  if (max_stream_id_ < stream_id)
+    waiting_for_stream_flow_control_.WakeupAsync();
   max_stream_id_ = stream_id;
 }
 
@@ -162,18 +164,20 @@ void ChaoticGoodClientTransport::StreamDispatch::OnIncomingFrame(
       break;
     case FrameType::kServerSetNewStreamState:
       transport_frame_serializer_->Spawn(
-        [this, incoming_frame = std::move(incoming_frame)]() mutable {
-          return Map(TrySeq(
-            incoming_frame.Payload(),
-            [this](Frame frame) {
-              UpdateMaxStreamId(std::get<ServerSetNewStreamStateFrame>(frame).body.max_stream_id());
-              return absl::OkStatus();
-            }
-          ), [self = RefAsSubclass<StreamDispatch>()](absl::Status status) {
-            if (!status.ok()) self->OnFrameTransportClosed(std::move(status));
+          [this, incoming_frame = std::move(incoming_frame)]() mutable {
+            return Map(
+                TrySeq(incoming_frame.Payload(),
+                       [this](Frame frame) {
+                         UpdateMaxStreamId(
+                             std::get<ServerSetNewStreamStateFrame>(frame)
+                                 .body.max_stream_id());
+                         return absl::OkStatus();
+                       }),
+                [self = RefAsSubclass<StreamDispatch>()](absl::Status status) {
+                  if (!status.ok())
+                    self->OnFrameTransportClosed(std::move(status));
+                });
           });
-        }
-      );
       break;
     default:
       LOG_EVERY_N_SEC(INFO, 10)
@@ -283,6 +287,9 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }
 
 void ChaoticGoodClientTransport::Orphan() {
+  stream_dispatch_->OnFrameTransportClosed(
+      absl::UnavailableError("Transport closed"));
+  party_.reset();
   frame_transport_.reset();
   Unref();
 }

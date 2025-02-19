@@ -97,6 +97,7 @@ void ChaoticGoodServerTransport::StreamDispatch::DispatchFrame(
   if (stream == nullptr) return;
   stream->spawn_serializer->Spawn(
       [this, stream, frame = std::move(frame)]() mutable {
+        DCHECK_NE(stream.get(), nullptr);
         auto& call = stream->call;
         return call.CancelIfFails(call.UntilCallCompletes(TrySeq(
             frame.Payload(),
@@ -195,13 +196,20 @@ auto ChaoticGoodServerTransport::StreamDispatch::ProcessNextFrame(
   return Switch(
       incoming_frame.header().type,
       Case<FrameType::kClientInitialMetadata>([&, this]() {
-        return DiscardResult(TrySeq(
-            incoming_frame.Payload(),
-            [this, header = incoming_frame.header()](Frame frame) mutable {
-              return NewStream(
-                  header.stream_id,
-                  std::move(absl::get<ClientInitialMetadataFrame>(frame)));
-            }));
+        return Map(
+            TrySeq(
+                incoming_frame.Payload(),
+                [this, header = incoming_frame.header()](Frame frame) mutable {
+                  return NewStream(
+                      header.stream_id,
+                      std::move(absl::get<ClientInitialMetadataFrame>(frame)));
+                }),
+            [](absl::Status status) {
+              if (!status.ok()) {
+                LOG(ERROR) << "Failed to process client initial metadata: "
+                           << status;
+              }
+            });
       }),
       Case<FrameType::kMessage>([&, this]() mutable {
         DispatchFrame<MessageFrame>(std::move(incoming_frame));
@@ -221,7 +229,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::ProcessNextFrame(
             << "Cancel stream " << incoming_frame.header().stream_id
             << (stream != nullptr ? " (active)" : " (not found)");
         if (stream == nullptr) return;
-        auto c = std::move(stream->call);
+        auto& c = stream->call;
         c.SpawnInfallible("cancel", [c]() mutable { c.Cancel(); });
       }),
       Default([&]() {
@@ -232,13 +240,18 @@ auto ChaoticGoodServerTransport::StreamDispatch::ProcessNextFrame(
 
 void ChaoticGoodServerTransport::StreamDispatch::OnIncomingFrame(
     IncomingFrame incoming_frame) {
-  incoming_frame_spawner_->Spawn(ProcessNextFrame(std::move(incoming_frame)));
+  incoming_frame_spawner_->Spawn(
+      [self = RefAsSubclass<StreamDispatch>(),
+       incoming_frame = std::move(incoming_frame)]() mutable {
+        return self->ProcessNextFrame(std::move(incoming_frame));
+      });
 }
 
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     const ChannelArgs& args, OrphanablePtr<FrameTransport> frame_transport,
     MessageChunker message_chunker, FlowControlConfig flow_control_config)
-    : state_{std::make_unique<ConstructionParameters>(args, message_chunker, flow_control_config)},
+    : state_{std::make_unique<ConstructionParameters>(args, message_chunker,
+                                                      flow_control_config)},
       frame_transport_(std::move(frame_transport)) {}
 
 ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
@@ -253,8 +266,11 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
               ->CreateMemoryAllocator("chaotic-good"),
           1024)),
       call_destination_(std::move(call_destination)),
-      message_chunker_(message_chunker), flow_control_config_(flow_control_config),
-     max_concurrent_streams_(std::max<int>(1, args.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS).value_or(std::numeric_limits<int>::max()))) {
+      message_chunker_(message_chunker),
+      flow_control_config_(flow_control_config),
+      max_concurrent_streams_(
+          std::max<int>(1, args.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS)
+                               .value_or(std::numeric_limits<int>::max()))) {
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
@@ -272,7 +288,8 @@ void ChaoticGoodServerTransport::SetCallDestination(
   state_ = MakeRefCounted<StreamDispatch>(
       construction_parameters->args, frame_transport_.get(),
       construction_parameters->message_chunker,
-      construction_parameters->flow_control_config, std::move(call_destination));
+      construction_parameters->flow_control_config,
+      std::move(call_destination));
 }
 
 void ChaoticGoodServerTransport::Orphan() {
@@ -343,8 +360,6 @@ ChaoticGoodServerTransport::StreamDispatch::ExtractStream(uint32_t stream_id) {
 
 absl::Status ChaoticGoodServerTransport::StreamDispatch::AddStream(
     uint32_t stream_id, CallInitiator call_initiator) {
-  GRPC_TRACE_LOG(chaotic_good, INFO)
-      << "CHAOTIC_GOOD " << this << " NewStream " << stream_id;
   MutexLock lock(&mu_);
   if (stream_id <= last_seen_new_stream_id_) {
     return absl::InternalError("Stream id is not increasing");

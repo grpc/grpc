@@ -484,7 +484,7 @@ class StreamWriteContext {
                 .Add(s_->flow_control.stats())
                 .Add(write_stats));
       }
-    } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
+    } else {
       auto* call_tracer =
           s_->arena->GetContext<grpc_core::CallTracerInterface>();
       if (call_tracer != nullptr && call_tracer->IsSampled()) {
@@ -646,7 +646,7 @@ class StreamWriteContext {
                 .Add(s_->t->flow_control.stats())
                 .Add(s_->flow_control.stats()));
       }
-    } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
+    } else {
       auto* call_tracer =
           s_->arena->GetContext<grpc_core::CallTracerInterface>();
       if (call_tracer != nullptr && call_tracer->IsSampled()) {

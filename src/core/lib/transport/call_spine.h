@@ -135,7 +135,10 @@ class CallSpine final : public Party {
     DCHECK(GetContext<Activity>() == this);
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
-    return Map(std::move(promise), [this](ResultType r) { CancelIfFailed(r); });
+    return Map(std::move(promise),
+               [self = RefAsSubclass<CallSpine>()](ResultType r) {
+                 self->CancelIfFailed(r);
+               });
   }
 
   template <typename StatusType>
@@ -318,39 +321,56 @@ class CallInitiator {
 
   CallInitiator() = default;
   explicit CallInitiator(RefCountedPtr<CallSpine> spine)
-      : spine_(std::move(spine)) {}
+      : spine_(std::move(spine)) {
+    DCHECK_NE(spine_.get(), nullptr);
+  }
 
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
+    DCHECK_NE(spine_.get(), nullptr);
     return spine_->CancelIfFails(std::move(promise));
   }
 
   auto PullServerInitialMetadata() {
+    DCHECK_NE(spine_.get(), nullptr);
     return spine_->PullServerInitialMetadata();
   }
 
   auto PushMessage(MessageHandle message) {
+    DCHECK_NE(spine_.get(), nullptr);
     return spine_->PushClientToServerMessage(std::move(message));
   }
 
   void SpawnPushMessage(MessageHandle message) {
+    DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnPushClientToServerMessage(std::move(message));
   }
 
-  void FinishSends() { spine_->FinishSends(); }
+  void FinishSends() {
+    DCHECK_NE(spine_.get(), nullptr);
+    spine_->FinishSends();
+  }
 
-  void SpawnFinishSends() { spine_->SpawnFinishSends(); }
+  void SpawnFinishSends() {
+    DCHECK_NE(spine_.get(), nullptr);
+    spine_->SpawnFinishSends();
+  }
 
-  auto PullMessage() { return spine_->PullServerToClientMessage(); }
+  auto PullMessage() {
+    DCHECK_NE(spine_.get(), nullptr);
+    return spine_->PullServerToClientMessage();
+  }
 
   auto PullServerTrailingMetadata() {
+    DCHECK_NE(spine_.get(), nullptr);
     return spine_->PullServerTrailingMetadata();
   }
 
   void Cancel(absl::Status error) {
+    DCHECK_NE(spine_.get(), nullptr);
     CHECK(!error.ok());
     auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
@@ -358,52 +378,72 @@ class CallInitiator {
   }
 
   void SpawnCancel(absl::Status error) {
+    DCHECK_NE(spine_.get(), nullptr);
     CHECK(!error.ok());
     auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->SpawnPushServerTrailingMetadata(std::move(status));
   }
 
-  void Cancel() { spine_->Cancel(); }
+  void Cancel() {
+    DCHECK_NE(spine_.get(), nullptr);
+    spine_->Cancel();
+  }
 
-  void SpawnCancel() { spine_->SpawnCancel(); }
+  void SpawnCancel() {
+    DCHECK_NE(spine_.get(), nullptr);
+    spine_->SpawnCancel();
+  }
 
   GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+    DCHECK_NE(spine_.get(), nullptr);
     return spine_->OnDone(std::move(fn));
   }
 
   template <typename Promise>
   auto UntilCallCompletes(Promise promise) {
+    DCHECK_NE(spine_.get(), nullptr);
     return spine_->UntilCallCompletes(std::move(promise));
   }
 
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnGuarded(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
   void SpawnGuardedUntilCallCompletes(absl::string_view name,
                                       PromiseFactory promise_factory) {
+    DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
   void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
   auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+    DCHECK_NE(spine_.get(), nullptr);
     return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
   bool WasCancelledPushed() const {
+    DCHECK_NE(spine_.get(), nullptr);
     return spine_->call_filters().WasCancelledPushed();
   }
 
-  Arena* arena() { return spine_->arena(); }
-  Party* party() { return spine_.get(); }
+  Arena* arena() {
+    DCHECK_NE(spine_.get(), nullptr);
+    return spine_->arena();
+  }
+  Party* party() {
+    DCHECK_NE(spine_.get(), nullptr);
+    return spine_.get();
+  }
 
  private:
   friend class CallHandler;
@@ -553,7 +593,6 @@ class UnstartedCallHandler {
   }
 
   CallHandler StartCall() {
-    LOG(INFO) << "start: " << spine_.get();
     spine_->call_filters().Start();
     return CallHandler(std::move(spine_));
   }

@@ -684,12 +684,10 @@ class RlsLb final : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  // Returns a new picker to the channel to trigger reprocessing of
-  // pending picks.  Schedules the actual picker update on the ExecCtx
-  // to be run later, so it's safe to invoke this while holding the lock.
+  // Schedules a call to UpdatePickerLocked() on the WorkSerializer.
+  // The call will be run asynchronously, so it's safe to invoke this
+  // while holding the lock.
   void UpdatePickerAsync();
-  // Hops into work serializer and calls UpdatePickerLocked().
-  static void UpdatePickerCallback(void* arg, grpc_error_handle error);
   // Updates the picker in the work serializer.
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
@@ -2057,23 +2055,10 @@ void RlsLb::ShutdownLocked() {
 }
 
 void RlsLb::UpdatePickerAsync() {
-  // Run via the ExecCtx, since the caller may be holding the lock, and
-  // we don't want to be doing that when we hop into the WorkSerializer,
-  // in case the WorkSerializer callback happens to run inline.
-  ExecCtx::Run(
-      DEBUG_LOCATION,
-      GRPC_CLOSURE_CREATE(UpdatePickerCallback,
-                          Ref(DEBUG_LOCATION, "UpdatePickerCallback").release(),
-                          grpc_schedule_on_exec_ctx),
-      absl::OkStatus());
-}
-
-void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
-  auto* rls_lb = static_cast<RlsLb*>(arg);
-  rls_lb->work_serializer()->Run([rls_lb]() {
-    RefCountedPtr<RlsLb> lb_policy(rls_lb);
-    lb_policy->UpdatePickerLocked();
-    lb_policy.reset(DEBUG_LOCATION, "UpdatePickerCallback");
+  work_serializer()->Run([self = RefAsSubclass<RlsLb>(
+                              DEBUG_LOCATION, "UpdatePickerAsync")]() mutable {
+    self->UpdatePickerLocked();
+    self.reset(DEBUG_LOCATION, "UpdatePickerAsync");
   });
 }
 

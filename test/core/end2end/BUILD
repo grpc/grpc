@@ -284,7 +284,10 @@ grpc_core_end2end_test(
     shard_count = 5,
 )
 
-grpc_core_end2end_test(name = "max_concurrent_streams")
+grpc_core_end2end_test(
+    name = "max_concurrent_streams",
+    shard_count = 5,
+)
 
 grpc_core_end2end_test(name = "max_connection_age")
 
@@ -480,10 +483,10 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:sockaddr_utils",
         "//src/core:error",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:iomgr_port",
-        "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],
 )
