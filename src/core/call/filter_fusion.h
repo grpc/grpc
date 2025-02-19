@@ -617,27 +617,17 @@ auto ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
 
 // Combine the result of a series of OnFinalize filter methods into a single
 // method.
-template <typename Call, typename Derived, typename T>
-void ExecuteCombinedOnFinalizeWithChannelAccess(Call* /*call*/,
-                                                Derived* /*channel*/,
-                                                T* /*call_final_info*/,
-                                                Typelist<>, Valuelist<>,
-                                                std::index_sequence<>) {}
-
-template <typename Call, typename Derived, typename T, typename Filter0,
-          typename... Filters, auto filter_method_0, auto... filter_methods,
-          size_t I0, size_t... Is>
-void ExecuteCombinedOnFinalizeWithChannelAccess(
-    Call* call, Derived* channel, T* call_final_info,
-    Typelist<Filter0, Filters...>,
-    Valuelist<filter_method_0, filter_methods...>,
-    std::index_sequence<I0, Is...>) {
-  AdaptMethod<T, decltype(filter_method_0), filter_method_0>(
-      call->template fused_child<I0>(),
-      reinterpret_cast<Filter0*>(channel))(call_final_info);
-  ExecuteCombinedOnFinalizeWithChannelAccess(
-      call, channel, call_final_info, Typelist<Filters...>(),
-      Valuelist<filter_methods...>(), std::index_sequence<Is...>());
+template <typename Call, typename Derived, typename T, typename... Filters,
+          auto... filter_methods, size_t... Is>
+void ExecuteCombinedOnFinalizeWithChannelAccess(Call* call, Derived* channel,
+                                                T* call_final_info,
+                                                Typelist<Filters...>,
+                                                Valuelist<filter_methods...>,
+                                                std::index_sequence<Is...>) {
+  (AdaptMethod<T, decltype(filter_methods), filter_methods>(
+       call->template fused_child<Is>(),
+       reinterpret_cast<Filters*>(channel))(call_final_info),
+   ...);
 }
 
 template <typename FilterMethods, typename FilterTypes, typename Call,
