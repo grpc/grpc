@@ -156,11 +156,11 @@ auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
           call_initiator.PullServerTrailingMetadata(),
           // Capture the call_initiator to ensure the underlying call_spine
           // is alive until the SendFragment promise completes.
-          [self = RefAsSubclass<StreamDispatch>(), stream_id](ServerMetadataHandle md) mutable {
+          [this, stream_id](ServerMetadataHandle md) mutable {
             ServerTrailingMetadataFrame frame;
             frame.body = ServerMetadataProtoFromGrpc(*md);
             frame.stream_id = stream_id;
-            return self->outgoing_frames_.Send(std::move(frame));
+            return outgoing_frames_.Send(std::move(frame));
           }));
 }
 
