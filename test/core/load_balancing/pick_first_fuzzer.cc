@@ -525,11 +525,25 @@ class Fuzzer {
     return address;
   }
 
+  static std::optional<std::string> AddressUriFromProto(
+      const pick_first_fuzzer::Address& address_proto) {
+    switch (address_proto.type_case()) {
+      case pick_first_fuzzer::Address::kUri:
+        return address_proto.uri();
+      case pick_first_fuzzer::Address::kLocalhostPort:
+        return absl::StrCat("ipv4:127.0.0.1:", address_proto.localhost_port());
+      case pick_first_fuzzer::Address::TYPE_NOT_SET:
+        return std::nullopt;
+    }
+  }
+
   static std::vector<grpc_resolved_address> MakeAddressList(
       const pick_first_fuzzer::EndpointList::Endpoint& endpoint) {
     std::vector<grpc_resolved_address> addresses;
-    for (const auto& uri : endpoint.address_uris()) {
-      auto address = MakeAddress(uri);
+    for (const auto& address_proto : endpoint.addresses()) {
+      auto address_uri = AddressUriFromProto(address_proto);
+      if (!address_uri.has_value()) continue;
+      auto address = MakeAddress(*address_uri);
       if (address.has_value()) addresses.push_back(*address);
     }
     return addresses;
@@ -572,14 +586,16 @@ class Fuzzer {
     grpc_connectivity_state new_state =
         static_cast<grpc_connectivity_state>(notification.state());
     if (new_state >= GRPC_CHANNEL_SHUTDOWN) return;
-    auto address = MakeAddress(notification.address_uri());
+    auto address_uri = AddressUriFromProto(notification.address());
+    if (!address_uri.has_value()) return;
+    auto address = MakeAddress(*address_uri);
     if (!address.has_value()) return;
     ChannelArgs args = CreateChannelArgsFromFuzzingConfiguration(
         notification.channel_args(), FuzzingEnvironment());
     SubchannelKey key(*address, args);
     auto [it, created] = subchannel_pool_.emplace(
         std::piecewise_construct, std::forward_as_tuple(key),
-        std::forward_as_tuple(notification.address_uri(), this));
+        std::forward_as_tuple(*address_uri, this));
     auto& subchannel_state = it->second;
     // Set the state only if the subchannel was just created or it's a
     // valid state transition from its current state.
@@ -661,9 +677,9 @@ static const char* kBasicCase = R"pb(
   actions {
     update {
       endpoint_list {
-        endpoints { address_uris: "ipv4:127.0.0.1:1024" }
-        endpoints { address_uris: "ipv4:127.0.0.2:1024" }
-        endpoints { address_uris: "ipv4:127.0.0.3:1024" }
+        endpoints { addresses { uri: "ipv4:127.0.0.1:1024" } }
+        endpoints { addresses { uri: "ipv4:127.0.0.2:1024" } }
+        endpoints { addresses { uri: "ipv4:127.0.0.3:1024" } }
       }
     }
   }
@@ -671,7 +687,7 @@ static const char* kBasicCase = R"pb(
   actions { do_pick {} }
   actions {
     subchannel_connectivity_notification {
-      address_uri: "ipv4:127.0.0.1:1024"
+      address { uri: "ipv4:127.0.0.1:1024" }
       state: CONNECTING
     }
   }
@@ -679,7 +695,7 @@ static const char* kBasicCase = R"pb(
   actions { do_pick {} }
   actions {
     subchannel_connectivity_notification {
-      address_uri: "ipv4:127.0.0.1:1024"
+      address { uri: "ipv4:127.0.0.1:1024" }
       state: READY
     }
   }

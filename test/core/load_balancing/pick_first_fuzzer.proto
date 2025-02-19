@@ -30,9 +30,16 @@ message Status {
   string message = 2;
 }
 
+message Address {
+  oneof type {
+    int32 localhost_port = 1;  // ipv4:127.0.0.1:${localhost_port}
+    string uri = 2;
+  }
+}
+
 message EndpointList {
   message Endpoint {
-    repeated string address_uris = 1;
+    repeated Address addresses = 1;
     grpc.testing.FuzzingChannelArgs channel_args = 2;
   }
   repeated Endpoint endpoints = 1;
@@ -55,7 +62,7 @@ message Update {
 }
 
 message SubchannelConnectivityNotification {
-  string address_uri = 1;
+  Address address = 1;
   grpc.testing.FuzzingChannelArgs channel_args = 2;
 
   // The numeric values here must match those in
