@@ -204,8 +204,10 @@ auto ChaoticGoodServerTransport::StreamDispatch::ProcessNextFrame(
                       std::move(absl::get<ClientInitialMetadataFrame>(frame)));
                 }),
             [](absl::Status status) {
-              LOG(ERROR) << "Failed to process client initial metadata: "
-                         << status;
+              if (!status.ok()) {
+                LOG(ERROR) << "Failed to process client initial metadata: "
+                           << status;
+              }
             });
       }),
       Case<FrameType::kMessage>([&, this]() mutable {

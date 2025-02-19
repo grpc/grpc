@@ -553,7 +553,6 @@ class UnstartedCallHandler {
   }
 
   CallHandler StartCall() {
-    LOG(INFO) << "start: " << spine_.get();
     spine_->call_filters().Start();
     return CallHandler(std::move(spine_));
   }
