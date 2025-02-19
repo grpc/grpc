@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_CHAOTIC_GOOD_CONNECTOR_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_CHAOTIC_GOOD_CONNECTOR_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CLIENT_CHAOTIC_GOOD_CONNECTOR_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CLIENT_CHAOTIC_GOOD_CONNECTOR_H
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
@@ -98,4 +98,4 @@ class ChaoticGoodConnector final : public SubchannelConnector {
 grpc_channel* grpc_chaotic_good_legacy_channel_create(
     const char* target, const grpc_channel_args* args);
 
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_CHAOTIC_GOOD_CONNECTOR_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CLIENT_CHAOTIC_GOOD_CONNECTOR_H
