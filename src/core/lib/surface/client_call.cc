@@ -410,8 +410,8 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
     message_slice = message->Ref();
   }
   if (status == GRPC_STATUS_DEADLINE_EXCEEDED) {
-    if (auto* delay_tracker =
-            server_trailing_metadata->get_pointer(GrpcDelayTracker());
+    // FIXME: include total duration of RPC
+    if (auto* delay_tracker = arena()->GetContext<DelayTracker>();
         delay_tracker != nullptr) {
       message_slice = Slice::FromCopiedString(
           absl::StrCat(message_slice.empty() ? "Deadline Exceeded"

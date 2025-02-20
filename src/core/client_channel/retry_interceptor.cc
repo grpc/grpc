@@ -284,10 +284,10 @@ RetryInterceptor::Attempt::Attempt(RefCountedPtr<Call> call)
 
 RetryInterceptor::Attempt::~Attempt() { call_->RemoveAttempt(this); }
 
-// Extracts the DelayTracker from the attempt's server trailing metadata
-// and adds it as a child to the DelayTracker in the parent call context.
-void RetryInterceptor::Attempt::PropagateChildDelayTracker(ServerMetadata& md) {
-  if (DelayTracker* attempt_tracker = md.get_pointer(GrpcDelayTracker());
+// Gets the DelayTracker from the attempt's call context and adds it as a
+// child to the DelayTracker in the parent call context.
+void RetryInterceptor::Attempt::PropagateChildDelayTracker() {
+  if (auto* attempt_tracker = initiator_.arena()->GetContext<DelayTracker>();
       attempt_tracker != nullptr) {
     std::string msg =
         absl::StrCat("retry attempt ", call_->num_attempts_completed());
@@ -325,7 +325,7 @@ auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
                          << call->DebugTag()
                          << " got server trailing metadata: "
                          << md->DebugString();
-                     self->PropagateChildDelayTracker(*md);
+                     self->PropagateChildDelayTracker();
                      call->call_handler()->SpawnPushServerTrailingMetadata(
                          std::move(md));
                      return absl::OkStatus();
@@ -342,7 +342,7 @@ auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
         GRPC_TRACE_LOG(retry, INFO)
             << self->DebugTag()
             << " got server trailing metadata: " << md->DebugString();
-        self->PropagateChildDelayTracker(*md);
+        self->PropagateChildDelayTracker();
         auto delay = self->call_->ShouldRetry(
             *md,
             [self = self.get()]() -> std::string { return self->DebugTag(); });
