@@ -50,7 +50,6 @@
 
 using testing::_;
 using testing::MockFunction;
-using testing::Return;
 using testing::StrictMock;
 using testing::WithArgs;
 

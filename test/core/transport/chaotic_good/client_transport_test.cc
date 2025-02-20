@@ -48,7 +48,6 @@
 #include "test/core/transport/chaotic_good/transport_test.h"
 
 using testing::MockFunction;
-using testing::Return;
 using testing::StrictMock;
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
