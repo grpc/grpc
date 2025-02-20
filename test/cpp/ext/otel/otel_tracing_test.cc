@@ -121,11 +121,12 @@ class OTelTracingTest : public ::testing::Test {
       auto current_spans = data_->GetSpans();
       spans.insert(spans.end(), std::make_move_iterator(current_spans.begin()),
                    std::make_move_iterator(current_spans.end()));
-      if (absl::Now() - start_time > timeout) {
+      if ((spans.size() == expected_size) ||
+          (absl::Now() - start_time > timeout)) {
         break;
       }
       std::this_thread::yield();
-    } while (spans.size() != expected_size);
+    } while (true);
     return spans;
   }
 
