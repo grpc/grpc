@@ -633,17 +633,16 @@ void ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
       typename FilterMethods::Methods(), typename FilterMethods::Idxs());
 }
 
-#define GRPC_FUSE_METHOD(name, type, forward, prefix)                         \
+#define GRPC_FUSE_METHOD(name, type, forward)                                 \
   template <MethodVariant variant, typename Derived, typename... Filters>     \
-  class FuseImpl##prefix##name;                                               \
+  class FuseImpl##name;                                                       \
   template <typename Derived, typename... Filters>                            \
-  class FuseImpl##prefix##name<MethodVariant::kNoInterceptor, Derived,        \
-                               Filters...> {                                  \
+  class FuseImpl##name<MethodVariant::kNoInterceptor, Derived, Filters...> {  \
    public:                                                                    \
     static inline const NoInterceptor name;                                   \
   };                                                                          \
   template <typename Derived, typename... Filters>                            \
-  class FuseImpl##prefix##name<MethodVariant::kSimple, Derived, Filters...> { \
+  class FuseImpl##name<MethodVariant::kSimple, Derived, Filters...> {         \
    public:                                                                    \
     auto name(type x) {                                                       \
       return ExecuteCombined<typename ForwardOrReverse<                       \
@@ -652,8 +651,7 @@ void ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
     }                                                                         \
   };                                                                          \
   template <typename Derived, typename... Filters>                            \
-  class FuseImpl##prefix##name<MethodVariant::kChannelAccess, Derived,        \
-                               Filters...> {                                  \
+  class FuseImpl##name<MethodVariant::kChannelAccess, Derived, Filters...> {  \
    public:                                                                    \
     auto name(type x, Derived* channel) {                                     \
       return ExecuteCombinedWithChannelAccess<                                \
@@ -664,112 +662,82 @@ void ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
     }                                                                         \
   };                                                                          \
   template <typename Derived, typename... Filters>                            \
-  using Fuse##prefix##name = FuseImpl##prefix##name<                          \
-      MethodVariantForFilters<&Filters::Call::name...>(), Derived, Filters...>
+  using Fuse##name =                                                          \
+      FuseImpl##name<MethodVariantForFilters<&Filters::Call::name...>(),      \
+                     Derived, Filters...>
 
-GRPC_FUSE_METHOD(OnClientInitialMetadata, ClientMetadataHandle, true,
-                 ClientFilter);
-GRPC_FUSE_METHOD(OnClientInitialMetadata, ClientMetadataHandle, false,
-                 ServerFilter);
-GRPC_FUSE_METHOD(OnServerInitialMetadata, ServerMetadataHandle, true,
-                 ClientFilter);
-GRPC_FUSE_METHOD(OnServerInitialMetadata, ServerMetadataHandle, false,
-                 ServerFilter);
-GRPC_FUSE_METHOD(OnClientToServerMessage, MessageHandle, true, ClientFilter);
-GRPC_FUSE_METHOD(OnClientToServerMessage, MessageHandle, false, ServerFilter);
-GRPC_FUSE_METHOD(OnServerToClientMessage, MessageHandle, true, ClientFilter);
-GRPC_FUSE_METHOD(OnServerToClientMessage, MessageHandle, false, ServerFilter);
-GRPC_FUSE_METHOD(OnServerTrailingMetadata, ServerMetadataHandle, true,
-                 ClientFilter);
-GRPC_FUSE_METHOD(OnServerTrailingMetadata, ServerMetadataHandle, false,
-                 ServerFilter);
-GRPC_FUSE_METHOD(OnClientToServerHalfClose, ServerMetadataHandle, true,
-                 ClientFilter);
-GRPC_FUSE_METHOD(OnClientToServerHalfClose, ServerMetadataHandle, false,
-                 ServerFilter);
-GRPC_FUSE_METHOD(OnFinalize, grpc_call_final_info*, true, ClientFilter);
-GRPC_FUSE_METHOD(OnFinalize, grpc_call_final_info*, false, ServerFilter);
+GRPC_FUSE_METHOD(OnClientInitialMetadata, ClientMetadataHandle, true);
+GRPC_FUSE_METHOD(OnServerInitialMetadata, ServerMetadataHandle, false);
+GRPC_FUSE_METHOD(OnClientToServerMessage, MessageHandle, true);
+GRPC_FUSE_METHOD(OnServerToClientMessage, MessageHandle, false);
+GRPC_FUSE_METHOD(OnServerTrailingMetadata, ServerMetadataHandle, false);
+GRPC_FUSE_METHOD(OnClientToServerHalfClose, ServerMetadataHandle, true);
+GRPC_FUSE_METHOD(OnFinalize, grpc_call_final_info*, true);
 
 #undef GRPC_FUSE_METHOD
 
-#define GRPC_FUSED_FILTER(prefix, forward)                                     \
-  template <typename... Filters>                                               \
-  class Fused##prefix : public Filters... {                                    \
-   public:                                                                     \
-    class Call : public Fuse##prefix##OnClientInitialMetadata<Fused##prefix,   \
-                                                              Filters...>,     \
-                 public Fuse##prefix##OnServerInitialMetadata<Fused##prefix,   \
-                                                              Filters...>,     \
-                 public Fuse##prefix##OnClientToServerMessage<Fused##prefix,   \
-                                                              Filters...>,     \
-                 public Fuse##prefix##OnServerToClientMessage<Fused##prefix,   \
-                                                              Filters...>,     \
-                 public Fuse##prefix##OnServerTrailingMetadata<Fused##prefix,  \
-                                                               Filters...>,    \
-                 public Fuse##prefix##OnClientToServerHalfClose<Fused##prefix, \
-                                                                Filters...>,   \
-                 public Fuse##prefix##OnFinalize<Fused##prefix, Filters...> {  \
-     public:                                                                   \
-      template <size_t I>                                                      \
-      auto* fused_child() {                                                    \
-        return &std::get<I>(filter_calls_);                                    \
-      }                                                                        \
-                                                                               \
-      using Fuse##prefix##OnClientInitialMetadata<                             \
-          Fused##prefix, Filters...>::OnClientInitialMetadata;                 \
-      using Fuse##prefix##OnServerInitialMetadata<                             \
-          Fused##prefix, Filters...>::OnServerInitialMetadata;                 \
-      using Fuse##prefix##OnClientToServerMessage<                             \
-          Fused##prefix, Filters...>::OnClientToServerMessage;                 \
-      using Fuse##prefix##OnServerToClientMessage<                             \
-          Fused##prefix, Filters...>::OnServerToClientMessage;                 \
-      using Fuse##prefix##OnServerTrailingMetadata<                            \
-          Fused##prefix, Filters...>::OnServerTrailingMetadata;                \
-      using Fuse##prefix##OnClientToServerHalfClose<                           \
-          Fused##prefix, Filters...>::OnClientToServerHalfClose;               \
-      using Fuse##prefix##OnFinalize<Fused##prefix, Filters...>::OnFinalize;   \
-                                                                               \
-     private:                                                                  \
-      std::tuple<typename Filters::Call...> filter_calls_;                     \
-    };                                                                         \
-    using FilterTypeList =                                                     \
-        typename ForwardOrReverseTypes<forward,                                \
-                                       Filters...>::OrderMethod::Types;        \
-                                                                               \
-    bool StartTransportOp(grpc_transport_op* op) {                             \
-      return StartTransportOpInternal(op, FilterTypeList());                   \
-    }                                                                          \
-                                                                               \
-    bool GetChannelInfo(const grpc_channel_info* info) {                       \
-      return GetChannelInfoInternal(info, FilterTypeList());                   \
-    }                                                                          \
-                                                                               \
-   private:                                                                    \
-    template <typename... FilterTypes>                                         \
-    bool StartTransportOpInternal(grpc_transport_op* op,                       \
-                                  Typelist<FilterTypes...>) {                  \
-      return (std::get<FilterTypes>(filters_).StartTransportOp(op) || ...);    \
-    }                                                                          \
-                                                                               \
-    template <typename... FilterTypes>                                         \
-    bool GetChannelInfoInternal(const grpc_channel_info* info,                 \
-                                Typelist<FilterTypes...>) {                    \
-      return (std::get<FilterTypes>(filters_).GetChannelInfo(info) || ...);    \
-    }                                                                          \
-                                                                               \
-    std::tuple<Filters...> filters_;                                           \
+template <typename... Filters>
+class FusedFilter : public Filters... {
+ public:
+  class Call : public FuseOnClientInitialMetadata<FusedFilter, Filters...>,
+               public FuseOnServerInitialMetadata<FusedFilter, Filters...>,
+               public FuseOnClientToServerMessage<FusedFilter, Filters...>,
+               public FuseOnServerToClientMessage<FusedFilter, Filters...>,
+               public FuseOnServerTrailingMetadata<FusedFilter, Filters...>,
+               public FuseOnClientToServerHalfClose<FusedFilter, Filters...>,
+               public FuseOnFinalize<FusedFilter, Filters...> {
+   public:
+    template <size_t I>
+    auto* fused_child() {
+      return &std::get<I>(filter_calls_);
+    }
+
+    using FuseOnClientInitialMetadata<FusedFilter,
+                                      Filters...>::OnClientInitialMetadata;
+    using FuseOnServerInitialMetadata<FusedFilter,
+                                      Filters...>::OnServerInitialMetadata;
+    using FuseOnClientToServerMessage<FusedFilter,
+                                      Filters...>::OnClientToServerMessage;
+    using FuseOnServerToClientMessage<FusedFilter,
+                                      Filters...>::OnServerToClientMessage;
+    using FuseOnServerTrailingMetadata<FusedFilter,
+                                       Filters...>::OnServerTrailingMetadata;
+    using FuseOnClientToServerHalfClose<FusedFilter,
+                                        Filters...>::OnClientToServerHalfClose;
+    using FuseOnFinalize<FusedFilter, Filters...>::OnFinalize;
+
+   private:
+    std::tuple<typename Filters::Call...> filter_calls_;
   };
 
-GRPC_FUSED_FILTER(ClientFilter, true);
-GRPC_FUSED_FILTER(ServerFilter, false);
+  bool StartTransportOp(grpc_transport_op* op) {
+    return StartTransportOpInternal(op, Typelist<Filters...>());
+  }
+
+  bool GetChannelInfo(const grpc_channel_info* info) {
+    return GetChannelInfoInternal(info, Typelist<Filters...>());
+  }
+
+ private:
+  template <typename... FilterTypes>
+  bool StartTransportOpInternal(grpc_transport_op* op,
+                                Typelist<FilterTypes...>) {
+    return (std::get<FilterTypes>(filters_).StartTransportOp(op) || ...);
+  }
+
+  template <typename... FilterTypes>
+  bool GetChannelInfoInternal(const grpc_channel_info* info,
+                              Typelist<FilterTypes...>) {
+    return (std::get<FilterTypes>(filters_).GetChannelInfo(info) || ...);
+  }
+
+  std::tuple<Filters...> filters_;
+};
 
 }  // namespace filters_detail
 
 template <typename... Filters>
-using FusedClientFilter = filters_detail::FusedClientFilter<Filters...>;
-
-template <typename... Filters>
-using FusedServerFilter = filters_detail::FusedServerFilter<Filters...>;
+using FusedFilter = filters_detail::FusedFilter<Filters...>;
 
 }  // namespace grpc_core
 
