@@ -582,6 +582,7 @@ grpc_cc_library(
         "//:chttp2_frame",
         "//src/core:default_event_engine",
         "//src/core:grpc_promise_endpoint",
+        "//src/core:http2_errors",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
