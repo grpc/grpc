@@ -22,6 +22,7 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/status_flag.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -105,7 +106,8 @@ class MessageChunker {
                            &output]() mutable {
                        auto next = chunker.NextChunk();
                        return Map(output.Send(std::move(next.frame)),
-                                  [done = next.done](bool x) -> LoopCtl<bool> {
+                                  [done = next.done](
+                                      StatusFlag x) -> LoopCtl<StatusFlag> {
                                     if (!done) return Continue{};
                                     return x;
                                   });
