@@ -295,7 +295,7 @@ void ChaoticGoodServerTransport::Orphan() {
 }
 
 void ChaoticGoodServerTransport::StreamDispatch::OnFrameTransportClosed(
-    absl::Status status) {
+    absl::Status) {
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
   ReleasableMutexLock lock(&mu_);
