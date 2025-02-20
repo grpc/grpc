@@ -16,14 +16,13 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include <memory>
+
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -31,7 +30,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus1) {
+CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus1) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingStatusOnClient server_status;
   c.NewBatch(1).RecvStatusOnClient(server_status);
@@ -46,7 +45,7 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus1) {
   EXPECT_EQ(server_status.message(), "xyz");
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus2) {
+CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus2) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
@@ -64,7 +63,7 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus2) {
   EXPECT_EQ(server_status.message(), "xyz");
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
+CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus3) {
   InitClient(ChannelArgs());
   // This is a workaround for the flakiness that if the server ever enters
   // GracefulShutdown for whatever reason while the client has already been
@@ -88,7 +87,7 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
   EXPECT_EQ(server_status.message(), "xyz");
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus4) {
+CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus4) {
   InitClient(ChannelArgs());
   // This is a workaround for the flakiness that if the server ever enters
   // GracefulShutdown for whatever reason while the client has already been

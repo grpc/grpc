@@ -14,18 +14,17 @@
 
 #include "src/core/client_channel/client_channel.h"
 
+#include <grpc/grpc.h>
+
 #include <atomic>
 #include <memory>
 
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "test/core/call/yodel/yodel_test.h"
 
@@ -131,8 +130,8 @@ class ClientChannelTest : public YodelTest {
       handlers_.push(unstarted_call_handler.StartCall());
     }
 
-    absl::optional<CallHandler> PopHandler() {
-      if (handlers_.empty()) return absl::nullopt;
+    std::optional<CallHandler> PopHandler() {
+      if (handlers_.empty()) return std::nullopt;
       auto handler = std::move(handlers_.front());
       handlers_.pop();
       return handler;
@@ -191,12 +190,10 @@ class ClientChannelTest : public YodelTest {
 
     void QueueNameResolutionResult(Resolver::Result result) {
       result.args = result.args.UnionWith(args_);
-      work_serializer_->Run(
-          [self = RefAsSubclass<TestResolver>(),
-           result = std::move(result)]() mutable {
-            self->result_handler_->ReportResult(std::move(result));
-          },
-          DEBUG_LOCATION);
+      work_serializer_->Run([self = RefAsSubclass<TestResolver>(),
+                             result = std::move(result)]() mutable {
+        self->result_handler_->ReportResult(std::move(result));
+      });
     }
 
    private:
@@ -251,7 +248,7 @@ class ClientChannelTest : public YodelTest {
   }
 
   RefCountedPtr<ClientChannel> channel_;
-  absl::optional<ClientChannel::PickerObservable> picker_;
+  std::optional<ClientChannel::PickerObservable> picker_;
   TestCallDestinationFactory call_destination_factory_{this};
   TestClientChannelFactory client_channel_factory_;
   RefCountedPtr<TestCallDestination> call_destination_ =
@@ -275,11 +272,9 @@ CLIENT_CHANNEL_TEST(StartCall) {
   QueueNameResolutionResult(
       MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
   auto call_handler = TickUntilCallStarted();
-  SpawnTestSeq(call.initiator, "cancel",
-               [call_initiator = call.initiator]() mutable {
-                 call_initiator.Cancel();
-                 return Empty{};
-               });
+  SpawnTestSeq(
+      call.initiator, "cancel",
+      [call_initiator = call.initiator]() mutable { call_initiator.Cancel(); });
   WaitForAllPendingWork();
 }
 
@@ -362,13 +357,10 @@ CLIENT_CHANNEL_TEST(ConfigSelectorWithDynamicFilters) {
           EXPECT_TRUE(value.has_value());
           if (value.has_value()) EXPECT_EQ(*value, "bar");
         }
-        return Empty{};
       });
-  SpawnTestSeq(call.initiator, "cancel",
-               [call_initiator = call.initiator]() mutable {
-                 call_initiator.Cancel();
-                 return Empty{};
-               });
+  SpawnTestSeq(
+      call.initiator, "cancel",
+      [call_initiator = call.initiator]() mutable { call_initiator.Cancel(); });
   WaitForAllPendingWork();
 }
 

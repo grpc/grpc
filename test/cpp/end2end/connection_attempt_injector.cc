@@ -20,7 +20,6 @@
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/utility/utility.h"
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -199,7 +198,6 @@ ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
   duration = std::min(duration, deadline - now);
   grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
       duration, [this] {
-        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
         TimerCallback();
       });

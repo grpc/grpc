@@ -16,13 +16,12 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/time.h"
@@ -102,22 +101,22 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
             key6_payload.as_string_view());
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerTrueBinaryClientHttp2Fallback) {
   BinaryMetadata(*this, true, false);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerHttp2FallbackClientTrueBinary) {
   BinaryMetadata(*this, false, true);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerTrueBinaryClientTrueBinary) {
   BinaryMetadata(*this, true, true);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerHttp2FallbackClientHttp2Fallback) {
   BinaryMetadata(*this, false, false);
 }

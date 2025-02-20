@@ -19,19 +19,18 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
 
-#include <algorithm>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "absl/status/statusor.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"

@@ -18,8 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <utility>
-
-#include "absl/types/variant.h"
+#include <variant>
 
 #include "src/core/util/overload.h"
 
@@ -48,9 +47,9 @@ struct MatchPointerExtractor {
 ///         [](int i) { puts("hoorah"); },
 ///         [](string s) { puts("boo"); });
 template <typename... Fs, typename T0, typename... Ts>
-auto Match(const absl::variant<T0, Ts...>& value, Fs... fs)
+auto Match(const std::variant<T0, Ts...>& value, Fs... fs)
     -> decltype(std::declval<OverloadType<Fs...>>()(std::declval<T0>())) {
-  return absl::visit(Overload(std::move(fs)...), value);
+  return std::visit(Overload(std::move(fs)...), value);
 }
 
 /// A version of Match that takes a mutable pointer to a variant and calls its
@@ -63,11 +62,11 @@ auto Match(const absl::variant<T0, Ts...>& value, Fs... fs)
 ///                [](string* s) { *s = "foo"; });
 ///   // v now contains 1.
 template <typename... Fs, typename T0, typename... Ts>
-auto MatchMutable(absl::variant<T0, Ts...>* value, Fs... fs)
+auto MatchMutable(std::variant<T0, Ts...>* value, Fs... fs)
     -> decltype(std::declval<OverloadType<Fs...>>()(std::declval<T0*>())) {
-  return absl::visit(detail::MatchPointerExtractor<Fs...>{OverloadType<Fs...>(
-                         std::move(fs)...)},
-                     *value);
+  return std::visit(detail::MatchPointerExtractor<Fs...>{OverloadType<Fs...>(
+                        std::move(fs)...)},
+                    *value);
 }
 
 }  // namespace grpc_core

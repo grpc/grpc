@@ -18,7 +18,7 @@ load(
     "grpc_cc_test",
     "grpc_package",
 )
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/load_balancing")
 
@@ -33,7 +33,6 @@ grpc_cc_library(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:oob_backend_metric",
         "//src/core:client_channel_internal_header",
@@ -49,7 +48,6 @@ grpc_cc_test(
     name = "pick_first_test",
     srcs = ["pick_first_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -69,7 +67,6 @@ grpc_cc_test(
     name = "round_robin_test",
     srcs = ["round_robin_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -89,7 +86,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -110,7 +106,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -129,7 +124,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -149,7 +143,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -169,7 +162,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -188,7 +180,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -203,6 +194,7 @@ grpc_cc_benchmark(
         "absl/algorithm:container",
         "absl/log:check",
     ],
+    monitoring = HISTORY,
     uses_event_engine = False,
     deps = [
         "//src/core:no_destruct",
@@ -216,7 +208,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -236,7 +227,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -253,7 +243,6 @@ grpc_cc_test(
     name = "ring_hash_test",
     srcs = ["ring_hash_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -264,6 +253,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_ring_hash",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -273,6 +263,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/strings",
     ],
+    monitoring = HISTORY,
     deps = [
         "//:config",
         "//:grpc",

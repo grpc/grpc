@@ -16,6 +16,10 @@
 //
 //
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -25,6 +29,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
@@ -35,19 +40,14 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
+#include "src/core/ext/transport/chttp2/transport/frame_security.h"
 #include "src/core/ext/transport/chttp2/transport/frame_settings.h"
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -69,6 +69,8 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/util/random_early_detection.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
@@ -87,6 +89,7 @@ static grpc_error_handle init_window_update_frame_parser(
     grpc_chttp2_transport* t);
 static grpc_error_handle init_ping_parser(grpc_chttp2_transport* t);
 static grpc_error_handle init_goaway_parser(grpc_chttp2_transport* t);
+static grpc_error_handle init_security_frame_parser(grpc_chttp2_transport* t);
 static grpc_error_handle init_non_header_skip_frame_parser(
     grpc_chttp2_transport* t);
 
@@ -193,6 +196,8 @@ std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
       return MakeFrameTypeString("GOAWAY", flags, {});
     case GRPC_CHTTP2_FRAME_WINDOW_UPDATE:
       return MakeFrameTypeString("WINDOW_UPDATE", flags, {});
+    case GRPC_CHTTP2_FRAME_SECURITY:
+      return MakeFrameTypeString("SECURITY", flags, {});
     default:
       return MakeFrameTypeString(
           absl::StrCat("UNKNOWN_FRAME_TYPE_", static_cast<int>(frame_type)),
@@ -201,7 +206,7 @@ std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
 }
 }  // namespace
 
-absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
+std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started) {
   GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_perform_read");
@@ -263,7 +268,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_0;
         return static_cast<size_t>(cur - beg);
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_0:
       DCHECK_LT(cur, end);
       t->incoming_frame_size = (static_cast<uint32_t>(*cur)) << 16;
@@ -271,7 +276,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_1;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_1:
       DCHECK_LT(cur, end);
       t->incoming_frame_size |= (static_cast<uint32_t>(*cur)) << 8;
@@ -279,7 +284,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_2;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_2:
       DCHECK_LT(cur, end);
       t->incoming_frame_size |= *cur;
@@ -287,7 +292,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_3;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_3:
       DCHECK_LT(cur, end);
       t->incoming_frame_type = *cur;
@@ -295,7 +300,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_4;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_4:
       DCHECK_LT(cur, end);
       t->incoming_frame_flags = *cur;
@@ -303,7 +308,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_5;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_5:
       DCHECK_LT(cur, end);
       t->incoming_stream_id = ((static_cast<uint32_t>(*cur)) & 0x7f) << 24;
@@ -311,7 +316,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_6;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_6:
       DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
@@ -319,7 +324,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_7;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_7:
       DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
@@ -327,7 +332,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_8;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_8:
       DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
@@ -361,7 +366,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       if (++cur == end) {
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FRAME:
       DCHECK_LT(cur, end);
       if (static_cast<uint32_t>(end - cur) == t->incoming_frame_size) {
@@ -450,6 +455,14 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
       return init_ping_parser(t);
     case GRPC_CHTTP2_FRAME_GOAWAY:
       return init_goaway_parser(t);
+    case GRPC_CHTTP2_FRAME_SECURITY:
+      if (!t->settings.peer().allow_security_frame()) {
+        if (GRPC_TRACE_FLAG_ENABLED(http)) {
+          LOG(ERROR) << "Security frame received but not allowed, ignoring";
+        }
+        return init_non_header_skip_frame_parser(t);
+      }
+      return init_security_frame_parser(t);
     default:
       GRPC_TRACE_LOG(http, ERROR)
           << "Unknown frame type "
@@ -641,6 +654,18 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
                                           t->incoming_stream_id,
                                           GRPC_HTTP2_REFUSED_STREAM, nullptr));
+      grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
+    } else if (grpc_core::IsRqFastRejectEnabled() &&
+               GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
+      // We have more streams allocated than we'd like, so apply some pushback
+      // by refusing this stream.
+      grpc_core::global_stats().IncrementRqCallsRejected();
+      ++t->num_pending_induced_frames;
+      grpc_slice_buffer_add(
+          &t->qbuf,
+          grpc_chttp2_rst_stream_create(t->incoming_stream_id,
+                                        GRPC_HTTP2_ENHANCE_YOUR_CALM, nullptr));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
@@ -866,6 +891,16 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
   }
   t->parser = grpc_chttp2_transport::Parser{
       "settings", grpc_chttp2_settings_parser_parse, &t->simple.settings};
+  return absl::OkStatus();
+}
+
+static grpc_error_handle init_security_frame_parser(grpc_chttp2_transport* t) {
+  grpc_error_handle err =
+      grpc_chttp2_security_frame_parser_begin_frame(&t->security_frame_parser);
+  if (!err.ok()) return err;
+  t->parser = grpc_chttp2_transport::Parser{
+      "security_frame", grpc_chttp2_security_frame_parser_parse,
+      &t->security_frame_parser};
   return absl::OkStatus();
 }
 

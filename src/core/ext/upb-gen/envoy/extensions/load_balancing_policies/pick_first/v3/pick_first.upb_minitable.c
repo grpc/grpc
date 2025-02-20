@@ -3,7 +3,8 @@
  *     envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,6 +14,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
@@ -30,6 +32,7 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__pick_0first__v
   })
 };
 
+const upb_MiniTable* envoy__extensions__load_0balancing_0policies__pick_0first__v3__PickFirst_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__pick_0first__v3__PickFirst_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__extensions__load_0balancing_0policies__pick_0first__v3__PickFirst_msg_init,
 };

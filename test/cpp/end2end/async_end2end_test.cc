@@ -16,16 +16,6 @@
 //
 //
 
-#include <cinttypes>
-#include <memory>
-#include <thread>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
@@ -37,8 +27,17 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include <cinttypes>
+#include <memory>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -187,20 +186,18 @@ class Verifier {
         EXPECT_EQ(it->second.ok, ok) << it->second.ToString(it->first);
       }
       expectations_.erase(it);
-    } else {
-      auto it2 = maybe_expectations_.find(got_tag);
-      if (it2 != maybe_expectations_.end()) {
-        if (it2->second.seen != nullptr) {
-          EXPECT_FALSE(*it2->second.seen);
-          *it2->second.seen = true;
-        }
-        if (!ignore_ok) {
-          EXPECT_EQ(it2->second.ok, ok) << it->second.ToString(it->first);
-        }
-        maybe_expectations_.erase(it2);
-      } else {
-        grpc_core::Crash(absl::StrFormat("Unexpected tag: %p", got_tag));
+    } else if (auto it2 = maybe_expectations_.find(got_tag);
+               it2 != maybe_expectations_.end()) {
+      if (it2->second.seen != nullptr) {
+        EXPECT_FALSE(*it2->second.seen);
+        *it2->second.seen = true;
       }
+      if (!ignore_ok) {
+        EXPECT_EQ(it2->second.ok, ok) << it->second.ToString(it->first);
+      }
+      maybe_expectations_.erase(it2);
+    } else {
+      grpc_core::Crash(absl::StrFormat("Unexpected tag: %p", got_tag));
     }
   }
 
@@ -235,7 +232,7 @@ bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
 }
 
 // This class disables the server builder plugins that may add sync services to
-// the server. If there are sync services, UnimplementedRpc test will triger
+// the server. If there are sync services, UnimplementedRpc test will trigger
 // the sync unknown rpc routine on the server side, rather than the async one
 // that needs to be tested here.
 class ServerBuilderSyncPluginDisabler : public grpc::ServerBuilderOption {
@@ -323,7 +320,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     cq_ = builder.AddCompletionQueue();
 
-    // TODO(zyc): make a test option to choose wheather sync plugins should be
+    // TODO(zyc): make a test option to choose whether sync plugins should be
     // deleted
     std::unique_ptr<ServerBuilderOption> sync_plugin_disabler(
         new ServerBuilderSyncPluginDisabler());

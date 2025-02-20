@@ -15,17 +15,16 @@
 //
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/json/json.h"
@@ -45,7 +44,6 @@ FileExternalAccountCredentials::FileFetchBody::FileFetchBody(
   // Start work asynchronously, since we can't invoke the callback
   // synchronously without causing a deadlock.
   creds->event_engine().Run([self = RefAsSubclass<FileFetchBody>()]() mutable {
-    ApplicationCallbackExecCtx application_exec_ctx;
     ExecCtx exec_ctx;
     self->ReadFile();
     self.reset();
@@ -157,7 +155,7 @@ std::string FileExternalAccountCredentials::debug_string() {
                       ")");
 }
 
-UniqueTypeName FileExternalAccountCredentials::type() const {
+UniqueTypeName FileExternalAccountCredentials::Type() {
   static UniqueTypeName::Factory kFactory("FileExternalAccountCredentials");
   return kFactory.Create();
 }

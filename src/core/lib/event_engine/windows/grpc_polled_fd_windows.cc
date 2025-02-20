@@ -18,17 +18,14 @@
 
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
-#include <winsock2.h>
-
 #include <ares.h>
+#include <grpc/support/log_windows.h>
+#include <winsock2.h>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/log_windows.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
@@ -49,8 +46,7 @@ struct iovec {
   size_t iov_len;
 };
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 namespace {
 
 constexpr int kRecvFromSourceAddrSize = 200;
@@ -227,7 +223,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     // c-ares overloads this recv_from virtual socket function to receive
     // data on both UDP and TCP sockets, and from is nullptr for TCP.
     if (from != nullptr) {
-      CHECK(*from_len <= recv_from_source_addr_len_);
+      CHECK(*from_len >= recv_from_source_addr_len_);
       memcpy(from, &recv_from_source_addr_, recv_from_source_addr_len_);
       *from_len = recv_from_source_addr_len_;
     }
@@ -847,7 +843,6 @@ void GrpcPolledFdFactoryWindows::ConfigureAresChannelLocked(
   ares_set_socket_functions(channel, &kCustomSockFuncs, this);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)

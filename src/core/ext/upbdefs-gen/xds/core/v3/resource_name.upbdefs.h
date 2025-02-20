@@ -3,10 +3,11 @@
  *     xds/core/v3/resource_name.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_CORE_V3_RESOURCE_NAME_PROTO_UPBDEFS_H_
-#define XDS_CORE_V3_RESOURCE_NAME_PROTO_UPBDEFS_H_
+#ifndef XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H__UPBDEFS_H_
+#define XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -29,4 +30,4 @@ UPB_INLINE const upb_MessageDef *xds_core_v3_ResourceName_getmsgdef(upb_DefPool 
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_CORE_V3_RESOURCE_NAME_PROTO_UPBDEFS_H_ */
+#endif  /* XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H__UPBDEFS_H_ */

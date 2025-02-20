@@ -18,6 +18,14 @@
 
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_crl_provider.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -30,19 +38,9 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_crl_provider.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-
+#include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/tsi/ssl_transport_security.h"

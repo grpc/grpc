@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/status.h>
+#include <grpc/support/time.h>
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -23,15 +26,11 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-#include <grpc/support/time.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -74,14 +73,14 @@ class FakeCallTracer : public ClientCallTracer {
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-    void RecordSendMessage(const SliceBuffer& /*send_message*/) override {}
+    void RecordSendMessage(const Message& /*send_message*/) override {}
     void RecordSendCompressedMessage(
-        const SliceBuffer& /*send_compressed_message*/) override {}
+        const Message& /*send_compressed_message*/) override {}
     void RecordReceivedInitialMetadata(
         grpc_metadata_batch* /*recv_initial_metadata*/) override {}
-    void RecordReceivedMessage(const SliceBuffer& /*recv_message*/) override {}
+    void RecordReceivedMessage(const Message& /*recv_message*/) override {}
     void RecordReceivedDecompressedMessage(
-        const SliceBuffer& /*recv_decompressed_message*/) override {}
+        const Message& /*recv_decompressed_message*/) override {}
 
     void RecordReceivedTrailingMetadata(
         absl::Status /*status*/,
@@ -174,14 +173,14 @@ class FakeServerCallTracer : public ServerCallTracer {
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-  void RecordSendMessage(const SliceBuffer& /*send_message*/) override {}
+  void RecordSendMessage(const Message& /*send_message*/) override {}
   void RecordSendCompressedMessage(
-      const SliceBuffer& /*send_compressed_message*/) override {}
+      const Message& /*send_compressed_message*/) override {}
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* /*recv_initial_metadata*/) override {}
-  void RecordReceivedMessage(const SliceBuffer& /*recv_message*/) override {}
+  void RecordReceivedMessage(const Message& /*recv_message*/) override {}
   void RecordReceivedDecompressedMessage(
-      const SliceBuffer& /*recv_decompressed_message*/) override {}
+      const Message& /*recv_decompressed_message*/) override {}
   void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
   std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
     return nullptr;
@@ -258,7 +257,7 @@ class NewFakeStatsPlugin : public FakeStatsPlugin {
 };
 
 // This test verifies the HTTP2 stats on a stream
-CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
+CORE_END2END_TEST(Http2FullstackSingleHopTests, StreamStats) {
   g_mu = new Mutex();
   g_client_call_ended_notify = new CoreEnd2endTest::TestNotification(this);
   g_server_call_ended_notify = new CoreEnd2endTest::TestNotification(this);

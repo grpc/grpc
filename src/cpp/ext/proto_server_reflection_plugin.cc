@@ -16,15 +16,15 @@
 //
 //
 
-#include <memory>
-#include <string>
-
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/impl/server_initializer.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/config/config_vars.h"
+#include <memory>
+#include <string>
+
+#include "src/core/config/config_vars.h"
 #include "src/cpp/ext/proto_server_reflection.h"
 
 namespace grpc {

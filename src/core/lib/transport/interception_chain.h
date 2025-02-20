@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_INTERCEPTION_CHAIN_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_INTERCEPTION_CHAIN_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_filters.h"
@@ -28,6 +28,7 @@
 
 namespace grpc_core {
 
+class Blackboard;
 class InterceptionChainBuilder;
 
 // One hijacked call. Using this we can get access to the CallHandler for the
@@ -89,6 +90,8 @@ class HijackedCall final {
 
 class Interceptor : public UnstartedCallDestination {
  public:
+  using UnstartedCallDestination::UnstartedCallDestination;
+
   void StartCall(UnstartedCallHandler unstarted_call_handler) final {
     unstarted_call_handler.AddCallStack(filter_stack_);
     InterceptCall(std::move(unstarted_call_handler));
@@ -105,13 +108,20 @@ class Interceptor : public UnstartedCallDestination {
     return Map(call_handler.PullClientInitialMetadata(),
                [call_handler, destination = wrapped_destination_](
                    ValueOrFailure<ClientMetadataHandle> metadata) mutable
-               -> ValueOrFailure<HijackedCall> {
+                   -> ValueOrFailure<HijackedCall> {
                  if (!metadata.ok()) return Failure{};
                  return HijackedCall(std::move(metadata.value()),
                                      std::move(destination),
                                      std::move(call_handler));
                });
   }
+
+  // Hijack a call with custom initial metadata.
+  // TODO(ctiller): Evaluate whether this or hijack or some other in-between
+  // API is what we need here (I think we need 2 or 3 more fully worked through
+  // samples) and then reduce this surface to one API.
+  CallInitiator MakeChildCall(ClientMetadataHandle metadata,
+                              RefCountedPtr<Arena> arena);
 
   // Consume this call - it will not be passed on to any further filters.
   CallHandler Consume(UnstartedCallHandler unstarted_call_handler) {
@@ -149,12 +159,15 @@ class InterceptionChainBuilder final {
   // the future, and building is a builder responsibility.
   // Instead, we declare a relatively closed set of destinations here, and
   // hide the adaptors inside the builder at build time.
-  using FinalDestination =
-      absl::variant<RefCountedPtr<UnstartedCallDestination>,
-                    RefCountedPtr<CallDestination>>;
+  using FinalDestination = std::variant<RefCountedPtr<UnstartedCallDestination>,
+                                        RefCountedPtr<CallDestination>>;
 
-  explicit InterceptionChainBuilder(ChannelArgs args)
-      : args_(std::move(args)) {}
+  explicit InterceptionChainBuilder(ChannelArgs args,
+                                    const Blackboard* old_blackboard = nullptr,
+                                    Blackboard* new_blackboard = nullptr)
+      : args_(std::move(args)),
+        old_blackboard_(old_blackboard),
+        new_blackboard_(new_blackboard) {}
 
   // Add a filter with a `Call` class as an inner member.
   // Call class must be one compatible with the filters described in
@@ -163,7 +176,8 @@ class InterceptionChainBuilder final {
   absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
   Add() {
     if (!status_.ok()) return *this;
-    auto filter = T::Create(args_, {FilterInstanceId(FilterTypeId<T>())});
+    auto filter = T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
+                                    old_blackboard_, new_blackboard_});
     if (!filter.ok()) {
       status_ = filter.status();
       return *this;
@@ -179,20 +193,37 @@ class InterceptionChainBuilder final {
   absl::enable_if_t<std::is_base_of<Interceptor, T>::value,
                     InterceptionChainBuilder&>
   Add() {
-    AddInterceptor(T::Create(args_, {FilterInstanceId(FilterTypeId<T>())}));
+    AddInterceptor(T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
+                                     old_blackboard_, new_blackboard_}));
     return *this;
   };
 
   // Add a filter that just mutates client initial metadata.
   template <typename F>
-  void AddOnClientInitialMetadata(F f) {
+  InterceptionChainBuilder& AddOnClientInitialMetadata(F f) {
     stack_builder().AddOnClientInitialMetadata(std::move(f));
+    return *this;
   }
 
   // Add a filter that just mutates server trailing metadata.
   template <typename F>
-  void AddOnServerTrailingMetadata(F f) {
+  InterceptionChainBuilder& AddOnServerTrailingMetadata(F f) {
     stack_builder().AddOnServerTrailingMetadata(std::move(f));
+    return *this;
+  }
+
+  // Immediately: Call AddOnServerTrailingMetadata
+  // Then, or every interceptor added to the filter from this point on:
+  // Perform an AddOnServerTrailingMetadata() immediately after
+  // the interceptor was added - but only if other filters or interceptors
+  // are added below it.
+  template <typename F>
+  InterceptionChainBuilder& AddOnServerTrailingMetadataForEachInterceptor(F f) {
+    AddOnServerTrailingMetadata(f);
+    on_new_interception_tail_.emplace_back([f](InterceptionChainBuilder* b) {
+      b->AddOnServerTrailingMetadata(f);
+    });
+    return *this;
   }
 
   void Fail(absl::Status status) {
@@ -208,7 +239,10 @@ class InterceptionChainBuilder final {
 
  private:
   CallFilters::StackBuilder& stack_builder() {
-    if (!stack_builder_.has_value()) stack_builder_.emplace();
+    if (!stack_builder_.has_value()) {
+      stack_builder_.emplace();
+      for (auto& f : on_new_interception_tail_) f(this);
+    }
     return *stack_builder_;
   }
 
@@ -232,11 +266,15 @@ class InterceptionChainBuilder final {
   void AddInterceptor(absl::StatusOr<RefCountedPtr<Interceptor>> interceptor);
 
   ChannelArgs args_;
-  absl::optional<CallFilters::StackBuilder> stack_builder_;
+  std::optional<CallFilters::StackBuilder> stack_builder_;
   RefCountedPtr<Interceptor> top_interceptor_;
+  std::vector<absl::AnyInvocable<void(InterceptionChainBuilder*)>>
+      on_new_interception_tail_;
   absl::Status status_;
   std::map<size_t, size_t> filter_type_counts_;
   static std::atomic<size_t> next_filter_id_;
+  const Blackboard* old_blackboard_ = nullptr;
+  Blackboard* new_blackboard_ = nullptr;
 };
 
 }  // namespace grpc_core

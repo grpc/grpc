@@ -15,6 +15,11 @@
  * limitations under the License.
  *
  */
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/support/status.h>
+
 #include <cstddef>
 #include <iostream>
 #include <memory>
@@ -23,11 +28,6 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/support/status.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -75,7 +75,7 @@ class HelloReactor final
       absl::MutexLock lock(&mu_);
       std::cout << "Write #" << messages_to_send_ << " done (Ok: " << ok
                 << "): " << absl::Now() - *write_start_time_ << "\n";
-      write_start_time_ = absl::nullopt;
+      write_start_time_ = std::nullopt;
       more = ok && messages_to_send_ > 0;
     }
     if (more) {
@@ -91,7 +91,7 @@ class HelloReactor final
  private:
   helloworld::HelloReply res_;
   size_t messages_to_send_;
-  absl::optional<absl::Time> write_start_time_;
+  std::optional<absl::Time> write_start_time_;
   absl::Mutex mu_;
 };
 

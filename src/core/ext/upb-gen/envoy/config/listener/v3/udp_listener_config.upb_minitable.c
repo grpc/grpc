@@ -3,7 +3,8 @@
  *     envoy/config/listener/v3/udp_listener_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -17,10 +18,11 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_listener_v3_UdpListenerConfig_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__UdpSocketConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__QuicProtocolOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_listener_v3_UdpListenerConfig__submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__UdpSocketConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__QuicProtocolOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_listener_v3_UdpListenerConfig__fields[3] = {
@@ -30,7 +32,7 @@ static const upb_MiniTableField envoy_config_listener_v3_UdpListenerConfig__fiel
 };
 
 const upb_MiniTable envoy__config__listener__v3__UdpListenerConfig_msg_init = {
-  &envoy_config_listener_v3_UdpListenerConfig_submsgs[0],
+  &envoy_config_listener_v3_UdpListenerConfig__submsgs[0],
   &envoy_config_listener_v3_UdpListenerConfig__fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -38,6 +40,7 @@ const upb_MiniTable envoy__config__listener__v3__UdpListenerConfig_msg_init = {
 #endif
 };
 
+const upb_MiniTable* envoy__config__listener__v3__UdpListenerConfig_msg_init_ptr = &envoy__config__listener__v3__UdpListenerConfig_msg_init;
 const upb_MiniTable envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_init = {
   NULL,
   NULL,
@@ -47,6 +50,7 @@ const upb_MiniTable envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_
 #endif
 };
 
+const upb_MiniTable* envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_init_ptr = &envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__config__listener__v3__UdpListenerConfig_msg_init,
   &envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_init,

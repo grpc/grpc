@@ -16,6 +16,13 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
@@ -27,14 +34,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -63,13 +62,6 @@ namespace grpc_core {
 
 const grpc_channel_filter ServerAuthFilter::kFilter =
     MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>();
-
-const NoInterceptor ServerAuthFilter::Call::OnClientToServerMessage;
-const NoInterceptor ServerAuthFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerAuthFilter::Call::OnServerToClientMessage;
-const NoInterceptor ServerAuthFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ServerAuthFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ServerAuthFilter::Call::OnFinalize;
 
 namespace {
 
@@ -152,7 +144,6 @@ void ServerAuthFilter::RunApplicationCode::OnMdProcessingDone(
     void* user_data, const grpc_metadata* consumed_md, size_t num_consumed_md,
     const grpc_metadata* response_md, size_t num_response_md,
     grpc_status_code status, const char* error_details) {
-  ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
 
   auto* state = static_cast<State*>(user_data);

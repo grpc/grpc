@@ -18,6 +18,9 @@
 
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <memory>
 
@@ -26,10 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
@@ -116,7 +115,6 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
     void* request, const grpc_metadata* md, size_t num_md,
     grpc_status_code status, const char* error_details) {
   // called from application code
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_FINISHED |
                               GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
   grpc_core::RefCountedPtr<grpc_plugin_credentials::PendingRequest> r(

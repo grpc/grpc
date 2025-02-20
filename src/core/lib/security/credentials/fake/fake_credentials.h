@@ -19,16 +19,15 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
 
-#include <string>
-
-#include "absl/status/statusor.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -83,7 +82,7 @@ grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
 // For LB channels:
 //     "backend_target_1,backend_target_2,...;lb_target_1,lb_target_2,..."
 // For regular channels:
-//     "backend_taget_1,backend_target_2,..."
+//     "backend_target_1,backend_target_2,..."
 //
 // That is to say, LB channels have a heading list of LB targets separated from
 // the list of backend targets by a semicolon. For non-LB channels, only the

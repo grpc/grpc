@@ -13,6 +13,7 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <cstddef>
@@ -22,13 +23,9 @@
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // -------- LivingThreadCount --------
 
@@ -74,5 +71,4 @@ size_t LivingThreadCount::WaitForCountChange(size_t desired_threads,
   return count;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

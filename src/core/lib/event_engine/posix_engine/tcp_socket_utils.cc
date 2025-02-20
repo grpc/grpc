@@ -15,18 +15,17 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
 #include <errno.h>
-#include <limits.h>
-
-#include "absl/cleanup/cleanup.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
+#include <limits.h>
 
+#include <optional>
+
+#include "absl/cleanup/cleanup.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/util/time.h"
@@ -51,7 +50,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/strerror.h"
@@ -68,13 +66,12 @@
 #endif  // GPR_WINDOWS
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
 int AdjustValue(int default_value, int min_value, int max_value,
-                absl::optional<int> actual_value) {
+                std::optional<int> actual_value) {
   if (!actual_value.has_value() || *actual_value < min_value ||
       *actual_value > max_value) {
     return default_value;
@@ -925,5 +922,4 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

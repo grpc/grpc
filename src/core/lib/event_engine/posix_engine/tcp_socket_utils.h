@@ -15,6 +15,12 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
 
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <string>
 #include <utility>
@@ -22,13 +28,6 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -47,8 +46,7 @@
 #endif
 #endif  // ifdef GRPC_LINUX_ERRQUEUE
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 struct PosixTcpOptions {
   static constexpr int kDefaultReadChunkSize = 8192;
@@ -324,7 +322,6 @@ struct PosixSocketWrapper::PosixSocketCreateResult {
 
 bool SetSocketDualStack(int fd);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H

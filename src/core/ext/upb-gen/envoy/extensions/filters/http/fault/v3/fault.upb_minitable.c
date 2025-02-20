@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/fault/v3/fault.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -20,9 +21,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_filters_http_fault_v3_FaultAbort_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__fault__v3__FaultAbort__HeaderAbort_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_fault_v3_FaultAbort__submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__fault__v3__FaultAbort__HeaderAbort_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_fault_v3_FaultAbort__fields[4] = {
@@ -33,7 +35,7 @@ static const upb_MiniTableField envoy_extensions_filters_http_fault_v3_FaultAbor
 };
 
 const upb_MiniTable envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init = {
-  &envoy_extensions_filters_http_fault_v3_FaultAbort_submsgs[0],
+  &envoy_extensions_filters_http_fault_v3_FaultAbort__submsgs[0],
   &envoy_extensions_filters_http_fault_v3_FaultAbort__fields[0],
   UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -51,6 +53,7 @@ const upb_MiniTable envoy__extensions__filters__http__fault__v3__FaultAbort_msg_
   })
 };
 
+const upb_MiniTable* envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init_ptr = &envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init;
 const upb_MiniTable envoy__extensions__filters__http__fault__v3__FaultAbort__HeaderAbort_msg_init = {
   NULL,
   NULL,
@@ -60,13 +63,14 @@ const upb_MiniTable envoy__extensions__filters__http__fault__v3__FaultAbort__Hea
 #endif
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_http_fault_v3_HTTPFault_submsgs[6] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__HeaderMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultRateLimit_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
+const upb_MiniTable* envoy__extensions__filters__http__fault__v3__FaultAbort__HeaderAbort_msg_init_ptr = &envoy__extensions__filters__http__fault__v3__FaultAbort__HeaderAbort_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_fault_v3_HTTPFault__submsgs[6] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__HeaderMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultRateLimit_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_fault_v3_HTTPFault__fields[16] = {
@@ -89,7 +93,7 @@ static const upb_MiniTableField envoy_extensions_filters_http_fault_v3_HTTPFault
 };
 
 const upb_MiniTable envoy__extensions__filters__http__fault__v3__HTTPFault_msg_init = {
-  &envoy_extensions_filters_http_fault_v3_HTTPFault_submsgs[0],
+  &envoy_extensions_filters_http_fault_v3_HTTPFault__submsgs[0],
   &envoy_extensions_filters_http_fault_v3_HTTPFault__fields[0],
   UPB_SIZE(112, 200), 16, kUpb_ExtMode_NonExtendable, 16, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -115,6 +119,7 @@ const upb_MiniTable envoy__extensions__filters__http__fault__v3__HTTPFault_msg_i
   })
 };
 
+const upb_MiniTable* envoy__extensions__filters__http__fault__v3__HTTPFault_msg_init_ptr = &envoy__extensions__filters__http__fault__v3__HTTPFault_msg_init;
 static const upb_MiniTable *messages_layout[3] = {
   &envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init,
   &envoy__extensions__filters__http__fault__v3__FaultAbort__HeaderAbort_msg_init,

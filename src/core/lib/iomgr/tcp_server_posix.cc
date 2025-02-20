@@ -16,10 +16,10 @@
 //
 //
 
-#include <utility>
-
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
@@ -32,6 +32,12 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/byte_buffer.h>
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -47,14 +53,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/memory_allocator_factory.h"
@@ -128,7 +126,6 @@ static grpc_error_handle CreateEventEngineListener(
         [s](int listener_fd, std::unique_ptr<EventEngine::Endpoint> ep,
             bool is_external, MemoryAllocator /*allocator*/,
             SliceBuffer* pending_data) {
-          grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_pollset* read_notifier_pollset;
           grpc_tcp_server_acceptor* acceptor;
@@ -215,7 +212,6 @@ static grpc_error_handle CreateEventEngineListener(
   } else {
     EventEngine::Listener::AcceptCallback accept_cb =
         [s](std::unique_ptr<EventEngine::Endpoint> ep, MemoryAllocator) {
-          grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           void* cb_arg;
           {
@@ -638,7 +634,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
             }
             DCHECK_GT(*listen_fd, 0);
             s->listen_fd_to_index_map.insert_or_assign(
-                *listen_fd, std::make_tuple(s->n_bind_ports, fd_index++));
+                *listen_fd, std::tuple(s->n_bind_ports, fd_index++));
           });
     } else {
       port = s->ee_listener->Bind(

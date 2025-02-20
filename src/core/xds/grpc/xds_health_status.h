@@ -19,10 +19,10 @@
 
 #include <stdint.h>
 
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/span.h"
+#include <optional>
 
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "src/core/resolver/endpoint_addresses.h"
 
 // Channel arg key for xDS health status.
@@ -37,8 +37,8 @@ class XdsHealthStatus final {
   enum HealthStatus { kUnknown, kHealthy, kDraining };
 
   // Returns an XdsHealthStatus for supported enum values, else nullopt.
-  static absl::optional<XdsHealthStatus> FromUpb(uint32_t status);
-  static absl::optional<XdsHealthStatus> FromString(absl::string_view status);
+  static std::optional<XdsHealthStatus> FromUpb(uint32_t status);
+  static std::optional<XdsHealthStatus> FromString(absl::string_view status);
 
   explicit XdsHealthStatus(HealthStatus status) : status_(status) {}
 

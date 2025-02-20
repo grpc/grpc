@@ -42,12 +42,11 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_POSIX_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_POSIX_H
 
-#include "absl/status/status.h"
-
 #include <grpc/support/port_platform.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+#include "absl/status/status.h"
+
+namespace grpc_event_engine::experimental {
 
 class WakeupFd {
  public:
@@ -70,7 +69,6 @@ class WakeupFd {
   int write_fd_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_POSIX_H

@@ -18,9 +18,15 @@
 
 #include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
 
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -30,14 +36,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc_security_constants.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -202,9 +200,9 @@ class grpc_fake_channel_security_connector final
   }
 
   char* target_;
-  absl::optional<std::string> expected_targets_;
+  std::optional<std::string> expected_targets_;
   bool is_lb_channel_;
-  absl::optional<std::string> target_name_override_;
+  std::optional<std::string> target_name_override_;
 };
 
 void fake_check_peer(grpc_security_connector* /*sc*/, tsi_peer peer,

@@ -45,7 +45,7 @@ enum {
    *    already has some sub-message fields present.  If the sub-message does
    *    not occur in the binary payload, we will never visit it and discover the
    *    incomplete sub-message.  For this reason, this check is only useful for
-   *    implemting ParseFromString() semantics.  For MergeFromString(), a
+   *    implementing ParseFromString() semantics.  For MergeFromString(), a
    *    post-parse validation step will always be necessary. */
   kUpb_DecodeOption_CheckRequired = 2,
 
@@ -143,6 +143,9 @@ UPB_API upb_DecodeStatus upb_DecodeLengthPrefixed(
     const upb_MiniTable* mt, const upb_ExtensionRegistry* extreg, int options,
     upb_Arena* arena);
 
+// Utility function for wrapper languages to get an error string from a
+// upb_DecodeStatus.
+UPB_API const char* upb_DecodeStatus_String(upb_DecodeStatus status);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

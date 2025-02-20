@@ -18,23 +18,21 @@
 
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/trace.h"
 
 static thread_local bool g_timer_thread;
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 void TimerManager::RunSomeTimers(
     std::vector<experimental::EventEngine::Closure*> timers) {
@@ -65,8 +63,8 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
 
 void TimerManager::MainLoop() {
   grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
-  absl::optional<std::vector<experimental::EventEngine::Closure*>>
-      check_result = timer_list_->TimerCheck(&next);
+  std::optional<std::vector<experimental::EventEngine::Closure*>> check_result =
+      timer_list_->TimerCheck(&next);
   CHECK(check_result.has_value())
       << "ERROR: More than one MainLoop is running.";
   bool timers_found = !check_result->empty();
@@ -151,5 +149,4 @@ void TimerManager::PrepareFork() { Shutdown(); }
 void TimerManager::PostforkParent() { RestartPostFork(); }
 void TimerManager::PostforkChild() { RestartPostFork(); }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

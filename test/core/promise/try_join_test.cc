@@ -23,6 +23,163 @@
 
 namespace grpc_core {
 
+TEST(TryJoinTestBasic, TryJoinPendingFour) {
+  std::string execution_order;
+  bool pending_3 = true;
+  bool pending_4 = true;
+  bool pending_5 = true;
+  bool pending_6 = true;
+  auto try_join_combinator = TryJoin<absl::StatusOr>(
+      [&execution_order, &pending_3]() mutable -> Poll<absl::StatusOr<int>> {
+        absl::StrAppend(&execution_order, "3");
+        if (pending_3) {
+          absl::StrAppend(&execution_order, "P");
+          return Pending{};
+        }
+        return 3;
+      },
+      [&execution_order, &pending_4]() mutable -> Poll<absl::StatusOr<double>> {
+        absl::StrAppend(&execution_order, "4");
+        if (pending_4) {
+          absl::StrAppend(&execution_order, "P");
+          return Pending{};
+        }
+        return 4.0;
+      },
+      [&execution_order,
+       &pending_5]() mutable -> Poll<absl::StatusOr<std::string>> {
+        absl::StrAppend(&execution_order, "5");
+        if (pending_5) {
+          absl::StrAppend(&execution_order, "P");
+          return Pending{};
+        }
+        return "5";
+      },
+      [&execution_order, &pending_6]() mutable -> Poll<absl::StatusOr<int>> {
+        absl::StrAppend(&execution_order, "6");
+        if (pending_6) {
+          absl::StrAppend(&execution_order, "P");
+          return Pending{};
+        }
+        return 6;
+      });
+
+  // Asserts
+  // 1. All pending promises are re-run when the TryJoin is executed.
+  // 2. Resolved promises (promises which have returned a value) should not be
+  //    re-run when TryJoin is executed.
+  // 3. The TryJoin should return pending until all promises are resolved.
+  // 4. The TryJoin should return the tuple of values when all promises are
+  //    resolved.
+  // 5. The order in which the promises are resolved should not matter. If the
+  //    Nth promise is resolved, but the previous N promises are not resolved,
+  //    they should still be re-run.
+  // 6. TryJoin returns success status only if all promises return success
+  //    status.
+
+  // Execution 1 : All promises are pending. All should be run once.
+  Poll<absl::StatusOr<std::tuple<int, double, std::string, int>>> retval =
+      try_join_combinator();
+  EXPECT_TRUE(retval.pending());
+  // All promises are Pending
+  EXPECT_STREQ(execution_order.c_str(), "3P4P5P6P");
+
+  // Execution 2 : All promises should be run once. 3 gets resolved.
+  execution_order.clear();
+  pending_3 = false;
+  retval = try_join_combinator();
+  EXPECT_TRUE(retval.pending());
+  EXPECT_STREQ(execution_order.c_str(), "34P5P6P");
+
+  // Execution 3 : All promises other than 3 should be run. 4 gets resolved.
+  execution_order.clear();
+  pending_4 = false;
+  retval = try_join_combinator();
+  EXPECT_TRUE(retval.pending());
+  EXPECT_STREQ(execution_order.c_str(), "45P6P");  // 3 should not be re-run.
+
+  // Execution 4 : Order changed. 5 will still be pending. 6 will be resolved.
+  execution_order.clear();
+  pending_6 = false;
+  retval = try_join_combinator();
+  EXPECT_TRUE(retval.pending());
+  EXPECT_STREQ(execution_order.c_str(), "5P6");
+
+  // Execution 5 : Only 5 should be run. And 5 gets resolved.
+  execution_order.clear();
+  pending_5 = false;
+  retval = try_join_combinator();
+  EXPECT_TRUE(retval.ready());  // All promises are resolved.
+  EXPECT_STREQ(execution_order.c_str(), "5");
+
+  EXPECT_TRUE(retval.value().ok());  // All promises are a success.
+  EXPECT_EQ(retval.value().value(), std::tuple(3, 4.0, "5", 6));
+}
+
+TEST(TryJoinTestBasic, TryJoinPendingFailure) {
+  std::string execution_order;
+  bool pending_3 = true;
+  bool pending_4 = true;
+  bool pending_5 = true;
+  auto try_join_combinator = TryJoin<absl::StatusOr>(
+      [&execution_order, &pending_3]() mutable -> Poll<absl::StatusOr<int>> {
+        absl::StrAppend(&execution_order, "3");
+        if (pending_3) {
+          absl::StrAppend(&execution_order, "P");
+          return Pending{};
+        }
+        return 3;
+      },
+      [&execution_order, &pending_4]() mutable -> Poll<absl::StatusOr<double>> {
+        absl::StrAppend(&execution_order, "4");
+        if (pending_4) {
+          absl::StrAppend(&execution_order, "P");
+          return Pending{};
+        }
+        return absl::InternalError("Promise Errror");
+      },
+      [&execution_order,
+       &pending_5]() mutable -> Poll<absl::StatusOr<std::string>> {
+        absl::StrAppend(&execution_order, "5");
+        if (pending_5) {
+          absl::StrAppend(&execution_order, "P");
+          return Pending{};
+        }
+        return "5";
+      });
+
+  // Asserts
+  // 1. One failing promise in the TryJoin should cancel the execution of the
+  //    remaining promises even if they are pending.
+  // 2. The TryJoin should not return a tuple if any of the promises fail. It
+  //    should return the correct failure status.
+
+  // Execution 1 : All promises are pending. All should be run once.
+  Poll<absl::StatusOr<std::tuple<int, double, std::string>>> retval =
+      try_join_combinator();
+  EXPECT_TRUE(retval.pending());
+  // All promises are Pending
+  EXPECT_STREQ(execution_order.c_str(), "3P4P5P");
+
+  // Execution 2 : All promises should be run once. 3 gets resolved.
+  execution_order.clear();
+  pending_3 = false;
+  retval = try_join_combinator();
+  EXPECT_TRUE(retval.pending());
+  EXPECT_STREQ(execution_order.c_str(), "34P5P");
+
+  // Execution 3 : All promises other than 3 should be run. 4 fails.
+  // 5 should not be run (even though it is pending) because 4 failed.
+  execution_order.clear();
+  pending_4 = false;
+  retval = try_join_combinator();
+  EXPECT_TRUE(retval.ready());
+  EXPECT_STREQ(execution_order.c_str(), "4");
+
+  EXPECT_EQ(retval.value().status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(retval.value().status().message(), "Promise Errror");
+}
+
 struct AbslStatusTraits {
   template <typename... Promises>
   static auto TryJoinImpl(Promises... promises) {

@@ -18,6 +18,9 @@
 
 #include "src/core/lib/transport/transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <memory>
@@ -26,11 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
@@ -51,7 +49,6 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
     // Throw this over to the executor (on a core-owned thread) and process it
     // there.
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run([refcount] {
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
       grpc_core::ExecCtx exec_ctx;
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,
                               absl::OkStatus());

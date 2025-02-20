@@ -16,17 +16,16 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
+#include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -36,7 +35,7 @@ namespace {
 
 // Client sends a request, then waits for the keepalive watchdog timeouts before
 // returning status.
-CORE_END2END_TEST(Http2SingleHopTest, KeepaliveTimeout) {
+CORE_END2END_TEST(Http2SingleHopTests, KeepaliveTimeout) {
   // Disable ping ack to trigger the keepalive timeout
   InitServer(ChannelArgs().Set("grpc.http2.ack_pings", false));
   InitClient(ChannelArgs()
@@ -62,7 +61,7 @@ CORE_END2END_TEST(Http2SingleHopTest, KeepaliveTimeout) {
 // with a sleep of 10ms in between. It has a configured keepalive timer of
 // 200ms. In the success case, each ping ack should reset the keepalive timer so
 // that the keepalive ping is never sent.
-CORE_END2END_TEST(Http2SingleHopTest, ReadDelaysKeepalive) {
+CORE_END2END_TEST(Http2SingleHopTests, ReadDelaysKeepalive) {
 #ifdef GRPC_POSIX_SOCKET
   // It is hard to get the timing right for the polling engine poll.
   if (ConfigVars::Get().PollStrategy() == "poll") {

@@ -15,7 +15,6 @@
 import argparse
 from concurrent import futures
 import logging
-import socket
 from typing import Sequence
 
 import grpc
@@ -26,8 +25,8 @@ from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics import view
 from prometheus_client import start_http_server
 
-from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import test_pb2_grpc
+from examples.python.observability.csm import helloworld_pb2
+from examples.python.observability.csm import helloworld_pb2_grpc
 
 _LISTEN_HOST = "0.0.0.0"
 _THREAD_POOL_SIZE = 256
@@ -39,25 +38,10 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
-class TestService(test_pb2_grpc.TestServiceServicer):
-    def __init__(self, server_id, hostname):
-        self._server_id = server_id
-        self._hostname = hostname
-
-    def UnaryCall(
-        self, request: messages_pb2.SimpleRequest, context: grpc.ServicerContext
-    ) -> messages_pb2.SimpleResponse:
-        context.send_initial_metadata((("hostname", self._hostname),))
-        if request.response_size > 0:
-            response = messages_pb2.SimpleResponse(
-                payload=messages_pb2.Payload(body=b"0" * request.response_size)
-            )
-        else:
-            response = messages_pb2.SimpleResponse()
-        response.server_id = self._server_id
-        response.hostname = self._hostname
-        logger.info("Sending response to client")
-        return response
+class Greeter(helloworld_pb2_grpc.GreeterServicer):
+    def SayHello(self, request, context):
+        message = request.name
+        return helloworld_pb2.HelloReply(message=f"Hello {message}")
 
 
 def _run(
@@ -69,7 +53,8 @@ def _run(
     csm_plugin = _prepare_csm_observability_plugin(prometheus_endpoint)
     csm_plugin.register_global()
     server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE)
+        futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE),
+        xds=secure_mode,
     )
     _configure_test_server(server, port, secure_mode, server_id)
     server.start()
@@ -179,9 +164,7 @@ def _create_views() -> Sequence[view.View]:
 def _configure_test_server(
     server: grpc.Server, port: int, secure_mode: bool, server_id: str
 ) -> None:
-    test_pb2_grpc.add_TestServiceServicer_to_server(
-        TestService(server_id, socket.gethostname()), server
-    )
+    helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     listen_address = f"{_LISTEN_HOST}:{port}"
     if not secure_mode:
         server.add_insecure_port(listen_address)

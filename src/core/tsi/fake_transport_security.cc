@@ -18,15 +18,13 @@
 
 #include "src/core/tsi/fake_transport_security.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -193,6 +191,11 @@ static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
     frame->allocated_size = TSI_FAKE_FRAME_INITIAL_ALLOCATED_SIZE;
     frame->data =
         static_cast<unsigned char*>(gpr_malloc(frame->allocated_size));
+    // Initialize `data` to some recognizably bad values.
+    // There's some debug code paths where we stringify the entire buffer, and
+    // doing so leads to ubsan failures on those code paths -- which are
+    // commonly hit using fuzzers.
+    memset(frame->data, 0xab, frame->allocated_size);
   }
 
   if (frame->offset < TSI_FAKE_FRAME_HEADER_SIZE) {

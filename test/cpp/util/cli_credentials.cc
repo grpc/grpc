@@ -18,12 +18,11 @@
 
 #include "test/cpp/util/cli_credentials.h"
 
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
-
 #include <grpc/slice.h>
 #include <grpcpp/support/slice.h>
 
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/load_file.h"
 
@@ -64,7 +63,7 @@ namespace {
 
 const char ACCESS_TOKEN_PREFIX[] = "access_token=";
 constexpr int ACCESS_TOKEN_PREFIX_LEN =
-    sizeof(ACCESS_TOKEN_PREFIX) / sizeof(*ACCESS_TOKEN_PREFIX) - 1;
+    (sizeof(ACCESS_TOKEN_PREFIX) / sizeof(*ACCESS_TOKEN_PREFIX)) - 1;
 
 bool IsAccessToken(const std::string& auth) {
   return auth.length() > ACCESS_TOKEN_PREFIX_LEN &&

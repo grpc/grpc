@@ -16,6 +16,10 @@
 //
 //
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <inttypes.h>
 
 #include <string>
@@ -24,12 +28,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
@@ -407,7 +405,7 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
 #else
         // On 32-bit systems, gpr_atm_no_barrier_store does not work on 64-bit
         // types (like grpc_core::Timestamp). So all reads and writes to
-        // g_shared_mutables.min_timer varialbe under g_shared_mutables.mu
+        // g_shared_mutables.min_timer variable under g_shared_mutables.mu
         g_shared_mutables.min_timer = deadline;
 #endif
         grpc_kick_poller();

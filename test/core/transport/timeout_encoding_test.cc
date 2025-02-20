@@ -23,7 +23,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
@@ -101,7 +100,7 @@ TEST(TimeoutTest, DecodingSucceeds) {
 }
 
 void assert_decoding_fails(const char* s) {
-  EXPECT_EQ(absl::nullopt, ParseTimeout(Slice::FromCopiedString(s)))
+  EXPECT_EQ(std::nullopt, ParseTimeout(Slice::FromCopiedString(s)))
       << " s=" << s;
 }
 

@@ -21,7 +21,7 @@ cc_binary(
     deps = [
         "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
-        "//src/proto/grpc/health/v1:health_proto",
+        "//src/proto/grpc/health/v1:health_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
     ],

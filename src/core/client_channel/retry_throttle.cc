@@ -16,18 +16,34 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/retry_throttle.h"
 
+#include <grpc/support/port_platform.h>
+
+#include <atomic>
+#include <cstdint>
+#include <limits>
 #include <map>
 #include <string>
 #include <utility>
 
-#include <grpc/support/atm.h>
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace internal {
+
+namespace {
+template <typename T>
+T ClampedAdd(std::atomic<T>& value, T delta, T min, T max) {
+  T prev_value = value.load(std::memory_order_relaxed);
+  T new_value;
+  do {
+    new_value = Clamp(SaturatingAdd(prev_value, delta), min, max);
+  } while (!value.compare_exchange_weak(prev_value, new_value,
+                                        std::memory_order_relaxed));
+  return new_value;
+}
+}  // namespace
 
 //
 // ServerRetryThrottleData
@@ -45,26 +61,24 @@ ServerRetryThrottleData::ServerRetryThrottleData(
   // we will start out doing the same thing on the new one.
   if (old_throttle_data != nullptr) {
     double token_fraction =
-        static_cast<uintptr_t>(
-            gpr_atm_acq_load(&old_throttle_data->milli_tokens_)) /
+        static_cast<double>(
+            old_throttle_data->milli_tokens_.load(std::memory_order_relaxed)) /
         static_cast<double>(old_throttle_data->max_milli_tokens_);
     initial_milli_tokens =
         static_cast<uintptr_t>(token_fraction * max_milli_tokens);
   }
-  gpr_atm_rel_store(&milli_tokens_, static_cast<gpr_atm>(initial_milli_tokens));
+  milli_tokens_.store(initial_milli_tokens, std::memory_order_relaxed);
   // If there was a pre-existing entry, mark it as stale and give it a
   // pointer to the new entry, which is its replacement.
   if (old_throttle_data != nullptr) {
     Ref().release();  // Ref held by pre-existing entry.
-    gpr_atm_rel_store(&old_throttle_data->replacement_,
-                      reinterpret_cast<gpr_atm>(this));
+    old_throttle_data->replacement_.store(this, std::memory_order_release);
   }
 }
 
 ServerRetryThrottleData::~ServerRetryThrottleData() {
   ServerRetryThrottleData* replacement =
-      reinterpret_cast<ServerRetryThrottleData*>(
-          gpr_atm_acq_load(&replacement_));
+      replacement_.load(std::memory_order_acquire);
   if (replacement != nullptr) {
     replacement->Unref();
   }
@@ -74,8 +88,7 @@ void ServerRetryThrottleData::GetReplacementThrottleDataIfNeeded(
     ServerRetryThrottleData** throttle_data) {
   while (true) {
     ServerRetryThrottleData* new_throttle_data =
-        reinterpret_cast<ServerRetryThrottleData*>(
-            gpr_atm_acq_load(&(*throttle_data)->replacement_));
+        (*throttle_data)->replacement_.load(std::memory_order_acquire);
     if (new_throttle_data == nullptr) return;
     *throttle_data = new_throttle_data;
   }
@@ -86,10 +99,10 @@ bool ServerRetryThrottleData::RecordFailure() {
   ServerRetryThrottleData* throttle_data = this;
   GetReplacementThrottleDataIfNeeded(&throttle_data);
   // We decrement milli_tokens by 1000 (1 token) for each failure.
-  const uintptr_t new_value =
-      static_cast<uintptr_t>(gpr_atm_no_barrier_clamped_add(
-          &throttle_data->milli_tokens_, gpr_atm{-1000}, gpr_atm{0},
-          static_cast<gpr_atm>(throttle_data->max_milli_tokens_)));
+  const uintptr_t new_value = ClampedAdd<intptr_t>(
+      throttle_data->milli_tokens_, -1000, 0,
+      std::min<uintptr_t>(throttle_data->max_milli_tokens_,
+                          std::numeric_limits<intptr_t>::max()));
   // Retries are allowed as long as the new value is above the threshold
   // (max_milli_tokens / 2).
   return new_value > throttle_data->max_milli_tokens_ / 2;
@@ -100,10 +113,11 @@ void ServerRetryThrottleData::RecordSuccess() {
   ServerRetryThrottleData* throttle_data = this;
   GetReplacementThrottleDataIfNeeded(&throttle_data);
   // We increment milli_tokens by milli_token_ratio for each success.
-  gpr_atm_no_barrier_clamped_add(
-      &throttle_data->milli_tokens_,
-      static_cast<gpr_atm>(throttle_data->milli_token_ratio_), gpr_atm{0},
-      static_cast<gpr_atm>(throttle_data->max_milli_tokens_));
+  ClampedAdd<intptr_t>(
+      throttle_data->milli_tokens_, throttle_data->milli_token_ratio_, 0,
+      std::max<intptr_t>(
+          0, std::min<uintptr_t>(throttle_data->max_milli_tokens_,
+                                 std::numeric_limits<intptr_t>::max())));
 }
 
 //

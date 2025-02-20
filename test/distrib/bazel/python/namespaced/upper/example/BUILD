@@ -14,12 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
     "@com_github_grpc_grpc//bazel:python_rules.bzl",
     "py_grpc_library",
     "py_proto_library",
 )
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_test")
 
 _IMPORT_PREFIX = "foo/bar"
 

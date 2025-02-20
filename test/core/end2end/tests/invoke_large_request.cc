@@ -16,15 +16,13 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <string.h>
 
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/time.h"
@@ -33,7 +31,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(Http2SingleHopTest, InvokeLargeRequest) {
+CORE_END2END_TEST(Http2SingleHopTests, InvokeLargeRequest) {
   const size_t kMessageSize = 10 * 1024 * 1024;
   auto send_from_client = RandomSlice(kMessageSize);
   auto send_from_server = RandomSlice(kMessageSize);

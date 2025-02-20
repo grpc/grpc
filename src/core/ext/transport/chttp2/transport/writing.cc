@@ -16,12 +16,17 @@
 //
 //
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stddef.h>
 
 #include <algorithm>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -29,14 +34,8 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channelz.h"
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -51,6 +50,7 @@
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/ext/transport/chttp2/transport/stream_lists.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -174,7 +174,6 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                 kInvalid) {
           t->delayed_ping_timer_handle = t->event_engine->RunAfter(
               too_soon.wait, [t = t->Ref()]() mutable {
-                grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
                 grpc_core::ExecCtx exec_ctx;
                 grpc_chttp2_retry_initiate_ping(std::move(t));
               });
@@ -268,7 +267,6 @@ class WriteContext {
         // for implementations taking some more time about acking a setting.
         t_->settings_ack_watchdog = t_->event_engine->RunAfter(
             t_->settings_timeout, [t = t_->Ref()]() mutable {
-              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
               grpc_core::ExecCtx exec_ctx;
               grpc_chttp2_settings_timeout(std::move(t));
             });
@@ -486,7 +484,7 @@ class StreamWriteContext {
                 .Add(s_->flow_control.stats())
                 .Add(write_stats));
       }
-    } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
+    } else {
       auto* call_tracer =
           s_->arena->GetContext<grpc_core::CallTracerInterface>();
       if (call_tracer != nullptr && call_tracer->IsSampled()) {
@@ -648,7 +646,7 @@ class StreamWriteContext {
                 .Add(s_->t->flow_control.stats())
                 .Add(s_->flow_control.stats()));
       }
-    } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
+    } else {
       auto* call_tracer =
           s_->arena->GetContext<grpc_core::CallTracerInterface>();
       if (call_tracer != nullptr && call_tracer->IsSampled()) {
@@ -748,12 +746,11 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
     // Set ping timeout after finishing write so we don't measure our own send
     // time.
     const auto timeout = t->ping_timeout;
-    auto id = t->ping_callbacks.OnPingTimeout(
-        timeout, t->event_engine.get(), [t = t->Ref()] {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
-          grpc_chttp2_ping_timeout(t);
-        });
+    auto id = t->ping_callbacks.OnPingTimeout(timeout, t->event_engine.get(),
+                                              [t = t->Ref()] {
+                                                grpc_core::ExecCtx exec_ctx;
+                                                grpc_chttp2_ping_timeout(t);
+                                              });
     if (GRPC_TRACE_FLAG_ENABLED(http2_ping) && id.has_value()) {
       LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
                 << "]: Set ping timeout timer of " << timeout.ToString()
@@ -773,7 +770,6 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
       }
       t->keepalive_ping_timeout_handle =
           t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
             grpc_chttp2_keepalive_timeout(t);
           });

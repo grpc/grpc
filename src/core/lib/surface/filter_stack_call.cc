@@ -14,6 +14,19 @@
 
 #include "src/core/lib/surface/filter_stack_call.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -29,21 +42,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/call.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -265,7 +263,6 @@ void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
 void FilterStackCall::ExternalUnref() {
   if (GPR_LIKELY(!ext_ref_.Unref())) return;
 
-  ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
 
   GRPC_TRACE_LOG(api, INFO) << "grpc_call_unref(c=" << this << ")";
@@ -452,8 +449,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
   if (!batch_error.ok()) {
     SetFinalStatus(batch_error);
   } else {
-    absl::optional<grpc_status_code> grpc_status =
-        b->Take(GrpcStatusMetadata());
+    std::optional<grpc_status_code> grpc_status = b->Take(GrpcStatusMetadata());
     if (grpc_status.has_value()) {
       grpc_status_code status_code = *grpc_status;
       grpc_error_handle error;
@@ -660,7 +656,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     grpc_metadata_batch* md = &call->recv_initial_metadata_;
     call->RecvInitialFilter(md);
 
-    absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
+    std::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {
       call_->set_send_deadline(*deadline);
     }

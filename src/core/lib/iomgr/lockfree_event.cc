@@ -18,11 +18,10 @@
 
 #include "src/core/lib/iomgr/lockfree_event.h"
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/crash.h"

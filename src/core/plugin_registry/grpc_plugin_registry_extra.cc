@@ -17,7 +17,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 
 namespace grpc_core {
 #ifndef GRPC_NO_XDS
@@ -40,6 +40,7 @@ extern void RegisterXdsWrrLocalityLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterFileWatcherCertificateProvider(
     CoreConfiguration::Builder* builder);
+extern void RegisterXdsHttpProxyMapper(CoreConfiguration::Builder* builder);
 #endif
 void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // Use builder to avoid unused-parameter warning.
@@ -61,6 +62,7 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   RegisterXdsWrrLocalityLbPolicy(builder);
   RegisterRingHashLbPolicy(builder);
   RegisterFileWatcherCertificateProvider(builder);
+  RegisterXdsHttpProxyMapper(builder);
 #endif
 }
 }  // namespace grpc_core

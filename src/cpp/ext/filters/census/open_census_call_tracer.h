@@ -19,6 +19,9 @@
 #ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+#include <grpcpp/opencensus.h>
 #include <stdint.h>
 
 #include <atomic>
@@ -33,11 +36,6 @@
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-#include <grpcpp/opencensus.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -85,15 +83,14 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
         grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-    void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override;
+    void RecordSendMessage(const grpc_core::Message& send_message) override;
     void RecordSendCompressedMessage(
-        const grpc_core::SliceBuffer& send_compressed_message) override;
+        const grpc_core::Message& send_compressed_message) override;
     void RecordReceivedInitialMetadata(
         grpc_metadata_batch* /*recv_initial_metadata*/) override {}
-    void RecordReceivedMessage(
-        const grpc_core::SliceBuffer& recv_message) override;
+    void RecordReceivedMessage(const grpc_core::Message& recv_message) override;
     void RecordReceivedDecompressedMessage(
-        const grpc_core::SliceBuffer& recv_decompressed_message) override;
+        const grpc_core::Message& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;

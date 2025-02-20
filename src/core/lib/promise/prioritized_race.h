@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PRIORITIZED_RACE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PRIORITIZED_RACE_H
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
 
-namespace grpc_core {
+#include <utility>
 
-namespace promise_detail {
+#include "src/core/lib/promise/detail/promise_like.h"
+
+namespace grpc_core {
 
 template <typename A, typename B>
 class TwoPartyPrioritizedRace {
@@ -36,23 +36,25 @@ class TwoPartyPrioritizedRace {
     auto p = a_();
     if (p.ready()) return p;
     // Check the other promise.
-    p = b_();
-    if (p.ready()) {
-      // re-poll a to see if it's also completed.
-      auto q = a_();
-      if (q.ready()) {
-        // both are ready, but a is prioritized
-        return q;
-      }
+    auto q = b_();
+    if (!q.ready()) return q;
+    // re-poll a to see if it's also completed.
+    auto r = a_();
+    if (r.ready()) {
+      // both are ready, but a is prioritized
+      return r;
     }
-    return p;
+    return q;
   }
 
  private:
-  A a_;
-  B b_;
+  promise_detail::PromiseLike<A> a_;
+  promise_detail::PromiseLike<B> b_;
 };
 
+/// Run all the promises until one is non-pending.
+/// Once there's a non-pending promise, repoll all the promises before that.
+/// Return the result from the lexically first non-pending promise.
 template <typename... Promises>
 class PrioritizedRace;
 
@@ -78,16 +80,8 @@ class PrioritizedRace<Promise> {
   Promise promise_;
 };
 
-}  // namespace promise_detail
-
-/// Run all the promises until one is non-pending.
-/// Once there's a non-pending promise, repoll all the promises before that.
-/// Return the result from the lexically first non-pending promise.
 template <typename... Promises>
-promise_detail::PrioritizedRace<Promises...> PrioritizedRace(
-    Promises... promises) {
-  return promise_detail::PrioritizedRace<Promises...>(std::move(promises)...);
-}
+PrioritizedRace(Promises...) -> PrioritizedRace<Promises...>;
 
 }  // namespace grpc_core
 

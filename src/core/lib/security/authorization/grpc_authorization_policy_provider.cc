@@ -14,21 +14,19 @@
 
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 
-#include <stdint.h>
-
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <stdint.h>
 
+#include <optional>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"

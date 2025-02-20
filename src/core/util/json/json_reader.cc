@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -23,6 +23,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/attributes.h"
@@ -33,10 +34,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
-
-#include <grpc/support/json.h>
-
 #include "src/core/util/json/json.h"
 #include "src/core/util/match.h"
 
@@ -97,7 +94,7 @@ class JsonReader {
 
   struct Scope {
     std::string parent_object_key;
-    absl::variant<Json::Object, Json::Array> data;
+    std::variant<Json::Object, Json::Array> data;
 
     Json::Type type() const {
       return Match(
@@ -298,7 +295,7 @@ void JsonReader::EndContainer() {
 void JsonReader::SetKey() {
   key_ = std::move(string_);
   string_.clear();
-  const Json::Object& object = absl::get<Json::Object>(stack_.back().data);
+  const Json::Object& object = std::get<Json::Object>(stack_.back().data);
   if (object.find(key_) != object.end()) {
     if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
       truncated_errors_ = true;
@@ -437,7 +434,7 @@ JsonReader::Status JsonReader::Run() {
             }
             if (!SetNumber()) return Status::GRPC_JSON_PARSE_ERROR;
             state_ = State::GRPC_JSON_STATE_VALUE_END;
-            ABSL_FALLTHROUGH_INTENDED;
+            [[fallthrough]];
 
           case State::GRPC_JSON_STATE_VALUE_END:
           case State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN:

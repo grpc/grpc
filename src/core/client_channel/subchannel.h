@@ -17,8 +17,9 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <functional>
@@ -26,11 +27,8 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -310,10 +308,9 @@ class Subchannel final : public DualRefCounted<Subchannel> {
 
    private:
     Subchannel* subchannel_;
-    // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
-    // be a set instead of a map.
-    std::map<ConnectivityStateWatcherInterface*,
-             RefCountedPtr<ConnectivityStateWatcherInterface>>
+    absl::flat_hash_set<RefCountedPtr<ConnectivityStateWatcherInterface>,
+                        RefCountedPtrHash<ConnectivityStateWatcherInterface>,
+                        RefCountedPtrEq<ConnectivityStateWatcherInterface>>
         watchers_;
   };
 

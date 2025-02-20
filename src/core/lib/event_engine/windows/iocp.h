@@ -18,16 +18,14 @@
 
 #ifdef GPR_WINDOWS
 
-#include "absl/status/status.h"
-
 #include <grpc/event_engine/event_engine.h>
 
+#include "absl/status/status.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class IOCP final : public Poller {
  public:
@@ -61,8 +59,7 @@ class IOCP final : public Poller {
   std::atomic<int> outstanding_kicks_{0};
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif
 

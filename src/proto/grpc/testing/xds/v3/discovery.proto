@@ -18,7 +18,7 @@ syntax = "proto3";
 
 package envoy.service.discovery.v3;
 
-import "src/proto/grpc/testing/xds/v3/base.proto";
+import "envoy/config/core/v3/base.proto";
 
 import "google/protobuf/any.proto";
 import "google/protobuf/duration.proto";
@@ -35,6 +35,22 @@ message Status {
   // A list of messages that carry the error details.  There is a common set of
   // message types for APIs to use.
   repeated google.protobuf.Any details = 3;
+}
+
+// Specifies a concrete resource name.
+message ResourceName {
+  // The name of the resource.
+  string name = 1;
+}
+
+// An error associated with a specific resource name, returned to the
+// client by the server.
+message ResourceError {
+  // The name of the resource.
+  ResourceName resource_name = 1;
+
+  // The error reported for the resource.
+  Status error_detail = 2;
 }
 
 // [#protodoc-title: Common discovery API components]
@@ -83,7 +99,7 @@ message DiscoveryRequest {
   Status error_detail = 6;
 }
 
-// [#next-free-field: 7]
+// [#next-free-field: 8]
 message DiscoveryResponse {
   // The version of the response data.
   string version_info = 1;
@@ -120,6 +136,12 @@ message DiscoveryResponse {
   // DiscoveryRequest bearing the nonce. The nonce is optional and is not
   // required for non-stream based xDS implementations.
   string nonce = 5;
+
+  // Errors associated with specific resources. Clients are expected to
+  // remember the most recent error for a given resource across responses;
+  // the error condition is not considered to be cleared until a response is
+  // received that contains the resource in the 'resources' field.
+  repeated ResourceError resource_errors = 7;
 }
 
 // [#next-free-field: 8]

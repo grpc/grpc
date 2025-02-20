@@ -16,6 +16,7 @@
 
 #include "src/core/resolver/polling_resolver.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <functional>
@@ -29,9 +30,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/resolver/endpoint_addresses.h"
@@ -108,12 +106,10 @@ void PollingResolver::ScheduleNextResolutionTimer(Duration delay) {
   next_resolution_timer_handle_ =
       channel_args_.GetObject<EventEngine>()->RunAfter(
           delay, [self = RefAsSubclass<PollingResolver>()]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();
             self_ptr->work_serializer_->Run(
-                [self = std::move(self)]() { self->OnNextResolutionLocked(); },
-                DEBUG_LOCATION);
+                [self = std::move(self)]() { self->OnNextResolutionLocked(); });
           });
 }
 
@@ -144,8 +140,7 @@ void PollingResolver::MaybeCancelNextResolutionTimer() {
 void PollingResolver::OnRequestComplete(Result result) {
   Ref(DEBUG_LOCATION, "OnRequestComplete").release();
   work_serializer_->Run(
-      [this, result]() mutable { OnRequestCompleteLocked(std::move(result)); },
-      DEBUG_LOCATION);
+      [this, result]() mutable { OnRequestCompleteLocked(std::move(result)); });
 }
 
 void PollingResolver::OnRequestCompleteLocked(Result result) {

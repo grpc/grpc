@@ -3,10 +3,11 @@
  *     xds/service/orca/v3/orca.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_MINITABLE_H_
-#define XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_MINITABLE_H_
+#ifndef XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H__UPB_MINITABLE_H_
+#define XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,6 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable xds__service__orca__v3__OrcaLoadReportRequest_msg_init;
+extern const upb_MiniTable* xds__service__orca__v3__OrcaLoadReportRequest_msg_init_ptr;
 
 extern const upb_MiniTableFile xds_service_orca_v3_orca_proto_upb_file_layout;
 
@@ -27,4 +29,4 @@ extern const upb_MiniTableFile xds_service_orca_v3_orca_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_MINITABLE_H_ */
+#endif  /* XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H__UPB_MINITABLE_H_ */

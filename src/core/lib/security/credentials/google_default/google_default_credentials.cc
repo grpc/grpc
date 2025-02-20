@@ -18,19 +18,6 @@
 
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 
-#include <string.h>
-
-#include <memory>
-#include <string>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -39,7 +26,18 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <string.h>
 
+#include <memory>
+#include <optional>
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -108,7 +106,7 @@ struct metadata_server_detector {
 
 namespace {
 
-bool IsXdsNonCfeCluster(absl::optional<absl::string_view> xds_cluster) {
+bool IsXdsNonCfeCluster(std::optional<absl::string_view> xds_cluster) {
   if (!xds_cluster.has_value()) return false;
   if (absl::StartsWith(*xds_cluster, "google_cfe_")) return false;
   if (!absl::StartsWith(*xds_cluster, "xdstp:")) return true;
@@ -145,7 +143,7 @@ grpc_google_default_channel_credentials::create_security_connector(
           ? alts_creds_->create_security_connector(call_creds, target, args)
           : ssl_creds_->create_security_connector(call_creds, target, args);
   // grpclb-specific channel args are removed from the channel args set
-  // to ensure backends and fallback adresses will have the same set of channel
+  // to ensure backends and fallback addresses will have the same set of channel
   // args. By doing that, it guarantees the connections to backends will not be
   // torn down and re-connected when switching in and out of fallback mode.
   //
@@ -162,8 +160,7 @@ grpc_google_default_channel_credentials::update_arguments(
   return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 
-grpc_core::UniqueTypeName grpc_google_default_channel_credentials::type()
-    const {
+grpc_core::UniqueTypeName grpc_google_default_channel_credentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("GoogleDefault");
   return kFactory.Create();
 }

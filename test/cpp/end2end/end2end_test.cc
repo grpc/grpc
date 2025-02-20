@@ -16,16 +16,6 @@
 //
 //
 
-#include <mutex>
-#include <thread>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
@@ -42,8 +32,17 @@
 #include <grpcpp/support/string_ref.h>
 #include <grpcpp/test/channel_test_peer.h>
 
+#include <mutex>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/crash.h"
@@ -166,7 +165,7 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
     EXPECT_TRUE(channel_auth_context.IsPeerAuthenticated());
     EXPECT_TRUE(metadata != nullptr);
     if (is_successful_) {
-      metadata->insert(std::make_pair(metadata_key_, metadata_value_));
+      metadata->insert(std::pair(metadata_key_, metadata_value_));
       return Status::OK;
     } else {
       return Status(StatusCode::NOT_FOUND, kTestCredsPluginErrorMsg);
@@ -230,9 +229,9 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
     if (auth_md_value == kGoodGuy) {
       context->AddProperty(kIdentityPropName, kGoodGuy);
       context->SetPeerIdentityPropertyName(kIdentityPropName);
-      consumed_auth_metadata->insert(std::make_pair(
-          string(auth_md->first.data(), auth_md->first.length()),
-          string(auth_md->second.data(), auth_md->second.length())));
+      consumed_auth_metadata->insert(
+          std::pair(string(auth_md->first.data(), auth_md->first.length()),
+                    string(auth_md->second.data(), auth_md->second.length())));
       return Status::OK;
     } else {
       return Status(StatusCode::UNAUTHENTICATED,
@@ -787,7 +786,7 @@ TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelDuring) {
   TestResponseStreamServerCancel(CANCEL_DURING_PROCESSING);
 }
 
-// Server to cancel after writing all the respones to the stream but before
+// Server to cancel after writing all the responses to the stream but before
 // returning to the client
 TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelAfter) {
   TestResponseStreamServerCancel(CANCEL_AFTER_PROCESSING);

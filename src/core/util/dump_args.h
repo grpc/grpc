@@ -26,20 +26,12 @@
 namespace grpc_core {
 namespace dump_args_detail {
 
-// Helper function... just ignore the initializer list passed into it.
-// Allows doing 'statements' via parameter pack expansion in C++11 - given
-// template <typename... Ts>:
-//  do_these_things({foo<Ts>()...});
-// will execute foo<T>() for each T in Ts.
-template <typename T>
-void do_these_things(std::initializer_list<T>) {}
-
 class DumpArgs {
  public:
   template <typename... Args>
   explicit DumpArgs(const char* arg_string, const Args&... args)
       : arg_string_(arg_string) {
-    do_these_things({AddDumper(&args)...});
+    (AddDumper(&args), ...);
   }
 
   template <typename Sink>
@@ -78,20 +70,25 @@ class DumpArgs {
     return 0;
   }
 
-  int AddDumper(void** p) {
+  int AddDumper(void const* const* p) {
     arg_dumpers_.push_back(
         [p](CustomSink& os) { os.Append(absl::StrFormat("%p", *p)); });
     return 0;
   }
 
   template <typename T>
-  int AddDumper(T** p) {
-    return AddDumper(reinterpret_cast<void**>(p));
+  int AddDumper(T const* const* p) {
+    return AddDumper(reinterpret_cast<void const* const*>(p));
   }
 
   template <typename T>
   int AddDumper(T* const* p) {
-    return AddDumper(const_cast<T**>(p));
+    return AddDumper(const_cast<T const* const*>(p));
+  }
+
+  template <typename T>
+  int AddDumper(T const** p) {
+    return AddDumper(const_cast<T const* const*>(p));
   }
 
   void Stringify(CustomSink& sink) const;

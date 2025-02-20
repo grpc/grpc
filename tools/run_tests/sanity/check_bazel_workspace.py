@@ -38,13 +38,6 @@ git_submodule_hashes = {
 _BAZEL_SKYLIB_DEP_NAME = "bazel_skylib"
 _BAZEL_TOOLCHAINS_DEP_NAME = "bazel_toolchains"
 _BAZEL_COMPDB_DEP_NAME = "bazel_compdb"
-_TWISTED_TWISTED_DEP_NAME = "com_github_twisted_twisted"
-_YAML_PYYAML_DEP_NAME = "com_github_yaml_pyyaml"
-_TWISTED_INCREMENTAL_DEP_NAME = "com_github_twisted_incremental"
-_ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME = (
-    "com_github_zopefoundation_zope_interface"
-)
-_TWISTED_CONSTANTLY_DEP_NAME = "com_github_twisted_constantly"
 
 _GRPC_DEP_NAMES = [
     "platforms",
@@ -59,17 +52,12 @@ _GRPC_DEP_NAMES = [
     "com_google_fuzztest",
     "io_opencensus_cpp",
     "io_opentelemetry_cpp",
-    # TODO(stanleycheung): remove when prometheus-cpp has new release
-    "com_github_jupp0r_prometheus_cpp",
     "envoy_api",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,
-    _TWISTED_TWISTED_DEP_NAME,
-    _YAML_PYYAML_DEP_NAME,
-    _TWISTED_INCREMENTAL_DEP_NAME,
-    _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
-    _TWISTED_CONSTANTLY_DEP_NAME,
+    "bazel_features",
+    "rules_proto",
     "io_bazel_rules_go",
     "build_bazel_rules_apple",
     "build_bazel_apple_support",
@@ -81,6 +69,8 @@ _GRPC_DEP_NAMES = [
     "com_google_libprotobuf_mutator",
     "com_github_cncf_xds",
     "google_cloud_cpp",
+    "rules_shell",
+    "rules_java",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -89,16 +79,11 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_google_absl",
     "com_google_fuzztest",
     "io_opencensus_cpp",
-    # TODO(stanleycheung): remove when prometheus-cpp has new release
-    "com_github_jupp0r_prometheus_cpp",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,
-    _TWISTED_TWISTED_DEP_NAME,
-    _YAML_PYYAML_DEP_NAME,
-    _TWISTED_INCREMENTAL_DEP_NAME,
-    _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
-    _TWISTED_CONSTANTLY_DEP_NAME,
+    "bazel_features",
+    "rules_proto",
     "io_bazel_rules_go",
     "build_bazel_rules_apple",
     "build_bazel_apple_support",
@@ -109,6 +94,8 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_google_googleapis",
     "com_google_libprotobuf_mutator",
     "google_cloud_cpp",
+    "rules_shell",
+    "rules_java",
 ]
 
 
@@ -160,6 +147,11 @@ with open(os.path.join("bazel", "grpc_deps.bzl"), "r") as f:
     eval_state = BazelEvalState(names_and_urls)
     bazel_file = f.read()
 
+# Remove bzlmod specific functions
+bazel_file = re.sub(
+    r"^grpc_repo_deps_ext.*$", "", bazel_file, flags=re.MULTILINE
+)
+
 # grpc_deps.bzl only defines 'grpc_deps' and 'grpc_test_only_deps', add these
 # lines to call them.
 bazel_file += "\ngrpc_deps()\n"
@@ -187,6 +179,10 @@ names_without_bazel_only_deps = list(names_and_urls.keys())
 for dep_name in _GRPC_BAZEL_ONLY_DEPS:
     names_without_bazel_only_deps.remove(dep_name)
 archive_urls = [names_and_urls[name] for name in names_without_bazel_only_deps]
+for url in archive_urls:
+    if re.search(git_hash_pattern, url) is None:
+        print("Cannot find the hash value from url", url)
+        sys.exit(1)
 workspace_git_hashes = {
     re.search(git_hash_pattern, url).group() for url in archive_urls
 }

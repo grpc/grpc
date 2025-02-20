@@ -27,6 +27,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
 #include <limits.h>
 #include <poll.h>
 #include <pthread.h>
@@ -43,10 +45,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
-
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -708,7 +706,7 @@ static grpc_error_handle process_epoll_events(grpc_pollset* /*pollset*/) {
 
 // NOTE ON SYNCHRONIZATION: At any point of time, only the g_active_poller
 // (i.e the designated poller thread) will be calling this function. So there is
-// no need for any synchronization when accesing fields in g_epoll_set
+// no need for any synchronization when accessing fields in g_epoll_set
 static grpc_error_handle do_epoll_wait(grpc_pollset* ps,
                                        grpc_core::Timestamp deadline) {
   int r;
@@ -1011,7 +1009,7 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
     // threads
 
     // process_epoll_events() returns very quickly: It just queues the work on
-    // exec_ctx but does not execute it (the actual exectution or more
+    // exec_ctx but does not execute it (the actual execution or more
     // accurately grpc_core::ExecCtx::Get()->Flush() happens in end_worker()
     // AFTER selecting a designated poller). So we are not waiting long periods
     // without a designated poller

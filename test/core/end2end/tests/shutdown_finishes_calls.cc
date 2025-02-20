@@ -16,13 +16,12 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
+#include <memory>
+
+#include "gtest/gtest.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/test_config.h"
@@ -30,7 +29,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreEnd2endTest, EarlyServerShutdownFinishesInflightCalls) {
+CORE_END2END_TEST(CoreEnd2endTests, EarlyServerShutdownFinishesInflightCalls) {
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
 

@@ -19,24 +19,22 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>  // IWYU pragma: keep
 #include <iosfwd>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/avl.h"
 #include "src/core/util/debug_location.h"
@@ -355,8 +353,8 @@ class ChannelArgs {
         : rep_(RefCountedString::Make(s).release(), &string_vtable_) {}
     explicit Value(Pointer p) : rep_(std::move(p)) {}
 
-    absl::optional<int> GetIfInt() const {
-      if (rep_.c_vtable() != &int_vtable_) return absl::nullopt;
+    std::optional<int> GetIfInt() const {
+      if (rep_.c_vtable() != &int_vtable_) return std::nullopt;
       return reinterpret_cast<intptr_t>(rep_.c_pointer());
     }
     RefCountedPtr<RefCountedString> GetIfString() const {
@@ -498,9 +496,9 @@ class ChannelArgs {
     return Get(ChannelArgNameTraits<T>::ChannelArgName()) != nullptr;
   }
 
-  absl::optional<int> GetInt(absl::string_view name) const;
-  absl::optional<absl::string_view> GetString(absl::string_view name) const;
-  absl::optional<std::string> GetOwnedString(absl::string_view name) const;
+  std::optional<int> GetInt(absl::string_view name) const;
+  std::optional<absl::string_view> GetString(absl::string_view name) const;
+  std::optional<std::string> GetOwnedString(absl::string_view name) const;
   // WARNING: this is broken if `name` represents something that was stored as a
   // RefCounted<const T> - we will discard the const-ness.
   void* GetVoidPointer(absl::string_view name) const;
@@ -510,9 +508,9 @@ class ChannelArgs {
     return static_cast<typename GetObjectImpl<T>::StoredType>(
         GetVoidPointer(name));
   }
-  absl::optional<Duration> GetDurationFromIntMillis(
+  std::optional<Duration> GetDurationFromIntMillis(
       absl::string_view name) const;
-  absl::optional<bool> GetBool(absl::string_view name) const;
+  std::optional<bool> GetBool(absl::string_view name) const;
 
   // Object based get/set.
   // Deal with the common case that we set a pointer to an object under
@@ -679,7 +677,7 @@ typedef grpc_core::ChannelArgs (
     const char* target, const grpc_core::ChannelArgs& old_args,
     grpc_channel_stack_type type);
 
-// Should be called only once globaly before grpc is init'ed.
+// Should be called only once globally before grpc is init'ed.
 void grpc_channel_args_set_client_channel_creation_mutator(
     grpc_channel_args_client_channel_creation_mutator cb);
 // This will be called at the creation of each channel.

@@ -27,7 +27,6 @@ grpc_cc_library(
     hdrs = ["memstats.h"],
     external_deps = [
         "absl/log:check",
-        "absl/types:optional",
     ],
     tags = [
         "bazel_only",
@@ -112,7 +111,7 @@ grpc_cc_binary(
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_chaotic_good",
-        "//src/proto/grpc/testing:benchmark_service_proto",
+        "//src/proto/grpc/testing:benchmark_service_cc_grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -139,7 +138,7 @@ grpc_cc_binary(
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_chaotic_good",
-        "//src/proto/grpc/testing:benchmark_service_proto",
+        "//src/proto/grpc/testing:benchmark_service_cc_grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -169,7 +168,6 @@ grpc_cc_test(
         "absl/flags:parse",
         "absl/log:log",
     ],
-    language = "C++",
     tags = MEMORY_USAGE_TAGS,
     deps = [
         "//:gpr",
@@ -190,7 +188,6 @@ grpc_cc_binary(
         "absl/flags:flag",
         "absl/flags:parse",
     ],
-    language = "C++",
     tags = MEMORY_USAGE_TAGS,
     deps = [
         "//:gpr",

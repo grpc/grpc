@@ -27,7 +27,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
 #include "src/core/util/atomic_utils.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
@@ -285,6 +284,7 @@ template <typename Child, typename Impl = PolymorphicRefCount,
 class RefCounted : public Impl {
  public:
   using RefCountedChildType = Child;
+  using RefCountedUnrefBehaviorType = UnrefBehavior;
 
   // Not copyable nor movable.
   RefCounted(const RefCounted&) = delete;

@@ -23,6 +23,8 @@
 #define HAVE_ABSEIL
 #endif
 
+#include <grpcpp/ext/otel_plugin.h>
+
 #include <string>
 
 #include "absl/flags/flag.h"
@@ -30,8 +32,6 @@
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
-
-#include <grpcpp/ext/otel_plugin.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/util.h"
@@ -49,6 +49,7 @@ int main(int argc, char** argv) {
   // exporter.
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   opts.url = absl::GetFlag(FLAGS_prometheus_endpoint);
+  opts.without_otel_scope = false;
   auto prometheus_exporter =
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =

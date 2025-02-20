@@ -18,6 +18,8 @@
 
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
@@ -31,10 +33,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -77,7 +75,7 @@ ChannelStackBuilderImpl::Build() {
         gpr_free(stk);
       },
       channel_stack, stack.data(), stack.size(), channel_args(), name(),
-      channel_stack);
+      channel_stack, old_blackboard_, new_blackboard_);
 
   if (!error.ok()) {
     grpc_channel_stack_destroy(channel_stack);

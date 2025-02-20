@@ -18,17 +18,15 @@
 
 #include "src/core/lib/iomgr/executor.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <string.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -86,17 +84,6 @@ void Executor::Init() { SetThreading(true); }
 size_t Executor::RunClosures(const char* executor_name,
                              grpc_closure_list list) {
   size_t n = 0;
-
-  // In the executor, the ExecCtx for the thread is declared in the executor
-  // thread itself, but this is the point where we could start seeing
-  // application-level callbacks. No need to create a new ExecCtx, though,
-  // since there already is one and it is flushed (but not destructed) in this
-  // function itself. The ApplicationCallbackExecCtx will have its callbacks
-  // invoked on its destruction, which will be after completing any closures in
-  // the executor's closure list (which were explicitly scheduled onto the
-  // executor).
-  ApplicationCallbackExecCtx callback_exec_ctx(
-      GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
   grpc_closure* c = list.head;
   while (c != nullptr) {

@@ -67,6 +67,7 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     generator_parameters.include_import_headers = false;
     generator_parameters.allow_sync_server_api = true;
     generator_parameters.allow_cq_api = true;
+    generator_parameters.allow_deprecated = false;
 
     ProtoBufFile pbfile(file);
 
@@ -129,6 +130,15 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
             *error = std::string("Invalid parameter: ") + *parameter_string;
             return false;
           }
+        } else if (param[0] == "allow_deprecated") {
+          if (param[1] == "true") {
+            generator_parameters.allow_deprecated = true;
+          } else if (param[1] == "false") {
+            generator_parameters.allow_deprecated = false;
+          } else {
+            *error = std::string("Invalid parameter: ") + *parameter_string;
+            return false;
+          }
         } else {
           *error = std::string("Unknown parameter: ") + *parameter_string;
           return false;
@@ -136,7 +146,8 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
     }
 
-    std::string file_name = grpc_generator::StripProto(file->name());
+    std::string file_name =
+        grpc_generator::StripProto(std::string(file->name()));
 
     std::string header_code =
         grpc_cpp_generator::GetHeaderPrologue(&pbfile, generator_parameters) +

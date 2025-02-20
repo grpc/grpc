@@ -19,15 +19,13 @@
 #include "src/core/lib/iomgr/combiner.h"
 
 #include <assert.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -162,7 +160,6 @@ static void queue_offload(grpc_core::Combiner* lock) {
   gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 1);
   GRPC_TRACE_LOG(combiner, INFO) << "C:" << lock << " queue_offload";
   lock->event_engine->Run([lock] {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx(0);
     push_last_on_exec_ctx(lock);
     exec_ctx.Flush();

@@ -3,10 +3,11 @@
  *     envoy/config/listener/v3/listener_components.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPBDEFS_H_
-#define ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPBDEFS_H_
+#ifndef ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -33,11 +34,6 @@ UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_FilterChain_getmsgdef(
   return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.FilterChain");
 }
 
-UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_FilterChain_OnDemandConfiguration_getmsgdef(upb_DefPool *s) {
-  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
-  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.FilterChain.OnDemandConfiguration");
-}
-
 UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_ListenerFilterChainMatchPredicate_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.ListenerFilterChainMatchPredicate");
@@ -59,4 +55,4 @@ UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_ListenerFilter_getmsgd
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_CONFIG_LISTENER_V3_LISTENER_COMPONENTS_PROTO_UPB_H__UPBDEFS_H_ */

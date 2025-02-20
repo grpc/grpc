@@ -3,7 +3,8 @@
  *     envoy/admin/v3/server_info.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -16,11 +17,12 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_admin_v3_ServerInfo_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__CommandLineOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_admin_v3_ServerInfo__submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__CommandLineOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_admin_v3_ServerInfo__fields[7] = {
@@ -34,7 +36,7 @@ static const upb_MiniTableField envoy_admin_v3_ServerInfo__fields[7] = {
 };
 
 const upb_MiniTable envoy__admin__v3__ServerInfo_msg_init = {
-  &envoy_admin_v3_ServerInfo_submsgs[0],
+  &envoy_admin_v3_ServerInfo__submsgs[0],
   &envoy_admin_v3_ServerInfo__fields[0],
   UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -52,13 +54,14 @@ const upb_MiniTable envoy__admin__v3__ServerInfo_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_admin_v3_CommandLineOptions_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* envoy__admin__v3__ServerInfo_msg_init_ptr = &envoy__admin__v3__ServerInfo_msg_init;
+static const upb_MiniTableSubInternal envoy_admin_v3_CommandLineOptions__submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_admin_v3_CommandLineOptions__fields[36] = {
+static const upb_MiniTableField envoy_admin_v3_CommandLineOptions__fields[37] = {
   {1, UPB_SIZE(88, 64), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, 12, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(96, 72), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -95,12 +98,13 @@ static const upb_MiniTableField envoy_admin_v3_CommandLineOptions__fields[36] = 
   {38, UPB_SIZE(76, 296), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {39, UPB_SIZE(80, 57), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {40, UPB_SIZE(81, 58), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {41, UPB_SIZE(82, 59), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__admin__v3__CommandLineOptions_msg_init = {
-  &envoy_admin_v3_CommandLineOptions_submsgs[0],
+  &envoy_admin_v3_CommandLineOptions__submsgs[0],
   &envoy_admin_v3_CommandLineOptions__fields[0],
-  UPB_SIZE(192, 304), 36, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(192, 304), 37, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(248), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.CommandLineOptions",
 #endif
@@ -140,6 +144,7 @@ const upb_MiniTable envoy__admin__v3__CommandLineOptions_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__admin__v3__CommandLineOptions_msg_init_ptr = &envoy__admin__v3__CommandLineOptions_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__admin__v3__ServerInfo_msg_init,
   &envoy__admin__v3__CommandLineOptions_msg_init,

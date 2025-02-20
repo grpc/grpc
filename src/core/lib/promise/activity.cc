@@ -14,6 +14,7 @@
 
 #include "src/core/lib/promise/activity.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <vector>
@@ -22,9 +23,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/atomic_utils.h"
 
 namespace grpc_core {
@@ -32,7 +30,9 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
+#if !defined(_WIN32) || !defined(_DLL)
 thread_local Activity* Activity::g_current_activity_{nullptr};
+#endif
 
 namespace promise_detail {
 

@@ -1,13 +1,10 @@
 # This dockerfile is taken from go/rbe-windows-user-guide
-# Local modifications:
-# * install VS2019 (instead of VS2022)
-# TODO(jtattermusch): check the --compilation_mode=dbg fix
 
 # This Dockerfile creates an image that has the following:
 #  * correct MTU setting for networking from inside the container to work.
 #  * metadata server routes correctly installed 
 #  * VC++ redistributable installed
-#  * Visual Studio 2019 Build Tools installed
+#  * Visual Studio 2022 Build Tools installed
 #  * msys2 + git, curl, zip, unzip installed
 #  * Python 3.10.4 installed
 #  * JDK 17.0.2 installed
@@ -34,9 +31,8 @@ RUN New-Item -Path "C:/" -Name "TEMP" -ItemType "directory"; \
         -OutFile C:/TEMP/vc_redist.x64.exe -UseBasicParsing; \
     Start-Process -filepath C:/TEMP/vc_redist.x64.exe -ArgumentList '/install', '/passive', '/norestart' -Wait; \
     Remove-Item C:/TEMP/vc_redist.x64.exe
-
-# Install Visual Studio 2019 Build Tools.
-RUN Invoke-WebRequest "https://aka.ms/vs/16/release/vs_buildtools.exe" \
+# Install Visual Studio 2022 Build Tools.
+RUN Invoke-WebRequest "https://aka.ms/vs/17/release/vs_buildtools.exe" \
         -OutFile C:/TEMP/vs_buildtools.exe -UseBasicParsing; \
     Start-Process -FilePath C:/TEMP/vs_buildtools.exe -ArgumentList "--installPath", "C:/VS", \
         "--quiet", "--wait", "--nocache", \
@@ -47,7 +43,7 @@ RUN Invoke-WebRequest "https://aka.ms/vs/16/release/vs_buildtools.exe" \
     [Environment]::SetEnvironmentVariable(\"BAZEL_VC\", \"C:\VS\VC\", \"Machine\")
 # Install msys2 and add to path.
 RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
-    Invoke-WebRequest "https://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20220319.sfx.exe" \
+    Invoke-WebRequest "https://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20240507.sfx.exe" \
         -OutFile msys2_install.exe -UseBasicParsing; \
     .\msys2_install.exe -y -oC:\; \
     Remove-Item msys2_install.exe; \
@@ -56,7 +52,8 @@ RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tl
     msys 'pacman --noconfirm -Syy zstd'; \
     msys 'pacman --noconfirm -Syy git curl zip unzip'; \
     $old_path = [Environment]::GetEnvironmentVariable(\"PATH\", \"Machine\"); \
-    [Environment]::SetEnvironmentVariable(\"PATH\", $old_path + \";C:\msys64;C:\msys64\usr\bin\", \"Machine\");
+    [Environment]::SetEnvironmentVariable(\"PATH\", $old_path + \";C:\msys64;C:\msys64\usr\bin\", \"Machine\"); \
+    [Environment]::SetEnvironmentVariable(\"BAZEL_SH\", \"C:\msys64\usr\bin\bash.exe\", \"Machine\")
 # Install Python 3.
 RUN Invoke-WebRequest "https://www.python.org/ftp/python/3.10.4/python-3.10.4-amd64.exe" \
                 -OutFile C:/TEMP/python_install.exe -UseBasicParsing; \

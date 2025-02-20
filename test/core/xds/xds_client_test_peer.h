@@ -17,13 +17,12 @@
 #ifndef GRPC_TEST_CORE_XDS_XDS_CLIENT_TEST_PEER_H
 #define GRPC_TEST_CORE_XDS_XDS_CLIENT_TEST_PEER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <set>
 
 #include "absl/functional/function_ref.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/xds/xds_client/xds_client.h"
 
 namespace grpc_core {
@@ -33,12 +32,16 @@ class XdsClientTestPeer {
  public:
   explicit XdsClientTestPeer(XdsClient* xds_client) : xds_client_(xds_client) {}
 
-  void TestDumpClientConfig() {
+  std::string TestDumpClientConfig() {
     upb::Arena arena;
-    auto client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
+    auto* client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
     std::set<std::string> string_pool;
     MutexLock lock(xds_client_->mu());
     xds_client_->DumpClientConfig(&string_pool, arena.ptr(), client_config);
+    size_t output_length;
+    char* output = envoy_service_status_v3_ClientConfig_serialize(
+        client_config, arena.ptr(), &output_length);
+    return std::string(output, output_length);
   }
 
   struct ResourceCountLabels {

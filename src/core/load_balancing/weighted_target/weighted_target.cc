@@ -16,12 +16,16 @@
 
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -36,14 +40,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -202,7 +200,7 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
       void OnTimerLocked();
 
       RefCountedPtr<WeightedChild> weighted_child_;
-      absl::optional<EventEngine::TaskHandle> timer_handle_;
+      std::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     // Methods for dealing with the child policy.
@@ -302,7 +300,7 @@ void WeightedTargetLb::ShutdownLocked() {
 }
 
 void WeightedTargetLb::ResetBackoffLocked() {
-  for (auto& p : targets_) p.second->ResetBackoffLocked();
+  for (auto& [_, child] : targets_) child->ResetBackoffLocked();
 }
 
 absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
@@ -313,9 +311,7 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = args.config.TakeAsSubclass<WeightedTargetLbConfig>();
   // Deactivate the targets not in the new config.
-  for (const auto& p : targets_) {
-    const std::string& name = p.first;
-    WeightedChild* child = p.second.get();
+  for (const auto& [name, child] : targets_) {
     if (config_->target_map().find(name) == config_->target_map().end()) {
       child->DeactivateLocked();
     }
@@ -324,9 +320,7 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   absl::StatusOr<HierarchicalAddressMap> address_map =
       MakeHierarchicalAddressMap(args.addresses);
   std::vector<std::string> errors;
-  for (const auto& p : config_->target_map()) {
-    const std::string& name = p.first;
-    const WeightedTargetLbConfig::ChildConfig& config = p.second;
+  for (const auto& [name, config] : config_->target_map()) {
     auto& target = targets_[name];
     // Create child if it does not already exist.
     if (target == nullptr) {
@@ -394,9 +388,7 @@ void WeightedTargetLb::UpdateStateLocked() {
   // the aggregated state.
   size_t num_connecting = 0;
   size_t num_idle = 0;
-  for (const auto& p : targets_) {
-    const std::string& child_name = p.first;
-    const WeightedChild* child = p.second.get();
+  for (const auto& [child_name, child] : targets_) {
     // Skip the targets that are not in the latest update.
     if (config_->target_map().find(child_name) == config_->target_map().end()) {
       continue;
@@ -473,13 +465,11 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
       weighted_child_->weighted_target_policy_->channel_control_helper()
           ->GetEventEngine()
           ->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
-            ApplicationCallbackExecCtx app_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();  // Avoid use-after-move problem.
             self_ptr->weighted_child_->weighted_target_policy_
                 ->work_serializer()
-                ->Run([self = std::move(self)] { self->OnTimerLocked(); },
-                      DEBUG_LOCATION);
+                ->Run([self = std::move(self)] { self->OnTimerLocked(); });
           });
 }
 

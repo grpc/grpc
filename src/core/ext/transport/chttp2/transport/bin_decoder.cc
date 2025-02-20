@@ -18,13 +18,12 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 
-#include "absl/base/attributes.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/base/attributes.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/slice/slice.h"
 
 static uint8_t decode_table[] = {
@@ -97,7 +96,7 @@ size_t grpc_chttp2_base64_infer_length_after_decode(const grpc_slice& slice) {
                << " (without padding), which is invalid.\n";
     return 0;
   }
-  return tuples * 3 + tail_xtra[tail_case];
+  return (tuples * 3) + tail_xtra[tail_case];
 }
 
 bool grpc_base64_decode_partial(struct grpc_base64_decode_context* ctx) {
@@ -143,7 +142,7 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context* ctx) {
       switch (input_tail) {
         case 3:
           ctx->output_cur[1] = COMPOSE_OUTPUT_BYTE_1(ctx->input_cur);
-          ABSL_FALLTHROUGH_INTENDED;
+          [[fallthrough]];
         case 2:
           ctx->output_cur[0] = COMPOSE_OUTPUT_BYTE_0(ctx->input_cur);
       }
@@ -216,7 +215,8 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
                    input_length / 4 * 3 + tail_xtra[input_length % 4])) {
     LOG(ERROR) << "Base64 decoding failed, output_length " << output_length
                << " is longer than the max possible output length "
-               << (input_length / 4 * 3 + tail_xtra[input_length % 4]) << ".\n";
+               << ((input_length / 4 * 3) + tail_xtra[input_length % 4])
+               << ".\n";
     grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }

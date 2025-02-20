@@ -18,12 +18,20 @@
 
 #include "src/core/handshaker/security/security_handshaker.h"
 
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -33,23 +41,13 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -201,7 +199,7 @@ MakeChannelzSecurityFromAuthContext(grpc_auth_context* auth_context) {
   // https://github.com/grpc/grpc/blob/fcd43e90304862a823316b224ee733d17a8cfd90/src/proto/grpc/channelz/channelz.proto#L326
   // from grpc_auth_context.
   security->type = channelz::SocketNode::Security::ModelType::kTls;
-  security->tls = absl::make_optional<channelz::SocketNode::Security::Tls>();
+  security->tls = std::make_optional<channelz::SocketNode::Security::Tls>();
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context, GRPC_X509_PEM_CERT_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
@@ -247,7 +245,7 @@ void SecurityHandshaker::OnPeerCheckedFn(grpc_error_handle error) {
   tsi_frame_protector* protector = nullptr;
   switch (frame_protector_type) {
     case TSI_FRAME_PROTECTOR_ZERO_COPY:
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY:
       // Create zero-copy frame protector.
       result = tsi_handshaker_result_create_zero_copy_grpc_protector(
@@ -358,16 +356,12 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     return error;
   }
   if (result != TSI_OK) {
-    auto* security_connector = args_->args.GetObject<grpc_security_connector>();
-    absl::string_view connector_type = "<unknown>";
-    if (security_connector != nullptr) {
-      connector_type = security_connector->type().name();
-    }
     // TODO(roth): Get a better signal from the TSI layer as to what
     // status code we should use here.
     return GRPC_ERROR_CREATE(absl::StrCat(
-        connector_type, " handshake failed (", tsi_result_to_string(result),
-        ")", (tsi_handshake_error_.empty() ? "" : ": "), tsi_handshake_error_));
+        connector_->type().name(), " handshake failed (",
+        tsi_result_to_string(result), ")",
+        (tsi_handshake_error_.empty() ? "" : ": "), tsi_handshake_error_));
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
@@ -446,7 +440,6 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
     grpc_error_handle error) {
   args_->event_engine->Run([self = RefAsSubclass<SecurityHandshaker>(),
                             error = std::move(error)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     self->OnHandshakeDataReceivedFromPeerFn(std::move(error));
     // Avoid destruction outside of an ExecCtx (since this is non-cancelable).
@@ -478,7 +471,6 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
     grpc_error_handle error) {
   args_->event_engine->Run([self = RefAsSubclass<SecurityHandshaker>(),
                             error = std::move(error)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     self->OnHandshakeDataSentToPeerFn(std::move(error));
     // Avoid destruction outside of an ExecCtx (since this is non-cancelable).

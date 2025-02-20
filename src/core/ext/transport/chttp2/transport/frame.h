@@ -15,17 +15,16 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "absl/types/variant.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -50,6 +49,19 @@ namespace grpc_core {
 // declare a bool per flag to make producing/consuming code easier to write.
 //
 // Equality operators are defined for use in unit tests.
+
+// All frames begin with a fixed 9-octet header followed by a variable-length
+// frame payload. The following sizes are in bits.
+// HTTP Frame {
+//   Length(24),
+//   Type(8),
+//   Flags(8),
+//   Reserved(1),
+//   Stream Identifier(31),
+//   Frame Payload(..),
+// }
+// Reference : https://www.rfc-editor.org/rfc/rfc9113.html#name-frame-format
+constexpr uint8_t kFrameHeaderSize = 9;
 
 // DATA frame
 struct Http2DataFrame {
@@ -152,6 +164,15 @@ struct Http2WindowUpdateFrame {
   }
 };
 
+// Security-related frame
+struct Http2SecurityFrame {
+  SliceBuffer payload;
+
+  bool operator==(const Http2SecurityFrame& other) const {
+    return payload.JoinIntoString() == other.payload.JoinIntoString();
+  }
+};
+
 // Type of frame was unknown (and should be ignored)
 struct Http2UnknownFrame {
   bool operator==(const Http2UnknownFrame&) const { return true; }
@@ -163,9 +184,10 @@ struct Http2UnknownFrame {
 // A union of all the frame types above, so that we may pass around an
 // arbitrary frame between layers as appropriate.
 using Http2Frame =
-    absl::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
-                  Http2RstStreamFrame, Http2SettingsFrame, Http2PingFrame,
-                  Http2GoawayFrame, Http2WindowUpdateFrame, Http2UnknownFrame>;
+    std::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
+                 Http2RstStreamFrame, Http2SettingsFrame, Http2PingFrame,
+                 Http2GoawayFrame, Http2WindowUpdateFrame, Http2SecurityFrame,
+                 Http2UnknownFrame>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Frame header

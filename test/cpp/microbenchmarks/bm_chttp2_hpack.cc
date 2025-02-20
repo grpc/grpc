@@ -18,20 +18,17 @@
 
 // Microbenchmarks around CHTTP2 HPACK operations
 
+#include <benchmark/benchmark.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <string.h>
 
 #include <memory>
 #include <sstream>
 
-#include <benchmark/benchmark.h>
-
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/random.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -66,14 +63,14 @@ class FakeCallTracer final : public CallTracerInterface {
       grpc_metadata_batch* send_initial_metadata) override {}
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override {}
-  void RecordSendMessage(const SliceBuffer& send_message) override {}
+  void RecordSendMessage(const Message& send_message) override {}
   void RecordSendCompressedMessage(
-      const SliceBuffer& send_compressed_message) override {}
+      const Message& send_compressed_message) override {}
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) override {}
-  void RecordReceivedMessage(const SliceBuffer& recv_message) override {}
+  void RecordReceivedMessage(const Message& recv_message) override {}
   void RecordReceivedDecompressedMessage(
-      const SliceBuffer& recv_decompressed_message) override {}
+      const Message& recv_decompressed_message) override {}
   void RecordCancel(grpc_error_handle cancel_error) override {}
   std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
     return nullptr;

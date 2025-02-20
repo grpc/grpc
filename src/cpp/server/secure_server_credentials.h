@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
 #define GRPC_SRC_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
 
-#include <memory>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/server_credentials.h>
+
+#include <memory>
 
 #include "src/cpp/server/thread_pool_interface.h"
 

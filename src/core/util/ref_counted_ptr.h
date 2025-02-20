@@ -21,14 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <iosfwd>
 #include <type_traits>
 #include <utility>
 
 #include "absl/hash/hash.h"
-
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
 

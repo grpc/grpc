@@ -14,20 +14,18 @@
 // limitations under the License.
 //
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <stdlib.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -63,7 +61,7 @@ TEST(MetadataMapTest, NoopWithDeadline) { TimeoutOnlyMetadataMap(); }
 TEST(MetadataMapTest, SimpleOps) {
   TimeoutOnlyMetadataMap map;
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
-  EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
+  EXPECT_EQ(map.get(GrpcTimeoutMetadata()), std::nullopt);
   map.Set(GrpcTimeoutMetadata(),
           Timestamp::FromMillisecondsAfterProcessEpoch(1234));
   EXPECT_NE(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
@@ -73,7 +71,7 @@ TEST(MetadataMapTest, SimpleOps) {
             Timestamp::FromMillisecondsAfterProcessEpoch(1234));
   map.Remove(GrpcTimeoutMetadata());
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
-  EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
+  EXPECT_EQ(map.get(GrpcTimeoutMetadata()), std::nullopt);
 }
 
 // Target for MetadataMap::Encode.
@@ -255,7 +253,7 @@ TEST(DebugStringBuilderTest, TestAllRedacted) {
   int i = 0;
   for (std::string& curr_row : redacted_output) {
     std::string redacted_str = absl::StrCat(
-        allow_list_keys[i++].size(), " bytes redacted by allow listing.");
+        allow_list_keys[i++].size(), " bytes redacted for security reasons.");
     EXPECT_EQ(absl::StrContains(curr_row, redacted_str), true);
   }
 }

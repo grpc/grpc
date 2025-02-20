@@ -16,6 +16,8 @@ load(
 )
 load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
+package(default_applicable_licenses = ["//:license"])
+
 cc_library(
     name = "message",
     srcs = [
@@ -86,6 +88,24 @@ cc_library(
 )
 
 cc_library(
+    name = "iterator",
+    srcs = [
+        "internal/iterator.c",
+    ],
+    hdrs = [
+        "internal/iterator.h",
+    ],
+    copts = UPB_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":internal",
+        ":message",
+        "//upb:mini_table",
+        "//upb:port",
+    ],
+)
+
+cc_library(
     name = "compare",
     srcs = [
         "compare.c",
@@ -97,6 +117,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
+        ":iterator",
         ":message",
         "//upb:base",
         "//upb:mini_table",
@@ -109,9 +130,11 @@ cc_library(
     name = "copy",
     srcs = [
         "copy.c",
+        "merge.c",
     ],
     hdrs = [
         "copy.h",
+        "merge.h",
     ],
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
@@ -122,6 +145,7 @@ cc_library(
         "//upb:mem",
         "//upb:mini_table",
         "//upb:port",
+        "//upb:wire",
         "//upb/base:internal",
         "//upb/mini_table:internal",
     ],
@@ -147,6 +171,26 @@ cc_library(
         "//upb:port",
         "//upb:wire",
         "//upb:wire_reader",
+    ],
+)
+
+cc_test(
+    name = "merge_test",
+    srcs = ["merge_test.cc"],
+    deps = [
+        ":copy",
+        ":internal",
+        "//upb:base",
+        "//upb:mem",
+        "//upb:message",
+        "//upb:mini_table",
+        "//upb:port",
+        "//upb:wire",
+        "//upb/test:test_messages_proto2_upb_minitable",
+        "//upb/test:test_messages_proto2_upb_proto",
+        "//upb/test:test_upb_proto",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -388,7 +432,6 @@ cc_test(
     ],
 )
 
-# begin:github_only
 filegroup(
     name = "source_files",
     srcs = glob(
@@ -402,9 +445,7 @@ filegroup(
         "//upb/cmake:__pkg__",
     ],
 )
-# end:github_only
 
-# begin:github_only
 filegroup(
     name = "test_srcs",
     srcs = glob(
@@ -425,4 +466,3 @@ filegroup(
     ),
     visibility = ["//upb:__pkg__"],
 )
-# end:github_only

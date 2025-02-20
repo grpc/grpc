@@ -23,16 +23,17 @@
 #define HAVE_ABSEIL
 #endif
 
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/xds_server_builder.h>
+
 #include <condition_variable>
 #include <mutex>
 
 #include "opentelemetry/sdk/metrics/view/instrument_selector_factory.h"
 #include "opentelemetry/sdk/metrics/view/meter_selector_factory.h"
 #include "opentelemetry/sdk/metrics/view/view_factory.h"
-
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/util.h"
@@ -164,15 +165,39 @@ void RunServer(uint16_t port) {
   server->Wait();
 }
 
+void RunXdsEnabledServer(uint16_t port) {
+  std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
+  GreeterServiceImpl service;
+
+  grpc::EnableDefaultHealthCheckService(true);
+  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
+  grpc::XdsServerBuilder builder;
+  // Listen on the given address without any authentication mechanism.
+  builder.AddListeningPort(
+      server_address,
+      grpc::XdsServerCredentials(grpc::InsecureServerCredentials()));
+  // Register "service" as the instance through which we'll communicate with
+  // clients. In this case it corresponds to an *synchronous* service.
+  builder.RegisterService(&service);
+  // Finally assemble the server.
+  std::unique_ptr<Server> server(builder.BuildAndStart());
+  std::cout << "Server listening on " << server_address << std::endl;
+
+  // Wait for the server to shutdown. Note that some other thread must be
+  // responsible for shutting down the server for this call to ever return.
+  server->Wait();
+}
+
 void RunClient(const std::string& target_str) {
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint specified by
   // the argument "--target=" which is the only expected argument.
   grpc::ChannelArguments args;
+  GreeterClient greeter(grpc::CreateCustomChannel(
+      target_str, grpc::XdsCredentials(grpc::InsecureChannelCredentials()),
+      args));
   // Continuously send RPCs every second.
   while (true) {
-    GreeterClient greeter(grpc::CreateCustomChannel(
-        target_str, grpc::InsecureChannelCredentials(), args));
     std::string user("world");
     std::string reply = greeter.SayHello(user);
     std::cout << "Greeter received: " << reply << std::endl;

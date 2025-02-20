@@ -17,15 +17,16 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_BOOTSTRAP_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_BOOTSTRAP_H
 
-#include <string>
-
 #include <grpc/support/port_platform.h>
+
+#include <string>
 
 #include "src/core/util/json/json.h"
 
 namespace grpc_core {
 
 bool XdsFederationEnabled();
+bool XdsDataErrorHandlingEnabled();
 
 class XdsBootstrap {
  public:
@@ -46,7 +47,13 @@ class XdsBootstrap {
     virtual ~XdsServer() = default;
 
     virtual const std::string& server_uri() const = 0;
+
+    // TODO(roth): Remove this method once the data error handling
+    // feature passes interop tests.
     virtual bool IgnoreResourceDeletion() const = 0;
+
+    virtual bool FailOnDataErrors() const = 0;
+    virtual bool ResourceTimerIsTransientFailure() const = 0;
 
     virtual bool Equals(const XdsServer& other) const = 0;
 

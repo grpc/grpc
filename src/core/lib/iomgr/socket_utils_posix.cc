@@ -16,18 +16,17 @@
 //
 //
 
-#include "absl/types/optional.h"
-
 #include <grpc/support/port_platform.h>
+
+#include <optional>
 
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 #include <fcntl.h>
+#include <grpc/impl/grpc_types.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-#include <grpc/impl/grpc_types.h>
 
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -47,7 +46,7 @@ using ::grpc_core::PosixTcpOptions;
 namespace {
 
 int AdjustValue(int default_value, int min_value, int max_value,
-                absl::optional<int> actual_value) {
+                std::optional<int> actual_value) {
   if (!actual_value.has_value() || *actual_value < min_value ||
       *actual_value > max_value) {
     return default_value;

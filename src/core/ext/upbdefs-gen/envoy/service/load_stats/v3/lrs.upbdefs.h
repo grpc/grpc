@@ -3,10 +3,11 @@
  *     envoy/service/load_stats/v3/lrs.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPBDEFS_H_
-#define ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPBDEFS_H_
+#ifndef ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -34,4 +35,4 @@ UPB_INLINE const upb_MessageDef *envoy_service_load_stats_v3_LoadStatsResponse_g
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_H__UPBDEFS_H_ */

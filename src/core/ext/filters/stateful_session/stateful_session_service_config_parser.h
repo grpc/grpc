@@ -18,18 +18,16 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_SERVICE_CONFIG_PARSER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -47,7 +45,7 @@ class StatefulSessionMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
   struct CookieConfig {
-    absl::optional<std::string> name;  // Will be unset if disabled.
+    std::optional<std::string> name;  // Will be unset if disabled.
     std::string path;
     Duration ttl;
 

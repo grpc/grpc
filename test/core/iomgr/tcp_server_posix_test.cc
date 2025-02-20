@@ -39,16 +39,15 @@
 #include <sys/un.h>
 #endif
 
-#include <memory>
-#include <string>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/log/log.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/error.h"
@@ -330,12 +329,12 @@ static void test_connect(size_t num_connects,
                          const grpc_channel_args* channel_args,
                          test_addrs* dst_addrs, bool test_dst_addrs) {
   grpc_core::ExecCtx exec_ctx;
-  // Use aligned_stroage to allocate grpc_resolved_address objects on stack
+  // Use aligned_storage to allocate grpc_resolved_address objects on stack
   // to meet the alignment requirement of sockaddr_storage type.
-  std::aligned_storage<sizeof(grpc_resolved_address),
-                       alignof(sockaddr_storage)>::type resolved_addr_buffer;
-  std::aligned_storage<sizeof(grpc_resolved_address),
-                       alignof(sockaddr_storage)>::type resolved_addr1_buffer;
+  alignas(sockaddr_storage) char
+      resolved_addr_buffer[sizeof(grpc_resolved_address)];
+  alignas(sockaddr_storage) char
+      resolved_addr1_buffer[sizeof(grpc_resolved_address)];
   grpc_resolved_address& resolved_addr =
       *reinterpret_cast<grpc_resolved_address*>(&resolved_addr_buffer);
   grpc_resolved_address& resolved_addr1 =

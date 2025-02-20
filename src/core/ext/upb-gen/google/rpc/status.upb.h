@@ -3,10 +3,11 @@
  *     google/rpc/status.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_RPC_STATUS_PROTO_UPB_H_
-#define GOOGLE_RPC_STATUS_PROTO_UPB_H_
+#ifndef GOOGLE_RPC_STATUS_PROTO_UPB_H__UPB_H_
+#define GOOGLE_RPC_STATUS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -92,6 +93,7 @@ UPB_INLINE void google_rpc_Status_clear_details(google_rpc_Status* msg) {
 }
 UPB_INLINE const struct google_protobuf_Any* const* google_rpc_Status_details(const google_rpc_Status* msg, size_t* size) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -103,6 +105,7 @@ UPB_INLINE const struct google_protobuf_Any* const* google_rpc_Status_details(co
 }
 UPB_INLINE const upb_Array* _google_rpc_Status_details_upb_array(const google_rpc_Status* msg, size_t* size) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -111,6 +114,7 @@ UPB_INLINE const upb_Array* _google_rpc_Status_details_upb_array(const google_rp
 }
 UPB_INLINE upb_Array* _google_rpc_Status_details_mutable_upb_array(google_rpc_Status* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -129,6 +133,7 @@ UPB_INLINE void google_rpc_Status_set_message(google_rpc_Status *msg, upb_String
 }
 UPB_INLINE struct google_protobuf_Any** google_rpc_Status_mutable_details(google_rpc_Status* msg, size_t* size) {
   upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -145,6 +150,7 @@ UPB_INLINE struct google_protobuf_Any** google_rpc_Status_resize_details(google_
 }
 UPB_INLINE struct google_protobuf_Any* google_rpc_Status_add_details(google_rpc_Status* msg, upb_Arena* arena) {
   upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -164,4 +170,4 @@ UPB_INLINE struct google_protobuf_Any* google_rpc_Status_add_details(google_rpc_
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_RPC_STATUS_PROTO_UPB_H_ */
+#endif  /* GOOGLE_RPC_STATUS_PROTO_UPB_H__UPB_H_ */

@@ -15,6 +15,12 @@
 
 #ifdef GPR_WINDOWS
 
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/cpu.h>
+
 #include <memory>
 #include <ostream>
 
@@ -23,13 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/support/cpu.h>
-
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/handle_containers.h"
@@ -44,13 +43,13 @@
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::ostream& operator<<(
     std::ostream& out,
@@ -594,7 +593,6 @@ WindowsEventEngine::CreateListener(
       std::move(memory_allocator_factory), shared_from_this(),
       thread_pool_.get(), config);
 }
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

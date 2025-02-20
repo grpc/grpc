@@ -14,10 +14,10 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/subchannel_stream_client.h"
 
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -25,9 +25,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -143,7 +140,6 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
   }
   retry_timer_handle_ = event_engine_->RunAfter(
       timeout, [self = Ref(DEBUG_LOCATION, "health_retry_timer")]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnRetryTimer();
         self.reset(DEBUG_LOCATION, "health_retry_timer");

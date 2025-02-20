@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -25,21 +26,24 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/wait_set.h"
+#include "src/core/util/dump_args.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 
-// Multi producer single consumer inter-activity comms.
-
 namespace grpc_core {
 
 namespace mpscpipe_detail {
+
+// Multi Producer Single Consumer (MPSC) inter-activity communications.
+// MPSC is used to communicate in between two or more Activities or Promise
+// Parties in a thread safe way.
+// The communication consists of one or more MpscSender objects and one
+// MpscReceiver.
 
 // "Center" of the communication pipe.
 // Contains sent but not received messages, and open/close state.
@@ -56,18 +60,23 @@ class Center : public RefCounted<Center<T>> {
   // - Returns true if new items were obtained, in which case they are contained
   //   in dest in the order they were added. Wakes up all pending senders since
   //   there will now be space to send.
+  // - If receives have been closed, returns false.
   // - If no new items are available, returns
-  //   false and sets up a waker to be awoken when more items are available.
+  //   Pending and sets up a waker to be awoken when more items are available.
   // TODO(ctiller): consider the problem of thundering herds here. There may be
   // more senders than there are queue spots, and so the strategy of waking up
   // all senders is ill-advised.
   // That said, some senders may have been cancelled by the time we wake them,
   // and so waking a subset could cause starvation.
-  bool PollReceiveBatch(std::vector<T>& dest) {
+  Poll<bool> PollReceiveBatch(std::vector<T>& dest) {
     ReleasableMutexLock lock(&mu_);
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << "MPSC::PollReceiveBatch: "
+        << GRPC_DUMP_ARGS(this, batch_, queue_.size());
     if (queue_.empty()) {
+      if (batch_ == kClosedBatch) return false;
       receive_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      return false;
+      return Pending{};
     }
     dest.swap(queue_);
     queue_.clear();
@@ -78,14 +87,19 @@ class Center : public RefCounted<Center<T>> {
     return true;
   }
 
-  // Returns the batch number that the item was sent in, or kClosedBatch if the
-  // pipe is closed.
-  uint64_t Send(T t) {
+  // Return value:
+  //  - if the pipe is closed, returns kClosedBatch
+  //  - if await_receipt is false, returns the batch number the item was sent
+  //  in.
+  //  - if await_receipt is true, returns the first sending batch number that
+  //  guarantees the item has been received.
+  uint64_t Send(T t, bool await_receipt) {
     ReleasableMutexLock lock(&mu_);
     if (batch_ == kClosedBatch) return kClosedBatch;
     queue_.push_back(std::move(t));
     auto receive_waker = std::move(receive_waker_);
-    const uint64_t batch = queue_.size() <= max_queued_ ? batch_ : batch_ + 1;
+    const uint64_t batch =
+        (!await_receipt && queue_.size() <= max_queued_) ? batch_ : batch_ + 1;
     lock.Release();
     receive_waker.Wakeup();
     return batch;
@@ -94,18 +108,24 @@ class Center : public RefCounted<Center<T>> {
   // Poll until a particular batch number is received.
   Poll<Empty> PollReceiveBatch(uint64_t batch) {
     ReleasableMutexLock lock(&mu_);
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << "MPSC::PollReceiveBatch: " << GRPC_DUMP_ARGS(this, batch_, batch);
     if (batch_ >= batch) return Empty{};
     send_wakers_.AddPending(GetContext<Activity>()->MakeNonOwningWaker());
     return Pending{};
   }
 
   // Mark that the receiver is closed.
-  void ReceiverClosed() {
+  void ReceiverClosed(bool wake_receiver) {
     ReleasableMutexLock lock(&mu_);
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << "MPSC::ReceiverClosed: " << GRPC_DUMP_ARGS(this, batch_);
     if (batch_ == kClosedBatch) return;
     batch_ = kClosedBatch;
     auto wakeups = send_wakers_.TakeWakeupSet();
+    auto receive_waker = std::move(receive_waker_);
     lock.Release();
+    if (wake_receiver) receive_waker.Wakeup();
     wakeups.Wakeup();
   }
 
@@ -134,15 +154,36 @@ class MpscSender {
   MpscSender(MpscSender&&) noexcept = default;
   MpscSender& operator=(MpscSender&&) noexcept = default;
 
-  // Return a promise that will send one item.
-  // Resolves to true if sent, false if the receiver was closed (and the value
-  // will never be successfully sent).
-  auto Send(T t) {
+  // Input: Input is the object that you want to send. The promise that is
+  // returned by Send will take ownership of the object.
+  // Return: Returns a promise that will send one item.
+  // This promise can either return
+  // 1. Pending{} if the sending is still pending
+  // 2. Resolves to true if sending is successful
+  // 3. Resolves to false if the receiver was closed and the value
+  //    will never be successfully sent.
+  // The promise returned is thread safe. We can use multiple send calls
+  // in parallel to generate multiple such send promises and these promises can
+  // be run in parallel in a thread safe way.
+  auto Send(T t) { return SendGeneric<false>(std::move(t)); }
+
+  // Similar to send, but the promise returned by SendAcked will not resolve
+  // until the item has been received by the receiver.
+  auto SendAcked(T t) { return SendGeneric<true>(std::move(t)); }
+
+  bool UnbufferedImmediateSend(T t) {
+    return center_->Send(std::move(t), false) !=
+           mpscpipe_detail::Center<T>::kClosedBatch;
+  }
+
+ private:
+  template <bool kAwaitReceipt>
+  auto SendGeneric(T t) {
     return [center = center_, t = std::move(t),
             batch = uint64_t(0)]() mutable -> Poll<bool> {
       if (center == nullptr) return false;
       if (batch == 0) {
-        batch = center->Send(std::move(t));
+        batch = center->Send(std::move(t), kAwaitReceipt);
         CHECK_NE(batch, 0u);
         if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return false;
       }
@@ -152,12 +193,6 @@ class MpscSender {
     };
   }
 
-  bool UnbufferedImmediateSend(T t) {
-    return center_->Send(std::move(t)) !=
-           mpscpipe_detail::Center<T>::kClosedBatch;
-  }
-
- private:
   friend class MpscReceiver<T>;
   explicit MpscSender(RefCountedPtr<mpscpipe_detail::Center<T>> center)
       : center_(std::move(center)) {}
@@ -178,10 +213,13 @@ class MpscReceiver {
       : center_(MakeRefCounted<mpscpipe_detail::Center<T>>(
             std::max(static_cast<size_t>(1), max_buffer_hint / 2))) {}
   ~MpscReceiver() {
-    if (center_ != nullptr) center_->ReceiverClosed();
+    if (center_ != nullptr) center_->ReceiverClosed(false);
   }
+  // Marking the receiver closed will make sure it will not receive any
+  // messages. If a sender tries to Send a message to a closed receiver,
+  // sending will fail.
   void MarkClosed() {
-    if (center_ != nullptr) center_->ReceiverClosed();
+    if (center_ != nullptr) center_->ReceiverClosed(true);
   }
   MpscReceiver(const MpscReceiver&) = delete;
   MpscReceiver& operator=(const MpscReceiver&) = delete;
@@ -197,18 +235,24 @@ class MpscReceiver {
     return *this;
   }
 
-  // Construct a new sender for this receiver.
+  // Construct a new sender for this receiver. One receiver can have multiple
+  // senders.
   MpscSender<T> MakeSender() { return MpscSender<T>(center_); }
 
-  // Return a promise that will resolve to the next item (and remove said item).
+  // Returns a promise that will resolve to ValueOrFailure<T>.
+  // If receiving is closed, the promise will resolve to failure.
+  // Otherwise, the promise resolves to the next item and removes
+  // said item from the queue.
   auto Next() {
-    return [this]() -> Poll<T> {
+    return [this]() -> Poll<ValueOrFailure<T>> {
       if (buffer_it_ != buffer_.end()) {
-        return Poll<T>(std::move(*buffer_it_++));
+        return Poll<ValueOrFailure<T>>(std::move(*buffer_it_++));
       }
-      if (center_->PollReceiveBatch(buffer_)) {
+      auto p = center_->PollReceiveBatch(buffer_);
+      if (bool* r = p.value_if_ready()) {
+        if (!*r) return Failure{};
         buffer_it_ = buffer_.begin();
-        return Poll<T>(std::move(*buffer_it_++));
+        return Poll<ValueOrFailure<T>>(std::move(*buffer_it_++));
       }
       return Pending{};
     };

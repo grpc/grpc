@@ -16,6 +16,9 @@
 // is % allowed in string
 //
 
+#include <grpc/support/time.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/grpcpp.h>
 #include <limits.h>
 
 #include <memory>
@@ -28,11 +31,6 @@
 #include "absl/log/check.h"
 #include "absl/log/globals.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/time.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
@@ -188,7 +186,7 @@ bool ParseTestCasesString(const std::string& test_cases,
       break;
     }
 
-    tests.emplace_back(std::make_pair(test_case, weight));
+    tests.emplace_back(std::pair(test_case, weight));
   }
 
   return is_success;

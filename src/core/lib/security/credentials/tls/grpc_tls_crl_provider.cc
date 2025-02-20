@@ -18,9 +18,8 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
-#include <limits.h>
-
 #include <grpc/support/port_platform.h>
+#include <limits.h>
 
 // IWYU pragma: no_include <ratio>
 #include <memory>
@@ -41,7 +40,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/span.h"
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
@@ -193,7 +191,6 @@ void DirectoryReloaderCrlProvider::UpdateAndStartTimer() {
   std::weak_ptr<DirectoryReloaderCrlProvider> self = shared_from_this();
   refresh_handle_ =
       event_engine_->RunAfter(refresh_duration_, [self = std::move(self)]() {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         if (std::shared_ptr<DirectoryReloaderCrlProvider> valid_ptr =
                 self.lock()) {

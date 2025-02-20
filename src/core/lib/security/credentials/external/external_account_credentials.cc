@@ -15,6 +15,13 @@
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -36,15 +43,6 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
@@ -80,7 +78,6 @@ ExternalAccountCredentials::NoOpFetchBody::NoOpFetchBody(
     : FetchBody(std::move(on_done)) {
   event_engine.Run([self = RefAsSubclass<NoOpFetchBody>(),
                     result = std::move(result)]() mutable {
-    ApplicationCallbackExecCtx application_exec_ctx;
     ExecCtx exec_ctx;
     self->Finish(std::move(result));
   });
@@ -231,15 +228,16 @@ void ExternalAccountCredentials::ExternalFetchRequest::ExchangeToken(
         }
         body_parts.push_back(
             absl::StrFormat("scope=%s", UrlEncode(scope).c_str()));
-        Json::Object addtional_options_json_object;
+        Json::Object additional_options_json_object;
         if (options().client_id.empty() && options().client_secret.empty()) {
-          addtional_options_json_object["userProject"] =
+          additional_options_json_object["userProject"] =
               Json::FromString(options().workforce_pool_user_project);
         }
-        Json addtional_options_json =
-            Json::FromObject(std::move(addtional_options_json_object));
+        Json additional_options_json =
+            Json::FromObject(std::move(additional_options_json_object));
         body_parts.push_back(absl::StrFormat(
-            "options=%s", UrlEncode(JsonDump(addtional_options_json)).c_str()));
+            "options=%s",
+            UrlEncode(JsonDump(additional_options_json)).c_str()));
         std::string body = absl::StrJoin(body_parts, "&");
         request.body = const_cast<char*>(body.c_str());
         request.body_length = body.size();
@@ -399,7 +397,7 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
                           absl::StrCat("error fetching oauth2 token: ",
                                        response_body.status().message()));
   } else {
-    absl::optional<Slice> token_value;
+    std::optional<Slice> token_value;
     Duration token_lifetime;
     if (grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
             *response_body, &token_value, &token_lifetime) !=
@@ -412,7 +410,6 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
   }
   creds_->event_engine().Run([on_done = std::exchange(on_done_, nullptr),
                               result = std::move(result)]() mutable {
-    ApplicationCallbackExecCtx application_exec_ctx;
     ExecCtx exec_ctx;
     std::exchange(on_done, nullptr)(std::move(result));
   });

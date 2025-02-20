@@ -16,9 +16,16 @@
 
 #include "src/core/xds/grpc/xds_client_grpc.h"
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,21 +35,11 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/service/status/v3/csds.upb.h"
-#include "upb/base/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
@@ -50,6 +47,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/orphanable.h"
@@ -64,6 +62,7 @@
 #include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "upb/base/string_view.h"
 
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
 // will be appended to the user agent name reported to the xDS server.
@@ -226,13 +225,30 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
       "not defined");
 }
 
+GlobalStatsPluginRegistry::StatsPluginGroup
+GetStatsPluginGroupForKeyAndChannelArgs(absl::string_view key,
+                                        const ChannelArgs& channel_args) {
+  if (key == GrpcXdsClient::kServerKey) {
+    return GlobalStatsPluginRegistry::GetStatsPluginsForServer(channel_args);
+  }
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
+      channel_args);
+  std::string authority =
+      channel_args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
+          .value_or(
+              CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
+                  key));
+  experimental::StatsPluginChannelScope scope(key, authority, endpoint_config);
+  return GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+}
+
 }  // namespace
 
 absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     absl::string_view key, const ChannelArgs& args, const char* reason) {
   // If getting bootstrap from channel args, create a local XdsClient
   // instance for the channel or server instead of using the global instance.
-  absl::optional<absl::string_view> bootstrap_config = args.GetString(
+  std::optional<absl::string_view> bootstrap_config = args.GetString(
       GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
   if (bootstrap_config.has_value()) {
     auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_config);
@@ -242,7 +258,8 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     auto channel_args = ChannelArgs::FromC(xds_channel_args);
     return MakeRefCounted<GrpcXdsClient>(
         key, std::move(*bootstrap), channel_args,
-        MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
+        MakeRefCounted<GrpcXdsTransportFactory>(channel_args),
+        GetStatsPluginGroupForKeyAndChannelArgs(key, args));
   }
   // Otherwise, use the global instance.
   MutexLock lock(g_mu);
@@ -265,7 +282,8 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   auto channel_args = ChannelArgs::FromC(g_channel_args);
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
       key, std::move(*bootstrap), channel_args,
-      MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
+      MakeRefCounted<GrpcXdsTransportFactory>(channel_args),
+      GetStatsPluginGroupForKeyAndChannelArgs(key, args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
   GRPC_TRACE_LOG(xds_client, INFO) << "[xds_client " << xds_client.get()
                                    << "] Created xDS client for key " << key;
@@ -274,56 +292,62 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
 
 namespace {
 
-GlobalStatsPluginRegistry::StatsPluginGroup GetStatsPluginGroupForKey(
-    absl::string_view key) {
-  if (key == GrpcXdsClient::kServerKey) {
-    return GlobalStatsPluginRegistry::GetStatsPluginsForServer(ChannelArgs{});
-  }
-  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
-      ChannelArgs{});
-  // TODO(roth): How do we set the authority here?
-  experimental::StatsPluginChannelScope scope(key, "", endpoint_config);
-  return GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+std::string UserAgentName() {
+  return absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
+                      GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING);
+}
+
+std::string UserAgentVersion() {
+  return absl::StrCat("C-core ", grpc_version_string(),
+                      GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
+                      GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING);
 }
 
 }  // namespace
 
 GrpcXdsClient::GrpcXdsClient(
-    absl::string_view key, std::unique_ptr<GrpcXdsBootstrap> bootstrap,
+    absl::string_view key, std::shared_ptr<GrpcXdsBootstrap> bootstrap,
     const ChannelArgs& args,
-    OrphanablePtr<XdsTransportFactory> transport_factory)
+    RefCountedPtr<XdsTransportFactory> transport_factory,
+    GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group)
     : XdsClient(
-          std::move(bootstrap), std::move(transport_factory),
+          bootstrap, transport_factory,
           grpc_event_engine::experimental::GetDefaultEventEngine(),
-          std::make_unique<MetricsReporter>(*this),
-          absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
-                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING),
-          absl::StrCat("C-core ", grpc_version_string(),
-                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
-                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING),
+          std::make_unique<MetricsReporter>(*this), UserAgentName(),
+          UserAgentVersion(),
           std::max(Duration::Zero(),
                    args.GetDurationFromIntMillis(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)
                        .value_or(Duration::Seconds(15)))),
       key_(key),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
-          static_cast<const GrpcXdsBootstrap&>(this->bootstrap())
+          DownCast<const GrpcXdsBootstrap&>(this->bootstrap())
               .certificate_providers())),
-      stats_plugin_group_(GetStatsPluginGroupForKey(key_)),
+      stats_plugin_group_(std::move(stats_plugin_group)),
       registered_metric_callback_(stats_plugin_group_.RegisterCallback(
           [this](CallbackMetricReporter& reporter) {
             ReportCallbackMetrics(reporter);
           },
-          Duration::Seconds(5), kMetricConnected, kMetricResources)) {}
+          Duration::Seconds(5), kMetricConnected, kMetricResources)),
+      lrs_client_(MakeRefCounted<LrsClient>(
+          std::move(bootstrap), UserAgentName(), UserAgentVersion(),
+          std::move(transport_factory),
+          grpc_event_engine::experimental::GetDefaultEventEngine())) {}
 
 void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
   XdsClient::Orphaned();
+  lrs_client_.reset();
   MutexLock lock(g_mu);
   auto it = g_xds_client_map->find(key_);
   if (it != g_xds_client_map->end() && it->second == this) {
     g_xds_client_map->erase(it);
   }
+}
+
+void GrpcXdsClient::ResetBackoff() {
+  XdsClient::ResetBackoff();
+  lrs_client_->ResetBackoff();
 }
 
 grpc_pollset_set* GrpcXdsClient::interested_parties() const {
@@ -336,9 +360,9 @@ namespace {
 std::vector<RefCountedPtr<GrpcXdsClient>> GetAllXdsClients() {
   MutexLock lock(g_mu);
   std::vector<RefCountedPtr<GrpcXdsClient>> xds_clients;
-  for (const auto& key_client : *g_xds_client_map) {
+  for (const auto& [_, client] : *g_xds_client_map) {
     auto xds_client =
-        key_client.second->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs");
+        client->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs");
     if (xds_client != nullptr) {
       xds_clients.emplace_back(xds_client.TakeAsSubclass<GrpcXdsClient>());
     }
@@ -415,7 +439,6 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 
 // The returned bytes may contain NULL(0), so we can't use c-string.
 grpc_slice grpc_dump_xds_configs(void) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::GrpcXdsClient::DumpAllClientConfigs();
 }

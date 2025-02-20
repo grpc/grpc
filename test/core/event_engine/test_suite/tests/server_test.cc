@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/impl/channel_arg_names.h>
+
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -29,11 +33,6 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/impl/channel_arg_names.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -236,8 +235,8 @@ TEST_F(EventEngineServerTest,
     server_signal->WaitForNotification();
     ASSERT_NE(client_endpoint.get(), nullptr);
     ASSERT_NE(server_endpoint.get(), nullptr);
-    connections.push_back(std::make_tuple(std::move(client_endpoint),
-                                          std::move(server_endpoint)));
+    connections.push_back(
+        std::tuple(std::move(client_endpoint), std::move(server_endpoint)));
     delete server_signal;
     server_signal = new grpc_core::Notification();
   }

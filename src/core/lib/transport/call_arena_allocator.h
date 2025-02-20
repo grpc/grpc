@@ -15,12 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_ARENA_ALLOCATOR_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_ARENA_ALLOCATOR_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <atomic>
 #include <cstddef>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"

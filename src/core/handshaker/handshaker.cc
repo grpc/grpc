@@ -18,6 +18,11 @@
 
 #include "src/core/handshaker/handshaker.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <string>
@@ -29,13 +34,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -55,7 +53,6 @@ void Handshaker::InvokeOnHandshakeDone(
     absl::Status status) {
   args->event_engine->Run([on_handshake_done = std::move(on_handshake_done),
                            status = std::move(status)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     on_handshake_done(std::move(status));
     // Destroy callback while ExecCtx is still in scope.
@@ -124,7 +121,6 @@ void HandshakeManager::DoHandshake(
   const Duration time_to_deadline = deadline - Timestamp::Now();
   deadline_timer_handle_ =
       args_.event_engine->RunAfter(time_to_deadline, [self = Ref()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
         // HandshakeManager deletion might require an active ExecCtx.
@@ -177,7 +173,6 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
     if (!error.ok()) result = std::move(error);
     args_.event_engine->Run([on_handshake_done = std::move(on_handshake_done_),
                              result = std::move(result)]() mutable {
-      ApplicationCallbackExecCtx callback_exec_ctx;
       ExecCtx exec_ctx;
       on_handshake_done(std::move(result));
       // Destroy callback while ExecCtx is still in scope.

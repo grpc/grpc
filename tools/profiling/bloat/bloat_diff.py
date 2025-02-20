@@ -60,6 +60,7 @@ def _build(output_dir):
         [
             "cmake",
             "-DgRPC_BUILD_TESTS=OFF",
+            "-DCMAKE_CXX_STANDARD=17",
             "-DBUILD_SHARED_LIBS=ON",
             "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
             '-DCMAKE_C_FLAGS="-gsplit-dwarf"',

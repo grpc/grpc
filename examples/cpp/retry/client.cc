@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/support/status.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
-
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/support/status.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

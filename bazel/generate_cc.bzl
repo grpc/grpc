@@ -121,6 +121,7 @@ def generate_cc_impl(ctx):
             ctx.attr.flags,
             dir_out,
             ctx.attr.generate_mocks,
+            ctx.attr.allow_deprecated,
         )
         tools = [ctx.executable.plugin]
     else:
@@ -134,7 +135,7 @@ def generate_cc_impl(ctx):
 
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
-    arguments.append("--proto_path={0}{1}".format(dir_out, proto_root))
+    arguments.append("--proto_path={0}".format(dir_out))
     arguments += [_get_srcs_file_path(proto) for proto in protos]
 
     # create a list of well known proto files if the argument is non-None
@@ -183,6 +184,10 @@ _generate_cc = rule(
         ),
         "well_known_protos": attr.label(mandatory = False),
         "generate_mocks": attr.bool(
+            default = False,
+            mandatory = False,
+        ),
+        "allow_deprecated": attr.bool(
             default = False,
             mandatory = False,
         ),

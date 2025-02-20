@@ -17,14 +17,12 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_FILTER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_FILTER_H
 
+#include <optional>
 #include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "upb/reflection/def.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/transport/interception_chain.h"
@@ -33,6 +31,7 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "upb/reflection/def.h"
 
 namespace grpc_core {
 
@@ -80,14 +79,14 @@ class XdsHttpFilterImpl {
 
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
-  virtual absl::optional<FilterConfig> GenerateFilterConfig(
+  virtual std::optional<FilterConfig> GenerateFilterConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
-  virtual absl::optional<FilterConfig> GenerateFilterConfigOverride(
+  virtual std::optional<FilterConfig> GenerateFilterConfigOverride(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;

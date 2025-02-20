@@ -19,6 +19,10 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_WINSOCK_SOCKET
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log_windows.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <string.h>
 #include <sys/types.h>
@@ -26,12 +30,6 @@
 #include <string>
 
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log_windows.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -166,7 +164,6 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   RunCallbackOnDefaultEventEngine([on_resolved] {
-    ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up SRV records"));
@@ -181,7 +178,6 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     absl::string_view /* name_server */) {
   // Not supported
   RunCallbackOnDefaultEventEngine([on_resolved] {
-    ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up TXT records"));

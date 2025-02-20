@@ -23,13 +23,11 @@
 
 #ifdef GRPC_CFSTREAM
 #import <CoreFoundation/CoreFoundation.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #import "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -60,7 +58,6 @@ CFStreamHandle* CFStreamHandle::CreateStreamHandle(
 void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
                                   CFStreamEventType type,
                                   void* client_callback_info) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle error;
   CFErrorRef stream_error;
@@ -93,7 +90,6 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
 void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
                                    CFStreamEventType type,
                                    void* clientCallBackInfo) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle error;
   CFErrorRef stream_error;

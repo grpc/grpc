@@ -18,7 +18,13 @@
 
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
@@ -26,13 +32,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-#include <grpcpp/impl/grpc_library.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -253,7 +252,7 @@ class EnvironmentAutoDetectHelper
                 << (result.ok() ? result.value()
                                 : grpc_core::StatusToString(result.status()))
                 << "\"";
-            absl::optional<EnvironmentAutoDetect::ResourceType> resource;
+            std::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
               grpc_core::MutexLock lock(&mu_);
               auto it = attributes_to_fetch_.find(attribute);

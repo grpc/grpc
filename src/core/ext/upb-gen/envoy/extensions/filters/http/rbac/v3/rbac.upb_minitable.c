@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/rbac/v3/rbac.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -18,11 +19,12 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_filters_http_rbac_v3_RBAC_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__rbac__v3__RBAC_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__rbac__v3__RBAC_msg_init},
-  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_rbac_v3_RBAC__submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__rbac__v3__RBAC_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__rbac__v3__RBAC_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_rbac_v3_RBAC__fields[7] = {
@@ -36,7 +38,7 @@ static const upb_MiniTableField envoy_extensions_filters_http_rbac_v3_RBAC__fiel
 };
 
 const upb_MiniTable envoy__extensions__filters__http__rbac__v3__RBAC_msg_init = {
-  &envoy_extensions_filters_http_rbac_v3_RBAC_submsgs[0],
+  &envoy_extensions_filters_http_rbac_v3_RBAC__submsgs[0],
   &envoy_extensions_filters_http_rbac_v3_RBAC__fields[0],
   UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -54,8 +56,9 @@ const upb_MiniTable envoy__extensions__filters__http__rbac__v3__RBAC_msg_init = 
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_http_rbac_v3_RBACPerRoute_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__rbac__v3__RBAC_msg_init},
+const upb_MiniTable* envoy__extensions__filters__http__rbac__v3__RBAC_msg_init_ptr = &envoy__extensions__filters__http__rbac__v3__RBAC_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_rbac_v3_RBACPerRoute__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__rbac__v3__RBAC_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_rbac_v3_RBACPerRoute__fields[1] = {
@@ -63,7 +66,7 @@ static const upb_MiniTableField envoy_extensions_filters_http_rbac_v3_RBACPerRou
 };
 
 const upb_MiniTable envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init = {
-  &envoy_extensions_filters_http_rbac_v3_RBACPerRoute_submsgs[0],
+  &envoy_extensions_filters_http_rbac_v3_RBACPerRoute__submsgs[0],
   &envoy_extensions_filters_http_rbac_v3_RBACPerRoute__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -71,6 +74,7 @@ const upb_MiniTable envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg
 #endif
 };
 
+const upb_MiniTable* envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init_ptr = &envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__extensions__filters__http__rbac__v3__RBAC_msg_init,
   &envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init,

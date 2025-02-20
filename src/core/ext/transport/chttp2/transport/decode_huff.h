@@ -17,10 +17,10 @@
 
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H
+#include <grpc/support/port_platform.h>
+
 #include <cstddef>
 #include <cstdint>
-
-#include <grpc/support/port_platform.h>
 namespace grpc_core {
 class HuffDecoderCommon {
  protected:
@@ -87,7 +87,7 @@ class HuffDecoderCommon {
     return table1_emit_[i >> 6][emit];
   }
   static inline uint64_t GetOp13(size_t i) {
-    return table13_0_inner_[(i < 3 ? (i) : ((i - 3) / 12 + 3))];
+    return table13_0_inner_[(i < 3 ? (i) : (((i - 3) / 12) + 3))];
   }
   static inline uint64_t GetEmit13(size_t, size_t emit) {
     return (emit < 1 ? (((void)emit, 92)) : ((emit - 1) ? 208 : 195));
@@ -189,7 +189,7 @@ class HuffDecoderCommon {
   }
   static inline uint64_t GetEmit37(size_t, size_t emit) { return emit + 236; }
   static inline uint64_t GetOp36(size_t i) {
-    return table36_0_inner_[(i < 3 ? (i / 2 + 0) : ((i - 3) + 1))];
+    return table36_0_inner_[(i < 3 ? ((i / 2) + 0) : ((i - 3) + 1))];
   }
   static inline uint64_t GetEmit36(size_t, size_t emit) {
     return table36_0_emit_[emit];

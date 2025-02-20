@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
-
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 #include "src/core/lib/slice/slice.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 void SliceBuffer::Append(Slice slice) {
   grpc_slice_buffer_add(&slice_buffer_, slice.TakeCSlice());
@@ -44,5 +42,4 @@ Slice SliceBuffer::RefSlice(size_t index) {
   return Slice(grpc_core::CSliceRef(slice_buffer_.slices[index]));
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
