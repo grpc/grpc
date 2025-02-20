@@ -108,6 +108,7 @@ grpc_cc_test(
         "otel_tracing_test.cc",
     ],
     external_deps = [
+        "absl/status:status_matchers",
         "gtest",
         "otel/api",
         "otel/exporters/memory:in_memory_span_exporter",

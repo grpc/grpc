@@ -19,6 +19,7 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
 
+#include "absl/status/status_matchers.h"
 #include "absl/synchronization/notification.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -39,6 +40,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
+using absl_testing::IsOk;
 using opentelemetry::sdk::trace::SpanData;
 using opentelemetry::sdk::trace::SpanDataEvent;
 using ::testing::ElementsAre;
@@ -63,13 +65,13 @@ class OTelTracingTest : public ::testing::Test {
                 opentelemetry::exporter::memory::InMemorySpanExporterFactory::
                     Create(data_)));
     tracer_ = tracer_provider->GetTracer("grpc-test");
-    ASSERT_TRUE(
+    ASSERT_THAT(
         OpenTelemetryPluginBuilder()
             .SetTracerProvider(std::move(tracer_provider))
             .SetTextMapPropagator(
                 OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator())
-            .BuildAndRegisterGlobal()
-            .ok());
+            .BuildAndRegisterGlobal(),
+        IsOk());
     port_ = grpc_pick_unused_port_or_die();
     server_address_ = absl::StrCat("localhost:", port_);
     RestartServer();
@@ -79,7 +81,7 @@ class OTelTracingTest : public ::testing::Test {
   }
 
   void RestartServer() {
-    if (server_) {
+    if (server_ != nullptr) {
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     }
     grpc::ServerBuilder builder;
@@ -466,7 +468,9 @@ TEST_F(OTelTracingTest, Streaming) {
       EXPECT_TRUE(stream->Read(&response));
     }
     stream->WritesDone();
-    EXPECT_TRUE(stream->Finish().ok());
+    auto status = stream->Finish();
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
   }
   auto spans = GetSpans(3);
   EXPECT_EQ(spans.size(), 3);
@@ -577,11 +581,12 @@ TEST_F(OTelTracingTest, TransparentRetries) {
     echo_context.set_wait_for_ready(true);
     EchoResponse echo_response;
     absl::Notification notify;
-    stub_->async()->Echo(&echo_context, &request, &echo_response,
-                         [&notify](Status s) {
-                           EXPECT_TRUE(s.ok());
-                           notify.Notify();
-                         });
+    stub_->async()->Echo(
+        &echo_context, &request, &echo_response, [&notify](Status s) {
+          EXPECT_TRUE(s.ok())
+              << "code=" << s.error_code() << " message=" << s.error_message();
+          notify.Notify();
+        });
     // Restart the server which will result in the bidi stream failing and the
     // new echo RPC starting.
     RestartServer();
@@ -633,7 +638,9 @@ class PropagatingEchoTestServiceImpl : public EchoTestService::CallbackService {
         ClientContext::FromCallbackServerContext(*context).release();
     stub_->async()->Echo(child_context, request, response,
                          [child_context, reactor](Status s) mutable {
-                           EXPECT_TRUE(s.ok());
+                           EXPECT_TRUE(s.ok())
+                               << "code=" << s.error_code()
+                               << " message=" << s.error_message();
                            reactor->Finish(s);
                            delete child_context;
                          });

@@ -135,7 +135,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                  parent, args->propagation_mask)));
     }
     // Client call tracers should be created after propagating relevant
-    // properties (tracing includes) from the parent.
+    // properties (tracing included) from the parent.
     channel_stack->stats_plugin_group->AddClientCallTracers(
         Slice(CSliceRef(path)), args->registered_method, arena.get());
   } else {

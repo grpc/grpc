@@ -100,7 +100,6 @@ TEST(GrpcTraceBinTextMapPropagatorTest, Extract) {
       "01234567"          // span
       "\x02"              // field 2
       "\x01";             // flag
-  absl::string_view trace_bin_value(kTraceBinValue, sizeof(kTraceBinValue));
   carrier.Set("grpc-trace-bin",
               absl::Base64Escape(absl::string_view(
                   kTraceBinValue, sizeof(kTraceBinValue) - 1)));
