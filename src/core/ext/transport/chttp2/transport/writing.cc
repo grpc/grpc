@@ -472,7 +472,6 @@ class StreamWriteContext {
     grpc_chttp2_complete_closure_step(t_, &s_->send_initial_metadata_finished,
                                       absl::OkStatus(),
                                       "send_initial_metadata_finished");
-    auto* call_tracer = s_->CallTracer();
     if (!grpc_core::IsCallTracerTransportFixEnabled()) {
       if (s_->parent_call_tracer != nullptr) {
         grpc_core::HttpAnnotation::WriteStats write_stats;
@@ -486,6 +485,7 @@ class StreamWriteContext {
                 .Add(write_stats));
       }
     } else {
+      auto* call_tracer = s_->CallTracer();
       if (call_tracer != nullptr && call_tracer->IsSampled()) {
         grpc_core::HttpAnnotation::WriteStats write_stats;
         write_stats.target_write_size = write_context_->target_write_size();
