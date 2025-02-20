@@ -201,7 +201,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::ProcessNextFrame(
                 [this, header = incoming_frame.header()](Frame frame) mutable {
                   return NewStream(
                       header.stream_id,
-                      std::move(absl::get<ClientInitialMetadataFrame>(frame)));
+                      std::move(std::get<ClientInitialMetadataFrame>(frame)));
                 }),
             [](absl::Status status) {
               if (!status.ok()) {
