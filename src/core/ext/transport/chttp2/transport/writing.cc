@@ -472,16 +472,31 @@ class StreamWriteContext {
     grpc_chttp2_complete_closure_step(t_, &s_->send_initial_metadata_finished,
                                       absl::OkStatus(),
                                       "send_initial_metadata_finished");
-    if (s_->CallTracer()) {
-      grpc_core::HttpAnnotation::WriteStats write_stats;
-      write_stats.target_write_size = write_context_->target_write_size();
-      s_->CallTracer()->RecordAnnotation(
-          grpc_core::HttpAnnotation(
-              grpc_core::HttpAnnotation::Type::kHeadWritten,
-              gpr_now(GPR_CLOCK_REALTIME))
-              .Add(s_->t->flow_control.stats())
-              .Add(s_->flow_control.stats())
-              .Add(write_stats));
+    auto* call_tracer = s_->CallTracer();
+    if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+      if (s_->parent_call_tracer != nullptr) {
+        grpc_core::HttpAnnotation::WriteStats write_stats;
+        write_stats.target_write_size = write_context_->target_write_size();
+        s_->parent_call_tracer->RecordAnnotation(
+            grpc_core::HttpAnnotation(
+                grpc_core::HttpAnnotation::Type::kHeadWritten,
+                gpr_now(GPR_CLOCK_REALTIME))
+                .Add(s_->t->flow_control.stats())
+                .Add(s_->flow_control.stats())
+                .Add(write_stats));
+      }
+    } else {
+      if (call_tracer != nullptr && call_tracer->IsSampled()) {
+        grpc_core::HttpAnnotation::WriteStats write_stats;
+        write_stats.target_write_size = write_context_->target_write_size();
+        call_tracer->RecordAnnotation(
+            grpc_core::HttpAnnotation(
+                grpc_core::HttpAnnotation::Type::kHeadWritten,
+                gpr_now(GPR_CLOCK_REALTIME))
+                .Add(s_->t->flow_control.stats())
+                .Add(s_->flow_control.stats())
+                .Add(write_stats));
+      }
     }
   }
 
@@ -622,12 +637,23 @@ class StreamWriteContext {
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
-    if (s_->CallTracer()) {
-      s_->CallTracer()->RecordAnnotation(
-          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
-                                    gpr_now(GPR_CLOCK_REALTIME))
-              .Add(s_->t->flow_control.stats())
-              .Add(s_->flow_control.stats()));
+    if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+      if (s_->parent_call_tracer != nullptr) {
+        s_->parent_call_tracer->RecordAnnotation(
+            grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
+                                      gpr_now(GPR_CLOCK_REALTIME))
+                .Add(s_->t->flow_control.stats())
+                .Add(s_->flow_control.stats()));
+      }
+    } else {
+      auto* call_tracer = s_->CallTracer();
+      if (call_tracer != nullptr && call_tracer->IsSampled()) {
+        call_tracer->RecordAnnotation(
+            grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
+                                      gpr_now(GPR_CLOCK_REALTIME))
+                .Add(s_->t->flow_control.stats())
+                .Add(s_->flow_control.stats()));
+      }
     }
   }
 

@@ -674,6 +674,8 @@ struct grpc_chttp2_stream {
 
   // TODO(roth): Remove this when call v3 is supported.
   grpc_core::CallTracerInterface* call_tracer = nullptr;
+  // TODO(yashykt): Remove this once call_tracer_transport_fix is rolled out
+  grpc_core::CallTracerAnnotationInterface* parent_call_tracer = nullptr;
 
   /// Only set when enabled.
   std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
