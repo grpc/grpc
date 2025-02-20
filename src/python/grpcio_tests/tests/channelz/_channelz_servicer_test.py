@@ -19,14 +19,8 @@ import unittest
 
 import grpc
 from grpc_channelz.v1 import channelz
-
-# Bazel build uses another path.
-try:
-    import channelz_pb2
-    import channelz_pb2_grpc
-except ImportError:
-    from grpc_channelz.v1 import channelz_pb2
-    from grpc_channelz.v1 import channelz_pb2_grpc
+from grpc_channelz.v1 import channelz_pb2
+from grpc_channelz.v1 import channelz_pb2_grpc
 
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants

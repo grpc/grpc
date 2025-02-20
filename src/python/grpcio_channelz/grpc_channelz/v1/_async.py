@@ -16,16 +16,8 @@
 from grpc.experimental import aio
 from grpc_channelz.v1._servicer import ChannelzServicer as _SyncChannelzServicer
 
-# Bazel build uses another path.
-# pylint: disable=ungrouped-imports
-try:
-    import channelz_pb2 as _channelz_pb2
-    import channelz_pb2_grpc as _channelz_pb2_grpc
-except ImportError:
-    from grpc_channelz.v1 import channelz_pb2 as _channelz_pb2
-    from grpc_channelz.v1 import channelz_pb2_grpc as _channelz_pb2_grpc
-# pylint: enable=ungrouped-imports
-
+from grpc_channelz.v1 import channelz_pb2 as _channelz_pb2
+from grpc_channelz.v1 import channelz_pb2_grpc as _channelz_pb2_grpc
 
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     """AsyncIO servicer for handling RPCs for service statuses."""
