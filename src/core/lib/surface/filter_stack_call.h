@@ -253,7 +253,8 @@ class FilterStackCall final : public Call {
   void PublishAppMetadata(grpc_metadata_batch* b, bool is_trailing);
   void RecvInitialFilter(grpc_metadata_batch* b);
   void RecvTrailingFilter(grpc_metadata_batch* b,
-                          grpc_error_handle batch_error);
+                          grpc_error_handle batch_error,
+                          grpc_core::DelayTracker* delay_tracker);
 
   grpc_compression_algorithm incoming_compression_algorithm() override {
     return incoming_compression_algorithm_;

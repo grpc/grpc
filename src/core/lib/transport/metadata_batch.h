@@ -36,7 +36,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
-#include "src/core/call/delay_tracker.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/poll.h"
@@ -629,17 +628,6 @@ struct GrpcTarPit {
   static constexpr bool kRepeatable = false;
   using ValueType = Empty;
   static absl::string_view DisplayValue(Empty) { return "tarpit"; }
-};
-
-// Annotation used for reporting delays accumulated for a call.  Used
-// for constructing a useful status message for DEADLINE_EXCEEDED.
-struct GrpcDelayTracker {
-  static absl::string_view DebugKey() { return "DelayTracker"; }
-  static constexpr bool kRepeatable = false;
-  using ValueType = DelayTracker;
-  static std::string DisplayValue(const ValueType& value) {
-    return value.GetDelayInfo();
-  }
 };
 
 namespace metadata_detail {
@@ -1668,7 +1656,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
     grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
     grpc_core::IsTransparentRetry, grpc_core::GrpcTrailersOnly,
-    grpc_core::GrpcTarPit, grpc_core::GrpcDelayTracker,
+    grpc_core::GrpcTarPit,
     grpc_core::GrpcRegisteredMethod GRPC_CUSTOM_CLIENT_METADATA
         GRPC_CUSTOM_SERVER_METADATA>;
 
