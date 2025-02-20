@@ -2236,7 +2236,7 @@ void ClientChannelFilter::FilterBasedCallData::TryCheckResolution(
       // Get the DelayTracker from call context, creating it if needed.
       DelayTracker* tracker = arena_->GetContext<DelayTracker>();
       if (tracker == nullptr) {
-        tracker = arena_->New<DelayTracker>();
+        tracker = arena_->ManagedNew<DelayTracker>();
         arena_->SetContext<DelayTracker>(tracker);
       }
       // Start recording a delay.
@@ -3023,7 +3023,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::TryPick(
       // Get the DelayTracker from call context, creating it if needed.
       DelayTracker* tracker = arena()->GetContext<DelayTracker>();
       if (tracker == nullptr) {
-        tracker = arena()->New<DelayTracker>();
+        tracker = arena()->ManagedNew<DelayTracker>();
         arena()->SetContext<DelayTracker>(tracker);
       }
       // Start recording a delay.
