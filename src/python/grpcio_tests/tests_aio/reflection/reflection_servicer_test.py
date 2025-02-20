@@ -20,14 +20,8 @@ from google.protobuf import descriptor_pb2
 import grpc
 from grpc.experimental import aio
 from grpc_reflection.v1alpha import reflection
-
-# Bazel build uses another path.
-try:
-    import reflection_pb2
-    import reflection_pb2_grpc
-except ImportError:
-    from grpc_reflection.v1alpha import reflection_pb2
-    from grpc_reflection.v1alpha import reflection_pb2_grpc
+from grpc_reflection.v1alpha import reflection_pb2
+from grpc_reflection.v1alpha import reflection_pb2_grpc
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing.proto2 import empty2_extensions_pb2

@@ -18,14 +18,8 @@ import sys
 import threading
 
 import grpc
-
-# Bazel build uses another path.
-try:
-    import health_pb2 as _health_pb2
-    import health_pb2_grpc as _health_pb2_grpc
-except ImportError:
-    from grpc_health.v1 import health_pb2 as _health_pb2
-    from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
+from grpc_health.v1 import health_pb2 as _health_pb2
+from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
 if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     # Exposes AsyncHealthServicer as public API.

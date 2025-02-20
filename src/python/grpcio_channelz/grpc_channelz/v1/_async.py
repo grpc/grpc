@@ -15,9 +15,9 @@
 
 from grpc.experimental import aio
 from grpc_channelz.v1._servicer import ChannelzServicer as _SyncChannelzServicer
+import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
+import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
 
-from grpc_channelz.v1 import channelz_pb2 as _channelz_pb2
-from grpc_channelz.v1 import channelz_pb2_grpc as _channelz_pb2_grpc
 
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     """AsyncIO servicer for handling RPCs for service statuses."""

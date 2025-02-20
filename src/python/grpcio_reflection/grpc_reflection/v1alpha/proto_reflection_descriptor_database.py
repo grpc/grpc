@@ -23,26 +23,14 @@ from typing import Any, Dict, Iterable, List, Set
 from google.protobuf.descriptor_database import DescriptorDatabase
 from google.protobuf.descriptor_pb2 import FileDescriptorProto
 import grpc
-
-# Bazel build uses another path.
-try:
-    from reflection_pb2 import ExtensionNumberResponse
-    from reflection_pb2 import ExtensionRequest
-    from reflection_pb2 import FileDescriptorResponse
-    from reflection_pb2 import ListServiceResponse
-    from reflection_pb2 import ServerReflectionRequest
-    from reflection_pb2 import ServerReflectionResponse
-    from reflection_pb2 import ServiceResponse
-    from reflection_pb2_grpc import ServerReflectionStub
-except ImportError:
-    from grpc_reflection.v1alpha.reflection_pb2 import ExtensionNumberResponse
-    from grpc_reflection.v1alpha.reflection_pb2 import ExtensionRequest
-    from grpc_reflection.v1alpha.reflection_pb2 import FileDescriptorResponse
-    from grpc_reflection.v1alpha.reflection_pb2 import ListServiceResponse
-    from grpc_reflection.v1alpha.reflection_pb2 import ServerReflectionRequest
-    from grpc_reflection.v1alpha.reflection_pb2 import ServerReflectionResponse
-    from grpc_reflection.v1alpha.reflection_pb2 import ServiceResponse
-    from grpc_reflection.v1alpha.reflection_pb2_grpc import ServerReflectionStub
+from grpc_reflection.v1alpha.reflection_pb2 import ExtensionNumberResponse
+from grpc_reflection.v1alpha.reflection_pb2 import ExtensionRequest
+from grpc_reflection.v1alpha.reflection_pb2 import FileDescriptorResponse
+from grpc_reflection.v1alpha.reflection_pb2 import ListServiceResponse
+from grpc_reflection.v1alpha.reflection_pb2 import ServerReflectionRequest
+from grpc_reflection.v1alpha.reflection_pb2 import ServerReflectionResponse
+from grpc_reflection.v1alpha.reflection_pb2 import ServiceResponse
+from grpc_reflection.v1alpha.reflection_pb2_grpc import ServerReflectionStub
 
 
 class ProtoReflectionDescriptorDatabase(DescriptorDatabase):

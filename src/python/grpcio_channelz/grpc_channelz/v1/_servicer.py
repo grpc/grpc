@@ -16,9 +16,9 @@
 from google.protobuf import json_format
 import grpc
 from grpc._cython import cygrpc
+import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
+import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
 
-from grpc_channelz.v1 import channelz_pb2 as _channelz_pb2
-from grpc_channelz.v1 import channelz_pb2_grpc as _channelz_pb2_grpc
 
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     """Servicer handling RPCs for service statuses."""

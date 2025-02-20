@@ -20,18 +20,10 @@ from time import sleep
 
 import grpc
 from grpc_health.v1 import health
+from grpc_health.v1 import health_pb2
+from grpc_health.v1 import health_pb2_grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
-
-# Bazel build uses another path.
-# pylint: disable=ungrouped-imports
-try:
-    import health_pb2
-    import health_pb2_grpc
-except ImportError:
-    from grpc_health.v1 import health_pb2
-    from grpc_health.v1 import health_pb2_grpc
-# pylint: enable=ungrouped-imports
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):

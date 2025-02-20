@@ -22,14 +22,8 @@ import unittest
 import grpc
 from grpc.experimental import aio
 from grpc_health.v1 import health
-
-# Bazel build uses another path.
-try:
-    import health_pb2
-    import health_pb2_grpc
-except ImportError:
-    from grpc_health.v1 import health_pb2
-    from grpc_health.v1 import health_pb2_grpc
+from grpc_health.v1 import health_pb2
+from grpc_health.v1 import health_pb2_grpc
 
 from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase

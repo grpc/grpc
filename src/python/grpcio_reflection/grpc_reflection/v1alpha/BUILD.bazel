@@ -12,18 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 load("@rules_python//python:defs.bzl", "py_library")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
+proto_library(
+    name = "reflection_proto_descriptor",
+    srcs = ["reflection.proto"],
+)
+
 py_proto_library(
     name = "reflection_py_pb2",
-    deps = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_descriptor"],
+    deps = [":reflection_proto_descriptor"],
 )
 
 py_grpc_library(
     name = "reflection_py_pb2_grpc",
-    srcs = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_descriptor"],
+    srcs = [":reflection_proto_descriptor"],
     strip_prefixes = ["src.python.grpcio_reflection."],
     deps = ["reflection_py_pb2"],
 )

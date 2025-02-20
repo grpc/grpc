@@ -18,14 +18,8 @@ import asyncio
 import logging
 
 import grpc
-
-# Bazel build uses another path.
-try:
-    import channelz_pb2
-    import channelz_pb2_grpc
-except ImportError:
-    from grpc_channelz.v1 import channelz_pb2
-    from grpc_channelz.v1 import channelz_pb2_grpc
+from grpc_channelz.v1 import channelz_pb2
+from grpc_channelz.v1 import channelz_pb2_grpc
 
 
 async def run(addr: str) -> None:
