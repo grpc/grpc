@@ -55,6 +55,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/peer_address.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -2105,8 +2106,13 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
       grpc_slice_buffer_reset_and_unref(&s->frame_storage);
     }
     *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
-    s->recv_initial_metadata->Set(grpc_core::PeerString(),
-                                  t->peer_string.Ref());
+    // Set peer address in call context.
+    auto* peer_address = s->arena->GetContext<grpc_core::PeerAddress>();
+    if (peer_address == nullptr) {
+      peer_address = s->arena->New<grpc_core::PeerAddress>();
+      s->arena->SetContext<grpc_core::PeerAddress>(peer_address);
+    }
+    peer_address->peer_address = t->peer_string.Ref();
     // If we didn't receive initial metadata from the wire and instead faked a
     // status (due to stream cancellations for example), let upper layers know
     // that trailing metadata is immediately available.

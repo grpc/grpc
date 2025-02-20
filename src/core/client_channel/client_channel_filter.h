@@ -534,7 +534,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   CallCombiner* call_combiner_;
   grpc_polling_entity* pollent_;
   grpc_closure* on_call_destruction_complete_;
-  std::optional<Slice> peer_string_;
 
   // Set when we get a cancel_stream op.
   grpc_error_handle cancel_error_;

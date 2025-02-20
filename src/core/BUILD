@@ -1649,6 +1649,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "peer_address",
+    hdrs = [
+        "call/peer_address.h",
+    ],
+    deps = [
+        "arena",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
     name = "request_buffer",
     srcs = [
         "call/request_buffer.cc",

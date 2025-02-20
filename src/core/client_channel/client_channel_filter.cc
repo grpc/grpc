@@ -47,6 +47,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/peer_address.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -2880,8 +2881,6 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::RecvInitialMetadataReady(
     // recv_initial_metadata_flags is not populated for clients
     self->call_attempt_tracer()->RecordReceivedInitialMetadata(
         self->recv_initial_metadata_);
-    auto* peer_string = self->recv_initial_metadata_->get_pointer(PeerString());
-    if (peer_string != nullptr) self->peer_string_ = peer_string->Ref();
   }
   Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
                error);
@@ -2923,8 +2922,9 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
       }
     }
     absl::string_view peer_string;
-    if (self->peer_string_.has_value()) {
-      peer_string = self->peer_string_->as_string_view();
+    if (auto* peer_address = self->arena()->GetContext<PeerAddress>();
+        peer_address != nullptr) {
+      peer_string = peer_address->peer_address.as_string_view();
     }
     self->RecordCallCompletion(status, self->recv_trailing_metadata_,
                                self->transport_stream_stats_, peer_string);

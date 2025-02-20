@@ -223,8 +223,9 @@ void CallData::LogClientHeader(bool is_client,
                                const ClientMetadata& metadata) {
   LoggingSink::Entry entry;
   if (!is_client) {
-    if (auto* value = metadata.get_pointer(PeerString())) {
-      peer_ = PeerStringToAddress(*value);
+    if (auto* peer_address = MaybeGetContext<PeerAddress>();
+        peer_address != nullptr) {
+      peer_ = PeerStringToAddress(peer_address->peer_address);
     }
   }
   SetCommonEntryFields(&entry, is_client, tracer,
@@ -251,8 +252,9 @@ void CallData::LogServerHeader(bool is_client,
   if (metadata != nullptr) {
     entry.is_trailer_only = metadata->get(GrpcTrailersOnly()).value_or(false);
     if (is_client) {
-      if (auto* value = metadata->get_pointer(PeerString())) {
-        peer_ = PeerStringToAddress(*value);
+      if (auto* peer_address = MaybeGetContext<PeerAddress>();
+          peer_address != nullptr) {
+        peer_ = PeerStringToAddress(peer_address->peer_address);
       }
     }
   }
