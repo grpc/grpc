@@ -94,36 +94,9 @@ class AsyncConnect {
 };
 
 // A helper class to manager lifetime of the poller associated with the
-// posix EventEngine.
-class PosixEnginePollerManager
-    : public grpc_event_engine::experimental::Scheduler {
- public:
-  explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
-  explicit PosixEnginePollerManager(
-      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller,
-      std::shared_ptr<ThreadPool> executor);
-  grpc_event_engine::experimental::PosixEventPoller* Poller() {
-    return poller_.get();
-  }
+// posix EventEngine. It is defined in the impl file.
+class PosixEnginePollerManager;
 
-  ThreadPool* Executor() { return executor_.get(); }
-
-  void Run(experimental::EventEngine::Closure* closure) override;
-  void Run(absl::AnyInvocable<void()>) override;
-
-  bool IsShuttingDown() {
-    return poller_state_.load(std::memory_order_acquire) ==
-           PollerState::kShuttingDown;
-  }
-  void TriggerShutdown();
-
- private:
-  enum class PollerState { kExternal, kOk, kShuttingDown };
-  std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
-  std::atomic<PollerState> poller_state_{PollerState::kOk};
-  std::shared_ptr<ThreadPool> executor_;
-  bool trigger_shutdown_called_;
-};
 #endif  // GRPC_POSIX_SOCKET_TCP
 
 // An iomgr-based Posix EventEngine implementation.
@@ -219,8 +192,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
   // Called before fork is executed
   void BeforeFork();
-  void AfterForkInParent();
-  void AfterForkInChild();
+  void AfterFork(bool advance_generation);
 
   // Needed for fork support
   std::weak_ptr<PosixEventEngine> pointer() {
@@ -234,6 +206,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                                            absl::AnyInvocable<void()> cb);
 
 #ifdef GRPC_POSIX_SOCKET_TCP
+  class PollCycle;
   friend class AsyncConnect;
   struct ConnectionShard {
     grpc_core::Mutex mu;
@@ -241,8 +214,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
         ABSL_GUARDED_BY(&mu);
   };
 
-  static void PollerWorkInternal(
-      std::shared_ptr<PosixEnginePollerManager> poller_manager);
+  void SchedulePoller();
 
   ConnectionHandle CreateEndpointFromUnconnectedFdInternal(
       const FileDescriptor& fd, EventEngine::OnConnectCallback on_connect,
@@ -263,6 +235,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   std::shared_ptr<TimerManager> timer_manager_;
 #ifdef GRPC_POSIX_SOCKET_TCP
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
+  grpc_core::Mutex poll_cycle_mu_;
+  std::unique_ptr<PollCycle> poll_cycle_ ABSL_GUARDED_BY(&poll_cycle_mu_);
 #endif  // GRPC_POSIX_SOCKET_TCP
 };
 
