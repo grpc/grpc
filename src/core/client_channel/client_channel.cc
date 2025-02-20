@@ -1277,8 +1277,6 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   auto new_blackboard = MakeRefCounted<Blackboard>();
   InterceptionChainBuilder builder(new_args, blackboard_.get(),
                                    new_blackboard.get());
-  // At the top of each stack segment, move the delay tracker from call
-  // context into server trailing metadata.
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();
