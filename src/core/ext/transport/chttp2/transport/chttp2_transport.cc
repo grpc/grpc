@@ -229,9 +229,6 @@ using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
     grpc_chttp2_stream* s) {
-  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
-    return nullptr;
-  }
   auto* call_tracer =
       s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   if (call_tracer == nullptr || !call_tracer->IsSampled()) {
@@ -242,9 +239,6 @@ grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
 
 std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
     grpc_chttp2_stream* s) {
-  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
-    return nullptr;
-  }
   auto* call_attempt_tracer =
       s->arena->GetContext<grpc_core::CallTracerInterface>();
   if (call_attempt_tracer == nullptr || !call_attempt_tracer->IsSampled()) {
@@ -577,7 +571,6 @@ static void init_keepalive_pings_if_enabled_locked(
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     t->keepalive_ping_timer_handle =
         t->event_engine->RunAfter(t->keepalive_time, [t = t->Ref()]() mutable {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
           init_keepalive_ping(std::move(t));
         });
@@ -1396,7 +1389,7 @@ static void trace_annotations(grpc_chttp2_stream* s) {
               .Add(s->t->flow_control.stats())
               .Add(s->flow_control.stats()));
     }
-  } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
+  } else {
     auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
     if (call_tracer != nullptr && call_tracer->IsSampled()) {
       call_tracer->RecordAnnotation(
@@ -1505,18 +1498,6 @@ static void send_message_locked(
                                       absl::OkStatus(),
                                       "fetching_send_message_finished");
   } else {
-    // Buffer hint is used to buffer the message in the transport until the
-    // write buffer size (specified through GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE) is
-    // reached. This is to batch writes sent down to tcp. However, if the memory
-    // pressure is high, disable the buffer hint to flush data down to tcp as
-    // soon as possible to avoid OOM.
-    if (grpc_core::IsDisableBufferHintOnHighMemoryPressureEnabled() &&
-        t->memory_owner.GetPressureInfo().pressure_control_value >= 0.8) {
-      // Disable write buffer hint if memory pressure is high. The value of 0.8
-      // is chosen to match the threshold used by the tcp endpoint (in
-      // allocating memory for socket reads).
-      op_payload->send_message.flags &= ~GRPC_WRITE_BUFFER_HINT;
-    }
     flags = op_payload->send_message.flags;
     uint8_t* frame_hdr = grpc_slice_buffer_tiny_add(&s->flow_controlled_buffer,
                                                     GRPC_HEADER_SIZE_IN_BYTES);
@@ -2289,7 +2270,6 @@ void MaybeTarpit(grpc_chttp2_transport* t, bool tarpit, F fn) {
   const auto duration = TarpitDuration(t);
   t->event_engine->RunAfter(
       duration, [t = t->Ref(), fn = std::move(fn)]() mutable {
-        ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         t->combiner->Run(
             NewClosure([t, fn = std::move(fn)](grpc_error_handle) mutable {
@@ -2958,7 +2938,6 @@ static void finish_bdp_ping_locked(
   CHECK(t->next_bdp_ping_timer_handle == TaskHandle::kInvalid);
   t->next_bdp_ping_timer_handle =
       t->event_engine->RunAfter(next_ping - grpc_core::Timestamp::Now(), [t] {
-        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
         next_bdp_ping_timer_expired(t.get());
       });
@@ -3067,7 +3046,6 @@ static void init_keepalive_ping_locked(
       }
       t->keepalive_ping_timer_handle =
           t->event_engine->RunAfter(t->keepalive_time + extend, [t] {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
             init_keepalive_ping(t);
           });
@@ -3099,7 +3077,6 @@ static void finish_keepalive_ping_locked(
       CHECK(t->keepalive_ping_timer_handle == TaskHandle::kInvalid);
       t->keepalive_ping_timer_handle =
           t->event_engine->RunAfter(t->keepalive_time, [t] {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
             init_keepalive_ping(t);
           });
@@ -3128,13 +3105,11 @@ static bool ExtendScheduledTimer(grpc_chttp2_transport* t, TaskHandle& handle,
 }
 
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
-  if (ExtendScheduledTimer(
-          t, t->keepalive_ping_timer_handle, t->keepalive_time,
-          [t = t->Ref()]() mutable {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-            grpc_core::ExecCtx exec_ctx;
-            init_keepalive_ping(std::move(t));
-          })) {
+  if (ExtendScheduledTimer(t, t->keepalive_ping_timer_handle, t->keepalive_time,
+                           [t = t->Ref()]() mutable {
+                             grpc_core::ExecCtx exec_ctx;
+                             init_keepalive_ping(std::move(t));
+                           })) {
     // Cancel succeeds, resets the keepalive ping timer. Note that we don't
     // need to Ref or Unref here since we still hold the Ref.
     if (GRPC_TRACE_FLAG_ENABLED(http) ||

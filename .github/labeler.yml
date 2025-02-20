@@ -46,6 +46,7 @@ lang/python:
       - any-glob-to-any-file:
           - bazel/python_rules.bzl
           - examples/python/**
+          - requirements.bazel.lock
           - requirements.bazel.txt
           - src/compiler/python*
       - all-globs-to-any-file:

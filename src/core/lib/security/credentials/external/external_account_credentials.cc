@@ -78,7 +78,6 @@ ExternalAccountCredentials::NoOpFetchBody::NoOpFetchBody(
     : FetchBody(std::move(on_done)) {
   event_engine.Run([self = RefAsSubclass<NoOpFetchBody>(),
                     result = std::move(result)]() mutable {
-    ApplicationCallbackExecCtx application_exec_ctx;
     ExecCtx exec_ctx;
     self->Finish(std::move(result));
   });
@@ -411,7 +410,6 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
   }
   creds_->event_engine().Run([on_done = std::exchange(on_done_, nullptr),
                               result = std::move(result)]() mutable {
-    ApplicationCallbackExecCtx application_exec_ctx;
     ExecCtx exec_ctx;
     std::exchange(on_done, nullptr)(std::move(result));
   });

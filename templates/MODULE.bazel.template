@@ -87,7 +87,7 @@
         pip.parse(
             hub_name = "grpc_python_dependencies",
             python_version = python_version,
-            requirements_lock = "//:requirements.bazel.txt",
+            requirements_lock = "//:requirements.bazel.lock",
         )
         for python_version in PYTHON_VERSIONS
     ]

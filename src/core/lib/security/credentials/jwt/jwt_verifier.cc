@@ -377,7 +377,6 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
     grpc_jwt_claims* claims, const char* audience, const grpc_slice& signature,
     const char* signed_jwt, size_t signed_jwt_len, void* user_data,
     grpc_jwt_verification_done_cb cb) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   verifier_cb_ctx* ctx = new verifier_cb_ctx();
   ctx->verifier = verifier;

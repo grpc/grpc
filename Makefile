@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 45.0.0
-CPP_VERSION = 1.71.0-dev
+CORE_VERSION = 46.0.0
+CPP_VERSION = 1.72.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -45
+SHARED_VERSION_CORE = -46
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -1828,8 +1828,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.45 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.45
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.46 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.46
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -1888,8 +1888,8 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/bio/socket.cc \
     third_party/boringssl-with-bazel/src/crypto/bio/socket_helper.cc \
     third_party/boringssl-with-bazel/src/crypto/blake2/blake2.cc \
-    third_party/boringssl-with-bazel/src/crypto/bn_extra/bn_asn1.cc \
-    third_party/boringssl-with-bazel/src/crypto/bn_extra/convert.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/bn_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/convert.cc \
     third_party/boringssl-with-bazel/src/crypto/buf/buf.cc \
     third_party/boringssl-with-bazel/src/crypto/bytestring/asn1_compat.cc \
     third_party/boringssl-with-bazel/src/crypto/bytestring/ber.cc \
@@ -1897,17 +1897,17 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/bytestring/cbs.cc \
     third_party/boringssl-with-bazel/src/crypto/bytestring/unicode.cc \
     third_party/boringssl-with-bazel/src/crypto/chacha/chacha.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_extra.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/derive_key.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesctrhmac.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesgcmsiv.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_chacha20poly1305.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_des.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_null.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc2.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc4.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_tls.cc \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/tls_cbc.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/derive_key.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_aesctrhmac.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_aesgcmsiv.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_chacha20poly1305.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_des.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_null.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_rc2.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_rc4.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_tls.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/get_cipher.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/tls_cbc.cc \
     third_party/boringssl-with-bazel/src/crypto/conf/conf.cc \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.cc \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.cc \
@@ -1923,16 +1923,16 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_64_adx.cc \
     third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.cc \
     third_party/boringssl-with-bazel/src/crypto/des/des.cc \
-    third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.cc \
-    third_party/boringssl-with-bazel/src/crypto/dh_extra/params.cc \
-    third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/dh/dh_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/dh/params.cc \
+    third_party/boringssl-with-bazel/src/crypto/digest/digest_extra.cc \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa.cc \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.cc \
-    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.cc \
-    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_derive.cc \
-    third_party/boringssl-with-bazel/src/crypto/ec_extra/hash_to_curve.cc \
-    third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_extra.cc \
-    third_party/boringssl-with-bazel/src/crypto/ecdsa_extra/ecdsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec/ec_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec/ec_derive.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec/hash_to_curve.cc \
+    third_party/boringssl-with-bazel/src/crypto/ecdh/ecdh.cc \
+    third_party/boringssl-with-bazel/src/crypto/ecdsa/ecdsa_asn1.cc \
     third_party/boringssl-with-bazel/src/crypto/engine/engine.cc \
     third_party/boringssl-with-bazel/src/crypto/err/err.cc \
     third_party/boringssl-with-bazel/src/crypto/evp/evp.cc \
@@ -1959,7 +1959,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.cc \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.cc \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.cc \
-    third_party/boringssl-with-bazel/src/crypto/keccak/keccak.cc \
     third_party/boringssl-with-bazel/src/crypto/kyber/kyber.cc \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash.cc \
     third_party/boringssl-with-bazel/src/crypto/md4/md4.cc \
@@ -1986,31 +1985,28 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_arm.cc \
     third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_vec.cc \
     third_party/boringssl-with-bazel/src/crypto/pool/pool.cc \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.cc \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/fork_detect.cc \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.cc \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/getentropy.cc \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/ios.cc \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.cc \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.cc \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/trusty.cc \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/urandom.cc \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/deterministic.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/fork_detect.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/forkunsafe.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/getentropy.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/ios.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/passive.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/rand.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/trusty.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/urandom.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/windows.cc \
     third_party/boringssl-with-bazel/src/crypto/rc4/rc4.cc \
     third_party/boringssl-with-bazel/src/crypto/refcount.cc \
-    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.cc \
-    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.cc \
-    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_extra.cc \
-    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa/rsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa/rsa_crypt.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa/rsa_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa/rsa_print.cc \
     third_party/boringssl-with-bazel/src/crypto/sha/sha1.cc \
     third_party/boringssl-with-bazel/src/crypto/sha/sha256.cc \
     third_party/boringssl-with-bazel/src/crypto/sha/sha512.cc \
     third_party/boringssl-with-bazel/src/crypto/siphash/siphash.cc \
-    third_party/boringssl-with-bazel/src/crypto/slhdsa/fors.cc \
-    third_party/boringssl-with-bazel/src/crypto/slhdsa/merkle.cc \
     third_party/boringssl-with-bazel/src/crypto/slhdsa/slhdsa.cc \
-    third_party/boringssl-with-bazel/src/crypto/slhdsa/thash.cc \
-    third_party/boringssl-with-bazel/src/crypto/slhdsa/wots.cc \
+    third_party/boringssl-with-bazel/src/crypto/spake2plus/spake2plus.cc \
     third_party/boringssl-with-bazel/src/crypto/stack/stack.cc \
     third_party/boringssl-with-bazel/src/crypto/thread.cc \
     third_party/boringssl-with-bazel/src/crypto/thread_none.cc \

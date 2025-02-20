@@ -1,0 +1,110 @@
+//
+// Copyright 2025 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package pick_first_fuzzer;
+
+import "google/protobuf/struct.proto";
+import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
+import "test/core/test_util/fuzzing_channel_args.proto";
+
+// We'd ideally like to use google.rpc.Status instead of creating our
+// own proto for this, but that winds up causing all sorts of dependency
+// headaches.
+message Status {
+  int32 code = 1;
+  string message = 2;
+}
+
+message Address {
+  oneof type {
+    int32 localhost_port = 1;  // ipv4:127.0.0.1:${localhost_port}
+    string uri = 2;
+  }
+}
+
+message EndpointList {
+  message Endpoint {
+    repeated Address addresses = 1;
+    grpc.testing.FuzzingChannelArgs channel_args = 2;
+  }
+  repeated Endpoint endpoints = 1;
+}
+
+//
+// actions
+//
+
+message Update {
+  oneof endpoints_oneof {
+    EndpointList endpoint_list = 1;
+    Status endpoint_error = 2;
+  }
+  oneof config_oneof {
+    string config_string = 3;
+    google.protobuf.Struct config_json = 4;
+  }
+  grpc.testing.FuzzingChannelArgs channel_args = 5;
+}
+
+message SubchannelConnectivityNotification {
+  Address address = 1;
+  grpc.testing.FuzzingChannelArgs channel_args = 2;
+
+  // The numeric values here must match those in
+  // include/grpc/impl/connectivity_state.h.
+  enum State {
+    IDLE = 0;
+    CONNECTING = 1;
+    READY = 2;
+    TRANSIENT_FAILURE = 3;
+  }
+  State state = 3;
+
+  Status status = 4;  // Used only for TRANSIENT_FAILURE.
+}
+
+message ExitIdle {}
+
+message ResetBackoff {}
+
+message CreateLbPolicy {
+  grpc.testing.FuzzingChannelArgs channel_args = 1;
+}
+
+message DoPick {}
+
+message Tick {
+  uint64 ms = 1;
+}
+
+message Action {
+  oneof action_type {
+    Update update = 1;
+    SubchannelConnectivityNotification subchannel_connectivity_notification = 2;
+    ExitIdle exit_idle = 3;
+    ResetBackoff reset_backoff = 4;
+    CreateLbPolicy create_lb_policy = 5;  // Recreates if already exists.
+    DoPick do_pick = 6;
+    Tick tick = 7;
+  }
+}
+
+message Msg {
+  repeated Action actions = 2;
+  fuzzing_event_engine.Actions fuzzing_event_engine_actions = 3;
+}

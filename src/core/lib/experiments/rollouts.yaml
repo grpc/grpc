@@ -46,10 +46,6 @@
   default: true
 - name: call_v3
   default: false
-- name: disable_buffer_hint_on_high_memory_pressure
-  default: false
-- name: event_engine_application_callbacks
-  default: true
 - name: event_engine_callback_cq
   default: true
 - name: event_engine_client
@@ -84,8 +80,6 @@
   default: true
 - name: posix_ee_skip_grpc_init
   default: false
-- name: prioritize_finished_requests
-  default: false
 - name: promise_based_http2_client_transport
   default: false
 - name: promise_based_http2_server_transport
@@ -102,7 +96,5 @@
   default: false
 - name: tcp_rcv_lowat
   default: false
-- name: trace_record_callops
-  default: true
 - name: unconstrained_max_quota_buffer_size
   default: false
