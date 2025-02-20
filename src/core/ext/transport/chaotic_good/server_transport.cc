@@ -154,7 +154,8 @@ auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
                 return Empty{};
               }),
           call_initiator.PullServerTrailingMetadata(),
-          [outgoing_frames = outgoing_frames_, stream_id](ServerMetadataHandle md) mutable {
+          [outgoing_frames = outgoing_frames_,
+           stream_id](ServerMetadataHandle md) mutable {
             ServerTrailingMetadataFrame frame;
             frame.body = ServerMetadataProtoFromGrpc(*md);
             frame.stream_id = stream_id;

@@ -83,7 +83,7 @@ grpc_fuzz_test(
     ],
 )
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "frame_test",
     srcs = ["frame_test.cc"],
     external_deps = [

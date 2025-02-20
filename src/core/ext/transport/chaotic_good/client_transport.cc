@@ -131,7 +131,7 @@ void ChaoticGoodClientTransport::StreamDispatch::DispatchFrame(
                                         std::move(stream))),
                                     [](auto) { return absl::OkStatus(); });
                        })),
-                   [](auto x) {});
+                   [](auto) {});
       });
 }
 
@@ -160,7 +160,7 @@ void ChaoticGoodClientTransport::StreamDispatch::OnIncomingFrame(
 }
 
 void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
-    absl::Status status) {
+    absl::Status) {
   // Mark transport as unavailable when the endpoint write/read failed.
   ReleasableMutexLock lock(&mu_);
   StreamMap stream_map = std::move(stream_map_);
