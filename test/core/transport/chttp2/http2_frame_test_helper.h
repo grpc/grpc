@@ -25,6 +25,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/http2_errors.h"
 
 namespace grpc_core {
 namespace transport {
