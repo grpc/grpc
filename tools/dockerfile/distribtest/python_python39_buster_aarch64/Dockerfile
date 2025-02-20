@@ -13,6 +13,6 @@
 # limitations under the License.
 
 # this an aarch64 image, qemu emulator will be used to run the tests
-FROM arm64v8/python:3.8-buster
+FROM arm64v8/python:3.9-buster
 
 RUN python3 -m pip install virtualenv

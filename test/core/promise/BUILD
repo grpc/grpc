@@ -695,6 +695,37 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "party_mpsc_test",
+    srcs = ["party_mpsc_test.cc"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = ["party_mpsc_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_unsecure",
+        "//:ref_counted_ptr",
+        "//src/core:1999",
+        "//src/core:context",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_memory_allocator",
+        "//src/core:memory_quota",
+        "//src/core:mpsc",
+        "//src/core:notification",
+        "//src/core:poll",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:sleep",
+        "//src/core:time",
+    ],
+)
+
 grpc_cc_benchmark(
     name = "bm_party",
     srcs = ["bm_party.cc"],

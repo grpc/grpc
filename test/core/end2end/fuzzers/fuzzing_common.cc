@@ -27,6 +27,7 @@
 #include <grpc/support/time.h>
 #include <string.h>
 
+#include <limits>
 #include <memory>
 #include <new>
 #include <optional>
@@ -43,6 +44,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/useful.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 
 namespace grpc_core {
@@ -193,7 +195,9 @@ class Call : public std::enable_shared_from_this<Call> {
         op.data.send_status_from_server.trailing_metadata_count = ary.count;
         op.data.send_status_from_server.trailing_metadata = ary.metadata;
         op.data.send_status_from_server.status = static_cast<grpc_status_code>(
-            batch_op.send_status_from_server().status_code());
+            Clamp<int64_t>(batch_op.send_status_from_server().status_code(),
+                           std::numeric_limits<int>::min(),
+                           std::numeric_limits<int>::max()));
         op.data.send_status_from_server.status_details =
             batch_op.send_status_from_server().has_status_details()
                 ? NewCopy(ReadSlice(
@@ -722,6 +726,7 @@ void BasicFuzzer::TryShutdown() {
   if (server() != nullptr) {
     if (!server_shutdown_called()) {
       ShutdownServer();
+      CancelAllCallsIfShutdown();
     }
     if (server_finished_shutting_down()) {
       DestroyServer();

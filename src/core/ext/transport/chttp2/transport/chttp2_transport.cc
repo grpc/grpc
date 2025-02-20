@@ -229,9 +229,6 @@ using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
     grpc_chttp2_stream* s) {
-  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
-    return nullptr;
-  }
   auto* call_attempt_tracer =
       s->arena->GetContext<grpc_core::CallTracerInterface>();
   if (call_attempt_tracer == nullptr || !call_attempt_tracer->IsSampled()) {
@@ -1374,7 +1371,7 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
 }
 
 static void trace_annotations(grpc_chttp2_stream* s) {
-  if (grpc_core::IsTraceRecordCallopsEnabled() && s->CallTracer() != nullptr) {
+  if (s->CallTracer() != nullptr) {
     s->CallTracer()->RecordAnnotation(
         grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
                                   gpr_now(GPR_CLOCK_REALTIME))
@@ -1480,18 +1477,6 @@ static void send_message_locked(
                                       absl::OkStatus(),
                                       "fetching_send_message_finished");
   } else {
-    // Buffer hint is used to buffer the message in the transport until the
-    // write buffer size (specified through GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE) is
-    // reached. This is to batch writes sent down to tcp. However, if the memory
-    // pressure is high, disable the buffer hint to flush data down to tcp as
-    // soon as possible to avoid OOM.
-    if (grpc_core::IsDisableBufferHintOnHighMemoryPressureEnabled() &&
-        t->memory_owner.GetPressureInfo().pressure_control_value >= 0.8) {
-      // Disable write buffer hint if memory pressure is high. The value of 0.8
-      // is chosen to match the threshold used by the tcp endpoint (in
-      // allocating memory for socket reads).
-      op_payload->send_message.flags &= ~GRPC_WRITE_BUFFER_HINT;
-    }
     flags = op_payload->send_message.flags;
     uint8_t* frame_hdr = grpc_slice_buffer_tiny_add(&s->flow_controlled_buffer,
                                                     GRPC_HEADER_SIZE_IN_BYTES);
