@@ -34,13 +34,6 @@ struct ArenaContextType<PeerAddress> {
   }
 };
 
-inline void SetPeerAddressContext(const Slice& peer_address_slice) {
-  Arena* arena = GetContext<Arena>();
-  auto* peer_address = arena->New<PeerAddress>();
-  peer_address->peer_address = peer_address_slice.Ref();
-  arena->SetContext<PeerAddress>(peer_address);
-}
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_CALL_PEER_ADDRESS_H
