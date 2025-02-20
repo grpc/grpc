@@ -61,7 +61,6 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
-                "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
@@ -89,6 +88,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_listener",
                 "server_listener",
@@ -120,7 +120,6 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
-                "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
@@ -145,6 +144,7 @@ EXPERIMENTS = {
         },
         "on": {
             "core_end2end_test": [
+                "chaotic_good_framing_layer",
                 "server_listener",
             ],
             "cpp_lb_end2end_test": [
@@ -165,7 +165,6 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
-                "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
@@ -193,6 +192,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_listener",
                 "server_listener",
