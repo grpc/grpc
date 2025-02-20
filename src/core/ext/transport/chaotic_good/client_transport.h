@@ -47,6 +47,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/inter_activity_mutex.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
@@ -107,8 +108,6 @@ class ChaoticGoodClientTransport final : public ClientTransport {
     auto MakeStream(CallHandler call_handler,
                     ClientMetadataHandle client_initial_metadata);
 
-    void UpdateMaxStreamId(uint32_t max_stream_id);
-
     void StartConnectivityWatch(
         grpc_connectivity_state state,
         OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
@@ -136,9 +135,11 @@ class ChaoticGoodClientTransport final : public ClientTransport {
         std::numeric_limits<uint32_t>::max();
 
     Mutex mu_;
-    uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
-    uint32_t max_stream_id_ ABSL_GUARDED_BY(mu_) = 0;
-    WaitSet waiting_for_stream_flow_control_ ABSL_GUARDED_BY(mu_);
+    struct FlowControlState {
+      uint32_t next_stream_id = 1;
+      uint32_t max_stream_id = 0;
+    };
+    InterActivityMutex<FlowControlState> flow_control_state_;
     // Map of stream incoming server frames, key
     // is stream_id.
     StreamMap stream_map_ ABSL_GUARDED_BY(mu_);

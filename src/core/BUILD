@@ -7975,6 +7975,7 @@ grpc_cc_library(
         "metadata_batch",
         "mpsc",
         "pipe",
+        "inter_activity_mutex",
         "poll",
         "resource_quota",
         "slice",

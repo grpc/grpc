@@ -136,14 +136,6 @@ void ChaoticGoodClientTransport::StreamDispatch::DispatchFrame(
       });
 }
 
-void ChaoticGoodClientTransport::StreamDispatch::UpdateMaxStreamId(
-    uint32_t stream_id) {
-  MutexLock lock(&mu_);
-  if (max_stream_id_ < stream_id)
-    waiting_for_stream_flow_control_.WakeupAsync();
-  max_stream_id_ = stream_id;
-}
-
 void ChaoticGoodClientTransport::StreamDispatch::OnIncomingFrame(
     IncomingFrame incoming_frame) {
   switch (incoming_frame.header().type) {
@@ -163,21 +155,27 @@ void ChaoticGoodClientTransport::StreamDispatch::OnIncomingFrame(
       DispatchFrame<MessageChunkFrame>(std::move(incoming_frame));
       break;
     case FrameType::kServerSetNewStreamState:
-      transport_frame_serializer_->Spawn(
-          [this, incoming_frame = std::move(incoming_frame)]() mutable {
-            return Map(
-                TrySeq(incoming_frame.Payload(),
-                       [this](Frame frame) {
-                         UpdateMaxStreamId(
-                             std::get<ServerSetNewStreamStateFrame>(frame)
-                                 .body.max_stream_id());
-                         return absl::OkStatus();
-                       }),
-                [self = RefAsSubclass<StreamDispatch>()](absl::Status status) {
-                  if (!status.ok())
-                    self->OnFrameTransportClosed(std::move(status));
-                });
-          });
+      transport_frame_serializer_->Spawn([this, incoming_frame = std::move(
+                                                    incoming_frame)]() mutable {
+        return Map(
+            TrySeq(
+                incoming_frame.Payload(),
+                [this](Frame frame) {
+                  return Staple(flow_control_state_.Acquire(),
+                                std::get<ServerSetNewStreamStateFrame>(frame)
+                                    .body.max_stream_id());
+                },
+                [](std::tuple<InterActivityMutex<FlowControlState>::Lock,
+                              uint32_t>
+                       state) {
+                  auto& [lock, max_stream_id] = state;
+                  lock->max_stream_id = max_stream_id;
+                  return absl::OkStatus();
+                }),
+            [self = RefAsSubclass<StreamDispatch>()](absl::Status status) {
+              if (!status.ok()) self->OnFrameTransportClosed(std::move(status));
+            });
+      });
       break;
     default:
       LOG_EVERY_N_SEC(INFO, 10)
@@ -221,32 +219,42 @@ void ChaoticGoodClientTransport::StreamDispatch::FinishCall(uint32_t stream_id,
 
 auto ChaoticGoodClientTransport::StreamDispatch::MakeStream(
     CallHandler call_handler, ClientMetadataHandle client_initial_metadata) {
-  return
-      [this, call_handler = std::move(call_handler),
-       client_initial_metadata = std::move(client_initial_metadata)]() mutable
-          -> Poll<absl::StatusOr<uint32_t>> {
-        MutexLock lock(&mu_);
-        if (next_stream_id_ == kClosedTransportStreamId) {
+  return TrySeq(
+      flow_control_state_.AcquireWhen([this](const FlowControlState& s) {
+        return s.next_stream_id == kClosedTransportStreamId ||
+               !flow_control_config_.new_stream_flow_control ||
+               s.next_stream_id <= s.max_stream_id;
+      }),
+      [this](typename InterActivityMutex<FlowControlState>::Lock lock)
+          -> absl::StatusOr<InterActivityMutex<FlowControlState>::Lock> {
+        if (lock->next_stream_id == kClosedTransportStreamId) {
           return absl::UnavailableError("Transport closed");
         }
-        if (flow_control_config_.new_stream_flow_control &&
-            next_stream_id_ > max_stream_id_) {
-          return waiting_for_stream_flow_control_.AddPending(
-              GetContext<Activity>()->MakeNonOwningWaker());
+        if (flow_control_config_.new_stream_flow_control) {
+          CHECK(lock->next_stream_id > lock->max_stream_id);
         }
-        const uint32_t stream_id = next_stream_id_++;
+        const uint32_t stream_id = lock->next_stream_id++;
         const bool on_done_added = call_handler.OnDone(
             [self = RefAsSubclass<StreamDispatch>(), stream_id](
                 bool cancelled) { self->FinishCall(stream_id, cancelled); });
         if (!on_done_added) return absl::CancelledError();
+        return std::tuple(std::move(lock), stream_id);
+      },
+      [this, call_handler = std::move(call_handler),
+       client_initial_metadata = std::move(client_initial_metadata)](
+          std::tuple<typename InterActivityMutex<FlowControlState>::Lock,
+                     uint32_t>
+              state) mutable -> Poll<absl::StatusOr<uint32_t>> {
+        auto& [lock, stream_id] = state;
         ClientInitialMetadataFrame frame;
         frame.body = ClientMetadataProtoFromGrpc(*client_initial_metadata);
         frame.stream_id = stream_id;
-        outgoing_frames_.UnbufferedImmediateSend(std::move(frame));
         stream_map_.emplace(stream_id,
                             MakeRefCounted<Stream>(std::move(call_handler)));
-        return stream_id;
-      };
+        return TryStaple(outgoing_frames_.Send(std::move(frame)),
+                         std::move(lock), std::move(stream_id));
+      },
+      JustElem<2>());
 }
 
 void ChaoticGoodClientTransport::StreamDispatch::StartConnectivityWatch(
