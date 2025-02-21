@@ -6922,6 +6922,7 @@ grpc_cc_library(
         "grpc_sockaddr",
         "latent_see",
         "metadata_batch",
+        "peer_address",
         "resolved_address",
         "seq",
         "slice",
