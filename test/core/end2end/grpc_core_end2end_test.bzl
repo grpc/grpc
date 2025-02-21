@@ -166,7 +166,7 @@ _TESTS = [
     "write_buffering_at_end",
 ]
 
-def grpc_core_end2end_test_suite(name, shard_count = 50, enable_fuzzing = True, tags = [], flaky = False):
+def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, enable_fuzzing = True, tags = [], flaky = False):
     """Generate one core end2end test
 
     Args:
@@ -182,7 +182,7 @@ def grpc_core_end2end_test_suite(name, shard_count = 50, enable_fuzzing = True, 
 
     grpc_cc_test(
         name = name + "_test",
-        srcs = [
+        srcs = [config_src] + [
             "tests/%s.cc" % t
             for t in _TESTS
         ],
@@ -191,7 +191,7 @@ def grpc_core_end2end_test_suite(name, shard_count = 50, enable_fuzzing = True, 
             "gtest",
             "gtest_main",
         ],
-        deps = _DEPS + ["end2end_test_lib_no_fuzztest_gtest"],
+        deps = _DEPS + deps + ["end2end_test_lib_no_fuzztest_gtest"],
         data = _DATA,
         shard_count = shard_count,
         tags = tags + ["core_end2end_test"],
@@ -201,7 +201,7 @@ def grpc_core_end2end_test_suite(name, shard_count = 50, enable_fuzzing = True, 
     if enable_fuzzing:
         grpc_fuzz_test(
             name = name + "_fuzzer",
-            srcs = [
+            srcs = [config_src] + [
                 "tests/%s.cc" % t
                 for t in _TESTS
             ],
@@ -212,6 +212,6 @@ def grpc_core_end2end_test_suite(name, shard_count = 50, enable_fuzzing = True, 
                 "fuzztest_main",
             ],
         shard_count = shard_count,
-            deps = _DEPS + ["end2end_test_lib_fuzztest_no_gtest"],
+            deps = _DEPS + deps + ["end2end_test_lib_fuzztest_no_gtest"],
             data = _DATA,
         )

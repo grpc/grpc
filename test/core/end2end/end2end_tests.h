@@ -658,6 +658,12 @@ DECLARE_SUITE(ProxyAuthTests);
 
 core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
 
+// This function should be provided by the config_src C++ file for the
+// end2end test suite binary being compiled. It provides an extension
+// point so that different test configurations can be executed by the
+// core test suite.
+std::vector<CoreTestConfiguration> End2endTestConfigs();
+
 }  // namespace grpc_core
 
 // If this test fixture is being run under minstack, skip the test.
