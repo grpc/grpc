@@ -113,6 +113,8 @@ grpc_cc_test(
     ],
     external_deps = ["gtest"],
     deps = [
+        "//:grpc_base",
+        "//src/core:call_final_info",
         "//src/core:filter_fusion",
     ],
 )

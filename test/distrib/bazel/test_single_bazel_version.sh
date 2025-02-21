@@ -64,6 +64,9 @@ EXCLUDED_TARGETS=(
 
   # Exclude bazelified tests as they contain some bazel hackery
   "-//tools/bazelify_tests/..."
+
+  # Also exclude the artifact_gen tooling, which again contains some bazel hackery
+  "-//tools/artifact_gen/..."
 )
 
 FAILED_TESTS=""

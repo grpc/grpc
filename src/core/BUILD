@@ -8816,8 +8816,10 @@ grpc_cc_library(
     ],
     deps = [
         "call_filters",
+        "call_final_info",
         "metadata",
         "type_list",
+        "//:grpc_public_hdrs",
     ],
 )
 

@@ -46,7 +46,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/transport/chaotic_good/mock_frame_transport.h"
-#include "test/core/transport/chaotic_good/transport_test.h"
+#include "test/core/transport/util/transport_test.h"
 
 using testing::_;
 using testing::MockFunction;

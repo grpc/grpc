@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/chaotic_good/transport_test.h"
+#ifndef GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_XML_H
+#define GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_XML_H
 
-namespace grpc_core {
-namespace chaotic_good {
-namespace testing {}  // namespace testing
-}  // namespace chaotic_good
-}  // namespace grpc_core
+#include "include/nlohmann/json.hpp"
+
+nlohmann::json ExtractMetadataFromBazelXml();
+
+#endif  // GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_XML_H
