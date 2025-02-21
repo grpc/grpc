@@ -61,8 +61,9 @@ namespace grpc_core {
 inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
+inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
@@ -80,7 +81,6 @@ inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
-inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -91,8 +91,6 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerListenerEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
-inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
@@ -100,8 +98,9 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
+inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -122,7 +121,6 @@ inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
-inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -133,8 +131,6 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerListenerEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
-inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #else
@@ -142,8 +138,9 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
+inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -164,7 +161,6 @@ inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
-inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -175,8 +171,6 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerListenerEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
-inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #endif
 
@@ -184,8 +178,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 enum ExperimentIds {
   kExperimentIdBackoffCapInitialAtMax,
   kExperimentIdCallTracerInTransport,
+  kExperimentIdCallTracerTransportFix,
   kExperimentIdCallv3ClientAuthFilter,
-  kExperimentIdDisableBufferHintOnHighMemoryPressure,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineDnsNonClientChannel,
@@ -199,7 +193,6 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdPickFirstNew,
   kExperimentIdPosixEeSkipGrpcInit,
-  kExperimentIdPrioritizeFinishedRequests,
   kExperimentIdPromiseBasedHttp2ClientTransport,
   kExperimentIdPromiseBasedHttp2ServerTransport,
   kExperimentIdPromiseBasedInprocTransport,
@@ -209,7 +202,6 @@ enum ExperimentIds {
   kExperimentIdServerListener,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
-  kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kNumExperiments
 };
@@ -221,14 +213,13 @@ inline bool IsBackoffCapInitialAtMaxEnabled() {
 inline bool IsCallTracerInTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdCallTracerInTransport>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
+inline bool IsCallTracerTransportFixEnabled() {
+  return IsExperimentEnabled<kExperimentIdCallTracerTransportFix>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_CLIENT_AUTH_FILTER
 inline bool IsCallv3ClientAuthFilterEnabled() {
   return IsExperimentEnabled<kExperimentIdCallv3ClientAuthFilter>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_DISABLE_BUFFER_HINT_ON_HIGH_MEMORY_PRESSURE
-inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() {
-  return IsExperimentEnabled<
-      kExperimentIdDisableBufferHintOnHighMemoryPressure>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {
@@ -282,10 +273,6 @@ inline bool IsPickFirstNewEnabled() {
 inline bool IsPosixEeSkipGrpcInitEnabled() {
   return IsExperimentEnabled<kExperimentIdPosixEeSkipGrpcInit>();
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PRIORITIZE_FINISHED_REQUESTS
-inline bool IsPrioritizeFinishedRequestsEnabled() {
-  return IsExperimentEnabled<kExperimentIdPrioritizeFinishedRequests>();
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_HTTP2_CLIENT_TRANSPORT
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseBasedHttp2ClientTransport>();
@@ -321,10 +308,6 @@ inline bool IsTcpFrameSizeTuningEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_RCV_LOWAT
 inline bool IsTcpRcvLowatEnabled() {
   return IsExperimentEnabled<kExperimentIdTcpRcvLowat>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
-inline bool IsTraceRecordCallopsEnabled() {
-  return IsExperimentEnabled<kExperimentIdTraceRecordCallops>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
