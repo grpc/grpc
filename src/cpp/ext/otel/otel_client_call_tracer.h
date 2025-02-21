@@ -30,6 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "opentelemetry/trace/span.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -51,6 +52,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
       : public grpc_core::ClientCallTracer::CallAttemptTracer {
    public:
     CallAttemptTracer(const OpenTelemetryPluginImpl::ClientCallTracer* parent,
+                      uint64_t attempt_num, bool is_transparent_retry,
                       bool arena_allocated);
 
     std::string TraceId() override {
@@ -116,6 +118,9 @@ class OpenTelemetryPluginImpl::ClientCallTracer
     // the call's party.
     std::atomic<uint64_t> incoming_bytes_{0};
     std::atomic<uint64_t> outgoing_bytes_{0};
+    opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
+    uint64_t send_seq_num_ = 0;
+    uint64_t recv_seq_num_ = 0;
   };
 
   ClientCallTracer(
@@ -153,10 +158,11 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   OpenTelemetryPluginImpl* otel_plugin_;
   std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config_;
   grpc_core::Mutex mu_;
-  // Non-transparent attempts per call
+  // Non-transparent attempts per call (including first attempt)
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
   // Transparent retries per call
   uint64_t transparent_retries_ ABSL_GUARDED_BY(&mu_) = 0;
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
 };
 
 }  // namespace internal
