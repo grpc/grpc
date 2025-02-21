@@ -42,6 +42,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/delay_tracker.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -408,6 +409,16 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
   if (Slice* message =
           server_trailing_metadata->get_pointer(GrpcMessageMetadata())) {
     message_slice = message->Ref();
+  }
+  if (status == GRPC_STATUS_DEADLINE_EXCEEDED) {
+    // FIXME: include total duration of RPC
+    if (auto* delay_tracker = arena()->GetContext<DelayTracker>();
+        delay_tracker != nullptr) {
+      message_slice = Slice::FromCopiedString(
+          absl::StrCat(message_slice.empty() ? "Deadline Exceeded"
+                                             : message_slice.as_string_view(),
+                       " (", delay_tracker->GetDelayInfo(), ")"));
+    }
   }
   *out_status_details = message_slice.TakeCSlice();
   if (out_error_string != nullptr) {

@@ -444,8 +444,9 @@ void FilterStackCall::RecvInitialFilter(grpc_metadata_batch* b) {
   PublishAppMetadata(b, false);
 }
 
-void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
-                                         grpc_error_handle batch_error) {
+void FilterStackCall::RecvTrailingFilter(
+    grpc_metadata_batch* b, grpc_error_handle batch_error,
+    grpc_core::DelayTracker* delay_tracker) {
   if (!batch_error.ok()) {
     SetFinalStatus(batch_error);
   } else {
@@ -461,7 +462,14 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
             StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
       }
       auto grpc_message = b->Take(GrpcMessageMetadata());
-      if (grpc_message.has_value()) {
+      if (status_code == GRPC_STATUS_DEADLINE_EXCEEDED &&
+          delay_tracker != nullptr) {
+        std::string msg = absl::StrCat(
+            grpc_message.has_value() ? grpc_message->as_string_view()
+                                     : "Deadline Exceeded",
+            " (", delay_tracker->GetDelayInfo(), ")");
+        error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage, msg);
+      } else if (grpc_message.has_value()) {
         error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
                                    grpc_message->as_string_view());
       } else if (!error.ok()) {
@@ -703,10 +711,14 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
 
 void FilterStackCall::BatchControl::ReceivingTrailingMetadataReady(
     grpc_error_handle error) {
+  // Before leaving the call combiner, grab the delay tracker from call
+  // context.
+  DelayTracker* delay_tracker = call_->arena()->GetContext<DelayTracker>();
+  call_->arena()->SetContext<DelayTracker>(nullptr);
   GRPC_CALL_COMBINER_STOP(call_->call_combiner(),
                           "recv_trailing_metadata_ready");
   grpc_metadata_batch* md = &call_->recv_trailing_metadata_;
-  call_->RecvTrailingFilter(md, error);
+  call_->RecvTrailingFilter(md, error, delay_tracker);
   FinishStep(PendingOp::kRecvTrailingMetadata);
 }
 

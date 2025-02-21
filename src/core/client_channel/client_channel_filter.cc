@@ -47,6 +47,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/delay_tracker.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -297,6 +298,8 @@ class ClientChannelFilter::FilterBasedCallData final
 
   // Set when we get a cancel_stream op.
   grpc_error_handle cancel_error_;
+
+  std::optional<DelayTracker::Handle> delay_handle_;
 };
 
 //
@@ -2226,7 +2229,26 @@ class ClientChannelFilter::FilterBasedCallData::ResolverQueuedCallCanceller
 void ClientChannelFilter::FilterBasedCallData::TryCheckResolution(
     bool was_queued) {
   auto result = CheckResolution(was_queued);
-  if (result.has_value()) {
+  if (!result.has_value()) {
+    // Result not yet available.  If we haven't already started recording
+    // a delay, do so now.
+    if (!delay_handle_.has_value()) {
+      // Get the DelayTracker from call context, creating it if needed.
+      DelayTracker* tracker = arena_->GetContext<DelayTracker>();
+      if (tracker == nullptr) {
+        tracker = arena_->ManagedNew<DelayTracker>();
+        arena_->SetContext<DelayTracker>(tracker);
+      }
+      // Start recording a delay.
+      delay_handle_ = tracker->StartDelay("Name resolver");
+    }
+  } else {
+    // Result available.
+    // If there was a delay, record that the delay is over.
+    if (delay_handle_.has_value()) {
+      DelayTracker* tracker = arena_->GetContext<DelayTracker>();
+      tracker->EndDelay(*delay_handle_);
+    }
     if (!result->ok()) {
       PendingBatchesFail(*result, YieldCallCombiner);
       return;
@@ -2997,7 +3019,26 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall::LbQueuedCallCanceller
 void ClientChannelFilter::FilterBasedLoadBalancedCall::TryPick(
     bool was_queued) {
   auto result = PickSubchannel(was_queued);
-  if (result.has_value()) {
+  if (!result.has_value()) {
+    // Result not yet available.  If we haven't already started recording
+    // a delay, do so now.
+    if (!delay_handle_.has_value()) {
+      // Get the DelayTracker from call context, creating it if needed.
+      DelayTracker* tracker = arena()->GetContext<DelayTracker>();
+      if (tracker == nullptr) {
+        tracker = arena()->ManagedNew<DelayTracker>();
+        arena()->SetContext<DelayTracker>(tracker);
+      }
+      // Start recording a delay.
+      delay_handle_ = tracker->StartDelay("Load balancing");
+    }
+  } else {
+    // Result available.
+    // If there was a delay, record that the delay is over.
+    if (delay_handle_.has_value()) {
+      DelayTracker* tracker = arena()->GetContext<DelayTracker>();
+      tracker->EndDelay(*delay_handle_);
+    }
     if (!result->ok()) {
       PendingBatchesFail(*result, YieldCallCombiner);
       return;

@@ -1324,8 +1324,7 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 //   static constexpr bool kRepeatable = ...;
 //   // The type that's stored on MetadataBatch
 //   using ValueType = ...;
-//   // Convert a value to something that can be passed to StrCat and
-//   displayed
+//   // Convert a value to something that can be passed to StrCat and displayed
 //   // for debugging
 //   static SomeStrCatableType DisplayValue(ValueType value) { ... }
 // };

@@ -34,6 +34,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/delay_tracker.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/client_channel/client_channel_factory.h"
@@ -568,6 +569,8 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   // passed the batch down to the subchannel call and are not
   // intercepting any of its callbacks).
   grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
+
+  std::optional<DelayTracker::Handle> delay_handle_;
 };
 
 }  // namespace grpc_core

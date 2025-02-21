@@ -40,6 +40,7 @@ if test "$PHP_GRPC" != "no"; then
 
   PHP_SUBST(GRPC_SHARED_LIBADD)
   PHP_NEW_EXTENSION(grpc,
+    src/core/call/delay_tracker.cc \
     src/core/call/request_buffer.cc \
     src/core/channelz/channel_trace.cc \
     src/core/channelz/channelz.cc \
