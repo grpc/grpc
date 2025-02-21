@@ -186,8 +186,8 @@ class TestOpenTelemetryPluginOption(OpenTelemetryPluginOption):
 
 
 @unittest.skipIf(
-    os.name == "nt" or "darwin" in sys.platform,
-    "Observability is not supported in Windows and MacOS",
+    "darwin" in sys.platform,
+    "Observability is not supported in MacOS",
 )
 class ObservabilityPluginTest(unittest.TestCase):
     def setUp(self):

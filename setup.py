@@ -265,6 +265,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     if "win32" in sys.platform:
         # MSVC by defaults uses C++14 and C89 so both needs to be configured.
         EXTRA_ENV_COMPILE_ARGS += " /std:c++17"
+        EXTRA_ENV_COMPILE_ARGS += " /GL"
         EXTRA_ENV_COMPILE_ARGS += " /std:c11"
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
@@ -296,6 +297,9 @@ if EXTRA_ENV_LINK_ARGS is None:
 # missing when compiled using package managers like Conda.
 if "darwin" in sys.platform:
     EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
+
+if "win32" in sys.platform:
+    EXTRA_ENV_LINK_ARGS += " /LTCG"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
