@@ -19,7 +19,6 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
 
-#include "absl/status/status_matchers.h"
 #include "absl/synchronization/notification.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -40,7 +39,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using absl_testing::IsOk;
 using opentelemetry::sdk::trace::SpanData;
 using opentelemetry::sdk::trace::SpanDataEvent;
 using ::testing::ElementsAre;
@@ -65,13 +63,13 @@ class OTelTracingTest : public ::testing::Test {
                 opentelemetry::exporter::memory::InMemorySpanExporterFactory::
                     Create(data_)));
     tracer_ = tracer_provider->GetTracer("grpc-test");
-    ASSERT_THAT(
+    auto status =
         OpenTelemetryPluginBuilder()
             .SetTracerProvider(std::move(tracer_provider))
             .SetTextMapPropagator(
                 OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator())
-            .BuildAndRegisterGlobal(),
-        IsOk());
+            .BuildAndRegisterGlobal();
+    ASSERT_TRUE(status.ok()) << status;
     port_ = grpc_pick_unused_port_or_die();
     server_address_ = absl::StrCat("localhost:", port_);
     RestartServer();
