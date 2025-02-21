@@ -2358,14 +2358,18 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
       errors->AddError("must be valid gRPC target URI");
     }
   }
-  // Clamp maxAge to the max allowed value.
-  if (max_age > kMaxMaxAge) max_age = kMaxMaxAge;
   // If staleAge is set, then maxAge must also be set.
-  if (json.object().find("staleAge") != json.object().end() &&
-      json.object().find("maxAge") == json.object().end()) {
+  const bool stale_age_set =
+      json.object().find("staleAge") != json.object().end();
+  const bool max_age_set = json.object().find("maxAge") != json.object().end();
+  if (stale_age_set && !max_age_set) {
     ValidationErrors::ScopedField field(errors, ".maxAge");
     errors->AddError("must be set if staleAge is set");
   }
+  // Clamp staleAge to the max allowed value.
+  if (stale_age > kMaxMaxAge) stale_age = kMaxMaxAge;
+  // If staleAge is not set, clamp maxAge to the max allowed value.
+  if (!stale_age_set && max_age > kMaxMaxAge) max_age = kMaxMaxAge;
   // Ignore staleAge if greater than or equal to maxAge.
   if (stale_age >= max_age) stale_age = max_age;
   // Validate cacheSizeBytes.
