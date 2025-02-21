@@ -25,19 +25,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "envoy/config/core/v3/address.upb.h"
-#include "envoy/config/rbac/v3/rbac.upb.h"
-#include "envoy/config/route/v3/route_components.upb.h"
-#include "envoy/extensions/filters/http/rbac/v3/rbac.upb.h"
-#include "envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h"
-#include "envoy/type/matcher/v3/metadata.upb.h"
-#include "envoy/type/matcher/v3/path.upb.h"
-#include "envoy/type/matcher/v3/regex.upb.h"
-#include "envoy/type/matcher/v3/string.upb.h"
-#include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
@@ -52,6 +39,20 @@
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "envoy/config/core/v3/address.upb.h"
+#include "envoy/config/rbac/v3/rbac.upb.h"
+#include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.upb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h"
+#include "envoy/type/matcher/v3/metadata.upb.h"
+#include "envoy/type/matcher/v3/path.upb.h"
+#include "envoy/type/matcher/v3/regex.upb.h"
+#include "envoy/type/matcher/v3/string.upb.h"
+#include "envoy/type/v3/range.upb.h"
+#include "upb/base/string_view.h"
 #include "upb/message/map.h"
 
 namespace grpc_core {
@@ -451,6 +452,7 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
     if (envoy_config_rbac_v3_RBAC_policies_size(rules) != 0) {
       Json::Object policies_object;
       size_t iter = kUpb_Map_Begin;
+      // grpc-oss-only-begin
       while (true) {
         auto* entry = envoy_config_rbac_v3_RBAC_policies_next(rules, &iter);
         if (entry == nullptr) {
@@ -464,6 +466,21 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
             envoy_config_rbac_v3_RBAC_PoliciesEntry_value(entry), errors);
         policies_object.emplace(std::string(key), std::move(policy));
       }
+      // grpc-oss-only-end
+      /* grpc-google-only-begin
+      // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+      // v30.0.
+      upb_StringView key_view;
+      const envoy_config_rbac_v3_Policy* val;
+      while (envoy_config_rbac_v3_RBAC_policies_next(rules, &key_view, &val,
+                                                     &iter)) {
+        absl::string_view key = UpbStringToAbsl(key_view);
+        ValidationErrors::ScopedField field(
+            errors, absl::StrCat(".policies[", key, "]"));
+        Json policy = ParsePolicyToJson(val, errors);
+        policies_object.emplace(std::string(key), std::move(policy));
+      }
+      grpc-google-only-end */
       inner_rbac_json.emplace("policies",
                               Json::FromObject(std::move(policies_object)));
     }

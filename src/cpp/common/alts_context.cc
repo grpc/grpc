@@ -88,6 +88,7 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
   }
   if (grpc_gcp_AltsContext_peer_attributes_size(ctx) != 0) {
     size_t iter = kUpb_Map_Begin;
+    // grpc-oss-only-begin
     const grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
         grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
     while (peer_attributes_entry != nullptr) {
@@ -100,6 +101,17 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
       peer_attributes_entry =
           grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
     }
+    // grpc-oss-only-end
+    /* grpc-google-only-begin
+    // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+    // v30.0.
+    upb_StringView key;
+    upb_StringView val;
+    while (grpc_gcp_AltsContext_peer_attributes_next(ctx, &key, &val, &iter)) {
+      peer_attributes_map_[std::string(key.data, key.size)] =
+          std::string(val.data, val.size);
+    }
+    grpc-google-only-end */
   }
 }
 
