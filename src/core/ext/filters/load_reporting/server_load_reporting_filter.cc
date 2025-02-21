@@ -135,8 +135,7 @@ std::string GetCensusSafeClientIpString() {
   }
 }
 
-std::string MakeClientIpAndLrToken(absl::string_view lr_token,
-                                   const ClientMetadata& initial_metadata) {
+std::string MakeClientIpAndLrToken(absl::string_view lr_token) {
   std::string client_ip = GetCensusSafeClientIpString();
   absl::string_view prefix;
   switch (client_ip.length()) {
@@ -186,7 +185,7 @@ void ServerLoadReportingFilter::Call::OnClientInitialMetadata(
   }
   auto lb_token = md.Take(LbTokenMetadata()).value_or(Slice());
   client_ip_and_lr_token_ =
-      MakeClientIpAndLrToken(lb_token.as_string_view(), md);
+      MakeClientIpAndLrToken(lb_token.as_string_view());
   // Record the beginning of the request
   opencensus::stats::Record(
       {{::grpc::load_reporter::MeasureStartCount(), 1}},
