@@ -15931,6 +15931,7 @@ targets:
   - test/cpp/ext/otel/otel_tracing_test.cc
   deps:
   - gtest
+  - absl/status:status_matchers
   - opentelemetry-cpp::api
   - opentelemetry-cpp::in_memory_span_exporter
   - opentelemetry-cpp::metrics

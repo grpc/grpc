@@ -23708,6 +23708,7 @@ target_include_directories(otel_tracing_test
 target_link_libraries(otel_tracing_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::status_matchers
   opentelemetry-cpp::api
   opentelemetry-cpp::in_memory_span_exporter
   opentelemetry-cpp::metrics

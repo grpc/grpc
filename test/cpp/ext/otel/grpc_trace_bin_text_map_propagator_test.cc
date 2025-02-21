@@ -124,7 +124,9 @@ TEST(GrpcTraceBinTextMapPropagatorTest, Fields) {
       OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
   StrictMock<MockFunction<bool(opentelemetry::nostd::string_view)>>(
       mock_callback);
-  EXPECT_CALL(mock_callback, Call("grpc-trace-bin")).WillOnce(Return(true));
+  EXPECT_CALL(mock_callback,
+              Call(opentelemetry::nostd::string_view("grpc-trace-bin")))
+      .WillOnce(Return(true));
   propagator->Fields(mock_callback.AsStdFunction());
 }
 
