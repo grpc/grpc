@@ -35,11 +35,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "2f12c33d2cf25a658a1b981fb96923dac87e9175fb20e45db6950ee36c526356",
-            strip_prefix = "boringssl-dec0d8f681348af8bb675e07bd89989665fca8bc",
+            sha256 = "cea4c77cd69279585ea53efa2bb2ae6eb5f31fb39c214213c5b7cdf3c44d7b52",
+            strip_prefix = "boringssl-c64b8fefbba9a9dadda73138062fc449bdf11e2a",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/dec0d8f681348af8bb675e07bd89989665fca8bc.tar.gz",
-                "https://github.com/google/boringssl/archive/dec0d8f681348af8bb675e07bd89989665fca8bc.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/c64b8fefbba9a9dadda73138062fc449bdf11e2a.tar.gz",
+                "https://github.com/google/boringssl/archive/c64b8fefbba9a9dadda73138062fc449bdf11e2a.tar.gz",
             ],
         )
 
@@ -367,66 +367,6 @@ def grpc_test_only_deps():
 
     Loads dependencies that are only needed to run grpc library's tests.
     """
-
-    if "com_github_twisted_twisted" not in native.existing_rules():
-        http_archive(
-            name = "com_github_twisted_twisted",
-            sha256 = "ca17699d0d62eafc5c28daf2c7d0a18e62ae77b4137300b6c7d7868b39b06139",
-            strip_prefix = "twisted-twisted-17.5.0",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/twisted/twisted/archive/twisted-17.5.0.zip",
-                "https://github.com/twisted/twisted/archive/twisted-17.5.0.zip",
-            ],
-            build_file = "@com_github_grpc_grpc//third_party:twisted.BUILD",
-        )
-
-    if "com_github_yaml_pyyaml" not in native.existing_rules():
-        http_archive(
-            name = "com_github_yaml_pyyaml",
-            sha256 = "e34d97db6d846f5e2ad51417fd646e7ce6a3a70726ccea2a857e0580a7155f39",
-            strip_prefix = "pyyaml-6.0.1",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/yaml/pyyaml/archive/6.0.1.zip",
-                "https://github.com/yaml/pyyaml/archive/6.0.1.zip",
-            ],
-            build_file = "@com_github_grpc_grpc//third_party:yaml.BUILD",
-        )
-
-    if "com_github_twisted_incremental" not in native.existing_rules():
-        http_archive(
-            name = "com_github_twisted_incremental",
-            sha256 = "f0ca93359ee70243ff7fbf2d904a6291810bd88cb80ed4aca6fa77f318a41a36",
-            strip_prefix = "incremental-incremental-17.5.0",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/twisted/incremental/archive/incremental-17.5.0.zip",
-                "https://github.com/twisted/incremental/archive/incremental-17.5.0.zip",
-            ],
-            build_file = "@com_github_grpc_grpc//third_party:incremental.BUILD",
-        )
-
-    if "com_github_zopefoundation_zope_interface" not in native.existing_rules():
-        http_archive(
-            name = "com_github_zopefoundation_zope_interface",
-            sha256 = "e9579fc6149294339897be3aa9ecd8a29217c0b013fe6f44fcdae00e3204198a",
-            strip_prefix = "zope.interface-4.4.3",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/zopefoundation/zope.interface/archive/4.4.3.zip",
-                "https://github.com/zopefoundation/zope.interface/archive/4.4.3.zip",
-            ],
-            build_file = "@com_github_grpc_grpc//third_party:zope_interface.BUILD",
-        )
-
-    if "com_github_twisted_constantly" not in native.existing_rules():
-        http_archive(
-            name = "com_github_twisted_constantly",
-            sha256 = "2702cd322161a579d2c0dbf94af4e57712eedc7bd7bbbdc554a230544f7d346c",
-            strip_prefix = "constantly-15.1.0",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/twisted/constantly/archive/15.1.0.zip",
-                "https://github.com/twisted/constantly/archive/15.1.0.zip",
-            ],
-            build_file = "@com_github_grpc_grpc//third_party:constantly.BUILD",
-        )
 
     if "com_google_libprotobuf_mutator" not in native.existing_rules():
         http_archive(

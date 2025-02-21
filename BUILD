@@ -197,11 +197,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gears"  # @unused
+g_stands_for = "gusto"  # @unused
 
-core_version = "45.0.0"  # @unused
+core_version = "46.0.0"  # @unused
 
-version = "1.71.0-dev"  # @unused
+version = "1.72.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -528,6 +528,8 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/codegen/sync_stream.h",
     "include/grpcpp/impl/codegen/time.h",
     "include/grpcpp/impl/codegen/sync.h",
+    "include/grpcpp/ports_def.inc",
+    "include/grpcpp/ports_undef.inc",
 ]
 
 grpc_cc_library(

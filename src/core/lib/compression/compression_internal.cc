@@ -245,10 +245,10 @@ grpc_compression_options CompressionOptionsFromChannelArgs(
   auto default_level = args.GetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL);
   if (default_level.has_value()) {
     compression_options.default_level.is_set = true;
-    compression_options.default_level.level = Clamp(
-        static_cast<grpc_compression_level>(*default_level),
-        GRPC_COMPRESS_LEVEL_NONE,
-        static_cast<grpc_compression_level>(GRPC_COMPRESS_LEVEL_COUNT - 1));
+    compression_options.default_level.level =
+        static_cast<grpc_compression_level>(
+            Clamp(*default_level, static_cast<int>(GRPC_COMPRESS_LEVEL_NONE),
+                  static_cast<int>(GRPC_COMPRESS_LEVEL_COUNT - 1)));
   }
   auto default_algorithm =
       args.GetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);

@@ -227,24 +227,18 @@ namespace {
 using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
-grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
+grpc_core::CallTracerAnnotationInterface* ParentCallTracerIfSampled(
     grpc_chttp2_stream* s) {
-  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
-    return nullptr;
-  }
-  auto* call_tracer =
+  auto* parent_call_tracer =
       s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
-  if (call_tracer == nullptr || !call_tracer->IsSampled()) {
+  if (parent_call_tracer == nullptr || !parent_call_tracer->IsSampled()) {
     return nullptr;
   }
-  return call_tracer;
+  return parent_call_tracer;
 }
 
 std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
     grpc_chttp2_stream* s) {
-  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
-    return nullptr;
-  }
   auto* call_attempt_tracer =
       s->arena->GetContext<grpc_core::CallTracerInterface>();
   if (call_attempt_tracer == nullptr || !call_attempt_tracer->IsSampled()) {
@@ -1387,16 +1381,16 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
 }
 
 static void trace_annotations(grpc_chttp2_stream* s) {
-  if (!grpc_core::IsCallTracerInTransportEnabled()) {
-    if (s->call_tracer != nullptr) {
-      s->call_tracer->RecordAnnotation(
+  if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+    if (s->parent_call_tracer != nullptr) {
+      s->parent_call_tracer->RecordAnnotation(
           grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
                                     gpr_now(GPR_CLOCK_REALTIME))
               .Add(s->t->flow_control.stats())
               .Add(s->flow_control.stats()));
     }
-  } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
-    auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
+  } else {
+    auto* call_tracer = s->CallTracer();
     if (call_tracer != nullptr && call_tracer->IsSampled()) {
       call_tracer->RecordAnnotation(
           grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
@@ -1504,18 +1498,6 @@ static void send_message_locked(
                                       absl::OkStatus(),
                                       "fetching_send_message_finished");
   } else {
-    // Buffer hint is used to buffer the message in the transport until the
-    // write buffer size (specified through GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE) is
-    // reached. This is to batch writes sent down to tcp. However, if the memory
-    // pressure is high, disable the buffer hint to flush data down to tcp as
-    // soon as possible to avoid OOM.
-    if (grpc_core::IsDisableBufferHintOnHighMemoryPressureEnabled() &&
-        t->memory_owner.GetPressureInfo().pressure_control_value >= 0.8) {
-      // Disable write buffer hint if memory pressure is high. The value of 0.8
-      // is chosen to match the threshold used by the tcp endpoint (in
-      // allocating memory for socket reads).
-      op_payload->send_message.flags &= ~GRPC_WRITE_BUFFER_HINT;
-    }
     flags = op_payload->send_message.flags;
     uint8_t* frame_hdr = grpc_slice_buffer_tiny_add(&s->flow_controlled_buffer,
                                                     GRPC_HEADER_SIZE_IN_BYTES);
@@ -1664,8 +1646,15 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_chttp2_transport* t = s->t.get();
 
   s->traced = op->is_traced;
-  if (!grpc_core::IsCallTracerInTransportEnabled()) {
-    s->call_tracer = CallTracerIfSampled(s);
+  if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+    s->parent_call_tracer = ParentCallTracerIfSampled(s);
+  }
+  // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
+  // https://github.com/grpc/grpc/pull/38729 for more information.) On the
+  // client, the call attempt tracer will be available for use when the
+  // send_initial_metadata op arrives.
+  if (s->t->is_client && op->send_initial_metadata) {
+    s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
   }
   s->tcp_tracer = TcpTracerIfSampled(s);
   if (GRPC_TRACE_FLAG_ENABLED(http)) {

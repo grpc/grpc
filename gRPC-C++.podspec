@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.71.0-dev'
+  version = '1.72.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -181,6 +181,8 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/status.h',
                       'include/grpcpp/impl/sync.h',
                       'include/grpcpp/passive_listener.h',
+                      'include/grpcpp/ports_def.inc',
+                      'include/grpcpp/ports_undef.inc',
                       'include/grpcpp/resource_quota.h',
                       'include/grpcpp/security/audit_logging.h',
                       'include/grpcpp/security/auth_context.h',

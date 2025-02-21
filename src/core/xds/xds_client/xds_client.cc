@@ -476,6 +476,12 @@ void XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
       if (!call->HasSubscribedResources()) {
         ads_call_.reset();
       }
+    } else {
+      // If there is currently no ADS call because we're in retry backoff,
+      // then we immediately trigger deletion of unsubscribed cache entries.
+      // This may orphan the XdsChannel, which would stop the retry
+      // timer, since we would no longer need to restart the ADS call.
+      xds_client_->MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(this, type);
     }
   }
 }
@@ -532,6 +538,13 @@ void XdsClient::XdsChannel::SetHealthyLocked() {
           << "[xds_client " << xds_client_.get() << "] authority " << authority
           << ": Falling forward to " << server_.server_uri();
       // Lower priority channels are no longer needed, connection is back!
+      // Note that we move the lower priority channels out of the vector
+      // before we unref them, or else
+      // MaybeRemoveUnsubscribedCacheEntriesForTypeLocked() will try to
+      // access the vector while we are modifying it.
+      std::vector<RefCountedPtr<XdsChannel>> channels_to_unref(
+          std::make_move_iterator(channel_it + 1),
+          std::make_move_iterator(channels.end()));
       channels.erase(channel_it + 1, channels.end());
     }
   }

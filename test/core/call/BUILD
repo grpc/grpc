@@ -105,3 +105,16 @@ grpc_cc_test(
         "//test/core/promise:poll_matcher",
     ],
 )
+
+grpc_cc_test(
+    name = "filter_fusion_test",
+    srcs = [
+        "filter_fusion_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc_base",
+        "//src/core:call_final_info",
+        "//src/core:filter_fusion",
+    ],
+)
