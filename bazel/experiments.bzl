@@ -19,6 +19,7 @@
 EXPERIMENT_ENABLES = {
     "backoff_cap_initial_at_max": "backoff_cap_initial_at_max",
     "call_tracer_in_transport": "call_tracer_in_transport",
+    "call_tracer_transport_fix": "call_tracer_transport_fix",
     "callv3_client_auth_filter": "callv3_client_auth_filter",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",

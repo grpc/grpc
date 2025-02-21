@@ -830,7 +830,7 @@ TEST_F(StatsPluginEnd2EndTest, TestMetadataSizeAnnotations) {
   auto sent_span_data = GetSpanByName(
       recorded_spans,
       absl::StrCat(
-          grpc_core::IsCallTracerInTransportEnabled() ? "Attempt." : "Sent.",
+          grpc_core::IsCallTracerTransportFixEnabled() ? "Attempt." : "Sent.",
           client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(
@@ -876,7 +876,7 @@ TEST_F(StatsPluginEnd2EndTest, TestHttpAnnotations) {
   auto client_span_data = GetSpanByName(
       recorded_spans,
       absl::StrCat(
-          grpc_core::IsCallTracerInTransportEnabled() ? "Attempt." : "Sent.",
+          grpc_core::IsCallTracerTransportFixEnabled() ? "Attempt." : "Sent.",
           client_method_name_));
   ASSERT_NE(client_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(client_span_data,

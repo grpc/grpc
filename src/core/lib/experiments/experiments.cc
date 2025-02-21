@@ -29,6 +29,9 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_call_tracer_transport_fix =
+    "Use the correct call tracer in transport";
+const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
@@ -131,6 +134,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
+     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"event_engine_client", description_event_engine_client,
@@ -205,6 +210,9 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_call_tracer_transport_fix =
+    "Use the correct call tracer in transport";
+const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
@@ -307,6 +315,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
+     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"event_engine_client", description_event_engine_client,
@@ -381,6 +391,9 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_call_tracer_transport_fix =
+    "Use the correct call tracer in transport";
+const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
@@ -483,6 +496,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
+     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"event_engine_client", description_event_engine_client,

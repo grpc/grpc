@@ -44,6 +44,8 @@
   default: true
 - name: call_tracer_in_transport
   default: true
+- name: call_tracer_transport_fix
+  default: true
 - name: call_v3
   default: false
 - name: event_engine_callback_cq

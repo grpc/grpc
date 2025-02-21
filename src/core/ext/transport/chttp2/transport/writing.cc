@@ -472,11 +472,11 @@ class StreamWriteContext {
     grpc_chttp2_complete_closure_step(t_, &s_->send_initial_metadata_finished,
                                       absl::OkStatus(),
                                       "send_initial_metadata_finished");
-    if (!grpc_core::IsCallTracerInTransportEnabled()) {
-      if (s_->call_tracer) {
+    if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+      if (s_->parent_call_tracer != nullptr) {
         grpc_core::HttpAnnotation::WriteStats write_stats;
         write_stats.target_write_size = write_context_->target_write_size();
-        s_->call_tracer->RecordAnnotation(
+        s_->parent_call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(
                 grpc_core::HttpAnnotation::Type::kHeadWritten,
                 gpr_now(GPR_CLOCK_REALTIME))
@@ -485,8 +485,7 @@ class StreamWriteContext {
                 .Add(write_stats));
       }
     } else {
-      auto* call_tracer =
-          s_->arena->GetContext<grpc_core::CallTracerInterface>();
+      auto* call_tracer = s_->CallTracer();
       if (call_tracer != nullptr && call_tracer->IsSampled()) {
         grpc_core::HttpAnnotation::WriteStats write_stats;
         write_stats.target_write_size = write_context_->target_write_size();
@@ -638,17 +637,16 @@ class StreamWriteContext {
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
-    if (!grpc_core::IsCallTracerInTransportEnabled()) {
-      if (s_->call_tracer) {
-        s_->call_tracer->RecordAnnotation(
+    if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+      if (s_->parent_call_tracer != nullptr) {
+        s_->parent_call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
                                       gpr_now(GPR_CLOCK_REALTIME))
                 .Add(s_->t->flow_control.stats())
                 .Add(s_->flow_control.stats()));
       }
     } else {
-      auto* call_tracer =
-          s_->arena->GetContext<grpc_core::CallTracerInterface>();
+      auto* call_tracer = s_->CallTracer();
       if (call_tracer != nullptr && call_tracer->IsSampled()) {
         call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
