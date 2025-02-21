@@ -42,6 +42,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/peer_address.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -327,6 +328,10 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                   metadata = std::move(md->value());
                   is_trailers_only_ =
                       metadata->get(GrpcTrailersOnly()).value_or(false);
+                }
+                if (auto* peer_address = MaybeGetContext<PeerAddress>();
+                    peer_address != nullptr) {
+                  SetPeerString(peer_address->peer_address.Ref());
                 }
                 ProcessIncomingInitialMetadata(*metadata);
                 PublishMetadataArray(metadata.get(), array, true);

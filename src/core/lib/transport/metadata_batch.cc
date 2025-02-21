@@ -94,7 +94,6 @@ bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
         allow_list.insert(std::string(GrpcStreamNetworkState::DebugKey()));
         allow_list.insert(std::string(GrpcTarPit::DebugKey()));
         allow_list.insert(std::string(GrpcTrailersOnly::DebugKey()));
-        allow_list.insert(std::string(PeerString::DebugKey()));
         allow_list.insert(std::string(WaitForReady::DebugKey()));
         // go/keep-sorted end
         return allow_list;
@@ -365,10 +364,6 @@ std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
 
 std::string GrpcRegisteredMethod::DisplayValue(void* x) {
   return absl::StrFormat("%p", x);
-}
-
-std::string PeerString::DisplayValue(const ValueType& x) {
-  return std::string(x.as_string_view());
 }
 
 const std::string& GrpcStatusContext::DisplayValue(const std::string& x) {

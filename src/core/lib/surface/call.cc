@@ -284,9 +284,6 @@ void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
 }
 
 void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
-  Slice* peer_string = md.get_pointer(PeerString());
-  if (peer_string != nullptr) SetPeerString(peer_string->Ref());
-
   SetIncomingCompressionAlgorithm(
       md.Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE));
   encodings_accepted_by_peer_ =

@@ -1649,6 +1649,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "peer_address",
+    hdrs = [
+        "call/peer_address.h",
+    ],
+    deps = [
+        "arena",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
     name = "request_buffer",
     srcs = [
         "call/request_buffer.cc",
@@ -6911,6 +6922,7 @@ grpc_cc_library(
         "grpc_sockaddr",
         "latent_see",
         "metadata_batch",
+        "peer_address",
         "resolved_address",
         "seq",
         "slice",
@@ -8652,6 +8664,7 @@ grpc_cc_library(
         "logging_sink",
         "map",
         "metadata_batch",
+        "peer_address",
         "pipe",
         "slice",
         "slice_buffer",

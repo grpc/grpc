@@ -251,7 +251,7 @@ class FilterStackCall final : public Call {
   bool PrepareApplicationMetadata(size_t count, grpc_metadata* metadata,
                                   bool is_trailing);
   void PublishAppMetadata(grpc_metadata_batch* b, bool is_trailing);
-  void RecvInitialFilter(grpc_metadata_batch* b);
+  void RecvInitialFilter(grpc_metadata_batch* b, Slice peer_address);
   void RecvTrailingFilter(grpc_metadata_batch* b,
                           grpc_error_handle batch_error);
 

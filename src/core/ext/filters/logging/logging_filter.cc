@@ -44,6 +44,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "src/core/call/peer_address.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
@@ -223,8 +224,9 @@ void CallData::LogClientHeader(bool is_client,
                                const ClientMetadata& metadata) {
   LoggingSink::Entry entry;
   if (!is_client) {
-    if (auto* value = metadata.get_pointer(PeerString())) {
-      peer_ = PeerStringToAddress(*value);
+    if (auto* peer_address = MaybeGetContext<PeerAddress>();
+        peer_address != nullptr) {
+      peer_ = PeerStringToAddress(peer_address->peer_address);
     }
   }
   SetCommonEntryFields(&entry, is_client, tracer,
@@ -251,8 +253,9 @@ void CallData::LogServerHeader(bool is_client,
   if (metadata != nullptr) {
     entry.is_trailer_only = metadata->get(GrpcTrailersOnly()).value_or(false);
     if (is_client) {
-      if (auto* value = metadata->get_pointer(PeerString())) {
-        peer_ = PeerStringToAddress(*value);
+      if (auto* peer_address = MaybeGetContext<PeerAddress>();
+          peer_address != nullptr) {
+        peer_ = PeerStringToAddress(peer_address->peer_address);
       }
     }
   }

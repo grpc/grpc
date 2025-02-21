@@ -42,6 +42,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/peer_address.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -439,7 +440,9 @@ void FilterStackCall::PublishAppMetadata(grpc_metadata_batch* b,
   b->Encode(&encoder);
 }
 
-void FilterStackCall::RecvInitialFilter(grpc_metadata_batch* b) {
+void FilterStackCall::RecvInitialFilter(grpc_metadata_batch* b,
+                                        Slice peer_address) {
+  SetPeerString(std::move(peer_address));
   ProcessIncomingInitialMetadata(*b);
   PublishAppMetadata(b, false);
 }
@@ -650,11 +653,19 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     grpc_error_handle error) {
   FilterStackCall* call = call_;
 
+  // Before leaving the call combiner, grab a ref to the peer address
+  // string from call context, if set.
+  Slice peer_address_slice;
+  if (auto* peer_address = call->arena()->GetContext<PeerAddress>();
+      peer_address != nullptr) {
+    peer_address_slice = peer_address->peer_address.Ref();
+  }
+
   GRPC_CALL_COMBINER_STOP(call->call_combiner(), "recv_initial_metadata_ready");
 
   if (error.ok()) {
     grpc_metadata_batch* md = &call->recv_initial_metadata_;
-    call->RecvInitialFilter(md);
+    call->RecvInitialFilter(md, std::move(peer_address_slice));
 
     std::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {

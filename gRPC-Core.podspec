@@ -238,7 +238,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
-    ss.source_files = 'src/core/call/request_buffer.cc',
+    ss.source_files = 'src/core/call/peer_address.h',
+                      'src/core/call/request_buffer.cc',
                       'src/core/call/request_buffer.h',
                       'src/core/channelz/channel_trace.cc',
                       'src/core/channelz/channel_trace.h',
@@ -2427,7 +2428,8 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.c',
                       'third_party/zlib/zutil.h'
-    ss.private_header_files = 'src/core/call/request_buffer.h',
+    ss.private_header_files = 'src/core/call/peer_address.h',
+                              'src/core/call/request_buffer.h',
                               'src/core/channelz/channel_trace.h',
                               'src/core/channelz/channelz.h',
                               'src/core/channelz/channelz_registry.h',
