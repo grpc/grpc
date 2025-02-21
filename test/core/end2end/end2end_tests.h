@@ -747,31 +747,14 @@ std::vector<CoreTestConfiguration> End2endTestConfigs();
   CORE_END2END_FUZZER(suite, name)                                             \
   void CoreEnd2endTest_##suite##_##name::RunTest()
 
-#define CORE_END2END_TEST_INCOMPATIBLE_WITH_FUZZING(suite, name)               \
-  class CoreEnd2endTest_##suite##_##name final                                 \
-      : public grpc_core::CoreEnd2endTest {                                    \
-   public:                                                                     \
-    using grpc_core::CoreEnd2endTest::CoreEnd2endTest;                         \
-    void RunTest();                                                            \
-  };                                                                           \
-  void suite##_##name(const grpc_core::CoreTestConfiguration* config,          \
-                      core_end2end_test_fuzzer::Msg msg) {                     \
-    if (config == nullptr) {                                                   \
-      GTEST_SKIP() << "config not available on this platform";                 \
-    }                                                                          \
-    if (absl::StartsWith(#name, "DISABLED_")) GTEST_SKIP() << "disabled test"; \
-    if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled() ||    \
-        !IsEventEngineDnsEnabled()) {                                          \
-      GTEST_SKIP() << "fuzzers need event engine";                             \
-    }                                                                          \
-    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
-      GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
-                      "fuzzing currently";                                     \
-    }                                                                          \
-    CoreEnd2endTest_##suite##_##name(config, &msg, #suite).RunTest();          \
-    grpc_event_engine::experimental::ShutdownDefaultEventEngine();             \
-  }                                                                            \
-  CORE_END2END_TEST_P(suite, name)                                             \
+#define CORE_END2END_TEST_INCOMPATIBLE_WITH_FUZZING(suite, name) \
+  class CoreEnd2endTest_##suite##_##name final                   \
+      : public grpc_core::CoreEnd2endTest {                      \
+   public:                                                       \
+    using grpc_core::CoreEnd2endTest::CoreEnd2endTest;           \
+    void RunTest();                                              \
+  };                                                             \
+  CORE_END2END_TEST_P(suite, name)                               \
   void CoreEnd2endTest_##suite##_##name::RunTest()
 
 #define CORE_END2END_TEST_SUITE(suite, configs)                                \

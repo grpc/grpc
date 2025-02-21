@@ -171,6 +171,8 @@ def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, 
 
     Args:
         name: name of the test, must correspond to a "test/name.cc" file
+        config_src: filename of a C++ file that implements the End2endTestConfigs() function
+        deps: any additional dependencies needed by config_src provided configurations
         shard_count: per bazel
         tags: per bazel
         flaky: per bazel
