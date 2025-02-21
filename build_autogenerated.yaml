@@ -10770,6 +10770,7 @@ targets:
   language: c++
   headers:
   - src/core/call/filter_fusion.h
+  - src/core/call/peer_address.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
