@@ -223,7 +223,7 @@ class FakeCallTracer : public ClientCallTracer {
 
 class FakeServerCallTracer : public ServerCallTracer {
  public:
-  FakeServerCallTracer(std::shared_ptr<TestState> test_state)
+  explicit FakeServerCallTracer(std::shared_ptr<TestState> test_state)
       : test_state_(test_state) {
     test_state_->ResetServerByteSizes();
   }
