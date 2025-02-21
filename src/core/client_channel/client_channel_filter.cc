@@ -30,9 +30,11 @@
 #include <algorithm>
 #include <functional>
 #include <new>
+#include <optional>
 #include <set>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
@@ -45,8 +47,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -139,14 +139,14 @@ class ClientChannelFilter::CallData {
   // Checks whether a resolver result is available.  The following
   // outcomes are possible:
   // - No resolver result is available yet.  The call will be queued and
-  //   absl::nullopt will be returned.  Later, when a resolver result
+  //   std::nullopt will be returned.  Later, when a resolver result
   //   becomes available, RetryCheckResolutionLocked() will be called.
   // - The resolver has returned a transient failure.  If the call is
   //   not wait_for_ready, a non-OK status will be returned.  (If the
   //   call *is* wait_for_ready, it will be queued instead.)
   // - There is a valid resolver result.  The service config will be
   //   stored in the call context and an OK status will be returned.
-  absl::optional<absl::Status> CheckResolution(bool was_queued);
+  std::optional<absl::Status> CheckResolution(bool was_queued);
 
  private:
   // Accessors for data stored in the subclass.
@@ -521,7 +521,16 @@ class ClientChannelFilter::SubchannelWrapper final
     GRPC_TRACE_LOG(client_channel, INFO)
         << "chand=" << chand_ << ": destroying subchannel wrapper " << this
         << "for subchannel " << subchannel_.get();
-    if (!IsWorkSerializerDispatchEnabled()) {
+    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
+  }
+
+  void Orphaned() override {
+    // Make sure we clean up the channel's subchannel maps inside the
+    // WorkSerializer.
+    // Ref held by callback.
+    WeakRef(DEBUG_LOCATION, "subchannel map cleanup").release();
+    chand_->work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                                      *chand_->work_serializer_) {
       chand_->subchannel_wrappers_.erase(this);
       if (chand_->channelz_node_ != nullptr) {
         auto* subchannel_node = subchannel_->channelz_node();
@@ -536,36 +545,8 @@ class ClientChannelFilter::SubchannelWrapper final
           }
         }
       }
-    }
-    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
-  }
-
-  void Orphaned() override {
-    if (!IsWorkSerializerDispatchEnabled()) return;
-    // Make sure we clean up the channel's subchannel maps inside the
-    // WorkSerializer.
-    // Ref held by callback.
-    WeakRef(DEBUG_LOCATION, "subchannel map cleanup").release();
-    chand_->work_serializer_->Run(
-        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
-          chand_->subchannel_wrappers_.erase(this);
-          if (chand_->channelz_node_ != nullptr) {
-            auto* subchannel_node = subchannel_->channelz_node();
-            if (subchannel_node != nullptr) {
-              auto it =
-                  chand_->subchannel_refcount_map_.find(subchannel_.get());
-              CHECK(it != chand_->subchannel_refcount_map_.end());
-              --it->second;
-              if (it->second == 0) {
-                chand_->channelz_node_->RemoveChildSubchannel(
-                    subchannel_node->uuid());
-                chand_->subchannel_refcount_map_.erase(it);
-              }
-            }
-          }
-          WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
-        },
-        DEBUG_LOCATION);
+      WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
+    });
   }
 
   void WatchConnectivityState(
@@ -639,16 +620,6 @@ class ClientChannelFilter::SubchannelWrapper final
         : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
     ~WatcherWrapper() override {
-      if (!IsWorkSerializerDispatchEnabled()) {
-        auto* parent = parent_.release();  // ref owned by lambda
-        parent->chand_->work_serializer_->Run(
-            [parent]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                *parent_->chand_->work_serializer_) {
-              parent->Unref(DEBUG_LOCATION, "WatcherWrapper");
-            },
-            DEBUG_LOCATION);
-        return;
-      }
       parent_.reset(DEBUG_LOCATION, "WatcherWrapper");
     }
 
@@ -666,8 +637,7 @@ class ClientChannelFilter::SubchannelWrapper final
               *parent_->chand_->work_serializer_) {
             ApplyUpdateInControlPlaneWorkSerializer(state, status);
             Unref();
-          },
-          DEBUG_LOCATION);
+          });
     }
 
     grpc_pollset_set* interested_parties() override {
@@ -685,8 +655,7 @@ class ClientChannelFilter::SubchannelWrapper final
           << parent_.get() << " subchannel " << parent_->subchannel_.get()
           << " watcher=" << watcher_.get()
           << " state=" << ConnectivityStateName(state) << " status=" << status;
-      absl::optional<absl::Cord> keepalive_throttling =
-          status.GetPayload(kKeepaliveThrottlingKey);
+      auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
       if (keepalive_throttling.has_value()) {
         int new_keepalive_time = -1;
         if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
@@ -787,8 +756,7 @@ ClientChannelFilter::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
       [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
         // The ref is passed to AddWatcherLocked().
         AddWatcherLocked();
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 ClientChannelFilter::ExternalConnectivityWatcher::
@@ -841,8 +809,7 @@ void ClientChannelFilter::ExternalConnectivityWatcher::Notify(
         [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
           RemoveWatcherLocked();
           Unref(DEBUG_LOCATION, "RemoveWatcherLocked()");
-        },
-        DEBUG_LOCATION);
+        });
   }
 }
 
@@ -861,8 +828,7 @@ void ClientChannelFilter::ExternalConnectivityWatcher::Cancel() {
       [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
         RemoveWatcherLocked();
         Unref(DEBUG_LOCATION, "RemoveWatcherLocked()");
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 void ClientChannelFilter::ExternalConnectivityWatcher::AddWatcherLocked() {
@@ -892,8 +858,7 @@ class ClientChannelFilter::ConnectivityWatcherAdder final {
     chand_->work_serializer_->Run(
         [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
           AddWatcherLocked();
-        },
-        DEBUG_LOCATION);
+        });
   }
 
  private:
@@ -922,8 +887,7 @@ class ClientChannelFilter::ConnectivityWatcherRemover final {
     chand_->work_serializer_->Run(
         [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
           RemoveWatcherLocked();
-        },
-        DEBUG_LOCATION);
+        });
   }
 
  private:
@@ -1102,7 +1066,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   }
   // Get default service config.  If none is specified via the client API,
   // we use an empty config.
-  absl::optional<absl::string_view> service_config_json =
+  std::optional<absl::string_view> service_config_json =
       channel_args_.GetString(GRPC_ARG_SERVICE_CONFIG);
   if (!service_config_json.has_value()) service_config_json = "{}";
   *error = absl::OkStatus();
@@ -1114,7 +1078,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   }
   default_service_config_ = std::move(*service_config);
   // Get URI to resolve, using proxy mapper if needed.
-  absl::optional<std::string> target_uri =
+  std::optional<std::string> target_uri =
       channel_args_.GetOwnedString(GRPC_ARG_SERVER_URI);
   if (!target_uri.has_value()) {
     *error = GRPC_ERROR_CREATE(
@@ -1146,7 +1110,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
     keepalive_time_ = -1;  // unset
   }
   // Set default authority.
-  absl::optional<std::string> default_authority =
+  std::optional<std::string> default_authority =
       channel_args_.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {
     default_authority_ =
@@ -1199,7 +1163,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   }
   // Try the deprecated LB policy name from the service config.
   // If not, try the setting from channel args.
-  absl::optional<absl::string_view> policy_name;
+  std::optional<absl::string_view> policy_name;
   if (!parsed_service_config->parsed_deprecated_lb_policy().empty()) {
     policy_name = parsed_service_config->parsed_deprecated_lb_policy();
   } else {
@@ -1406,7 +1370,7 @@ void ClientChannelFilter::OnResolverErrorLocked(absl::Status status) {
 
 absl::Status ClientChannelFilter::CreateOrUpdateLbPolicyLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-    const absl::optional<std::string>& health_check_service_name,
+    const std::optional<std::string>& health_check_service_name,
     Resolver::Result result) {
   // Construct update.
   LoadBalancingPolicy::UpdateArgs update_args;
@@ -1631,22 +1595,22 @@ T HandlePickResult(
     std::function<T(LoadBalancingPolicy::PickResult::Fail*)> fail_func,
     std::function<T(LoadBalancingPolicy::PickResult::Drop*)> drop_func) {
   auto* complete_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
   if (complete_pick != nullptr) {
     return complete_func(complete_pick);
   }
   auto* queue_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
   if (queue_pick != nullptr) {
     return queue_func(queue_pick);
   }
   auto* fail_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
   if (fail_pick != nullptr) {
     return fail_func(fail_pick);
   }
   auto* drop_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
   CHECK_NE(drop_pick, nullptr);
   return drop_func(drop_pick);
 }
@@ -1768,8 +1732,7 @@ void ClientChannelFilter::StartTransportOp(grpc_channel_element* elem,
   chand->work_serializer_->Run(
       [chand, op]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand->work_serializer_) {
         chand->StartTransportOpLocked(op);
-      },
-      DEBUG_LOCATION);
+      });
 }
 
 void ClientChannelFilter::GetChannelInfo(grpc_channel_element* elem,
@@ -1806,8 +1769,7 @@ grpc_connectivity_state ClientChannelFilter::CheckConnectivityState(
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(owning_stack_, "TryToConnect");
     work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                              *work_serializer_) { TryToConnectLocked(); },
-                          DEBUG_LOCATION);
+                              *work_serializer_) { TryToConnectLocked(); });
   }
   return out;
 }
@@ -1898,7 +1860,7 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
   return absl::OkStatus();
 }
 
-absl::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
+std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
     bool was_queued) {
   // Check if we have a resolver result to use.
   absl::StatusOr<RefCountedPtr<ConfigSelector>> config_selector;
@@ -1908,19 +1870,11 @@ absl::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
     // If no result is available, queue the call.
     if (!result_ready) {
       AddCallToResolverQueuedCallsLocked();
-      return absl::nullopt;
+      return std::nullopt;
     }
   }
   // We have a result.  Apply service config to call.
   grpc_error_handle error = ApplyServiceConfigToCallLocked(config_selector);
-  // ConfigSelector must be unreffed inside the WorkSerializer.
-  if (!IsWorkSerializerDispatchEnabled() && config_selector.ok()) {
-    chand()->work_serializer_->Run(
-        [config_selector = std::move(*config_selector)]() mutable {
-          config_selector.reset();
-        },
-        DEBUG_LOCATION);
-  }
   // Handle errors.
   if (!error.ok()) {
     GRPC_TRACE_LOG(client_channel_call, INFO)
@@ -2097,8 +2051,7 @@ void ClientChannelFilter::FilterBasedCallData::StartTransportStreamOpBatch(
           [chand]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand->work_serializer_) {
             chand->CheckConnectivityState(/*try_to_connect=*/true);
             GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "ExitIdle");
-          },
-          DEBUG_LOCATION);
+          });
     }
     calld->TryCheckResolution(/*was_queued=*/false);
   } else {
@@ -2293,7 +2246,6 @@ void ClientChannelFilter::FilterBasedCallData::RetryCheckResolutionLocked() {
   // Do an async callback to resume call processing, so that we're not
   // doing it while holding the channel's resolution mutex.
   chand()->owning_stack_->EventEngine()->Run([this]() {
-    ApplicationCallbackExecCtx application_exec_ctx;
     ExecCtx exec_ctx;
     TryCheckResolution(/*was_queued=*/true);
   });
@@ -2427,12 +2379,14 @@ class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
 
 namespace {
 
-void CreateCallAttemptTracer(Arena* arena, bool is_transparent_retry) {
+ClientCallTracer::CallAttemptTracer* CreateCallAttemptTracer(
+    Arena* arena, bool is_transparent_retry) {
   auto* call_tracer = DownCast<ClientCallTracer*>(
       arena->GetContext<CallTracerAnnotationInterface>());
-  if (call_tracer == nullptr) return;
+  if (call_tracer == nullptr) return nullptr;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
   arena->SetContext<CallTracerInterface>(tracer);
+  return tracer;
 }
 
 }  // namespace
@@ -2444,9 +2398,10 @@ ClientChannelFilter::LoadBalancedCall::LoadBalancedCall(
                                ? "LoadBalancedCall"
                                : nullptr),
       chand_(chand),
+      call_attempt_tracer_(
+          CreateCallAttemptTracer(arena, is_transparent_retry)),
       on_commit_(std::move(on_commit)),
       arena_(arena) {
-  CreateCallAttemptTracer(arena, is_transparent_retry);
   GRPC_TRACE_LOG(client_channel_lb_call, INFO)
       << "chand=" << chand_ << " lb_call=" << this << ": created";
 }
@@ -2514,51 +2469,21 @@ void ClientChannelFilter::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
   OnAddToQueueLocked();
 }
 
-absl::optional<absl::Status>
+std::optional<absl::Status>
 ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
-  // We may accumulate multiple pickers here, because if a picker says
-  // to queue the call, we check again to see if the picker has been
-  // updated before we queue it.
-  // We need to unref pickers in the WorkSerializer.
-  std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
-  auto cleanup = absl::MakeCleanup(
-      [work_serializer = chand_->work_serializer_, &pickers]() {
-        if (IsWorkSerializerDispatchEnabled()) return;
-        work_serializer->Run(
-            [pickers = std::move(pickers)]() mutable {
-              for (auto& picker : pickers) {
-                picker.reset(DEBUG_LOCATION, "PickSubchannel");
-              }
-            },
-            DEBUG_LOCATION);
-      });
-  absl::AnyInvocable<void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
-      set_picker;
-  if (!IsWorkSerializerDispatchEnabled()) {
-    set_picker =
-        [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
-          pickers.emplace_back(std::move(picker));
-        };
-  } else {
-    pickers.emplace_back();
-    set_picker =
-        [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
-          pickers[0] = std::move(picker);
-        };
-  }
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
   // Grab mutex and take a ref to the picker.
   GRPC_TRACE_LOG(client_channel_lb_call, INFO)
       << "chand=" << chand_ << " lb_call=" << this
       << ": grabbing LB mutex to get picker";
-  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
   {
     MutexLock lock(&chand_->lb_mu_);
-    set_picker(chand_->picker_);
+    picker = chand_->picker_;
   }
   while (true) {
     // TODO(roth): Fix race condition in channel_idle filter and any
     // other possible causes of this.
-    if (pickers.back() == nullptr) {
+    if (picker == nullptr) {
       GRPC_TRACE_LOG(client_channel_lb_call, INFO)
           << "chand=" << chand_ << " lb_call=" << this
           << ": picker is null, failing call";
@@ -2567,27 +2492,25 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
     // Do pick.
     GRPC_TRACE_LOG(client_channel_lb_call, INFO)
         << "chand=" << chand_ << " lb_call=" << this
-        << ": performing pick with picker=" << pickers.back().get();
+        << ": performing pick with picker=" << picker.get();
     grpc_error_handle error;
-    bool pick_complete = PickSubchannelImpl(pickers.back().get(), &error);
+    bool pick_complete = PickSubchannelImpl(picker.get(), &error);
     if (!pick_complete) {
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> old_picker;
       MutexLock lock(&chand_->lb_mu_);
       // If picker has been swapped out since we grabbed it, try again.
-      if (pickers.back() != chand_->picker_) {
+      if (picker != chand_->picker_) {
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "chand=" << chand_ << " lb_call=" << this
             << ": pick not complete, but picker changed";
-        if (IsWorkSerializerDispatchEnabled()) {
-          // Don't unref until after we release the mutex.
-          old_picker = std::move(pickers.back());
-        }
-        set_picker(chand_->picker_);
+        // Don't unref until after we release the mutex.
+        old_picker = std::move(picker);
+        picker = chand_->picker_;
         continue;
       }
       // Otherwise queue the pick to try again later when we get a new picker.
       AddCallToLbQueuedCallsLocked();
-      return absl::nullopt;
+      return std::nullopt;
     }
     // Pick is complete.
     // If it was queued, add a trace annotation.

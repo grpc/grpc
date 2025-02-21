@@ -29,15 +29,19 @@ namespace grpc_core {
 
 namespace {
 
+// HTTP2 Frame Types
 constexpr uint8_t kFrameTypeData = 0;
 constexpr uint8_t kFrameTypeHeader = 1;
-constexpr uint8_t kFrameTypeContinuation = 9;
+// type 2 was Priority which has been deprecated.
 constexpr uint8_t kFrameTypeRstStream = 3;
 constexpr uint8_t kFrameTypeSettings = 4;
+constexpr uint8_t kFrameTypePushPromise = 5;
 constexpr uint8_t kFrameTypePing = 6;
 constexpr uint8_t kFrameTypeGoaway = 7;
 constexpr uint8_t kFrameTypeWindowUpdate = 8;
-constexpr uint8_t kFrameTypePushPromise = 5;
+constexpr uint8_t kFrameTypeContinuation = 9;
+
+// Custom Frame Type
 constexpr uint8_t kFrameTypeSecurity = 200;
 
 constexpr uint8_t kFlagEndStream = 1;
@@ -45,8 +49,6 @@ constexpr uint8_t kFlagAck = 1;
 constexpr uint8_t kFlagEndHeaders = 4;
 constexpr uint8_t kFlagPadded = 8;
 constexpr uint8_t kFlagPriority = 0x20;
-
-constexpr size_t kFrameHeaderSize = 9;
 
 void Write2b(uint16_t x, uint8_t* output) {
   output[0] = static_cast<uint8_t>(x >> 8);
@@ -481,11 +483,11 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
     // Bytes needed for framing
     buffer_needed += kFrameHeaderSize;
     // Bytes needed for frame payload
-    buffer_needed += absl::visit(SerializeExtraBytesRequired(), frame);
+    buffer_needed += std::visit(SerializeExtraBytesRequired(), frame);
   }
   SerializeHeaderAndPayload serialize(buffer_needed, out);
   for (auto& frame : frames) {
-    absl::visit(serialize, frame);
+    std::visit(serialize, frame);
   }
 }
 

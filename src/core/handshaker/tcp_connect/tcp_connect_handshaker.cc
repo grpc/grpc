@@ -24,6 +24,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -31,7 +32,6 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
@@ -125,11 +125,13 @@ void TCPConnectHandshaker::DoHandshake(
   }
   CHECK_EQ(args->endpoint.get(), nullptr);
   args_ = args;
-  absl::StatusOr<URI> uri = URI::Parse(
-      args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value());
+  absl::string_view resolved_address_text =
+      args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value();
+  absl::StatusOr<URI> uri = URI::Parse(resolved_address_text);
   if (!uri.ok() || !grpc_parse_uri(*uri, &addr_)) {
     MutexLock lock(&mu_);
-    FinishLocked(GRPC_ERROR_CREATE("Resolved address in invalid format"));
+    FinishLocked(GRPC_ERROR_CREATE(absl::StrCat(
+        "Resolved address in invalid format: ", resolved_address_text)));
     return;
   }
   bind_endpoint_to_pollset_ =

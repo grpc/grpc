@@ -25,6 +25,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/bitset.h"
 
 static const char* stream_list_id_string(grpc_chttp2_stream_list_id id) {

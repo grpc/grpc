@@ -16,16 +16,16 @@
 echo "!TIME!: prepare_build_windows.bat started"
 
 @rem make sure msys binaries are preferred over cygwin binaries
-@rem set path to python3.7
+@rem set path to python3.8
 @rem set path to CMake
-set PATH=C:\tools\msys64\usr\bin;C:\Python37;C:\Program Files\CMake\bin;%PATH%
+set PATH=C:\tools\msys64\usr\bin;C:\Python38;C:\Program Files\CMake\bin;%PATH%
 
 @rem Print image ID of the windows kokoro image being used.
 cat C:\image_id.txt
 
 @rem create "python3" link that normally doesn't exist
-dir C:\Python37\
-mklink C:\Python37\python3.exe C:\Python37\python.exe
+dir C:\Python38\
+mklink C:\Python38\python3.exe C:\Python38\python.exe
 
 python --version
 python3 --version

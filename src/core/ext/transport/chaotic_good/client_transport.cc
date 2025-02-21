@@ -15,6 +15,7 @@
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
@@ -162,33 +163,33 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
     return TrySeq(
         transport->ReadFrameBytes(),
         [this, transport](IncomingFrame incoming_frame) mutable {
-          return Switch(
-              incoming_frame.header().type,
-              Case<FrameType, FrameType::kServerInitialMetadata>([&, this]() {
-                return DispatchFrame<ServerInitialMetadataFrame>(
-                    std::move(transport), std::move(incoming_frame));
-              }),
-              Case<FrameType, FrameType::kServerTrailingMetadata>([&, this]() {
-                return DispatchFrame<ServerTrailingMetadataFrame>(
-                    std::move(transport), std::move(incoming_frame));
-              }),
-              Case<FrameType, FrameType::kMessage>([&, this]() {
-                return DispatchFrame<MessageFrame>(std::move(transport),
-                                                   std::move(incoming_frame));
-              }),
-              Case<FrameType, FrameType::kBeginMessage>([&, this]() {
-                return DispatchFrame<BeginMessageFrame>(
-                    std::move(transport), std::move(incoming_frame));
-              }),
-              Case<FrameType, FrameType::kMessageChunk>([&, this]() {
-                return DispatchFrame<MessageChunkFrame>(
-                    std::move(transport), std::move(incoming_frame));
-              }),
-              Default([&]() {
-                LOG_EVERY_N_SEC(INFO, 10)
-                    << "Bad frame type: " << incoming_frame.header().ToString();
-                return absl::OkStatus();
-              }));
+          return Switch(incoming_frame.header().type,
+                        Case<FrameType::kServerInitialMetadata>([&, this]() {
+                          return DispatchFrame<ServerInitialMetadataFrame>(
+                              std::move(transport), std::move(incoming_frame));
+                        }),
+                        Case<FrameType::kServerTrailingMetadata>([&, this]() {
+                          return DispatchFrame<ServerTrailingMetadataFrame>(
+                              std::move(transport), std::move(incoming_frame));
+                        }),
+                        Case<FrameType::kMessage>([&, this]() {
+                          return DispatchFrame<MessageFrame>(
+                              std::move(transport), std::move(incoming_frame));
+                        }),
+                        Case<FrameType::kBeginMessage>([&, this]() {
+                          return DispatchFrame<BeginMessageFrame>(
+                              std::move(transport), std::move(incoming_frame));
+                        }),
+                        Case<FrameType::kMessageChunk>([&, this]() {
+                          return DispatchFrame<MessageChunkFrame>(
+                              std::move(transport), std::move(incoming_frame));
+                        }),
+                        Default([&]() {
+                          LOG_EVERY_N_SEC(INFO, 10)
+                              << "Bad frame type: "
+                              << incoming_frame.header().ToString();
+                          return absl::OkStatus();
+                        }));
         },
         []() -> LoopCtl<absl::Status> { return Continue{}; });
   });
@@ -206,31 +207,18 @@ auto ChaoticGoodClientTransport::OnTransportActivityDone(
 }
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
-    PromiseEndpoint control_endpoint,
-    std::vector<PromiseEndpoint> data_endpoints, const ChannelArgs& args,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    const Config& config)
+    const ChannelArgs& args, PromiseEndpoint control_endpoint, Config config,
+    RefCountedPtr<ClientConnectionFactory>)
     : allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
       outgoing_frames_(4),
       message_chunker_(config.MakeMessageChunker()) {
-  CHECK(event_engine != nullptr);
-  // Set up TCP tracer if enabled.
-  if (config.tracing_enabled()) {
-    for (auto& ep : data_endpoints) {
-      auto* epte = grpc_event_engine::experimental::QueryExtension<
-          grpc_event_engine::experimental::TcpTraceExtension>(
-          ep.GetEventEngineEndpoint().get());
-      if (epte != nullptr) {
-        epte->InitializeAndReturnTcpTracer();
-      }
-    }
-  }
-  CHECK(event_engine != nullptr);
+  auto event_engine =
+      args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoints), event_engine,
-      config.MakeTransportOptions());
+      std::move(control_endpoint), config.TakePendingDataEndpoints(),
+      event_engine, config.MakeTransportOptions(), config.tracing_enabled());
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
@@ -276,6 +264,9 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
   const bool on_done_added =
       call_handler.OnDone([self = RefAsSubclass<ChaoticGoodClientTransport>(),
                            stream_id](bool cancelled) {
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD: Client call " << self.get() << " id=" << stream_id
+            << " done: cancelled=" << cancelled;
         if (cancelled) {
           self->outgoing_frames_.MakeSender().UnbufferedImmediateSend(
               CancelFrame{stream_id});
@@ -326,10 +317,16 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
             return send_fragment(std::move(frame));
           },
           // Continuously send client frame with client to server messages.
-          ForEach(OutgoingMessages(call_handler), std::move(send_message)),
+          ForEach(MessagesFrom(call_handler), std::move(send_message)),
           [send_fragment]() mutable {
             ClientEndOfStream frame;
             return send_fragment(std::move(frame));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.WasCancelled(), [](bool cancelled) {
+              if (cancelled) return absl::CancelledError();
+              return absl::OkStatus();
+            });
           }));
 }
 

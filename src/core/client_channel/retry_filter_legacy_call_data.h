@@ -22,11 +22,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/retry_service_config.h"
@@ -241,8 +241,8 @@ class RetryFilter::LegacyCallData final {
     void MaybeSwitchToFastPath();
 
     // Returns true if the call should be retried.
-    bool ShouldRetry(absl::optional<grpc_status_code> status,
-                     absl::optional<Duration> server_pushback_ms);
+    bool ShouldRetry(std::optional<grpc_status_code> status,
+                     std::optional<Duration> server_pushback_ms);
 
     // Abandons the call attempt.  Unrefs any deferred batches.
     void Abandon();
@@ -256,7 +256,7 @@ class RetryFilter::LegacyCallData final {
     bool lb_call_committed_ = false;
 
     grpc_closure on_per_attempt_recv_timer_;
-    absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+    std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
         per_attempt_recv_timer_handle_;
 
     // BatchData.batch.payload points to this.
@@ -273,7 +273,7 @@ class RetryFilter::LegacyCallData final {
     bool trailing_metadata_available_ = false;
     // For intercepting recv_message.
     grpc_closure recv_message_ready_;
-    absl::optional<SliceBuffer> recv_message_;
+    std::optional<SliceBuffer> recv_message_;
     uint32_t recv_message_flags_;
     // For intercepting recv_trailing_metadata.
     grpc_metadata_batch recv_trailing_metadata_;
@@ -352,7 +352,7 @@ class RetryFilter::LegacyCallData final {
 
   // Starts a timer to retry after appropriate back-off.
   // If server_pushback is nullopt, retry_backoff_ is used.
-  void StartRetryTimer(absl::optional<Duration> server_pushback);
+  void StartRetryTimer(std::optional<Duration> server_pushback);
 
   void OnRetryTimer();
   static void OnRetryTimerLocked(void* arg, grpc_error_handle /*error*/);
@@ -410,7 +410,7 @@ class RetryFilter::LegacyCallData final {
   bool retry_codepath_started_ : 1;
   bool sent_transparent_retry_not_seen_by_server_ : 1;
   int num_attempts_completed_ = 0;
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       retry_timer_handle_;
   grpc_closure retry_closure_;
 

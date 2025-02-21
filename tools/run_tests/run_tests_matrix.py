@@ -36,6 +36,12 @@ _CPP_RUNTESTS_TIMEOUT = 6 * 60 * 60
 # Set timeout high for ObjC for Cocoapods to install pods
 _OBJC_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
+# Set higher timeout for python_windows_opt_native test
+_PYTHON_WINDOWS_RUNTESTS_TIMEOUT = 1.5 * 60 * 60
+
+# Set timeout high for Ruby for MacOS for slow xcodebuild
+_RUBY_RUNTESTS_TIMEOUT = 2 * 60 * 60
+
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
 
@@ -204,6 +210,9 @@ def _generate_jobs(
                             timeout_seconds=timeout_seconds,
                         )
                     else:
+                        if platform == "windows" and language == "python":
+                            timeout_seconds = _PYTHON_WINDOWS_RUNTESTS_TIMEOUT
+
                         job = _workspace_jobspec(
                             name=name,
                             runtests_args=runtests_args,
@@ -308,6 +317,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         labels=["basictests", "multilang"],
         extra_args=extra_args + ["--report_multi_target"],
         inner_jobs=inner_jobs,
+        timeout_seconds=_RUBY_RUNTESTS_TIMEOUT,
     )
 
     # ARM64 Linux Ruby and PHP tests

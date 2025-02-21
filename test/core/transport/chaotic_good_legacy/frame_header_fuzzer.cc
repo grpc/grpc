@@ -17,17 +17,19 @@
 #include <string.h>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
 
-bool squelch = false;
+using grpc_core::chaotic_good_legacy::FrameHeader;
+using HeaderBuffer = std::array<uint8_t, FrameHeader::kFrameHeaderSize>;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (size != 24) return 0;
-  auto r = grpc_core::chaotic_good_legacy::FrameHeader::Parse(data);
-  if (!r.ok()) return 0;
-  uint8_t reserialized[24];
-  r->Serialize(reserialized);
-  // If it parses, we insist that the bytes reserialize to the same thing.
-  if (memcmp(data, reserialized, 24) != 0) abort();
-  return 0;
+void RoundTrips(HeaderBuffer buffer) {
+  auto r = FrameHeader::Parse(buffer.data());
+  if (!r.ok()) return;
+  HeaderBuffer reserialized;
+  r->Serialize(reserialized.data());
+  EXPECT_EQ(buffer, reserialized);
 }
+FUZZ_TEST(FrameHeaderTest, RoundTrips);

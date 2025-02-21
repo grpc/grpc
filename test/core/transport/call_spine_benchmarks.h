@@ -72,7 +72,7 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
                 Map(initiator.PushMessage(fixture.MakePayload()),
                     [](StatusFlag) { return Success{}; }),
                 Map(initiator.PullServerInitialMetadata(),
-                    [](absl::optional<ServerMetadataHandle> md) {
+                    [](std::optional<ServerMetadataHandle> md) {
                       return Success{};
                     }),
                 Map(initiator.PullMessage(),
@@ -107,7 +107,7 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
   });
   call.initiator.SpawnInfallible("initiator-initial-metadata", [&]() {
     return Map(call.initiator.PullServerInitialMetadata(),
-               [&](absl::optional<ServerMetadataHandle> md) {
+               [&](std::optional<ServerMetadataHandle> md) {
                  CHECK(md.has_value());
                  initiator_metadata_done.Notify();
                });
@@ -202,7 +202,7 @@ class UnstartedCallDestinationFixture {
       top_destination_->StartCall(std::move(p.handler));
     });
     auto handler = bottom_destination_->TakeHandler();
-    absl::optional<CallHandler> started_handler;
+    std::optional<CallHandler> started_handler;
     Notification started;
     handler.SpawnInfallible("handler_setup", [&]() {
       started_handler = handler.StartCall();
@@ -256,7 +256,7 @@ class UnstartedCallDestinationFixture {
 
    private:
     absl::Mutex mu_;
-    absl::optional<UnstartedCallHandler> handler_ ABSL_GUARDED_BY(mu_);
+    std::optional<UnstartedCallHandler> handler_ ABSL_GUARDED_BY(mu_);
   };
 
   // TODO(ctiller): no need for unique_ptr once ExecCtx is gone
@@ -297,7 +297,7 @@ class TransportFixture {
         MakeCallPair(traits_.MakeClientInitialMetadata(), std::move(arena));
     transport_.client->StartCall(p.handler.StartCall());
     auto handler = acceptor_->TakeHandler();
-    absl::optional<CallHandler> started_handler;
+    std::optional<CallHandler> started_handler;
     Notification started;
     handler.SpawnInfallible("handler_setup", [&]() {
       started_handler = handler.StartCall();
@@ -340,7 +340,7 @@ class TransportFixture {
     }
 
     absl::Mutex mu_;
-    absl::optional<UnstartedCallHandler> handler_ ABSL_GUARDED_BY(mu_);
+    std::optional<UnstartedCallHandler> handler_ ABSL_GUARDED_BY(mu_);
   };
 
   Traits traits_;

@@ -42,44 +42,55 @@ uint32_t ReadLittleEndianUint32(const uint8_t* data) {
 
 // Serializes a frame header into a buffer of 24 bytes.
 void FrameHeader::Serialize(uint8_t* data) const {
-  WriteLittleEndianUint32(
-      static_cast<uint32_t>(type) | (flags.ToInt<uint32_t>() << 8), data);
+  WriteLittleEndianUint32((static_cast<uint32_t>(type) << 16) |
+                              static_cast<uint32_t>(payload_connection_id),
+                          data);
   WriteLittleEndianUint32(stream_id, data + 4);
-  WriteLittleEndianUint32(header_length, data + 8);
-  WriteLittleEndianUint32(message_length, data + 12);
-  WriteLittleEndianUint32(message_padding, data + 16);
-  WriteLittleEndianUint32(trailer_length, data + 20);
+  WriteLittleEndianUint32(payload_length, data + 8);
 }
 
 // Parses a frame header from a buffer of 24 bytes. All 24 bytes are consumed.
 absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
   FrameHeader header;
-  const uint32_t type_and_flags = ReadLittleEndianUint32(data);
-  header.type = static_cast<FrameType>(type_and_flags & 0xff);
-  const uint32_t flags = type_and_flags >> 8;
-  if (flags > 7) return absl::InvalidArgumentError("Invalid flags");
-  header.flags = BitSet<3>::FromInt(flags);
+  const uint32_t type_and_conn_id = ReadLittleEndianUint32(data);
+  if (type_and_conn_id & 0xff000000u) {
+    return absl::InternalError("Non-zero reserved byte received");
+  }
+  header.type = static_cast<FrameType>(type_and_conn_id >> 16);
+  header.payload_connection_id = type_and_conn_id & 0xffff;
   header.stream_id = ReadLittleEndianUint32(data + 4);
-  header.header_length = ReadLittleEndianUint32(data + 8);
-  header.message_length = ReadLittleEndianUint32(data + 12);
-  header.message_padding = ReadLittleEndianUint32(data + 16);
-  header.trailer_length = ReadLittleEndianUint32(data + 20);
+  header.payload_length = ReadLittleEndianUint32(data + 8);
   return header;
 }
 
-uint32_t FrameHeader::GetFrameLength() const {
-  // In chaotic-good transport design, message and message padding are sent
-  // through different channel. So not included in the frame length calculation.
-  uint32_t frame_length = header_length + trailer_length;
-  return frame_length;
+std::string FrameHeader::ToString() const {
+  return absl::StrCat("[type:", type, " conn:", payload_connection_id,
+                      " stream_id:", stream_id,
+                      " payload_length:", payload_length, "]");
 }
 
-std::string FrameHeader::ToString() const {
-  return absl::StrFormat(
-      "[type=0x%02x, flags=0x%02x, stream_id=%d, header_length=%d, "
-      "message_length=%d, message_padding=%d, trailer_length=%d]",
-      static_cast<uint8_t>(type), flags.ToInt<uint8_t>(), stream_id,
-      header_length, message_length, message_padding, trailer_length);
+std::string FrameTypeString(FrameType type) {
+  switch (type) {
+    case FrameType::kSettings:
+      return "Settings";
+    case FrameType::kClientInitialMetadata:
+      return "ClientInitialMetadata";
+    case FrameType::kClientEndOfStream:
+      return "ClientEndOfStream";
+    case FrameType::kMessage:
+      return "Message";
+    case FrameType::kServerInitialMetadata:
+      return "ServerInitialMetadata";
+    case FrameType::kServerTrailingMetadata:
+      return "ServerTrailingMetadata";
+    case FrameType::kCancel:
+      return "Cancel";
+    case FrameType::kBeginMessage:
+      return "BeginMessage";
+    case FrameType::kMessageChunk:
+      return "MessageChunk";
+  }
+  return absl::StrCat("Unknown[", static_cast<int>(type), "]");
 }
 
 }  // namespace chaotic_good_legacy

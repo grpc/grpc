@@ -69,4 +69,6 @@
 - 1.67 'g' stands for ['gesundheit'](https://github.com/grpc/grpc/tree/v1.67.x)
 - 1.68 'g' stands for ['groovy'](https://github.com/grpc/grpc/tree/v1.68.x)
 - 1.69 'g' stands for ['gridiron'](https://github.com/grpc/grpc/tree/v1.69.x)
-- 1.70 'g' stands for ['genius'](https://github.com/grpc/grpc/tree/master)
+- 1.70 'g' stands for ['genius'](https://github.com/grpc/grpc/tree/v1.70.x)
+- 1.71 'g' stands for ['gears'](https://github.com/grpc/grpc/tree/v1.71.x)
+- 1.72 'g' stands for ['gusto'](https://github.com/grpc/grpc/tree/master)

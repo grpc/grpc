@@ -33,6 +33,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
@@ -40,13 +41,12 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h"
+#include "src/core/ext/transport/chaotic_good_legacy/config.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chaotic_good_legacy/message_reassembly.h"
+#include "src/core/ext/transport/chaotic_good_legacy/pending_connection.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -77,12 +77,9 @@ namespace chaotic_good_legacy {
 
 class ChaoticGoodServerTransport final : public ServerTransport {
  public:
-  ChaoticGoodServerTransport(
-      const ChannelArgs& args, PromiseEndpoint control_endpoint,
-      PromiseEndpoint data_endpoint,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      HPackParser hpack_parser, HPackCompressor hpack_encoder);
+  ChaoticGoodServerTransport(const ChannelArgs& args,
+                             PromiseEndpoint control_endpoint, Config config,
+                             RefCountedPtr<ServerConnectionFactory>);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -98,42 +95,45 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   void AbortWithError();
 
  private:
-  using StreamMap = absl::flat_hash_map<uint32_t, CallInitiator>;
+  struct Stream : public RefCounted<Stream> {
+    explicit Stream(CallInitiator call) : call(std::move(call)) {}
+    CallInitiator call;
+    MessageReassembly message_reassembly;
+  };
+  using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
 
   absl::Status NewStream(uint32_t stream_id, CallInitiator call_initiator);
-  absl::optional<CallInitiator> LookupStream(uint32_t stream_id);
-  absl::optional<CallInitiator> ExtractStream(uint32_t stream_id);
+  RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
+  RefCountedPtr<Stream> ExtractStream(uint32_t stream_id);
   auto SendCallInitialMetadataAndBody(uint32_t stream_id,
                                       MpscSender<ServerFrame> outgoing_frames,
                                       CallInitiator call_initiator);
   auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
                     CallInitiator call_initiator);
-  static auto SendFragment(ServerFragmentFrame frame,
-                           MpscSender<ServerFrame> outgoing_frames,
-                           CallInitiator call_initiator);
-  static auto SendFragmentAcked(ServerFragmentFrame frame,
-                                MpscSender<ServerFrame> outgoing_frames,
-                                CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
-  auto ReadOneFrame(ChaoticGoodTransport& transport);
-  auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
+  auto ReadOneFrame(RefCountedPtr<ChaoticGoodTransport> transport);
   // Read different parts of the server frame from control/data endpoints
   // based on frame header.
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
   auto ReadFrameBody(Slice read_buffer);
   void SendCancel(uint32_t stream_id, absl::Status why);
-  auto DeserializeAndPushFragmentToNewCall(FrameHeader frame_header,
-                                           BufferPair buffers,
-                                           ChaoticGoodTransport& transport);
-  auto DeserializeAndPushFragmentToExistingCall(
-      FrameHeader frame_header, BufferPair buffers,
-      ChaoticGoodTransport& transport);
-  auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
-                                 absl::Status error, ClientFragmentFrame frame);
-  auto PushFragmentIntoCall(CallInitiator call_initiator,
-                            ClientFragmentFrame frame);
+  absl::Status NewStream(ChaoticGoodTransport& transport,
+                         const FrameHeader& header,
+                         SliceBuffer initial_metadata_payload);
+  template <typename T>
+  auto DispatchFrame(RefCountedPtr<ChaoticGoodTransport> transport,
+                     IncomingFrame frame);
+  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageFrame frame);
+  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, ClientEndOfStream frame);
+  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, BeginMessageFrame frame);
+  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageChunkFrame frame);
+  auto SendFrame(ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+                 CallInitiator call_initiator);
+  auto SendFrameAcked(ServerFrame frame,
+                      MpscSender<ServerFrame> outgoing_frames,
+                      CallInitiator call_initiator);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
@@ -141,8 +141,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       event_engine_;
   InterActivityLatch<void> got_acceptor_;
   MpscReceiver<ServerFrame> outgoing_frames_;
-  // Assigned aligned bytes from setting frame.
-  size_t aligned_bytes_ = 64;
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
@@ -151,6 +149,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_server", GRPC_CHANNEL_READY};
+  MessageChunker message_chunker_;
 };
 
 }  // namespace chaotic_good_legacy

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
@@ -26,7 +26,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
     uses_event_engine = False,
     uses_polling = False,
@@ -43,7 +42,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
     uses_event_engine = False,
     uses_polling = False,
@@ -61,7 +59,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -78,7 +75,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -93,7 +89,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -108,7 +103,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -123,7 +117,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -138,7 +131,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -154,7 +146,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -168,7 +159,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:grpc",
         "//src/core:activity",
@@ -183,7 +173,6 @@ grpc_cc_test(
     name = "status_conversion_test",
     srcs = ["status_conversion_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -200,7 +189,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -211,13 +199,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_yodel_simple_test(
+grpc_fuzz_test(
     name = "call_spine",
     srcs = ["call_spine_test.cc"],
     external_deps = [
+        "fuzztest",
+        "fuzztest_main",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//src/core:call_spine",
         "//test/core/call/yodel:yodel_test",

@@ -44,6 +44,7 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/stub_options.h>
 #include <grpcpp/support/sync_stream.h>
+#include <grpcpp/ports_def.inc>
 
 namespace grpc {
 namespace testing {
@@ -712,7 +713,7 @@ class ServiceA final {
 };
 
 // ServiceB leading comment 1
-class ServiceB final {
+class [[deprecated]] ServiceB final {
  public:
   static constexpr char const* service_full_name() {
     return "grpc.testing.ServiceB";
@@ -930,4 +931,5 @@ class ServiceB final {
 }  // namespace grpc
 
 
+#include <grpcpp/ports_undef.inc>
 #endif  // GRPC_src_2fproto_2fgrpc_2ftesting_2fcompiler_5ftest_2eproto__INCLUDED

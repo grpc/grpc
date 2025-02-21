@@ -24,11 +24,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -178,11 +179,13 @@ bool LegacyChannel::IsLame() const {
   return elem->filter == &LameClientFilter::kFilter;
 }
 
-grpc_call* LegacyChannel::CreateCall(
-    grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
-    Slice path, absl::optional<Slice> authority, Timestamp deadline,
-    bool registered_method) {
+grpc_call* LegacyChannel::CreateCall(grpc_call* parent_call,
+                                     uint32_t propagation_mask,
+                                     grpc_completion_queue* cq,
+                                     grpc_pollset_set* pollset_set_alternative,
+                                     Slice path, std::optional<Slice> authority,
+                                     Timestamp deadline,
+                                     bool registered_method) {
   CHECK(is_client_);
   CHECK(!(cq != nullptr && pollset_set_alternative != nullptr));
   grpc_call_create_args args;
@@ -286,7 +289,6 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
     MutexLock lock(&mu_);
     timer_handle_ =
         channel_->event_engine()->RunAfter(timeout, [self = Ref()]() mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->TimeoutComplete();
           // StateWatcher deletion might require an active ExecCtx.
@@ -343,7 +345,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
   // timer callback fired immediately on an EventEngine thread before
   // RunAfter() returns.
   Mutex mu_;
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       timer_handle_ ABSL_GUARDED_BY(mu_);
   bool timer_fired_ = false;
 };

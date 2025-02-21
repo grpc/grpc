@@ -16,20 +16,19 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
-absl::optional<int> ChannelArgsEndpointConfig::GetInt(
+std::optional<int> ChannelArgsEndpointConfig::GetInt(
     absl::string_view key) const {
   return args_.GetInt(key);
 }
 
-absl::optional<absl::string_view> ChannelArgsEndpointConfig::GetString(
+std::optional<absl::string_view> ChannelArgsEndpointConfig::GetString(
     absl::string_view key) const {
   return args_.GetString(key);
 }
@@ -41,5 +40,4 @@ void* ChannelArgsEndpointConfig::GetVoidPointer(absl::string_view key) const {
   return args_.GetVoidPointer(key);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

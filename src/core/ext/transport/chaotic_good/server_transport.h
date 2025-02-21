@@ -33,6 +33,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
@@ -40,13 +41,12 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
+#include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -77,12 +77,9 @@ namespace chaotic_good {
 
 class ChaoticGoodServerTransport final : public ServerTransport {
  public:
-  ChaoticGoodServerTransport(
-      const ChannelArgs& args, PromiseEndpoint control_endpoint,
-      std::vector<PromiseEndpoint> data_endpoints,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      Config config);
+  ChaoticGoodServerTransport(const ChannelArgs& args,
+                             PromiseEndpoint control_endpoint, Config config,
+                             RefCountedPtr<ServerConnectionFactory>);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }

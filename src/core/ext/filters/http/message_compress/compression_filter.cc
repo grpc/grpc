@@ -23,13 +23,13 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -51,13 +51,6 @@
 #include "src/core/util/latent_see.h"
 
 namespace grpc_core {
-
-const NoInterceptor ServerCompressionFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerCompressionFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ServerCompressionFilter::Call::OnFinalize;
-const NoInterceptor ClientCompressionFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ClientCompressionFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ClientCompressionFilter::Call::OnFinalize;
 
 const grpc_channel_filter ClientCompressionFilter::kFilter =
     MakePromiseBasedFilter<ClientCompressionFilter, FilterEndpoint::kClient,
@@ -108,13 +101,13 @@ ChannelCompression::ChannelCompression(const ChannelArgs& args)
 }
 
 MessageHandle ChannelCompression::CompressMessage(
-    MessageHandle message, grpc_compression_algorithm algorithm) const {
+    MessageHandle message, grpc_compression_algorithm algorithm,
+    CallTracerInterface* call_tracer) const {
   GRPC_TRACE_LOG(compression, INFO)
       << "CompressMessage: len=" << message->payload()->Length()
       << " alg=" << algorithm << " flags=" << message->flags();
-  auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
-    call_tracer->RecordSendMessage(*message->payload());
+    call_tracer->RecordSendMessage(*message);
   }
   // Check if we're allowed to compress this message
   // (apps might want to disable compression for certain messages to avoid
@@ -147,7 +140,7 @@ MessageHandle ChannelCompression::CompressMessage(
     tmp.Swap(payload);
     flags |= GRPC_WRITE_INTERNAL_COMPRESS;
     if (call_tracer != nullptr) {
-      call_tracer->RecordSendCompressedMessage(*message->payload());
+      call_tracer->RecordSendCompressedMessage(*message);
     }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(compression)) {
@@ -162,14 +155,14 @@ MessageHandle ChannelCompression::CompressMessage(
 }
 
 absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
-    bool is_client, MessageHandle message, DecompressArgs args) const {
+    bool is_client, MessageHandle message, DecompressArgs args,
+    CallTracerInterface* call_tracer) const {
   GRPC_TRACE_LOG(compression, INFO)
       << "DecompressMessage: len=" << message->payload()->Length()
       << " max=" << args.max_recv_message_length.value_or(-1)
       << " alg=" << args.algorithm;
-  auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
-    call_tracer->RecordReceivedMessage(*message->payload());
+    call_tracer->RecordReceivedMessage(*message);
   }
   // Check max message length.
   if (args.max_recv_message_length.has_value() &&
@@ -199,7 +192,7 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
   message->mutable_flags() &= ~GRPC_WRITE_INTERNAL_COMPRESS;
   message->mutable_flags() |= GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
   if (call_tracer != nullptr) {
-    call_tracer->RecordReceivedDecompressedMessage(*message->payload());
+    call_tracer->RecordReceivedDecompressedMessage(*message);
   }
   return std::move(message);
 }
@@ -240,14 +233,15 @@ void ClientCompressionFilter::Call::OnClientInitialMetadata(
       "ClientCompressionFilter::Call::OnClientInitialMetadata");
   compression_algorithm_ =
       filter->compression_engine_.HandleOutgoingMetadata(md);
+  call_tracer_ = MaybeGetContext<CallTracerInterface>();
 }
 
 MessageHandle ClientCompressionFilter::Call::OnClientToServerMessage(
     MessageHandle message, ClientCompressionFilter* filter) {
   GRPC_LATENT_SEE_INNER_SCOPE(
       "ClientCompressionFilter::Call::OnClientToServerMessage");
-  return filter->compression_engine_.CompressMessage(std::move(message),
-                                                     compression_algorithm_);
+  return filter->compression_engine_.CompressMessage(
+      std::move(message), compression_algorithm_, call_tracer_);
 }
 
 void ClientCompressionFilter::Call::OnServerInitialMetadata(
@@ -263,7 +257,7 @@ ClientCompressionFilter::Call::OnServerToClientMessage(
   GRPC_LATENT_SEE_INNER_SCOPE(
       "ClientCompressionFilter::Call::OnServerToClientMessage");
   return filter->compression_engine_.DecompressMessage(
-      /*is_client=*/true, std::move(message), decompress_args_);
+      /*is_client=*/true, std::move(message), decompress_args_, call_tracer_);
 }
 
 void ServerCompressionFilter::Call::OnClientInitialMetadata(
@@ -279,7 +273,8 @@ ServerCompressionFilter::Call::OnClientToServerMessage(
   GRPC_LATENT_SEE_INNER_SCOPE(
       "ServerCompressionFilter::Call::OnClientToServerMessage");
   return filter->compression_engine_.DecompressMessage(
-      /*is_client=*/false, std::move(message), decompress_args_);
+      /*is_client=*/false, std::move(message), decompress_args_,
+      MaybeGetContext<CallTracerInterface>());
 }
 
 void ServerCompressionFilter::Call::OnServerInitialMetadata(
@@ -294,8 +289,9 @@ MessageHandle ServerCompressionFilter::Call::OnServerToClientMessage(
     MessageHandle message, ServerCompressionFilter* filter) {
   GRPC_LATENT_SEE_INNER_SCOPE(
       "ServerCompressionFilter::Call::OnServerToClientMessage");
-  return filter->compression_engine_.CompressMessage(std::move(message),
-                                                     compression_algorithm_);
+  return filter->compression_engine_.CompressMessage(
+      std::move(message), compression_algorithm_,
+      MaybeGetContext<CallTracerInterface>());
 }
 
 }  // namespace grpc_core

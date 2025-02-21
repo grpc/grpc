@@ -70,7 +70,7 @@
 
   Pod::Spec.new do |s|
     s.name     = 'BoringSSL-GRPC'
-    version = '0.0.37'
+    version = '0.0.39'
     s.version  = version
     s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
     # Adapted from the homepage:
@@ -167,7 +167,7 @@
                         # We have to include fiat because spake25519 depends on it
                         'src/third_party/fiat/*.{h,c,cc}',
                         # Include the err_data.c pre-generated in boringssl's master-with-bazel branch
-                        'src/gen/crypto/err_data.c'
+                        'src/gen/crypto/err_data.cc'
 
       ss.private_header_files = 'src/ssl/*.h',
                                 'src/ssl/**/*.h',

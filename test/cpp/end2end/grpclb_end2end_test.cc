@@ -186,8 +186,8 @@ struct ClientStats {
         other.num_calls_finished_with_client_failed_to_send;
     num_calls_finished_known_received +=
         other.num_calls_finished_known_received;
-    for (const auto& p : other.drop_token_counts) {
-      drop_token_counts[p.first] += p.second;
+    for (const auto& [token, count] : other.drop_token_counts) {
+      drop_token_counts[token] += count;
     }
     return *this;
   }
@@ -238,11 +238,11 @@ class BalancerServiceImpl : public BalancerService {
 
   void ShutdownStream() {
     grpc_core::MutexLock lock(&mu_);
-    response_queue_.emplace_back(absl::nullopt);
+    response_queue_.emplace_back(std::nullopt);
     if (response_cond_ != nullptr) response_cond_->SignalAll();
   }
 
-  absl::optional<ClientStats> WaitForLoadReport(absl::Duration timeout) {
+  std::optional<ClientStats> WaitForLoadReport(absl::Duration timeout) {
     grpc_core::MutexLock lock(&load_report_mu_);
     if (load_report_queue_.empty()) {
       grpc_core::CondVar condition;
@@ -251,7 +251,7 @@ class BalancerServiceImpl : public BalancerService {
                                 timeout * grpc_test_slowdown_factor());
       load_report_cond_ = nullptr;
     }
-    if (load_report_queue_.empty()) return absl::nullopt;
+    if (load_report_queue_.empty()) return std::nullopt;
     ClientStats load_report = std::move(load_report_queue_.front());
     load_report_queue_.pop_front();
     return load_report;
@@ -388,7 +388,7 @@ class BalancerServiceImpl : public BalancerService {
   // Helper for request handler thread to get the next response to be
   // sent on the stream.  Returns nullopt when the test has requested
   // stream shutdown.
-  absl::optional<LoadBalanceResponse> GetNextResponse() {
+  std::optional<LoadBalanceResponse> GetNextResponse() {
     grpc_core::MutexLock lock(&mu_);
     if (response_queue_.empty()) {
       grpc_core::CondVar condition;
@@ -417,7 +417,7 @@ class BalancerServiceImpl : public BalancerService {
   grpc_core::Mutex mu_;
   bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
   std::vector<std::string> service_names_ ABSL_GUARDED_BY(mu_);
-  std::deque<absl::optional<LoadBalanceResponse>> response_queue_
+  std::deque<std::optional<LoadBalanceResponse>> response_queue_
       ABSL_GUARDED_BY(mu_);
   grpc_core::CondVar* response_cond_ ABSL_GUARDED_BY(mu_) = nullptr;
 
@@ -618,7 +618,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (auto& backend : backends_) backend->service().ResetCounters();
   }
 
-  absl::optional<ClientStats> WaitForLoadReports(
+  std::optional<ClientStats> WaitForLoadReports(
       absl::Duration timeout = absl::Seconds(5)) {
     return balancer_->service().WaitForLoadReport(timeout);
   }
@@ -692,7 +692,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
               << options.num_requests_multiple_of << ") against the backends. "
               << num_ok << " succeeded, " << num_failure << " failed, "
               << num_drops << " dropped.";
-    return std::make_tuple(num_ok, num_failure, num_drops);
+    return std::tuple(num_ok, num_failure, num_drops);
   }
 
   void WaitForBackend(size_t backend_idx,
@@ -766,11 +766,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
       const std::vector<int>& backend_ports,
       const std::map<std::string, size_t>& drop_token_counts) {
     LoadBalanceResponse response;
-    for (const auto& drop_token_count : drop_token_counts) {
-      for (size_t i = 0; i < drop_token_count.second; ++i) {
+    for (const auto& [token, count] : drop_token_counts) {
+      for (size_t i = 0; i < count; ++i) {
         auto* server = response.mutable_server_list()->add_servers();
         server->set_drop(true);
-        server->set_load_balance_token(drop_token_count.first);
+        server->set_load_balance_token(token);
       }
     }
     for (const int& backend_port : backend_ports) {

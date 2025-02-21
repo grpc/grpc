@@ -26,21 +26,22 @@
 #include <initializer_list>  // IWYU pragma: keep
 #include <map>
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
+#include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
@@ -65,12 +66,9 @@ namespace chaotic_good {
 
 class ChaoticGoodClientTransport final : public ClientTransport {
  public:
-  ChaoticGoodClientTransport(
-      PromiseEndpoint control_endpoint,
-      std::vector<PromiseEndpoint> data_endpoints, const ChannelArgs& args,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      const Config& config);
+  ChaoticGoodClientTransport(const ChannelArgs& args,
+                             PromiseEndpoint control_endpoint, Config config,
+                             RefCountedPtr<ClientConnectionFactory> connector);
   ~ChaoticGoodClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }

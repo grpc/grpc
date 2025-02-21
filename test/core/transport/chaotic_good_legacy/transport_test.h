@@ -15,6 +15,8 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_LEGACY_TRANSPORT_TEST_H
 #define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_LEGACY_TRANSPORT_TEST_H
 
+#include <google/protobuf/text_format.h>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
@@ -22,6 +24,8 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/lib/transport/call_spine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
@@ -71,10 +75,19 @@ class TransportTest : public ::testing::Test {
 };
 
 grpc_event_engine::experimental::Slice SerializedFrameHeader(
-    FrameType type, uint8_t flags, uint32_t stream_id, uint32_t header_length,
-    uint32_t message_length, uint32_t message_padding, uint32_t trailer_length);
+    FrameType type, uint16_t payload_connection_id, uint32_t stream_id,
+    uint32_t payload_length);
 
 grpc_event_engine::experimental::Slice Zeros(uint32_t length);
+
+template <typename T>
+grpc_event_engine::experimental::Slice EncodeProto(const std::string& fields) {
+  T msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(fields, &msg));
+  std::string out;
+  CHECK(msg.SerializeToString(&out));
+  return grpc_event_engine::experimental::Slice::FromCopiedString(out);
+}
 
 }  // namespace testing
 }  // namespace chaotic_good_legacy

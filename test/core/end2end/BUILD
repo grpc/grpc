@@ -31,10 +31,8 @@ grpc_cc_library(
         "absl/log:log",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/types:variant",
         "gtest",
     ],
-    language = "C++",
     visibility = ["//:__subpackages__"],
     deps = [
         "//:debug_location",
@@ -55,7 +53,6 @@ grpc_cc_library(
         "data/test_root_cert.cc",
     ],
     hdrs = ["data/ssl_test_data.h"],
-    language = "C++",
     visibility = ["//:__subpackages__"],
 )
 
@@ -70,7 +67,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
     ],
-    language = "C++",
     visibility = ["//test/cpp/end2end/xds:__subpackages__"],
     deps = [
         "//:config",
@@ -103,7 +99,6 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "//:channel_arg_names",
         "//:gpr",
@@ -114,184 +109,91 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "end2end_test_lib",
-    testonly = 1,
-    srcs = [
-        "end2end_tests.cc",
-    ],
-    hdrs = [
-        "end2end_tests.h",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/log:log",
-        "absl/memory",
-        "absl/meta:type_traits",
-        "absl/random",
-        "absl/strings",
-        "absl/types:optional",
-        "absl/types:variant",
-        "gtest",
-    ],
-    deps = [
-        "cq_verifier",
-        "//:config",
-        "//:debug_location",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_public_hdrs",
-        "//src/core:bitset",
-        "//src/core:channel_args",
-        "//src/core:default_event_engine",
-        "//src/core:no_destruct",
-        "//src/core:slice",
-        "//src/core:time",
-        "//test/core/call:batch_builder",
-        "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "fixture_support",
-    testonly = 1,
-    srcs = ["fixtures/local_util.cc"],
-    hdrs = [
-        "fixtures/h2_oauth2_common.h",
-        "fixtures/h2_ssl_cred_reload_fixture.h",
-        "fixtures/h2_ssl_tls_common.h",
-        "fixtures/h2_tls_common.h",
-        "fixtures/inproc_fixture.h",
-        "fixtures/local_util.h",
-        "fixtures/secure_fixture.h",
-        "fixtures/sockpair_fixture.h",
-        "tests/cancel_test_helpers.h",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "end2end_test_lib",
-        "//:channel_arg_names",
-        "//:config",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_public_hdrs",
-        "//:grpc_security_base",
-        "//:grpc_transport_chttp2",
-        "//:ref_counted_ptr",
-        "//src/core:channel_args",
-        "//src/core:channel_args_preconditioning",
-        "//src/core:channel_stack_type",
-        "//src/core:error",
-        "//src/core:grpc_ssl_credentials",
-        "//src/core:grpc_tls_credentials",
-        "//src/core:grpc_transport_inproc",
-        "//src/core:slice",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "end2end_test_suites",
-    testonly = 1,
-    srcs = [
-        "end2end_test_suites.cc",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/meta:type_traits",
-        "absl/random",
-        "absl/status",
-        "absl/strings:str_format",
-        "absl/types:optional",
-        "gtest",
-    ],
-    deps = [
-        "end2end_test_lib",
-        "fixture_support",
-        "http_proxy",
-        "proxy",
-        "//:channel_arg_names",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_public_hdrs",
-        "//:grpc_trace",
-        "//src/core:channel_args",
-        "//src/core:chaotic_good_connector",
-        "//src/core:chaotic_good_server",
-        "//src/core:env",
-        "//src/core:error",
-        "//src/core:grpc_fake_credentials",
-        "//src/core:iomgr_port",
-        "//src/core:no_destruct",
-        "//test/core/test_util:grpc_test_util",
-    ],
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "end2end_test_main",
-    testonly = 1,
-    srcs = [
-        "end2end_test_main.cc",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/strings",
-        "absl/types:optional",
-        "gtest",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "end2end_test_lib",
-        "end2end_test_suites",
-        "fixture_support",
-        "//:config_vars",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "end2end_test_fuzzer",
-    testonly = 1,
-    srcs = [
-        "end2end_test_fuzzer.cc",
-    ],
-    hdrs = [
-        "end2end_test_fuzzer.h",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/strings",
-        "absl/types:optional",
-        "gtest",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "end2end_test_fuzzer_cc_proto",
-        "end2end_test_lib",
-        "end2end_test_suites",
-        "fixture_support",
-        "//:config_vars",
-        "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/test_util:fuzz_config_vars",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+# Notes:
+# - We have several platforms on which fuzzers do not work,
+#   but we want to fuzz on Linux to find all the nice bugs that it finds.
+# - We also don't want to keep our own test running infrastructure
+#   to make all this work.
+# - We have an expectation that fuzztest will work as far as running
+#   tests (maybe without fuzzing) soon.
+# - We can't customize the defines that cmake pulls in
+# - fuzztest isn't yet integrated with our cmake infrastructure
+# So:
+# - For now, define a library for fuzz testing, and one for gtest
+#   (and one for both to keep ensuring that works)
+# - Build tests on all platforms, exclude fuzzers from platforms
+#   where we don't work
+# - Choose defines carefully so that the defaults are what we want
+#   on cmake (basically, gtest - and no fuzztest)
+[
+    grpc_cc_library(
+        name = "end2end_test_lib" +
+               ("_fuzztest" if fuzz else "_no_fuzztest") +
+               ("_gtest" if gtest else "_no_gtest"),
+        testonly = 1,
+        srcs = [
+            "end2end_test_suites.cc",
+            "end2end_tests.cc",
+            "fixtures/local_util.cc",
+        ],
+        hdrs = [
+            "end2end_tests.h",
+            "fixtures/h2_oauth2_common.h",
+            "fixtures/h2_ssl_cred_reload_fixture.h",
+            "fixtures/h2_ssl_tls_common.h",
+            "fixtures/h2_tls_common.h",
+            "fixtures/inproc_fixture.h",
+            "fixtures/local_util.h",
+            "fixtures/secure_fixture.h",
+            "fixtures/sockpair_fixture.h",
+            "tests/cancel_test_helpers.h",
+        ],
+        defines =
+            (["GRPC_END2END_TEST_INCLUDE_FUZZER"] if fuzz else []) +
+            ([] if gtest else ["GRPC_END2END_TEST_NO_GTEST"]),
+        external_deps = [
+            "absl/functional:any_invocable",
+            "absl/log:check",
+            "absl/log:log",
+            "absl/memory",
+            "absl/meta:type_traits",
+            "absl/random",
+            "absl/strings",
+            "gtest",
+        ] + (["fuzztest"] if fuzz else []),
+        tags = ["no_windows"] if fuzz else [],
+        deps = [
+            "cq_verifier",
+            "end2end_test_fuzzer_cc_proto",
+            "http_proxy",
+            "proxy",
+            "//:config",
+            "//:debug_location",
+            "//:gpr",
+            "//:grpc",
+            "//:grpc_public_hdrs",
+            "//src/core:bitset",
+            "//src/core:channel_args",
+            "//src/core:chaotic_good_connector",
+            "//src/core:chaotic_good_server",
+            "//src/core:default_event_engine",
+            "//src/core:no_destruct",
+            "//src/core:slice",
+            "//src/core:time",
+            "//test/core/call:batch_builder",
+            "//test/core/event_engine:event_engine_test_utils",
+            "//test/core/event_engine/fuzzing_event_engine",
+            "//test/core/test_util:fuzz_config_vars",
+            "//test/core/test_util:grpc_test_util",
+        ] + (["//test/core/test_util:fuzz_config_vars_helpers"] if fuzz else []),
+        alwayslink = 1,
+    )
+    for (fuzz, gtest) in [
+        (True, False),
+        (False, True),
+        (True, True),
+    ]
+]
 
 grpc_core_end2end_test(name = "bad_ping")
 
@@ -303,23 +205,23 @@ grpc_core_end2end_test(name = "call_host_override")
 
 grpc_core_end2end_test(
     name = "cancel_after_accept",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "cancel_after_client_done",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "cancel_after_invoke",
     flaky = True,
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "cancel_after_round_trip",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(name = "cancel_before_invoke")
@@ -360,23 +262,26 @@ grpc_core_end2end_test(name = "grpc_authz")
 
 grpc_core_end2end_test(
     name = "high_initial_seqno",
-    shard_count = 20,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "hpack_size",
-    shard_count = 50,
+    shard_count = 10,
 )
 
 grpc_core_end2end_test(name = "http2_stats")
 
-grpc_core_end2end_test(name = "invoke_large_request")
+grpc_core_end2end_test(
+    name = "invoke_large_request",
+    shard_count = 5,
+)
 
 grpc_core_end2end_test(name = "keepalive_timeout")
 
 grpc_core_end2end_test(
     name = "large_metadata",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(name = "max_concurrent_streams")
@@ -393,19 +298,25 @@ grpc_core_end2end_test(name = "no_logging")
 
 grpc_core_end2end_test(name = "no_op")
 
-grpc_core_end2end_test(name = "payload")
+grpc_core_end2end_test(
+    name = "payload",
+    shard_count = 10,
+)
 
 grpc_core_end2end_test(name = "ping")
 
 grpc_core_end2end_test(name = "ping_pong_streaming")
 
-grpc_core_end2end_test(name = "proxy_auth")
+grpc_core_end2end_test(
+    name = "proxy_auth",
+    enable_fuzzing = False,
+)
 
 grpc_core_end2end_test(name = "registered_call")
 
 grpc_core_end2end_test(
     name = "request_with_flags",
-    shard_count = 50,
+    shard_count = 10,
 )
 
 grpc_core_end2end_test(name = "request_with_payload")
@@ -416,7 +327,10 @@ grpc_core_end2end_test(name = "retry")
 
 grpc_core_end2end_test(name = "retry_cancel_after_first_attempt_starts")
 
-grpc_core_end2end_test(name = "retry_cancel_during_delay")
+grpc_core_end2end_test(
+    name = "retry_cancel_during_delay",
+    shard_count = 10,
+)
 
 grpc_core_end2end_test(name = "retry_cancel_with_multiple_send_batches")
 
@@ -514,7 +428,6 @@ grpc_cc_test(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:exec_ctx",
@@ -540,7 +453,6 @@ grpc_cc_test(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:channel_arg_names",
@@ -562,17 +474,16 @@ grpc_cc_test(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "cq_verifier",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:sockaddr_utils",
         "//src/core:error",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:iomgr_port",
-        "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -587,7 +498,6 @@ grpc_cc_test(
         "absl/status:statusor",
         "absl/strings",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:channel_arg_names",
@@ -618,7 +528,6 @@ grpc_cc_test(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:gpr",
@@ -631,7 +540,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "multiple_server_queues_test",
     srcs = ["multiple_server_queues_test.cc"],
-    language = "C++",
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -649,7 +557,6 @@ grpc_cc_test(
         "absl/status:statusor",
         "absl/time",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:endpoint_addresses",
@@ -678,16 +585,12 @@ grpc_cc_test(
         "absl/memory",
         "absl/meta:type_traits",
         "absl/strings",
-        "absl/types:optional",
-        "absl/types:variant",
         "gtest",
     ],
-    language = "C++",
     shard_count = 10,
     deps = [
         "cq_verifier",
-        "end2end_test_lib",
-        "fixture_support",
+        "end2end_test_lib_no_fuzztest_gtest",
         "ssl_test_data",
         "//:channel_arg_names",
         "//:config_vars",
@@ -717,10 +620,8 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/types:optional",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:channel_arg_names",
@@ -748,10 +649,8 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/types:optional",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:channel_arg_names",

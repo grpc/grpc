@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -40,7 +41,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
@@ -199,7 +199,7 @@ MakeChannelzSecurityFromAuthContext(grpc_auth_context* auth_context) {
   // https://github.com/grpc/grpc/blob/fcd43e90304862a823316b224ee733d17a8cfd90/src/proto/grpc/channelz/channelz.proto#L326
   // from grpc_auth_context.
   security->type = channelz::SocketNode::Security::ModelType::kTls;
-  security->tls = absl::make_optional<channelz::SocketNode::Security::Tls>();
+  security->tls = std::make_optional<channelz::SocketNode::Security::Tls>();
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context, GRPC_X509_PEM_CERT_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
@@ -245,7 +245,7 @@ void SecurityHandshaker::OnPeerCheckedFn(grpc_error_handle error) {
   tsi_frame_protector* protector = nullptr;
   switch (frame_protector_type) {
     case TSI_FRAME_PROTECTOR_ZERO_COPY:
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY:
       // Create zero-copy frame protector.
       result = tsi_handshaker_result_create_zero_copy_grpc_protector(
@@ -440,7 +440,6 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
     grpc_error_handle error) {
   args_->event_engine->Run([self = RefAsSubclass<SecurityHandshaker>(),
                             error = std::move(error)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     self->OnHandshakeDataReceivedFromPeerFn(std::move(error));
     // Avoid destruction outside of an ExecCtx (since this is non-cancelable).
@@ -472,7 +471,6 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
     grpc_error_handle error) {
   args_->event_engine->Run([self = RefAsSubclass<SecurityHandshaker>(),
                             error = std::move(error)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     self->OnHandshakeDataSentToPeerFn(std::move(error));
     // Avoid destruction outside of an ExecCtx (since this is non-cancelable).

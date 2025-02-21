@@ -19,34 +19,24 @@ namespace chaotic_good_legacy {
 namespace testing {
 
 grpc_event_engine::experimental::Slice SerializedFrameHeader(
-    FrameType type, uint8_t flags, uint32_t stream_id, uint32_t header_length,
-    uint32_t message_length, uint32_t message_padding,
-    uint32_t trailer_length) {
-  uint8_t buffer[24] = {static_cast<uint8_t>(type),
-                        flags,
-                        0,
-                        0,
-                        static_cast<uint8_t>(stream_id),
-                        static_cast<uint8_t>(stream_id >> 8),
-                        static_cast<uint8_t>(stream_id >> 16),
-                        static_cast<uint8_t>(stream_id >> 24),
-                        static_cast<uint8_t>(header_length),
-                        static_cast<uint8_t>(header_length >> 8),
-                        static_cast<uint8_t>(header_length >> 16),
-                        static_cast<uint8_t>(header_length >> 24),
-                        static_cast<uint8_t>(message_length),
-                        static_cast<uint8_t>(message_length >> 8),
-                        static_cast<uint8_t>(message_length >> 16),
-                        static_cast<uint8_t>(message_length >> 24),
-                        static_cast<uint8_t>(message_padding),
-                        static_cast<uint8_t>(message_padding >> 8),
-                        static_cast<uint8_t>(message_padding >> 16),
-                        static_cast<uint8_t>(message_padding >> 24),
-                        static_cast<uint8_t>(trailer_length),
-                        static_cast<uint8_t>(trailer_length >> 8),
-                        static_cast<uint8_t>(trailer_length >> 16),
-                        static_cast<uint8_t>(trailer_length >> 24)};
-  return grpc_event_engine::experimental::Slice::FromCopiedBuffer(buffer, 24);
+    FrameType type, uint16_t payload_connection_id, uint32_t stream_id,
+    uint32_t payload_length) {
+  uint8_t buffer[FrameHeader::kFrameHeaderSize] = {
+      static_cast<uint8_t>(payload_connection_id),
+      static_cast<uint8_t>(payload_connection_id >> 16),
+      static_cast<uint8_t>(type),
+      0,
+      static_cast<uint8_t>(stream_id),
+      static_cast<uint8_t>(stream_id >> 8),
+      static_cast<uint8_t>(stream_id >> 16),
+      static_cast<uint8_t>(stream_id >> 24),
+      static_cast<uint8_t>(payload_length),
+      static_cast<uint8_t>(payload_length >> 8),
+      static_cast<uint8_t>(payload_length >> 16),
+      static_cast<uint8_t>(payload_length >> 24),
+  };
+  return grpc_event_engine::experimental::Slice::FromCopiedBuffer(
+      buffer, sizeof(buffer));
 }
 
 grpc_event_engine::experimental::Slice Zeros(uint32_t length) {

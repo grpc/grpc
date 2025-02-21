@@ -29,6 +29,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
@@ -39,7 +40,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -206,7 +206,7 @@ std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
 }
 }  // namespace
 
-absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
+std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started) {
   GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_perform_read");
@@ -268,7 +268,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_0;
         return static_cast<size_t>(cur - beg);
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_0:
       DCHECK_LT(cur, end);
       t->incoming_frame_size = (static_cast<uint32_t>(*cur)) << 16;
@@ -276,7 +276,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_1;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_1:
       DCHECK_LT(cur, end);
       t->incoming_frame_size |= (static_cast<uint32_t>(*cur)) << 8;
@@ -284,7 +284,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_2;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_2:
       DCHECK_LT(cur, end);
       t->incoming_frame_size |= *cur;
@@ -292,7 +292,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_3;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_3:
       DCHECK_LT(cur, end);
       t->incoming_frame_type = *cur;
@@ -300,7 +300,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_4;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_4:
       DCHECK_LT(cur, end);
       t->incoming_frame_flags = *cur;
@@ -308,7 +308,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_5;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_5:
       DCHECK_LT(cur, end);
       t->incoming_stream_id = ((static_cast<uint32_t>(*cur)) & 0x7f) << 24;
@@ -316,7 +316,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_6;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_6:
       DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
@@ -324,7 +324,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_7;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_7:
       DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
@@ -332,7 +332,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         t->deframe_state = GRPC_DTS_FH_8;
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FH_8:
       DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
@@ -366,7 +366,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       if (++cur == end) {
         return absl::OkStatus();
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case GRPC_DTS_FRAME:
       DCHECK_LT(cur, end);
       if (static_cast<uint32_t>(end - cur) == t->incoming_frame_size) {
@@ -960,8 +960,8 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
     s->call_tracer_wrapper.RecordIncomingBytes(
         {0, 0, GRPC_SLICE_LENGTH(slice)});
     call_tracer =
-        grpc_core::IsCallTracerInTransportEnabled()
-            ? s->arena->GetContext<grpc_core::CallTracerInterface>()
+        grpc_core::IsCallTracerTransportFixEnabled()
+            ? s->CallTracer()
             : s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   }
   grpc_error_handle error = parser->Parse(

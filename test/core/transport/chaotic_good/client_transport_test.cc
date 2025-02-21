@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <initializer_list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -33,19 +34,20 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
+#include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "test/core/transport/chaotic_good/transport_test.h"
+#include "test/core/transport/chaotic_good/transport_test_helper.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
+#include "test/core/transport/util/transport_test.h"
 
 using testing::MockFunction;
 using testing::Return;
@@ -56,6 +58,12 @@ using EventEngineSlice = grpc_event_engine::experimental::Slice;
 namespace grpc_core {
 namespace chaotic_good {
 namespace testing {
+
+class MockClientConnectionFactory : public ClientConnectionFactory {
+ public:
+  MOCK_METHOD(PendingConnection, Connect, (absl::string_view), (override));
+  void Orphaned() final {}
+};
 
 ClientMetadataHandle TestInitialMetadata() {
   auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
@@ -85,17 +93,33 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
   });
 }
 
-ChannelArgs MakeChannelArgs() {
+ChannelArgs MakeChannelArgs(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
   return CoreConfiguration::Get()
       .channel_args_preconditioning()
-      .PreconditionChannelArgs(nullptr);
+      .PreconditionChannelArgs(nullptr)
+      .SetObject<grpc_event_engine::experimental::EventEngine>(
+          std::move(event_engine));
 }
 
-Config MakeConfig() { return Config(MakeChannelArgs()); }
+template <typename... PromiseEndpoints>
+Config MakeConfig(const ChannelArgs& channel_args,
+                  PromiseEndpoints... promise_endpoints) {
+  Config config(channel_args);
+  auto name_endpoint = [i = 0]() mutable { return absl::StrCat(++i); };
+  std::vector<int> this_is_only_here_to_unpack_the_following_statement{
+      (config.ServerAddPendingDataEndpoint(
+           ImmediateConnection(name_endpoint(), std::move(promise_endpoints))),
+       0)...};
+  return config;
+}
 
 TEST_F(TransportTest, AddOneStream) {
   MockPromiseEndpoint control_endpoint(1000);
   MockPromiseEndpoint data_endpoint(1001);
+  auto client_connection_factory =
+      MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   static const std::string many_as(1024 * 1024, 'a');
   const auto server_initial_metadata =
       EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
@@ -118,10 +142,11 @@ TEST_F(TransportTest, AddOneStream) {
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .InSequence(control_endpoint.read_sequence)
       .WillOnce(Return(false));
+  auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      std::move(control_endpoint.promise_endpoint),
-      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine(), MakeConfig());
+      channel_args, std::move(control_endpoint.promise_endpoint),
+      MakeConfig(channel_args, std::move(data_endpoint.promise_endpoint)),
+      client_connection_factory);
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -144,7 +169,7 @@ TEST_F(TransportTest, AddOneStream) {
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
               EXPECT_TRUE(md.value().has_value());
               EXPECT_EQ(md.value()
@@ -180,6 +205,8 @@ TEST_F(TransportTest, AddOneStream) {
 TEST_F(TransportTest, AddOneStreamMultipleMessages) {
   MockPromiseEndpoint control_endpoint(1000);
   MockPromiseEndpoint data_endpoint(1001);
+  auto client_connection_factory =
+      MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   const auto server_initial_metadata =
       EncodeProto<chaotic_good_frame::ServerMetadata>("");
   const auto server_trailing_metadata =
@@ -202,10 +229,11 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .InSequence(control_endpoint.read_sequence)
       .WillOnce(Return(false));
+  auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      std::move(control_endpoint.promise_endpoint),
-      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine(), MakeConfig());
+      channel_args, std::move(control_endpoint.promise_endpoint),
+      MakeConfig(channel_args, std::move(data_endpoint.promise_endpoint)),
+      client_connection_factory);
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -230,7 +258,7 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
               EXPECT_TRUE(md.value().has_value());
             },

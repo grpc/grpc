@@ -20,9 +20,12 @@
 
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/transport/http2_errors.h"
+#include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 
 using grpc_core::chaotic_good::testing::MockPromiseEndpoint;
+using grpc_core::transport::testing::Http2FrameTestHelper;
 using grpc_event_engine::experimental::EventEngine;
 
 namespace grpc_core {
@@ -39,6 +42,10 @@ TEST(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
                                      .channel_args_preconditioning()
                                      .PreconditionChannelArgs(nullptr),
                                  event_engine);
+  // TODO(tjagtap) : [PH2][P1] : Remove this when the test is completed.
+  Http2FrameTestHelper helper1;
+  VLOG(4)
+      << helper1.EventEngineSliceFromHttp2WindowUpdateFrame().as_string_view();
 }
 
 }  // namespace testing

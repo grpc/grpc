@@ -165,7 +165,7 @@
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
       'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
       'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
-      'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
+      'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     }
 
     s.default_subspecs = 'Interface', 'Implementation'
@@ -200,7 +200,7 @@
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency "#{s.name}/Privacy", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.37'
+      ss.dependency 'BoringSSL-GRPC', '0.0.39'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor

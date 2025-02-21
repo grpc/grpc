@@ -279,7 +279,7 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
 
 void CheckLBPolicyResultLocked(const grpc_core::ChannelArgs channel_args,
                                ArgsStruct* args) {
-  absl::optional<absl::string_view> lb_policy_arg =
+  std::optional<absl::string_view> lb_policy_arg =
       channel_args.GetString(GRPC_ARG_LB_POLICY_NAME);
   if (!args->expected_lb_policy.empty()) {
     EXPECT_TRUE(lb_policy_arg.has_value());
@@ -505,8 +505,7 @@ void RunResolvesRelevantRecordsTest(
           whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
           CreateResultHandler(&args));
   auto* resolver_ptr = resolver.get();
-  args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },
-                 DEBUG_LOCATION);
+  args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); });
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);

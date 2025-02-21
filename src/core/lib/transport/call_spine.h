@@ -135,14 +135,19 @@ class CallSpine final : public Party {
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
-      if (!IsStatusOk(r)) {
-        auto md = StatusCast<ServerMetadataHandle>(r);
-        md->Set(GrpcCallWasCancelled(), true);
-        PushServerTrailingMetadata(std::move(md));
-      }
+      CancelIfFailed(r);
       return r;
     });
   }
+
+  template <typename StatusType>
+  void CancelIfFailed(const StatusType& r) {
+    if (!IsStatusOk(r)) {
+      Cancel();
+    }
+  }
+
+  void Cancel() { call_filters().Cancel(); }
 
   // Spawn a promise that returns Empty{} and save some boilerplate handling
   // that detail.
@@ -193,6 +198,92 @@ class CallSpine final : public Party {
     });
   }
 
+  // Spawned operations: these are callable from /outside/ the call; they spawn
+  // an operation into the call and execute that operation.
+  //
+  // Server -> client operations are serialized in the order they are spawned.
+  // Client -> server operations are serialized in the order they are spawned.
+  //
+  // It's required that at most one thread call a server->client operation at a
+  // time, and likewise for client->server operations. There is no requirement
+  // that there be synchronization between the two directionalities.
+  //
+  // No ordering is given between the `Spawn` and the basic operations.
+
+  void SpawnPushServerInitialMetadata(ServerMetadataHandle md) {
+    server_to_client_serializer()->Spawn(
+        [md = std::move(md), self = RefAsSubclass<CallSpine>()]() mutable {
+          self->CancelIfFailed(self->PushServerInitialMetadata(std::move(md)));
+        });
+  }
+
+  void SpawnPushServerToClientMessage(MessageHandle msg) {
+    server_to_client_serializer()->Spawn(
+        [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
+          return Map(self->CancelIfFails(
+                         self->PushServerToClientMessage(std::move(msg))),
+                     [](auto) { return Empty{}; });
+        });
+  }
+
+  void SpawnPushClientToServerMessage(MessageHandle msg) {
+    client_to_server_serializer()->Spawn(
+        [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
+          return Map(self->CancelIfFails(
+                         self->PushClientToServerMessage(std::move(msg))),
+                     [](auto) { return Empty{}; });
+        });
+  }
+
+  void SpawnFinishSends() {
+    client_to_server_serializer()->Spawn([self = RefAsSubclass<CallSpine>()]() {
+      self->FinishSends();
+      return Empty{};
+    });
+  }
+
+  void SpawnPushServerTrailingMetadata(ServerMetadataHandle md) {
+    if (md->get(GrpcCallWasCancelled()).value_or(false)) {
+      // Cancellation doesn't serialize with the rest of ops
+      SpawnInfallible(
+          "push-server-trailing-metadata",
+          [md = std::move(md), self = RefAsSubclass<CallSpine>()]() mutable {
+            self->PushServerTrailingMetadata(std::move(md));
+            return Empty{};
+          });
+    } else {
+      server_to_client_serializer()->Spawn(
+          [md = std::move(md), self = RefAsSubclass<CallSpine>()]() mutable {
+            self->PushServerTrailingMetadata(std::move(md));
+            return Empty{};
+          });
+    }
+  }
+
+  void SpawnCancel() {
+    SpawnInfallible("cancel", [self = RefAsSubclass<CallSpine>()]() {
+      self->call_filters().Cancel();
+    });
+  }
+
+  void AddChildCall(RefCountedPtr<CallSpine> child_call) {
+    child_calls_.push_back(std::move(child_call));
+    if (child_calls_.size() == 1) {
+      SpawnInfallible(
+          "check_cancellation", [self = RefAsSubclass<CallSpine>()]() mutable {
+            auto was_completed =
+                self->call_filters().ServerTrailingMetadataWasPushed();
+            return Map(std::move(was_completed),
+                       [self = std::move(self)](Empty) {
+                         for (auto& child : self->child_calls_) {
+                           child->SpawnCancel();
+                         }
+                         return Empty{};
+                       });
+          });
+    }
+  }
+
  private:
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
@@ -200,10 +291,30 @@ class CallSpine final : public Party {
       : Party(std::move(arena)),
         call_filters_(std::move(client_initial_metadata)) {}
 
+  SpawnSerializer* client_to_server_serializer() {
+    if (client_to_server_serializer_ == nullptr) {
+      client_to_server_serializer_ = MakeSpawnSerializer();
+    }
+    return client_to_server_serializer_;
+  }
+
+  SpawnSerializer* server_to_client_serializer() {
+    if (server_to_client_serializer_ == nullptr) {
+      server_to_client_serializer_ = MakeSpawnSerializer();
+    }
+    return server_to_client_serializer_;
+  }
+
   // Call filters/pipes part of the spine
   CallFilters call_filters_;
   absl::AnyInvocable<void(bool)> on_done_{nullptr};
+  // Call spines that should be cancelled if this spine is cancelled
+  absl::InlinedVector<RefCountedPtr<CallSpine>, 3> child_calls_;
+  SpawnSerializer* client_to_server_serializer_ = nullptr;
+  SpawnSerializer* server_to_client_serializer_ = nullptr;
 };
+
+class CallHandler;
 
 class CallInitiator {
  public:
@@ -226,7 +337,13 @@ class CallInitiator {
     return spine_->PushClientToServerMessage(std::move(message));
   }
 
+  void SpawnPushMessage(MessageHandle message) {
+    spine_->SpawnPushClientToServerMessage(std::move(message));
+  }
+
   void FinishSends() { spine_->FinishSends(); }
+
+  void SpawnFinishSends() { spine_->SpawnFinishSends(); }
 
   auto PullMessage() { return spine_->PullServerToClientMessage(); }
 
@@ -234,15 +351,31 @@ class CallInitiator {
     return spine_->PullServerTrailingMetadata();
   }
 
-  void Cancel(absl::Status error = absl::CancelledError()) {
+  void Cancel(absl::Status error) {
     CHECK(!error.ok());
     auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
+  void SpawnCancel(absl::Status error) {
+    CHECK(!error.ok());
+    auto status = ServerMetadataFromStatus(error);
+    status->Set(GrpcCallWasCancelled(), true);
+    spine_->SpawnPushServerTrailingMetadata(std::move(status));
+  }
+
+  void Cancel() { spine_->Cancel(); }
+
+  void SpawnCancel() { spine_->SpawnCancel(); }
+
   GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
     return spine_->OnDone(std::move(fn));
+  }
+
+  template <typename Promise>
+  auto UntilCallCompletes(Promise promise) {
+    return spine_->UntilCallCompletes(std::move(promise));
   }
 
   template <typename PromiseFactory>
@@ -274,6 +407,7 @@ class CallInitiator {
   Party* party() { return spine_.get(); }
 
  private:
+  friend class CallHandler;
   RefCountedPtr<CallSpine> spine_;
 };
 
@@ -292,8 +426,16 @@ class CallHandler {
     return spine_->PushServerInitialMetadata(std::move(md));
   }
 
+  void SpawnPushServerInitialMetadata(ServerMetadataHandle md) {
+    return spine_->SpawnPushServerInitialMetadata(std::move(md));
+  }
+
   void PushServerTrailingMetadata(ServerMetadataHandle status) {
     spine_->PushServerTrailingMetadata(std::move(status));
+  }
+
+  void SpawnPushServerTrailingMetadata(ServerMetadataHandle status) {
+    spine_->SpawnPushServerTrailingMetadata(std::move(status));
   }
 
   GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
@@ -309,12 +451,21 @@ class CallHandler {
     return spine_->PushServerToClientMessage(std::move(message));
   }
 
+  void SpawnPushMessage(MessageHandle message) {
+    spine_->SpawnPushServerToClientMessage(std::move(message));
+  }
+
   auto PullMessage() { return spine_->PullClientToServerMessage(); }
 
   auto WasCancelled() { return spine_->WasCancelled(); }
 
   bool WasCancelledPushed() const {
     return spine_->call_filters().WasCancelledPushed();
+  }
+
+  template <typename Promise>
+  auto UntilCallCompletes(Promise promise) {
+    return spine_->UntilCallCompletes(std::move(promise));
   }
 
   template <typename PromiseFactory>
@@ -337,6 +488,11 @@ class CallHandler {
   template <typename PromiseFactory>
   auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
     return spine_->SpawnWaitable(name, std::move(promise_factory));
+  }
+
+  void AddChildCall(const CallInitiator& initiator) {
+    CHECK(initiator.spine_ != nullptr);
+    spine_->AddChildCall(initiator.spine_);
   }
 
   Arena* arena() { return spine_->arena(); }
@@ -414,12 +570,21 @@ CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena);
 
 template <typename CallHalf>
-auto OutgoingMessages(CallHalf h) {
+auto MessagesFrom(CallHalf h) {
   struct Wrapper {
     CallHalf h;
     auto Next() { return h.PullMessage(); }
   };
   return Wrapper{std::move(h)};
+}
+
+template <typename CallHalf>
+auto MessagesFrom(CallHalf* h) {
+  struct Wrapper {
+    CallHalf* h;
+    auto Next() { return h->PullMessage(); }
+  };
+  return Wrapper{h};
 }
 
 // Forward a call from `call_handler` to `call_initiator` (with initial metadata

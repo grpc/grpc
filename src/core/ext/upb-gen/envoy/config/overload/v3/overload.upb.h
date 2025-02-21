@@ -45,7 +45,8 @@ typedef enum {
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_UNSPECIFIED = 0,
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_HTTP_DOWNSTREAM_CONNECTION_IDLE = 1,
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_HTTP_DOWNSTREAM_STREAM_IDLE = 2,
-  envoy_config_overload_v3_ScaleTimersOverloadActionConfig_TRANSPORT_SOCKET_CONNECT = 3
+  envoy_config_overload_v3_ScaleTimersOverloadActionConfig_TRANSPORT_SOCKET_CONNECT = 3,
+  envoy_config_overload_v3_ScaleTimersOverloadActionConfig_HTTP_DOWNSTREAM_CONNECTION_MAX = 4
 } envoy_config_overload_v3_ScaleTimersOverloadActionConfig_TimerType;
 
 

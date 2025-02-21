@@ -79,37 +79,30 @@ template <>
 class PromiseLike<void>;
 
 template <typename F>
-class PromiseLike<F, absl::enable_if_t<!std::is_void<
-#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-                         std::invoke_result_t<F>
-#else
-                         typename std::result_of<F()>::type
-#endif
-                         >::value>> {
+class PromiseLike<
+    F, absl::enable_if_t<!std::is_void<std::invoke_result_t<F>>::value>> {
  private:
   GPR_NO_UNIQUE_ADDRESS RemoveCVRef<F> f_;
+  using OriginalResult = decltype(f_());
+  using WrappedResult = decltype(WrapInPoll(std::declval<OriginalResult>()));
 
  public:
   // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION PromiseLike(F&& f)
       : f_(std::forward<F>(f)) {}
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()()
-      -> decltype(WrapInPoll(f_())) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION WrappedResult operator()() {
     return WrapInPoll(f_());
   }
-  using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
+  PromiseLike(const PromiseLike&) = default;
+  PromiseLike& operator=(const PromiseLike&) = default;
+  PromiseLike(PromiseLike&&) = default;
+  PromiseLike& operator=(PromiseLike&&) = default;
+  using Result = typename PollTraits<WrappedResult>::Type;
 };
 
 template <typename F>
-class PromiseLike<F, absl::enable_if_t<std::is_void<
-#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-                         std::invoke_result_t<F>
-#else
-                         typename std::result_of<F()>::type
-#endif
-                         >::value>> {
+class PromiseLike<
+    F, absl::enable_if_t<std::is_void<std::invoke_result_t<F>>::value>> {
  private:
   GPR_NO_UNIQUE_ADDRESS RemoveCVRef<F> f_;
 
@@ -121,6 +114,10 @@ class PromiseLike<F, absl::enable_if_t<std::is_void<
     f_();
     return Empty{};
   }
+  PromiseLike(const PromiseLike&) = default;
+  PromiseLike& operator=(const PromiseLike&) = default;
+  PromiseLike(PromiseLike&&) = default;
+  PromiseLike& operator=(PromiseLike&&) = default;
   using Result = Empty;
 };
 

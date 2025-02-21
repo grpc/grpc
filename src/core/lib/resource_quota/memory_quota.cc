@@ -178,7 +178,7 @@ struct ReclaimerQueue::State {
 
 void ReclaimerQueue::Handle::Orphan() {
   if (auto* sweep = sweep_.exchange(nullptr, std::memory_order_acq_rel)) {
-    sweep->RunAndDelete(absl::nullopt);
+    sweep->RunAndDelete(std::nullopt);
   }
   Unref();
 }
@@ -304,7 +304,7 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   }
 }
 
-absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
+std::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
     MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
   size_t scaled_size_over_min = request.max() - request.min();
@@ -433,54 +433,58 @@ void BasicMemoryQuota::Start() {
   // basically, wait until we are in overcommit (free_bytes_ < 0), and then:
   // while (free_bytes_ < 0) reclaim_memory()
   // ... and repeat
-  auto reclamation_loop = Loop(Seq(
-      [self]() -> Poll<int> {
-        // If there's free memory we no longer need to reclaim memory!
-        if (self->free_bytes_.load(std::memory_order_acquire) > 0) {
-          return Pending{};
-        }
-        return 0;
-      },
-      [self]() {
-        // Race biases to the first thing that completes... so this will
-        // choose the highest priority/least destructive thing to do that's
-        // available.
-        auto annotate = [](const char* name) {
-          return [name](RefCountedPtr<ReclaimerQueue::Handle> f) {
-            return std::make_tuple(name, std::move(f));
+  auto reclamation_loop = Loop([self]() {
+    return Seq(
+        [self]() -> Poll<int> {
+          // If there's free memory we no longer need to reclaim memory!
+          if (self->free_bytes_.load(std::memory_order_acquire) > 0) {
+            return Pending{};
+          }
+          return 0;
+        },
+        [self]() {
+          // Race biases to the first thing that completes... so this will
+          // choose the highest priority/least destructive thing to do that's
+          // available.
+          auto annotate = [](const char* name) {
+            return [name](RefCountedPtr<ReclaimerQueue::Handle> f) {
+              return std::tuple(name, std::move(f));
+            };
           };
-        };
-        return Race(Map(self->reclaimers_[0].Next(), annotate("benign")),
-                    Map(self->reclaimers_[1].Next(), annotate("idle")),
-                    Map(self->reclaimers_[2].Next(), annotate("destructive")));
-      },
-      [self](
-          std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>> arg) {
-        auto reclaimer = std::move(std::get<1>(arg));
-        if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-          double free = std::max(intptr_t{0}, self->free_bytes_.load());
-          size_t quota_size = self->quota_size_.load();
-          LOG(INFO) << "RQ: " << self->name_ << " perform " << std::get<0>(arg)
-                    << " reclamation. Available free bytes: " << free
-                    << ", total quota_size: " << quota_size;
-        }
-        // One of the reclaimer queues gave us a way to get back memory.
-        // Call the reclaimer with a token that contains enough to wake us
-        // up again.
-        const uint64_t token =
-            self->reclamation_counter_.fetch_add(1, std::memory_order_relaxed) +
-            1;
-        reclaimer->Run(ReclamationSweep(
-            self, token, GetContext<Activity>()->MakeNonOwningWaker()));
-        // Return a promise that will wait for our barrier. This will be
-        // awoken by the token above being destroyed. So, once that token is
-        // destroyed, we'll be able to proceed.
-        return WaitForSweepPromise(self, token);
-      },
-      []() -> LoopCtl<absl::Status> {
-        // Continue the loop!
-        return Continue{};
-      }));
+          return Race(
+              Map(self->reclaimers_[0].Next(), annotate("benign")),
+              Map(self->reclaimers_[1].Next(), annotate("idle")),
+              Map(self->reclaimers_[2].Next(), annotate("destructive")));
+        },
+        [self](std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>>
+                   arg) {
+          auto reclaimer = std::move(std::get<1>(arg));
+          if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
+            double free = std::max(intptr_t{0}, self->free_bytes_.load());
+            size_t quota_size = self->quota_size_.load();
+            LOG(INFO) << "RQ: " << self->name_ << " perform "
+                      << std::get<0>(arg)
+                      << " reclamation. Available free bytes: " << free
+                      << ", total quota_size: " << quota_size;
+          }
+          // One of the reclaimer queues gave us a way to get back memory.
+          // Call the reclaimer with a token that contains enough to wake us
+          // up again.
+          const uint64_t token = self->reclamation_counter_.fetch_add(
+                                     1, std::memory_order_relaxed) +
+                                 1;
+          reclaimer->Run(ReclamationSweep(
+              self, token, GetContext<Activity>()->MakeNonOwningWaker()));
+          // Return a promise that will wait for our barrier. This will be
+          // awoken by the token above being destroyed. So, once that token is
+          // destroyed, we'll be able to proceed.
+          return WaitForSweepPromise(self, token);
+        },
+        []() -> LoopCtl<absl::Status> {
+          // Continue the loop!
+          return Continue{};
+        });
+  });
 
   reclaimer_activity_ =
       MakeActivity(std::move(reclamation_loop), ExecCtxWakeupScheduler(),

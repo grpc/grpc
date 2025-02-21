@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -38,13 +39,100 @@
 namespace grpc_core {
 
 // Handles calling out to credentials to fill in metadata per call.
-class ClientAuthFilter final : public ChannelFilter {
+class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::string_view TypeName() { return "client-auth-filter"; }
 
   ClientAuthFilter(
+      RefCountedPtr<grpc_channel_security_connector> security_connector,
+      RefCountedPtr<grpc_auth_context> auth_context);
+
+  static absl::StatusOr<std::unique_ptr<ClientAuthFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
+
+ private:
+  // These methods are early in the declaration order as auto return type is
+  // needed by Call.
+  auto GetMetadataFromCreds(RefCountedPtr<grpc_call_credentials> creds,
+                            ClientMetadataHandle md) {
+    return Map(creds->GetRequestMetadata(std::move(md), &args_),
+               [](absl::StatusOr<ClientMetadataHandle> new_metadata) mutable {
+                 if (!new_metadata.ok()) {
+                   return absl::StatusOr<ClientMetadataHandle>(
+                       MaybeRewriteIllegalStatusCode(new_metadata.status(),
+                                                     "call credentials"));
+                 }
+                 return new_metadata;
+               });
+  }
+
+  auto GetCallCredsMetadata(ClientMetadataHandle md) {
+    auto creds = GetCallCreds();
+    return If(
+        creds.ok(),
+        [this, &creds, md = std::move(md)]() mutable {
+          return If(
+              *creds != nullptr,
+              [this, &creds, &md]() {
+                return GetMetadataFromCreds(std::move(*creds), std::move(md));
+              },
+              [&md]() {
+                return Immediate(
+                    absl::StatusOr<ClientMetadataHandle>(std::move(md)));
+              });
+        },
+        [&creds]() {
+          return Immediate(
+              absl::StatusOr<ClientMetadataHandle>(creds.status()));
+        });
+  }
+
+ public:
+  class Call {
+   public:
+    auto OnClientInitialMetadata(ClientMetadataHandle md,
+                                 ClientAuthFilter* filter) {
+      filter->InstallContext();
+      auto* host = md->get_pointer(HttpAuthorityMetadata());
+      return AssertResultType<absl::StatusOr<ClientMetadataHandle>>(If(
+          host == nullptr,
+          [&md]() mutable -> absl::StatusOr<ClientMetadataHandle> {
+            return std::move(md);
+          },
+          [filter, host, &md]() mutable {
+            return TrySeq(
+                filter->args_.security_connector->CheckCallHost(
+                    host->as_string_view(), filter->args_.auth_context.get()),
+                [filter, md = std::move(md)]() mutable {
+                  return filter->GetCallCredsMetadata(std::move(md));
+                });
+          }));
+    }
+    static const inline NoInterceptor OnServerInitialMetadata;
+    static const inline NoInterceptor OnClientToServerMessage;
+    static const inline NoInterceptor OnClientToServerHalfClose;
+    static const inline NoInterceptor OnServerToClientMessage;
+    static const inline NoInterceptor OnServerTrailingMetadata;
+    static const inline NoInterceptor OnFinalize;
+  };
+
+ private:
+  void InstallContext();
+  absl::StatusOr<RefCountedPtr<grpc_call_credentials>> GetCallCreds();
+
+  // Contains refs to security connector and auth context.
+  grpc_call_credentials::GetRequestMetadataArgs args_;
+};
+
+class LegacyClientAuthFilter final : public ChannelFilter {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "client-auth-filter"; }
+
+  LegacyClientAuthFilter(
       RefCountedPtr<grpc_channel_security_connector> security_connector,
       RefCountedPtr<grpc_auth_context> auth_context);
 
@@ -116,12 +204,12 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
           ImmediateOkStatus(),
           [filter, md = &md]() { return RunApplicationCode(filter, *md); });
     }
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
   };
 
  private:

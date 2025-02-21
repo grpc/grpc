@@ -22,7 +22,6 @@
 #include "google/protobuf/any.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
-#include "xds/annotations/v3/status.upb_minitable.h"
 #include "xds/type/matcher/v3/matcher.upb_minitable.h"
 #include "envoy/annotations/deprecation.upb_minitable.h"
 #include "udpa/annotations/migrate.upb_minitable.h"
@@ -90,7 +89,7 @@ const upb_MiniTable envoy__config__route__v3__VirtualHost_msg_init = {
     {0x003000003f00001a, &upb_prm_1bt_max192b},
     {0x000c00003f000020, &upb_psv4_1bt},
     {0x003800003f01002a, &upb_prm_1bt_max64b},
-    {0x004000003f020032, &upb_prm_1bt_max64b},
+    {0x004000003f020032, &upb_prm_1bt_max128b},
     {0x004800003f03003a, &upb_prm_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -647,7 +646,7 @@ const upb_MiniTable envoy__config__route__v3__RouteAction_msg_init = {
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000058, &upb_psv4_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x007000003f05006a, &upb_prm_1bt_max64b},
+    {0x007000003f05006a, &upb_prm_1bt_max128b},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x008000003f07007a, &upb_prm_1bt_max64b},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -1304,23 +1303,26 @@ const upb_MiniTable envoy__config__route__v3__VirtualCluster_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__route__v3__VirtualCluster_msg_init_ptr = &envoy__config__route__v3__VirtualCluster_msg_init;
-static const upb_MiniTableSubInternal envoy_config_route_v3_RateLimit__submsgs[3] = {
+static const upb_MiniTableSubInternal envoy_config_route_v3_RateLimit__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RateLimit__Action_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RateLimit__Override_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RateLimit__HitsAddend_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_route_v3_RateLimit__fields[4] = {
+static const upb_MiniTableField envoy_config_route_v3_RateLimit__fields[6] = {
   {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(32, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(20, 48), 65, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 56), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__route__v3__RateLimit_msg_init = {
   &envoy_config_route_v3_RateLimit__submsgs[0],
   &envoy_config_route_v3_RateLimit__fields[0],
-  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(40, 64), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.route.v3.RateLimit",
 #endif
@@ -1329,11 +1331,15 @@ const upb_MiniTable envoy__config__route__v3__RateLimit_msg_init = {
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001800003f000012, &upb_pss_1bt},
     {0x002800003f01001a, &upb_prm_1bt_max64b},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000900003f000030, &upb_psb1_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
 const upb_MiniTable* envoy__config__route__v3__RateLimit_msg_init_ptr = &envoy__config__route__v3__RateLimit_msg_init;
-static const upb_MiniTableSubInternal envoy_config_route_v3_RateLimit_Action__submsgs[11] = {
+static const upb_MiniTableSubInternal envoy_config_route_v3_RateLimit_Action__submsgs[12] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RateLimit__Action__SourceCluster_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RateLimit__Action__DestinationCluster_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RateLimit__Action__RequestHeaders_msg_init_ptr},
@@ -1345,9 +1351,10 @@ static const upb_MiniTableSubInternal envoy_config_route_v3_RateLimit_Action__su
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RateLimit__Action__MaskedRemoteAddress_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RateLimit__Action__QueryParameterValueMatch_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RateLimit__Action__QueryParameters_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_route_v3_RateLimit_Action__fields[11] = {
+static const upb_MiniTableField envoy_config_route_v3_RateLimit_Action__fields[12] = {
   {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -1359,12 +1366,13 @@ static const upb_MiniTableField envoy_config_route_v3_RateLimit_Action__fields[1
   {9, UPB_SIZE(12, 16), -9, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {10, UPB_SIZE(12, 16), -9, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {11, UPB_SIZE(12, 16), -9, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {12, UPB_SIZE(12, 16), -9, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__route__v3__RateLimit__Action_msg_init = {
   &envoy_config_route_v3_RateLimit_Action__submsgs[0],
   &envoy_config_route_v3_RateLimit_Action__fields[0],
-  UPB_SIZE(16, 24), 11, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(16, 24), 12, kUpb_ExtMode_NonExtendable, 12, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.route.v3.RateLimit.Action",
 #endif
@@ -1381,7 +1389,7 @@ const upb_MiniTable envoy__config__route__v3__RateLimit__Action_msg_init = {
     {0x001000080908004a, &upb_pom_1bt_maxmaxb},
     {0x001000080a090052, &upb_pom_1bt_max64b},
     {0x001000080b0a005a, &upb_pom_1bt_max128b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000080c0b0062, &upb_pom_1bt_max64b},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -1431,6 +1439,28 @@ const upb_MiniTable envoy__config__route__v3__RateLimit__Action__RequestHeaders_
 };
 
 const upb_MiniTable* envoy__config__route__v3__RateLimit__Action__RequestHeaders_msg_init_ptr = &envoy__config__route__v3__RateLimit__Action__RequestHeaders_msg_init;
+static const upb_MiniTableField envoy_config_route_v3_RateLimit_Action_QueryParameters__fields[3] = {
+  {1, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(20, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy__config__route__v3__RateLimit__Action__QueryParameters_msg_init = {
+  NULL,
+  &envoy_config_route_v3_RateLimit_Action_QueryParameters__fields[0],
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.route.v3.RateLimit.Action.QueryParameters",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000003f00000a, &upb_pss_1bt},
+    {0x002000003f000012, &upb_pss_1bt},
+    {0x000800003f000018, &upb_psb1_1bt},
+  })
+};
+
+const upb_MiniTable* envoy__config__route__v3__RateLimit__Action__QueryParameters_msg_init_ptr = &envoy__config__route__v3__RateLimit__Action__QueryParameters_msg_init;
 const upb_MiniTable envoy__config__route__v3__RateLimit__Action__RemoteAddress_msg_init = {
   NULL,
   NULL,
@@ -1644,6 +1674,31 @@ const upb_MiniTable envoy__config__route__v3__RateLimit__Override__DynamicMetada
 };
 
 const upb_MiniTable* envoy__config__route__v3__RateLimit__Override__DynamicMetadata_msg_init_ptr = &envoy__config__route__v3__RateLimit__Override__DynamicMetadata_msg_init;
+static const upb_MiniTableSubInternal envoy_config_route_v3_RateLimit_HitsAddend__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
+};
+
+static const upb_MiniTableField envoy_config_route_v3_RateLimit_HitsAddend__fields[2] = {
+  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy__config__route__v3__RateLimit__HitsAddend_msg_init = {
+  &envoy_config_route_v3_RateLimit_HitsAddend__submsgs[0],
+  &envoy_config_route_v3_RateLimit_HitsAddend__fields[0],
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.route.v3.RateLimit.HitsAddend",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001800003f000012, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+const upb_MiniTable* envoy__config__route__v3__RateLimit__HitsAddend_msg_init_ptr = &envoy__config__route__v3__RateLimit__HitsAddend_msg_init;
 static const upb_MiniTableSubInternal envoy_config_route_v3_HeaderMatcher__submsgs[3] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__v3__Int64Range_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__RegexMatcher_msg_init_ptr},
@@ -1781,7 +1836,7 @@ const upb_MiniTable envoy__config__route__v3__FilterConfig_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__route__v3__FilterConfig_msg_init_ptr = &envoy__config__route__v3__FilterConfig_msg_init;
-static const upb_MiniTable *messages_layout[58] = {
+static const upb_MiniTable *messages_layout[60] = {
   &envoy__config__route__v3__VirtualHost_msg_init,
   &envoy__config__route__v3__VirtualHost__TypedPerFilterConfigEntry_msg_init,
   &envoy__config__route__v3__FilterAction_msg_init,
@@ -1827,6 +1882,7 @@ static const upb_MiniTable *messages_layout[58] = {
   &envoy__config__route__v3__RateLimit__Action__SourceCluster_msg_init,
   &envoy__config__route__v3__RateLimit__Action__DestinationCluster_msg_init,
   &envoy__config__route__v3__RateLimit__Action__RequestHeaders_msg_init,
+  &envoy__config__route__v3__RateLimit__Action__QueryParameters_msg_init,
   &envoy__config__route__v3__RateLimit__Action__RemoteAddress_msg_init,
   &envoy__config__route__v3__RateLimit__Action__MaskedRemoteAddress_msg_init,
   &envoy__config__route__v3__RateLimit__Action__GenericKey_msg_init,
@@ -1836,6 +1892,7 @@ static const upb_MiniTable *messages_layout[58] = {
   &envoy__config__route__v3__RateLimit__Action__QueryParameterValueMatch_msg_init,
   &envoy__config__route__v3__RateLimit__Override_msg_init,
   &envoy__config__route__v3__RateLimit__Override__DynamicMetadata_msg_init,
+  &envoy__config__route__v3__RateLimit__HitsAddend_msg_init,
   &envoy__config__route__v3__HeaderMatcher_msg_init,
   &envoy__config__route__v3__QueryParameterMatcher_msg_init,
   &envoy__config__route__v3__InternalRedirectPolicy_msg_init,
@@ -1846,7 +1903,7 @@ const upb_MiniTableFile envoy_config_route_v3_route_components_proto_upb_file_la
   messages_layout,
   NULL,
   NULL,
-  58,
+  60,
   0,
   0,
 };

@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <memory>
 #include <new>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -40,7 +41,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -185,16 +185,21 @@ struct inproc_stream {
 
     if (!server_data) {
       t->ref();
-      inproc_transport* st = t->other_side;
-      st->ref();
       other_side = nullptr;  // will get filled in soon
-      // Pass the client-side stream address to the server-side for a ref
-      ref("inproc_init_stream:clt");  // ref it now on behalf of server
-                                      // side to avoid destruction
-      GRPC_TRACE_LOG(inproc, INFO)
-          << "calling accept stream cb " << st->accept_stream_cb << " "
-          << st->accept_stream_data;
-      (*st->accept_stream_cb)(st->accept_stream_data, t, this);
+      inproc_transport* st = t->other_side;
+      if (st->accept_stream_cb == nullptr) {
+        cancel_stream_locked(this,
+                             absl::UnavailableError("inproc server closed"));
+      } else {
+        st->ref();
+        // Pass the client-side stream address to the server-side for a ref
+        ref("inproc_init_stream:clt");  // ref it now on behalf of server
+                                        // side to avoid destruction
+        GRPC_TRACE_LOG(inproc, INFO)
+            << "calling accept stream cb " << st->accept_stream_cb << " "
+            << st->accept_stream_data;
+        (*st->accept_stream_cb)(st->accept_stream_data, t, this);
+      }
     } else {
       // This is the server-side and is being called through accept_stream_cb
       inproc_stream* cs = const_cast<inproc_stream*>(

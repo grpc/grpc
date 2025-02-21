@@ -32,13 +32,13 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -160,7 +160,6 @@ bool OrcaService::Reactor::MaybeCancelTimer() {
 }
 
 void OrcaService::Reactor::OnTimer() {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc::internal::MutexLock lock(&timer_mu_);
   timer_handle_.reset();

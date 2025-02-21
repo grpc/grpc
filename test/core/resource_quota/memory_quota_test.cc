@@ -88,7 +88,7 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   auto checker1 = CallChecker::Make();
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object, checker1](absl::optional<ReclamationSweep> sweep) {
+      [&object, checker1](std::optional<ReclamationSweep> sweep) {
         checker1->Called();
         EXPECT_TRUE(sweep.has_value());
         object.reset();
@@ -100,7 +100,7 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   auto checker2 = CallChecker::Make();
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object2, checker2](absl::optional<ReclamationSweep> sweep) {
+      [&object2, checker2](std::optional<ReclamationSweep> sweep) {
         checker2->Called();
         EXPECT_TRUE(sweep.has_value());
         object2.reset();
@@ -160,7 +160,7 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
     auto memory_owner = memory_quota.CreateMemoryOwner();
     memory_owner.PostReclaimer(
         ReclamationPass::kDestructive,
-        [&count_reclaimers_called](absl::optional<ReclamationSweep> sweep) {
+        [&count_reclaimers_called](std::optional<ReclamationSweep> sweep) {
           EXPECT_FALSE(sweep.has_value());
           count_reclaimers_called.fetch_add(1, std::memory_order_relaxed);
         });

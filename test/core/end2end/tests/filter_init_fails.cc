@@ -19,10 +19,10 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
@@ -93,7 +93,7 @@ void RegisterFilter(grpc_channel_stack_type type) {
       });
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
+CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ServerFilterChannelInitFails) {
   SKIP_IF_V3();
   RegisterFilter(GRPC_SERVER_CHANNEL);
   InitClient(ChannelArgs());
@@ -118,7 +118,7 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
   ShutdownAndDestroyServer();
 };
 
-CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
+CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
   SKIP_IF_FUZZING();
   SKIP_IF_V3();
 
@@ -139,7 +139,7 @@ CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
   ShutdownAndDestroyServer();
 };
 
-CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
+CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
@@ -159,7 +159,7 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_INVALID_ARGUMENT);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, ClientFilterCallInitFails) {
+CORE_END2END_TEST(CoreEnd2endTests, ClientFilterCallInitFails) {
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
 
@@ -181,7 +181,7 @@ CORE_END2END_TEST(CoreEnd2endTest, ClientFilterCallInitFails) {
   EXPECT_EQ(server_status.message(), "access denied");
 }
 
-CORE_END2END_TEST(CoreClientChannelTest,
+CORE_END2END_TEST(CoreClientChannelTests,
                   DISABLED_SubchannelFilterChannelInitFails) {
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
@@ -218,7 +218,7 @@ CORE_END2END_TEST(CoreClientChannelTest,
   EXPECT_EQ(server_status2.status(), GRPC_STATUS_UNAVAILABLE);
 }
 
-CORE_END2END_TEST(CoreClientChannelTest, SubchannelFilterCallInitFails) {
+CORE_END2END_TEST(CoreClientChannelTests, SubchannelFilterCallInitFails) {
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();

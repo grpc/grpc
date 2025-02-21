@@ -52,7 +52,9 @@ typedef enum {
   envoy_admin_v3_REQUESTED = 1,
   envoy_admin_v3_DOES_NOT_EXIST = 2,
   envoy_admin_v3_ACKED = 3,
-  envoy_admin_v3_NACKED = 4
+  envoy_admin_v3_NACKED = 4,
+  envoy_admin_v3_RECEIVED_ERROR = 5,
+  envoy_admin_v3_TIMEOUT = 6
 } envoy_admin_v3_ClientResourceStatus;
 
 

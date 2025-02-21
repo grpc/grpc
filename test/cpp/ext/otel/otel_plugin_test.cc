@@ -223,20 +223,20 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptStarted) {
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
-  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+  auto point_data = std::get_if<opentelemetry::sdk::metrics::SumPointData>(
       &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
-  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  auto client_started_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(client_started_value, nullptr);
   EXPECT_EQ(*client_started_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
   const auto* target_value =
-      absl::get_if<std::string>(&attributes.at("grpc.target"));
+      std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, canonical_server_address_);
 }
@@ -254,22 +254,22 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptDuration) {
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   auto point_data =
-      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 3);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
   const auto* target_value =
-      absl::get_if<std::string>(&attributes.at("grpc.target"));
+      std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, canonical_server_address_);
   const auto* status_value =
-      absl::get_if<std::string>(&attributes.at("grpc.status"));
+      std::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "OK");
 }
@@ -289,23 +289,23 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   auto point_data =
-      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
-  ASSERT_EQ(absl::get<int64_t>(point_data->max_), 5);
+  ASSERT_EQ(std::get<int64_t>(point_data->max_), 5);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 3);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
   const auto* target_value =
-      absl::get_if<std::string>(&attributes.at("grpc.target"));
+      std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, canonical_server_address_);
   const auto* status_value =
-      absl::get_if<std::string>(&attributes.at("grpc.status"));
+      std::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "OK");
 }
@@ -325,23 +325,23 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   auto point_data =
-      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
-  ASSERT_EQ(absl::get<int64_t>(point_data->max_), 5);
+  ASSERT_EQ(std::get<int64_t>(point_data->max_), 5);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 3);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
   const auto* target_value =
-      absl::get_if<std::string>(&attributes.at("grpc.target"));
+      std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, canonical_server_address_);
   const auto* status_value =
-      absl::get_if<std::string>(&attributes.at("grpc.status"));
+      std::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "OK");
 }
@@ -357,16 +357,16 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallStarted) {
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
-  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+  auto point_data = std::get_if<opentelemetry::sdk::metrics::SumPointData>(
       &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
-  auto server_started_value = absl::get_if<int64_t>(&point_data->value_);
+  auto server_started_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(server_started_value, nullptr);
   ASSERT_EQ(*server_started_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 1);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
 }
@@ -383,18 +383,18 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallDuration) {
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   auto point_data =
-      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
   const auto* status_value =
-      absl::get_if<std::string>(&attributes.at("grpc.status"));
+      std::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "OK");
 }
@@ -414,19 +414,19 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   auto point_data =
-      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   EXPECT_EQ(point_data->count_, 1);
-  ASSERT_EQ(absl::get<int64_t>(point_data->max_), 5);
+  ASSERT_EQ(std::get<int64_t>(point_data->max_), 5);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
   const auto* status_value =
-      absl::get_if<std::string>(&attributes.at("grpc.status"));
+      std::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "OK");
 }
@@ -446,19 +446,19 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   auto point_data =
-      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
-  ASSERT_EQ(absl::get<int64_t>(point_data->max_), 5);
+  ASSERT_EQ(std::get<int64_t>(point_data->max_), 5);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
   const auto* status_value =
-      absl::get_if<std::string>(&attributes.at("grpc.status"));
+      std::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "OK");
 }
@@ -514,20 +514,20 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ChannelScopeFilterReturnsTrue) {
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
-  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+  auto point_data = std::get_if<opentelemetry::sdk::metrics::SumPointData>(
       &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
-  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  auto client_started_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(client_started_value, nullptr);
   EXPECT_EQ(*client_started_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
   const auto* target_value =
-      absl::get_if<std::string>(&attributes.at("grpc.target"));
+      std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, canonical_server_address_);
 }
@@ -572,9 +572,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsTrue) {
   const auto& server_attributes =
       data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(server_attributes.size(), 2);
-  EXPECT_EQ(absl::get<std::string>(server_attributes.at("grpc.method")),
+  EXPECT_EQ(std::get<std::string>(server_attributes.at("grpc.method")),
             kMethodName);
-  EXPECT_EQ(absl::get<std::string>(server_attributes.at("grpc.status")), "OK");
+  EXPECT_EQ(std::get<std::string>(server_attributes.at("grpc.status")), "OK");
 }
 
 // Test that a server selector returning false does not record metrics on the
@@ -613,20 +613,20 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsTrue) {
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
-  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+  auto point_data = std::get_if<opentelemetry::sdk::metrics::SumPointData>(
       &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
-  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  auto client_started_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(client_started_value, nullptr);
   EXPECT_EQ(*client_started_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
   const auto* target_value =
-      absl::get_if<std::string>(&attributes.at("grpc.target"));
+      std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, canonical_server_address_);
 }
@@ -648,20 +648,20 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsFalse) {
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
           /*data*/) { return false; });
   ASSERT_EQ(data[kMetricName].size(), 1);
-  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+  auto point_data = std::get_if<opentelemetry::sdk::metrics::SumPointData>(
       &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
-  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  auto client_started_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(client_started_value, nullptr);
   EXPECT_EQ(*client_started_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
   const auto* target_value =
-      absl::get_if<std::string>(&attributes.at("grpc.target"));
+      std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, "other");
 }
@@ -679,20 +679,20 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, GenericClientRpc) {
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
           /*data*/) { return false; });
   ASSERT_EQ(data[kMetricName].size(), 1);
-  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+  auto point_data = std::get_if<opentelemetry::sdk::metrics::SumPointData>(
       &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
-  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  auto client_started_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(client_started_value, nullptr);
   EXPECT_EQ(*client_started_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, "other");
   const auto* target_value =
-      absl::get_if<std::string>(&attributes.at("grpc.target"));
+      std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, canonical_server_address_);
 }
@@ -715,20 +715,20 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
           /*data*/) { return false; });
   ASSERT_EQ(data[kMetricName].size(), 1);
-  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+  auto point_data = std::get_if<opentelemetry::sdk::metrics::SumPointData>(
       &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
-  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  auto client_started_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(client_started_value, nullptr);
   EXPECT_EQ(*client_started_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, "other");
   const auto* target_value =
-      absl::get_if<std::string>(&attributes.at("grpc.target"));
+      std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, canonical_server_address_);
 }
@@ -751,20 +751,20 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
           /*data*/) { return false; });
   ASSERT_EQ(data[kMetricName].size(), 1);
-  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+  auto point_data = std::get_if<opentelemetry::sdk::metrics::SumPointData>(
       &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
-  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  auto client_started_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(client_started_value, nullptr);
   EXPECT_EQ(*client_started_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kGenericMethodName);
   const auto* target_value =
-      absl::get_if<std::string>(&attributes.at("grpc.target"));
+      std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, canonical_server_address_);
 }
@@ -782,18 +782,18 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, GenericServerRpc) {
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   auto point_data =
-      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, "other");
   const auto* status_value =
-      absl::get_if<std::string>(&attributes.at("grpc.status"));
+      std::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "UNIMPLEMENTED");
 }
@@ -817,18 +817,18 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   auto point_data =
-      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, "other");
   const auto* status_value =
-      absl::get_if<std::string>(&attributes.at("grpc.status"));
+      std::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "UNIMPLEMENTED");
 }
@@ -852,18 +852,18 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   auto point_data =
-      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
-      absl::get_if<std::string>(&attributes.at("grpc.method"));
+      std::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kGenericMethodName);
   const auto* status_value =
-      absl::get_if<std::string>(&attributes.at("grpc.status"));
+      std::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "UNIMPLEMENTED");
 }
@@ -908,7 +908,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, OptionalPerCallLocalityLabel) {
   const auto& client_duration_attributes =
       data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(
-      absl::get<std::string>(client_duration_attributes.at("grpc.lb.locality")),
+      std::get<std::string>(client_duration_attributes.at("grpc.lb.locality")),
       "locality");
   // Verify server metric (grpc.server.call.started) does not see this label
   ASSERT_EQ(data["grpc.server.call.started"].size(), 1);
@@ -947,7 +947,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
   const auto& client_duration_attributes =
       data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(
-      absl::get<std::string>(client_duration_attributes.at("grpc.lb.locality")),
+      std::get<std::string>(client_duration_attributes.at("grpc.lb.locality")),
       "");
 }
 
@@ -1040,10 +1040,10 @@ class SimpleLabelIterable : public grpc::internal::LabelsIterable {
       std::pair<absl::string_view, absl::string_view> label)
       : label_(label) {}
 
-  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
+  std::optional<std::pair<absl::string_view, absl::string_view>> Next()
       override {
     if (iterated_) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     iterated_ = true;
     return label_;
@@ -1133,7 +1133,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
                                            kServerCallDurationInstrumentName})
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ true, /*enabled_on_server*/ true,
-                        std::make_pair("key", "value")))));
+                        std::pair("key", "value")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1148,13 +1148,13 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
   const auto& client_attributes =
       data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(client_attributes.size(), 4);
-  EXPECT_EQ(absl::get<std::string>(client_attributes.at("key")), "value");
+  EXPECT_EQ(std::get<std::string>(client_attributes.at("key")), "value");
   // Verify server side metric
   ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
   const auto& server_attributes =
       data["grpc.server.call.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(server_attributes.size(), 3);
-  EXPECT_EQ(absl::get<std::string>(server_attributes.at("key")), "value");
+  EXPECT_EQ(std::get<std::string>(server_attributes.at("key")), "value");
 }
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
@@ -1166,7 +1166,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
                                            kServerCallDurationInstrumentName})
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ true, /*enabled_on_server*/ false,
-                        std::make_pair("key", "value")))));
+                        std::pair("key", "value")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1181,7 +1181,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
   const auto& client_attributes =
       data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(client_attributes.size(), 4);
-  EXPECT_EQ(absl::get<std::string>(client_attributes.at("key")), "value");
+  EXPECT_EQ(std::get<std::string>(client_attributes.at("key")), "value");
   // Verify server side metric
   ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
   const auto& server_attributes =
@@ -1200,7 +1200,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
                                            kServerCallDurationInstrumentName})
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ false, /*enabled_on_server*/ true,
-                        std::make_pair("key", "value")))));
+                        std::pair("key", "value")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1222,7 +1222,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
   const auto& server_attributes =
       data["grpc.server.call.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(server_attributes.size(), 3);
-  EXPECT_EQ(absl::get<std::string>(server_attributes.at("key")), "value");
+  EXPECT_EQ(std::get<std::string>(server_attributes.at("key")), "value");
 }
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
@@ -1235,19 +1235,19 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
                                            kServerCallDurationInstrumentName})
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ true, /*enabled_on_server*/ true,
-                        std::make_pair("key1", "value1")))
+                        std::pair("key1", "value1")))
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ true, /*enabled_on_server*/ false,
-                        std::make_pair("key2", "value2")))
+                        std::pair("key2", "value2")))
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ true, /*enabled_on_server*/ false,
-                        std::make_pair("key3", "value3")))
+                        std::pair("key3", "value3")))
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ false, /*enabled_on_server*/ true,
-                        std::make_pair("key4", "value4")))
+                        std::pair("key4", "value4")))
                     .add_plugin_option(std::make_unique<CustomPluginOption>(
                         /*enabled_on_client*/ false, /*enabled_on_server*/ true,
-                        std::make_pair("key5", "value5")))));
+                        std::pair("key5", "value5")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1262,9 +1262,9 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
   const auto& client_attributes =
       data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(client_attributes.size(), 6);
-  EXPECT_EQ(absl::get<std::string>(client_attributes.at("key1")), "value1");
-  EXPECT_EQ(absl::get<std::string>(client_attributes.at("key2")), "value2");
-  EXPECT_EQ(absl::get<std::string>(client_attributes.at("key3")), "value3");
+  EXPECT_EQ(std::get<std::string>(client_attributes.at("key1")), "value1");
+  EXPECT_EQ(std::get<std::string>(client_attributes.at("key2")), "value2");
+  EXPECT_EQ(std::get<std::string>(client_attributes.at("key3")), "value3");
   EXPECT_THAT(client_attributes,
               ::testing::Not(::testing::Contains(::testing::Key("key4"))));
   EXPECT_THAT(client_attributes,
@@ -1274,13 +1274,13 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
   const auto& server_attributes =
       data["grpc.server.call.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(server_attributes.size(), 5);
-  EXPECT_EQ(absl::get<std::string>(server_attributes.at("key1")), "value1");
+  EXPECT_EQ(std::get<std::string>(server_attributes.at("key1")), "value1");
   EXPECT_THAT(server_attributes,
               ::testing::Not(::testing::Contains(::testing::Key("key2"))));
   EXPECT_THAT(server_attributes,
               ::testing::Not(::testing::Contains(::testing::Key("key3"))));
-  EXPECT_EQ(absl::get<std::string>(server_attributes.at("key4")), "value4");
-  EXPECT_EQ(absl::get<std::string>(server_attributes.at("key5")), "value5");
+  EXPECT_EQ(std::get<std::string>(server_attributes.at("key4")), "value4");
+  EXPECT_EQ(std::get<std::string>(server_attributes.at("key5")), "value5");
 }
 
 class OpenTelemetryPluginNPCMetricsTest

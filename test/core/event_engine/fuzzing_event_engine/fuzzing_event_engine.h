@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <queue>
 #include <set>
 #include <thread>
@@ -38,7 +39,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
@@ -128,32 +129,43 @@ class FuzzingEventEngine : public EventEngine {
  private:
   class IoToken {
    public:
-    IoToken() : refs_(nullptr) {}
-    explicit IoToken(std::atomic<size_t>* refs) : refs_(refs) {
-      refs_->fetch_add(1, std::memory_order_relaxed);
+    struct Manifest {
+      absl::string_view operation = "NOTHING";
+      void* whom = nullptr;
+      int part = 0;
+      std::atomic<size_t>* refs = nullptr;
+    };
+
+    IoToken() : manifest_{} {}
+    explicit IoToken(Manifest manifest) : manifest_(manifest) {
+      manifest_.refs->fetch_add(1, std::memory_order_relaxed);
+      GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
+          << "START_" << manifest_.operation << " " << manifest_.whom << ":"
+          << manifest_.part;
     }
     ~IoToken() {
-      if (refs_ != nullptr) refs_->fetch_sub(1, std::memory_order_relaxed);
+      if (manifest_.refs != nullptr) {
+        GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
+            << "STOP_" << manifest_.operation << " " << manifest_.whom << ":"
+            << manifest_.part;
+        manifest_.refs->fetch_sub(1, std::memory_order_relaxed);
+      }
     }
-    IoToken(const IoToken& other) : refs_(other.refs_) {
-      if (refs_ != nullptr) refs_->fetch_add(1, std::memory_order_relaxed);
-    }
-    IoToken& operator=(const IoToken& other) {
-      IoToken copy(other);
-      Swap(copy);
-      return *this;
-    }
+    IoToken(const IoToken&) = delete;
+    IoToken& operator=(const IoToken&) = delete;
     IoToken(IoToken&& other) noexcept
-        : refs_(std::exchange(other.refs_, nullptr)) {}
+        : manifest_(std::exchange(other.manifest_, Manifest{})) {}
     IoToken& operator=(IoToken&& other) noexcept {
-      if (refs_ != nullptr) refs_->fetch_sub(1, std::memory_order_relaxed);
-      refs_ = std::exchange(other.refs_, nullptr);
+      if (manifest_.refs != nullptr) {
+        manifest_.refs->fetch_sub(1, std::memory_order_relaxed);
+      }
+      manifest_ = std::exchange(other.manifest_, Manifest{});
       return *this;
     }
-    void Swap(IoToken& other) { std::swap(refs_, other.refs_); }
+    void Swap(IoToken& other) { std::swap(manifest_, other.manifest_); }
 
    private:
-    std::atomic<size_t>* refs_;
+    Manifest manifest_;
   };
 
   enum class RunType {
@@ -238,7 +250,7 @@ class FuzzingEventEngine : public EventEngine {
     // The sizes of each accepted write, as determined by the fuzzer actions.
     std::queue<size_t> write_sizes[2] ABSL_GUARDED_BY(mu_);
     // The next read that's pending (or nullopt).
-    absl::optional<PendingRead> pending_read[2] ABSL_GUARDED_BY(mu_);
+    std::optional<PendingRead> pending_read[2] ABSL_GUARDED_BY(mu_);
 
     // Helper to take some bytes from data and queue them into pending[index].
     // Returns true if all bytes were consumed, false if more writes are needed.

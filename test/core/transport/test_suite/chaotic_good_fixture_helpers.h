@@ -32,9 +32,9 @@ namespace grpc_core {
 class MockEndpointConfig
     : public grpc_event_engine::experimental::EndpointConfig {
  public:
-  MOCK_METHOD(absl::optional<int>, GetInt, (absl::string_view key),
+  MOCK_METHOD(std::optional<int>, GetInt, (absl::string_view key),
               (const, override));
-  MOCK_METHOD(absl::optional<absl::string_view>, GetString,
+  MOCK_METHOD(std::optional<absl::string_view>, GetString,
               (absl::string_view key), (const, override));
   MOCK_METHOD(void*, GetVoidPointer, (absl::string_view key),
               (const, override));
@@ -48,6 +48,24 @@ struct EndpointPair {
 EndpointPair CreateEndpointPair(
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine,
     ResourceQuota* resource_quota, int port);
+
+class FakeClientConnectionFactory final
+    : public chaotic_good::ClientConnectionFactory {
+ public:
+  chaotic_good::PendingConnection Connect(absl::string_view) override {
+    Crash("Connect not implemented");
+  }
+  void Orphaned() override {}
+};
+
+class FakeServerConnectionFactory final
+    : public chaotic_good::ServerConnectionFactory {
+ public:
+  chaotic_good::PendingConnection RequestDataConnection() override {
+    Crash("RequestDataConnection not implemented");
+  }
+  void Orphaned() override {}
+};
 
 }  // namespace grpc_core
 

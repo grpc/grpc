@@ -20,8 +20,7 @@
 
 #include "src/core/lib/slice/slice.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 void SliceBuffer::Append(Slice slice) {
   grpc_slice_buffer_add(&slice_buffer_, slice.TakeCSlice());
@@ -43,5 +42,4 @@ Slice SliceBuffer::RefSlice(size_t index) {
   return Slice(grpc_core::CSliceRef(slice_buffer_.slices[index]));
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

@@ -50,7 +50,8 @@ typedef enum {
   envoy_service_status_v3_CLIENT_UNKNOWN = 0,
   envoy_service_status_v3_CLIENT_REQUESTED = 1,
   envoy_service_status_v3_CLIENT_ACKED = 2,
-  envoy_service_status_v3_CLIENT_NACKED = 3
+  envoy_service_status_v3_CLIENT_NACKED = 3,
+  envoy_service_status_v3_CLIENT_RECEIVED_ERROR = 4
 } envoy_service_status_v3_ClientConfigStatus;
 
 typedef enum {

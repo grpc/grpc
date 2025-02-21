@@ -33,8 +33,11 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <optional>
+#include <ostream>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -43,8 +46,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -55,10 +56,20 @@
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/time.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_test_fuzzer.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
+
+#ifdef GRPC_END2END_TEST_INCLUDE_FUZZER
+#include "fuzztest/fuzztest.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
+#endif
+
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 
 // Test feature flags.
 #define FEATURE_MASK_DOES_NOT_SUPPORT_RETRY (1 << 0)
@@ -79,16 +90,15 @@
 #define FEATURE_MASK_IS_MINSTACK (1 << 11)
 #define FEATURE_MASK_IS_SECURE (1 << 12)
 #define FEATURE_MASK_DO_NOT_FUZZ (1 << 13)
+#define FEATURE_MASK_DO_NOT_GTEST (1 << 14)
 // Exclude this fixture from experiment runs
-#define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 14)
-#define FEATURE_MASK_IS_CALL_V3 (1 << 15)
-#define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 16)
+#define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 15)
+#define FEATURE_MASK_IS_CALL_V3 (1 << 16)
+#define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 17)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
 namespace grpc_core {
-
-extern bool g_is_fuzzing_core_e2e_tests;
 
 class CoreTestFixture {
  public:
@@ -121,6 +131,19 @@ struct CoreTestConfiguration {
       create_fixture;
 };
 
+const CoreTestConfiguration* CoreTestConfigurationNamed(absl::string_view name);
+
+template <typename Sink>
+void AbslStringify(Sink& sink, const CoreTestConfiguration* config) {
+  sink.Append(
+      absl::StrCat("CoreTestConfigurationNamed(\"", config->name, "\")"));
+}
+
+inline std::ostream& operator<<(std::ostream& out,
+                                const CoreTestConfiguration* config) {
+  return out << "CoreTestConfigurationNamed(\"" << config->name << "\")";
+}
+
 // Base class for e2e tests.
 //
 // Initialization:
@@ -146,16 +169,12 @@ struct CoreTestConfiguration {
 //   older compilers, and it's tremendously convenient to be able to do so. So
 //   we use std::string for return types here - performance isn't particularly
 //   important, so an extra copy is fine.
-class CoreEnd2endTest : public ::testing::Test {
+class CoreEnd2endTest {
  public:
-  void TestInfrastructureSetParam(const CoreTestConfiguration* param) {
-    param_ = param;
-  }
-  const CoreTestConfiguration* GetParam() { return param_; }
-
-  void SetUp() override;
-  void TearDown() override;
-  virtual void RunTest() = 0;
+  CoreEnd2endTest(const CoreTestConfiguration* config,
+                  const core_end2end_test_fuzzer::Msg* fuzzing_args,
+                  absl::string_view suite_name);
+  ~CoreEnd2endTest();
 
   void SetCqVerifierStepFn(
       absl::AnyInvocable<
@@ -184,7 +203,7 @@ class CoreEnd2endTest : public ::testing::Test {
     explicit TestNotification(CoreEnd2endTest* test) : test_(test) {}
 
     void WaitForNotificationWithTimeout(absl::Duration wait_time) {
-      if (g_is_fuzzing_core_e2e_tests) {
+      if (test_->fuzzing_) {
         Timestamp end = Timestamp::Now() + Duration::NanosecondsRoundUp(
                                                ToInt64Nanoseconds(wait_time));
         while (true) {
@@ -212,13 +231,13 @@ class CoreEnd2endTest : public ::testing::Test {
    public:
     ClientCallBuilder(CoreEnd2endTest& test, std::string method)
         : test_(test),
-          call_selector_(UnregisteredCall{std::move(method), absl::nullopt}) {}
+          call_selector_(UnregisteredCall{std::move(method), std::nullopt}) {}
     ClientCallBuilder(CoreEnd2endTest& test, RegisteredCall registered_call)
         : test_(test), call_selector_(registered_call.p) {}
 
     // Specify the host (otherwise nullptr is passed)
     ClientCallBuilder& Host(std::string host) {
-      absl::get<UnregisteredCall>(call_selector_).host = std::move(host);
+      std::get<UnregisteredCall>(call_selector_).host = std::move(host);
       return *this;
     }
     // Specify the timeout (otherwise gpr_inf_future is passed) - this time is
@@ -238,9 +257,9 @@ class CoreEnd2endTest : public ::testing::Test {
     CoreEnd2endTest& test_;
     struct UnregisteredCall {
       std::string method;
-      absl::optional<std::string> host;
+      std::optional<std::string> host;
     };
-    absl::variant<void*, UnregisteredCall> call_selector_;
+    std::variant<void*, UnregisteredCall> call_selector_;
     grpc_call* parent_call_ = nullptr;
     uint32_t propagation_mask_ = GRPC_PROPAGATE_DEFAULTS;
     gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_REALTIME);
@@ -272,9 +291,9 @@ class CoreEnd2endTest : public ::testing::Test {
     }
     // Access the peer structure (returns a string that can be matched, etc) -
     // or nullopt if grpc_call_get_peer returns nullptr.
-    absl::optional<std::string> GetPeer() {
+    std::optional<std::string> GetPeer() {
       char* peer = grpc_call_get_peer(call_);
-      if (peer == nullptr) return absl::nullopt;
+      if (peer == nullptr) return std::nullopt;
       std::string result(peer);
       gpr_free(peer);
       return result;
@@ -328,10 +347,10 @@ class CoreEnd2endTest : public ::testing::Test {
     }
 
     // Return some initial metadata.
-    absl::optional<std::string> GetInitialMetadata(absl::string_view key) const;
+    std::optional<std::string> GetInitialMetadata(absl::string_view key) const;
 
     // Return the peer address.
-    absl::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
+    std::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
 
     // Return the auth context.
     std::unique_ptr<grpc_auth_context, void (*)(grpc_auth_context*)>
@@ -415,17 +434,16 @@ class CoreEnd2endTest : public ::testing::Test {
   // Step the system until expectations are met or until timeout is reached.
   // If there are no expectations logged, then step for 1 second and verify that
   // no events occur.
-  void Step(absl::optional<Duration> timeout = absl::nullopt,
+  void Step(std::optional<Duration> timeout = std::nullopt,
             SourceLocation whence = {}) {
     if (expectations_ == 0) {
       cq_verifier().VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);
       return;
     }
     expectations_ = 0;
-    cq_verifier().Verify(
-        timeout.value_or(g_is_fuzzing_core_e2e_tests ? Duration::Minutes(10)
-                                                     : Duration::Seconds(10)),
-        whence);
+    cq_verifier().Verify(timeout.value_or(fuzzing_ ? Duration::Minutes(10)
+                                                   : Duration::Seconds(10)),
+                         whence);
   }
 
   // Initialize the client.
@@ -528,6 +546,10 @@ class CoreEnd2endTest : public ::testing::Test {
     post_grpc_init_func_ = std::move(fn);
   }
 
+  const CoreTestConfiguration* test_config() const { return test_config_; }
+
+  bool fuzzing() const { return fuzzing_; }
+
  private:
   void ForceInitialized();
 
@@ -536,7 +558,7 @@ class CoreEnd2endTest : public ::testing::Test {
       grpc_init();
       post_grpc_init_func_();
       cq_ = grpc_completion_queue_create_for_next(nullptr);
-      fixture_ = GetParam()->create_fixture(ChannelArgs(), ChannelArgs());
+      fixture_ = test_config()->create_fixture(ChannelArgs(), ChannelArgs());
     }
     return *fixture_;
   }
@@ -546,8 +568,8 @@ class CoreEnd2endTest : public ::testing::Test {
       fixture();  // ensure cq_ present
       cq_verifier_ = absl::make_unique<CqVerifier>(
           cq_,
-          g_is_fuzzing_core_e2e_tests ? CqVerifier::FailUsingGprCrashWithStdio
-                                      : CqVerifier::FailUsingGprCrash,
+          fuzzing_ ? CqVerifier::FailUsingGprCrashWithStdio
+                   : CqVerifier::FailUsingGprCrash,
           step_fn_ == nullptr
               ? nullptr
               : absl::AnyInvocable<void(
@@ -560,7 +582,8 @@ class CoreEnd2endTest : public ::testing::Test {
     return *cq_verifier_;
   }
 
-  const CoreTestConfiguration* param_ = nullptr;
+  const CoreTestConfiguration* const test_config_;
+  const bool fuzzing_;
   std::unique_ptr<CoreTestFixture> fixture_;
   grpc_completion_queue* cq_ = nullptr;
   grpc_server* server_ = nullptr;
@@ -575,9 +598,9 @@ class CoreEnd2endTest : public ::testing::Test {
       grpc_event_engine::experimental::EventEngine::Duration) const>
       step_fn_ = nullptr;
   absl::AnyInvocable<void(
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>)>
       quiesce_event_engine_ =
-          grpc_event_engine::experimental::WaitForSingleOwner;
+          WaitForSingleOwner<grpc_event_engine::experimental::EventEngine>;
 };
 
 // Define names for additional test suites.
@@ -585,140 +608,145 @@ class CoreEnd2endTest : public ::testing::Test {
 // tests against. Each new name gets a differing set of configurations in
 // end2end_test_main.cc to customize the set of fixtures the tests run against.
 
-// Test suite for tests that rely on a secure transport
-class SecureEnd2endTest : public CoreEnd2endTest {};
-// Test suite for tests that send rather large messages/metadata
-class CoreLargeSendTest : public CoreEnd2endTest {};
-// Test suite for tests that need a client channel
-class CoreClientChannelTest : public CoreEnd2endTest {};
-// Test suite for tests that require deadline handling
-class CoreDeadlineTest : public CoreEnd2endTest {};
-// Test suite for tests that require deadline handling
-class CoreDeadlineSingleHopTest : public CoreEnd2endTest {};
-// Test suite for http2 tests that only work over a single hop (unproxyable)
-class Http2SingleHopTest : public CoreEnd2endTest {};
-// Test suite for fullstack single hop http2 tests (require client channel)
-class Http2FullstackSingleHopTest : public CoreEnd2endTest {};
-// Test suite for tests that require retry features
-class RetryTest : public CoreEnd2endTest {};
-// Test suite for write buffering
-class WriteBufferingTest : public CoreEnd2endTest {};
-// Test suite for http2 tests
-class Http2Test : public CoreEnd2endTest {};
-// Test suite for http2 tests that require retry features
-class RetryHttp2Test : public CoreEnd2endTest {};
-// Test suite for tests that require resource quota
-class ResourceQuotaTest : public CoreEnd2endTest {};
-// Test suite for tests that require a transport that supports secure call
-// credentials
-class PerCallCredsTest : public CoreEnd2endTest {};
-// Test suite for tests that require a transport that supports insecure call
-// credentials
-class PerCallCredsOnInsecureTest : public CoreEnd2endTest {};
-// Test suite for tests that verify lack of logging in particular situations
-class NoLoggingTest : public CoreEnd2endTest {};
-// Test suite for tests that verify proxy authentication
-class ProxyAuthTest : public CoreEnd2endTest {};
-
-using MakeTestFn = absl::AnyInvocable<CoreEnd2endTest*(
-    const CoreTestConfiguration* config) const>;
-
-class CoreEnd2endTestRegistry {
- public:
-  CoreEnd2endTestRegistry(const CoreEnd2endTestRegistry&) = delete;
-  CoreEnd2endTestRegistry& operator=(const CoreEnd2endTestRegistry&) = delete;
-
-  static CoreEnd2endTestRegistry& Get() {
-    static CoreEnd2endTestRegistry* singleton = new CoreEnd2endTestRegistry;
-    return *singleton;
-  }
-
-  struct Test {
-    absl::string_view suite;
-    absl::string_view name;
-    const CoreTestConfiguration* config;
-    const MakeTestFn& make_test;
+// NOLINTBEGIN(bugprone-macro-parentheses)
+#define DECLARE_SUITE(name)                                                    \
+  class name : public ::testing::TestWithParam<const CoreTestConfiguration*> { \
+   public:                                                                     \
+    static std::vector<const CoreTestConfiguration*> AllSuiteConfigs(          \
+        bool fuzzing);                                                         \
   };
 
-  void RegisterTest(absl::string_view suite, absl::string_view name,
-                    MakeTestFn make_test, SourceLocation where = {});
+// Test suite for tests that should run in all configurations
+DECLARE_SUITE(CoreEnd2endTests);
+// Test suite for tests that rely on a secure transport
+DECLARE_SUITE(SecureEnd2endTests);
+// Test suite for tests that send rather large messages/metadata
+DECLARE_SUITE(CoreLargeSendTests);
+// Test suite for tests that need a client channel
+DECLARE_SUITE(CoreClientChannelTests);
+// Test suite for tests that require deadline handling
+DECLARE_SUITE(CoreDeadlineTests);
+// Test suite for tests that require deadline handling
+DECLARE_SUITE(CoreDeadlineSingleHopTests);
+// Test suite for http2 tests that only work over a single hop (unproxyable)
+DECLARE_SUITE(Http2SingleHopTests);
+// Test suite for fullstack single hop http2 tests (require client channel)
+DECLARE_SUITE(Http2FullstackSingleHopTests);
+// Test suite for tests that require retry features
+DECLARE_SUITE(RetryTests);
+// Test suite for write buffering
+DECLARE_SUITE(WriteBufferingTests);
+// Test suite for http2 tests
+DECLARE_SUITE(Http2Tests);
+// Test suite for http2 tests that require retry features
+DECLARE_SUITE(RetryHttp2Tests);
+// Test suite for tests that require resource quota
+DECLARE_SUITE(ResourceQuotaTests);
+// Test suite for tests that require a transport that supports secure call
+// credentials
+DECLARE_SUITE(PerCallCredsTests);
+// Test suite for tests that require a transport that supports insecure call
+// credentials
+DECLARE_SUITE(PerCallCredsOnInsecureTests);
+// Test suite for tests that verify lack of logging in particular situations
+DECLARE_SUITE(NoLoggingTests);
+// Test suite for tests that verify proxy authentication
+DECLARE_SUITE(ProxyAuthTests);
 
-  void RegisterSuite(absl::string_view suite,
-                     std::vector<const CoreTestConfiguration*> configs,
-                     SourceLocation where);
+#undef DECLARE_SUITE
+// NOLINTEND(bugprone-macro-parentheses)
 
-  std::vector<Test> AllTests();
-
-  // Enforce passing a type so that we can check it exists (saves typos)
-  template <typename T>
-  absl::void_t<T> RegisterSuiteT(
-      absl::string_view suite,
-      std::vector<const CoreTestConfiguration*> configs,
-      SourceLocation where = {}) {
-    return RegisterSuite(suite, std::move(configs), where);
-  }
-
- private:
-  CoreEnd2endTestRegistry() = default;
-
-  std::map<absl::string_view, std::vector<const CoreTestConfiguration*>>
-      suites_;
-  std::map<absl::string_view, std::map<absl::string_view, MakeTestFn>>
-      tests_by_suite_;
-};
+core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
 
 }  // namespace grpc_core
 
 // If this test fixture is being run under minstack, skip the test.
-#define SKIP_IF_MINSTACK()                                 \
-  if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
+#define SKIP_IF_MINSTACK()                                    \
+  if (test_config()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
   GTEST_SKIP() << "Skipping test for minstack"
 
 #define SKIP_IF_FUZZING() \
-  if (g_is_fuzzing_core_e2e_tests) GTEST_SKIP() << "Skipping test for fuzzing"
+  if (fuzzing()) GTEST_SKIP() << "Skipping test for fuzzing"
 
-#define SKIP_IF_V3()                                        \
-  if (GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) { \
-    GTEST_SKIP() << "Disabled for initial v3 testing";      \
+#define SKIP_IF_V3()                                           \
+  if (test_config()->feature_mask & FEATURE_MASK_IS_CALL_V3) { \
+    GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
-#define SKIP_IF_LOCAL_TCP_CREDS()                                   \
-  if (GetParam()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
-    GTEST_SKIP() << "Disabled for Local TCP Connection";            \
+#define SKIP_IF_LOCAL_TCP_CREDS()                                      \
+  if (test_config()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
+    GTEST_SKIP() << "Disabled for Local TCP Connection";               \
   }
 
-#define CORE_END2END_TEST(suite, name)                                       \
-  class CoreEnd2endTest_##suite##_##name : public grpc_core::suite {         \
-   public:                                                                   \
-    CoreEnd2endTest_##suite##_##name() {}                                    \
-    void TestBody() override {                                               \
-      if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&            \
-          (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {         \
-        GTEST_SKIP() << "call-v3 not supported with poll poller";            \
-      }                                                                      \
-      RunTest();                                                             \
+#ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
+#define CORE_END2END_FUZZER(suite, name)
+#else
+#define CORE_END2END_FUZZER(suite, name)                                  \
+  FUZZ_TEST(Fuzzers, suite##_##name)                                      \
+      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)),   \
+                   ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>() \
+                       .WithProtobufField("config_vars", AnyConfigVars()));
+#endif
+
+// NOLINTBEGIN(bugprone-macro-parentheses)
+#if defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION) || \
+    defined(GRPC_END2END_TEST_NO_GTEST)
+#define CORE_END2END_TEST_P(suite, name)
+#else
+#define CORE_END2END_TEST_P(suite, name)                                     \
+  TEST_P(suite, name) {                                                      \
+    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&              \
+        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
+      GTEST_SKIP() << "call-v3 not supported with poll poller";              \
     }                                                                        \
-    void RunTest() override;                                                 \
-                                                                             \
-   private:                                                                  \
-    static grpc_core::CoreEnd2endTest* Run(                                  \
-        const grpc_core::CoreTestConfiguration* config) {                    \
-      auto* test = new CoreEnd2endTest_##suite##_##name;                     \
-      test->TestInfrastructureSetParam(config);                              \
-      return test;                                                           \
-    }                                                                        \
-    static int registered_;                                                  \
-  };                                                                         \
-  int CoreEnd2endTest_##suite##_##name::registered_ =                        \
-      (grpc_core::CoreEnd2endTestRegistry::Get().RegisterTest(#suite, #name, \
-                                                              &Run),         \
-       0);                                                                   \
+    CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
+  }
+#endif
+
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#define CORE_END2END_INSTANTIATE_TEST_SUITE_P(suite)
+#else
+#define CORE_END2END_INSTANTIATE_TEST_SUITE_P(suite)                           \
+  INSTANTIATE_TEST_SUITE_P(, suite,                                            \
+                           ::testing::ValuesIn(suite::AllSuiteConfigs(false)), \
+                           [](auto info) { return info.param->name; });        \
+  GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(suite);
+#endif
+
+#define CORE_END2END_TEST(suite, name)                                         \
+  class CoreEnd2endTest_##suite##_##name final                                 \
+      : public grpc_core::CoreEnd2endTest {                                    \
+   public:                                                                     \
+    using grpc_core::CoreEnd2endTest::CoreEnd2endTest;                         \
+    void RunTest();                                                            \
+  };                                                                           \
+  void suite##_##name(const grpc_core::CoreTestConfiguration* config,          \
+                      core_end2end_test_fuzzer::Msg msg) {                     \
+    if (config == nullptr) {                                                   \
+      GTEST_SKIP() << "config not available on this platform";                 \
+    }                                                                          \
+    if (absl::StartsWith(#name, "DISABLED_")) GTEST_SKIP() << "disabled test"; \
+    if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled() ||    \
+        !IsEventEngineDnsEnabled()) {                                          \
+      GTEST_SKIP() << "fuzzers need event engine";                             \
+    }                                                                          \
+    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
+      GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
+                      "fuzzing currently";                                     \
+    }                                                                          \
+    CoreEnd2endTest_##suite##_##name(config, &msg, #suite).RunTest();          \
+    grpc_event_engine::experimental::ShutdownDefaultEventEngine();             \
+  }                                                                            \
+  CORE_END2END_TEST_P(suite, name)                                             \
+  CORE_END2END_FUZZER(suite, name)                                             \
   void CoreEnd2endTest_##suite##_##name::RunTest()
 
-#define CORE_END2END_TEST_SUITE(suite, configs)              \
-  static int registered_##suite =                            \
-      (grpc_core::CoreEnd2endTestRegistry::Get()             \
-           .template RegisterSuiteT<suite>(#suite, configs), \
-       0)
+#define CORE_END2END_TEST_SUITE(suite, configs)                                \
+  CORE_END2END_INSTANTIATE_TEST_SUITE_P(suite)                                 \
+  std::vector<const grpc_core::CoreTestConfiguration*> suite::AllSuiteConfigs( \
+      bool fuzzing) {                                                          \
+    return configs;                                                            \
+  }
+// NOLINTEND(bugprone-macro-parentheses)
 
 #endif  // GRPC_TEST_CORE_END2END_END2END_TESTS_H

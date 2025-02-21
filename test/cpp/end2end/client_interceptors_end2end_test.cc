@@ -126,9 +126,8 @@ class HijackingInterceptor : public experimental::Interceptor {
       auto* map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+      for (const auto& [key, value] : *map) {
+        found = key.starts_with("testkey") && value.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -153,7 +152,7 @@ class HijackingInterceptor : public experimental::Interceptor {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
       EXPECT_EQ(map->size(), 0);
-      map->insert(std::make_pair("testkey", "testvalue"));
+      map->insert(std::pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
@@ -247,9 +246,8 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       auto* map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+      for (const auto& [key, value] : *map) {
+        found = key.starts_with("testkey") && value.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -274,7 +272,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
       EXPECT_EQ(map->size(), 0);
-      map->insert(std::make_pair("testkey", "testvalue"));
+      map->insert(std::pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
@@ -355,7 +353,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
       EXPECT_EQ(map->size(), 0);
-      map->insert(std::make_pair("testkey", "testvalue"));
+      map->insert(std::pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
@@ -471,9 +469,8 @@ class ServerStreamingRpcHijackingInterceptor
       auto* map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+      for (const auto& [key, value] : *map) {
+        found = key.starts_with("testkey") && value.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -500,7 +497,7 @@ class ServerStreamingRpcHijackingInterceptor
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
       EXPECT_EQ(map->size(), 0);
-      map->insert(std::make_pair("testkey", "testvalue"));
+      map->insert(std::pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
@@ -619,9 +616,8 @@ class LoggingInterceptor : public experimental::Interceptor {
       auto* map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+      for (const auto& [key, value] : *map) {
+        found = key.starts_with("testkey") && value.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);

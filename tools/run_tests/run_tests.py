@@ -306,7 +306,7 @@ class CLanguage(object):
 
             self._cmake_configure_extra_args = list(
                 self.args.cmake_configure_extra_args
-            )
+            ) + ["-DCMAKE_CXX_STANDARD=17"]
             self._cmake_generator_windows = cmake_generator
             # required to pass as cmake "-A" configuration for VS builds (but not for Ninja)
             self._cmake_architecture_windows = (
@@ -560,22 +560,17 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            # This is to address Apple clang defaults C++98.
-            cmake_args = (
-                ["-DCMAKE_CXX_STANDARD=14"]
-                if platform_string() == "mac"
-                else []
-            )
-            return ("debian11", cmake_args)
+            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc8":
-            return ("gcc_8", [])
+            return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2":
-            return ("debian11", [])
+            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
             return (
                 "debian11_openssl102",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
         elif compiler == "gcc10.2_openssl111":
@@ -583,6 +578,7 @@ class CLanguage(object):
                 "debian11_openssl111",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
         elif compiler == "gcc12_openssl309":
@@ -590,16 +586,29 @@ class CLanguage(object):
                 "debian12_openssl309",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
         elif compiler == "gcc14":
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
-            return ("alpine", [])
+            return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "clang7":
-            return ("clang_7", self._clang_cmake_configure_extra_args())
+            return (
+                "clang_7",
+                self._clang_cmake_configure_extra_args()
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
+            )
         elif compiler == "clang19":
-            return ("clang_19", self._clang_cmake_configure_extra_args())
+            return (
+                "clang_19",
+                self._clang_cmake_configure_extra_args()
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
+            )
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -801,13 +810,6 @@ class PythonLanguage(object):
 
         # TODO: Supported version range should be defined by a single
         # source of truth.
-        python38_config = _python_config_generator(
-            name="py38",
-            major="3",
-            minor="8",
-            bits=bits,
-            config_vars=config_vars,
-        )
         python39_config = _python_config_generator(
             name="py39",
             major="3",
@@ -852,12 +854,12 @@ class PythonLanguage(object):
 
         if args.compiler == "default":
             if os.name == "nt":
-                return (python38_config,)
+                return (python39_config,)
             elif os.uname()[0] == "Darwin":
                 # NOTE(rbellevi): Testing takes significantly longer on
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
-                return (python38_config,)
+                return (python39_config,)
             elif platform.machine() == "aarch64":
                 # Currently the python_debian11_default_arm64 docker image
                 # only has python3.9 installed (and that seems sufficient
@@ -866,11 +868,9 @@ class PythonLanguage(object):
             else:
                 # Default set tested on master. Test oldest and newest.
                 return (
-                    python38_config,
+                    python39_config,
                     python313_config,
                 )
-        elif args.compiler == "python3.8":
-            return (python38_config,)
         elif args.compiler == "python3.9":
             return (python39_config,)
         elif args.compiler == "python3.10":
@@ -886,10 +886,9 @@ class PythonLanguage(object):
         elif args.compiler == "pypy3":
             return (pypy32_config,)
         elif args.compiler == "python_alpine":
-            return (python310_config,)
+            return (python311_config,)
         elif args.compiler == "all_the_cpythons":
             return (
-                python38_config,
                 python39_config,
                 python310_config,
                 python311_config,
@@ -1711,12 +1710,11 @@ argp.add_argument(
         "clang7",
         "clang19",
         # TODO: Automatically populate from supported version
-        "python3.7",
-        "python3.8",
         "python3.9",
         "python3.10",
         "python3.11",
         "python3.12",
+        "python3.13",
         "pypy",
         "pypy3",
         "python_alpine",
