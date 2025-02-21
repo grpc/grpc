@@ -166,8 +166,8 @@ TEST_P(LogicalDNSClusterTest, FailedBackendConnectionCausesReresolution) {
     if (!result.status.ok()) {
       EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
       EXPECT_THAT(result.status.error_message(),
-                  MakeConnectionFailureRegex(
-                      "connections to all backends failing; last error: "));
+                  ::testing::MatchesRegex(MakeConnectionFailureRegex(
+                      "connections to all backends failing; last error: ")));
     }
   });
 }
