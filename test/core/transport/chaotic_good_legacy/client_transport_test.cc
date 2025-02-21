@@ -53,7 +53,8 @@ using testing::StrictMock;
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 
-using grpc_core::chaotic_good::testing::MockPromiseEndpoint;
+using grpc_core::chaotic_good_legacy::testing::TransportTest;
+using grpc_core::util::testing::MockPromiseEndpoint;
 
 namespace grpc_core {
 namespace chaotic_good_legacy {

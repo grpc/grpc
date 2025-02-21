@@ -56,6 +56,7 @@ using testing::StrictMock;
 using testing::WithArgs;
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
+using grpc_core::util::testing::TransportTest;
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -110,8 +111,8 @@ class MockServerConnectionFactory : public ServerConnectionFactory {
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
-  MockPromiseEndpoint control_endpoint(1);
-  MockPromiseEndpoint data_endpoint(2);
+  util::testing::MockPromiseEndpoint control_endpoint(1);
+  util::testing::MockPromiseEndpoint data_endpoint(2);
   auto server_connection_factory =
       MakeRefCounted<StrictMock<MockServerConnectionFactory>>();
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
