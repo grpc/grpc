@@ -184,8 +184,7 @@ void ServerLoadReportingFilter::Call::OnClientInitialMetadata(
     target_host_ = absl::AsciiStrToLower(authority->as_string_view());
   }
   auto lb_token = md.Take(LbTokenMetadata()).value_or(Slice());
-  client_ip_and_lr_token_ =
-      MakeClientIpAndLrToken(lb_token.as_string_view());
+  client_ip_and_lr_token_ = MakeClientIpAndLrToken(lb_token.as_string_view());
   // Record the beginning of the request
   opencensus::stats::Record(
       {{::grpc::load_reporter::MeasureStartCount(), 1}},
