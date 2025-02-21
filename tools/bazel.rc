@@ -15,6 +15,10 @@ common --incompatible_disallow_struct_provider_syntax=false
 # for platform-appropriate cxxopts
 common --enable_platform_specific_config
 
+# avoid riegeli use for gRPC: fuzztest wants to use it by default, but we don't need
+# it in any open source build.
+common --@com_google_fuzztest//fuzztest:use_riegeli=false
+
 build:windows --cxxopt='/std:c++17'
 build:windows --host_cxxopt='/std:c++17'
 build:linux   --cxxopt='-std=c++17'
