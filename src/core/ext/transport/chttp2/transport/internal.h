@@ -672,10 +672,10 @@ struct grpc_chttp2_stream {
 
   grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
 
-  /// Only set when enabled.
-  // TODO(roth): Remove this when the call_tracer_in_transport
-  // experiment finishes rolling out.
-  grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
+  // TODO(roth): Remove this when call v3 is supported.
+  grpc_core::CallTracerInterface* call_tracer = nullptr;
+  // TODO(yashykt): Remove this once call_tracer_transport_fix is rolled out
+  grpc_core::CallTracerAnnotationInterface* parent_call_tracer = nullptr;
 
   /// Only set when enabled.
   std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
@@ -700,6 +700,14 @@ struct grpc_chttp2_stream {
   // The last time a stream window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
+
+  // TODO(yashykt): Remove this when call v3 is supported.
+  grpc_core::CallTracerInterface* CallTracer() const {
+    if (t->is_client) {
+      return call_tracer;
+    }
+    return arena->GetContext<grpc_core::CallTracerInterface>();
+  }
 };
 
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
