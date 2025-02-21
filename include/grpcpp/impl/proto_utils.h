@@ -20,6 +20,7 @@
 #define GRPCPP_IMPL_PROTO_UTILS_H
 
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
@@ -46,8 +47,10 @@ class SerializationTraits<
     T, typename std::enable_if<
            std::is_base_of<grpc::protobuf::MessageLite, T>::value>::type> {
  public:
-  static Status Serialize(const grpc::protobuf::MessageLite& msg,
-                          ByteBuffer* bb, bool* own_buffer) {
+  static Status Serialize(
+      grpc_event_engine::experimental::MemoryAllocator* allocator,
+      const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
+      bool* own_buffer) {
     return GenericSerialize<ProtoBufferWriter, T>(msg, bb, own_buffer);
   }
 
