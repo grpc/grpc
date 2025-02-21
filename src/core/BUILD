@@ -7472,6 +7472,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:function_ref",
+        "absl/log",
         "absl/strings",
     ],
     deps = [
@@ -7490,6 +7491,10 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chttp2/transport/http2_client_transport.h",
     ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
     deps = [
         "grpc_promise_endpoint",
         "//:grpc_base",
@@ -7505,6 +7510,10 @@ grpc_cc_library(
     ],
     hdrs = [
         "ext/transport/chttp2/transport/http2_server_transport.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
     ],
     deps = [
         "grpc_promise_endpoint",
@@ -8676,6 +8685,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log",
         "absl/log:check",
         "absl/status",
         "absl/status:statusor",
@@ -8887,6 +8897,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log",
         "absl/log:check",
     ],
     deps = [
@@ -8944,6 +8955,7 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
+        "absl/log",
         "absl/log:check",
         "absl/meta:type_traits",
         "absl/strings",
