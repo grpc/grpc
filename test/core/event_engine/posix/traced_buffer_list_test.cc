@@ -66,7 +66,7 @@ void AdvanceClockMillis(uint64_t millis) {
 }
 
 void TestShutdownFlushesListVerifier(void* arg, Timestamps* /*ts*/,
-                                     absl::Status status) {
+                                     const absl::Status& status) {
   ASSERT_TRUE(status.ok());
   ASSERT_NE(arg, nullptr);
   int* done = reinterpret_cast<int*>(arg);
@@ -81,9 +81,11 @@ TEST(BufferListTest, TestShutdownFlushesList) {
   TcpSetWriteTimestampsCallback(TestShutdownFlushesListVerifier);
   TracedBufferList traced_buffers;
   int verifier_called[NUM_ELEM];
+  FileDescriptors fds;
   for (auto i = 0; i < NUM_ELEM; i++) {
     verifier_called[i] = 0;
-    traced_buffers.AddNewEntry(i, 0, static_cast<void*>(&verifier_called[i]));
+    traced_buffers.AddNewEntry(i, &fds, FileDescriptor(0, 0),
+                               static_cast<void*>(&verifier_called[i]));
   }
   traced_buffers.Shutdown(nullptr, absl::OkStatus());
   for (auto i = 0; i < NUM_ELEM; i++) {
@@ -101,7 +103,7 @@ TEST(BufferListTest, TestVerifierCalledOnAck) {
   tss.ts[0].tv_sec = 123;
   tss.ts[0].tv_nsec = 456;
   TcpSetWriteTimestampsCallback(
-      [](void* arg, Timestamps* ts, absl::Status status) {
+      [](void* arg, Timestamps* ts, const absl::Status& status) {
         ASSERT_TRUE(status.ok());
         ASSERT_NE(arg, nullptr);
         ASSERT_EQ(ts->acked_time.time.clock_type, GPR_CLOCK_REALTIME);
@@ -113,7 +115,8 @@ TEST(BufferListTest, TestVerifierCalledOnAck) {
       });
   TracedBufferList traced_buffers;
   int verifier_called = 0;
-  traced_buffers.AddNewEntry(213, 0, &verifier_called);
+  FileDescriptors fds;
+  traced_buffers.AddNewEntry(213, &fds, FileDescriptor(0, 0), &verifier_called);
   traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
   ASSERT_EQ(verifier_called, 1);
   ASSERT_TRUE(traced_buffers.Size() == 0);
@@ -132,8 +135,8 @@ TEST(BufferListTest, TestProcessTimestampAfterShutdown) {
   TcpSetWriteTimestampsCallback(TestShutdownFlushesListVerifier);
   TracedBufferList traced_buffers;
   int verifier_called = 0;
-
-  traced_buffers.AddNewEntry(213, 0, &verifier_called);
+  FileDescriptors fds;
+  traced_buffers.AddNewEntry(213, &fds, FileDescriptor(0, 0), &verifier_called);
   ASSERT_TRUE(traced_buffers.Size() == 1);
   traced_buffers.Shutdown(nullptr, absl::OkStatus());
   ASSERT_TRUE(traced_buffers.Size() == 0);
@@ -165,10 +168,12 @@ TEST(BufferListTest, TestLongPendingAckForOneTracedBuffer) {
   gpr_atm_rel_store(&verifier_called[1], static_cast<gpr_atm>(0));
   gpr_atm_rel_store(&verifier_called[2], static_cast<gpr_atm>(0));
 
+  FileDescriptors fds;
+
   //  Add 3 traced buffers
-  tb_list.AddNewEntry(1, 0, &verifier_called[0]);
-  tb_list.AddNewEntry(2, 0, &verifier_called[1]);
-  tb_list.AddNewEntry(3, 0, &verifier_called[2]);
+  tb_list.AddNewEntry(1, &fds, FileDescriptor(0, 0), &verifier_called[0]);
+  tb_list.AddNewEntry(2, &fds, FileDescriptor(0, 0), &verifier_called[1]);
+  tb_list.AddNewEntry(3, &fds, FileDescriptor(0, 0), &verifier_called[2]);
 
   AdvanceClockMillis(kMaxPendingAckMillis);
   tss.ts[0].tv_sec = g_now.tv_sec;
@@ -177,7 +182,7 @@ TEST(BufferListTest, TestLongPendingAckForOneTracedBuffer) {
   // Process SCHED Timestamp for 1st traced buffer.
   // Nothing should be flushed.
   TcpSetWriteTimestampsCallback(
-      [](void*, Timestamps*, absl::Status) { ASSERT_TRUE(false); });
+      [](void*, Timestamps*, const absl::Status&) { ASSERT_TRUE(false); });
   tb_list.ProcessTimestamp(&serr[0], nullptr, &tss);
   ASSERT_EQ(tb_list.Size(), 3);
   ASSERT_EQ(gpr_atm_acq_load(&verifier_called[0]), static_cast<gpr_atm>(0));
@@ -191,12 +196,13 @@ TEST(BufferListTest, TestLongPendingAckForOneTracedBuffer) {
   // Process SND Timestamp for 1st traced buffer. The second and third traced
   // buffers must be flushed because the max pending ack time would have
   // elapsed for them.
-  TcpSetWriteTimestampsCallback([](void* arg, Timestamps*, absl::Status error) {
-    ASSERT_EQ(error, absl::DeadlineExceededError("Ack timed out"));
-    ASSERT_NE(arg, nullptr);
-    gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
-    gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
-  });
+  TcpSetWriteTimestampsCallback(
+      [](void* arg, Timestamps*, const absl::Status& error) {
+        ASSERT_EQ(error, absl::DeadlineExceededError("Ack timed out"));
+        ASSERT_NE(arg, nullptr);
+        gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
+        gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
+      });
   tb_list.ProcessTimestamp(&serr[1], nullptr, &tss);
   ASSERT_EQ(tb_list.Size(), 1);
   ASSERT_EQ(gpr_atm_acq_load(&verifier_called[0]), static_cast<gpr_atm>(0));
@@ -209,7 +215,7 @@ TEST(BufferListTest, TestLongPendingAckForOneTracedBuffer) {
 
   // Process ACK Timestamp for 1st traced buffer.
   TcpSetWriteTimestampsCallback(
-      [](void* arg, Timestamps* ts, absl::Status error) {
+      [](void* arg, Timestamps* ts, const absl::Status& error) {
         ASSERT_TRUE(error.ok());
         ASSERT_NE(arg, nullptr);
         ASSERT_EQ(ts->acked_time.time.clock_type, GPR_CLOCK_REALTIME);
@@ -237,7 +243,7 @@ TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
   tss.ts[0].tv_sec = 123;
   tss.ts[0].tv_nsec = 456;
   TcpSetWriteTimestampsCallback(
-      [](void* arg, Timestamps* ts, absl::Status status) {
+      [](void* arg, Timestamps* ts, const absl::Status& status) {
         ASSERT_NE(arg, nullptr);
         if (status.ok()) {
           ASSERT_EQ(ts->acked_time.time.clock_type, GPR_CLOCK_REALTIME);
@@ -252,11 +258,12 @@ TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
         }
       });
   TracedBufferList tb_list;
+  FileDescriptors fds;
   for (int i = 0; i < kNumTracedBuffers; i++) {
     serr[i].ee_data = i + 1;
     serr[i].ee_info = SCM_TSTAMP_ACK;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
-    tb_list.AddNewEntry(i + 1, 0, &verifier_called[i]);
+    tb_list.AddNewEntry(i + 1, &fds, FileDescriptor(0, 0), &verifier_called[i]);
   }
   int elapsed_time_millis = 0;
   int increment_millis = (2 * kMaxPendingAckMillis) / 10;
