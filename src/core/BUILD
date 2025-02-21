@@ -8664,6 +8664,7 @@ grpc_cc_library(
         "logging_sink",
         "map",
         "metadata_batch",
+        "peer_address",
         "pipe",
         "slice",
         "slice_buffer",

@@ -44,6 +44,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "src/core/call/peer_address.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
