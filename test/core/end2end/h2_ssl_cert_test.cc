@@ -265,6 +265,10 @@ INSTANTIATE_TEST_SUITE_P(H2SslCert, H2SslCertTest,
 }  // namespace testing
 }  // namespace grpc
 
+namespace grpc_core {
+std::vector<CoreTestConfiguration> End2endTestConfigs() { return {}; }
+}  // namespace grpc_core
+
 int main(int argc, char** argv) {
   FILE* roots_file;
   size_t roots_size = strlen(test_root_cert);
