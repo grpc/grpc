@@ -56,7 +56,8 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
                     }),
                 Map(handler.PullMessage(),
                     [](ClientToServerNextMessage msg) { return msg.status(); }),
-                handler.PushMessage(fixture.MakePayload())),
+                handler.PushMessage(
+                    fixture.MakePayload(GRPC_WRITE_INTERNAL_IMMEDIATE_PUSH))),
             [&handler_done, &fixture, handler](StatusFlag status) mutable {
               CHECK(status.ok());
               handler.PushServerTrailingMetadata(
@@ -69,7 +70,8 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
                                                    &initiator_done]() mutable {
         return Map(
             AllOk<StatusFlag>(
-                Map(initiator.PushMessage(fixture.MakePayload()),
+                Map(initiator.PushMessage(fixture.MakePayload(
+                        GRPC_WRITE_INTERNAL_IMMEDIATE_PUSH)),
                     [](StatusFlag) { return Success{}; }),
                 Map(initiator.PullServerInitialMetadata(),
                     [](std::optional<ServerMetadataHandle> md) {
@@ -125,7 +127,7 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
                  });
     });
     call.initiator.SpawnInfallible("initiator", [&]() {
-      return Map(call.initiator.PushMessage(fixture.MakePayload()),
+      return Map(call.initiator.PushMessage(fixture.MakePayload(0)),
                  [&](StatusFlag result) {
                    CHECK(result.ok());
                    initiator_done.Notify();
@@ -162,7 +164,9 @@ class FilterFixture {
     return traits_.MakeServerInitialMetadata();
   }
 
-  MessageHandle MakePayload() { return traits_.MakePayload(); }
+  MessageHandle MakePayload(uint32_t flags) {
+    return traits_.MakePayload(flags);
+  }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
     return traits_.MakeServerTrailingMetadata();
@@ -227,7 +231,9 @@ class UnstartedCallDestinationFixture {
     return traits_->MakeServerInitialMetadata();
   }
 
-  MessageHandle MakePayload() { return traits_->MakePayload(); }
+  MessageHandle MakePayload(uint32_t flags) {
+    return traits_->MakePayload(flags);
+  }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
     return traits_->MakeServerTrailingMetadata();
@@ -312,7 +318,9 @@ class TransportFixture {
     return traits_.MakeServerInitialMetadata();
   }
 
-  MessageHandle MakePayload() { return traits_.MakePayload(); }
+  MessageHandle MakePayload(uint32_t flags) {
+    return traits_.MakePayload(flags);
+  }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
     return traits_.MakeServerTrailingMetadata();
