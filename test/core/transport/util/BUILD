@@ -32,3 +32,17 @@ grpc_cc_library(
         "//src/core:grpc_promise_endpoint",
     ],
 )
+
+grpc_cc_library(
+    name = "transport_test",
+    testonly = 1,
+    hdrs = ["transport_test.h"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:iomgr_timer",
+        "//src/core:memory_quota",
+        "//src/core:resource_quota",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+    ],
+)

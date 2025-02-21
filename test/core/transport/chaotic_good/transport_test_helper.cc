@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/chaotic_good/transport_test.h"
+#include "test/core/transport/chaotic_good/transport_test_helper.h"
 
 namespace grpc_core {
 namespace chaotic_good {
