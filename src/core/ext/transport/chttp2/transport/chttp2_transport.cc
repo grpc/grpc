@@ -228,14 +228,14 @@ namespace {
 using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
-grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
+grpc_core::CallTracerAnnotationInterface* ParentCallTracerIfSampled(
     grpc_chttp2_stream* s) {
-  auto* call_tracer =
+  auto* parent_call_tracer =
       s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
-  if (call_tracer == nullptr || !call_tracer->IsSampled()) {
+  if (parent_call_tracer == nullptr || !parent_call_tracer->IsSampled()) {
     return nullptr;
   }
-  return call_tracer;
+  return parent_call_tracer;
 }
 
 std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
@@ -1382,16 +1382,16 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
 }
 
 static void trace_annotations(grpc_chttp2_stream* s) {
-  if (!grpc_core::IsCallTracerInTransportEnabled()) {
-    if (s->call_tracer != nullptr) {
-      s->call_tracer->RecordAnnotation(
+  if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+    if (s->parent_call_tracer != nullptr) {
+      s->parent_call_tracer->RecordAnnotation(
           grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
                                     gpr_now(GPR_CLOCK_REALTIME))
               .Add(s->t->flow_control.stats())
               .Add(s->flow_control.stats()));
     }
   } else {
-    auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
+    auto* call_tracer = s->CallTracer();
     if (call_tracer != nullptr && call_tracer->IsSampled()) {
       call_tracer->RecordAnnotation(
           grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
@@ -1647,8 +1647,15 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_chttp2_transport* t = s->t.get();
 
   s->traced = op->is_traced;
-  if (!grpc_core::IsCallTracerInTransportEnabled()) {
-    s->call_tracer = CallTracerIfSampled(s);
+  if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+    s->parent_call_tracer = ParentCallTracerIfSampled(s);
+  }
+  // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
+  // https://github.com/grpc/grpc/pull/38729 for more information.) On the
+  // client, the call attempt tracer will be available for use when the
+  // send_initial_metadata op arrives.
+  if (s->t->is_client && op->send_initial_metadata) {
+    s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
   }
   s->tcp_tracer = TcpTracerIfSampled(s);
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
