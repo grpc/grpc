@@ -48,6 +48,8 @@ template <typename T>
 struct Vtable {
   // Poll the promise, once.
   Poll<T> (*poll_once)(ArgType* arg);
+  // Move the promise to another memory location.
+  void (*move)(ArgType* dst, ArgType* src);
   // Destroy the underlying callable object if there is one.
   // Since we don't delete (the arena owns the memory) but we may need to call a
   // destructor, we expose this for when the ArenaPromise object is destroyed.
@@ -73,11 +75,12 @@ struct Null {
     GPR_UNREACHABLE_CODE(return Pending{});
   }
 
+  static void Move(ArgType*, ArgType*) {}
   static void Destroy(ArgType*) {}
 };
 
 template <typename T>
-const Vtable<T> Null<T>::vtable = {PollOnce, Destroy};
+const Vtable<T> Null<T>::vtable = {PollOnce, Move, Destroy};
 
 // Implementation of ImplInterface for a callable object.
 template <typename T, typename Callable>
@@ -88,11 +91,16 @@ struct AllocatedCallable {
     return poll_cast<T>((*ArgAsPtr<Callable>(arg))());
   }
 
+  static void Move(ArgType* dst, ArgType* src) {
+    ArgAsPtr<Callable>(dst) = ArgAsPtr<Callable>(src);
+  }
+
   static void Destroy(ArgType* arg) { Destruct(ArgAsPtr<Callable>(arg)); }
 };
 
 template <typename T, typename Callable>
-const Vtable<T> AllocatedCallable<T, Callable>::vtable = {PollOnce, Destroy};
+const Vtable<T> AllocatedCallable<T, Callable>::vtable = {PollOnce, Move,
+                                                          Destroy};
 
 // Implementation of ImplInterface for a small callable object (one that fits
 // within the ArgType arg)
@@ -104,13 +112,17 @@ struct Inlined {
     return poll_cast<T>((*reinterpret_cast<Callable*>(arg))());
   }
 
+  static void Move(ArgType* dst, ArgType* src) {
+    new (dst) Callable(reinterpret_cast<Callable&&>(*src));
+  }
+
   static void Destroy(ArgType* arg) {
     Destruct(reinterpret_cast<Callable*>(arg));
   }
 };
 
 template <typename T, typename Callable>
-const Vtable<T> Inlined<T, Callable>::vtable = {PollOnce, Destroy};
+const Vtable<T> Inlined<T, Callable>::vtable = {PollOnce, Move, Destroy};
 
 // If a callable object is empty we can substitute any instance of that callable
 // for the one we call (for how could we tell the difference)?
@@ -129,7 +141,7 @@ struct SharedCallable {
 };
 
 template <typename T, typename Callable>
-const Vtable<T> SharedCallable<T, Callable>::vtable = {PollOnce,
+const Vtable<T> SharedCallable<T, Callable>::vtable = {PollOnce, Null<T>::Move,
                                                        Null<T>::Destroy};
 
 // Redirector type: given a callable type, expose a Make() function that creates
@@ -199,13 +211,17 @@ class ArenaPromise {
   ArenaPromise(const ArenaPromise&) = delete;
   ArenaPromise& operator=(const ArenaPromise&) = delete;
   // ArenaPromise is movable.
-  ArenaPromise(ArenaPromise&& other) noexcept
-      : vtable_and_arg_(other.vtable_and_arg_) {
+  ArenaPromise(ArenaPromise&& other) noexcept {
+    vtable_and_arg_.vtable = other.vtable_and_arg_.vtable;
+    vtable_and_arg_.vtable->move(&vtable_and_arg_.arg,
+                                 &other.vtable_and_arg_.arg);
     other.vtable_and_arg_.vtable = &arena_promise_detail::Null<T>::vtable;
   }
   ArenaPromise& operator=(ArenaPromise&& other) noexcept {
     vtable_and_arg_.vtable->destroy(&vtable_and_arg_.arg);
-    vtable_and_arg_ = other.vtable_and_arg_;
+    vtable_and_arg_.vtable = other.vtable_and_arg_.vtable;
+    vtable_and_arg_.vtable->move(&vtable_and_arg_.arg,
+                                 &other.vtable_and_arg_.arg);
     other.vtable_and_arg_.vtable = &arena_promise_detail::Null<T>::vtable;
     return *this;
   }
