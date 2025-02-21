@@ -66,4 +66,4 @@ class MaxConcurrentRequestGovernor {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_SERVER_MAX_CONCURRENT_REQUEST_GOVERNER_H
