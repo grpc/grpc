@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
-#define GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
+#ifndef GRPC_SRC_CORE_TRANSPORT_AUTH_CONTEXT_H
+#define GRPC_SRC_CORE_TRANSPORT_AUTH_CONTEXT_H
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -130,60 +128,6 @@ struct grpc_auth_context
   grpc_core::OrphanablePtr<grpc_core::ConnectionContext> connection_context_;
 };
 
-// --- grpc_security_context_extension ---
-
-// Extension to the security context that may be set in a filter and accessed
-// later by a higher level method on a grpc_call object.
-
-struct grpc_security_context_extension {
-  void* instance = nullptr;
-  void (*destroy)(void*) = nullptr;
-};
-
-namespace grpc_core {
-
-class SecurityContext {
- public:
-  virtual ~SecurityContext() = default;
-};
-
-}  // namespace grpc_core
-
-// --- grpc_client_security_context ---
-
-// Internal client-side security context.
-
-struct grpc_client_security_context final : public grpc_core::SecurityContext {
-  explicit grpc_client_security_context(
-      grpc_core::RefCountedPtr<grpc_call_credentials> creds)
-      : creds(std::move(creds)) {}
-  ~grpc_client_security_context() override;
-
-  grpc_core::RefCountedPtr<grpc_call_credentials> creds;
-  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
-  grpc_security_context_extension extension;
-};
-
-grpc_client_security_context* grpc_client_security_context_create(
-    grpc_core::Arena* arena, grpc_call_credentials* creds);
-void grpc_client_security_context_destroy(void* ctx);
-
-// --- grpc_server_security_context ---
-
-// Internal server-side security context.
-
-struct grpc_server_security_context final : public grpc_core::SecurityContext {
-  grpc_server_security_context() = default;
-  ~grpc_server_security_context() override;
-
-  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
-  grpc_security_context_extension extension;
-};
-
-grpc_server_security_context* grpc_server_security_context_create(
-    grpc_core::Arena* arena);
-void grpc_server_security_context_destroy(void* ctx);
-
 // --- Channel args for auth context ---
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c);
@@ -191,20 +135,4 @@ grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg);
 grpc_auth_context* grpc_find_auth_context_in_args(
     const grpc_channel_args* args);
 
-namespace grpc_core {
-template <>
-struct ArenaContextType<SecurityContext> {
-  static void Destroy(SecurityContext* p) { p->~SecurityContext(); }
-};
-
-template <>
-struct ContextSubclass<grpc_client_security_context> {
-  using Base = SecurityContext;
-};
-template <>
-struct ContextSubclass<grpc_server_security_context> {
-  using Base = SecurityContext;
-};
-}  // namespace grpc_core
-
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
+#endif  // GRPC_SRC_CORE_TRANSPORT_AUTH_CONTEXT_H

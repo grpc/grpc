@@ -108,6 +108,8 @@
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/request_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/request_buffer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/security_context.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channel_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channel_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz.cc" role="src" />
@@ -1452,8 +1454,6 @@
     <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/certificate_provider_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/certificate_provider_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/certificate_provider_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/context/security_context.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment.cc" role="src" />
@@ -1770,6 +1770,8 @@
     <file baseinstalldir="/" name="src/core/telemetry/stats_data.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/transport/auth_context.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/transport/auth_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/aes_gcm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.h" role="src" />

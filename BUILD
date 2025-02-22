@@ -2096,9 +2096,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_security_base",
     srcs = [
+        "//src/core:call/security_context.cc",
         "//src/core:handshaker/security/secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",
-        "//src/core:lib/security/context/security_context.cc",
         "//src/core:lib/security/credentials/call_creds_util.cc",
         "//src/core:lib/security/credentials/composite/composite_credentials.cc",
         "//src/core:lib/security/credentials/credentials.cc",
@@ -2106,17 +2106,19 @@ grpc_cc_library(
         "//src/core:lib/security/security_connector/security_connector.cc",
         "//src/core:lib/security/transport/client_auth_filter.cc",
         "//src/core:lib/security/transport/server_auth_filter.cc",
+        "//src/core:transport/auth_context.cc",
     ],
     hdrs = [
+        "//src/core:call/security_context.h",
         "//src/core:handshaker/security/secure_endpoint.h",
         "//src/core:handshaker/security/security_handshaker.h",
-        "//src/core:lib/security/context/security_context.h",
         "//src/core:lib/security/credentials/call_creds_util.h",
         "//src/core:lib/security/credentials/composite/composite_credentials.h",
         "//src/core:lib/security/credentials/credentials.h",
         "//src/core:lib/security/credentials/plugin/plugin_credentials.h",
         "//src/core:lib/security/security_connector/security_connector.h",
         "//src/core:lib/security/transport/auth_filters.h",
+        "//src/core:transport/auth_context.h",
     ],
     external_deps = [
         "absl/base:core_headers",

@@ -272,6 +272,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
 
     ss.source_files = 'src/core/call/request_buffer.h',
+                      'src/core/call/security_context.h',
                       'src/core/channelz/channel_trace.h',
                       'src/core/channelz/channelz.h',
                       'src/core/channelz/channelz_registry.h',
@@ -1051,7 +1052,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/stdout_logger.h',
                       'src/core/lib/security/certificate_provider/certificate_provider_factory.h',
                       'src/core/lib/security/certificate_provider/certificate_provider_registry.h',
-                      'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
                       'src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h',
@@ -1206,6 +1206,7 @@ Pod::Spec.new do |s|
                       'src/core/telemetry/stats.h',
                       'src/core/telemetry/stats_data.h',
                       'src/core/telemetry/tcp_tracer.h',
+                      'src/core/transport/auth_context.h',
                       'src/core/tsi/alts/crypt/gsec.h',
                       'src/core/tsi/alts/frame_protector/alts_counter.h',
                       'src/core/tsi/alts/frame_protector/alts_crypter.h',
@@ -1573,6 +1574,7 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zutil.h'
 
     ss.private_header_files = 'src/core/call/request_buffer.h',
+                              'src/core/call/security_context.h',
                               'src/core/channelz/channel_trace.h',
                               'src/core/channelz/channelz.h',
                               'src/core/channelz/channelz_registry.h',
@@ -2352,7 +2354,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/stdout_logger.h',
                               'src/core/lib/security/certificate_provider/certificate_provider_factory.h',
                               'src/core/lib/security/certificate_provider/certificate_provider_registry.h',
-                              'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
                               'src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h',
@@ -2507,6 +2508,7 @@ Pod::Spec.new do |s|
                               'src/core/telemetry/stats.h',
                               'src/core/telemetry/stats_data.h',
                               'src/core/telemetry/tcp_tracer.h',
+                              'src/core/transport/auth_context.h',
                               'src/core/tsi/alts/crypt/gsec.h',
                               'src/core/tsi/alts/frame_protector/alts_counter.h',
                               'src/core/tsi/alts/frame_protector/alts_crypter.h',

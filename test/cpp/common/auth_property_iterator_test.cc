@@ -20,7 +20,7 @@
 #include <grpcpp/security/auth_context.h>
 #include <gtest/gtest.h>
 
-#include "src/core/lib/security/context/security_context.h"
+#include "src/core/transport/auth_context.h"
 #include "src/cpp/common/secure_auth_context.h"
 #include "test/cpp/util/string_ref_helper.h"
 

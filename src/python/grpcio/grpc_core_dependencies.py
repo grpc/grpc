@@ -16,6 +16,7 @@
 
 CORE_SOURCE_FILES = [
     'src/core/call/request_buffer.cc',
+    'src/core/call/security_context.cc',
     'src/core/channelz/channel_trace.cc',
     'src/core/channelz/channelz.cc',
     'src/core/channelz/channelz_registry.cc',
@@ -581,7 +582,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/security/authorization/rbac_policy.cc',
     'src/core/lib/security/authorization/stdout_logger.cc',
     'src/core/lib/security/certificate_provider/certificate_provider_registry.cc',
-    'src/core/lib/security/context/security_context.cc',
     'src/core/lib/security/credentials/alts/alts_credentials.cc',
     'src/core/lib/security/credentials/alts/check_gcp_environment.cc',
     'src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc',
@@ -744,6 +744,7 @@ CORE_SOURCE_FILES = [
     'src/core/telemetry/metrics.cc',
     'src/core/telemetry/stats.cc',
     'src/core/telemetry/stats_data.cc',
+    'src/core/transport/auth_context.cc',
     'src/core/tsi/alts/crypt/aes_gcm.cc',
     'src/core/tsi/alts/crypt/gsec.cc',
     'src/core/tsi/alts/frame_protector/alts_counter.cc',

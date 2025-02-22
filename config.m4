@@ -41,6 +41,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_SUBST(GRPC_SHARED_LIBADD)
   PHP_NEW_EXTENSION(grpc,
     src/core/call/request_buffer.cc \
+    src/core/call/security_context.cc \
     src/core/channelz/channel_trace.cc \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
@@ -606,7 +607,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/authorization/rbac_policy.cc \
     src/core/lib/security/authorization/stdout_logger.cc \
     src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
-    src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc \
@@ -769,6 +769,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/telemetry/metrics.cc \
     src/core/telemetry/stats.cc \
     src/core/telemetry/stats_data.cc \
+    src/core/transport/auth_context.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -1561,7 +1562,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/certificate_provider)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/composite)
@@ -1615,6 +1615,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/telemetry)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/crypt)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/frame_protector)

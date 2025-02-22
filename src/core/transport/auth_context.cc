@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//
 
-#include "src/core/lib/security/context/security_context.h"
+#include "src/core/transport/auth_context.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
@@ -37,104 +35,12 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/util/ref_counted_ptr.h"
 
-// --- grpc_call ---
-
-grpc_call_error grpc_call_set_credentials(grpc_call* call,
-                                          grpc_call_credentials* creds) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_client_security_context* ctx = nullptr;
-  GRPC_TRACE_LOG(api, INFO) << "grpc_call_set_credentials(call=" << call
-                            << ", creds=" << creds << ")";
-  if (!grpc_call_is_client(call)) {
-    LOG(ERROR) << "Method is client-side only.";
-    return GRPC_CALL_ERROR_NOT_ON_SERVER;
-  }
-  auto* arena = grpc_call_get_arena(call);
-  ctx = grpc_core::DownCast<grpc_client_security_context*>(
-      arena->GetContext<grpc_core::SecurityContext>());
-  if (ctx == nullptr) {
-    ctx = grpc_client_security_context_create(arena, creds);
-    arena->SetContext<grpc_core::SecurityContext>(ctx);
-  } else {
-    ctx->creds = creds != nullptr ? creds->Ref() : nullptr;
-  }
-
-  return GRPC_CALL_OK;
-}
-
-grpc_auth_context* grpc_call_auth_context(grpc_call* call) {
-  auto* sec_ctx =
-      grpc_call_get_arena(call)->GetContext<grpc_core::SecurityContext>();
-  GRPC_TRACE_LOG(api, INFO) << "grpc_call_auth_context(call=" << call << ")";
-  if (sec_ctx == nullptr) return nullptr;
-  if (grpc_call_is_client(call)) {
-    auto* sc = grpc_core::DownCast<grpc_client_security_context*>(sec_ctx);
-    if (sc->auth_context == nullptr) {
-      return nullptr;
-    } else {
-      return sc->auth_context
-          ->Ref(DEBUG_LOCATION, "grpc_call_auth_context client")
-          .release();
-    }
-  } else {
-    auto* sc = grpc_core::DownCast<grpc_server_security_context*>(sec_ctx);
-    if (sc->auth_context == nullptr) {
-      return nullptr;
-    } else {
-      return sc->auth_context
-          ->Ref(DEBUG_LOCATION, "grpc_call_auth_context server")
-          .release();
-    }
-  }
-}
-
 void grpc_auth_context_release(grpc_auth_context* context) {
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_auth_context_release(context=" << context << ")";
   if (context == nullptr) return;
   context->Unref(DEBUG_LOCATION, "grpc_auth_context_unref");
 }
-
-// --- grpc_client_security_context ---
-grpc_client_security_context::~grpc_client_security_context() {
-  auth_context.reset(DEBUG_LOCATION, "client_security_context");
-  if (extension.instance != nullptr && extension.destroy != nullptr) {
-    extension.destroy(extension.instance);
-  }
-}
-
-grpc_client_security_context* grpc_client_security_context_create(
-    grpc_core::Arena* arena, grpc_call_credentials* creds) {
-  return arena->New<grpc_client_security_context>(
-      creds != nullptr ? creds->Ref() : nullptr);
-}
-
-void grpc_client_security_context_destroy(void* ctx) {
-  grpc_client_security_context* c =
-      static_cast<grpc_client_security_context*>(ctx);
-  c->~grpc_client_security_context();
-}
-
-// --- grpc_server_security_context ---
-grpc_server_security_context::~grpc_server_security_context() {
-  auth_context.reset(DEBUG_LOCATION, "server_security_context");
-  if (extension.instance != nullptr && extension.destroy != nullptr) {
-    extension.destroy(extension.instance);
-  }
-}
-
-grpc_server_security_context* grpc_server_security_context_create(
-    grpc_core::Arena* arena) {
-  return arena->New<grpc_server_security_context>();
-}
-
-void grpc_server_security_context_destroy(void* ctx) {
-  grpc_server_security_context* c =
-      static_cast<grpc_server_security_context*>(ctx);
-  c->~grpc_server_security_context();
-}
-
-// --- grpc_auth_context ---
 
 static grpc_auth_property_iterator empty_iterator = {nullptr, 0, nullptr};
 

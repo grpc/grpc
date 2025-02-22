@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "src/core/lib/security/context/security_context.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/cpp/common/secure_auth_context.h"
 

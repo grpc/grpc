@@ -7,6 +7,7 @@ if (PHP_GRPC != "no") {
 
   EXTENSION("grpc",
     "src\\core\\call\\request_buffer.cc " +
+    "src\\core\\call\\security_context.cc " +
     "src\\core\\channelz\\channel_trace.cc " +
     "src\\core\\channelz\\channelz.cc " +
     "src\\core\\channelz\\channelz_registry.cc " +
@@ -572,7 +573,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\authorization\\rbac_policy.cc " +
     "src\\core\\lib\\security\\authorization\\stdout_logger.cc " +
     "src\\core\\lib\\security\\certificate_provider\\certificate_provider_registry.cc " +
-    "src\\core\\lib\\security\\context\\security_context.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\alts_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_linux.cc " +
@@ -735,6 +735,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\telemetry\\metrics.cc " +
     "src\\core\\telemetry\\stats.cc " +
     "src\\core\\telemetry\\stats_data.cc " +
+    "src\\core\\transport\\auth_context.cc " +
     "src\\core\\tsi\\alts\\crypt\\aes_gcm.cc " +
     "src\\core\\tsi\\alts\\crypt\\gsec.cc " +
     "src\\core\\tsi\\alts\\frame_protector\\alts_counter.cc " +
@@ -1699,7 +1700,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\authorization");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\certificate_provider");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\context");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\alts");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\composite");
@@ -1753,6 +1753,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\server");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\service_config");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\telemetry");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts\\crypt");

@@ -186,6 +186,7 @@ libs:
   - include/grpc/support/workaround_list.h
   headers:
   - src/core/call/request_buffer.h
+  - src/core/call/security_context.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -962,7 +963,6 @@ libs:
   - src/core/lib/security/authorization/stdout_logger.h
   - src/core/lib/security/certificate_provider/certificate_provider_factory.h
   - src/core/lib/security/certificate_provider/certificate_provider_registry.h
-  - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
@@ -1117,6 +1117,7 @@ libs:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context.h
   - src/core/tsi/alts/crypt/gsec.h
   - src/core/tsi/alts/frame_protector/alts_counter.h
   - src/core/tsi/alts/frame_protector/alts_crypter.h
@@ -1252,6 +1253,7 @@ libs:
   - third_party/xxhash/xxhash.h
   src:
   - src/core/call/request_buffer.cc
+  - src/core/call/security_context.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -1813,7 +1815,6 @@ libs:
   - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/stdout_logger.cc
   - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
@@ -1976,6 +1977,7 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/transport/auth_context.cc
   - src/core/tsi/alts/crypt/aes_gcm.cc
   - src/core/tsi/alts/crypt/gsec.cc
   - src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -2206,6 +2208,7 @@ libs:
   - include/grpc/support/workaround_list.h
   headers:
   - src/core/call/request_buffer.h
+  - src/core/call/security_context.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -2519,7 +2522,6 @@ libs:
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/security/certificate_provider/certificate_provider_factory.h
   - src/core/lib/security/certificate_provider/certificate_provider_registry.h
-  - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
   - src/core/lib/security/credentials/call_creds_util.h
@@ -2637,6 +2639,7 @@ libs:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
@@ -2699,6 +2702,7 @@ libs:
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/request_buffer.cc
+  - src/core/call/security_context.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -2945,7 +2949,6 @@ libs:
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
@@ -3064,6 +3067,7 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/transport/auth_context.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
@@ -4354,6 +4358,7 @@ libs:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/call/security_context.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -4569,7 +4574,6 @@ libs:
   - src/core/lib/security/authorization/stdout_logger.h
   - src/core/lib/security/certificate_provider/certificate_provider_factory.h
   - src/core/lib/security/certificate_provider/certificate_provider_registry.h
-  - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
   - src/core/lib/security/credentials/call_creds_util.h
@@ -4647,6 +4651,7 @@ libs:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
@@ -4698,6 +4703,7 @@ libs:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/security_context.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -4867,7 +4873,6 @@ libs:
   - src/core/lib/security/authorization/rbac_translator.cc
   - src/core/lib/security/authorization/stdout_logger.cc
   - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
@@ -4939,6 +4944,7 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/transport/auth_context.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc

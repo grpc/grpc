@@ -31,7 +31,6 @@
 #include <grpc/support/string_util.h>
 
 #include "gtest/gtest.h"
-#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_supported.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
