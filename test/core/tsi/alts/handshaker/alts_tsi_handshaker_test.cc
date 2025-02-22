@@ -360,6 +360,7 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
                    local_account.size),
             0);
   size_t iter = kUpb_Map_Begin;
+  // grpc-oss-only-begin
   grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
       grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
   ASSERT_NE(peer_attributes_entry, nullptr);
@@ -379,6 +380,22 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
     peer_attributes_entry =
         grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
   }
+  // grpc-oss-only-end
+  /* grpc-google-only-begin
+  // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+  // v30.0.
+  upb_StringView key;
+  upb_StringView val;
+  while (grpc_gcp_AltsContext_peer_attributes_next(ctx, &key, &val, &iter)) {
+    ASSERT_TRUE(upb_StringView_IsEqual(
+        key, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+    ASSERT_TRUE(upb_StringView_IsEqual(
+        val, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+  }
+  grpc-google-only-end */
+
   // Validate security level.
   ASSERT_EQ(
       memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
@@ -463,6 +480,7 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
                    local_account.size),
             0);
   size_t iter = kUpb_Map_Begin;
+  // grpc-oss-only-begin
   grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
       grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
   ASSERT_NE(peer_attributes_entry, nullptr);
@@ -482,6 +500,22 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
     peer_attributes_entry =
         grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
   }
+  // grpc-oss-only-end
+  /* grpc-google-only-begin
+  // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+  // v30.0.
+  upb_StringView key;
+  upb_StringView val;
+  while (grpc_gcp_AltsContext_peer_attributes_next(ctx, &key, &val, &iter)) {
+    ASSERT_TRUE(upb_StringView_IsEqual(
+        key, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+    ASSERT_TRUE(upb_StringView_IsEqual(
+        val, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+  }
+  grpc-google-only-end */
+
   // Check security level.
   ASSERT_EQ(
       memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,

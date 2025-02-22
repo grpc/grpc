@@ -31,6 +31,7 @@ namespace grpc_core {
 
 namespace {
 
+// grpc-oss-only-begin
 template <typename EntryType>
 std::map<absl::string_view, double> ParseMap(
     xds_data_orca_v3_OrcaLoadReport* msg,
@@ -51,6 +52,26 @@ std::map<absl::string_view, double> ParseMap(
   }
   return result;
 }
+// grpc-oss-only-end
+/* grpc-google-only-begin
+// TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto v30.0.
+std::map<absl::string_view, double> ParseMap(
+    xds_data_orca_v3_OrcaLoadReport* msg,
+    bool (*iter_func)(const xds_data_orca_v3_OrcaLoadReport*, upb_StringView*,
+                      double*, size_t*),
+    BackendMetricAllocatorInterface* allocator) {
+  std::map<absl::string_view, double> result;
+  size_t i = kUpb_Map_Begin;
+  upb_StringView key_view;
+  double value;
+  while (iter_func(msg, &key_view, &value, &i)) {
+    char* key = allocator->AllocateString(key_view.size);
+    memcpy(key, key_view.data, key_view.size);
+    result[absl::string_view(key, key_view.size)] = value;
+  }
+  return result;
+}
+grpc-google-only-end */
 
 }  // namespace
 
@@ -73,6 +94,7 @@ const BackendMetricData* ParseBackendMetricData(
   backend_metric_data->qps =
       xds_data_orca_v3_OrcaLoadReport_rps_fractional(msg);
   backend_metric_data->eps = xds_data_orca_v3_OrcaLoadReport_eps(msg);
+  // grpc-oss-only-begin
   backend_metric_data->request_cost =
       ParseMap<xds_data_orca_v3_OrcaLoadReport_RequestCostEntry>(
           msg, xds_data_orca_v3_OrcaLoadReport_request_cost_next,
@@ -88,6 +110,17 @@ const BackendMetricData* ParseBackendMetricData(
           msg, xds_data_orca_v3_OrcaLoadReport_named_metrics_next,
           xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_key,
           xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_value, allocator);
+  // grpc-oss-only-end
+  /* grpc-google-only-begin
+  // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+  // v30.0.
+  backend_metric_data->request_cost = ParseMap(
+      msg, xds_data_orca_v3_OrcaLoadReport_request_cost_next, allocator);
+  backend_metric_data->utilization = ParseMap(
+      msg, xds_data_orca_v3_OrcaLoadReport_utilization_next, allocator);
+  backend_metric_data->named_metrics = ParseMap(
+      msg, xds_data_orca_v3_OrcaLoadReport_named_metrics_next, allocator);
+  grpc-google-only-end */
   return backend_metric_data;
 }
 

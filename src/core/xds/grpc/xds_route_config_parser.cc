@@ -386,6 +386,7 @@ void RouteRuntimeFractionParse(const envoy_config_route_v3_RouteMatch* match,
   }
 }
 
+// grpc-oss-only-begin
 template <typename ParentType, typename EntryType>
 XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     const XdsResourceType::DecodeContext& context, const ParentType* parent,
@@ -402,6 +403,26 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     ValidationErrors::ScopedField field(errors, absl::StrCat("[", key, "]"));
     if (key.empty()) errors->AddError("filter name must be non-empty");
     const google_protobuf_Any* any = value_func(filter_entry);
+    // grpc-oss-only-end
+    /* grpc-google-only-begin
+    // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+    // v30.0.
+    template <typename ParentType>
+    XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
+        const XdsResourceType::DecodeContext& context, const ParentType* parent,
+        bool (*iter_func)(const ParentType*, upb_StringView*,
+                          const google_protobuf_Any**, size_t*),
+        ValidationErrors* errors) {
+      XdsRouteConfigResource::TypedPerFilterConfig typed_per_filter_config;
+      size_t filter_it = kUpb_Map_Begin;
+      upb_StringView key_view;
+      const google_protobuf_Any* any;
+      while (iter_func(parent, &key_view, &any, &filter_it)) {
+        absl::string_view key = UpbStringToAbsl(key_view);
+        ValidationErrors::ScopedField field(errors, absl::StrCat("[", key,
+                                                                 "]"));
+        if (key.empty()) errors->AddError("filter name must be non-empty");
+        grpc-google-only-end */
     auto extension = ExtractXdsExtension(context, any, errors);
     if (!extension.has_value()) continue;
     auto* extension_to_use = &*extension;
@@ -665,6 +686,7 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       // typed_per_filter_config
       {
         ValidationErrors::ScopedField field(errors, ".typed_per_filter_config");
+        // grpc-oss-only-begin
         cluster.typed_per_filter_config = ParseTypedPerFilterConfig<
             envoy_config_route_v3_WeightedCluster_ClusterWeight,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
@@ -673,6 +695,16 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_key,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value,
             errors);
+        // grpc-oss-only-end
+        /* grpc-google-only-begin
+        // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to
+        // proto v30.0.
+        cluster.typed_per_filter_config = ParseTypedPerFilterConfig<
+            envoy_config_route_v3_WeightedCluster_ClusterWeight>(
+            context, cluster_proto,
+            envoy_config_route_v3_WeightedCluster_ClusterWeight_typed_per_filter_config_next,
+            errors);
+        grpc-google-only-end */
       }
       // name
       cluster.name = UpbStringToStdString(
@@ -795,6 +827,7 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
   // Parse typed_per_filter_config.
   {
     ValidationErrors::ScopedField field(errors, ".typed_per_filter_config");
+    // grpc-oss-only-begin
     route.typed_per_filter_config = ParseTypedPerFilterConfig<
         envoy_config_route_v3_Route,
         envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
@@ -802,6 +835,15 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
         envoy_config_route_v3_Route_typed_per_filter_config_next,
         envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
         envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value, errors);
+    // grpc-oss-only-end
+    /* grpc-google-only-begin
+    // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+    // v30.0.
+    route.typed_per_filter_config =
+        ParseTypedPerFilterConfig<envoy_config_route_v3_Route>(
+            context, route_proto,
+            envoy_config_route_v3_Route_typed_per_filter_config_next, errors);
+    grpc-google-only-end */
   }
   return route;
 }
@@ -856,6 +898,7 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
     // Parse typed_per_filter_config.
     {
       ValidationErrors::ScopedField field(errors, ".typed_per_filter_config");
+      // grpc-oss-only-begin
       vhost.typed_per_filter_config = ParseTypedPerFilterConfig<
           envoy_config_route_v3_VirtualHost,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
@@ -864,6 +907,16 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value,
           errors);
+      // grpc-oss-only-end
+      /* grpc-google-only-begin
+      // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+      // v30.0.
+      vhost.typed_per_filter_config =
+          ParseTypedPerFilterConfig<envoy_config_route_v3_VirtualHost>(
+              context, virtual_hosts[i],
+              envoy_config_route_v3_VirtualHost_typed_per_filter_config_next,
+              errors);
+      grpc-google-only-end */
     }
     // Parse retry policy.
     std::optional<XdsRouteConfigResource::RetryPolicy>

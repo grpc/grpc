@@ -70,6 +70,7 @@ CelAuthorizationEngine::CelAuthorizationEngine(
     // allow_if_matched_ or deny_if_matched_, depending on the policy action.
     upb::Arena temp_arena;
     size_t policy_num = kUpb_Map_Begin;
+    // grpc-oss-only-begin
     const envoy_config_rbac_v3_RBAC_PoliciesEntry* policy_entry;
     while ((policy_entry = envoy_config_rbac_v3_RBAC_policies_next(
                 rbac_policy, &policy_num)) != nullptr) {
@@ -79,6 +80,17 @@ CelAuthorizationEngine::CelAuthorizationEngine(
                                     policy_name_strview.size);
       const envoy_config_rbac_v3_Policy* policy =
           envoy_config_rbac_v3_RBAC_PoliciesEntry_value(policy_entry);
+      // grpc-oss-only-end
+      /* grpc-google-only-begin
+      // TODO: b/397931390 - Clean up the code after gRPC OSS migrates to proto
+      // v30.0.
+      upb_StringView policy_name_strview;
+      const envoy_config_rbac_v3_Policy* policy;
+      while (envoy_config_rbac_v3_RBAC_policies_next(
+          rbac_policy, &policy_name_strview, &policy, &policy_num)) {
+        const std::string policy_name(policy_name_strview.data,
+                                      policy_name_strview.size);
+        grpc-google-only-end */
       const google_api_expr_v1alpha1_Expr* condition =
           envoy_config_rbac_v3_Policy_condition(policy);
       // Parse condition to make a pointer tied to the lifetime of arena_.
@@ -87,7 +99,7 @@ CelAuthorizationEngine::CelAuthorizationEngine(
           condition, temp_arena.ptr(), &serial_len);
       const google_api_expr_v1alpha1_Expr* parsed_condition =
           google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
-                                              arena_.ptr());
+                                     arena_.ptr());
       if (envoy_config_rbac_v3_RBAC_action(rbac_policy) == kAllow) {
         allow_if_matched_.insert(std::pair(policy_name, parsed_condition));
       } else {
