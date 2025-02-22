@@ -31,6 +31,7 @@
 #include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
+#include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/tls_utils.h"
 
 class Oauth2Fixture : public SecureFixture {

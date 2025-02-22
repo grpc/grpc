@@ -153,9 +153,4 @@ struct grpc_call_credentials
   const grpc_security_level min_security_level_;
 };
 
-// Metadata-only credentials with the specified key and value where
-// asynchronicity can be simulated for testing.
-grpc_call_credentials* grpc_md_only_test_credentials_create(
-    const char* md_key, const char* md_value);
-
 #endif  // GRPC_SRC_CORE_CREDENTIALS_CALL_CALL_CREDENTIALS_H

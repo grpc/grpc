@@ -79,25 +79,3 @@ grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets) {
       const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
       expected_targets);
 }
-
-// -- Metadata-only test credentials. --
-
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
-grpc_md_only_test_credentials::GetRequestMetadata(
-    grpc_core::ClientMetadataHandle initial_metadata,
-    const grpc_call_credentials::GetRequestMetadataArgs*) {
-  initial_metadata->Append(
-      key_.as_string_view(), value_.Ref(),
-      [](absl::string_view, const grpc_core::Slice&) { abort(); });
-  return grpc_core::Immediate(std::move(initial_metadata));
-}
-
-grpc_core::UniqueTypeName grpc_md_only_test_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory kFactory("MdOnlyTest");
-  return kFactory.Create();
-}
-
-grpc_call_credentials* grpc_md_only_test_credentials_create(
-    const char* md_key, const char* md_value) {
-  return new grpc_md_only_test_credentials(md_key, md_value);
-}

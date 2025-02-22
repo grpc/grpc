@@ -89,36 +89,4 @@ grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
 // latter is present.
 grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets);
 
-// --  Metadata-only Test credentials. --
-
-class grpc_md_only_test_credentials : public grpc_call_credentials {
- public:
-  grpc_md_only_test_credentials(const char* md_key, const char* md_value)
-      : grpc_call_credentials(GRPC_SECURITY_NONE),
-        key_(grpc_core::Slice::FromCopiedString(md_key)),
-        value_(grpc_core::Slice::FromCopiedString(md_value)) {}
-
-  void Orphaned() override {}
-
-  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
-  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
-                     const GetRequestMetadataArgs* args) override;
-
-  std::string debug_string() override { return "MD only Test Credentials"; }
-
-  static grpc_core::UniqueTypeName Type();
-
-  grpc_core::UniqueTypeName type() const override { return Type(); }
-
- private:
-  int cmp_impl(const grpc_call_credentials* other) const override {
-    // TODO(yashykt): Check if we can do something better here
-    return grpc_core::QsortCompare(
-        static_cast<const grpc_call_credentials*>(this), other);
-  }
-
-  grpc_core::Slice key_;
-  grpc_core::Slice value_;
-};
-
 #endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H

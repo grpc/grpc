@@ -75,6 +75,7 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

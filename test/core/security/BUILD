@@ -116,6 +116,7 @@ grpc_cc_test(
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:test_call_creds",
     ],
 )
 
@@ -363,6 +364,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:test_call_creds",
     ],
 )
 

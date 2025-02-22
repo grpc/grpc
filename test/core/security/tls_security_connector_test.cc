@@ -36,6 +36,7 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/unique_type_name.h"
+#include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 
