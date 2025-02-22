@@ -16,14 +16,14 @@
 //
 //
 
-#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
+#include "src/core/credentials/transport/insecure/insecure_credentials.h"
 
 #include <grpc/support/port_platform.h>
 
 #include <utility>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
+#include "src/core/credentials/transport/insecure/insecure_security_connector.h"
 
 namespace grpc_core {
 

@@ -25,7 +25,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
-#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
+#include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/server/server.h"

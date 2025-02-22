@@ -1255,7 +1255,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/google_default/credentials_generic.cc \
     src/core/lib/security/credentials/google_default/google_default_credentials.cc \
     src/core/lib/security/credentials/iam/iam_credentials.cc \
-    src/core/lib/security/credentials/insecure/insecure_credentials.cc \
+    src/core/credentials/transport/insecure/insecure_credentials.cc \
     src/core/lib/security/credentials/jwt/json_token.cc \
     src/core/lib/security/credentials/jwt/jwt_credentials.cc \
     src/core/lib/security/credentials/jwt/jwt_verifier.cc \
@@ -1275,7 +1275,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/xds/xds_credentials.cc \
     src/core/credentials/transport/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
-    src/core/lib/security/security_connector/insecure/insecure_security_connector.cc \
+    src/core/credentials/transport/insecure/insecure_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
     src/core/lib/security/security_connector/load_system_roots_supported.cc \
     src/core/lib/security/security_connector/load_system_roots_windows.cc \

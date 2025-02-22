@@ -76,7 +76,7 @@
 #include "src/core/lib/resource_quota/connection_quota.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
+#include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"

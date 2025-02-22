@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
+#include "src/core/credentials/transport/insecure/insecure_security_connector.h"
 
 #include <gmock/gmock.h>
 #include <grpc/grpc_security.h>

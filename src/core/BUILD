@@ -4110,12 +4110,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_insecure_credentials",
     srcs = [
-        "lib/security/credentials/insecure/insecure_credentials.cc",
-        "lib/security/security_connector/insecure/insecure_security_connector.cc",
+        "credentials/transport/insecure/insecure_credentials.cc",
+        "credentials/transport/insecure/insecure_security_connector.cc",
     ],
     hdrs = [
-        "lib/security/credentials/insecure/insecure_credentials.h",
-        "lib/security/security_connector/insecure/insecure_security_connector.h",
+        "credentials/transport/insecure/insecure_credentials.h",
+        "credentials/transport/insecure/insecure_security_connector.h",
     ],
     external_deps = [
         "absl/log:check",
