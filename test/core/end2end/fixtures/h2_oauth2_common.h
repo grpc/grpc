@@ -28,7 +28,7 @@
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+#include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/test_util/tls_utils.h"

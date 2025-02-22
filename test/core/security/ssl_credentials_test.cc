@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+#include "src/core/credentials/transport/ssl/ssl_credentials.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>

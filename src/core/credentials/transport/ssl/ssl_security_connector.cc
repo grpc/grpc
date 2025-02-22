@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
+#include "src/core/credentials/transport/ssl/ssl_security_connector.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
@@ -43,7 +43,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+#include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"

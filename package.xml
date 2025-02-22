@@ -1507,8 +1507,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/oauth2/oauth2_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/ssl/ssl_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/ssl/ssl_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc" role="src" />
@@ -1543,8 +1543,8 @@
     <file baseinstalldir="/" name="src/core/credentials/transport/local/local_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl/ssl_security_connector.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl/ssl_security_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/ssl/ssl_security_connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/ssl/ssl_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/tls_security_connector.cc" role="src" />

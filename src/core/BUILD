@@ -4211,12 +4211,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_ssl_credentials",
     srcs = [
-        "lib/security/credentials/ssl/ssl_credentials.cc",
-        "lib/security/security_connector/ssl/ssl_security_connector.cc",
+        "credentials/transport/ssl/ssl_credentials.cc",
+        "credentials/transport/ssl/ssl_security_connector.cc",
     ],
     hdrs = [
-        "lib/security/credentials/ssl/ssl_credentials.h",
-        "lib/security/security_connector/ssl/ssl_security_connector.h",
+        "credentials/transport/ssl/ssl_credentials.h",
+        "credentials/transport/ssl/ssl_security_connector.h",
     ],
     external_deps = [
         "absl/log",
