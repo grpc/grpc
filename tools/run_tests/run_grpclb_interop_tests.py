@@ -14,8 +14,6 @@
 # limitations under the License.
 """Run interop (cross-language) tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import atexit
 import itertools
