@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+#include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 
 #include <gmock/gmock.h>
 #include <grpc/credentials.h>
@@ -26,8 +26,8 @@
 #include <gtest/gtest.h>
 
 #include "src/core/config/config_vars.h"
-#include "src/core/lib/security/credentials/tls/tls_credentials.h"
-#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
+#include "src/core/credentials/transport/tls/tls_credentials.h"
+#include "src/core/credentials/transport/tls/tls_security_connector.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"

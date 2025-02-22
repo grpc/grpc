@@ -33,7 +33,7 @@
 #include "absl/status/status.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"

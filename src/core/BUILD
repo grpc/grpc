@@ -4033,10 +4033,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_crl_provider",
     srcs = [
-        "lib/security/credentials/tls/grpc_tls_crl_provider.cc",
+        "credentials/transport/tls/grpc_tls_crl_provider.cc",
     ],
     hdrs = [
-        "lib/security/credentials/tls/grpc_tls_crl_provider.h",
+        "credentials/transport/tls/grpc_tls_crl_provider.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4324,21 +4324,21 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_tls_credentials",
     srcs = [
-        "lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
-        "lib/security/credentials/tls/grpc_tls_certificate_match.cc",
-        "lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
-        "lib/security/credentials/tls/grpc_tls_certificate_verifier.cc",
-        "lib/security/credentials/tls/grpc_tls_credentials_options.cc",
-        "lib/security/credentials/tls/tls_credentials.cc",
-        "lib/security/security_connector/tls/tls_security_connector.cc",
+        "credentials/transport/tls/grpc_tls_certificate_distributor.cc",
+        "credentials/transport/tls/grpc_tls_certificate_match.cc",
+        "credentials/transport/tls/grpc_tls_certificate_provider.cc",
+        "credentials/transport/tls/grpc_tls_certificate_verifier.cc",
+        "credentials/transport/tls/grpc_tls_credentials_options.cc",
+        "credentials/transport/tls/tls_credentials.cc",
+        "credentials/transport/tls/tls_security_connector.cc",
     ],
     hdrs = [
-        "lib/security/credentials/tls/grpc_tls_certificate_distributor.h",
-        "lib/security/credentials/tls/grpc_tls_certificate_provider.h",
-        "lib/security/credentials/tls/grpc_tls_certificate_verifier.h",
-        "lib/security/credentials/tls/grpc_tls_credentials_options.h",
-        "lib/security/credentials/tls/tls_credentials.h",
-        "lib/security/security_connector/tls/tls_security_connector.h",
+        "credentials/transport/tls/grpc_tls_certificate_distributor.h",
+        "credentials/transport/tls/grpc_tls_certificate_provider.h",
+        "credentials/transport/tls/grpc_tls_certificate_verifier.h",
+        "credentials/transport/tls/grpc_tls_credentials_options.h",
+        "credentials/transport/tls/tls_credentials.h",
+        "credentials/transport/tls/tls_security_connector.h",
     ],
     external_deps = [
         "absl/base:core_headers",

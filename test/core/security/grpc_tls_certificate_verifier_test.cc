@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 
 #include <gmock/gmock.h>
 #include <grpc/support/alloc.h>
@@ -25,7 +25,7 @@
 #include <list>
 
 #include "absl/log/log.h"
-#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
+#include "src/core/credentials/transport/tls/tls_security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/tmpfile.h"

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 
 #include <grpc/credentials.h>
 #include <grpc/slice.h>

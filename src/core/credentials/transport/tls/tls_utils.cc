@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/tls/tls_utils.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 
 #include <grpc/support/port_platform.h>
 #include <stddef.h>

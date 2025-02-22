@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_TLS_SECURITY_CONNECTOR_H
-#define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_TLS_SECURITY_CONNECTOR_H
+#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_TLS_SECURITY_CONNECTOR_H
+#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_TLS_SECURITY_CONNECTOR_H
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -38,7 +38,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
@@ -282,4 +282,4 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_TLS_SECURITY_CONNECTOR_H
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_TLS_SECURITY_CONNECTOR_H

@@ -1263,14 +1263,14 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/credentials/transport/ssl/ssl_credentials.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc \
-    src/core/lib/security/credentials/tls/tls_credentials.cc \
-    src/core/lib/security/credentials/tls/tls_utils.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_match.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc \
+    src/core/credentials/transport/tls/grpc_tls_credentials_options.cc \
+    src/core/credentials/transport/tls/grpc_tls_crl_provider.cc \
+    src/core/credentials/transport/tls/tls_credentials.cc \
+    src/core/credentials/transport/tls/tls_utils.cc \
     src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc \
     src/core/lib/security/credentials/xds/xds_credentials.cc \
     src/core/credentials/transport/alts/alts_security_connector.cc \
@@ -1283,7 +1283,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/credentials/transport/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
-    src/core/lib/security/security_connector/tls/tls_security_connector.cc \
+    src/core/credentials/transport/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/util/json_util.cc \

@@ -56,7 +56,7 @@
 #include "src/core/lib/security/credentials/iam/iam_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+#include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/transport/error_utils.h"

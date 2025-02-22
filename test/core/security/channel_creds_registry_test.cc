@@ -28,7 +28,7 @@
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
-#include "src/core/lib/security/credentials/tls/tls_credentials.h"
+#include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

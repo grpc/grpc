@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_CREDENTIALS_H
-#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_TLS_CREDENTIALS_H
+#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_TLS_CREDENTIALS_H
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -72,4 +72,4 @@ class TlsServerCredentials final : public grpc_server_credentials {
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
 };
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_CREDENTIALS_H
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_TLS_CREDENTIALS_H

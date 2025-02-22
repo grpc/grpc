@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+#include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/support/port_platform.h>

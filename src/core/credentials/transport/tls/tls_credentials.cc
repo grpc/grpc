@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/tls/tls_credentials.h"
+#include "src/core/credentials/transport/tls/tls_credentials.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
@@ -30,9 +30,9 @@
 
 #include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
-#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
+#include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
+#include "src/core/credentials/transport/tls/tls_security_connector.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/util/useful.h"
 

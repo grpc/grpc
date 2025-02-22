@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generator script for src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h and test/core/security/grpc_tls_credentials_options_comparator_test.cc
+# Generator script for src/core/credentials/transport/tls/grpc_tls_credentials_options.h and test/core/security/grpc_tls_credentials_options_comparator_test.cc
 # Should be executed from grpc's root directory.
 
 from __future__ import print_function
@@ -284,9 +284,9 @@ if len(sys.argv) > 1 and sys.argv[1] == "--test":
     test_mode = True
 
 HEADER_FILE_NAME = (
-    "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+    "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 )
-# Generate src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
+# Generate src/core/credentials/transport/tls/grpc_tls_credentials_options.h
 header_file_name = HEADER_FILE_NAME
 if test_mode:
     header_file_name = tempfile.NamedTemporaryFile(delete=False).name
@@ -309,9 +309,9 @@ print(
 #include <grpc/grpc_security.h>
 
 #include "src/core/util/ref_counted.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
 // Contains configurable options specified by callers to configure their certain
@@ -473,7 +473,7 @@ print(
 #include <grpc/credentials.h>
 
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+#include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

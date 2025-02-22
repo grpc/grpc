@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
@@ -28,7 +28,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/security/credentials/tls/tls_utils.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/util/host_port.h"
 
 namespace grpc_core {

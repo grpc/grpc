@@ -1509,21 +1509,21 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/ssl/ssl_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/ssl/ssl_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_utils.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_certificate_match.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_certificate_provider.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_credentials_options.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_credentials_options.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_crl_provider.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/grpc_tls_crl_provider.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/tls_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/tls_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/tls_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/tls_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.cc" role="src" />
@@ -1547,8 +1547,8 @@
     <file baseinstalldir="/" name="src/core/credentials/transport/ssl/ssl_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/tls_security_connector.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/tls_security_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/tls_security_connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/tls_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/server_auth_filter.cc" role="src" />
