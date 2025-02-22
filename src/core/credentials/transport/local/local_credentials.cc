@@ -16,14 +16,14 @@
 //
 //
 
-#include "src/core/lib/security/credentials/local/local_credentials.h"
+#include "src/core/credentials/transport/local/local_credentials.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include <utility>
 
-#include "src/core/lib/security/security_connector/local/local_security_connector.h"
+#include "src/core/credentials/transport/local/local_security_connector.h"
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_credentials::create_security_connector(

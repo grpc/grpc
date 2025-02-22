@@ -4164,12 +4164,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_local_credentials",
     srcs = [
-        "lib/security/credentials/local/local_credentials.cc",
-        "lib/security/security_connector/local/local_security_connector.cc",
+        "credentials/transport/local/local_credentials.cc",
+        "credentials/transport/local/local_security_connector.cc",
     ],
     hdrs = [
-        "lib/security/credentials/local/local_credentials.h",
-        "lib/security/security_connector/local/local_security_connector.h",
+        "credentials/transport/local/local_credentials.h",
+        "credentials/transport/local/local_security_connector.h",
     ],
     external_deps = [
         "absl/log",

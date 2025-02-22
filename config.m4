@@ -633,7 +633,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/jwt/json_token.cc \
     src/core/lib/security/credentials/jwt/jwt_credentials.cc \
     src/core/lib/security/credentials/jwt/jwt_verifier.cc \
-    src/core/lib/security/credentials/local/local_credentials.cc \
+    src/core/credentials/transport/local/local_credentials.cc \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
@@ -653,7 +653,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
     src/core/lib/security/security_connector/load_system_roots_supported.cc \
     src/core/lib/security/security_connector/load_system_roots_windows.cc \
-    src/core/lib/security/security_connector/local/local_security_connector.cc \
+    src/core/credentials/transport/local/local_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
@@ -1573,7 +1573,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/iam)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/jwt)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/local)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/local)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/oauth2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/plugin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
@@ -1584,7 +1584,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/insecure)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/local)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/local)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/tls)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)

@@ -2783,7 +2783,7 @@ add_library(grpc
   src/core/lib/security/credentials/jwt/json_token.cc
   src/core/lib/security/credentials/jwt/jwt_credentials.cc
   src/core/lib/security/credentials/jwt/jwt_verifier.cc
-  src/core/lib/security/credentials/local/local_credentials.cc
+  src/core/credentials/transport/local/local_credentials.cc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
@@ -2803,7 +2803,7 @@ add_library(grpc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_supported.cc
   src/core/lib/security/security_connector/load_system_roots_windows.cc
-  src/core/lib/security/security_connector/local/local_security_connector.cc
+  src/core/credentials/transport/local/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
