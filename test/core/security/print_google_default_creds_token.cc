@@ -26,8 +26,9 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "src/core/credentials/call/call_credentials.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/string.h"

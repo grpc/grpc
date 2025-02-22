@@ -30,8 +30,8 @@
 
 #include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"  // IWYU pragma: keep
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"

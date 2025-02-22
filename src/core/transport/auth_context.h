@@ -28,9 +28,9 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
+#include "src/core/credentials/transport/transport_credentials.h"  // IWYU pragma: keep
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 #include "src/core/lib/surface/connection_context.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"

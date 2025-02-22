@@ -44,7 +44,6 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"

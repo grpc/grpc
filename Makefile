@@ -695,6 +695,7 @@ LIBGRPC_SRC = \
     src/core/config/config_vars_non_generated.cc \
     src/core/config/core_configuration.cc \
     src/core/config/load_config.cc \
+    src/core/credentials/transport/transport_credentials.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
@@ -1244,7 +1245,6 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/call_creds_util.cc \
     src/core/lib/security/credentials/channel_creds_registry_init.cc \
     src/core/lib/security/credentials/composite/composite_credentials.cc \
-    src/core/lib/security/credentials/credentials.cc \
     src/core/lib/security/credentials/external/aws_external_account_credentials.cc \
     src/core/lib/security/credentials/external/aws_request_signer.cc \
     src/core/lib/security/credentials/external/external_account_credentials.cc \

@@ -19,7 +19,7 @@
 #ifndef GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H
 #define GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/credentials/call/call_credentials.h"
 
 // Fetch oauth2 access token with a credentials object. Does not take ownership.
 // Returns NULL on a failure. The caller should call gpr_free on the token.

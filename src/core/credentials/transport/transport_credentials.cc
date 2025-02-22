@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 
 #include <grpc/support/port_platform.h>
 #include <stdint.h>

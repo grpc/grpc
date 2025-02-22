@@ -23,9 +23,9 @@
 #include <string>
 #include <utility>
 
+#include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata.h"

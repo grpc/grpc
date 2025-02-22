@@ -23,7 +23,7 @@
 
 #include <string>
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {

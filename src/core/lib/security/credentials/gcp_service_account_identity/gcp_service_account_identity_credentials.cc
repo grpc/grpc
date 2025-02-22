@@ -25,6 +25,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/status_conversion.h"

@@ -23,7 +23,7 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/util/env.h"
 

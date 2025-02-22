@@ -2220,6 +2220,7 @@ add_library(grpc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
   src/core/config/core_configuration.cc
+  src/core/credentials/transport/transport_credentials.cc
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -2768,7 +2769,6 @@ add_library(grpc
   src/core/lib/security/credentials/call_creds_util.cc
   src/core/lib/security/credentials/channel_creds_registry_init.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
-  src/core/lib/security/credentials/credentials.cc
   src/core/lib/security/credentials/external/aws_external_account_credentials.cc
   src/core/lib/security/credentials/external/aws_request_signer.cc
   src/core/lib/security/credentials/external/external_account_credentials.cc
@@ -3308,6 +3308,7 @@ add_library(grpc_unsecure
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
   src/core/config/core_configuration.cc
+  src/core/credentials/transport/transport_credentials.cc
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -3539,7 +3540,6 @@ add_library(grpc_unsecure
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/security/credentials/call_creds_util.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
-  src/core/lib/security/credentials/credentials.cc
   src/core/lib/security/credentials/fake/fake_credentials.cc
   src/core/lib/security/credentials/insecure/insecure_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
@@ -5560,6 +5560,7 @@ add_library(grpc_authorization_provider
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/config/core_configuration.cc
+  src/core/credentials/transport/transport_credentials.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -5734,7 +5735,6 @@ add_library(grpc_authorization_provider
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/security/credentials/call_creds_util.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
-  src/core/lib/security/credentials/credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/tls/tls_utils.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc

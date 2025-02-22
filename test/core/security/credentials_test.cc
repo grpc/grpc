@@ -16,8 +16,6 @@
 //
 //
 
-#include "src/core/lib/security/credentials/credentials.h"
-
 #include <gmock/gmock.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
@@ -38,6 +36,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
+#include "src/core/credentials/call/call_credentials.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer_manager.h"
