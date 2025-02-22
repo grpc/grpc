@@ -47,7 +47,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"

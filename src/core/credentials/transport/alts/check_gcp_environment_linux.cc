@@ -24,7 +24,7 @@
 #include <grpc/support/sync.h>
 #include <string.h>
 
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/credentials/transport/alts/check_gcp_environment.h"
 
 #define GRPC_ALTS_EXPECT_NAME_GOOGLE "Google"
 #define GRPC_ALTS_EXPECT_NAME_GCE "Google Compute Engine"

@@ -35,7 +35,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/resolver_registry.h"

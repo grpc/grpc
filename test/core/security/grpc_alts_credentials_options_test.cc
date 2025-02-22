@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+#include "src/core/credentials/transport/alts/grpc_alts_credentials_options.h"
 
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>

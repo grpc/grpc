@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
+#include "src/core/credentials/transport/alts/alts_security_connector.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
@@ -46,7 +46,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/security/credentials/alts/alts_credentials.h"
+#include "src/core/credentials/transport/alts/alts_credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/transport/auth_context.h"

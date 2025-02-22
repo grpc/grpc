@@ -2213,19 +2213,19 @@ grpc_cc_library(
 grpc_cc_library(
     name = "alts_util",
     srcs = [
-        "//src/core:lib/security/credentials/alts/check_gcp_environment.cc",
-        "//src/core:lib/security/credentials/alts/check_gcp_environment_linux.cc",
-        "//src/core:lib/security/credentials/alts/check_gcp_environment_no_op.cc",
-        "//src/core:lib/security/credentials/alts/check_gcp_environment_windows.cc",
-        "//src/core:lib/security/credentials/alts/grpc_alts_credentials_client_options.cc",
-        "//src/core:lib/security/credentials/alts/grpc_alts_credentials_options.cc",
-        "//src/core:lib/security/credentials/alts/grpc_alts_credentials_server_options.cc",
+        "//src/core:credentials/transport/alts/check_gcp_environment.cc",
+        "//src/core:credentials/transport/alts/check_gcp_environment_linux.cc",
+        "//src/core:credentials/transport/alts/check_gcp_environment_no_op.cc",
+        "//src/core:credentials/transport/alts/check_gcp_environment_windows.cc",
+        "//src/core:credentials/transport/alts/grpc_alts_credentials_client_options.cc",
+        "//src/core:credentials/transport/alts/grpc_alts_credentials_options.cc",
+        "//src/core:credentials/transport/alts/grpc_alts_credentials_server_options.cc",
         "//src/core:tsi/alts/handshaker/transport_security_common_api.cc",
     ],
     hdrs = [
         "include/grpc/grpc_security.h",
-        "//src/core:lib/security/credentials/alts/check_gcp_environment.h",
-        "//src/core:lib/security/credentials/alts/grpc_alts_credentials_options.h",
+        "//src/core:credentials/transport/alts/check_gcp_environment.h",
+        "//src/core:credentials/transport/alts/grpc_alts_credentials_options.h",
         "//src/core:tsi/alts/handshaker/transport_security_common_api.h",
     ],
     external_deps = [
@@ -3828,12 +3828,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_alts_credentials",
     srcs = [
-        "//src/core:lib/security/credentials/alts/alts_credentials.cc",
-        "//src/core:lib/security/security_connector/alts/alts_security_connector.cc",
+        "//src/core:credentials/transport/alts/alts_credentials.cc",
+        "//src/core:credentials/transport/alts/alts_security_connector.cc",
     ],
     hdrs = [
-        "//src/core:lib/security/credentials/alts/alts_credentials.h",
-        "//src/core:lib/security/security_connector/alts/alts_security_connector.h",
+        "//src/core:credentials/transport/alts/alts_credentials.h",
+        "//src/core:credentials/transport/alts/alts_security_connector.h",
     ],
     external_deps = [
         "absl/log:check",

@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
+#include "src/core/credentials/transport/alts/alts_security_connector.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

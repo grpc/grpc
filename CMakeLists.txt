@@ -2758,14 +2758,14 @@ add_library(grpc
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/stdout_logger.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  src/core/lib/security/credentials/alts/alts_credentials.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/credentials/transport/alts/alts_credentials.cc
+  src/core/credentials/transport/alts/check_gcp_environment.cc
+  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/security/credentials/call_creds_util.cc
   src/core/lib/security/credentials/channel_creds_registry_init.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
@@ -2797,7 +2797,7 @@ add_library(grpc
   src/core/lib/security/credentials/tls/tls_utils.cc
   src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc
   src/core/lib/security/credentials/xds/xds_credentials.cc
-  src/core/lib/security/security_connector/alts/alts_security_connector.cc
+  src/core/credentials/transport/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -3531,13 +3531,13 @@ add_library(grpc_unsecure
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/credentials/transport/alts/check_gcp_environment.cc
+  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/security/credentials/call_creds_util.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/fake/fake_credentials.cc
@@ -5726,13 +5726,13 @@ add_library(grpc_authorization_provider
   src/core/lib/security/authorization/rbac_translator.cc
   src/core/lib/security/authorization/stdout_logger.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/credentials/transport/alts/check_gcp_environment.cc
+  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/security/credentials/call_creds_util.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
@@ -9770,13 +9770,13 @@ add_executable(call_utils_test
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/credentials/transport/alts/check_gcp_environment.cc
+  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -15675,13 +15675,13 @@ add_executable(filter_fusion_test
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/credentials/transport/alts/check_gcp_environment.cc
+  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc

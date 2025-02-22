@@ -608,14 +608,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/authorization/rbac_policy.cc \
     src/core/lib/security/authorization/stdout_logger.cc \
     src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
-    src/core/lib/security/credentials/alts/alts_credentials.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc \
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
+    src/core/credentials/transport/alts/alts_credentials.cc \
+    src/core/credentials/transport/alts/check_gcp_environment.cc \
+    src/core/credentials/transport/alts/check_gcp_environment_linux.cc \
+    src/core/credentials/transport/alts/check_gcp_environment_no_op.cc \
+    src/core/credentials/transport/alts/check_gcp_environment_windows.cc \
+    src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc \
+    src/core/credentials/transport/alts/grpc_alts_credentials_options.cc \
+    src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc \
     src/core/lib/security/credentials/call_creds_util.cc \
     src/core/lib/security/credentials/channel_creds_registry_init.cc \
     src/core/lib/security/credentials/composite/composite_credentials.cc \
@@ -647,7 +647,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/tls/tls_utils.cc \
     src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc \
     src/core/lib/security/credentials/xds/xds_credentials.cc \
-    src/core/lib/security/security_connector/alts/alts_security_connector.cc \
+    src/core/credentials/transport/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
     src/core/lib/security/security_connector/insecure/insecure_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
@@ -1564,7 +1564,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/certificate_provider)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/alts)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/composite)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/external)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/fake)
@@ -1581,7 +1581,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/token_fetcher)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/alts)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/local)

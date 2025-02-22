@@ -1457,17 +1457,17 @@
     <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/certificate_provider_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/certificate_provider_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/certificate_provider_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/alts_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/alts_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/check_gcp_environment.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/check_gcp_environment.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/check_gcp_environment_linux.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/check_gcp_environment_no_op.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/check_gcp_environment_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/grpc_alts_credentials_options.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/grpc_alts_credentials_options.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/call_creds_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/call_creds_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/channel_creds_registry.h" role="src" />
@@ -1528,8 +1528,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts/alts_security_connector.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts/alts_security_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/alts_security_connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/alts/alts_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/fake/fake_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/fake/fake_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/insecure/insecure_security_connector.cc" role="src" />
