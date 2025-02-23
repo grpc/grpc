@@ -19,3 +19,4 @@ RUN ln -s /usr/local/go/bin/go /usr/local/bin
 
 # Define the default command.
 CMD ["bash"]
+

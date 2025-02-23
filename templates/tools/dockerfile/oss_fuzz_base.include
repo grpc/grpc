@@ -11,11 +11,11 @@ FROM gcr.io/oss-fuzz-base/base-builder@sha256:c3581153788bc49f3634fec3cd36a5d6df
 # -------------------------------------------------------------------------
 
 # Install basic packages
-RUN apt-get update && apt-get -y install ${'\\'}
-  autoconf ${'\\'}
-  build-essential ${'\\'}
-  curl ${'\\'}
-  libtool ${'\\'}
-  make ${'\\'}
-  vim ${'\\'}
+RUN apt-get update && apt-get -y install \
+  autoconf \
+  build-essential \
+  curl \
+  libtool \
+  make \
+  vim \
   wget
