@@ -17,6 +17,7 @@
 #include <fstream>
 
 #include "absl/log/log.h"
+#include "absl/log/check.h"
 #include "include/yaml-cpp/yaml.h"
 
 namespace {
@@ -74,6 +75,7 @@ std::vector<std::string> AllFilesInDir(const std::string& dir) {
 
 std::string LoadString(const std::string& filename) {
   std::ifstream file(filename);
+  CHECK(file.is_open()) << "Failed to open file: " << filename;
   std::stringstream buffer;
   buffer << file.rdbuf();
   return buffer.str();

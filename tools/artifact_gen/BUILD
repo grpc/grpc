@@ -58,6 +58,7 @@ cc_library(
     hdrs = ["utils.h"],
     deps = [
         "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
         "@nlohmann_json//:json",
         "@yaml-cpp//:yaml-cpp",
     ],
