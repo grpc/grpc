@@ -17,6 +17,6 @@
 
 #include "nlohmann/json.hpp"
 
-void RenderAllTemplates(nlohmann::json build_yaml);
+void RenderAllTemplates(const nlohmann::json& build_yaml);
 
 #endif  // TOOLS_ARTIFACT_GEN_RENDER_H_
