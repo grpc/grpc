@@ -25,7 +25,7 @@ using grpc_event_engine::experimental::EventEngine;
 using testing::WithArgs;
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace util {
 namespace testing {
 
 void MockPromiseEndpoint::ExpectRead(
@@ -109,5 +109,5 @@ void MockPromiseEndpoint::CaptureWrites(SliceBuffer& writes,
 }
 
 }  // namespace testing
-}  // namespace chaotic_good
+}  // namespace util
 }  // namespace grpc_core

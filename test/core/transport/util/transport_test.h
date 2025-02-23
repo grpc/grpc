@@ -29,7 +29,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace util {
 namespace testing {
 
 class TransportTest : public ::testing::Test {
@@ -74,7 +74,7 @@ class TransportTest : public ::testing::Test {
 };
 
 }  // namespace testing
-}  // namespace chaotic_good
+}  // namespace util
 }  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_UTIL_TRANSPORT_TEST_H
