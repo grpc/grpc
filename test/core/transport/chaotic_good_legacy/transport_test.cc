@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/chaotic_good/transport_test.h"
+#include "test/core/transport/chaotic_good_legacy/transport_test.h"
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace chaotic_good_legacy {
 namespace testing {
 
 grpc_event_engine::experimental::Slice SerializedFrameHeader(
@@ -46,5 +46,5 @@ grpc_event_engine::experimental::Slice Zeros(uint32_t length) {
 }
 
 }  // namespace testing
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core

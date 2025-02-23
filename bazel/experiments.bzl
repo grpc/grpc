@@ -19,7 +19,9 @@
 EXPERIMENT_ENABLES = {
     "backoff_cap_initial_at_max": "backoff_cap_initial_at_max",
     "call_tracer_in_transport": "call_tracer_in_transport",
+    "call_tracer_transport_fix": "call_tracer_transport_fix",
     "callv3_client_auth_filter": "callv3_client_auth_filter",
+    "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "disable_buffer_hint_on_high_memory_pressure": "disable_buffer_hint_on_high_memory_pressure",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
@@ -34,7 +36,6 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "pick_first_new": "pick_first_new",
     "posix_ee_skip_grpc_init": "posix_ee_skip_grpc_init",
-    "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
@@ -44,7 +45,6 @@ EXPERIMENT_ENABLES = {
     "server_listener": "server_listener",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
-    "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
 }
 
@@ -62,6 +62,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
+                "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
@@ -120,6 +121,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
+                "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
@@ -164,6 +166,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
+                "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",

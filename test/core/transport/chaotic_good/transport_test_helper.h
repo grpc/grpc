@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_H
-#define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_H
+#ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_HELPER_H
+#define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_HELPER_H
 
 #include <google/protobuf/text_format.h>
 
@@ -32,47 +32,6 @@
 namespace grpc_core {
 namespace chaotic_good {
 namespace testing {
-
-class TransportTest : public ::testing::Test {
- protected:
-  const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>&
-  event_engine() {
-    return event_engine_;
-  }
-
-  RefCountedPtr<Arena> MakeArena() {
-    auto arena = call_arena_allocator_->MakeArena();
-    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-        event_engine_.get());
-    return arena;
-  }
-
-  RefCountedPtr<CallArenaAllocator> call_arena_allocator() {
-    return call_arena_allocator_;
-  }
-
-  auto MakeCall(ClientMetadataHandle client_initial_metadata) {
-    return MakeCallPair(std::move(client_initial_metadata), MakeArena());
-  }
-
- private:
-  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
-      event_engine_{
-          std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-              []() {
-                grpc_timer_manager_set_threading(false);
-                grpc_event_engine::experimental::FuzzingEventEngine::Options
-                    options;
-                return options;
-              }(),
-              fuzzing_event_engine::Actions())};
-  RefCountedPtr<CallArenaAllocator> call_arena_allocator_{
-      MakeRefCounted<CallArenaAllocator>(
-          MakeResourceQuota("test-quota")
-              ->memory_quota()
-              ->CreateMemoryAllocator("test-allocator"),
-          1024)};
-};
 
 grpc_event_engine::experimental::Slice SerializedFrameHeader(
     FrameType type, uint16_t payload_connection_id, uint32_t stream_id,
@@ -93,4 +52,4 @@ grpc_event_engine::experimental::Slice EncodeProto(const std::string& fields) {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_H
+#endif  // GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_HELPER_H
