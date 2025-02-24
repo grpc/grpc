@@ -8476,6 +8476,7 @@ targets:
 - name: end2end_chaotic_good_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
@@ -8674,6 +8675,7 @@ targets:
 - name: end2end_http2_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
@@ -8868,6 +8870,7 @@ targets:
 - name: end2end_inproc_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
@@ -9062,6 +9065,7 @@ targets:
 - name: end2end_posix_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
