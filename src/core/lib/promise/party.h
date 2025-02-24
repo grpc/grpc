@@ -306,12 +306,15 @@ class Party : public Activity, private Wakeable {
   // shut down.
   // The on_complete callback will be called with the result of the
   // promise if it completes. Even if the promise returns a failed status,
-  // on_complete will be called. promise_factory called to create the promise
+  // on_complete will be called.
+  //
+  // promise_factory called to create the promise
   // with the party lock taken; after the promise is created the factory is
   // destroyed. This means that pointers or references to factory members will
   // be invalidated after the promise is created - so the promise should not
   // retain any of these. This function is thread safe. We can Spawn different
-  // promises onto the same party from different threads. A party can hold upto
+  // promises onto the same party from different threads.
+  // A party can hold upto
   // 16 unresolved promises at a time. However, this number might change in the
   // future.
   template <typename Factory, typename OnComplete>
