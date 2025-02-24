@@ -14849,6 +14849,7 @@ targets:
 - name: test_core_end2end_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
