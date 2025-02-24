@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include "src/core/credentials/transport/google_default/google_default_credentials.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>

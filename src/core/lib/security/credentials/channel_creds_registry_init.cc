@@ -33,7 +33,7 @@
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
-#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"  // IWYU pragma: keep
+#include "src/core/credentials/transport/google_default/google_default_credentials.h"  // IWYU pragma: keep
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"

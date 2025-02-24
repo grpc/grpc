@@ -4255,11 +4255,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_google_default_credentials",
     srcs = [
-        "lib/security/credentials/google_default/credentials_generic.cc",
-        "lib/security/credentials/google_default/google_default_credentials.cc",
+        "credentials/transport/google_default/credentials_generic.cc",
+        "credentials/transport/google_default/google_default_credentials.cc",
     ],
     hdrs = [
-        "lib/security/credentials/google_default/google_default_credentials.h",
+        "credentials/transport/google_default/google_default_credentials.h",
         "load_balancing/grpclb/grpclb.h",
     ],
     external_deps = [

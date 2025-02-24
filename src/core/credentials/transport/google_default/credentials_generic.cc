@@ -24,7 +24,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/credentials/call/call_credentials.h"
-#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include "src/core/credentials/transport/google_default/google_default_credentials.h"
 #include "src/core/util/env.h"
 
 std::string grpc_get_well_known_google_credentials_file_path_impl(void) {

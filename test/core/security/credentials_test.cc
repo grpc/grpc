@@ -52,7 +52,7 @@
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
-#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include "src/core/credentials/transport/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/iam/iam_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
