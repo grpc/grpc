@@ -116,7 +116,7 @@ class Http2ClientTransport final : public ClientTransport {
   PromiseEndpoint endpoint_;
   Http2Settings settings_;
 
-  // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler
+  // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
   Http2FrameHeader current_frame_header_;
 
   struct Stream : public RefCounted<Stream> {

@@ -65,7 +65,6 @@ class Http2ClientTransportTest : public TransportTest {
 
 TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   // Event Engine      : FuzzingEventEngine
-  // Number of Threads : 1
   // This test asserts :
   // 1. Tests Http2ClientTransport object creation and destruction. The object
   // creation itself begins the ReadLoop and the WriteLoop.
@@ -78,9 +77,9 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
 
   mock_endpoint.ExpectRead(
       {helper_.EventEngineSliceFromHttp2DataFrame(
-           /*payload=*/"Hello", /*stream_id=*/10, /*end_stream=*/false),
+           /*payload=*/"Hello!", /*stream_id=*/10, /*end_stream=*/false),
        helper_.EventEngineSliceFromHttp2DataFrame(
-           /*payload=*/"Hello", /*stream_id=*/11, /*end_stream=*/true)},
+           /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)},
       event_engine().get());
 
   EXPECT_CALL(*mock_endpoint.endpoint, Read)

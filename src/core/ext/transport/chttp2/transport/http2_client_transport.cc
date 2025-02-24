@@ -33,7 +33,7 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/party.h"
-#include "src/core/lib/promise/poll.h"  // IWYU pragma : keep
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -61,7 +61,8 @@ using grpc_event_engine::experimental::EventEngine;
 void Http2ClientTransport::StartCall(GRPC_UNUSED CallHandler call_handler) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall Begin";
   // TODO(tjagtap) : [PH2][P1] : Implement this function.
-  // TODO(tjagtap) : [PH2][P1] : Add CallHandler to stream_list_
+  // TODO(tjagtap) : [PH2][P1] : Add CallHandler to Stream. Add the stream to
+  // our stream_list_
   HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall End";
 }
 
@@ -87,7 +88,7 @@ void Http2ClientTransport::AbortWithError() {
 auto ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2DataFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2DataFrame Promise { stream_id="
@@ -100,7 +101,7 @@ auto ProcessHttp2DataFrame(Http2DataFrame frame) {
 auto ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2HeaderFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2HeaderFrame Promise { stream_id="
@@ -115,7 +116,7 @@ auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
   HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2RstStreamFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2RstStreamFrame Promise{ stream_id="
@@ -127,7 +128,7 @@ auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame) {
 auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2SettingsFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     // Load into this.settings_
     // Take necessary actions as per settings that have changed.
@@ -141,7 +142,7 @@ auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
 auto ProcessHttp2PingFrame(Http2PingFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2PingFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2PingFrame Promise { ack="
@@ -153,7 +154,7 @@ auto ProcessHttp2PingFrame(Http2PingFrame frame) {
 auto ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2GoawayFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2GoawayFrame Promise { "
@@ -168,7 +169,7 @@ auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2WindowUpdateFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2WindowUpdateFrame Promise { "
@@ -182,7 +183,7 @@ auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-continuation
   HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2ContinuationFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2ContinuationFrame Promise { "
@@ -194,10 +195,10 @@ auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame) {
 }
 
 auto ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
-  // Custom Frame
+  // TODO(tjagtap) : [PH2][P2] : This is not in the RFC. Understand usage.
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2SecurityFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
-    // TODO(tjagtap) : [PH2][P1] : Implement this.
+  return [frame1 = frame]() -> absl::Status {
+    // TODO(tjagtap) : [PH2][P2] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2SecurityFrame Promise { payload="
         << frame1.payload.JoinIntoString() << " }";
@@ -208,34 +209,21 @@ auto ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
 auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Factory";
   return AssertResultType<absl::Status>(MatchPromise(
-      std::move(frame),
-      [](Http2DataFrame frame) {
-        return ProcessHttp2DataFrame(std::move(frame));
-      },
-      [](Http2HeaderFrame frame) {
-        return ProcessHttp2HeaderFrame(std::move(frame));
-      },
+      frame, [](Http2DataFrame frame) { return ProcessHttp2DataFrame(frame); },
+      [](Http2HeaderFrame frame) { return ProcessHttp2HeaderFrame(frame); },
       [](Http2RstStreamFrame frame) {
-        return ProcessHttp2RstStreamFrame(std::move(frame));
+        return ProcessHttp2RstStreamFrame(frame);
       },
-      [](Http2SettingsFrame frame) {
-        return ProcessHttp2SettingsFrame(std::move(frame));
-      },
-      [](Http2PingFrame frame) {
-        return ProcessHttp2PingFrame(std::move(frame));
-      },
-      [](Http2GoawayFrame frame) {
-        return ProcessHttp2GoawayFrame(std::move(frame));
-      },
+      [](Http2SettingsFrame frame) { return ProcessHttp2SettingsFrame(frame); },
+      [](Http2PingFrame frame) { return ProcessHttp2PingFrame(frame); },
+      [](Http2GoawayFrame frame) { return ProcessHttp2GoawayFrame(frame); },
       [](Http2WindowUpdateFrame frame) {
-        return ProcessHttp2WindowUpdateFrame(std::move(frame));
+        return ProcessHttp2WindowUpdateFrame(frame);
       },
       [](Http2ContinuationFrame frame) {
-        return ProcessHttp2ContinuationFrame(std::move(frame));
+        return ProcessHttp2ContinuationFrame(frame);
       },
-      [](Http2SecurityFrame frame) {
-        return ProcessHttp2SecurityFrame(std::move(frame));
-      },
+      [](Http2SecurityFrame frame) { return ProcessHttp2SecurityFrame(frame); },
       [](Http2UnknownFrame frame) {
         // As per HTTP2 RFC, implementations MUST ignore and discard frames of
         // unknown types.
@@ -258,8 +246,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       },
       // Read the payload of the frame.
       [this](Http2FrameHeader header) {
-        // TODO(tjagtap) : [PH2][P2] : This is not nice. Fix by returning a
-        // tuple of Http2FrameHeader and Http2Frame and SliceBuffer
+        // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
         HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame Read";
         current_frame_header_ = header;
         return AssertResultType<absl::StatusOr<SliceBuffer>>(
@@ -334,6 +321,9 @@ Http2ClientTransport::Http2ClientTransport(
     PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine)
     : endpoint_(std::move(endpoint)) {
+  // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
+  // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
+
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
 
   // Initialize the general party and write party.
