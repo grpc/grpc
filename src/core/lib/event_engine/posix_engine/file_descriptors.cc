@@ -634,7 +634,7 @@ IF_POSIX_SOCKET(StatusOrPipeEnds FileDescriptors::Pipe(), {
   if (!status.ok()) {
     return status;
   }
-  return std::make_pair(Adopt(pipefd[0]), Adopt(pipefd[1]));
+  return std::pair(Adopt(pipefd[0]), Adopt(pipefd[1]));
 })
 
 FileDescriptorResult FileDescriptors::EventFd(int initval, int flags) {
