@@ -284,7 +284,10 @@ grpc_core_end2end_test(
     shard_count = 5,
 )
 
-grpc_core_end2end_test(name = "max_concurrent_streams")
+grpc_core_end2end_test(
+    name = "max_concurrent_streams",
+    shard_count = 5,
+)
 
 grpc_core_end2end_test(name = "max_connection_age")
 

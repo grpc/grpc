@@ -19,9 +19,9 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/message_chunker.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 
@@ -35,6 +35,10 @@ namespace chaotic_good {
   "grpc.chaotic_good.max_send_chunk_size"
 #define GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD \
   "grpc.chaotic_good.inlined_payload_size_threshold"
+
+struct FlowControlConfig {
+  bool new_stream_flow_control;
+};
 
 // Transport configuration.
 // Most of our configuration is derived from channel args, and then exchanged
@@ -143,8 +147,8 @@ class Config {
   }
 
   // Factory: make transport options from the settings derived here-in.
-  ChaoticGoodTransport::Options MakeTransportOptions() const {
-    ChaoticGoodTransport::Options options;
+  TcpFrameTransport::Options MakeTcpFrameTransportOptions() const {
+    TcpFrameTransport::Options options;
     options.encode_alignment = encode_alignment_;
     options.decode_alignment = decode_alignment_;
     options.inlined_payload_size_threshold = inline_payload_size_threshold_;
@@ -186,6 +190,17 @@ class Config {
 
   bool supports_chunking() const {
     return supported_features_.contains(chaotic_good_frame::Settings::CHUNKING);
+  }
+
+  bool supports_new_stream_flow_control() const {
+    return supported_features_.contains(
+        chaotic_good_frame::Settings::NEW_STREAM_FLOW_CONTROL);
+  }
+
+  FlowControlConfig flow_control_config() const {
+    return FlowControlConfig{
+        supports_new_stream_flow_control(),
+    };
   }
 
  private:

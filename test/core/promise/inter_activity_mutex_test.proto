@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/chaotic_good/transport_test_helper.h"
+syntax = "proto3";
 
-namespace grpc_core {
-namespace chaotic_good {
-namespace testing {}  // namespace testing
-}  // namespace chaotic_good
-}  // namespace grpc_core
+package inter_activity_mutex_test;
+
+message Op {
+  message Poll {
+    uint32 id = 1;
+  }
+
+  message Drop {
+    uint32 id = 1;
+  }
+
+  message Acquire {
+    uint32 id = 1;
+  }
+
+  message AcquireWhen {
+    uint32 id = 1;
+    uint32 when = 2;
+  }
+
+  message DropLock {}
+
+  message SetLock {
+    uint32 value = 1;
+  }
+
+  oneof type {
+    Poll poll = 1;
+    Drop drop = 2;
+    Acquire acquire = 3;
+    AcquireWhen acquire_when = 4;
+    DropLock drop_lock = 5;
+    SetLock set_lock = 6;
+  }
+}

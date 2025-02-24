@@ -20,12 +20,13 @@ message Settings {
     enum Features {
         UNSPECIFIED = 0;
         CHUNKING = 1;
+        NEW_STREAM_FLOW_CONTROL = 2;
     }
 
     // Connection id
     // - sent server->client on the control channel to specify the
     //   data channel connection id, one for each desired connection
-    // - exactly one sent client->server on the data channel to 
+    // - exactly one sent client->server on the data channel to
     //   complete the connection
     repeated bytes connection_id = 1;
     // Flag true if this is a data channel (and not a control channel)
@@ -64,4 +65,23 @@ message ServerMetadata {
 
 message BeginMessage {
     uint64 length = 1;
+}
+
+// Server notification of new stream state
+// starts as sending a max_stream_id, and when the connection
+// is shutting down transitions to being a GoAway state.
+// Sending is governed by the NEW_STREAM_FLOW_CONTROL feature flag.
+message ServerSetNewStreamState {
+    oneof type {
+        uint32 max_stream_id = 1;
+        // TODO(ctiller): add GoAway here...
+        // something like:
+        // message GoAway {
+        //     uint32 last_stream_id = 1;
+        //     GoAwayError error = 2;
+        //     string debug_data = 3;
+        // }
+        // with the idea being that we have a single message type
+        // that controls the send state of new streams from the client
+    }
 }

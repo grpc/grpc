@@ -93,13 +93,14 @@ class Center : public RefCounted<Center<T>> {
   //  in.
   //  - if await_receipt is true, returns the first sending batch number that
   //  guarantees the item has been received.
-  uint64_t Send(T t, bool await_receipt) {
+  template <bool kAwaitReceipt>
+  uint64_t Send(T t) {
     ReleasableMutexLock lock(&mu_);
     if (batch_ == kClosedBatch) return kClosedBatch;
     queue_.push_back(std::move(t));
     auto receive_waker = std::move(receive_waker_);
     const uint64_t batch =
-        (!await_receipt && queue_.size() <= max_queued_) ? batch_ : batch_ + 1;
+        (!kAwaitReceipt && queue_.size() <= max_queued_) ? batch_ : batch_ + 1;
     lock.Release();
     receive_waker.Wakeup();
     return batch;
@@ -149,6 +150,7 @@ class MpscReceiver;
 template <typename T>
 class MpscSender {
  public:
+  MpscSender() = default;
   MpscSender(const MpscSender&) = default;
   MpscSender& operator=(const MpscSender&) = default;
   MpscSender(MpscSender&&) noexcept = default;
@@ -171,25 +173,25 @@ class MpscSender {
   // until the item has been received by the receiver.
   auto SendAcked(T t) { return SendGeneric<true>(std::move(t)); }
 
-  bool UnbufferedImmediateSend(T t) {
-    return center_->Send(std::move(t), false) !=
-           mpscpipe_detail::Center<T>::kClosedBatch;
+  StatusFlag UnbufferedImmediateSend(T t) {
+    return StatusFlag(center_->template Send<false>(std::move(t)) !=
+                      mpscpipe_detail::Center<T>::kClosedBatch);
   }
 
  private:
   template <bool kAwaitReceipt>
   auto SendGeneric(T t) {
     return [center = center_, t = std::move(t),
-            batch = uint64_t(0)]() mutable -> Poll<bool> {
-      if (center == nullptr) return false;
+            batch = uint64_t(0)]() mutable -> Poll<StatusFlag> {
+      if (center == nullptr) return Failure{};
       if (batch == 0) {
-        batch = center->Send(std::move(t), kAwaitReceipt);
-        CHECK_NE(batch, 0u);
-        if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return false;
+        batch = center->template Send<kAwaitReceipt>(std::move(t));
+        DCHECK_NE(batch, 0u);
+        if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return Failure{};
       }
       auto p = center->PollReceiveBatch(batch);
       if (p.pending()) return Pending{};
-      return true;
+      return Success{};
     };
   }
 

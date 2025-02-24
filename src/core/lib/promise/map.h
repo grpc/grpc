@@ -251,6 +251,38 @@ auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
   });
 }
 
+// Takes a promise that resolves to T, and returns a promise that resolves to
+// Empty (discarding the result)
+template <typename Promise>
+auto DiscardResult(Promise promise) {
+  return Map(std::move(promise), [](auto) {});
+}
+
+// Given a promise, and N values, return a tuple with the resolved promise
+// first, and then the N values stapled to it.
+template <typename Promise, typename... Values>
+auto Staple(Promise promise, Values&&... values) {
+  return Map(std::move(promise), [values = std::tuple(std::forward<Values>(
+                                      values)...)](auto first_value) mutable {
+    return std::tuple_cat(std::tuple(std::move(first_value)),
+                          std::move(values));
+  });
+}
+
+// Same as Staple, but assumes a StatusOr<X>, and returns X, Values.
+template <typename Promise, typename... Values>
+auto TryStaple(Promise promise, Values&&... values) {
+  return Map(
+      std::move(promise),
+      [values = std::tuple(std::forward<Values>(values)...)](
+          auto first_value) mutable
+          -> absl::StatusOr<std::tuple<decltype(*first_value), Values...>> {
+        if (!first_value.ok()) return first_value.status();
+        return std::tuple_cat(std::tuple(std::move(*first_value)),
+                              std::move(values));
+      });
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_MAP_H
