@@ -43,9 +43,9 @@ namespace http2 {
 namespace testing {
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
-using grpc_core::transport::testing::Http2FrameTestHelper;
-using grpc_core::util::testing::MockPromiseEndpoint;
 using grpc_event_engine::experimental::EventEngine;
+using transport::testing::Http2FrameTestHelper;
+using util::testing::MockPromiseEndpoint;
 using util::testing::TransportTest;
 
 class Http2ClientTransportTest : public TransportTest {
