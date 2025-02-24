@@ -23,7 +23,7 @@ with grpc_fuzz_test.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
-def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], data = [], external_deps = []):
+def grpc_fuzz_test(name, srcs = [], deps = [], shard_count = None, tags = [], data = [], external_deps = []):
     """Instantiates a fuzztest based test.
 
     This is the preferred method of writing fuzzers.
@@ -32,6 +32,7 @@ def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], data = [], external_de
         name: The name of the test.
         srcs: The source files for the test.
         deps: The dependencies of the test.
+        shard_count: The shard count.
         tags: The tags for the test.
         data: The data for the test.
         external_deps: External deps.
@@ -49,5 +50,6 @@ def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], data = [], external_de
         deps = deps,
         uses_polling = False,
         data = data,
+        shard_count = shard_count,
         external_deps = external_deps,
     )
