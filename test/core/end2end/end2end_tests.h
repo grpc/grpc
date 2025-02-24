@@ -699,7 +699,7 @@ inline auto MaybeAddNullConfig(
 #else
 #define CORE_END2END_FUZZER(suite, name)                                  \
   FUZZ_TEST(Fuzzers, suite##_##name)                                      \
-      .WithDomains(::fuzztest::ElementOf(::grpc_core::MaybeAddNullConfig( \
+      .WithDomains(::fuzztest::ElementOf(grpc_core::MaybeAddNullConfig(   \
                        suite::AllSuiteConfigs(true))),                    \
                    ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>() \
                        .WithProtobufField("config_vars", AnyConfigVars()));
