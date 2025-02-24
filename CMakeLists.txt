@@ -1323,6 +1323,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx call_arena_allocator_test)
   endif()
+  add_dependencies(buildtests_cxx call_credentials_test)
   add_dependencies(buildtests_cxx call_creds_test)
   add_dependencies(buildtests_cxx call_filters_test)
   add_dependencies(buildtests_cxx call_finalization_test)
@@ -1388,6 +1389,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx common_closures_test)
   add_dependencies(buildtests_cxx completion_queue_threading_test)
+  add_dependencies(buildtests_cxx composite_credentials_test)
   add_dependencies(buildtests_cxx compressed_payload_test)
   add_dependencies(buildtests_cxx compression_test)
   add_dependencies(buildtests_cxx concurrent_connectivity_test)
@@ -1533,6 +1535,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx if_test)
   add_dependencies(buildtests_cxx init_test)
   add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
+  add_dependencies(buildtests_cxx insecure_credentials_test)
   add_dependencies(buildtests_cxx insecure_security_connector_test)
   add_dependencies(buildtests_cxx inter_activity_latch_test)
   add_dependencies(buildtests_cxx inter_activity_pipe_test)
@@ -1821,17 +1824,18 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx tcp_socket_utils_test)
   add_dependencies(buildtests_cxx tdigest_test)
   add_dependencies(buildtests_cxx test_core_channelz_channelz_test)
+  add_dependencies(buildtests_cxx test_core_credentials_transport_ssl_ssl_credentials_test)
+  add_dependencies(buildtests_cxx test_core_credentials_transport_tls_tls_credentials_test)
   add_dependencies(buildtests_cxx test_core_end2end_channelz_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_iomgr_timer_heap_test)
-  add_dependencies(buildtests_cxx test_core_security_credentials_test)
-  add_dependencies(buildtests_cxx test_core_security_ssl_credentials_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_test)
   add_dependencies(buildtests_cxx test_core_util_time_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_end2end_ssl_credentials_test)
+  add_dependencies(buildtests_cxx test_cpp_end2end_tls_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_server_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_util_slice_test)
   add_dependencies(buildtests_cxx test_cpp_util_time_test)
@@ -1855,7 +1859,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx timer_manager_test)
   add_dependencies(buildtests_cxx timer_test)
   add_dependencies(buildtests_cxx tls_certificate_verifier_test)
-  add_dependencies(buildtests_cxx tls_credentials_test)
   add_dependencies(buildtests_cxx tls_key_export_test)
   add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx too_many_pings_test)
@@ -2220,7 +2223,60 @@ add_library(grpc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
   src/core/config/core_configuration.cc
+  src/core/credentials/call/call_creds_util.cc
+  src/core/credentials/call/composite/composite_call_credentials.cc
+  src/core/credentials/call/external/aws_external_account_credentials.cc
+  src/core/credentials/call/external/aws_request_signer.cc
+  src/core/credentials/call/external/external_account_credentials.cc
+  src/core/credentials/call/external/file_external_account_credentials.cc
+  src/core/credentials/call/external/url_external_account_credentials.cc
+  src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
+  src/core/credentials/call/iam/iam_credentials.cc
+  src/core/credentials/call/json_util.cc
+  src/core/credentials/call/jwt/json_token.cc
+  src/core/credentials/call/jwt/jwt_credentials.cc
+  src/core/credentials/call/jwt/jwt_verifier.cc
+  src/core/credentials/call/oauth2/oauth2_credentials.cc
+  src/core/credentials/call/plugin/plugin_credentials.cc
+  src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc
+  src/core/credentials/transport/alts/alts_credentials.cc
+  src/core/credentials/transport/alts/alts_security_connector.cc
+  src/core/credentials/transport/alts/check_gcp_environment.cc
+  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
+  src/core/credentials/transport/channel_creds_registry_init.cc
+  src/core/credentials/transport/composite/composite_channel_credentials.cc
+  src/core/credentials/transport/fake/fake_credentials.cc
+  src/core/credentials/transport/fake/fake_security_connector.cc
+  src/core/credentials/transport/google_default/credentials_generic.cc
+  src/core/credentials/transport/google_default/google_default_credentials.cc
+  src/core/credentials/transport/insecure/insecure_credentials.cc
+  src/core/credentials/transport/insecure/insecure_security_connector.cc
+  src/core/credentials/transport/local/local_credentials.cc
+  src/core/credentials/transport/local/local_security_connector.cc
+  src/core/credentials/transport/security_connector.cc
+  src/core/credentials/transport/ssl/ssl_credentials.cc
+  src/core/credentials/transport/ssl/ssl_security_connector.cc
+  src/core/credentials/transport/tls/certificate_provider_registry.cc
+  src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc
+  src/core/credentials/transport/tls/grpc_tls_certificate_match.cc
+  src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc
+  src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc
+  src/core/credentials/transport/tls/grpc_tls_credentials_options.cc
+  src/core/credentials/transport/tls/grpc_tls_crl_provider.cc
+  src/core/credentials/transport/tls/load_system_roots_fallback.cc
+  src/core/credentials/transport/tls/load_system_roots_supported.cc
+  src/core/credentials/transport/tls/load_system_roots_windows.cc
+  src/core/credentials/transport/tls/ssl_utils.cc
+  src/core/credentials/transport/tls/tls_credentials.cc
+  src/core/credentials/transport/tls/tls_security_connector.cc
+  src/core/credentials/transport/tls/tls_utils.cc
   src/core/credentials/transport/transport_credentials.cc
+  src/core/credentials/transport/xds/xds_credentials.cc
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -2594,6 +2650,8 @@ add_library(grpc
   src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c
   src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c
   src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
+  src/core/filter/auth/client_auth_filter.cc
+  src/core/filter/auth/server_auth_filter.cc
   src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
@@ -2757,60 +2815,6 @@ add_library(grpc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/stdout_logger.cc
-  src/core/credentials/transport/tls/certificate_provider_registry.cc
-  src/core/credentials/transport/alts/alts_credentials.cc
-  src/core/credentials/transport/alts/check_gcp_environment.cc
-  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
-  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
-  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
-  src/core/credentials/call/call_creds_util.cc
-  src/core/credentials/transport/channel_creds_registry_init.cc
-  src/core/credentials/call/composite/composite_credentials.cc
-  src/core/credentials/call/external/aws_external_account_credentials.cc
-  src/core/credentials/call/external/aws_request_signer.cc
-  src/core/credentials/call/external/external_account_credentials.cc
-  src/core/credentials/call/external/file_external_account_credentials.cc
-  src/core/credentials/call/external/url_external_account_credentials.cc
-  src/core/credentials/transport/fake/fake_credentials.cc
-  src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
-  src/core/credentials/transport/google_default/credentials_generic.cc
-  src/core/credentials/transport/google_default/google_default_credentials.cc
-  src/core/credentials/call/iam/iam_credentials.cc
-  src/core/credentials/transport/insecure/insecure_credentials.cc
-  src/core/credentials/call/jwt/json_token.cc
-  src/core/credentials/call/jwt/jwt_credentials.cc
-  src/core/credentials/call/jwt/jwt_verifier.cc
-  src/core/credentials/transport/local/local_credentials.cc
-  src/core/credentials/call/oauth2/oauth2_credentials.cc
-  src/core/credentials/call/plugin/plugin_credentials.cc
-  src/core/credentials/transport/ssl/ssl_credentials.cc
-  src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc
-  src/core/credentials/transport/tls/grpc_tls_certificate_match.cc
-  src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc
-  src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc
-  src/core/credentials/transport/tls/grpc_tls_credentials_options.cc
-  src/core/credentials/transport/tls/grpc_tls_crl_provider.cc
-  src/core/credentials/transport/tls/tls_credentials.cc
-  src/core/credentials/transport/tls/tls_utils.cc
-  src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc
-  src/core/credentials/transport/xds/xds_credentials.cc
-  src/core/credentials/transport/alts/alts_security_connector.cc
-  src/core/credentials/transport/fake/fake_security_connector.cc
-  src/core/credentials/transport/insecure/insecure_security_connector.cc
-  src/core/credentials/transport/tls/load_system_roots_fallback.cc
-  src/core/credentials/transport/tls/load_system_roots_supported.cc
-  src/core/credentials/transport/tls/load_system_roots_windows.cc
-  src/core/credentials/transport/local/local_security_connector.cc
-  src/core/credentials/transport/security_connector.cc
-  src/core/credentials/transport/ssl/ssl_security_connector.cc
-  src/core/credentials/transport/tls/ssl_utils.cc
-  src/core/credentials/transport/tls/tls_security_connector.cc
-  src/core/filter/auth/client_auth_filter.cc
-  src/core/filter/auth/server_auth_filter.cc
-  src/core/credentials/call/json_util.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -3308,6 +3312,28 @@ add_library(grpc_unsecure
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
   src/core/config/core_configuration.cc
+  src/core/credentials/call/call_creds_util.cc
+  src/core/credentials/call/composite/composite_call_credentials.cc
+  src/core/credentials/call/json_util.cc
+  src/core/credentials/call/plugin/plugin_credentials.cc
+  src/core/credentials/transport/alts/check_gcp_environment.cc
+  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
+  src/core/credentials/transport/composite/composite_channel_credentials.cc
+  src/core/credentials/transport/fake/fake_credentials.cc
+  src/core/credentials/transport/fake/fake_security_connector.cc
+  src/core/credentials/transport/insecure/insecure_credentials.cc
+  src/core/credentials/transport/insecure/insecure_security_connector.cc
+  src/core/credentials/transport/security_connector.cc
+  src/core/credentials/transport/tls/certificate_provider_registry.cc
+  src/core/credentials/transport/tls/load_system_roots_fallback.cc
+  src/core/credentials/transport/tls/load_system_roots_supported.cc
+  src/core/credentials/transport/tls/load_system_roots_windows.cc
+  src/core/credentials/transport/tls/tls_utils.cc
   src/core/credentials/transport/transport_credentials.cc
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -3373,6 +3399,8 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/validate/validate.upb_minitable.c
   src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
+  src/core/filter/auth/client_auth_filter.cc
+  src/core/filter/auth/server_auth_filter.cc
   src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
@@ -3530,29 +3558,6 @@ add_library(grpc_unsecure
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
-  src/core/credentials/transport/tls/certificate_provider_registry.cc
-  src/core/credentials/transport/alts/check_gcp_environment.cc
-  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
-  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
-  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
-  src/core/credentials/call/call_creds_util.cc
-  src/core/credentials/call/composite/composite_credentials.cc
-  src/core/credentials/transport/fake/fake_credentials.cc
-  src/core/credentials/transport/insecure/insecure_credentials.cc
-  src/core/credentials/call/plugin/plugin_credentials.cc
-  src/core/credentials/transport/tls/tls_utils.cc
-  src/core/credentials/transport/fake/fake_security_connector.cc
-  src/core/credentials/transport/insecure/insecure_security_connector.cc
-  src/core/credentials/transport/tls/load_system_roots_fallback.cc
-  src/core/credentials/transport/tls/load_system_roots_supported.cc
-  src/core/credentials/transport/tls/load_system_roots_windows.cc
-  src/core/credentials/transport/security_connector.cc
-  src/core/filter/auth/client_auth_filter.cc
-  src/core/filter/auth/server_auth_filter.cc
-  src/core/credentials/call/json_util.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -5560,12 +5565,32 @@ add_library(grpc_authorization_provider
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/config/core_configuration.cc
+  src/core/credentials/call/call_creds_util.cc
+  src/core/credentials/call/composite/composite_call_credentials.cc
+  src/core/credentials/call/json_util.cc
+  src/core/credentials/call/plugin/plugin_credentials.cc
+  src/core/credentials/transport/alts/check_gcp_environment.cc
+  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
+  src/core/credentials/transport/composite/composite_channel_credentials.cc
+  src/core/credentials/transport/security_connector.cc
+  src/core/credentials/transport/tls/certificate_provider_registry.cc
+  src/core/credentials/transport/tls/load_system_roots_fallback.cc
+  src/core/credentials/transport/tls/load_system_roots_supported.cc
+  src/core/credentials/transport/tls/load_system_roots_windows.cc
+  src/core/credentials/transport/tls/tls_utils.cc
   src/core/credentials/transport/transport_credentials.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/filter/auth/client_auth_filter.cc
+  src/core/filter/auth/server_auth_filter.cc
   src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
@@ -5725,25 +5750,6 @@ add_library(grpc_authorization_provider
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
   src/core/lib/security/authorization/stdout_logger.cc
-  src/core/credentials/transport/tls/certificate_provider_registry.cc
-  src/core/credentials/transport/alts/check_gcp_environment.cc
-  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
-  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
-  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
-  src/core/credentials/call/call_creds_util.cc
-  src/core/credentials/call/composite/composite_credentials.cc
-  src/core/credentials/call/plugin/plugin_credentials.cc
-  src/core/credentials/transport/tls/tls_utils.cc
-  src/core/credentials/transport/tls/load_system_roots_fallback.cc
-  src/core/credentials/transport/tls/load_system_roots_supported.cc
-  src/core/credentials/transport/tls/load_system_roots_windows.cc
-  src/core/credentials/transport/security_connector.cc
-  src/core/filter/auth/client_auth_filter.cc
-  src/core/filter/auth/server_auth_filter.cc
-  src/core/credentials/call/json_util.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -7566,7 +7572,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(alts_security_connector_test
-  test/core/security/alts_security_connector_test.cc
+  test/core/credentials/transport/alts/alts_security_connector_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -7956,7 +7962,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(auth_context_test
-  test/core/security/auth_context_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -7965,6 +7970,7 @@ add_executable(auth_context_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
+  test/core/transport/auth_context_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8188,7 +8194,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(aws_request_signer_test
-  test/core/security/aws_request_signer_test.cc
+  test/core/credentials/call/external/aws_request_signer_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -8384,6 +8390,7 @@ add_executable(bad_ping_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -8885,6 +8892,7 @@ add_executable(binary_metadata_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -9199,6 +9207,64 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(call_credentials_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/credentials/call/call_credentials_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/cmdline.cc
+  test/core/test_util/grpc_profiler.cc
+  test/core/test_util/histogram.cc
+  test/core/test_util/mock_endpoint.cc
+  test/core/test_util/parse_hexstring.cc
+  test/core/test_util/resolve_localhost_ip46.cc
+  test/core/test_util/slice_splitter.cc
+  test/core/test_util/test_call_creds.cc
+  test/core/test_util/tracer_util.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(call_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(call_credentials_test PUBLIC cxx_std_17)
+target_include_directories(call_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(call_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(call_creds_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
@@ -9245,6 +9311,7 @@ add_executable(call_creds_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -9472,6 +9539,7 @@ add_executable(call_host_override_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -9619,6 +9687,14 @@ add_executable(call_utils_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/config/core_configuration.cc
+  src/core/credentials/transport/alts/check_gcp_environment.cc
+  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
+  src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -9769,14 +9845,6 @@ add_executable(call_utils_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/credentials/transport/tls/certificate_provider_registry.cc
-  src/core/credentials/transport/alts/check_gcp_environment.cc
-  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
-  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
-  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -9950,6 +10018,7 @@ add_executable(cancel_after_accept_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -10040,6 +10109,7 @@ add_executable(cancel_after_client_done_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -10130,6 +10200,7 @@ add_executable(cancel_after_invoke_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -10220,6 +10291,7 @@ add_executable(cancel_after_round_trip_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -10357,6 +10429,7 @@ add_executable(cancel_before_invoke_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -10523,6 +10596,7 @@ add_executable(cancel_in_a_vacuum_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -10613,6 +10687,7 @@ add_executable(cancel_with_status_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -10799,7 +10874,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(certificate_provider_registry_test
-  test/core/security/certificate_provider_registry_test.cc
+  test/core/credentials/transport/tls/certificate_provider_registry_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -11138,7 +11213,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(channel_creds_registry_test
-  test/core/security/channel_creds_registry_test.cc
+  test/core/credentials/transport/channel_creds_registry_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -11551,7 +11626,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(check_gcp_environment_linux_test
-  test/core/security/check_gcp_environment_linux_test.cc
+  test/core/credentials/transport/alts/check_gcp_environment_linux_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -11601,7 +11676,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(check_gcp_environment_windows_test
-  test/core/security/check_gcp_environment_windows_test.cc
+  test/core/credentials/transport/alts/check_gcp_environment_windows_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -12466,6 +12541,7 @@ add_executable(client_streaming_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -12784,6 +12860,49 @@ target_link_libraries(completion_queue_threading_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(composite_credentials_test
+  test/core/credentials/transport/composite/composite_credentials_test.cc
+  test/core/test_util/test_call_creds.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(composite_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(composite_credentials_test PUBLIC cxx_std_17)
+target_include_directories(composite_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(composite_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(compressed_payload_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
@@ -12830,6 +12949,7 @@ add_executable(compressed_payload_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -13191,6 +13311,7 @@ add_executable(connectivity_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -13679,6 +13800,7 @@ add_executable(default_host_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -13930,6 +14052,7 @@ add_executable(disappearing_server_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -14313,6 +14436,7 @@ add_executable(empty_batch_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -15475,6 +15599,7 @@ add_executable(filter_causes_close_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -15524,6 +15649,14 @@ add_executable(filter_fusion_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/config/core_configuration.cc
+  src/core/credentials/transport/alts/check_gcp_environment.cc
+  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
+  src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -15674,14 +15807,6 @@ add_executable(filter_fusion_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/credentials/transport/tls/certificate_provider_registry.cc
-  src/core/credentials/transport/alts/check_gcp_environment.cc
-  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
-  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
-  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -15855,6 +15980,7 @@ add_executable(filter_init_fails_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -15995,6 +16121,7 @@ add_executable(filtered_metadata_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -16960,6 +17087,7 @@ add_executable(graceful_server_shutdown_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -17048,7 +17176,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_alts_credentials_options_test
-  test/core/security/grpc_alts_credentials_options_test.cc
+  test/core/credentials/transport/alts/grpc_alts_credentials_options_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -17366,6 +17494,7 @@ add_executable(grpc_authz_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -17861,7 +17990,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_certificate_distributor_test
-  test/core/security/grpc_tls_certificate_distributor_test.cc
+  test/core/credentials/transport/tls/grpc_tls_certificate_distributor_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -17911,7 +18040,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_certificate_provider_test
-  test/core/security/grpc_tls_certificate_provider_test.cc
+  test/core/credentials/transport/tls/grpc_tls_certificate_provider_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -17961,7 +18090,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_certificate_verifier_test
-  test/core/security/grpc_tls_certificate_verifier_test.cc
+  test/core/credentials/transport/tls/grpc_tls_certificate_verifier_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -18011,7 +18140,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_credentials_options_comparator_test
-  test/core/security/grpc_tls_credentials_options_comparator_test.cc
+  test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -18061,7 +18190,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_credentials_options_test
-  test/core/security/grpc_tls_credentials_options_test.cc
+  test/core/credentials/transport/tls/grpc_tls_credentials_options_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -18119,9 +18248,9 @@ add_executable(grpc_tls_crl_provider_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
+  test/core/credentials/transport/tls/grpc_tls_crl_provider_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/security/grpc_tls_crl_provider_test.cc
   test/core/tsi/transport_security_test_lib.cc
 )
 if(WIN32 AND MSVC)
@@ -18339,6 +18468,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
+    test/core/test_util/test_call_creds.cc
     test/cpp/end2end/grpclb_end2end_test.cc
     test/cpp/end2end/test_service_impl.cc
   )
@@ -18433,6 +18563,7 @@ add_executable(h2_ssl_cert_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18866,6 +18997,7 @@ add_executable(high_initial_seqno_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -19198,6 +19330,7 @@ add_executable(hpack_size_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -19487,6 +19620,7 @@ add_executable(http2_stats_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -19935,8 +20069,50 @@ target_link_libraries(initial_settings_frame_bad_client_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(insecure_credentials_test
+  test/core/credentials/transport/insecure/insecure_credentials_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(insecure_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(insecure_credentials_test PUBLIC cxx_std_17)
+target_include_directories(insecure_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(insecure_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(insecure_security_connector_test
-  test/core/security/insecure_security_connector_test.cc
+  test/core/credentials/transport/insecure/insecure_security_connector_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -20212,7 +20388,7 @@ add_executable(interop_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
-  test/core/security/oauth2_utils.cc
+  test/core/credentials/call/oauth2/oauth2_utils.cc
   test/cpp/interop/backend_metrics_lb_policy.cc
   test/cpp/interop/client.cc
   test/cpp/interop/client_helper.cc
@@ -20397,6 +20573,7 @@ add_executable(invoke_large_request_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -20668,7 +20845,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(json_token_test
-  test/core/security/json_token_test.cc
+  test/core/credentials/call/jwt/json_token_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -20718,7 +20895,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(jwt_verifier_test
-  test/core/security/jwt_verifier_test.cc
+  test/core/credentials/call/jwt/jwt_verifier_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -20813,6 +20990,7 @@ add_executable(keepalive_timeout_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -20946,6 +21124,7 @@ add_executable(large_metadata_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -21262,7 +21441,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(local_security_connector_test
-  test/core/security/local_security_connector_test.cc
+  test/core/credentials/transport/local/local_security_connector_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -21678,6 +21857,7 @@ add_executable(max_concurrent_streams_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -21768,6 +21948,7 @@ add_executable(max_connection_age_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -21858,6 +22039,7 @@ add_executable(max_connection_idle_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -21948,6 +22130,7 @@ add_executable(max_message_length_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -22711,6 +22894,7 @@ add_executable(negative_deadline_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -22833,6 +23017,7 @@ add_executable(no_logging_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -22923,6 +23108,7 @@ add_executable(no_op_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -24020,6 +24206,7 @@ add_executable(payload_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -24412,6 +24599,7 @@ add_executable(ping_pong_streaming_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -24552,6 +24740,7 @@ add_executable(ping_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -26085,6 +26274,7 @@ add_executable(proxy_auth_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -26696,6 +26886,7 @@ add_executable(registered_call_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -26929,6 +27120,7 @@ add_executable(request_with_flags_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -27019,6 +27211,7 @@ add_executable(request_with_payload_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -27392,6 +27585,7 @@ add_executable(resource_quota_server_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -27524,6 +27718,7 @@ add_executable(retry_cancel_after_first_attempt_starts_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -27614,6 +27809,7 @@ add_executable(retry_cancel_during_delay_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -27704,6 +27900,7 @@ add_executable(retry_cancel_with_multiple_send_batches_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -27794,6 +27991,7 @@ add_executable(retry_cancellation_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -27884,6 +28082,7 @@ add_executable(retry_disabled_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -27974,6 +28173,7 @@ add_executable(retry_exceeds_buffer_size_in_delay_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28064,6 +28264,7 @@ add_executable(retry_exceeds_buffer_size_in_initial_batch_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28154,6 +28355,7 @@ add_executable(retry_exceeds_buffer_size_in_subsequent_batch_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28244,6 +28446,7 @@ add_executable(retry_lb_drop_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28334,6 +28537,7 @@ add_executable(retry_lb_fail_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28424,6 +28628,7 @@ add_executable(retry_non_retriable_status_before_trailers_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28514,6 +28719,7 @@ add_executable(retry_non_retriable_status_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28604,6 +28810,7 @@ add_executable(retry_per_attempt_recv_timeout_on_last_attempt_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28694,6 +28901,7 @@ add_executable(retry_per_attempt_recv_timeout_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28784,6 +28992,7 @@ add_executable(retry_recv_initial_metadata_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28874,6 +29083,7 @@ add_executable(retry_recv_message_replay_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -28964,6 +29174,7 @@ add_executable(retry_recv_message_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -29054,6 +29265,7 @@ add_executable(retry_recv_trailing_metadata_error_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -29144,6 +29356,7 @@ add_executable(retry_send_initial_metadata_refs_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -29234,6 +29447,7 @@ add_executable(retry_send_op_fails_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -29324,6 +29538,7 @@ add_executable(retry_send_recv_batch_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -29414,6 +29629,7 @@ add_executable(retry_server_pushback_delay_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -29504,6 +29720,7 @@ add_executable(retry_server_pushback_disabled_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -29636,6 +29853,7 @@ add_executable(retry_streaming_after_commit_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -29726,6 +29944,7 @@ add_executable(retry_streaming_succeeds_before_replay_finished_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -29816,6 +30035,7 @@ add_executable(retry_streaming_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -29906,6 +30126,7 @@ add_executable(retry_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -30038,6 +30259,7 @@ add_executable(retry_throttled_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -30128,6 +30350,7 @@ add_executable(retry_too_many_attempts_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -30218,6 +30441,7 @@ add_executable(retry_transparent_goaway_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -30308,6 +30532,7 @@ add_executable(retry_transparent_max_concurrent_streams_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -30398,6 +30623,7 @@ add_executable(retry_transparent_not_sent_on_wire_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -30488,6 +30714,7 @@ add_executable(retry_unref_before_finish_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -30578,6 +30805,7 @@ add_executable(retry_unref_before_recv_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -30746,6 +30974,7 @@ add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
   test/core/event_engine/event_engine_test_utils.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   test/cpp/end2end/rls_end2end_test.cc
   test/cpp/end2end/rls_server.cc
@@ -30969,8 +31198,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(secure_endpoint_test
+  test/core/handshake/secure_endpoint_test.cc
   test/core/iomgr/endpoint_tests.cc
-  test/core/security/secure_endpoint_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -31020,7 +31249,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(security_connector_test
-  test/core/security/security_connector_test.cc
+  test/core/credentials/transport/security_connector_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -31701,6 +31930,7 @@ add_executable(server_finishes_request_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -32043,6 +32273,7 @@ add_executable(server_streaming_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -32347,6 +32578,7 @@ add_executable(shutdown_finishes_calls_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -32437,6 +32669,7 @@ add_executable(shutdown_finishes_tags_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -32606,6 +32839,7 @@ add_executable(simple_delayed_request_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -32696,6 +32930,7 @@ add_executable(simple_metadata_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -32830,6 +33065,7 @@ add_executable(simple_request_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -33734,6 +33970,7 @@ add_executable(streaming_error_response_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -34124,7 +34361,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(system_roots_test
-  test/core/security/system_roots_test.cc
+  test/core/credentials/transport/tls/system_roots_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -34541,6 +34778,98 @@ target_link_libraries(test_core_channelz_channelz_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(test_core_credentials_transport_ssl_ssl_credentials_test
+  test/core/credentials/transport/ssl/ssl_credentials_test.cc
+  test/core/test_util/cmdline.cc
+  test/core/test_util/grpc_profiler.cc
+  test/core/test_util/histogram.cc
+  test/core/test_util/mock_endpoint.cc
+  test/core/test_util/parse_hexstring.cc
+  test/core/test_util/resolve_localhost_ip46.cc
+  test/core/test_util/slice_splitter.cc
+  test/core/test_util/tracer_util.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_credentials_transport_ssl_ssl_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(test_core_credentials_transport_ssl_ssl_credentials_test PUBLIC cxx_std_17)
+target_include_directories(test_core_credentials_transport_ssl_ssl_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(test_core_credentials_transport_ssl_ssl_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(test_core_credentials_transport_tls_tls_credentials_test
+  test/core/credentials/transport/tls/tls_credentials_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_credentials_transport_tls_tls_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(test_core_credentials_transport_tls_tls_credentials_test PUBLIC cxx_std_17)
+target_include_directories(test_core_credentials_transport_tls_tls_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(test_core_credentials_transport_tls_tls_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(test_core_end2end_channelz_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
@@ -34587,6 +34916,7 @@ add_executable(test_core_end2end_channelz_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -34773,113 +35103,6 @@ target_include_directories(test_core_iomgr_timer_heap_test
 )
 
 target_link_libraries(test_core_iomgr_timer_heap_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(test_core_security_credentials_test
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/event_engine/event_engine_test_utils.cc
-  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/security/credentials_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_core_security_credentials_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(test_core_security_credentials_test PUBLIC cxx_std_17)
-target_include_directories(test_core_security_credentials_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_core_security_credentials_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(test_core_security_ssl_credentials_test
-  test/core/security/ssl_credentials_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_core_security_ssl_credentials_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(test_core_security_ssl_credentials_test PUBLIC cxx_std_17)
-target_include_directories(test_core_security_ssl_credentials_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_core_security_ssl_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
@@ -35129,6 +35352,82 @@ target_include_directories(test_cpp_end2end_ssl_credentials_test
 )
 
 target_link_libraries(test_cpp_end2end_ssl_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(test_cpp_end2end_tls_credentials_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
+  test/cpp/end2end/test_service_impl.cc
+  test/cpp/end2end/tls_credentials_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_cpp_end2end_tls_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(test_cpp_end2end_tls_credentials_test PUBLIC cxx_std_17)
+target_include_directories(test_cpp_end2end_tls_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(test_cpp_end2end_tls_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_test_util
@@ -35707,6 +36006,7 @@ add_executable(timeout_before_request_call_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -35978,82 +36278,6 @@ target_link_libraries(tls_certificate_verifier_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(tls_credentials_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
-  test/cpp/end2end/test_service_impl.cc
-  test/cpp/end2end/tls_credentials_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(tls_credentials_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-      "GRPCXX_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(tls_credentials_test PUBLIC cxx_std_17)
-target_include_directories(tls_credentials_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(tls_credentials_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc++_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(tls_key_export_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -36130,7 +36354,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(tls_security_connector_test
-  test/core/security/tls_security_connector_test.cc
+  test/core/credentials/transport/tls/tls_security_connector_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -36138,6 +36362,7 @@ add_executable(tls_security_connector_test
   test/core/test_util/parse_hexstring.cc
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
@@ -36356,6 +36581,7 @@ add_executable(trailing_metadata_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -37396,6 +37622,7 @@ add_executable(write_buffering_at_end_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -37486,6 +37713,7 @@ add_executable(write_buffering_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -41262,7 +41490,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_credentials_test
-  test/core/security/xds_credentials_test.cc
+  test/core/credentials/transport/xds/xds_credentials_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
