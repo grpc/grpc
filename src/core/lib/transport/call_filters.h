@@ -1384,6 +1384,36 @@ class ClientInitialMetadataInterceptor {
   GPR_NO_UNIQUE_ADDRESS Fn fn_;
 };
 
+// Determine if an interceptor needs to access the channel via one of its
+// arguments.
+
+template <typename T>
+constexpr bool MethodHasChannelAccess = false;
+
+template <typename T, typename R, typename A>
+constexpr bool MethodHasChannelAccess<R (T::*)(A)> = false;
+
+template <typename T, typename R>
+constexpr bool MethodHasChannelAccess<R (T::*)()> = false;
+
+template <typename T, typename R, typename A, typename C>
+constexpr bool MethodHasChannelAccess<R (T::*)(A, C)> = true;
+
+template <auto... Ts>
+constexpr bool AnyMethodHasChannelAccess =
+    (MethodHasChannelAccess<decltype(Ts)> || ...);
+
+// Composite for a given channel type to determine if any of its interceptors
+// fall into this category: later code should use this.
+template <typename Derived>
+inline constexpr bool CallHasChannelAccess() {
+  return AnyMethodHasChannelAccess<&Derived::Call::OnClientInitialMetadata,
+                                   &Derived::Call::OnClientToServerMessage,
+                                   &Derived::Call::OnServerInitialMetadata,
+                                   &Derived::Call::OnServerToClientMessage,
+                                   &Derived::Call::OnServerTrailingMetadata,
+                                   &Derived::Call::OnFinalize>;
+}
 }  // namespace filters_detail
 
 namespace for_each_detail {

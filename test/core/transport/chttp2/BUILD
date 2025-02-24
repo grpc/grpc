@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
-load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
@@ -490,7 +490,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "http2_client_transport_test",
     srcs = ["http2_client_transport_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -498,6 +501,7 @@ grpc_cc_test(
         "//src/core:http2_client_transport",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/transport/chttp2:http2_frame_test_helper",
         "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
@@ -505,7 +509,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "http2_server_transport_test",
     srcs = ["http2_server_transport_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -566,5 +573,24 @@ grpc_fuzz_test(
         "//src/core:resource_quota",
         "//src/core:slice_buffer",
         "//src/core:time",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_frame_test_helper",
+    testonly = 1,
+    hdrs = ["http2_frame_test_helper.h"],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_promise_endpoint",
+        "//src/core:http2_errors",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
     ],
 )

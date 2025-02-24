@@ -14,7 +14,7 @@
 
 module(
     name = "grpc",
-    version = "1.71.0-dev",
+    version = "1.72.0-dev",
     compatibility_level = 1,
     repo_name = "com_github_grpc_grpc",
 )
@@ -85,7 +85,7 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
     pip.parse(
         hub_name = "grpc_python_dependencies",
         python_version = python_version,
-        requirements_lock = "//:requirements.bazel.txt",
+        requirements_lock = "//:requirements.bazel.lock",
     )
     for python_version in PYTHON_VERSIONS
 ]

@@ -602,7 +602,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
         "(Connection refused"
         "|Connection reset by peer"
         "|Socket closed"
-        "|FD shutdown)"
+        "|FD shutdown"
+        "|Endpoint closing)"
         // errno value
         "( \\([0-9]+\\))?");
   }
