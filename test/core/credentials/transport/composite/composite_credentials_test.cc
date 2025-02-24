@@ -14,13 +14,12 @@
 // limitations under the License.
 //
 
-#include "src/core/credentials/transport/composite/composite_channel_credentials.h"
-
 #include <gmock/gmock.h>
 #include <grpc/grpc_security.h>
 #include <gtest/gtest.h>
 
 #include "src/core/credentials/call/call_credentials.h"
+#include "src/core/credentials/transport/composite/composite_channel_credentials.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"

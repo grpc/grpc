@@ -27,11 +27,11 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "src/core/credentials/call/oauth2/oauth2_credentials.h"
+#include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/credentials/call/oauth2/oauth2_credentials.h"
-#include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"

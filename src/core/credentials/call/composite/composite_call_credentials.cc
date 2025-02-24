@@ -110,6 +110,6 @@ grpc_call_credentials* grpc_composite_call_credentials_create(
   CHECK_NE(creds1, nullptr);
   CHECK_NE(creds2, nullptr);
   return grpc_core::MakeRefCounted<grpc_composite_call_credentials>(
-      creds1->Ref(), creds2->Ref())
+             creds1->Ref(), creds2->Ref())
       .release();
 }

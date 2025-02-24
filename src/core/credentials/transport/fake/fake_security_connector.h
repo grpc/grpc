@@ -23,8 +23,8 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/credentials/transport/security_connector.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 // Creates a fake connector that emulates real channel security.

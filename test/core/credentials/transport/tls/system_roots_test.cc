@@ -31,9 +31,9 @@
 #include <grpc/support/string_util.h>
 
 #include "gtest/gtest.h"
+#include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/credentials/transport/tls/load_system_roots_supported.h"
-#include "src/core/credentials/transport/security_connector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -73,12 +73,13 @@ TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
 TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   // Test that CreateRootCertsBundle returns a correct slice.
   absl::string_view roots_bundle_str;
-  auto roots_bundle = grpc_core::LoadFile("test/core/credentials/transport/tls/test_data/bundle.pem",
-                                          /*add_null_terminator=*/false);
+  auto roots_bundle = grpc_core::LoadFile(
+      "test/core/credentials/transport/tls/test_data/bundle.pem",
+      /*add_null_terminator=*/false);
   if (roots_bundle.ok()) roots_bundle_str = roots_bundle->as_string_view();
   // result_slice should have the same content as roots_bundle.
-  grpc_core::Slice result_slice(
-      grpc_core::CreateRootCertsBundle("test/core/credentials/transport/tls/test_data/test_roots"));
+  grpc_core::Slice result_slice(grpc_core::CreateRootCertsBundle(
+      "test/core/credentials/transport/tls/test_data/test_roots"));
   EXPECT_EQ(result_slice.as_string_view(), roots_bundle_str)
       << "Expected: \"" << result_slice.as_string_view() << "\"\n"
       << "Actual:   \"" << roots_bundle_str << "\"";

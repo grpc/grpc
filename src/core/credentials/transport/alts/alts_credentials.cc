@@ -25,9 +25,9 @@
 
 #include <utility>
 
+#include "src/core/credentials/transport/alts/alts_security_connector.h"
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/credentials/transport/alts/grpc_alts_credentials_options.h"
-#include "src/core/credentials/transport/alts/alts_security_connector.h"
 
 #define GRPC_ALTS_HANDSHAKER_SERVICE_URL "dns:///metadata.google.internal.:8080"
 

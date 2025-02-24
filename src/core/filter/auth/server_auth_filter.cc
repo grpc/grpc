@@ -36,6 +36,7 @@
 #include "absl/status/statusor.h"
 #include "src/core/call/security_context.h"
 #include "src/core/credentials/transport/transport_credentials.h"
+#include "src/core/filter/auth/auth_filters.h"  // IWYU pragma: keep
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -49,7 +50,6 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/filter/auth/auth_filters.h"  // IWYU pragma: keep
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
