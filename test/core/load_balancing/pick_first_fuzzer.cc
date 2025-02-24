@@ -133,8 +133,14 @@ class Fuzzer {
         break;
     }
     // In TF state, we should always be trying to connect to at least
-    // one subchannel, if there are any.
-    if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE && num_subchannels_ > 0) {
+    // one subchannel, if there are any.  Note that we check this only
+    // if we've received a new picker since the last update we sent to
+    // the LB policy, since the check would fail in the case where the
+    // LB policy previously had an empty address list and was sent a
+    // non-empty list but had not yet had a chance to trigger a
+    // connection attempt on any subchannels.
+    if (got_picker_since_last_update_ &&
+        state_ == GRPC_CHANNEL_TRANSIENT_FAILURE && num_subchannels_ > 0) {
       ASSERT_GT(num_subchannels_connecting_, 0);
     }
   }
@@ -460,6 +466,7 @@ class Fuzzer {
       fuzzer_->state_ = state;
       fuzzer_->status_ = status;
       fuzzer_->picker_ = std::move(picker);
+      fuzzer_->got_picker_since_last_update_ = true;
     }
 
     void RequestReresolution() override {}
@@ -557,6 +564,7 @@ class Fuzzer {
     ExecCtx exec_ctx;
     absl::Status status = lb_policy_->UpdateLocked(std::move(*update_args));
     LOG(INFO) << "UpdateLocked() returned status: " << status;
+    got_picker_since_last_update_ = false;
     return true;
   }
 
@@ -759,6 +767,7 @@ class Fuzzer {
   uint64_t num_subchannels_ = 0;
   uint64_t num_subchannels_connecting_ = 0;
   uint64_t last_update_num_endpoints_ = 0;
+  bool got_picker_since_last_update_ = false;
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
   std::string target_ = "dns:server.example.com";
   std::string authority_ = "server.example.com";
@@ -819,6 +828,16 @@ FUZZ_TEST(PickFirstFuzzer, Fuzz)
 TEST(PickFirstFuzzer, IgnoresOkStatusForEndpointError) {
   Fuzz(ParseTestProto(R"pb(
     actions { update { endpoint_error {} } }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, PassesInTfWhenNotYetStartedConnecting) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions { update {} }
+    actions {
+      update { endpoint_list { endpoints { addresses { localhost_port: 1 } } } }
+    }
   )pb"));
 }
 
