@@ -51,6 +51,8 @@ struct grpc_security_context_extension {
 
 namespace grpc_core {
 
+// TODO(roth): Consider renaming to something like CallSecurityContext
+// to reflect the fact that it stores call-level security properties.
 class SecurityContext {
  public:
   virtual ~SecurityContext() = default;

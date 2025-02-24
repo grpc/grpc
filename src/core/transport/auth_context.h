@@ -57,6 +57,8 @@ void grpc_auth_property_reset(grpc_auth_property* property);
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
+// TODO(roth): Consider renaming to something like ConnectionSecurityContext
+// to reflect the fact that it stores connection-level security properties.
 struct grpc_auth_context
     : public grpc_core::RefCounted<grpc_auth_context,
                                    grpc_core::NonPolymorphicRefCount> {
