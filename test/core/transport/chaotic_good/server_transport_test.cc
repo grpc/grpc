@@ -54,6 +54,7 @@ using testing::StrictMock;
 using testing::WithArgs;
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
+using grpc_core::util::testing::TransportTest;
 
 namespace grpc_core {
 namespace chaotic_good {
