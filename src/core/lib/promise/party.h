@@ -301,6 +301,7 @@ class Party : public Activity, private Wakeable {
     Party* const party_;
   };
 
+  // Spawn one promise into the party.
   // The party can poll the promise until it is resolved, or until the party is
   // shut down.
   // The on_complete callback will be called with the result of the
