@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generator script for src/core/credentials/transport/tls/grpc_tls_credentials_options.h and test/core/security/grpc_tls_credentials_options_comparator_test.cc
+# Generator script for src/core/credentials/transport/tls/grpc_tls_credentials_options.h and test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc
 # Should be executed from grpc's root directory.
 
 from __future__ import print_function
@@ -298,8 +298,8 @@ print(
     file=H,
 )
 print(
-    """#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
-#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
+    """#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
+#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -442,15 +442,15 @@ for data_member in _DATA_MEMBERS:
 print(
     """};
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H""",
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H""",
     file=H,
 )
 
 H.close()
 
-# Generate test/core/security/grpc_tls_credentials_options_comparator_test.cc
+# Generate test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc
 TEST_FILE_NAME = (
-    "test/core/security/grpc_tls_credentials_options_comparator_test.cc"
+    "test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc"
 )
 test_file_name = TEST_FILE_NAME
 if test_mode:
