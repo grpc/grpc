@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
-#define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
+#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SECURITY_CONNECTOR_H
+#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SECURITY_CONNECTOR_H
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -194,4 +194,4 @@ class grpc_server_security_connector : public grpc_security_connector {
   grpc_core::RefCountedPtr<grpc_server_credentials> server_creds_;
 };
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SECURITY_CONNECTOR_H

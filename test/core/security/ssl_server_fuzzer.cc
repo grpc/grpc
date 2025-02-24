@@ -26,7 +26,7 @@
 #include "fuzztest/fuzztest.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/credentials/transport/security_connector.h"
 #include "src/core/util/notification.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"

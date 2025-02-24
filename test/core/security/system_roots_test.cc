@@ -33,7 +33,7 @@
 #include "gtest/gtest.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_supported.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/credentials/transport/security_connector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"

@@ -1280,7 +1280,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/security_connector/load_system_roots_supported.cc \
     src/core/lib/security/security_connector/load_system_roots_windows.cc \
     src/core/credentials/transport/local/local_security_connector.cc \
-    src/core/lib/security/security_connector/security_connector.cc \
+    src/core/credentials/transport/security_connector.cc \
     src/core/credentials/transport/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
     src/core/credentials/transport/tls/tls_security_connector.cc \

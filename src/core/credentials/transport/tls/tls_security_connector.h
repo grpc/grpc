@@ -39,7 +39,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/credentials/transport/security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security.h"

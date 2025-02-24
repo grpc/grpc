@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/credentials/transport/security_connector.h"
 
 #include <grpc/support/port_platform.h>
 #include <string.h>
