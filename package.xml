@@ -1526,8 +1526,8 @@
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/tls_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/xds/xds_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/xds/xds_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/alts/alts_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/alts/alts_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/fake/fake_security_connector.cc" role="src" />

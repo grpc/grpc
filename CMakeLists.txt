@@ -2796,7 +2796,7 @@ add_library(grpc
   src/core/credentials/transport/tls/tls_credentials.cc
   src/core/credentials/transport/tls/tls_utils.cc
   src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc
-  src/core/lib/security/credentials/xds/xds_credentials.cc
+  src/core/credentials/transport/xds/xds_credentials.cc
   src/core/credentials/transport/alts/alts_security_connector.cc
   src/core/credentials/transport/fake/fake_security_connector.cc
   src/core/credentials/transport/insecure/insecure_security_connector.cc

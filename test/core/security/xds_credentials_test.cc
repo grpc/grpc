@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/xds/xds_credentials.h"
+#include "src/core/credentials/transport/xds/xds_credentials.h"
 
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>

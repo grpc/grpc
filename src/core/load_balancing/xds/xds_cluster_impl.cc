@@ -41,7 +41,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/security/credentials/xds/xds_credentials.h"
+#include "src/core/credentials/transport/xds/xds_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/child_policy_handler.h"

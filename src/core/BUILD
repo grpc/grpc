@@ -5396,10 +5396,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "xds_credentials",
     srcs = [
-        "lib/security/credentials/xds/xds_credentials.cc",
+        "credentials/transport/xds/xds_credentials.cc",
     ],
     hdrs = [
-        "lib/security/credentials/xds/xds_credentials.h",
+        "credentials/transport/xds/xds_credentials.h",
     ],
     external_deps = [
         "absl/status",

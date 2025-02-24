@@ -61,7 +61,7 @@
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
-#include "src/core/lib/security/credentials/xds/xds_credentials.h"
+#include "src/core/credentials/transport/xds/xds_credentials.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/server/server.h"
 #include "src/core/server/server_config_selector.h"
