@@ -8482,7 +8482,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--gtest_shuffle"
+    ],
     "benchmark": false,
     "ci_platforms": [
       "linux",

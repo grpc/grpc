@@ -15038,6 +15038,8 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
+  args:
+  - --gtest_shuffle
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true
   build: test
