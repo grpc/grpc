@@ -455,6 +455,22 @@ grpc_cc_proto_library(
 )
 
 grpc_core_end2end_test_suite(
-    name = "end2end",
-    config_src = "end2end_config.cc",
+    name = "end2end_http2",
+    config_src = "end2end_http2_config.cc",
+)
+
+grpc_core_end2end_test_suite(
+    name = "end2end_posix",
+    config_src = "end2end_posix_config.cc",
+)
+
+grpc_core_end2end_test_suite(
+    name = "end2end_chaotic_good",
+    config_src = "end2end_chaotic_good_config.cc",
+    tags = ["no_windows"],
+)
+
+grpc_core_end2end_test_suite(
+    name = "end2end_inproc",
+    config_src = "end2end_inproc_config.cc",
 )
