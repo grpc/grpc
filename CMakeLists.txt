@@ -455,14 +455,23 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src AND 
     opencensus-proto-0.3.0/src
   )
 endif()
-# Setup external proto library at third_party/protoc-gen-validate if it doesn't exist
+# Setup external proto library at third_party/protoc-gen-validate with 2 download URLs
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.0.4.zip
-    9372f9ecde8fbadf83c8c7de3dbb49b11067aa26fb608c501106d0b4bf06c28f
-    protoc-gen-validate-1.0.4
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
+    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
+    protoc-gen-validate-1.2.1
+  )
+endif()
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
+    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
+    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
+    protoc-gen-validate-1.2.1
   )
 endif()
 # Setup external proto library at third_party/xds with 2 download URLs
