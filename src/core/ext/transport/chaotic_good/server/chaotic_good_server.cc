@@ -380,10 +380,9 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             config.TakePendingDataEndpoints(),
             self->connection_->args().GetObjectRef<EventEngine>());
         return self->connection_->listener_->server_->SetupTransport(
-            new ChaoticGoodServerTransport(self->connection_->args(),
-                                           std::move(frame_transport),
-                                           config.MakeMessageChunker(),
-                                           config.flow_control_config()),
+            new ChaoticGoodServerTransport(
+                self->connection_->args(), std::move(frame_transport),
+                config.MakeMessageChunker(), config.flow_control_config()),
             nullptr, self->connection_->args(), nullptr);
       });
 }

@@ -193,12 +193,13 @@ class Config {
   }
 
   bool supports_new_stream_flow_control() const {
-    return supported_features_.contains(chaotic_good_frame::Settings::NEW_STREAM_FLOW_CONTROL);
+    return supported_features_.contains(
+        chaotic_good_frame::Settings::NEW_STREAM_FLOW_CONTROL);
   }
 
   FlowControlConfig flow_control_config() const {
     return FlowControlConfig{
-      supports_new_stream_flow_control(),
+        supports_new_stream_flow_control(),
     };
   }
 
