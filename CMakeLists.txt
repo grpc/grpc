@@ -2774,7 +2774,7 @@ add_library(grpc
   src/core/lib/security/credentials/external/external_account_credentials.cc
   src/core/lib/security/credentials/external/file_external_account_credentials.cc
   src/core/lib/security/credentials/external/url_external_account_credentials.cc
-  src/core/lib/security/credentials/fake/fake_credentials.cc
+  src/core/credentials/transport/fake/fake_credentials.cc
   src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
   src/core/lib/security/credentials/google_default/credentials_generic.cc
   src/core/lib/security/credentials/google_default/google_default_credentials.cc
@@ -2798,7 +2798,7 @@ add_library(grpc
   src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc
   src/core/lib/security/credentials/xds/xds_credentials.cc
   src/core/credentials/transport/alts/alts_security_connector.cc
-  src/core/lib/security/security_connector/fake/fake_security_connector.cc
+  src/core/credentials/transport/fake/fake_security_connector.cc
   src/core/credentials/transport/insecure/insecure_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_supported.cc
@@ -3540,11 +3540,11 @@ add_library(grpc_unsecure
   src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/security/credentials/call_creds_util.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
-  src/core/lib/security/credentials/fake/fake_credentials.cc
+  src/core/credentials/transport/fake/fake_credentials.cc
   src/core/credentials/transport/insecure/insecure_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/credentials/transport/tls/tls_utils.cc
-  src/core/lib/security/security_connector/fake/fake_security_connector.cc
+  src/core/credentials/transport/fake/fake_security_connector.cc
   src/core/credentials/transport/insecure/insecure_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_supported.cc

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
-#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_CREDENTIALS_H
+#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_CREDENTIALS_H
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -89,4 +89,4 @@ grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
 // latter is present.
 grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets);
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_CREDENTIALS_H

@@ -47,7 +47,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/endpoint_addresses.h"

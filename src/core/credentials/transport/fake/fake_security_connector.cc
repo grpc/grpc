@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
+#include "src/core/credentials/transport/fake/fake_security_connector.h"
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -47,7 +47,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/fake_transport_security.h"

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_FAKE_FAKE_SECURITY_CONNECTOR_H
-#define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_FAKE_FAKE_SECURITY_CONNECTOR_H
+#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_SECURITY_CONNECTOR_H
+#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_SECURITY_CONNECTOR_H
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -39,4 +39,4 @@ grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_fake_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_FAKE_FAKE_SECURITY_CONNECTOR_H
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_SECURITY_CONNECTOR_H

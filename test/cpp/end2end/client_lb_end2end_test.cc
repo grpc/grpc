@@ -55,7 +55,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"

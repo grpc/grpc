@@ -624,7 +624,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/external/external_account_credentials.cc \
     src/core/lib/security/credentials/external/file_external_account_credentials.cc \
     src/core/lib/security/credentials/external/url_external_account_credentials.cc \
-    src/core/lib/security/credentials/fake/fake_credentials.cc \
+    src/core/credentials/transport/fake/fake_credentials.cc \
     src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
     src/core/lib/security/credentials/google_default/credentials_generic.cc \
     src/core/lib/security/credentials/google_default/google_default_credentials.cc \
@@ -648,7 +648,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc \
     src/core/lib/security/credentials/xds/xds_credentials.cc \
     src/core/credentials/transport/alts/alts_security_connector.cc \
-    src/core/lib/security/security_connector/fake/fake_security_connector.cc \
+    src/core/credentials/transport/fake/fake_security_connector.cc \
     src/core/credentials/transport/insecure/insecure_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
     src/core/lib/security/security_connector/load_system_roots_supported.cc \
@@ -1567,7 +1567,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/composite)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/external)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/gcp_service_account_identity)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/google_default)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/iam)
@@ -1582,7 +1582,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/alts)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/local)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/ssl)

@@ -1484,8 +1484,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/file_external_account_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/url_external_account_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/url_external_account_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/fake/fake_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/fake/fake_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_generic.cc" role="src" />
@@ -1530,8 +1530,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/alts/alts_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/alts/alts_security_connector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/fake/fake_security_connector.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/fake/fake_security_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/fake/fake_security_connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/fake/fake_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/insecure/insecure_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/insecure/insecure_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots.h" role="src" />

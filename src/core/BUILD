@@ -4065,12 +4065,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_fake_credentials",
     srcs = [
-        "lib/security/credentials/fake/fake_credentials.cc",
-        "lib/security/security_connector/fake/fake_security_connector.cc",
+        "credentials/transport/fake/fake_credentials.cc",
+        "credentials/transport/fake/fake_security_connector.cc",
     ],
     hdrs = [
-        "lib/security/credentials/fake/fake_credentials.h",
-        "lib/security/security_connector/fake/fake_security_connector.h",
+        "credentials/transport/fake/fake_credentials.h",
+        "credentials/transport/fake/fake_security_connector.h",
         "load_balancing/grpclb/grpclb.h",
     ],
     external_deps = [

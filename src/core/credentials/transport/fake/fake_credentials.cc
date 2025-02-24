@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
@@ -27,7 +27,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
+#include "src/core/credentials/transport/fake/fake_security_connector.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/ref_counted_ptr.h"
