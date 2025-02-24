@@ -28,7 +28,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
+#include "src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/service_config/service_config.h"

@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
+#include "src/core/credentials/call/jwt/jwt_verifier.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -26,7 +26,7 @@
 #include <string.h>
 
 #include "absl/strings/escaping.h"
-#include "src/core/lib/security/credentials/jwt/json_token.h"
+#include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/json/json_reader.h"

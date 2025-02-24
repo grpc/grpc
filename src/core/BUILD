@@ -4389,10 +4389,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_iam_credentials",
     srcs = [
-        "lib/security/credentials/iam/iam_credentials.cc",
+        "credentials/call/iam/iam_credentials.cc",
     ],
     hdrs = [
-        "lib/security/credentials/iam/iam_credentials.h",
+        "credentials/call/iam/iam_credentials.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -4420,10 +4420,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "token_fetcher_credentials",
     srcs = [
-        "lib/security/credentials/token_fetcher/token_fetcher_credentials.cc",
+        "credentials/call/token_fetcher/token_fetcher_credentials.cc",
     ],
     hdrs = [
-        "lib/security/credentials/token_fetcher/token_fetcher_credentials.h",
+        "credentials/call/token_fetcher/token_fetcher_credentials.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
@@ -4455,10 +4455,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gcp_service_account_identity_credentials",
     srcs = [
-        "lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc",
+        "credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc",
     ],
     hdrs = [
-        "lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h",
+        "credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
@@ -4495,10 +4495,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_oauth2_credentials",
     srcs = [
-        "lib/security/credentials/oauth2/oauth2_credentials.cc",
+        "credentials/call/oauth2/oauth2_credentials.cc",
     ],
     hdrs = [
-        "lib/security/credentials/oauth2/oauth2_credentials.h",
+        "credentials/call/oauth2/oauth2_credentials.h",
     ],
     external_deps = [
         "absl/log",
@@ -4548,18 +4548,18 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_external_account_credentials",
     srcs = [
-        "lib/security/credentials/external/aws_external_account_credentials.cc",
-        "lib/security/credentials/external/aws_request_signer.cc",
-        "lib/security/credentials/external/external_account_credentials.cc",
-        "lib/security/credentials/external/file_external_account_credentials.cc",
-        "lib/security/credentials/external/url_external_account_credentials.cc",
+        "credentials/call/external/aws_external_account_credentials.cc",
+        "credentials/call/external/aws_request_signer.cc",
+        "credentials/call/external/external_account_credentials.cc",
+        "credentials/call/external/file_external_account_credentials.cc",
+        "credentials/call/external/url_external_account_credentials.cc",
     ],
     hdrs = [
-        "lib/security/credentials/external/aws_external_account_credentials.h",
-        "lib/security/credentials/external/aws_request_signer.h",
-        "lib/security/credentials/external/external_account_credentials.h",
-        "lib/security/credentials/external/file_external_account_credentials.h",
-        "lib/security/credentials/external/url_external_account_credentials.h",
+        "credentials/call/external/aws_external_account_credentials.h",
+        "credentials/call/external/aws_request_signer.h",
+        "credentials/call/external/external_account_credentials.h",
+        "credentials/call/external/file_external_account_credentials.h",
+        "credentials/call/external/url_external_account_credentials.h",
     ],
     external_deps = [
         "absl/log",

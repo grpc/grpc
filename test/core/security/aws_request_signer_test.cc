@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/security/credentials/external/aws_request_signer.h"
+#include "src/core/credentials/call/external/aws_request_signer.h"
 
 #include <gmock/gmock.h>
 #include <grpc/grpc_security.h>

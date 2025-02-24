@@ -2766,26 +2766,26 @@ add_library(grpc
   src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
   src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
-  src/core/lib/security/credentials/call_creds_util.cc
+  src/core/credentials/call/call_creds_util.cc
   src/core/credentials/transport/channel_creds_registry_init.cc
-  src/core/lib/security/credentials/composite/composite_credentials.cc
-  src/core/lib/security/credentials/external/aws_external_account_credentials.cc
-  src/core/lib/security/credentials/external/aws_request_signer.cc
-  src/core/lib/security/credentials/external/external_account_credentials.cc
-  src/core/lib/security/credentials/external/file_external_account_credentials.cc
-  src/core/lib/security/credentials/external/url_external_account_credentials.cc
+  src/core/credentials/call/composite/composite_credentials.cc
+  src/core/credentials/call/external/aws_external_account_credentials.cc
+  src/core/credentials/call/external/aws_request_signer.cc
+  src/core/credentials/call/external/external_account_credentials.cc
+  src/core/credentials/call/external/file_external_account_credentials.cc
+  src/core/credentials/call/external/url_external_account_credentials.cc
   src/core/credentials/transport/fake/fake_credentials.cc
-  src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
+  src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
   src/core/credentials/transport/google_default/credentials_generic.cc
   src/core/credentials/transport/google_default/google_default_credentials.cc
-  src/core/lib/security/credentials/iam/iam_credentials.cc
+  src/core/credentials/call/iam/iam_credentials.cc
   src/core/credentials/transport/insecure/insecure_credentials.cc
-  src/core/lib/security/credentials/jwt/json_token.cc
-  src/core/lib/security/credentials/jwt/jwt_credentials.cc
-  src/core/lib/security/credentials/jwt/jwt_verifier.cc
+  src/core/credentials/call/jwt/json_token.cc
+  src/core/credentials/call/jwt/jwt_credentials.cc
+  src/core/credentials/call/jwt/jwt_verifier.cc
   src/core/credentials/transport/local/local_credentials.cc
-  src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
-  src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  src/core/credentials/call/oauth2/oauth2_credentials.cc
+  src/core/credentials/call/plugin/plugin_credentials.cc
   src/core/credentials/transport/ssl/ssl_credentials.cc
   src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc
   src/core/credentials/transport/tls/grpc_tls_certificate_match.cc
@@ -2795,7 +2795,7 @@ add_library(grpc
   src/core/credentials/transport/tls/grpc_tls_crl_provider.cc
   src/core/credentials/transport/tls/tls_credentials.cc
   src/core/credentials/transport/tls/tls_utils.cc
-  src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc
+  src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc
   src/core/credentials/transport/xds/xds_credentials.cc
   src/core/credentials/transport/alts/alts_security_connector.cc
   src/core/credentials/transport/fake/fake_security_connector.cc
@@ -3538,11 +3538,11 @@ add_library(grpc_unsecure
   src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
   src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
-  src/core/lib/security/credentials/call_creds_util.cc
-  src/core/lib/security/credentials/composite/composite_credentials.cc
+  src/core/credentials/call/call_creds_util.cc
+  src/core/credentials/call/composite/composite_credentials.cc
   src/core/credentials/transport/fake/fake_credentials.cc
   src/core/credentials/transport/insecure/insecure_credentials.cc
-  src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  src/core/credentials/call/plugin/plugin_credentials.cc
   src/core/credentials/transport/tls/tls_utils.cc
   src/core/credentials/transport/fake/fake_security_connector.cc
   src/core/credentials/transport/insecure/insecure_security_connector.cc
@@ -5733,9 +5733,9 @@ add_library(grpc_authorization_provider
   src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
   src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
-  src/core/lib/security/credentials/call_creds_util.cc
-  src/core/lib/security/credentials/composite/composite_credentials.cc
-  src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  src/core/credentials/call/call_creds_util.cc
+  src/core/credentials/call/composite/composite_credentials.cc
+  src/core/credentials/call/plugin/plugin_credentials.cc
   src/core/credentials/transport/tls/tls_utils.cc
   src/core/credentials/transport/tls/load_system_roots_fallback.cc
   src/core/credentials/transport/tls/load_system_roots_supported.cc
