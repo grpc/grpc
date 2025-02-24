@@ -43,10 +43,7 @@ grpc_cc_library(
     name = "test_context",
     testonly = True,
     hdrs = ["test_context.h"],
-    visibility = [
-        "//test/core:__subpackages__",
-        "//test/cpp:__subpackages__",
-    ],
+    visibility = ["//test/core:__subpackages__"],
     deps = ["//src/core:context"],
 )
 
