@@ -187,28 +187,6 @@ class CompressionFixture : public CoreTestFixture {
       JoinHostPort("localhost", grpc_pick_unused_port_or_die());
 };
 
-class FakesecFixture : public SecureFixture {
- private:
-  grpc_channel_credentials* MakeClientCreds(const ChannelArgs&) override {
-    return grpc_fake_transport_security_credentials_create();
-  }
-  grpc_server_credentials* MakeServerCreds(const ChannelArgs& args) override {
-    grpc_server_credentials* fake_ts_creds =
-        grpc_fake_transport_security_server_credentials_create();
-    AddFailAuthCheckIfNeeded(args, fake_ts_creds);
-    return fake_ts_creds;
-  }
-};
-
-class InsecureCredsFixture : public InsecureFixture {
- private:
-  grpc_server_credentials* MakeServerCreds(const ChannelArgs& args) override {
-    auto* creds = grpc_insecure_server_credentials_create();
-    AddFailAuthCheckIfNeeded(args, creds);
-    return creds;
-  }
-};
-
 class SockpairWithMinstackFixture : public SockpairFixture {
  public:
   using SockpairFixture::SockpairFixture;
@@ -354,122 +332,6 @@ class ProxyFixture : public CoreTestFixture {
   grpc_end2end_proxy* proxy_;
 };
 
-class SslProxyFixture : public CoreTestFixture {
- public:
-  SslProxyFixture(const ChannelArgs& client_args,
-                  const ChannelArgs& server_args)
-      : proxy_(grpc_end2end_proxy_create(&proxy_def_, client_args.ToC().get(),
-                                         server_args.ToC().get())) {}
-  ~SslProxyFixture() override { grpc_end2end_proxy_destroy(proxy_); }
-
- private:
-  static grpc_server* CreateProxyServer(const char* port,
-                                        const grpc_channel_args* server_args) {
-    grpc_server* s = grpc_server_create(server_args, nullptr);
-    std::string server_cert = testing::GetFileContents(SERVER_CERT_PATH);
-    std::string server_key = testing::GetFileContents(SERVER_KEY_PATH);
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
-                                                    server_cert.c_str()};
-    grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-        nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    CHECK(grpc_server_add_http2_port(s, port, ssl_creds));
-    grpc_server_credentials_release(ssl_creds);
-    return s;
-  }
-
-  static grpc_channel* CreateProxyClient(const char* target,
-                                         const grpc_channel_args* client_args) {
-    grpc_channel* channel;
-    grpc_channel_credentials* ssl_creds =
-        grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-    grpc_arg ssl_name_override = {
-        GRPC_ARG_STRING,
-        const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-        {const_cast<char*>("foo.test.google.fr")}};
-    const grpc_channel_args* new_client_args =
-        grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
-    channel = grpc_channel_create(target, ssl_creds, new_client_args);
-    grpc_channel_credentials_release(ssl_creds);
-    {
-      ExecCtx exec_ctx;
-      grpc_channel_args_destroy(new_client_args);
-    }
-    return channel;
-  }
-
-  grpc_server* MakeServer(
-      const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
-    std::string server_cert = testing::GetFileContents(SERVER_CERT_PATH);
-    std::string server_key = testing::GetFileContents(SERVER_KEY_PATH);
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
-                                                    server_cert.c_str()};
-    grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-        nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    if (args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)) {
-      grpc_auth_metadata_processor processor = {ProcessAuthFailure, nullptr,
-                                                nullptr};
-      grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);
-    }
-
-    auto* server = grpc_server_create(args.ToC().get(), nullptr);
-    grpc_server_register_completion_queue(server, cq, nullptr);
-    CHECK(grpc_server_add_http2_port(
-        server, grpc_end2end_proxy_get_server_port(proxy_), ssl_creds));
-    grpc_server_credentials_release(ssl_creds);
-    pre_server_start(server);
-    grpc_server_start(server);
-    return server;
-  }
-
-  grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue*) override {
-    grpc_channel_credentials* ssl_creds =
-        grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-    auto* client = grpc_channel_create(
-        grpc_end2end_proxy_get_client_target(proxy_), ssl_creds,
-        args.Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr")
-            .ToC()
-            .get());
-    CHECK_NE(client, nullptr);
-    grpc_channel_credentials_release(ssl_creds);
-    return client;
-  }
-  const grpc_end2end_proxy_def proxy_def_ = {CreateProxyServer,
-                                             CreateProxyClient};
-  grpc_end2end_proxy* proxy_;
-};
-
-class FixtureWithTracing final : public CoreTestFixture {
- public:
-  explicit FixtureWithTracing(std::unique_ptr<CoreTestFixture> fixture)
-      : fixture_(std::move(fixture)) {
-    // g_fixture_slowdown_factor = 10;
-    EXPECT_FALSE(grpc_tracer_set_enabled("doesnt-exist", 0));
-    EXPECT_TRUE(grpc_tracer_set_enabled("http", 1));
-    EXPECT_TRUE(grpc_tracer_set_enabled("all", 1));
-  }
-  ~FixtureWithTracing() override {
-    saved_trace_flags_.Restore();
-    // g_fixture_slowdown_factor = 1;
-  }
-
-  grpc_server* MakeServer(
-      const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
-    return fixture_->MakeServer(args, cq, pre_server_start);
-  }
-
-  grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue* cq) override {
-    return fixture_->MakeClient(args, cq);
-  }
-
- private:
-  SavedTraceFlags saved_trace_flags_;
-  std::unique_ptr<CoreTestFixture> fixture_;
-};
-
 // Returns the temp directory to create uds in this test.
 std::string GetTempDir() {
 #ifdef GPR_WINDOWS
@@ -492,15 +354,6 @@ const std::string temp_dir = GetTempDir();
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   return std::vector<CoreTestConfiguration>{
       CoreTestConfiguration{
-          "Chttp2FakeSecurityFullstack",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE |
-              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_GTEST,
-          nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<FakesecFixture>();
-          }},
-      CoreTestConfiguration{
           "Chttp2Fullstack",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
           [](const ChannelArgs& /*client_args*/,
@@ -514,34 +367,6 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                             nullptr,
                             [](const ChannelArgs&, const ChannelArgs&) {
                               return std::make_unique<CompressionFixture>();
-                            }},
-      CoreTestConfiguration{"Chttp2FullstackLocalIpv4",
-                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                                FEATURE_MASK_IS_HTTP2 |
-                                FEATURE_MASK_DO_NOT_FUZZ |
-                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
-                                FEATURE_MASK_IS_LOCAL_TCP_CREDS,
-                            nullptr,
-                            [](const ChannelArgs& /*client_args*/,
-                               const ChannelArgs& /*server_args*/) {
-                              int port = grpc_pick_unused_port_or_die();
-                              return std::make_unique<LocalTestFixture>(
-                                  JoinHostPort("127.0.0.1", port), LOCAL_TCP);
-                            }},
-      CoreTestConfiguration{"Chttp2FullstackLocalIpv6",
-                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                                FEATURE_MASK_IS_HTTP2 |
-                                FEATURE_MASK_DO_NOT_FUZZ |
-                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
-                                FEATURE_MASK_IS_LOCAL_TCP_CREDS,
-                            nullptr,
-                            [](const ChannelArgs& /*client_args*/,
-                               const ChannelArgs& /*server_args*/) {
-                              int port = grpc_pick_unused_port_or_die();
-                              return std::make_unique<LocalTestFixture>(
-                                  JoinHostPort("[::1]", port), LOCAL_TCP);
                             }},
       CoreTestConfiguration{
           "Chttp2FullstackNoRetry",
@@ -577,67 +402,6 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           [](const ChannelArgs& client_args, const ChannelArgs&) {
             return std::make_unique<HttpProxyFilter>(client_args);
           }},
-      CoreTestConfiguration{
-          "Chttp2SslProxy",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_SECURE |
-              FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
-              FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ,
-          "foo.test.google.fr",
-          [](const ChannelArgs& client_args, const ChannelArgs& server_args) {
-            return std::make_unique<SslProxyFixture>(client_args, server_args);
-          }},
-      CoreTestConfiguration{
-          "Chttp2InsecureCredentials",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE |
-              FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
-              FEATURE_MASK_DO_NOT_GTEST,
-          nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<InsecureCredsFixture>();
-          },
-      },
-      CoreTestConfiguration{
-          "Chttp2SimpleSslWithOauth2FullstackTls12",
-          FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
-              FEATURE_MASK_DO_NOT_GTEST,
-          "foo.test.google.fr",
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<Oauth2Fixture>(grpc_tls_version::TLS1_2);
-          }},
-      CoreTestConfiguration{
-          "Chttp2SimpleSslWithOauth2FullstackTls13",
-          FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_DO_NOT_GTEST,
-          "foo.test.google.fr",
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<Oauth2Fixture>(grpc_tls_version::TLS1_3);
-          }},
-      CoreTestConfiguration{
-          "Chttp2SimplSslFullstackTls12",
-          FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
-              FEATURE_MASK_DO_NOT_GTEST,
-          "foo.test.google.fr",
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_2);
-          }},
-      CoreTestConfiguration{
-          "Chttp2SimplSslFullstackTls13",
-          FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST |
-              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_GTEST,
-          "foo.test.google.fr",
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_3);
-          }},
       CoreTestConfiguration{"Chttp2SocketPair",
                             FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
                                 FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
@@ -667,86 +431,6 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<SockpairWithMinstackFixture>(ChannelArgs());
           }},
-      CoreTestConfiguration{
-          "Chttp2SslCredReloadTls12",
-          FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
-              FEATURE_MASK_DO_NOT_GTEST,
-          "foo.test.google.fr",
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<SslCredReloadFixture>(TLS1_2);
-          }},
-      CoreTestConfiguration{
-          "Chttp2SslCredReloadTls13",
-          FEATURE_MASK_IS_SECURE | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST |
-              FEATURE_MASK_DO_NOT_GTEST,
-          "foo.test.google.fr",
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<SslCredReloadFixture>(TLS1_3);
-          }},
-      CoreTestConfiguration{
-          // client: certificate watcher provider + async external verifier
-          // server: certificate watcher provider + async external verifier
-          // extra: TLS 1.3
-          "Chttp2CertWatcherProviderAsyncVerifierTls13",
-          kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          "foo.test.google.fr",
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<TlsFixture>(
-                SecurityPrimitives::TlsVersion::V_13,
-                SecurityPrimitives::ProviderType::FILE_PROVIDER,
-                SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);
-          },
-      },
-      CoreTestConfiguration{
-          // client: certificate watcher provider + hostname verifier
-          // server: certificate watcher provider + sync external verifier
-          // extra: TLS 1.2
-          "Chttp2CertWatcherProviderSyncVerifierTls12",
-          kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          "foo.test.google.fr",
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<TlsFixture>(
-                SecurityPrimitives::TlsVersion::V_12,
-                SecurityPrimitives::ProviderType::FILE_PROVIDER,
-                SecurityPrimitives::VerifierType::HOSTNAME_VERIFIER);
-          },
-      },
-      CoreTestConfiguration{
-          // client: static data provider + sync external verifier
-          // server: static data provider + sync external verifier
-          // extra: TLS 1.2
-          "Chttp2SimpleSslFullstack",
-          kH2TLSFeatureMask,
-          "foo.test.google.fr",
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<TlsFixture>(
-                SecurityPrimitives::TlsVersion::V_12,
-                SecurityPrimitives::ProviderType::STATIC_PROVIDER,
-                SecurityPrimitives::VerifierType::EXTERNAL_SYNC_VERIFIER);
-          },
-      },
-      CoreTestConfiguration{
-          // client: static data provider + async external verifier
-          // server: static data provider + async external verifier
-          // extra: TLS 1.3
-          "Chttp2StaticProviderAsyncVerifierTls13",
-          kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          "foo.test.google.fr",
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<TlsFixture>(
-                SecurityPrimitives::TlsVersion::V_13,
-                SecurityPrimitives::ProviderType::STATIC_PROVIDER,
-                SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);
-          },
-      },
   };
 }
 

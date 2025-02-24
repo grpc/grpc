@@ -461,6 +461,12 @@ grpc_core_end2end_test_suite(
 )
 
 grpc_core_end2end_test_suite(
+    name = "end2end_http2_security",
+    config_src = "end2end_http2_security_config.cc",
+    flaky = True,
+)
+
+grpc_core_end2end_test_suite(
     name = "end2end_posix",
     config_src = "end2end_posix_config.cc",
     flaky = True,
