@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
+#include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 
 #include <grpc/support/port_platform.h>
 

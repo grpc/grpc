@@ -607,7 +607,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/authorization/matchers.cc \
     src/core/lib/security/authorization/rbac_policy.cc \
     src/core/lib/security/authorization/stdout_logger.cc \
-    src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
+    src/core/credentials/transport/tls/certificate_provider_registry.cc \
     src/core/credentials/transport/alts/alts_credentials.cc \
     src/core/credentials/transport/alts/check_gcp_environment.cc \
     src/core/credentials/transport/alts/check_gcp_environment_linux.cc \
@@ -1562,7 +1562,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/certificate_provider)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/tls)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/composite)

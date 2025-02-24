@@ -3926,7 +3926,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "certificate_provider_factory",
     hdrs = [
-        "lib/security/certificate_provider/certificate_provider_factory.h",
+        "credentials/transport/tls/certificate_provider_factory.h",
     ],
     external_deps = ["absl/strings"],
     deps = [
@@ -3944,10 +3944,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "certificate_provider_registry",
     srcs = [
-        "lib/security/certificate_provider/certificate_provider_registry.cc",
+        "credentials/transport/tls/certificate_provider_registry.cc",
     ],
     hdrs = [
-        "lib/security/certificate_provider/certificate_provider_registry.h",
+        "credentials/transport/tls/certificate_provider_registry.h",
     ],
     external_deps = [
         "absl/log",

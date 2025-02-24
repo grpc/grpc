@@ -56,7 +56,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
-#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
+#include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/env.h"

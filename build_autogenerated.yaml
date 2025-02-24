@@ -963,8 +963,8 @@ libs:
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/stdout_logger.h
-  - src/core/lib/security/certificate_provider/certificate_provider_factory.h
-  - src/core/lib/security/certificate_provider/certificate_provider_registry.h
+  - src/core/credentials/transport/tls/certificate_provider_factory.h
+  - src/core/credentials/transport/tls/certificate_provider_registry.h
   - src/core/credentials/transport/alts/alts_credentials.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
@@ -1816,7 +1816,7 @@ libs:
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/stdout_logger.cc
-  - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  - src/core/credentials/transport/tls/certificate_provider_registry.cc
   - src/core/credentials/transport/alts/alts_credentials.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -2523,8 +2523,8 @@ libs:
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
-  - src/core/lib/security/certificate_provider/certificate_provider_factory.h
-  - src/core/lib/security/certificate_provider/certificate_provider_registry.h
+  - src/core/credentials/transport/tls/certificate_provider_factory.h
+  - src/core/credentials/transport/tls/certificate_provider_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/call/call_creds_util.h
@@ -2951,7 +2951,7 @@ libs:
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
-  - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  - src/core/credentials/transport/tls/certificate_provider_registry.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
   - src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
@@ -4576,8 +4576,8 @@ libs:
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   - src/core/lib/security/authorization/stdout_logger.h
-  - src/core/lib/security/certificate_provider/certificate_provider_factory.h
-  - src/core/lib/security/certificate_provider/certificate_provider_registry.h
+  - src/core/credentials/transport/tls/certificate_provider_factory.h
+  - src/core/credentials/transport/tls/certificate_provider_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/call/call_creds_util.h
@@ -4876,7 +4876,7 @@ libs:
   - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - src/core/lib/security/authorization/stdout_logger.cc
-  - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  - src/core/credentials/transport/tls/certificate_provider_registry.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
   - src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
@@ -6958,8 +6958,8 @@ targets:
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/security/certificate_provider/certificate_provider_factory.h
-  - src/core/lib/security/certificate_provider/certificate_provider_registry.h
+  - src/core/credentials/transport/tls/certificate_provider_factory.h
+  - src/core/credentials/transport/tls/certificate_provider_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
@@ -7226,7 +7226,7 @@ targets:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  - src/core/credentials/transport/tls/certificate_provider_registry.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
   - src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
@@ -10973,8 +10973,8 @@ targets:
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/security/certificate_provider/certificate_provider_factory.h
-  - src/core/lib/security/certificate_provider/certificate_provider_registry.h
+  - src/core/credentials/transport/tls/certificate_provider_factory.h
+  - src/core/credentials/transport/tls/certificate_provider_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
@@ -11241,7 +11241,7 @@ targets:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  - src/core/credentials/transport/tls/certificate_provider_registry.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
   - src/core/credentials/transport/alts/check_gcp_environment_no_op.cc

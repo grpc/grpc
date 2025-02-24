@@ -582,7 +582,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/security/authorization/matchers.cc',
     'src/core/lib/security/authorization/rbac_policy.cc',
     'src/core/lib/security/authorization/stdout_logger.cc',
-    'src/core/lib/security/certificate_provider/certificate_provider_registry.cc',
+    'src/core/credentials/transport/tls/certificate_provider_registry.cc',
     'src/core/credentials/transport/alts/alts_credentials.cc',
     'src/core/credentials/transport/alts/check_gcp_environment.cc',
     'src/core/credentials/transport/alts/check_gcp_environment_linux.cc',

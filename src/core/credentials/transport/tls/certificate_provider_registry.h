@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_CERTIFICATE_PROVIDER_REGISTRY_H
-#define GRPC_SRC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_CERTIFICATE_PROVIDER_REGISTRY_H
+#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_CERTIFICATE_PROVIDER_REGISTRY_H
+#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_CERTIFICATE_PROVIDER_REGISTRY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,7 +26,7 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
+#include "src/core/credentials/transport/tls/certificate_provider_factory.h"
 
 namespace grpc_core {
 
@@ -72,4 +72,4 @@ class CertificateProviderRegistry {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_CERTIFICATE_PROVIDER_REGISTRY_H
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_CERTIFICATE_PROVIDER_REGISTRY_H

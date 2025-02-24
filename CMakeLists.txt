@@ -2757,7 +2757,7 @@ add_library(grpc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/stdout_logger.cc
-  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/credentials/transport/alts/alts_credentials.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -3530,7 +3530,7 @@ add_library(grpc_unsecure
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
-  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
   src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
@@ -5725,7 +5725,7 @@ add_library(grpc_authorization_provider
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
   src/core/lib/security/authorization/stdout_logger.cc
-  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
   src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
@@ -9769,7 +9769,7 @@ add_executable(call_utils_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
   src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
@@ -15674,7 +15674,7 @@ add_executable(filter_fusion_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
   src/core/credentials/transport/alts/check_gcp_environment_no_op.cc

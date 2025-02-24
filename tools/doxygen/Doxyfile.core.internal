@@ -2246,9 +2246,9 @@ src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
 src/core/lib/security/authorization/stdout_logger.cc \
 src/core/lib/security/authorization/stdout_logger.h \
-src/core/lib/security/certificate_provider/certificate_provider_factory.h \
-src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
-src/core/lib/security/certificate_provider/certificate_provider_registry.h \
+src/core/credentials/transport/tls/certificate_provider_factory.h \
+src/core/credentials/transport/tls/certificate_provider_registry.cc \
+src/core/credentials/transport/tls/certificate_provider_registry.h \
 src/core/credentials/transport/alts/alts_credentials.cc \
 src/core/credentials/transport/alts/alts_credentials.h \
 src/core/credentials/transport/alts/check_gcp_environment.cc \
