@@ -16,7 +16,7 @@
 //
 //
 
-#include "test/core/security/oauth2_utils.h"
+#include "test/core/credentials/call/oauth2/oauth2_utils.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>

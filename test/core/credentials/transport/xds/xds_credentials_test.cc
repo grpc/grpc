@@ -21,12 +21,36 @@
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
-
 namespace {
+
+TEST(XdsCredentialsTest, CompareSuccess) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
+  auto* xds_creds_2 = grpc_xds_credentials_create(insecure_creds);
+  EXPECT_EQ(xds_creds_1->cmp(xds_creds_2), 0);
+  EXPECT_EQ(xds_creds_2->cmp(xds_creds_1), 0);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(xds_creds_1);
+  grpc_channel_credentials_release(xds_creds_2);
+}
+
+TEST(XdsCredentialsTest, CompareFailure) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto* fake_creds = grpc_fake_transport_security_credentials_create();
+  auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
+  auto* xds_creds_2 = grpc_xds_credentials_create(fake_creds);
+  EXPECT_NE(xds_creds_1->cmp(xds_creds_2), 0);
+  EXPECT_NE(xds_creds_2->cmp(xds_creds_1), 0);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(fake_creds);
+  grpc_channel_credentials_release(xds_creds_1);
+  grpc_channel_credentials_release(xds_creds_2);
+}
 
 StringMatcher ExactMatcher(const char* string) {
   return StringMatcher::Create(StringMatcher::Type::kExact, string).value();
@@ -305,7 +329,6 @@ TEST(XdsCertificateVerifierTest, CompareFailureDifferentCertificateProviders) {
 }
 
 }  // namespace
-
 }  // namespace testing
 }  // namespace grpc_core
 

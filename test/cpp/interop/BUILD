@@ -113,7 +113,7 @@ grpc_cc_library(
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
-        "//test/core/security:oauth2_utils",
+        "//test/core/credentials/call/oauth2:oauth2_utils",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],

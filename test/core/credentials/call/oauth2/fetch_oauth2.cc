@@ -33,7 +33,7 @@
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/util/crash.h"
 #include "src/cpp/client/secure_credentials.h"
-#include "test/core/security/oauth2_utils.h"
+#include "test/core/credentials/call/oauth2/oauth2_utils.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/tls_utils.h"
 
