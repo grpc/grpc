@@ -2800,13 +2800,13 @@ add_library(grpc
   src/core/credentials/transport/alts/alts_security_connector.cc
   src/core/credentials/transport/fake/fake_security_connector.cc
   src/core/credentials/transport/insecure/insecure_security_connector.cc
-  src/core/lib/security/security_connector/load_system_roots_fallback.cc
-  src/core/lib/security/security_connector/load_system_roots_supported.cc
-  src/core/lib/security/security_connector/load_system_roots_windows.cc
+  src/core/credentials/transport/tls/load_system_roots_fallback.cc
+  src/core/credentials/transport/tls/load_system_roots_supported.cc
+  src/core/credentials/transport/tls/load_system_roots_windows.cc
   src/core/credentials/transport/local/local_security_connector.cc
   src/core/credentials/transport/security_connector.cc
   src/core/credentials/transport/ssl/ssl_security_connector.cc
-  src/core/lib/security/security_connector/ssl_utils.cc
+  src/core/credentials/transport/tls/ssl_utils.cc
   src/core/credentials/transport/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/server_auth_filter.cc
@@ -3546,9 +3546,9 @@ add_library(grpc_unsecure
   src/core/credentials/transport/tls/tls_utils.cc
   src/core/credentials/transport/fake/fake_security_connector.cc
   src/core/credentials/transport/insecure/insecure_security_connector.cc
-  src/core/lib/security/security_connector/load_system_roots_fallback.cc
-  src/core/lib/security/security_connector/load_system_roots_supported.cc
-  src/core/lib/security/security_connector/load_system_roots_windows.cc
+  src/core/credentials/transport/tls/load_system_roots_fallback.cc
+  src/core/credentials/transport/tls/load_system_roots_supported.cc
+  src/core/credentials/transport/tls/load_system_roots_windows.cc
   src/core/credentials/transport/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/server_auth_filter.cc
@@ -5737,9 +5737,9 @@ add_library(grpc_authorization_provider
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/credentials/transport/tls/tls_utils.cc
-  src/core/lib/security/security_connector/load_system_roots_fallback.cc
-  src/core/lib/security/security_connector/load_system_roots_supported.cc
-  src/core/lib/security/security_connector/load_system_roots_windows.cc
+  src/core/credentials/transport/tls/load_system_roots_fallback.cc
+  src/core/credentials/transport/tls/load_system_roots_supported.cc
+  src/core/credentials/transport/tls/load_system_roots_windows.cc
   src/core/credentials/transport/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/server_auth_filter.cc

@@ -3955,15 +3955,15 @@ grpc_cc_library(
     name = "grpc_credentials_util",
     srcs = [
         "//src/core:credentials/transport/tls/tls_utils.cc",
-        "//src/core:lib/security/security_connector/load_system_roots_fallback.cc",
-        "//src/core:lib/security/security_connector/load_system_roots_supported.cc",
-        "//src/core:lib/security/security_connector/load_system_roots_windows.cc",
+        "//src/core:credentials/transport/tls/load_system_roots_fallback.cc",
+        "//src/core:credentials/transport/tls/load_system_roots_supported.cc",
+        "//src/core:credentials/transport/tls/load_system_roots_windows.cc",
         "//src/core:lib/security/util/json_util.cc",
     ],
     hdrs = [
         "//src/core:credentials/transport/tls/tls_utils.h",
-        "//src/core:lib/security/security_connector/load_system_roots.h",
-        "//src/core:lib/security/security_connector/load_system_roots_supported.h",
+        "//src/core:credentials/transport/tls/load_system_roots.h",
+        "//src/core:credentials/transport/tls/load_system_roots_supported.h",
         "//src/core:lib/security/util/json_util.h",
     ],
     external_deps = [
@@ -4108,13 +4108,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
-        "//src/core:lib/security/security_connector/ssl_utils.cc",
+        "//src/core:credentials/transport/tls/ssl_utils.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
         "//src/core:tsi/ssl_transport_security.cc",
         "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
-        "//src/core:lib/security/security_connector/ssl_utils.h",
+        "//src/core:credentials/transport/tls/ssl_utils.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
         "//src/core:tsi/ssl_transport_security_utils.h",

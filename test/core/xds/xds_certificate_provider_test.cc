@@ -26,7 +26,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"

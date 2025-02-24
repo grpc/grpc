@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
-#define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
+#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SSL_UTILS_H
+#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SSL_UTILS_H
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
@@ -185,4 +185,4 @@ using PemKeyCertPairList = std::vector<PemKeyCertPair>;
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SSL_UTILS_H

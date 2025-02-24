@@ -44,7 +44,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/credentials/transport/ssl/ssl_credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"

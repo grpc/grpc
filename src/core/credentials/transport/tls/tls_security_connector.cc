@@ -41,7 +41,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/debug_location.h"

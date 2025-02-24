@@ -16,21 +16,20 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
-#if !defined(GPR_LINUX) && !defined(GPR_ANDROID) && !defined(GPR_FREEBSD) && \
-    !defined(GPR_APPLE) && !defined(GPR_WINDOWS)
+#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_LOAD_SYSTEM_ROOTS_H
+#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_LOAD_SYSTEM_ROOTS_H
 
 #include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-
-#include "src/core/lib/security/security_connector/load_system_roots.h"
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
-grpc_slice LoadSystemRootCerts() { return grpc_empty_slice(); }
+// TODO(matthewstevenson88): Update LoadSystemRootCerts to use Slice
+// instead of grpc_slice.
+
+// Returns a slice containing roots from the OS trust store
+grpc_slice LoadSystemRootCerts();
 
 }  // namespace grpc_core
 
-#endif  // !(GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE ||
-        // GPR_WINDOWS)
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_LOAD_SYSTEM_ROOTS_H

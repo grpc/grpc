@@ -30,7 +30,7 @@
 
 #include <vector>
 
-#include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/useful.h"
 

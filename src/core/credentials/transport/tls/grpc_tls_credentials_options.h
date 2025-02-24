@@ -32,7 +32,7 @@
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 
 // Contains configurable options specified by callers to configure their certain
 // security features supported in TLS.
