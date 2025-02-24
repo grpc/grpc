@@ -658,8 +658,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/transport/ssl/ssl_security_connector.cc \
     src/core/credentials/transport/tls/ssl_utils.cc \
     src/core/credentials/transport/tls/tls_security_connector.cc \
-    src/core/lib/security/transport/client_auth_filter.cc \
-    src/core/lib/security/transport/server_auth_filter.cc \
+    src/core/filter/auth/client_auth_filter.cc \
+    src/core/filter/auth/server_auth_filter.cc \
     src/core/credentials/call/json_util.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -1587,7 +1587,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/local)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/tls)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter/auth)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)

@@ -45,7 +45,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/credentials/transport/security_connector.h"
-#include "src/core/lib/security/transport/auth_filters.h"
+#include "src/core/filter/auth/auth_filters.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/transport/auth_context.h"

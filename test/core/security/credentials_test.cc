@@ -59,7 +59,7 @@
 #include "src/core/credentials/call/oauth2/oauth2_credentials.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/xds/xds_credentials.h"
-#include "src/core/lib/security/transport/auth_filters.h"
+#include "src/core/filter/auth/auth_filters.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/crash.h"

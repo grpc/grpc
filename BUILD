@@ -2105,8 +2105,8 @@ grpc_cc_library(
         "//src/core:credentials/call/composite/composite_call_credentials.cc",
         "//src/core:credentials/call/plugin/plugin_credentials.cc",
         "//src/core:credentials/transport/security_connector.cc",
-        "//src/core:lib/security/transport/client_auth_filter.cc",
-        "//src/core:lib/security/transport/server_auth_filter.cc",
+        "//src/core:filter/auth/client_auth_filter.cc",
+        "//src/core:filter/auth/server_auth_filter.cc",
         "//src/core:transport/auth_context.cc",
     ],
     hdrs = [
@@ -2120,7 +2120,7 @@ grpc_cc_library(
         "//src/core:credentials/call/composite/composite_call_credentials.h",
         "//src/core:credentials/call/plugin/plugin_credentials.h",
         "//src/core:credentials/transport/security_connector.h",
-        "//src/core:lib/security/transport/auth_filters.h",
+        "//src/core:filter/auth/auth_filters.h",
         "//src/core:transport/auth_context.h",
     ],
     external_deps = [
