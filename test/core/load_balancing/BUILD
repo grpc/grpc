@@ -15,9 +15,12 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
     "grpc_cc_test",
+    "grpc_internal_proto_library",
     "grpc_package",
 )
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/load_balancing")
@@ -60,6 +63,45 @@ grpc_cc_test(
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
+    ],
+)
+
+grpc_internal_proto_library(
+    name = "pick_first_fuzzer_proto",
+    srcs = [
+        "pick_first_fuzzer.proto",
+    ],
+    deps = [
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/test_util:fuzzing_channel_args_proto",
+        "@com_google_protobuf//:struct_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "pick_first_fuzzer_cc_proto",
+    deps = [
+        "pick_first_fuzzer_proto",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "pick_first_fuzzer",
+    srcs = ["pick_first_fuzzer.cc"],
+    external_deps = [
+        "absl/log:log",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        ":pick_first_fuzzer_cc_proto",
+        "//:grpc++_config_proto",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/test_util:fuzzing_channel_args",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 

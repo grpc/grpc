@@ -128,11 +128,11 @@ void ChaoticGoodClientTransport::StreamDispatch::DispatchFrame(
                        [stream = std::move(stream)](Frame frame) mutable {
                          auto& call = stream->call;
                          return Map(call.CancelIfFails(PushFrameIntoCall(
-                                        std::move(absl::get<T>(frame)),
+                                        std::move(std::get<T>(frame)),
                                         std::move(stream))),
                                     [](auto) { return absl::OkStatus(); });
                        })),
-                   [](auto x) {});
+                   [](auto) {});
       });
 }
 
@@ -184,7 +184,7 @@ void ChaoticGoodClientTransport::StreamDispatch::OnIncomingFrame(
 }
 
 void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
-    absl::Status status) {
+    absl::Status) {
   // Mark transport as unavailable when the endpoint write/read failed.
   ReleasableMutexLock lock(&mu_);
   StreamMap stream_map = std::move(stream_map_);

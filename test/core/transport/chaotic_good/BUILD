@@ -23,10 +23,10 @@ grpc_package(
 )
 
 grpc_cc_library(
-    name = "transport_test",
+    name = "transport_test_helper",
     testonly = 1,
-    srcs = ["transport_test.cc"],
-    hdrs = ["transport_test.h"],
+    srcs = ["transport_test_helper.cc"],
+    hdrs = ["transport_test_helper.h"],
     external_deps = ["gtest"],
     deps = [
         "//:iomgr_timer",
@@ -83,7 +83,7 @@ grpc_fuzz_test(
     ],
 )
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "frame_test",
     srcs = ["frame_test.cc"],
     external_deps = [
@@ -137,7 +137,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "mock_frame_transport",
-        "transport_test",
+        "transport_test_helper",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//src/core:arena",
@@ -147,6 +147,7 @@ grpc_cc_test(
         "//src/core:seq",
         "//src/core:slice_buffer",
         "//test/core/transport/util:mock_promise_endpoint",
+        "//test/core/transport/util:transport_test",
     ],
 )
 
@@ -164,7 +165,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "mock_frame_transport",
-        "transport_test",
+        "transport_test_helper",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:iomgr_timer",
@@ -180,6 +181,8 @@ grpc_cc_test(
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/transport/util:mock_promise_endpoint",
+        "//test/core/transport/util:transport_test",
     ],
 )
 

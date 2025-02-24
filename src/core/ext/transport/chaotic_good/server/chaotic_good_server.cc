@@ -373,7 +373,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer)), [self]() {
         auto config =
-            std::move(absl::get<ControlConnection>(self->data_).config);
+            std::move(std::get<ControlConnection>(self->data_).config);
         auto frame_transport = MakeOrphanable<TcpFrameTransport>(
             config.MakeTcpFrameTransportOptions(),
             std::move(self->connection_->endpoint_),

@@ -17,12 +17,15 @@
 
 #include <grpc/slice.h>
 
+#include <cstdint>
+
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/http2_errors.h"
 
 namespace grpc_core {
 namespace transport {
@@ -33,13 +36,62 @@ using EventEngineSlice = grpc_event_engine::experimental::Slice;
 class Http2FrameTestHelper {
  public:
   EventEngineSlice EventEngineSliceFromHttp2DataFrame(
-      std::string_view data) const {
+      std::string_view payload, const uint32_t stream_id = 1,
+      const bool end_stream = false) const {
     return EventEngineSliceFromHttp2Frame(
-        Http2DataFrame{1, false, SliceBufferFromString(data)});
+        Http2DataFrame{stream_id, end_stream, SliceBufferFromString(payload)});
   }
 
-  // TODO(tjagtap) : [PH2][P1] : Add more helper functions as needed. One
-  // function for each Http2Frame type that is being tested.
+  EventEngineSlice EventEngineSliceFromHttp2HeaderFrame(
+      std::string_view payload, const uint32_t stream_id = 1,
+      const bool end_headers = true, const bool end_stream = false) const {
+    return EventEngineSliceFromHttp2Frame(Http2HeaderFrame{
+        stream_id, end_headers, end_stream, SliceBufferFromString(payload)});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2RstStreamFrame(
+      const uint32_t stream_id = 1,
+      const uint32_t error_code = GRPC_HTTP2_CONNECT_ERROR) const {
+    return EventEngineSliceFromHttp2Frame(
+        Http2RstStreamFrame{stream_id, error_code});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2SettingsFrame(
+      const bool ack = false) const {
+    return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{ack, {}});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2PingFrame(
+      bool ack = false, uint64_t opaque = 0x123456789abcdef0) const {
+    return EventEngineSliceFromHttp2Frame(Http2PingFrame{ack, opaque});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2GoawayFrame(
+      std::string_view debug_data, const uint32_t last_stream_id = 0,
+      const uint32_t error_code = 0) const {
+    return EventEngineSliceFromHttp2Frame(Http2GoawayFrame{
+        last_stream_id, error_code, Slice::FromCopiedString(debug_data)});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2WindowUpdateFrame(
+      const uint32_t stream_id = 1,
+      const uint32_t increment = 0x12345678) const {
+    return EventEngineSliceFromHttp2Frame(
+        Http2WindowUpdateFrame{stream_id, increment});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2ContinuationFrame(
+      std::string_view payload, const uint32_t stream_id = 1,
+      const bool end_headers = true) const {
+    return EventEngineSliceFromHttp2Frame(Http2ContinuationFrame{
+        stream_id, end_headers, SliceBufferFromString(payload)});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2SecurityFrame(
+      std::string_view payload) const {
+    return EventEngineSliceFromHttp2Frame(
+        Http2SecurityFrame{SliceBufferFromString(payload)});
+  }
 
  private:
   EventEngineSlice EventEngineSliceFromHttp2Frame(Http2Frame frame) const {
