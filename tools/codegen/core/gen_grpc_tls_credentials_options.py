@@ -449,9 +449,7 @@ print(
 H.close()
 
 # Generate test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc
-TEST_FILE_NAME = (
-    "test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc"
-)
+TEST_FILE_NAME = "test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc"
 test_file_name = TEST_FILE_NAME
 if test_mode:
     test_file_name = tempfile.NamedTemporaryFile(delete=False).name
