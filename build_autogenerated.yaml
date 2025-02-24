@@ -969,7 +969,7 @@ libs:
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/lib/security/credentials/call_creds_util.h
-  - src/core/lib/security/credentials/channel_creds_registry.h
+  - src/core/credentials/transport/channel_creds_registry.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/external/aws_external_account_credentials.h
   - src/core/lib/security/credentials/external/aws_request_signer.h
@@ -1826,7 +1826,7 @@ libs:
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   - src/core/lib/security/credentials/call_creds_util.cc
-  - src/core/lib/security/credentials/channel_creds_registry_init.cc
+  - src/core/credentials/transport/channel_creds_registry_init.cc
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/external/aws_external_account_credentials.cc
   - src/core/lib/security/credentials/external/aws_request_signer.cc
@@ -2528,7 +2528,7 @@ libs:
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/lib/security/credentials/call_creds_util.h
-  - src/core/lib/security/credentials/channel_creds_registry.h
+  - src/core/credentials/transport/channel_creds_registry.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/credentials/transport/fake/fake_credentials.h
   - src/core/credentials/transport/insecure/insecure_credentials.h
@@ -4581,7 +4581,7 @@ libs:
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/lib/security/credentials/call_creds_util.h
-  - src/core/lib/security/credentials/channel_creds_registry.h
+  - src/core/credentials/transport/channel_creds_registry.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/credentials/transport/tls/tls_utils.h
@@ -6962,7 +6962,7 @@ targets:
   - src/core/lib/security/certificate_provider/certificate_provider_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
-  - src/core/lib/security/credentials/channel_creds_registry.h
+  - src/core/credentials/transport/channel_creds_registry.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -10977,7 +10977,7 @@ targets:
   - src/core/lib/security/certificate_provider/certificate_provider_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
-  - src/core/lib/security/credentials/channel_creds_registry.h
+  - src/core/credentials/transport/channel_creds_registry.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h

@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/credentials/transport/channel_creds_registry.h"
 
 #include <gmock/gmock.h>
 #include <grpc/grpc.h>

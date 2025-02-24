@@ -1466,7 +1466,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "channel_creds_registry",
     hdrs = [
-        "lib/security/credentials/channel_creds_registry.h",
+        "credentials/transport/channel_creds_registry.h",
     ],
     external_deps = ["absl/strings"],
     deps = [
@@ -6065,7 +6065,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "channel_creds_registry_init",
     srcs = [
-        "lib/security/credentials/channel_creds_registry_init.cc",
+        "credentials/transport/channel_creds_registry_init.cc",
     ],
     external_deps = ["absl/strings"],
     deps = [

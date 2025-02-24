@@ -35,7 +35,7 @@
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"

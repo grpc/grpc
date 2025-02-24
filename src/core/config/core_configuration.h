@@ -25,7 +25,7 @@
 #include "src/core/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/resolver/resolver_registry.h"

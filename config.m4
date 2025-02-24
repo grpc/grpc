@@ -617,7 +617,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/transport/alts/grpc_alts_credentials_options.cc \
     src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc \
     src/core/lib/security/credentials/call_creds_util.cc \
-    src/core/lib/security/credentials/channel_creds_registry_init.cc \
+    src/core/credentials/transport/channel_creds_registry_init.cc \
     src/core/lib/security/credentials/composite/composite_credentials.cc \
     src/core/lib/security/credentials/external/aws_external_account_credentials.cc \
     src/core/lib/security/credentials/external/aws_request_signer.cc \
