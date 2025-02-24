@@ -61,7 +61,6 @@
 #include "test/core/end2end/fixtures/h2_ssl_tls_common.h"
 #include "test/core/end2end/fixtures/h2_tls_common.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
-#include "test/core/end2end/fixtures/inproc_fixture.h"
 #include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
@@ -516,68 +515,6 @@ class FixtureWithTracing final : public CoreTestFixture {
   std::unique_ptr<CoreTestFixture> fixture_;
 };
 
-class ChaoticGoodFixture : public CoreTestFixture {
- public:
-  explicit ChaoticGoodFixture(int data_connections = 1, int chunk_size = 0,
-                              std::string localaddr = JoinHostPort(
-                                  "localhost", grpc_pick_unused_port_or_die()))
-      : data_connections_(data_connections),
-        chunk_size_(chunk_size),
-        localaddr_(std::move(localaddr)) {}
-
- protected:
-  const std::string& localaddr() const { return localaddr_; }
-
- private:
-  grpc_server* MakeServer(
-      const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
-    auto* server = grpc_server_create(
-        args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, data_connections_)
-            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
-            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
-            .ToC()
-            .get(),
-        nullptr);
-    grpc_server_register_completion_queue(server, cq, nullptr);
-    CHECK(grpc_server_add_chaotic_good_port(server, localaddr_.c_str()));
-    pre_server_start(server);
-    grpc_server_start(server);
-    return server;
-  }
-
-  grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue*) override {
-    auto* client = grpc_chaotic_good_channel_create(
-        localaddr_.c_str(),
-        args.Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
-            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
-            .SetIfUnset(GRPC_ARG_ENABLE_RETRIES, IsRetryInCallv3Enabled())
-            .ToC()
-            .get());
-    return client;
-  }
-
-  int data_connections_;
-  int chunk_size_;
-  std::string localaddr_;
-};
-
-class ChaoticGoodSingleConnectionFixture final : public ChaoticGoodFixture {
- public:
-  ChaoticGoodSingleConnectionFixture() : ChaoticGoodFixture(1) {}
-};
-
-class ChaoticGoodManyConnectionFixture final : public ChaoticGoodFixture {
- public:
-  ChaoticGoodManyConnectionFixture() : ChaoticGoodFixture(16) {}
-};
-
-class ChaoticGoodOneByteChunkFixture final : public ChaoticGoodFixture {
- public:
-  ChaoticGoodOneByteChunkFixture() : ChaoticGoodFixture(1, 1) {}
-};
-
 #ifdef GRPC_POSIX_WAKEUP_FD
 class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
  public:
@@ -614,15 +551,6 @@ const std::string temp_dir = GetTempDir();
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   return std::vector<CoreTestConfiguration>{
-#ifdef GRPC_POSIX_SOCKET
-      CoreTestConfiguration{"Chttp2Fd",
-                            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
-                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-                            nullptr,
-                            [](const ChannelArgs&, const ChannelArgs&) {
-                              return std::make_unique<FdFixture>();
-                            }},
-#endif
       CoreTestConfiguration{
           "Chttp2FakeSecurityFullstack",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
@@ -647,27 +575,6 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                             [](const ChannelArgs&, const ChannelArgs&) {
                               return std::make_unique<CompressionFixture>();
                             }},
-#ifdef GPR_LINUX
-      CoreTestConfiguration{
-          "Chttp2FullstackLocalAbstractUdsPercentEncoded",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          nullptr,
-          [](const ChannelArgs& /*client_args*/,
-             const ChannelArgs& /*server_args*/) {
-            gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-            return std::make_unique<LocalTestFixture>(
-                absl::StrFormat(
-                    "unix-abstract:grpc_fullstack_test.%%00.%d.%" PRId64
-                    ".%" PRId32 ".%" PRId64 ".%" PRId64,
-                    getpid(), now.tv_sec, now.tv_nsec,
-                    unique.fetch_add(1, std::memory_order_relaxed), Rand()),
-                UDS);
-          }},
-#endif
-
       CoreTestConfiguration{"Chttp2FullstackLocalIpv4",
                             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
@@ -696,46 +603,6 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                               return std::make_unique<LocalTestFixture>(
                                   JoinHostPort("[::1]", port), LOCAL_TCP);
                             }},
-#ifdef GRPC_HAVE_UNIX_SOCKET
-      CoreTestConfiguration{
-          "Chttp2FullstackLocalUdsPercentEncoded",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          nullptr,
-          [](const ChannelArgs& /*client_args*/,
-             const ChannelArgs& /*server_args*/) {
-            gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-            return std::make_unique<LocalTestFixture>(
-                absl::StrFormat("unix:%s"
-                                "grpc_fullstack_test.%%25.%d.%" PRId64
-                                ".%" PRId32 ".%" PRId64 ".%" PRId64,
-                                temp_dir, getpid(), now.tv_sec, now.tv_nsec,
-                                unique.fetch_add(1, std::memory_order_relaxed),
-                                Rand()),
-                UDS);
-          }},
-      CoreTestConfiguration{
-          "Chttp2FullstackLocalUds",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          nullptr,
-          [](const ChannelArgs& /*client_args*/,
-             const ChannelArgs& /*server_args*/) {
-            gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-            return std::make_unique<LocalTestFixture>(
-                absl::StrFormat("unix:%s"
-                                "grpc_fullstack_test.%d.%" PRId64 ".%" PRId32
-                                ".%" PRId64 ".%" PRId64,
-                                temp_dir, getpid(), now.tv_sec, now.tv_nsec,
-                                unique.fetch_add(1, std::memory_order_relaxed),
-                                Rand()),
-                UDS);
-          }},
-#endif
       CoreTestConfiguration{
           "Chttp2FullstackNoRetry",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
@@ -861,24 +728,6 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
             return std::make_unique<SockpairWithMinstackFixture>(ChannelArgs());
           }},
       CoreTestConfiguration{
-          "Inproc",
-          FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_DO_NOT_GTEST,
-          nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<InprocFixture>(false);
-          },
-      },
-      CoreTestConfiguration{
-          "InprocWithPromises",
-          FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
-          nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<InprocFixture>(true);
-          },
-      },
-      CoreTestConfiguration{
           "Chttp2SslCredReloadTls12",
           FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
@@ -958,118 +807,6 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                 SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);
           },
       },
-#ifdef GPR_LINUX
-      CoreTestConfiguration{
-          "Chttp2FullstackUdsAbstractNamespace",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-            return std::make_unique<InsecureFixture>(absl::StrFormat(
-                "unix-abstract:grpc_fullstack_test.%d.%" PRId64 ".%" PRId32
-                ".%" PRId64,
-                getpid(), now.tv_sec, now.tv_nsec,
-                unique.fetch_add(1, std::memory_order_relaxed)));
-          }},
-#endif
-#ifdef GRPC_HAVE_UNIX_SOCKET
-      CoreTestConfiguration{
-          "Chttp2FullstackUds",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_DO_NOT_FUZZ,
-          nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-            return std::make_unique<InsecureFixture>(absl::StrFormat(
-                "unix:%s"
-                "grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%" PRId64
-                ".%" PRId64,
-                temp_dir, getpid(), now.tv_sec, now.tv_nsec,
-                unique.fetch_add(1, std::memory_order_relaxed), Rand()));
-          }},
-#endif
-// TODO(ctiller): these got inadvertently disabled when the project
-// switched to Bazel in 2016, and have not been re-enabled since and are now
-// quite broken. We should re-enable them however, as they provide defense in
-// depth that enabling tracers is safe. When doing so, we'll need to re-enable
-// the windows setvbuf statement in main().
-#if 0
-    CoreTestConfiguration{
-        "Chttp2SocketPairWithTrace",
-        FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_ENABLES_TRACES, nullptr,
-        [](const ChannelArgs&, const ChannelArgs&) {
-          return std::make_unique<FixtureWithTracing>(
-              std::make_unique<SockpairFixture>(ChannelArgs()));
-        }},
-    CoreTestConfiguration{"Chttp2FullstackWithTrace",
-                          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                              FEATURE_MASK_IS_HTTP2 |
-                              FEATURE_MASK_ENABLES_TRACES,
-                          nullptr,
-                          [](const ChannelArgs& /*client_args*/,
-                             const ChannelArgs& /*server_args*/) {
-                            return std::make_unique<FixtureWithTracing>(
-                                std::make_unique<InsecureFixture>());
-                          }},
-#endif
-#ifdef GRPC_POSIX_WAKEUP_FD
-      CoreTestConfiguration{
-          "Chttp2FullstackWithPipeWakeup",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          nullptr,
-          [](const ChannelArgs& /*client_args*/,
-             const ChannelArgs& /*server_args*/) {
-            return std::make_unique<InsecureFixtureWithPipeForWakeupFd>();
-          }},
-#endif
-#ifndef GPR_WINDOWS
-      CoreTestConfiguration{"ChaoticGoodFullStack",
-                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-                                FEATURE_MASK_IS_CALL_V3,
-                            nullptr,
-                            [](const ChannelArgs& /*client_args*/,
-                               const ChannelArgs& /*server_args*/) {
-                              return std::make_unique<ChaoticGoodFixture>();
-                            }},
-      CoreTestConfiguration{
-          "ChaoticGoodManyConnections",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3,
-          nullptr,
-          [](const ChannelArgs& /*client_args*/,
-             const ChannelArgs& /*server_args*/) {
-            return std::make_unique<ChaoticGoodManyConnectionFixture>();
-          }},
-      CoreTestConfiguration{
-          "ChaoticGoodSingleConnection",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
-          nullptr,
-          [](const ChannelArgs& /*client_args*/,
-             const ChannelArgs& /*server_args*/) {
-            return std::make_unique<ChaoticGoodSingleConnectionFixture>();
-          }},
-      CoreTestConfiguration{
-          "ChaoticGoodOneByteChunk",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_1BYTE_AT_A_TIME |
-              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
-          nullptr,
-          [](const ChannelArgs& /*client_args*/,
-             const ChannelArgs& /*server_args*/) {
-            return std::make_unique<ChaoticGoodOneByteChunkFixture>();
-          }},
-#endif  // GPR_WINDOWS
   };
 }
 

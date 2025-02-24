@@ -664,6 +664,16 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
 // core test suite.
 std::vector<CoreTestConfiguration> End2endTestConfigs();
 
+// Helper function to add a nullptr to a vector of CoreConfiguration pointers
+// if the vector is empty - for fuzzers to avoid ElementOf from asserting.
+inline auto MaybeAddNullConfig(
+    std::vector<const CoreTestConfiguration*> configs) {
+  if (configs.empty()) {
+    configs.push_back(nullptr);
+  }
+  return configs;
+}
+
 }  // namespace grpc_core
 
 // If this test fixture is being run under minstack, skip the test.
@@ -689,7 +699,8 @@ std::vector<CoreTestConfiguration> End2endTestConfigs();
 #else
 #define CORE_END2END_FUZZER(suite, name)                                  \
   FUZZ_TEST(Fuzzers, suite##_##name)                                      \
-      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)),   \
+      .WithDomains(::fuzztest::ElementOf(::grpc_core::MaybeAddNullConfig( \
+                       suite::AllSuiteConfigs(true))),                    \
                    ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>() \
                        .WithProtobufField("config_vars", AnyConfigVars()));
 #endif
