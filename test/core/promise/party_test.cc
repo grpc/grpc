@@ -111,7 +111,7 @@ TEST_F(PartyTest, SpawnAndRunOneParty) {
 }
 
 TEST_F(PartyTest, SpawnAndFail) {
-  // Assert that on_done function of the Spawn should be called
+  // Assert that on_complete function of the Spawn should be called
   // even if the Spawned promise returns failing status.
   std::string execution_order;
   auto party = MakeParty();
