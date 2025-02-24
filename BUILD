@@ -3960,13 +3960,13 @@ grpc_cc_library(
         "//src/core:credentials/transport/tls/load_system_roots_fallback.cc",
         "//src/core:credentials/transport/tls/load_system_roots_supported.cc",
         "//src/core:credentials/transport/tls/load_system_roots_windows.cc",
-        "//src/core:lib/security/util/json_util.cc",
+        "//src/core:credentials/call/json_util.cc",
     ],
     hdrs = [
         "//src/core:credentials/transport/tls/tls_utils.h",
         "//src/core:credentials/transport/tls/load_system_roots.h",
         "//src/core:credentials/transport/tls/load_system_roots_supported.h",
-        "//src/core:lib/security/util/json_util.h",
+        "//src/core:credentials/call/json_util.h",
     ],
     external_deps = [
         "absl/log:log",

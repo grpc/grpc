@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/util/json_util.h"
+#include "src/core/credentials/call/json_util.h"
 
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>

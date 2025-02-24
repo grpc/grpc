@@ -30,7 +30,7 @@
 #include "absl/log/log.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/util/json_util.h"
+#include "src/core/credentials/call/json_util.h"
 #include "src/core/util/crash.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"

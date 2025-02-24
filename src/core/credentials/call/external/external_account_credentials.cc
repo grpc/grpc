@@ -47,7 +47,7 @@
 #include "src/core/credentials/call/external/aws_external_account_credentials.h"
 #include "src/core/credentials/call/external/file_external_account_credentials.h"
 #include "src/core/credentials/call/external/url_external_account_credentials.h"
-#include "src/core/lib/security/util/json_util.h"
+#include "src/core/credentials/call/json_util.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json_reader.h"

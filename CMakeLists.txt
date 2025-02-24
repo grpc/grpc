@@ -2810,7 +2810,7 @@ add_library(grpc
   src/core/credentials/transport/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/server_auth_filter.cc
-  src/core/lib/security/util/json_util.cc
+  src/core/credentials/call/json_util.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -3552,7 +3552,7 @@ add_library(grpc_unsecure
   src/core/credentials/transport/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/server_auth_filter.cc
-  src/core/lib/security/util/json_util.cc
+  src/core/credentials/call/json_util.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -5743,7 +5743,7 @@ add_library(grpc_authorization_provider
   src/core/credentials/transport/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/server_auth_filter.cc
-  src/core/lib/security/util/json_util.cc
+  src/core/credentials/call/json_util.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
