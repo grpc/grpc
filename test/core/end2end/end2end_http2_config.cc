@@ -242,51 +242,6 @@ class Sockpair1Byte : public SockpairFixture {
   }
 };
 
-#ifdef GRPC_POSIX_SOCKET
-
-class FdFixture : public CoreTestFixture {
- public:
-  FdFixture() { create_sockets(fd_pair_); }
-
- private:
-  grpc_server* MakeServer(
-      const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
-    ExecCtx exec_ctx;
-    auto* server = grpc_server_create(args.ToC().get(), nullptr);
-    grpc_server_register_completion_queue(server, cq, nullptr);
-    pre_server_start(server);
-    grpc_server_start(server);
-    grpc_server_credentials* creds = grpc_insecure_server_credentials_create();
-    grpc_server_add_channel_from_fd(server, fd_pair_[1], creds);
-    grpc_server_credentials_release(creds);
-    return server;
-  }
-  grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue*) override {
-    ExecCtx exec_ctx;
-    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-    auto* client = grpc_channel_create_from_fd("fixture_client", fd_pair_[0],
-                                               creds, args.ToC().get());
-    grpc_channel_credentials_release(creds);
-    return client;
-  }
-
-  static void create_sockets(int sv[2]) {
-    int flags;
-    grpc_create_socketpair_if_unix(sv);
-    flags = fcntl(sv[0], F_GETFL, 0);
-    CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
-    flags = fcntl(sv[1], F_GETFL, 0);
-    CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
-    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
-    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
-  }
-
-  int fd_pair_[2];
-};
-#endif
-
 class NoRetryFixture : public InsecureFixture {
  private:
   ChannelArgs MutateClientArgs(ChannelArgs args) override {
@@ -514,21 +469,6 @@ class FixtureWithTracing final : public CoreTestFixture {
   SavedTraceFlags saved_trace_flags_;
   std::unique_ptr<CoreTestFixture> fixture_;
 };
-
-#ifdef GRPC_POSIX_WAKEUP_FD
-class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
- public:
-  InsecureFixtureWithPipeForWakeupFd()
-      : old_value_(std::exchange(grpc_allow_specialized_wakeup_fd, 0)) {}
-
-  ~InsecureFixtureWithPipeForWakeupFd() override {
-    grpc_allow_specialized_wakeup_fd = old_value_;
-  }
-
- private:
-  const int old_value_;
-};
-#endif
 
 // Returns the temp directory to create uds in this test.
 std::string GetTempDir() {
