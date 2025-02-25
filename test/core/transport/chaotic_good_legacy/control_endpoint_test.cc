@@ -30,7 +30,7 @@ class ControlEndpointTest : public YodelTest {
 #define CONTROL_ENDPOINT_TEST(name) YODEL_TEST(ControlEndpointTest, name)
 
 CONTROL_ENDPOINT_TEST(CanWrite) {
-  chaotic_good::testing::MockPromiseEndpoint ep(1234);
+  util::testing::MockPromiseEndpoint ep(1234);
   chaotic_good_legacy::ControlEndpoint control_endpoint(
       std::move(ep.promise_endpoint), event_engine().get());
   ep.ExpectWrite(

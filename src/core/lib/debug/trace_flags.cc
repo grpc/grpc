@@ -37,7 +37,7 @@ DebugOnlyTraceFlag fd_trace_trace(false, "fd_trace");
 DebugOnlyTraceFlag lb_policy_refcount_trace(false, "lb_policy_refcount");
 DebugOnlyTraceFlag party_state_trace(false, "party_state");
 DebugOnlyTraceFlag pending_tags_trace(false, "pending_tags");
-DebugOnlyTraceFlag ph2_trace(false, "ph2");
+DebugOnlyTraceFlag http2_ph2_transport_trace(false, "http2_ph2_transport");
 DebugOnlyTraceFlag polling_trace(false, "polling");
 DebugOnlyTraceFlag polling_api_trace(false, "polling_api");
 DebugOnlyTraceFlag promise_primitives_trace(false, "promise_primitives");
@@ -227,7 +227,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"lb_policy_refcount", &lb_policy_refcount_trace},
           {"party_state", &party_state_trace},
           {"pending_tags", &pending_tags_trace},
-          {"ph2", &ph2_trace},
+          {"http2_ph2_transport", &http2_ph2_transport_trace},
           {"polling", &polling_trace},
           {"polling_api", &polling_api_trace},
           {"promise_primitives", &promise_primitives_trace},

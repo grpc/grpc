@@ -490,7 +490,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "http2_client_transport_test",
     srcs = ["http2_client_transport_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -506,7 +509,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "http2_server_transport_test",
     srcs = ["http2_server_transport_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -575,6 +581,7 @@ grpc_cc_library(
     testonly = 1,
     hdrs = ["http2_frame_test_helper.h"],
     external_deps = [
+        "absl/log:log",
         "absl/strings",
         "absl/types:span",
     ],
