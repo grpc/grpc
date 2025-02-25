@@ -94,8 +94,9 @@ class MessageReassembly {
     return If(
         done,
         [&]() {
-          auto message = Arena::MakePooled<Message>(
-              std::move(chunk_receiver_->incoming), 0);
+          auto message =
+              Arena::MakePooled<Message>(std::move(chunk_receiver_->incoming),
+                                         GRPC_WRITE_INTERNAL_IMMEDIATE_PUSH);
           chunk_receiver_.reset();
           return sink.PushMessage(std::move(message));
         },
