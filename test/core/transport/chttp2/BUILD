@@ -493,6 +493,8 @@ grpc_cc_test(
     external_deps = [
         "absl/log:log",
         "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
     uses_polling = False,
     deps = [

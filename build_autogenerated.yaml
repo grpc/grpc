@@ -12407,6 +12407,7 @@ targets:
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
+  - absl/numeric:int128
   - protobuf
   - grpc_test_util
   uses_polling: false

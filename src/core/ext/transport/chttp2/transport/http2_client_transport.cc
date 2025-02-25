@@ -272,7 +272,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             << payload.JoinIntoString();
         return ParseFramePayload(current_frame_header_, std::move(payload));
       },
-      [this](Http2Frame frame) {
+      [this](GRPC_UNUSED Http2Frame frame) {
         HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame ProcessOneFrame";
         return AssertResultType<absl::Status>(
