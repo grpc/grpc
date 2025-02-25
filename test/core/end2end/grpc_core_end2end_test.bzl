@@ -108,6 +108,7 @@ _TESTS = [
     "max_connection_idle",
     "max_message_length",
     "negative_deadline",
+    "no_logging",
     "no_op",
     "payload",
     "ping",
@@ -165,7 +166,7 @@ _TESTS = [
     "write_buffering_at_end",
 ]
 
-def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, enable_fuzzing = True, tags = [], flaky = False, with_no_logging_test = True):
+def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 1, enable_fuzzing = True, tags = [], flaky = False):
     """Generate one core end2end test
 
     Args:
@@ -176,52 +177,15 @@ def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, 
         tags: per bazel
         flaky: per bazel
         enable_fuzzing: also create a fuzzer
-        with_no_logging_test: also create variants with the no_logging test
     """
 
     if len(name) > 60:
         fail("test name %s too long" % name)
 
-    grpc_cc_test(
-        name = name + "_test",
-        srcs = [config_src] + [
-            "tests/%s.cc" % t
-            for t in _TESTS
-        ],
-        external_deps = [
-            "absl/log:log",
-            "gtest",
-            "gtest_main",
-        ],
-        deps = _DEPS + deps + ["end2end_test_lib_no_fuzztest_gtest"],
-        data = _DATA,
-        shard_count = shard_count,
-        tags = tags + ["core_end2end_test"],
-        flaky = flaky,
-    )
-
-    if enable_fuzzing:
-        grpc_fuzz_test(
-            name = name + "_fuzzer",
-            srcs = [config_src] + [
-                "tests/%s.cc" % t
-                for t in _TESTS
-            ],
-            external_deps = [
-                "absl/log:log",
-                "gtest",
-                "fuzztest",
-                "fuzztest_main",
-            ],
-            shard_count = shard_count,
-            deps = _DEPS + deps + ["end2end_test_lib_fuzztest_no_gtest"],
-            data = _DATA,
-        )
-
-    if with_no_logging_test:
+    for test in _TESTS:
         grpc_cc_test(
-            name = name + "_no_logging_test",
-            srcs = [config_src, "tests/no_logging.cc"],
+            name = "%s_%s_test" % (name, test),
+            srcs = [config_src, "tests/%s.cc" % test],
             external_deps = [
                 "absl/log:log",
                 "gtest",
@@ -234,17 +198,17 @@ def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, 
             flaky = flaky,
         )
 
-    if enable_fuzzing and with_no_logging_test:
-        grpc_fuzz_test(
-            name = name + "_no_logging_fuzzer",
-            srcs = [config_src, "tests/no_logging.cc"],
-            external_deps = [
-                "absl/log:log",
-                "gtest",
-                "fuzztest",
-                "fuzztest_main",
-            ],
-            shard_count = shard_count,
-            deps = _DEPS + deps + ["end2end_test_lib_fuzztest_no_gtest"],
-            data = _DATA,
-        )
+        if enable_fuzzing:
+            grpc_fuzz_test(
+                name = "%s_%s_fuzzer" % (name, test),
+                srcs = [config_src, "tests/%s.cc" % test],
+                external_deps = [
+                    "absl/log:log",
+                    "gtest",
+                    "fuzztest",
+                    "fuzztest_main",
+                ],
+                shard_count = shard_count,
+                deps = _DEPS + deps + ["end2end_test_lib_fuzztest_no_gtest"],
+                data = _DATA,
+            )
