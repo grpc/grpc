@@ -81,14 +81,6 @@ const char* GetStatusStrPropertyUrl(StatusStrProperty key) {
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
-const char* GetStatusTimePropertyUrl(StatusTimeProperty key) {
-  switch (key) {
-    case StatusTimeProperty::kCreated:
-      return TYPE_URL(TYPE_TIME_TAG "created_time");
-  }
-  GPR_UNREACHABLE_CODE(return "unknown");
-}
-
 void EncodeUInt32ToBytes(uint32_t v, char* buf) {
   buf[0] = v & 0xFF;
   buf[1] = (v >> 8) & 0xFF;
@@ -125,10 +117,9 @@ std::vector<absl::Status> ParseChildren(absl::Cord children) {
 }  // namespace
 
 absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
-                          const DebugLocation& location,
+                          const DebugLocation& /*location*/,
                           std::vector<absl::Status> children) {
   absl::Status s(code, msg);
-  StatusSetTime(&s, StatusTimeProperty::kCreated, absl::Now());
   for (const absl::Status& child : children) {
     if (!child.ok()) {
       StatusAddChild(&s, child);
@@ -171,34 +162,6 @@ std::optional<std::string> StatusGetStr(const absl::Status& status,
   auto p = status.GetPayload(GetStatusStrPropertyUrl(key));
   if (p.has_value()) {
     return std::string(*p);
-  }
-  return {};
-}
-
-void StatusSetTime(absl::Status* status, StatusTimeProperty key,
-                   absl::Time time) {
-  std::string time_str =
-      absl::FormatTime(absl::RFC3339_full, time, absl::UTCTimeZone());
-  status->SetPayload(GetStatusTimePropertyUrl(key),
-                     absl::Cord(std::move(time_str)));
-}
-
-std::optional<absl::Time> StatusGetTime(const absl::Status& status,
-                                        StatusTimeProperty key) {
-  auto p = status.GetPayload(GetStatusTimePropertyUrl(key));
-  if (p.has_value()) {
-    auto sv = p->TryFlat();
-    absl::Time time;
-    if (sv.has_value()) {
-      if (absl::ParseTime(absl::RFC3339_full, sv.value(), &time, nullptr)) {
-        return time;
-      }
-    } else {
-      std::string s = std::string(*p);
-      if (absl::ParseTime(absl::RFC3339_full, s, &time, nullptr)) {
-        return time;
-      }
-    }
   }
   return {};
 }

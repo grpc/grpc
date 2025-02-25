@@ -68,12 +68,6 @@ enum class StatusStrProperty {
   kGrpcMessage,
 };
 
-/// This enum should have the same value of grpc_error_times
-enum class StatusTimeProperty {
-  /// timestamp of error creation
-  kCreated,
-};
-
 /// Creates a status with given additional information
 absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
                           const DebugLocation& location,
@@ -94,14 +88,6 @@ void StatusSetStr(absl::Status* status, StatusStrProperty key,
 /// Gets the str property from the status
 GRPC_MUST_USE_RESULT std::optional<std::string> StatusGetStr(
     const absl::Status& status, StatusStrProperty key);
-
-/// Sets the time property to the status
-void StatusSetTime(absl::Status* status, StatusTimeProperty key,
-                   absl::Time time);
-
-/// Gets the time property from the status
-GRPC_MUST_USE_RESULT std::optional<absl::Time> StatusGetTime(
-    const absl::Status& status, StatusTimeProperty key);
 
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
