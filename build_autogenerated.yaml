@@ -8577,8 +8577,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-  args:
-  - --gtest_shuffle
   platforms:
   - linux
   - posix
@@ -8775,8 +8773,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-  args:
-  - --gtest_shuffle
   platforms:
   - linux
   - posix
@@ -8885,8 +8881,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-  args:
-  - --gtest_shuffle
 - name: end2end_http2_security_no_logging_test
   gtest: true
   build: test
@@ -8991,8 +8985,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-  args:
-  - --gtest_shuffle
 - name: end2end_http2_security_test
   gtest: true
   build: test
@@ -9185,8 +9177,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-  args:
-  - --gtest_shuffle
 - name: end2end_http2_test
   gtest: true
   build: test
@@ -9379,8 +9369,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-  args:
-  - --gtest_shuffle
 - name: end2end_inproc_no_logging_test
   gtest: true
   build: test
@@ -9485,8 +9473,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-  args:
-  - --gtest_shuffle
 - name: end2end_inproc_test
   gtest: true
   build: test
@@ -9679,8 +9665,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-  args:
-  - --gtest_shuffle
 - name: end2end_posix_no_logging_test
   gtest: true
   build: test
@@ -9785,8 +9769,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-  args:
-  - --gtest_shuffle
 - name: end2end_posix_test
   gtest: true
   build: test
@@ -9979,8 +9961,6 @@ targets:
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
-  args:
-  - --gtest_shuffle
 - name: end2end_test
   gtest: true
   build: test
