@@ -29,11 +29,11 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
-#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/useful.h"
+#include "test/core/test_util/fake_transport_credentials.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 

@@ -4097,51 +4097,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_fake_credentials",
-    srcs = [
-        "credentials/transport/fake/fake_credentials.cc",
-        "credentials/transport/fake/fake_security_connector.cc",
-    ],
-    hdrs = [
-        "credentials/transport/fake/fake_credentials.h",
-        "credentials/transport/fake/fake_security_connector.h",
-        "load_balancing/grpclb/grpclb.h",
-    ],
-    external_deps = [
-        "absl/log",
-        "absl/log:check",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-    ],
-    deps = [
-        "arena_promise",
-        "channel_args",
-        "closure",
-        "error",
-        "iomgr_fwd",
-        "metadata_batch",
-        "slice",
-        "unique_type_name",
-        "useful",
-        "//:channel_arg_names",
-        "//:debug_location",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc_base",
-        "//:grpc_core_credentials_header",
-        "//:grpc_security_base",
-        "//:handshaker",
-        "//:iomgr",
-        "//:promise",
-        "//:ref_counted_ptr",
-        "//:tsi_base",
-        "//:tsi_fake_credentials",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_insecure_credentials",
     srcs = [
         "credentials/transport/insecure/insecure_credentials.cc",
@@ -5292,7 +5247,6 @@ grpc_cc_library(
         "dual_ref_counted",
         "error",
         "error_utils",
-        "grpc_fake_credentials",
         "json",
         "json_args",
         "json_object_loader",
@@ -5870,7 +5824,6 @@ grpc_cc_library(
         "gcp_authentication_filter",
         "google_rpc_status_upb",
         "grpc_audit_logging",
-        "grpc_fake_credentials",
         "grpc_fault_injection_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_ring_hash",
@@ -6108,7 +6061,6 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "channel_creds_registry",
-        "grpc_fake_credentials",
         "grpc_google_default_credentials",
         "grpc_tls_credentials",
         "json",

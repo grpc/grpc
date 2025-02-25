@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_CREDENTIALS_H
-#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_CREDENTIALS_H
+#ifndef GRPC_TEST_CORE_TEST_UTIL_FAKE_TRANSPORT_CREDENTIALS_H
+#define GRPC_TEST_CORE_TEST_UTIL_FAKE_TRANSPORT_CREDENTIALS_H
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -37,9 +37,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
-
-#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
-  "grpc.fake_security.expected_targets"
 
 // -- Fake transport security credentials. --
 
@@ -75,18 +72,19 @@ grpc_channel_credentials* grpc_fake_transport_security_credentials_create(void);
 grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
     void);
 
-// Used to verify the target names given to the fake transport security
-// connector.
-//
-// The syntax of \a expected_targets by example:
-// For LB channels:
-//     "backend_target_1,backend_target_2,...;lb_target_1,lb_target_2,..."
-// For regular channels:
-//     "backend_target_1,backend_target_2,..."
-//
-// That is to say, LB channels have a heading list of LB targets separated from
-// the list of backend targets by a semicolon. For non-LB channels, only the
-// latter is present.
-grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets);
+namespace grpc_core {
 
-#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_CREDENTIALS_H
+// Registers a CoreConfiguration builder to register fake channel
+// credentials with the channel credentials registry.
+void RegisterFakeChannelCredentialsBuilder();
+
+}  // namespace grpc_core
+
+// Creates a fake connector that emulates real channel security.
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_fake_channel_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char* target, const grpc_core::ChannelArgs& args);
+
+#endif  // GRPC_TEST_CORE_TEST_UTIL_FAKE_TRANSPORT_CREDENTIALS_H

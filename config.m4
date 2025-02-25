@@ -109,8 +109,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc \
     src/core/credentials/transport/channel_creds_registry_init.cc \
     src/core/credentials/transport/composite/composite_channel_credentials.cc \
-    src/core/credentials/transport/fake/fake_credentials.cc \
-    src/core/credentials/transport/fake/fake_security_connector.cc \
     src/core/credentials/transport/google_default/credentials_generic.cc \
     src/core/credentials/transport/google_default/google_default_credentials.cc \
     src/core/credentials/transport/insecure/insecure_credentials.cc \
@@ -791,7 +789,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc \
-    src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
     src/core/tsi/ssl/key_logging/ssl_key_logging.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
@@ -1431,7 +1428,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/composite)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/google_default)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/local)

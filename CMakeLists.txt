@@ -2200,8 +2200,6 @@ add_library(grpc
   src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/credentials/transport/channel_creds_registry_init.cc
   src/core/credentials/transport/composite/composite_channel_credentials.cc
-  src/core/credentials/transport/fake/fake_credentials.cc
-  src/core/credentials/transport/fake/fake_security_connector.cc
   src/core/credentials/transport/google_default/credentials_generic.cc
   src/core/credentials/transport/google_default/google_default_credentials.cc
   src/core/credentials/transport/insecure/insecure_credentials.cc
@@ -2881,7 +2879,6 @@ add_library(grpc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/key_logging/ssl_key_logging.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -3291,8 +3288,6 @@ add_library(grpc_unsecure
   src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/credentials/transport/composite/composite_channel_credentials.cc
-  src/core/credentials/transport/fake/fake_credentials.cc
-  src/core/credentials/transport/fake/fake_security_connector.cc
   src/core/credentials/transport/insecure/insecure_credentials.cc
   src/core/credentials/transport/insecure/insecure_security_connector.cc
   src/core/credentials/transport/security_connector.cc
@@ -3611,7 +3606,6 @@ add_library(grpc_unsecure
   src/core/telemetry/stats_data.cc
   src/core/transport/auth_context.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
@@ -10060,7 +10054,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(channel_creds_registry_test
+  src/core/tsi/fake_transport_security.cc
   test/core/credentials/transport/channel_creds_registry_test.cc
+  test/core/test_util/fake_transport_credentials.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10811,9 +10807,11 @@ add_executable(client_auth_filter_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  src/core/tsi/fake_transport_security.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/client_auth_filter_test.cc
   test/core/filters/filter_test.cc
+  test/core/test_util/fake_transport_credentials.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12808,6 +12806,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good_legacy/server_transport.cc
     src/core/lib/promise/wait_set.cc
     src/core/lib/transport/promise_endpoint.cc
+    src/core/tsi/fake_transport_security.cc
     test/core/call/batch_builder.cc
     test/core/end2end/cq_verifier.cc
     test/core/end2end/end2end_chaotic_good_config.cc
@@ -12821,6 +12820,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
+    test/core/test_util/fake_transport_credentials.cc
     test/core/test_util/fuzz_config_vars.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
@@ -12905,6 +12905,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good_legacy/server_transport.cc
     src/core/lib/promise/wait_set.cc
     src/core/lib/transport/promise_endpoint.cc
+    src/core/tsi/fake_transport_security.cc
     test/core/call/batch_builder.cc
     test/core/end2end/cq_verifier.cc
     test/core/end2end/end2end_chaotic_good_config.cc
@@ -13006,6 +13007,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
+    test/core/test_util/fake_transport_credentials.cc
     test/core/test_util/fuzz_config_vars.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
@@ -13089,6 +13091,7 @@ add_executable(end2end_http2_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/tsi/fake_transport_security.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_http2_config.cc
@@ -13102,6 +13105,7 @@ add_executable(end2end_http2_no_logging_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13184,6 +13188,7 @@ add_executable(end2end_http2_security_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/tsi/fake_transport_security.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_http2_security_config.cc
@@ -13197,6 +13202,7 @@ add_executable(end2end_http2_security_no_logging_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13279,6 +13285,7 @@ add_executable(end2end_http2_security_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/tsi/fake_transport_security.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_http2_security_config.cc
@@ -13380,6 +13387,7 @@ add_executable(end2end_http2_security_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13462,6 +13470,7 @@ add_executable(end2end_http2_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/tsi/fake_transport_security.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_http2_config.cc
@@ -13563,6 +13572,7 @@ add_executable(end2end_http2_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13645,6 +13655,7 @@ add_executable(end2end_inproc_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/tsi/fake_transport_security.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_inproc_config.cc
@@ -13658,6 +13669,7 @@ add_executable(end2end_inproc_no_logging_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13740,6 +13752,7 @@ add_executable(end2end_inproc_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/tsi/fake_transport_security.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_inproc_config.cc
@@ -13841,6 +13854,7 @@ add_executable(end2end_inproc_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13923,6 +13937,7 @@ add_executable(end2end_posix_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/tsi/fake_transport_security.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_posix_config.cc
@@ -13936,6 +13951,7 @@ add_executable(end2end_posix_no_logging_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -14018,6 +14034,7 @@ add_executable(end2end_posix_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/tsi/fake_transport_security.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_posix_config.cc
@@ -14119,6 +14136,7 @@ add_executable(end2end_posix_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -24824,6 +24842,8 @@ add_executable(resource_quota_end2end_stress_test
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
+  src/core/tsi/fake_transport_security.cc
+  test/core/test_util/fake_transport_credentials.cc
   test/cpp/end2end/resource_quota_end2end_stress_test.cc
 )
 if(WIN32 AND MSVC)

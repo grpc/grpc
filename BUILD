@@ -673,7 +673,6 @@ grpc_cc_library(
         "//src/core:forkable",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_external_account_credentials",
-        "//src/core:grpc_fake_credentials",
         "//src/core:grpc_google_default_credentials",
         "//src/core:grpc_iam_credentials",
         "//src/core:grpc_insecure_credentials",
@@ -2253,7 +2252,6 @@ grpc_cc_library(
         "gpr",
         "tsi_alts_frame_protector",
         "tsi_base",
-        "tsi_fake_credentials",
         "//src/core:tsi_local_credentials",
         "//src/core:useful",
     ],
@@ -3879,6 +3877,7 @@ grpc_cc_library(
     ],
 )
 
+# TODO(roth): Move this target and the underlying code to the test tree.
 grpc_cc_library(
     name = "tsi_fake_credentials",
     srcs = [

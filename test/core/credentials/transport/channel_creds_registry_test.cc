@@ -26,10 +26,10 @@
 #include "gmock/gmock.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/composite/composite_channel_credentials.h"
-#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/fake_transport_credentials.h"
 
 namespace grpc_core {
 namespace testing {
@@ -108,10 +108,6 @@ TEST_F(ChannelCredsRegistryTest, GoogleDefaultCreds) {
 
 TEST_F(ChannelCredsRegistryTest, InsecureCreds) {
   TestCreds("insecure", InsecureCredentials::Type());
-}
-
-TEST_F(ChannelCredsRegistryTest, FakeCreds) {
-  TestCreds("fake", grpc_fake_channel_credentials::Type());
 }
 
 TEST_F(ChannelCredsRegistryTest, TlsCredsNoConfig) {

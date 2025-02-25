@@ -45,5 +45,6 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:fake_transport_credentials",
     ],
 )

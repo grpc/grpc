@@ -248,10 +248,6 @@
     <file baseinstalldir="/" name="src/core/credentials/transport/channel_creds_registry_init.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/composite/composite_channel_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/composite/composite_channel_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/credentials/transport/fake/fake_credentials.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/credentials/transport/fake/fake_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/credentials/transport/fake/fake_security_connector.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/credentials/transport/fake/fake_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/google_default/credentials_generic.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/google_default/google_default_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/google_default/google_default_credentials.h" role="src" />
@@ -1815,8 +1811,6 @@
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/key_logging/ssl_key_logging.cc" role="src" />

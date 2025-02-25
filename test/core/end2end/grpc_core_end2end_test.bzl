@@ -57,7 +57,6 @@ _DEPS = [
     "//src/core:error",
     "//src/core:experiments",
     "//src/core:grpc_authorization_base",
-    "//src/core:grpc_fake_credentials",
     "//src/core:iomgr_port",
     "//src/core:json",
     "//src/core:lb_policy",
@@ -72,6 +71,7 @@ _DEPS = [
     "//test/core/test_util:fake_stats_plugin",
     "//test/core/test_util:grpc_test_util",
     "//test/core/test_util:test_lb_policies",
+    "//test/core/test_util:fake_transport_credentials",
 ]
 
 _TESTS = [
