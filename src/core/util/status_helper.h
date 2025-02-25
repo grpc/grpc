@@ -56,8 +56,6 @@ enum class StatusIntProperty {
   kRpcStatus,
   /// http2 error code associated with the error (see the HTTP2 RFC)
   kHttp2Error,
-  /// File descriptor associated with this error
-  kFd,
   /// channel connectivity state associated with the error
   ChannelConnectivityState,
   /// LB policy drop
