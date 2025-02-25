@@ -33,9 +33,8 @@ namespace grpc_core {
 //
 // Input:
 // 1. The first argument is a promise.
-// 2. The second argument is a synchronous function to mutate the result of the
-// promise.
-// Note: The synchronous function must be callable with the result type of the
+// 2. The second argument is a synchronous function.
+// 3. The synchronous function MUST be callable with the result type of the
 // promise.
 //
 // Return:
