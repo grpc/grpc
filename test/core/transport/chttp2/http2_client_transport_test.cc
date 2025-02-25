@@ -62,45 +62,44 @@ class Http2ClientTransportTest : public TransportTest {
   }
 };
 
-// TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
-//   // Event Engine      : FuzzingEventEngine
-//   // This test asserts :
-//   // 1. Tests Http2ClientTransport object creation and destruction. The
-//   object
-//   // creation itself begins the ReadLoop and the WriteLoop.
-//   // 2. Assert if the ReadLoop was invoked correctly or not.
-//   // 3. Tests trivial functions GetTransportName() , server_transport() and
-//   // client_transport().
+TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
+  // Event Engine      : FuzzingEventEngine
+  // This test asserts :
+  // 1. Tests Http2ClientTransport object creation and destruction. The object
+  // creation itself begins the ReadLoop and the WriteLoop.
+  // 2. Assert if the ReadLoop was invoked correctly or not.
+  // 3. Tests trivial functions GetTransportName() , server_transport() and
+  // client_transport().
 
-//   LOG(INFO) << "TestHttp2ClientTransportObjectCreation Begin";
-//   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+  LOG(INFO) << "TestHttp2ClientTransportObjectCreation Begin";
+  MockPromiseEndpoint mock_endpoint(/*port=*/1000);
 
-//   mock_endpoint.ExpectRead(
-//       {helper_.EventEngineSliceFromHttp2DataFrame(
-//            /*payload=*/"Hello!", /*stream_id=*/10, /*end_stream=*/false),
-//        helper_.EventEngineSliceFromHttp2DataFrame(
-//            /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)},
-//       event_engine().get());
+  mock_endpoint.ExpectRead(
+      {helper_.EventEngineSliceFromHttp2DataFrame(
+           /*payload=*/"Hello!", /*stream_id=*/10, /*end_stream=*/false),
+       helper_.EventEngineSliceFromHttp2DataFrame(
+           /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)},
+      event_engine().get());
 
-//   EXPECT_CALL(*mock_endpoint.endpoint, Read)
-//       .InSequence(mock_endpoint.read_sequence)
-//       // Fail the Read to break the ReadLoop
-//       .WillOnce(::testing::Return(false));
+  EXPECT_CALL(*mock_endpoint.endpoint, Read)
+      .InSequence(mock_endpoint.read_sequence)
+      // Fail the Read to break the ReadLoop
+      .WillOnce(::testing::Return(false));
 
-//   auto client_transport = MakeOrphanable<Http2ClientTransport>(
-//       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-//       event_engine());
+  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
+      event_engine());
 
-//   EXPECT_EQ(client_transport->filter_stack_transport(), nullptr);
-//   EXPECT_NE(client_transport->client_transport(), nullptr);
-//   EXPECT_EQ(client_transport->server_transport(), nullptr);
-//   EXPECT_EQ(client_transport->GetTransportName(), "http2");
+  EXPECT_EQ(client_transport->filter_stack_transport(), nullptr);
+  EXPECT_NE(client_transport->client_transport(), nullptr);
+  EXPECT_EQ(client_transport->server_transport(), nullptr);
+  EXPECT_EQ(client_transport->GetTransportName(), "http2");
 
-//   // Wait for Http2ClientTransport's internal activities to finish.
-//   event_engine()->TickUntilIdle();
-//   event_engine()->UnsetGlobalHooks();
-//   LOG(INFO) << "TestHttp2ClientTransportObjectCreation End";
-// }
+  // Wait for Http2ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+  LOG(INFO) << "TestHttp2ClientTransportObjectCreation End";
+}
 
 }  // namespace testing
 }  // namespace http2
