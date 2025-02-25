@@ -5573,6 +5573,7 @@ grpc_cc_library(
         "xds/grpc/xds_server_grpc_interface.h",
     ],
     tags = ["nofixdeps"],
+    visibility = ["@grpc:xds_client_core"],
     deps = [
         "channel_creds_registry",
         "//:ref_counted_ptr",
@@ -5941,6 +5942,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     tags = ["nofixdeps"],
+    visibility = ["@grpc:xds_client_core"],
     deps = [
         "channel_args",
         "channel_creds_registry",
