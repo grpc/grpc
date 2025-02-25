@@ -18555,8 +18555,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http2_client_transport_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -18600,6 +18605,8 @@ target_include_directories(http2_client_transport_test
 target_link_libraries(http2_client_transport_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::int128
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
