@@ -305,7 +305,8 @@ class Party : public Activity, private Wakeable {
   // The party can poll the promise until it is resolved, or until the party is
   // shut down.
   // The on_complete callback will be called with the result of the
-  // promise if it completes.
+  // promise if it completes. Even if the promise returns a failed status,
+  // on_complete will be called.
   // promise_factory called to create the promise with the party lock taken;
   // after the promise is created the factory is destroyed. This means that
   // pointers or references to factory members will be invalidated after the
