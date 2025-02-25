@@ -198,7 +198,6 @@ def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, 
         shard_count = shard_count,
         tags = tags + ["core_end2end_test"],
         flaky = flaky,
-        args = ["--gtest_shuffle"],
     )
 
     if enable_fuzzing:
@@ -233,7 +232,6 @@ def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, 
             shard_count = shard_count,
             tags = tags + ["core_end2end_test"],
             flaky = flaky,
-            args = ["--gtest_shuffle"],
         )
 
     if enable_fuzzing and with_no_logging_test:
