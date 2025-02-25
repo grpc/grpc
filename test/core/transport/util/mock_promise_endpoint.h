@@ -23,7 +23,7 @@
 #include "src/core/lib/transport/promise_endpoint.h"
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace util {
 namespace testing {
 
 class MockEndpoint
@@ -87,7 +87,7 @@ struct MockPromiseEndpoint {
 };
 
 }  // namespace testing
-}  // namespace chaotic_good
+}  // namespace util
 }  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_UTIL_MOCK_PROMISE_ENDPOINT_H
