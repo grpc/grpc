@@ -87,18 +87,20 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
         grpc_gcp_AltsContext_security_level(ctx));
   }
   if (grpc_gcp_AltsContext_peer_attributes_size(ctx) != 0) {
-    size_t iter = kUpb_Map_Begin;
-    const grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
-        grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
-    while (peer_attributes_entry != nullptr) {
-      upb_StringView key =
-          grpc_gcp_AltsContext_PeerAttributesEntry_key(peer_attributes_entry);
-      upb_StringView val =
-          grpc_gcp_AltsContext_PeerAttributesEntry_value(peer_attributes_entry);
-      peer_attributes_map_[std::string(key.data, key.size)] =
-          std::string(val.data, val.size);
-      peer_attributes_entry =
-          grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
+    // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
+    // v30.0.
+    grpc_gcp_AltsContext* ctx_upb = (grpc_gcp_AltsContext*)ctx;
+    const upb_Map* ctx_upb_map =
+        _grpc_gcp_AltsContext_peer_attributes_upb_map(ctx_upb);
+    if (ctx_upb_map) {
+      size_t iter = kUpb_Map_Begin;
+      upb_MessageValue k, v;
+      while (upb_Map_Next(ctx_upb_map, &k, &v, &iter)) {
+        upb_StringView key = k.str_val;
+        upb_StringView val = v.str_val;
+        peer_attributes_map_[std::string(key.data, key.size)] =
+            std::string(val.data, val.size);
+      }
     }
   }
 }
