@@ -106,11 +106,18 @@ std::vector<CoreTestConfiguration> AllConfigs() {
   return configs;
 }
 
-static NoDestruct<std::vector<CoreTestConfiguration>> kConfigs(AllConfigs());
+namespace {
+
+absl::Span<const CoreTestConfiguration> Configs() {
+  static NoDestruct<std::vector<CoreTestConfiguration>> kConfigs(AllConfigs());
+  return *kConfigs;
+}
+
+}  // namespace
 
 const CoreTestConfiguration* CoreTestConfigurationNamed(
     absl::string_view name) {
-  for (const CoreTestConfiguration& config : *kConfigs) {
+  for (const CoreTestConfiguration& config : Configs()) {
     if (config.name == name) return &config;
   }
   return nullptr;
@@ -158,7 +165,7 @@ class ConfigQuery {
 
   auto Run() const {
     std::vector<const CoreTestConfiguration*> out;
-    for (const CoreTestConfiguration& config : *kConfigs) {
+    for (const CoreTestConfiguration& config : Configs()) {
       if ((config.feature_mask & enforce_features_) == enforce_features_ &&
           (config.feature_mask & exclude_features_) == 0) {
         bool allowed = allowed_names_.empty();
