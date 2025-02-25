@@ -57,8 +57,6 @@ const absl::string_view kChildrenPropertyUrl = TYPE_URL(TYPE_CHILDREN_TAG);
 
 const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
   switch (key) {
-    case StatusIntProperty::kFileLine:
-      return TYPE_URL(TYPE_INT_TAG "file_line");
     case StatusIntProperty::kStreamId:
       return TYPE_URL(TYPE_INT_TAG "stream_id");
     case StatusIntProperty::kRpcStatus:
@@ -77,8 +75,6 @@ const char* GetStatusStrPropertyUrl(StatusStrProperty key) {
   switch (key) {
     case StatusStrProperty::kDescription:
       return TYPE_URL(TYPE_STR_TAG "description");
-    case StatusStrProperty::kFile:
-      return TYPE_URL(TYPE_STR_TAG "file");
     case StatusStrProperty::kGrpcMessage:
       return TYPE_URL(TYPE_STR_TAG "grpc_message");
   }
@@ -132,12 +128,6 @@ absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
                           const DebugLocation& location,
                           std::vector<absl::Status> children) {
   absl::Status s(code, msg);
-  if (location.file() != nullptr) {
-    StatusSetStr(&s, StatusStrProperty::kFile, location.file());
-  }
-  if (location.line() != -1) {
-    StatusSetInt(&s, StatusIntProperty::kFileLine, location.line());
-  }
   StatusSetTime(&s, StatusTimeProperty::kCreated, absl::Now());
   for (const absl::Status& child : children) {
     if (!child.ok()) {

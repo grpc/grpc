@@ -46,8 +46,6 @@ namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints
 enum class StatusIntProperty {
-  /// __LINE__ from the call site creating the error
-  kFileLine,
   /// stream identifier: for errors that are associated with an individual
   /// wire stream
   kStreamId,
@@ -66,8 +64,6 @@ enum class StatusIntProperty {
 enum class StatusStrProperty {
   /// top-level textual description of this error
   kDescription,
-  /// source file in which this error occurred
-  kFile,
   /// peer that we were trying to communicate when this error occurred
   kGrpcMessage,
 };
