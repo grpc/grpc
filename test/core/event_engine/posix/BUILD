@@ -268,3 +268,45 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "file_descriptors_test",
+    srcs = ["file_descriptors_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    deps = [
+        ":posix_engine_test_utils",
+        "//:grpc++",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "posix_system_api_test",
+    srcs = ["posix_system_api_test.cc"],
+    data = ["//examples/cpp/helloworld:greeter_server"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    deps = [
+        ":posix_engine_test_utils",
+        "//:grpc++",
+        "//examples/protos:helloworld_cc_grpc",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
