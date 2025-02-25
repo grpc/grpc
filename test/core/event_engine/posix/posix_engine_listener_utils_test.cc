@@ -17,6 +17,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <cstdint>
 #include <list>
 #include <string>
 
@@ -94,6 +95,92 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddWildcardAddressesTest) {
     }
     close(socket->sock.Fd());
   }
+}
+
+TEST(PosixEngineListenerUtils, ListenerContainerIpv4LinkLocalTest) {
+  sockaddr_in addr4;
+  memset(&addr4, 0, sizeof(addr4));
+  addr4.sin_family = AF_INET;
+  addr4.sin_addr.s_addr = htonl(0xA9FE0101);  // 169.254.1.1
+  EventEngine::ResolvedAddress resolved_addr4(
+      reinterpret_cast<sockaddr*>(&addr4), sizeof(addr4));
+  EXPECT_TRUE(IsSockAddrLinkLocal(&resolved_addr4));
+
+  addr4.sin_addr.s_addr = htonl(0xA9FE1010);  // 169.254.16.16
+  EventEngine::ResolvedAddress resolved_addr4_mid1(
+      reinterpret_cast<sockaddr*>(&addr4), sizeof(addr4));
+  EXPECT_TRUE(IsSockAddrLinkLocal(&resolved_addr4_mid1));
+
+  addr4.sin_addr.s_addr = htonl(0xA9FE8080);  // 169.254.128.128
+  EventEngine::ResolvedAddress resolved_addr4_mid2(
+      reinterpret_cast<sockaddr*>(&addr4), sizeof(addr4));
+  EXPECT_TRUE(IsSockAddrLinkLocal(&resolved_addr4_mid2));
+
+  addr4.sin_addr.s_addr = htonl(0xA9FEFFFF);  // 169.254.255.255
+  EventEngine::ResolvedAddress resolved_addr4_max(
+      reinterpret_cast<sockaddr*>(&addr4), sizeof(addr4));
+  EXPECT_TRUE(IsSockAddrLinkLocal(&resolved_addr4_max));
+
+  addr4.sin_addr.s_addr = htonl(0xA9000101);  // 169.0.1.1 (Not link-local)
+  EventEngine::ResolvedAddress resolved_addr4_not_ll(
+      reinterpret_cast<sockaddr*>(&addr4), sizeof(addr4));
+  EXPECT_FALSE(IsSockAddrLinkLocal(&resolved_addr4_not_ll));
+
+  addr4.sin_addr.s_addr = htonl(0xAC100101);  // 172.16.1.1 (Not link-local)
+  EventEngine::ResolvedAddress resolved_addr4_not_ll2(
+      reinterpret_cast<sockaddr*>(&addr4), sizeof(addr4));
+  EXPECT_FALSE(IsSockAddrLinkLocal(&resolved_addr4_not_ll2));
+}
+
+TEST(PosixEngineListenerUtils, ListenerContainerIpv6LinkLocalTest) {
+  sockaddr_in6 addr6;
+  memset(&addr6, 0, sizeof(addr6));
+  addr6.sin6_family = AF_INET6;
+  // fe80::1
+  uint8_t fe80_1[] = {0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+  memcpy(&addr6.sin6_addr.s6_addr, fe80_1, 16);
+  EventEngine::ResolvedAddress resolved_addr6(
+      reinterpret_cast<sockaddr*>(&addr6), sizeof(addr6));
+  EXPECT_TRUE(IsSockAddrLinkLocal(&resolved_addr6));
+
+  uint8_t fea0_1[] = {0xfe, 0xa0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+  memcpy(&addr6.sin6_addr.s6_addr, fea0_1, 16);
+  EventEngine::ResolvedAddress resolved_addr6_mid1(
+      reinterpret_cast<sockaddr*>(&addr6), sizeof(addr6));
+  EXPECT_TRUE(IsSockAddrLinkLocal(&resolved_addr6_mid1));
+
+  uint8_t fe90_1234[] = {0xfe, 0x90, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc,
+                         0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc};
+  memcpy(&addr6.sin6_addr.s6_addr, fe90_1234, 16);
+  EventEngine::ResolvedAddress resolved_addr6_mid2(
+      reinterpret_cast<sockaddr*>(&addr6), sizeof(addr6));
+  EXPECT_TRUE(IsSockAddrLinkLocal(&resolved_addr6_mid2));
+
+  // febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff (Max link-local)
+  uint8_t febf_ffff[] = {0xfe, 0xbf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+  memcpy(&addr6.sin6_addr.s6_addr, febf_ffff, 16);
+  EventEngine::ResolvedAddress resolved_addr6_max(
+      reinterpret_cast<sockaddr*>(&addr6), sizeof(addr6));
+  EXPECT_TRUE(IsSockAddrLinkLocal(&resolved_addr6_max));
+
+  // fe7f::1 (Not link-local)
+  uint8_t fe7f_1[] = {0xfe, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+  memcpy(&addr6.sin6_addr.s6_addr, fe7f_1, 16);
+  EventEngine::ResolvedAddress resolved_addr6_not_ll(
+      reinterpret_cast<sockaddr*>(&addr6), sizeof(addr6));
+  EXPECT_FALSE(IsSockAddrLinkLocal(&resolved_addr6_not_ll));
+
+  // 2001:db8::1 (Not link-local)
+  uint8_t db8_1[] = {0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+  memcpy(&addr6.sin6_addr.s6_addr, db8_1, 16);
+  EventEngine::ResolvedAddress resolved_addr6_not_ll2(
+      reinterpret_cast<sockaddr*>(&addr6), sizeof(addr6));
+  EXPECT_FALSE(IsSockAddrLinkLocal(&resolved_addr6_not_ll2));
 }
 
 #ifdef GRPC_HAVE_IFADDRS
