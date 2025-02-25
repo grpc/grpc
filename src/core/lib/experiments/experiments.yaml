@@ -50,6 +50,7 @@
   expiry: 2025/06/01
   owner: roth@google.com
   test_tags: []
+  allow_in_fuzzing_config: false
 - name: call_tracer_transport_fix
   description: Use the correct call tracer in transport
   expiry: 2025/06/01
