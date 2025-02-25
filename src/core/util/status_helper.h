@@ -58,8 +58,6 @@ enum class StatusIntProperty {
   kHttp2Error,
   /// File descriptor associated with this error
   kFd,
-  /// chttp2: did the error occur while a write was in progress
-  kOccurredDuringWrite,
   /// channel connectivity state associated with the error
   ChannelConnectivityState,
   /// LB policy drop
