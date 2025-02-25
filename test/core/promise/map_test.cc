@@ -31,7 +31,13 @@ TEST(MapTest, Works) {
 
 TEST(MapTest, TwoTyped) {
   auto map = Map([]() { return absl::OkStatus(); },
-                 [](absl::Status s) { return "OK"; });
+                 [](absl::Status s) {
+                   if (s.ok()) {
+                     return "OK";
+                   } else {
+                     return "ERROR";
+                   }
+                 });
   EXPECT_THAT(map(), IsReady("OK"));
 }
 
@@ -90,7 +96,11 @@ TEST(MapTest, NestedMapsWithDifferentTypes) {
       });
   auto map2 = Map(std::move(map1), [&execution_order](absl::Status s) {
     execution_order.push_back('3');
-    return "OK";
+    if (s.ok()) {
+      return "OK";
+    } else {
+      return "ERROR";
+    }
   });
 
   EXPECT_THAT(map2(), IsReady("OK"));
@@ -120,7 +130,13 @@ TEST(CheckDelayedTest, SeesDelayed) {
 
 TEST(CheckDelayedTest, SeesImmediateWithMap) {
   auto map = Map([]() { return absl::OkStatus(); },
-                 [](absl::Status s) { return "OK"; });
+                 [](absl::Status s) {
+                   if (s.ok()) {
+                     return "OK";
+                   } else {
+                     return "ERROR";
+                   }
+                 });
   auto x = CheckDelayed(std::move(map));
 
   auto result = x();
