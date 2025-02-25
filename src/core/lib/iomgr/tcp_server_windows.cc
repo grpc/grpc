@@ -292,8 +292,8 @@ static grpc_error_handle prepare_socket(SOCKET sock,
 
 failure:
   CHECK(!error.ok());
-  error = GRPC_ERROR_CREATE_REFERENCING(
-      "Failed to prepare server socket", &error, 1);
+  error = GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket",
+                                        &error, 1);
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
 }

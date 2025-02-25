@@ -737,11 +737,11 @@ static void finish_estimate(grpc_tcp* tcp) {
 
 static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
                                             grpc_tcp* tcp) {
-  return grpc_error_set_int(
-      src_error,
-      // All tcp errors are marked with UNAVAILABLE so that application may
-      // choose to retry.
-      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
+  return grpc_error_set_int(src_error,
+                            // All tcp errors are marked with UNAVAILABLE so
+                            // that application may choose to retry.
+                            grpc_core::StatusIntProperty::kRpcStatus,
+                            GRPC_STATUS_UNAVAILABLE);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
