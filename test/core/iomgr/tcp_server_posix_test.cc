@@ -331,10 +331,10 @@ static void test_connect(size_t num_connects,
   grpc_core::ExecCtx exec_ctx;
   // Use aligned_storage to allocate grpc_resolved_address objects on stack
   // to meet the alignment requirement of sockaddr_storage type.
-  std::aligned_storage<sizeof(grpc_resolved_address),
-                       alignof(sockaddr_storage)>::type resolved_addr_buffer;
-  std::aligned_storage<sizeof(grpc_resolved_address),
-                       alignof(sockaddr_storage)>::type resolved_addr1_buffer;
+  alignas(sockaddr_storage) char
+      resolved_addr_buffer[sizeof(grpc_resolved_address)];
+  alignas(sockaddr_storage) char
+      resolved_addr1_buffer[sizeof(grpc_resolved_address)];
   grpc_resolved_address& resolved_addr =
       *reinterpret_cast<grpc_resolved_address*>(&resolved_addr_buffer);
   grpc_resolved_address& resolved_addr1 =
@@ -708,6 +708,19 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
+// return true for special interfaces
+// For Mac these interfaces are not allowed to bind and listen
+// these would not be used in below test
+static bool FilterSpecialInterfaces(const char* ifname) {
+  // skip unnamed interface
+  if (!ifname) return true;
+  // skip utun[0-9] interface, Mac VPN interfaces
+  if (absl::StrContains(ifname, "utun")) return true;
+  // skip awdl0 interface, Used for peer-peer b/w apple devices
+  if (absl::StrContains(ifname, "awdl")) return true;
+  return false;
+}
+
 TEST(TcpServerPosixTest, MainTest) {
   grpc_closure destroyed;
   grpc_arg chan_args[1];
@@ -746,6 +759,8 @@ TEST(TcpServerPosixTest, MainTest) {
     for (ifa_it = ifa; ifa_it != nullptr && dst_addrs->naddrs < MAX_ADDRS;
          ifa_it = ifa_it->ifa_next) {
       if (ifa_it->ifa_addr == nullptr) {
+        continue;
+      } else if (FilterSpecialInterfaces(ifa_it->ifa_name)) {
         continue;
       } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
         dst_addrs->addrs[dst_addrs->naddrs].addr.len =

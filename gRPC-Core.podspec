@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.71.0-dev'
+  version = '1.72.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -200,7 +200,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.38'
+    ss.dependency 'BoringSSL-GRPC', '0.0.39'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -678,6 +678,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb.h',
                       'src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb.h',
+                      'src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c',
+                      'src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb.h',
                       'src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.h',
@@ -1074,6 +1077,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c',
@@ -2162,6 +2167,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/xds_routing.h',
                       'src/core/xds/grpc/xds_server_grpc.cc',
                       'src/core/xds/grpc/xds_server_grpc.h',
+                      'src/core/xds/grpc/xds_server_grpc_interface.h',
                       'src/core/xds/grpc/xds_transport_grpc.cc',
                       'src/core/xds/grpc/xds_transport_grpc.h',
                       'src/core/xds/xds_client/lrs_client.cc',
@@ -2689,6 +2695,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb.h',
                               'src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb.h',
+                              'src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb.h',
                               'src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb.h',
@@ -2924,6 +2932,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/service/status/v3/csds.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/matcher/v3/metadata.upbdefs.h',
@@ -3492,6 +3501,7 @@ Pod::Spec.new do |s|
                               'src/core/xds/grpc/xds_route_config_parser.h',
                               'src/core/xds/grpc/xds_routing.h',
                               'src/core/xds/grpc/xds_server_grpc.h',
+                              'src/core/xds/grpc/xds_server_grpc_interface.h',
                               'src/core/xds/grpc/xds_transport_grpc.h',
                               'src/core/xds/xds_client/lrs_client.h',
                               'src/core/xds/xds_client/xds_api.h',

@@ -530,7 +530,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
               &on_receive_settings_, nullptr, on_close);
           timer_handle_ = connection_->event_engine_->RunAfter(
               deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
-                ApplicationCallbackExecCtx callback_exec_ctx;
                 ExecCtx exec_ctx;
                 self->OnTimeout();
                 // HandshakingState deletion might require an active ExecCtx.
@@ -614,7 +613,6 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
                              GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
                          .value_or(Duration::Minutes(10))),
             [self = Ref(DEBUG_LOCATION, "drain_grace_timer")]() mutable {
-              ApplicationCallbackExecCtx callback_exec_ctx;
               ExecCtx exec_ctx;
               self->OnDrainGraceTimeExpiry();
               self.reset(DEBUG_LOCATION, "drain_grace_timer");
@@ -972,7 +970,11 @@ NewChttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
     RefCountedPtr<ActiveConnection> connection_ref, grpc_tcp_server* tcp_server,
     grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
     const ChannelArgs& args, OrphanablePtr<grpc_endpoint> endpoint)
-    : connection_(std::move(connection_ref)),
+    : InternallyRefCounted(
+          GRPC_TRACE_FLAG_ENABLED(chttp2_server_refcount)
+              ? "NewChttp2ServerListener::ActiveConnection::HandshakingState"
+              : nullptr),
+      connection_(std::move(connection_ref)),
       tcp_server_(tcp_server),
       accepting_pollset_(accepting_pollset),
       acceptor_(std::move(acceptor)),
@@ -1093,7 +1095,6 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
       timer_handle_ = connection_->listener_state_->event_engine()->RunAfter(
           deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
             // HandshakingState deletion might require an active ExecCtx.
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();
             self_ptr->connection_->work_serializer_.Run(
@@ -1128,7 +1129,10 @@ NewChttp2ServerListener::ActiveConnection::ActiveConnection(
     grpc_tcp_server* tcp_server, grpc_pollset* accepting_pollset,
     AcceptorPtr acceptor, const ChannelArgs& args, MemoryOwner memory_owner,
     OrphanablePtr<grpc_endpoint> endpoint)
-    : listener_state_(std::move(listener_state)),
+    : LogicalConnection(GRPC_TRACE_FLAG_ENABLED(chttp2_server_refcount)
+                            ? "NewChttp2ServerListener::ActiveConnection"
+                            : nullptr),
+      listener_state_(std::move(listener_state)),
       work_serializer_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       state_(memory_owner.MakeOrphanable<HandshakingState>(
@@ -1207,8 +1211,10 @@ void NewChttp2ServerListener::ActiveConnection::SendGoAwayImplLocked() {
           // Send a GOAWAY if the transport exists
           if (transport != nullptr) {
             grpc_transport_op* op = grpc_make_transport_op(nullptr);
-            op->goaway_error =
-                GRPC_ERROR_CREATE("Server is stopping to serve requests.");
+            // Set an HTTP2 error of NO_ERROR to do graceful GOAWAYs.
+            op->goaway_error = grpc_error_set_int(
+                GRPC_ERROR_CREATE("Server is stopping to serve requests."),
+                StatusIntProperty::kHttp2Error, GRPC_HTTP2_NO_ERROR);
             transport->PerformOp(op);
           }
         });
@@ -1276,7 +1282,7 @@ grpc_error_handle NewChttp2ServerListener::Create(
   if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     auto string_address =
-        grpc_event_engine::experimental::ResolvedAddressToString(addr);
+        grpc_event_engine::experimental::ResolvedAddressToURI(addr);
     if (!string_address.ok()) {
       return GRPC_ERROR_CREATE(string_address.status().ToString());
     }
@@ -1317,7 +1323,11 @@ NewChttp2ServerListener* NewChttp2ServerListener::CreateForPassiveListener(
 NewChttp2ServerListener::NewChttp2ServerListener(
     const ChannelArgs& args,
     std::shared_ptr<experimental::PassiveListenerImpl> passive_listener)
-    : args_(args), passive_listener_(std::move(passive_listener)) {
+    : ListenerInterface(GRPC_TRACE_FLAG_ENABLED(chttp2_server_refcount)
+                            ? "NewChttp2ServerListener"
+                            : nullptr),
+      args_(args),
+      passive_listener_(std::move(passive_listener)) {
   GRPC_CLOSURE_INIT(&tcp_server_shutdown_complete_, TcpServerShutdownComplete,
                     this, grpc_schedule_on_exec_ctx);
 }

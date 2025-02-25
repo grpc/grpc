@@ -125,6 +125,7 @@ def get_plugin_args(
         flags,
         dir_out,
         generate_mocks,
+        allow_deprecated = False,
         plugin_name = "PLUGIN"):
     """Returns arguments configuring protoc to use a plugin for a language.
 
@@ -133,6 +134,8 @@ def get_plugin_args(
       flags: The plugin flags to be passed to protoc.
       dir_out: The output directory for the plugin.
       generate_mocks: A bool indicating whether to generate mocks.
+      allow_deprecated: A bool indicating whether to mark generated class deprecated
+      based on deprecated proto option in service file.
       plugin_name: A name of the plugin, it is required to be unique when there
       are more than one plugin used in a single protoc command.
     Returns:
@@ -141,6 +144,8 @@ def get_plugin_args(
     augmented_flags = list(flags)
     if generate_mocks:
         augmented_flags.append("generate_mock_code=true")
+    if allow_deprecated:
+        augmented_flags.append("allow_deprecated=true")
 
     augmented_dir_out = dir_out
     if augmented_flags:

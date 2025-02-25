@@ -140,6 +140,22 @@ void FuzzingEventEngine::Tick(Duration max_time) {
       if (!tasks_by_time_.empty()) {
         incr = std::min(incr, tasks_by_time_.begin()->first - now_);
       }
+      const auto max_incr =
+          std::numeric_limits<
+              decltype(now_.time_since_epoch().count())>::max() -
+          now_.time_since_epoch().count();
+      CHECK_GE(max_incr, 0u);
+      incr = std::max(Duration::zero(), incr);
+      incr = std::min(incr, Duration(max_incr));
+      GRPC_TRACE_LOG(fuzzing_ee_timers, INFO)
+          << "Tick "
+          << GRPC_DUMP_ARGS(now_.time_since_epoch().count(), incr.count(),
+                            max_incr);
+      if (!tasks_by_time_.empty()) {
+        GRPC_TRACE_LOG(fuzzing_ee_timers, INFO)
+            << "first time: "
+            << tasks_by_time_.begin()->first.time_since_epoch().count();
+      }
       now_ += incr;
       CHECK_GE(now_.time_since_epoch().count(), 0);
       // Find newly expired timers.
@@ -386,12 +402,10 @@ bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
 bool FuzzingEventEngine::FuzzingEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const WriteArgs*) {
-  GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
-      << "START_WRITE[" << middle_.get() << ":" << my_index()
-      << "]: " << data->Length() << " bytes";
-  IoToken write_token(&g_fuzzing_event_engine->outstanding_writes_);
   grpc_core::global_stats().IncrementSyscallWrite();
   grpc_core::MutexLock lock(&*mu_);
+  IoToken write_token({"WRITE", middle_.get(), my_index(),
+                       &g_fuzzing_event_engine->outstanding_writes_});
   CHECK(!middle_->closed[my_index()]);
   CHECK(!middle_->writing[my_index()]);
   // If the write succeeds immediately, then we return true.
@@ -477,18 +491,17 @@ FuzzingEventEngine::FuzzingEndpoint::~FuzzingEndpoint() {
 bool FuzzingEventEngine::FuzzingEndpoint::Read(
     absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
     const ReadArgs*) {
-  GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
-      << "START_READ[" << middle_.get() << ":" << my_index() << "]";
   buffer->Clear();
-  IoToken read_token(&g_fuzzing_event_engine->outstanding_reads_);
   grpc_core::MutexLock lock(&*mu_);
+  IoToken read_token({"READ", middle_.get(), my_index(),
+                      &g_fuzzing_event_engine->outstanding_reads_});
   CHECK(!middle_->closed[my_index()]);
   if (middle_->pending[peer_index()].empty()) {
     // If the endpoint is closed, fail asynchronously.
     if (middle_->closed[peer_index()]) {
       g_fuzzing_event_engine->RunLocked(
-          RunType::kRunAfter,
-          [read_token, on_read = std::move(on_read)]() mutable {
+          RunType::kRunAfter, [read_token = std::move(read_token),
+                               on_read = std::move(on_read)]() mutable {
             on_read(absl::InternalError("Endpoint closed"));
           });
       return false;
@@ -628,6 +641,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
   const intptr_t id = next_task_id_;
   ++next_task_id_;
   Duration delay_taken = Duration::zero();
+  when = std::max(when, Duration::zero());
   if (run_type != RunType::kExact) {
     if (!task_delays_.empty()) {
       delay_taken = grpc_core::Clamp(task_delays_.front(), Duration::zero(),

@@ -17,7 +17,6 @@
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 
 #include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -43,6 +42,7 @@
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
@@ -52,6 +52,8 @@
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "upb/base/string_view.h"
+#include "upb/message/array.h"
 #include "upb/message/map.h"
 
 namespace grpc_core {
@@ -418,7 +420,7 @@ Json ParseAuditLoggerConfigsToJson(
   Json::Array logger_configs_json;
   size_t size;
   const auto& registry =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .audit_logger_registry();
   const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* const*
       logger_configs =
@@ -450,19 +452,24 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
         "action", Json::FromNumber(envoy_config_rbac_v3_RBAC_action(rules)));
     if (envoy_config_rbac_v3_RBAC_policies_size(rules) != 0) {
       Json::Object policies_object;
-      size_t iter = kUpb_Map_Begin;
-      while (true) {
-        auto* entry = envoy_config_rbac_v3_RBAC_policies_next(rules, &iter);
-        if (entry == nullptr) {
-          break;
+      // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
+      // v30.0.
+      envoy_config_rbac_v3_RBAC* rules_upb = (envoy_config_rbac_v3_RBAC*)rules;
+      const upb_Map* rules_upb_map =
+          _envoy_config_rbac_v3_RBAC_policies_upb_map(rules_upb);
+      if (rules_upb_map) {
+        size_t iter = kUpb_Map_Begin;
+        upb_MessageValue k, v;
+        while (upb_Map_Next(rules_upb_map, &k, &v, &iter)) {
+          upb_StringView key_view = k.str_val;
+          const envoy_config_rbac_v3_Policy* val =
+              (envoy_config_rbac_v3_Policy*)v.msg_val;
+          absl::string_view key = UpbStringToAbsl(key_view);
+          ValidationErrors::ScopedField field(
+              errors, absl::StrCat(".policies[", key, "]"));
+          Json policy = ParsePolicyToJson(val, errors);
+          policies_object.emplace(std::string(key), std::move(policy));
         }
-        absl::string_view key =
-            UpbStringToAbsl(envoy_config_rbac_v3_RBAC_PoliciesEntry_key(entry));
-        ValidationErrors::ScopedField field(
-            errors, absl::StrCat(".policies[", key, "]"));
-        Json policy = ParsePolicyToJson(
-            envoy_config_rbac_v3_RBAC_PoliciesEntry_value(entry), errors);
-        policies_object.emplace(std::string(key), std::move(policy));
       }
       inner_rbac_json.emplace("policies",
                               Json::FromObject(std::move(policies_object)));

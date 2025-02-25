@@ -17,7 +17,7 @@ load(
     "grpc_cc_test",
     "grpc_package",
 )
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/compression")
 
@@ -40,26 +40,26 @@ grpc_cc_test(
     ],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "message_compress_fuzzer",
     srcs = ["message_compress_fuzzer.cc"],
-    corpus = "message_compress_corpus",
-    tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
     ],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "message_decompress_fuzzer",
     srcs = ["message_decompress_fuzzer.cc"],
-    corpus = "message_decompress_corpus",
-    tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
         "//:grpc",
         "//test/core/test_util:grpc_test_util",

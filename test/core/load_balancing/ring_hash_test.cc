@@ -192,6 +192,138 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
   EXPECT_EQ(address, kEndpoint1Addresses[1]);
 }
 
+TEST_F(RingHashTest,
+       TriggersConnectionAttemptsInConnectingAndTransientFailureWithoutPicks) {
+  const std::array<absl::string_view, 4> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443",
+      "ipv4:127.0.0.1:444"};
+  std::array<SubchannelState*, 4> subchannels;
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
+  }
+  absl::flat_hash_set<SubchannelState*> failed_subchannels;
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kAddresses, MakeRingHashConfig()), lb_policy()),
+      absl::OkStatus());
+  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
+  // Do a pick for subchannel 0.  This will trigger a connection attempt,
+  // which will fail.
+  auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
+  ExpectPickQueued(picker.get(), {address0_attribute});
+  WaitForWorkSerializerToFlush();
+  WaitForWorkSerializerToFlush();
+  EXPECT_TRUE(subchannels[0]->ConnectionRequested());
+  for (size_t i = 1; i < subchannels.size(); ++i) {
+    EXPECT_FALSE(subchannels[i]->ConnectionRequested()) << "index " << i;
+  }
+  subchannels[0]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    EXPECT_FALSE(subchannels[i]->ConnectionRequested()) << "index " << i;
+  }
+  subchannels[0]->SetConnectivityState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("connection attempt failed"));
+  failed_subchannels.insert(subchannels[0]);
+  // With one subchannel in state TF and the rest in IDLE, we report
+  // CONNECTING.  This should automatically trigger a connection attempt
+  // on exactly one other subchannel, even without picks.
+  ExpectReresolutionRequest();
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  SubchannelState* connecting_subchannel = nullptr;
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    if (subchannels[i]->ConnectionRequested()) {
+      ASSERT_EQ(connecting_subchannel, nullptr) << "index " << i;
+      connecting_subchannel = subchannels[i];
+    }
+  }
+  ASSERT_NE(connecting_subchannel, nullptr);
+  // This subchannel will also fail to connect.
+  connecting_subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    EXPECT_FALSE(subchannels[i]->ConnectionRequested());
+  }
+  connecting_subchannel->SetConnectivityState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("connection attempt failed"));
+  failed_subchannels.insert(connecting_subchannel);
+  // Now that there are two subchannels in TF, the policy will report TF
+  // to the channel.  It will also trigger a connection attempt on exactly
+  // one more subchannel, still without any picks.
+  ExpectReresolutionRequest();
+  picker = ExpectState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("no reachable endpoints; last error: "
+                             "UNAVAILABLE: connection attempt failed"));
+  connecting_subchannel = nullptr;
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    if (subchannels[i]->ConnectionRequested()) {
+      ASSERT_EQ(connecting_subchannel, nullptr) << "index " << i;
+      connecting_subchannel = subchannels[i];
+    }
+  }
+  ASSERT_NE(connecting_subchannel, nullptr);
+  ASSERT_FALSE(failed_subchannels.contains(connecting_subchannel));
+  // This subchannel will also fail to connect.
+  connecting_subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("no reachable endpoints; last error: "
+                             "UNAVAILABLE: connection attempt failed"));
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    EXPECT_FALSE(subchannels[i]->ConnectionRequested());
+  }
+  connecting_subchannel->SetConnectivityState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("connection attempt failed"));
+  failed_subchannels.insert(connecting_subchannel);
+  // The policy will once again report TF.  It will also trigger a connection
+  // attempt on the last subchannel, again without any picks.
+  ExpectReresolutionRequest();
+  picker = ExpectState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("no reachable endpoints; last error: "
+                             "UNAVAILABLE: connection attempt failed"));
+  connecting_subchannel = nullptr;
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    if (subchannels[i]->ConnectionRequested()) {
+      ASSERT_EQ(connecting_subchannel, nullptr) << "index " << i;
+      connecting_subchannel = subchannels[i];
+    }
+  }
+  ASSERT_NE(connecting_subchannel, nullptr);
+  ASSERT_FALSE(failed_subchannels.contains(connecting_subchannel));
+  // This subchannel will also fail to connect.
+  connecting_subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("no reachable endpoints; last error: "
+                             "UNAVAILABLE: connection attempt failed"));
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    EXPECT_FALSE(subchannels[i]->ConnectionRequested());
+  }
+  connecting_subchannel->SetConnectivityState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("connection attempt failed"));
+  failed_subchannels.insert(connecting_subchannel);
+  ExpectReresolutionRequest();
+  picker = ExpectState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("no reachable endpoints; last error: "
+                             "UNAVAILABLE: connection attempt failed"));
+  // Now one of the subchannels goes IDLE.  The pick_first child will
+  // trigger a new connection attempt, which will succeed this time.
+  subchannels[2]->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  EXPECT_TRUE(subchannels[2]->ConnectionRequested());
+  subchannels[2]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  subchannels[2]->SetConnectivityState(GRPC_CHANNEL_READY);
+  // Now the policy will report READY.
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  auto address = ExpectPickComplete(picker.get(), {address0_attribute});
+  EXPECT_EQ(address, kAddresses[2]);
+}
+
 TEST_F(RingHashTest, EndpointHashKeys) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};

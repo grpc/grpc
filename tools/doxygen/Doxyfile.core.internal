@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 45.0.0
+PROJECT_NUMBER         = 46.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1335,6 +1335,9 @@ src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.h \
 src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb.h \
 src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c \
 src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.h \
+src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb.h \
+src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c \
+src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.h \
 src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb.h \
 src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c \
 src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.h \
@@ -1731,6 +1734,8 @@ src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c \
@@ -2829,6 +2834,7 @@ src/core/xds/grpc/xds_routing.cc \
 src/core/xds/grpc/xds_routing.h \
 src/core/xds/grpc/xds_server_grpc.cc \
 src/core/xds/grpc/xds_server_grpc.h \
+src/core/xds/grpc/xds_server_grpc_interface.h \
 src/core/xds/grpc/xds_transport_grpc.cc \
 src/core/xds/grpc/xds_transport_grpc.h \
 src/core/xds/xds_client/lrs_client.cc \

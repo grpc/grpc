@@ -289,7 +289,6 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
     MutexLock lock(&mu_);
     timer_handle_ =
         channel_->event_engine()->RunAfter(timeout, [self = Ref()]() mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->TimeoutComplete();
           // StateWatcher deletion might require an active ExecCtx.

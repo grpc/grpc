@@ -960,8 +960,8 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
     s->call_tracer_wrapper.RecordIncomingBytes(
         {0, 0, GRPC_SLICE_LENGTH(slice)});
     call_tracer =
-        grpc_core::IsCallTracerInTransportEnabled()
-            ? s->arena->GetContext<grpc_core::CallTracerInterface>()
+        grpc_core::IsCallTracerTransportFixEnabled()
+            ? s->CallTracer()
             : s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   }
   grpc_error_handle error = parser->Parse(

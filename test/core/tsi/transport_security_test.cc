@@ -344,7 +344,6 @@ TEST(TransportSecurityTest, TestResultStrings) {
   for (i = 0; i < GPR_ARRAY_SIZE(results); i++) {
     ASSERT_STREQ(results[i].str, tsi_result_to_string(results[i].res));
   }
-  ASSERT_STREQ("UNKNOWN", tsi_result_to_string((tsi_result)42));
 }
 
 TEST(TransportSecurityTest, TestProtectorInvalidArgs) {

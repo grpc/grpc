@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
@@ -135,6 +135,7 @@ grpc_cc_test(
     srcs = ["map_test.cc"],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log",
         "gtest",
     ],
     tags = ["promise_test"],
@@ -521,19 +522,29 @@ grpc_cc_test(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "promise_fuzzer_proto",
+    srcs = ["promise_fuzzer.proto"],
+)
+
+grpc_cc_proto_library(
+    name = "promise_fuzzer_cc_proto",
+    deps = ["promise_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "promise_fuzzer",
     srcs = ["promise_fuzzer.cc"],
-    corpus = "promise_fuzzer_corpus",
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log:check",
         "absl/status",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    proto = "promise_fuzzer.proto",
     tags = ["no_windows"],
-    uses_polling = False,
     deps = [
+        "promise_fuzzer_cc_proto",
         "//:gpr",
         "//:promise",
         "//src/core:activity",
@@ -604,7 +615,7 @@ grpc_cc_test(
     name = "sleep_test",
     srcs = ["sleep_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log",
         "gtest",
     ],
     tags = ["promise_test"],
@@ -613,10 +624,11 @@ grpc_cc_test(
     deps = [
         "test_wakeup_schedulers",
         "//:exec_ctx",
-        "//:gpr",
         "//:grpc",
         "//:orphanable",
+        "//src/core:arena",
         "//src/core:default_event_engine",
+        "//src/core:event_engine_context",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:notification",
         "//src/core:race",
@@ -674,6 +686,37 @@ grpc_cc_test(
         "//src/core:event_engine_memory_allocator",
         "//src/core:inter_activity_latch",
         "//src/core:memory_quota",
+        "//src/core:notification",
+        "//src/core:poll",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:sleep",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_test(
+    name = "party_mpsc_test",
+    srcs = ["party_mpsc_test.cc"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = ["party_mpsc_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_unsecure",
+        "//:ref_counted_ptr",
+        "//src/core:1999",
+        "//src/core:context",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_memory_allocator",
+        "//src/core:memory_quota",
+        "//src/core:mpsc",
         "//src/core:notification",
         "//src/core:poll",
         "//src/core:resource_quota",

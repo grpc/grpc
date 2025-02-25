@@ -29,25 +29,20 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_call_tracer_transport_fix =
+    "Use the correct call tracer in transport";
+const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
+const char* const description_chaotic_good_framing_layer =
+    "Enable the chaotic good framing layer.";
+const char* const additional_constraints_chaotic_good_framing_layer = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
 const char* const
     additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
-const char* const description_event_engine_application_callbacks =
-    "Run application callbacks in EventEngine threads, instead of on the "
-    "thread-local ApplicationCallbackExecCtx";
-const char* const additional_constraints_event_engine_application_callbacks =
-    "{}";
-const char* const description_event_engine_callback_cq =
-    "Use EventEngine instead of the CallbackAlternativeCQ.";
-const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -62,6 +57,12 @@ const char* const additional_constraints_event_engine_dns_non_client_channel =
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -88,10 +89,6 @@ const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
 const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
-const char* const description_prioritize_finished_requests =
-    "Prioritize flushing out finished requests over other in-flight requests "
-    "during transport writes.";
-const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -117,6 +114,9 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -126,23 +126,10 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_trace_record_callops =
-    "Enables tracing of call batch initiation and completion.";
-const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
-const uint8_t required_experiments_server_listener[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -151,22 +138,20 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+     additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
+     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
+    {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
+     true},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
      nullptr, 0, false, true},
-    {"event_engine_application_callbacks",
-     description_event_engine_application_callbacks,
-     additional_constraints_event_engine_application_callbacks, nullptr, 0,
-     true, true},
-    {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_client", description_event_engine_client,
-     additional_constraints_event_engine_client, nullptr, 0, false, true},
+     additional_constraints_event_engine_client, nullptr, 0, false, false},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, false, false},
     {"event_engine_dns_non_client_channel",
@@ -174,7 +159,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      false, false},
     {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, false, true},
+     additional_constraints_event_engine_listener, nullptr, 0, false, false},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 2, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -190,9 +178,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
-    {"prioritize_finished_requests", description_prioritize_finished_requests,
-     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
-     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -213,21 +198,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener, nullptr, 0, true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"trace_record_callops", description_trace_record_callops,
-     additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener,
-     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -240,25 +220,20 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_call_tracer_transport_fix =
+    "Use the correct call tracer in transport";
+const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
+const char* const description_chaotic_good_framing_layer =
+    "Enable the chaotic good framing layer.";
+const char* const additional_constraints_chaotic_good_framing_layer = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
 const char* const
     additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
-const char* const description_event_engine_application_callbacks =
-    "Run application callbacks in EventEngine threads, instead of on the "
-    "thread-local ApplicationCallbackExecCtx";
-const char* const additional_constraints_event_engine_application_callbacks =
-    "{}";
-const char* const description_event_engine_callback_cq =
-    "Use EventEngine instead of the CallbackAlternativeCQ.";
-const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -273,6 +248,12 @@ const char* const additional_constraints_event_engine_dns_non_client_channel =
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -299,10 +280,6 @@ const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
 const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
-const char* const description_prioritize_finished_requests =
-    "Prioritize flushing out finished requests over other in-flight requests "
-    "during transport writes.";
-const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -328,6 +305,9 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -337,23 +317,10 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_trace_record_callops =
-    "Enables tracing of call batch initiation and completion.";
-const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
-const uint8_t required_experiments_server_listener[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -362,22 +329,20 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+     additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
+     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
+    {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
+     true},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
      nullptr, 0, false, true},
-    {"event_engine_application_callbacks",
-     description_event_engine_application_callbacks,
-     additional_constraints_event_engine_application_callbacks, nullptr, 0,
-     true, true},
-    {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_client", description_event_engine_client,
-     additional_constraints_event_engine_client, nullptr, 0, true, true},
+     additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, true, false},
     {"event_engine_dns_non_client_channel",
@@ -385,7 +350,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      false, false},
     {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, true, true},
+     additional_constraints_event_engine_listener, nullptr, 0, true, false},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 2, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -401,9 +369,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
-    {"prioritize_finished_requests", description_prioritize_finished_requests,
-     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
-     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -424,21 +389,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener, nullptr, 0, true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"trace_record_callops", description_trace_record_callops,
-     additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener,
-     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -451,25 +411,20 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_call_tracer_transport_fix =
+    "Use the correct call tracer in transport";
+const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
+const char* const description_chaotic_good_framing_layer =
+    "Enable the chaotic good framing layer.";
+const char* const additional_constraints_chaotic_good_framing_layer = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
 const char* const
     additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
-const char* const description_event_engine_application_callbacks =
-    "Run application callbacks in EventEngine threads, instead of on the "
-    "thread-local ApplicationCallbackExecCtx";
-const char* const additional_constraints_event_engine_application_callbacks =
-    "{}";
-const char* const description_event_engine_callback_cq =
-    "Use EventEngine instead of the CallbackAlternativeCQ.";
-const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -484,6 +439,12 @@ const char* const additional_constraints_event_engine_dns_non_client_channel =
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -510,10 +471,6 @@ const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
 const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
-const char* const description_prioritize_finished_requests =
-    "Prioritize flushing out finished requests over other in-flight requests "
-    "during transport writes.";
-const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -539,6 +496,9 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -548,23 +508,10 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_trace_record_callops =
-    "Enables tracing of call batch initiation and completion.";
-const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
-const uint8_t required_experiments_server_listener[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -573,22 +520,20 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+     additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
+     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
+    {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
+     true},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
      nullptr, 0, false, true},
-    {"event_engine_application_callbacks",
-     description_event_engine_application_callbacks,
-     additional_constraints_event_engine_application_callbacks, nullptr, 0,
-     true, true},
-    {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_client", description_event_engine_client,
-     additional_constraints_event_engine_client, nullptr, 0, true, true},
+     additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, true, false},
     {"event_engine_dns_non_client_channel",
@@ -596,7 +541,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      false, false},
     {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, true, true},
+     additional_constraints_event_engine_listener, nullptr, 0, true, false},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 2, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -612,9 +560,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
-    {"prioritize_finished_requests", description_prioritize_finished_requests,
-     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
-     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -635,21 +580,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener, nullptr, 0, true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"trace_record_callops", description_trace_record_callops,
-     additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener,
-     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core

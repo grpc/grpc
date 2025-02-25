@@ -224,6 +224,7 @@ class PickFirst final : public LoadBalancingPolicy {
       void RequestConnectionWithTimer();
 
       bool seen_transient_failure() const { return seen_transient_failure_; }
+      void set_seen_transient_failure() { seen_transient_failure_ = true; }
 
      private:
       // This method will be invoked once soon after instantiation to report
@@ -826,9 +827,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   connectivity_state_ = new_state;
   connectivity_status_ = std::move(status);
   // Make sure we note when a subchannel has seen TRANSIENT_FAILURE.
-  bool prev_seen_transient_failure = seen_transient_failure_;
   if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    seen_transient_failure_ = true;
     subchannel_list_->last_failure_ = connectivity_status_;
   }
   // If this is the initial connectivity state update for this subchannel,
@@ -873,6 +872,8 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   // Otherwise, process connectivity state change.
   switch (*connectivity_state_) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
+      bool prev_seen_transient_failure =
+          std::exchange(seen_transient_failure_, true);
       // If this is the first failure we've seen on this subchannel,
       // then we're still in the Happy Eyeballs pass.
       if (!prev_seen_transient_failure && seen_transient_failure_) {
@@ -957,7 +958,6 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
             p->connection_attempt_delay_,
             [subchannel_list =
                  subchannel_list_->Ref(DEBUG_LOCATION, "timer")]() mutable {
-              ApplicationCallbackExecCtx application_exec_ctx;
               ExecCtx exec_ctx;
               auto* sl = subchannel_list.get();
               sl->policy_->work_serializer()->Run(
@@ -973,8 +973,7 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
                     if (subchannel_list->policy_->selected_ != nullptr) return;
                     ++subchannel_list->attempting_index_;
                     subchannel_list->StartConnectingNextSubchannel();
-                  },
-                  DEBUG_LOCATION);
+                  });
             });
   }
 }
@@ -1068,6 +1067,7 @@ void PickFirst::SubchannelList::StartConnectingNextSubchannel() {
       sc->RequestConnectionWithTimer();
       return;
     }
+    sc->set_seen_transient_failure();
   }
   // If we didn't find a subchannel to request a connection on, check to
   // see if the Happy Eyeballs pass is complete.

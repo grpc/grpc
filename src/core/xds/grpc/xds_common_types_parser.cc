@@ -17,7 +17,6 @@
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 
 #include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -40,6 +39,7 @@
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/upb_utils.h"
@@ -137,7 +137,7 @@ CertificateProviderInstanceParse(
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
           certificate_provider_instance_proto));
   const auto& bootstrap =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
   if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
       bootstrap.certificate_providers().end()) {
     ValidationErrors::ScopedField field(errors, ".instance_name");
@@ -162,7 +162,7 @@ CertificateProviderPluginInstanceParse(
       envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_instance_name(
           certificate_provider_plugin_instance_proto));
   const auto& bootstrap =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
   if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
       bootstrap.certificate_providers().end()) {
     ValidationErrors::ScopedField field(errors, ".instance_name");
