@@ -124,6 +124,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/support/thd_id.h )
   s.files += %w( include/grpc/support/time.h )
   s.files += %w( include/grpc/support/workaround_list.h )
+  s.files += %w( src/core/call/peer_address.h )
   s.files += %w( src/core/call/request_buffer.cc )
   s.files += %w( src/core/call/request_buffer.h )
   s.files += %w( src/core/channelz/channel_trace.cc )

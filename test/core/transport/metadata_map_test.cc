@@ -188,7 +188,6 @@ std::vector<std::string> GetAllowList() {
           std::string(GrpcStreamNetworkState::DebugKey()),
           std::string(GrpcTarPit::DebugKey()),
           std::string(GrpcTrailersOnly::DebugKey()),
-          std::string(PeerString::DebugKey()),
           std::string(WaitForReady::DebugKey())
       // clang-format on
   };
@@ -235,7 +234,6 @@ TEST(DebugStringBuilderTest, TestAllAllowListed) {
             "GrpcStreamNetworkState: GrpcStreamNetworkState, "
             "GrpcTarPit: GrpcTarPit, "
             "GrpcTrailersOnly: GrpcTrailersOnly, "
-            "PeerString: PeerString, "
             "WaitForReady: WaitForReady");
 }
 

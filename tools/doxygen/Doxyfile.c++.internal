@@ -1091,6 +1091,7 @@ include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
 include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h \
+src/core/call/peer_address.h \
 src/core/call/request_buffer.cc \
 src/core/call/request_buffer.h \
 src/core/channelz/channel_trace.cc \

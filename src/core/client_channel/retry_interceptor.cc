@@ -308,6 +308,11 @@ auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
                          << call->DebugTag()
                          << " got server trailing metadata: "
                          << md->DebugString();
+                     // TODO(ctiller, roth): When we switch to using a
+                     // separate arena (and therefore separate call
+                     // context) for each party, then we need to
+                     // propagate the PeerAddress context from child
+                     // context to parent context here.
                      call->call_handler()->SpawnPushServerTrailingMetadata(
                          std::move(md));
                      return absl::OkStatus();

@@ -41,6 +41,7 @@
 #include "absl/strings/string_view.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
+#include "src/core/call/peer_address.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -91,17 +92,16 @@ ServerLoadReportingFilter::Create(const ChannelArgs& channel_args,
 }
 
 namespace {
-std::string GetCensusSafeClientIpString(
-    const ClientMetadata& initial_metadata) {
+std::string GetCensusSafeClientIpString() {
   // Find the client URI string.
-  const Slice* client_uri_slice = initial_metadata.get_pointer(PeerString());
-  if (client_uri_slice == nullptr) {
+  auto* peer_address = MaybeGetContext<PeerAddress>();
+  if (peer_address == nullptr) {
     LOG(ERROR) << "Unable to extract client URI string (peer string) from gRPC "
                   "metadata.";
     return "";
   }
   absl::StatusOr<URI> client_uri =
-      URI::Parse(client_uri_slice->as_string_view());
+      URI::Parse(peer_address->peer_address.as_string_view());
   if (!client_uri.ok()) {
     LOG(ERROR) << "Unable to parse the client URI string (peer string) to a "
                   "client URI. Error: "
@@ -135,9 +135,8 @@ std::string GetCensusSafeClientIpString(
   }
 }
 
-std::string MakeClientIpAndLrToken(absl::string_view lr_token,
-                                   const ClientMetadata& initial_metadata) {
-  std::string client_ip = GetCensusSafeClientIpString(initial_metadata);
+std::string MakeClientIpAndLrToken(absl::string_view lr_token) {
+  std::string client_ip = GetCensusSafeClientIpString();
   absl::string_view prefix;
   switch (client_ip.length()) {
     case 0:
@@ -185,8 +184,7 @@ void ServerLoadReportingFilter::Call::OnClientInitialMetadata(
     target_host_ = absl::AsciiStrToLower(authority->as_string_view());
   }
   auto lb_token = md.Take(LbTokenMetadata()).value_or(Slice());
-  client_ip_and_lr_token_ =
-      MakeClientIpAndLrToken(lb_token.as_string_view(), md);
+  client_ip_and_lr_token_ = MakeClientIpAndLrToken(lb_token.as_string_view());
   // Record the beginning of the request
   opencensus::stats::Record(
       {{::grpc::load_reporter::MeasureStartCount(), 1}},

@@ -118,6 +118,7 @@ let package = Package(
         "include/grpc/support/thd_id.h",
         "include/grpc/support/time.h",
         "include/grpc/support/workaround_list.h",
+        "src/core/call/peer_address.h",
         "src/core/call/request_buffer.cc",
         "src/core/call/request_buffer.h",
         "src/core/channelz/channel_trace.cc",
