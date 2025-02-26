@@ -3008,10 +3008,8 @@ TEST_F(ExternalAccountCredentialsTest,
   auto json = JsonParse(options_string1);
   ASSERT_TRUE(json.ok()) << json.status();
   auto creds = ExternalAccountCredentials::Create(*json, {"scope1", "scope2"});
-  std::string actual_error;
-  grpc_error_get_str(creds.status(), StatusStrProperty::kDescription,
-                     &actual_error);
-  EXPECT_EQ("token_lifetime_seconds must be more than 600s", actual_error);
+  EXPECT_EQ("token_lifetime_seconds must be more than 600s",
+            creds.status().message());
 
   const char* options_string2 =
       "{\"type\":\"external_account\",\"audience\":\"audience\","
@@ -3030,9 +3028,8 @@ TEST_F(ExternalAccountCredentialsTest,
   json = JsonParse(options_string2);
   ASSERT_TRUE(json.ok()) << json.status();
   creds = ExternalAccountCredentials::Create(*json, {"scope1", "scope2"});
-  grpc_error_get_str(creds.status(), StatusStrProperty::kDescription,
-                     &actual_error);
-  EXPECT_EQ("token_lifetime_seconds must be less than 43200s", actual_error);
+  EXPECT_EQ("token_lifetime_seconds must be less than 43200s",
+            creds.status().message());
 }
 
 TEST_F(ExternalAccountCredentialsTest, FailureInvalidTokenUrl) {
@@ -3299,10 +3296,7 @@ TEST_F(ExternalAccountCredentialsTest,
   };
   auto creds = UrlExternalAccountCredentials::Create(options, {});
   ASSERT_FALSE(creds.ok());
-  std::string actual_error;
-  grpc_error_get_str(creds.status(), StatusStrProperty::kDescription,
-                     &actual_error);
-  EXPECT_THAT(actual_error,
+  EXPECT_THAT(creds.status().message(),
               ::testing::StartsWith("Invalid credential source url."));
 }
 
@@ -4113,10 +4107,7 @@ TEST_F(ExternalAccountCredentialsTest,
   auto creds =
       AwsExternalAccountCredentials::Create(options, {}, event_engine_);
   ASSERT_FALSE(creds.ok());
-  std::string actual_error;
-  grpc_error_get_str(creds.status(), StatusStrProperty::kDescription,
-                     &actual_error);
-  EXPECT_EQ("environment_id does not match.", actual_error);
+  EXPECT_EQ("environment_id does not match.", creds.status().message());
 }
 
 TEST_F(ExternalAccountCredentialsTest,

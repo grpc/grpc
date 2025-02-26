@@ -451,21 +451,21 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
   } else {
     std::optional<grpc_status_code> grpc_status = b->Take(GrpcStatusMetadata());
     if (grpc_status.has_value()) {
-      grpc_status_code status_code = *grpc_status;
+      auto status_code = static_cast<absl::StatusCode>(*grpc_status);
       grpc_error_handle error;
-      if (status_code != GRPC_STATUS_OK) {
-        Slice peer = GetPeerString();
-        error = grpc_error_set_int(
-            GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ",
-                                           peer.as_string_view())),
-            StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
-      }
       auto grpc_message = b->Take(GrpcMessageMetadata());
-      if (grpc_message.has_value()) {
-        error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
-                                   grpc_message->as_string_view());
-      } else if (!error.ok()) {
-        error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage, "");
+      if (status_code != absl::StatusCode::kOk) {
+        if (grpc_message.has_value()) {
+          error = absl::Status(status_code, grpc_message->as_string_view());
+        } else {
+          Slice peer = GetPeerString();
+          error = grpc_error_set_int(
+              absl::Status(status_code,
+                           absl::StrCat("Error received from peer ",
+                                        peer.as_string_view())),
+              StatusIntProperty::kRpcStatus,
+              static_cast<intptr_t>(status_code));
+        }
       }
       SetFinalStatus(error);
     } else if (!is_client()) {
@@ -899,26 +899,28 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           goto done_with_error;
         }
 
-        grpc_error_handle status_error =
-            op->data.send_status_from_server.status == GRPC_STATUS_OK
-                ? absl::OkStatus()
-                : grpc_error_set_int(
-                      GRPC_ERROR_CREATE("Server returned error"),
-                      StatusIntProperty::kRpcStatus,
-                      static_cast<intptr_t>(
-                          op->data.send_status_from_server.status));
+        absl::string_view message;
         if (op->data.send_status_from_server.status_details != nullptr) {
           send_trailing_metadata_.Set(
               GrpcMessageMetadata(),
               Slice(grpc_slice_copy(
                   *op->data.send_status_from_server.status_details)));
-          if (!status_error.ok()) {
-            status_error = grpc_error_set_str(
-                status_error, StatusStrProperty::kGrpcMessage,
-                StringViewFromSlice(
-                    *op->data.send_status_from_server.status_details));
-          }
+          message = StringViewFromSlice(
+              *op->data.send_status_from_server.status_details);
         }
+        grpc_error_handle status_error =
+            op->data.send_status_from_server.status == GRPC_STATUS_OK
+                ? absl::OkStatus()
+                : grpc_error_set_int(
+                      absl::Status(
+                          static_cast<absl::StatusCode>(
+                              op->data.send_status_from_server.status),
+                          message().empty()
+                              ? "Server returned error"
+                              : message),
+                      StatusIntProperty::kRpcStatus,
+                      static_cast<intptr_t>(
+                          op->data.send_status_from_server.status));
 
         status_error_.set(status_error);
 

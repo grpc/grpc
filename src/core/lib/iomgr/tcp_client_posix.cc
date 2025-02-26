@@ -265,14 +265,9 @@ finish:
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (!error.ok()) {
-    std::string str;
-    bool ret = grpc_error_get_str(
-        error, grpc_core::StatusStrProperty::kDescription, &str);
-    CHECK(ret);
-    std::string description =
-        absl::StrCat("Failed to connect to remote host: ", str);
-    error = grpc_error_set_str(
-        error, grpc_core::StatusStrProperty::kDescription, description);
+    error = absl::Status(
+        static_cast<absl::StatusCode>(error.code()),
+        absl::StrCat("Failed to connect to remote host: ", error.message()));
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is

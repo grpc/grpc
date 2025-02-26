@@ -219,11 +219,9 @@ void Call::CancelWithStatus(grpc_status_code status, const char* description) {
   // guarantee that can be short-lived.
   // TODO(ctiller): change to
   // absl::Status(static_cast<absl::StatusCode>(status), description)
-  // (ie remove the set_int, set_str).
+  // (ie remove the set_int).
   CancelWithError(grpc_error_set_int(
-      grpc_error_set_str(
-          absl::Status(static_cast<absl::StatusCode>(status), description),
-          StatusStrProperty::kGrpcMessage, description),
+      absl::Status(static_cast<absl::StatusCode>(status), description),
       StatusIntProperty::kRpcStatus, status));
 }
 
