@@ -22,7 +22,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <chrono>
 

@@ -20,7 +20,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <set>
 #include <vector>

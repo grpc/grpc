@@ -21,7 +21,7 @@
 #include <fcntl.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <sys/types.h>
 
 #include "absl/log/log.h"

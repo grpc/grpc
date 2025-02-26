@@ -18,7 +18,7 @@
 
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/test/server_context_test_spouse.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <cstring>
 #include <vector>

@@ -14,10 +14,10 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <thread>
 

@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <string.h>

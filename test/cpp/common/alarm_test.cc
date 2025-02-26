@@ -18,7 +18,7 @@
 
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <condition_variable>
 #include <memory>

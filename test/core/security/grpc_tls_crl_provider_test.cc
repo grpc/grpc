@@ -21,7 +21,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_crl_provider.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <chrono>
 #include <cstdlib>

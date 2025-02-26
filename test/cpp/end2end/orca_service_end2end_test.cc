@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -28,7 +28,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <memory>
 #include <optional>

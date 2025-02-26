@@ -16,11 +16,11 @@
 
 #include "test/cpp/interop/pre_stop_hook_server.h"
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <thread>
 

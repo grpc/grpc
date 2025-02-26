@@ -28,7 +28,7 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <signal.h>
 
 #include "absl/log/log.h"

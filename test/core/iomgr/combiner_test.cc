@@ -20,7 +20,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <thread>
 

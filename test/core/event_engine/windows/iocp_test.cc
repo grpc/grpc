@@ -14,10 +14,10 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpc/support/log_windows.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <thread>
 #include <variant>

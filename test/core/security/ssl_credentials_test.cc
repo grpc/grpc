@@ -20,7 +20,7 @@
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <stdio.h>
 #include <string.h>
 

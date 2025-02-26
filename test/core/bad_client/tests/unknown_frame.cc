@@ -17,7 +17,7 @@
 //
 
 #include <grpc/grpc.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <string>
 

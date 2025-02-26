@@ -22,7 +22,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <string.h>
 
 #include "absl/strings/escaping.h"

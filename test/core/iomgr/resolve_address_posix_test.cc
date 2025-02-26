@@ -20,7 +20,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <net/if.h>
 #include <string.h>
 #include <sys/un.h>

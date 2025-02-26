@@ -21,7 +21,7 @@
 #include <grpc/slice.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/slice.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <cstring>
 #include <vector>

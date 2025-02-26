@@ -18,9 +18,9 @@
 
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc_security.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"

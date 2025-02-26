@@ -16,9 +16,9 @@
 
 #include "test/cpp/interop/xds_stats_watcher.h"
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <map>
 #include <memory>

@@ -14,9 +14,9 @@
 
 #include "src/core/lib/security/authorization/rbac_translator.h"
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc_audit_logging.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <memory>
 
