@@ -81,10 +81,9 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
            /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)},
       event_engine().get());
 
-  EXPECT_CALL(*mock_endpoint.endpoint, Read)
-      .InSequence(mock_endpoint.read_sequence)
-      // Fail the Read to break the ReadLoop
-      .WillOnce(::testing::Return(false));
+  // Break the ReadLoop
+  mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
+                                event_engine().get());
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
