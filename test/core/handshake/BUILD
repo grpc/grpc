@@ -63,7 +63,11 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    tags = ["no_windows"],
+    tags = [
+        # TODO: cannot load data internally
+        "grpc:fails-internally",
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -96,7 +100,11 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    tags = ["no_windows"],
+    tags = [
+        # TODO: cannot load data internally
+        "grpc:fails-internally",
+        "no_windows",
+    ],
     deps = [
         ":server_ssl_common",
         "//:gpr",
@@ -114,7 +122,11 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    tags = ["no_windows"],
+    tags = [
+        # TODO: cannot load data internally
+        "grpc:fails-internally",
+        "no_windows",
+    ],
     deps = [
         ":server_ssl_common",
         "//:gpr",
@@ -124,27 +136,6 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
-
-# Disabled as per b/178094682
-#grpc_cc_test(
-#    name = "handshake_verify_peer_options_test",
-#    srcs = ["verify_peer_options.cc"],
-#    data = [
-#        "//src/core/tsi/test_creds:ca.pem",
-#        "//src/core/tsi/test_creds:server1.key",
-#        "//src/core/tsi/test_creds:server1.pem",
-#    ],
-#    external_deps = [
-#        "absl/log:check",
-#        "absl/log:log",
-#    ],
-#    #    tags = ["no_mac", no_windows"],
-#    deps = [
-#        "//:gpr",
-#        "//:grpc",
-#        "//test/core/test_util:grpc_test_util",
-#    ],
-#)
 
 grpc_cc_test(
     name = "http_proxy_mapper_test",

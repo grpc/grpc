@@ -166,6 +166,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "grpc:fails-internally",
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
@@ -716,6 +717,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "grpc:fails-internally",
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
@@ -760,7 +762,9 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+    ],
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -807,6 +811,8 @@ grpc_cc_test(
         "manual",
         "exclusive",
         "no_test_ios",
+        # Needs root (not available internally).
+        "grpc:fails-internally",
     ],
     deps = [
         ":test_service_impl",
@@ -901,6 +907,8 @@ grpc_cc_test(
         "exclusive",
         "no_test_android",
         "no_test_ios",
+        # Needs root (not available internally).
+        "grpc:fails-internally",
     ],
     deps = [
         ":test_service_impl",
