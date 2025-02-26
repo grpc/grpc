@@ -39,7 +39,9 @@ TEST(MapTest, TwoTyped) {
                                             return "ERROR";
                                           }
                                         }));
-  EXPECT_THAT(map(), IsReady("OK"));
+  auto result = map();
+  EXPECT_THAT(result, IsReady());
+  EXPECT_STREQ(result.value(), "OK");
 }
 
 TEST(MapTest, ReturnsPending) {
@@ -143,7 +145,7 @@ TEST(CheckDelayedTest, SeesImmediateWithMap) {
 
   auto result = x();
   EXPECT_THAT(result, IsReady(std::tuple("OK", false)));
-  EXPECT_EQ(JustElem<0>()(result.value()), "OK");
+  EXPECT_STREQ(JustElem<0>()(result.value()), "OK");
   EXPECT_EQ(JustElem<1>()(result.value()), false);
 }
 
