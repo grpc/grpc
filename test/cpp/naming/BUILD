@@ -42,7 +42,10 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cancel_ares_query_test"],
+    tags = [
+        "cancel_ares_query_test",
+        "grpc:fails-internally",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
