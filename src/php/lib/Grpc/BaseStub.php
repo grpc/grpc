@@ -228,7 +228,7 @@ class BaseStub
         }
 
         // Remove the port if it is 443
-        // See https://github.com/grpc/grpc/blob/07c9f7a36b2a0d34fcffebc85649cf3b8c339b5d/src/core/lib/security/transport/client_auth_filter.cc#L205
+        // See https://github.com/grpc/grpc/blob/07c9f7a36b2a0d34fcffebc85649cf3b8c339b5d/src/core/filter/auth/client_auth_filter.cc#L205
         if ((strlen($hostname) > 4) && (substr($hostname, -4) === ":443")) {
             $hostname = substr($hostname, 0, -4);
         }

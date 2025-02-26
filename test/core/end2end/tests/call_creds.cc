@@ -26,10 +26,11 @@
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
+#include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/test_util/test_call_creds.h"
 
 namespace grpc_core {
 namespace {

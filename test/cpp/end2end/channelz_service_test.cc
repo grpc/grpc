@@ -33,9 +33,9 @@
 
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/env.h"
 #include "src/core/util/wait_for_single_owner.h"

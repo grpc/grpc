@@ -33,9 +33,9 @@
 
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
+#include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
