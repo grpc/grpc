@@ -172,8 +172,7 @@ if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
 then
 curl -sSL -o dotnet-install.sh https://dot.net/v1/dotnet-install.sh
 chmod u+x dotnet-install.sh
-./dotnet-install.sh --channel 6.0
-./dotnet-install.sh --channel 3.0
+./dotnet-install.sh
 export PATH="$HOME/.dotnet:$PATH"
 fi
 
