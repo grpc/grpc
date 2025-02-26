@@ -301,13 +301,13 @@ class Party : public Activity, private Wakeable {
     Party* const party_;
   };
 
-  // Spawn one promise into the party.
+  // Spawn one promise or a promise factory on the party.
   // The party can poll the promise until it is resolved, or until the party is
   // shut down.
-  // The on_complete callback will be called with the result of the
+  // The on_complete promise will be called with the result of the
   // promise if it completes. Even if the promise returns a failed status,
-  // on_complete will be called.
-  // promise_factory called to create the promise with the party lock taken;
+  // on_complete will be called. The on_complete should not return a value.
+  // promise_factory is called to create the promise with the party lock taken;
   // after the promise is created the factory is destroyed. This means that
   // pointers or references to factory members will be invalidated after the
   // promise is created - so the promise should not retain any of these.
