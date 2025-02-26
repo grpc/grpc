@@ -114,7 +114,6 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   *out_call = call->c_ptr();
   grpc_slice path = grpc_empty_slice();
   ScopedContext ctx(call);
-  Call* parent = Call::FromC(args->parent);
   if (call->is_client()) {
     call->final_op_.client.status_details = nullptr;
     call->final_op_.client.status = nullptr;
@@ -130,12 +129,6 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     call->send_initial_metadata_.Set(
         GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));
-    if (parent != nullptr) {
-      add_init_error(&error, absl_status_to_grpc_error(call->InitParent(
-                                 parent, args->propagation_mask)));
-    }
-    // Client call tracers should be created after propagating relevant
-    // properties (tracing included) from the parent.
     channel_stack->stats_plugin_group->AddClientCallTracers(
         Slice(CSliceRef(path)), args->registered_method, arena.get());
   } else {
@@ -167,6 +160,11 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     channel_stack->stats_plugin_group->AddServerCallTracers(arena.get());
   }
 
+  Call* parent = Call::FromC(args->parent);
+  if (parent != nullptr) {
+    add_init_error(&error, absl_status_to_grpc_error(call->InitParent(
+                               parent, args->propagation_mask)));
+  }
   // initial refcount dropped by grpc_call_unref
   grpc_call_element_args call_args = {
       call->call_stack(),   args->server_transport_data, path,
