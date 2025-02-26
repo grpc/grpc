@@ -119,7 +119,7 @@ class OTelTracingTest : public ::testing::Test {
       auto current_spans = data_->GetSpans();
       spans.insert(spans.end(), std::make_move_iterator(current_spans.begin()),
                    std::make_move_iterator(current_spans.end()));
-      if ((spans.size() == expected_size) ||
+      if ((spans.size() >= expected_size) ||
           (absl::Now() - start_time > timeout)) {
         break;
       }
@@ -546,7 +546,7 @@ TEST_F(OTelTracingTest, Retries) {
     grpc::ClientContext context;
     grpc::Status status = stub->Echo(&context, request, &response);
   }
-  auto spans = GetSpans(3);
+  auto spans = GetSpans(7);
   EXPECT_EQ(spans.size(), 7);  // 1 client span, 3 attempt spans, 3 server spans
   std::vector<uint64_t> attempt_seq_nums;
   uint64_t server_span_count = 0;
@@ -597,9 +597,16 @@ TEST_F(OTelTracingTest, TransparentRetries) {
     notify.WaitForNotificationWithTimeout(absl::Seconds(5));
   }
   auto spans = GetSpans(7);
-  EXPECT_EQ(spans.size(),
-            7);  // 2 client spans, 3 attempt spans, 2 server spans
+  // 2 client spans, 3 attempt spans, 2 server spans. There are cases where the
+  // Echo RPC will be transparently retried multiple times while the server is
+  // being restarted, so there might more than 7 spans.
+  EXPECT_GE(spans.size(), 7);
   struct AttemptAttributes {
+    std::string PrettyPrint() {
+      return absl::StrFormat(
+          "previous-rpc-attempts: %lu, transparent-retry: %s",
+          previous_rpc_attempts, transparent_retry ? "true" : "false");
+    }
     uint64_t previous_rpc_attempts;
     bool transparent_retry;
   };
@@ -615,11 +622,15 @@ TEST_F(OTelTracingTest, TransparentRetries) {
       ++server_span_count;
     }
   }
-  EXPECT_THAT(
-      attempt_attributes,
-      ElementsAre(
-          FieldsAre(/*previous-rpc-attempts=*/0, /*transparent-retry=*/false),
-          FieldsAre(/*previous-rpc-attempts=*/0, /*transparent-retry=*/true)));
+  EXPECT_GE(attempt_attributes.size(), 2);
+  EXPECT_THAT(attempt_attributes[0], FieldsAre(/*previous-rpc-attempts=*/0,
+                                               /*transparent-retry=*/false))
+      << attempt_attributes[0].PrettyPrint();
+  for (int i = 1; i < attempt_attributes.size(); ++i) {
+    EXPECT_THAT(attempt_attributes[i], FieldsAre(/*previous-rpc-attempts=*/0,
+                                                 /*transparent-retry=*/true))
+        << attempt_attributes[i].PrettyPrint();
+  }
   EXPECT_EQ(server_span_count, 1);
 }
 
