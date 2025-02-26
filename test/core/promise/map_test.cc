@@ -62,8 +62,13 @@ TEST(MapTest, ReturnsPending) {
         execution_order.push_back('3');
         return i / 2;
       });
-  EXPECT_THAT(map(), IsPending());
-  EXPECT_THAT(map(), IsReady(21));
+
+  auto first_result = map();
+  EXPECT_THAT(first_result, IsPending());
+
+  auto second_result = map();
+  EXPECT_THAT(second_result, IsReady());
+  EXPECT_EQ(second_result, Poll<int>(21));
   EXPECT_STREQ(execution_order.c_str(), "123");
 }
 
@@ -80,13 +85,16 @@ TEST(MapTest, ReturnsVoid) {
 
 TEST(MapTest, NestedMaps) {
   auto map1 = Map([]() { return 42; }, [](int i) { return i / 2; });
-  Promise<int> x = Map(std::move(map1), [](int i) { return i + 10; });
-  EXPECT_THAT(x(), IsReady(31));
+  Promise<int> promise = Map(std::move(map1), [](int i) { return i + 10; });
+
+  auto result = promise();
+  EXPECT_THAT(result, IsReady());
+  EXPECT_EQ(result, Poll<int>(31));
 }
 
 TEST(MapTest, NestedMapsWithDifferentTypes) {
   int i = 30;
-  std::string execution_order;
+  std::string execution_order{};
   auto map1 = AssertResultType<absl::Status>(Map(
       [i, &execution_order]() {
         execution_order.push_back('1');
@@ -107,7 +115,9 @@ TEST(MapTest, NestedMapsWithDifferentTypes) {
         }
       }));
 
-  EXPECT_THAT(map2(), IsReady("OK"));
+  auto result = map2();
+  EXPECT_THAT(result, IsReady());
+  EXPECT_EQ(result, Poll<std::string>("OK"));
   EXPECT_STREQ(execution_order.c_str(), "123");
 }
 
@@ -141,9 +151,10 @@ TEST(CheckDelayedTest, SeesImmediateWithMap) {
                      return "ERROR";
                    }
                  });
-  auto x = CheckDelayed(std::move(map));
+  auto promise = AssertResultType<std::tuple<const char*, bool>>(
+      CheckDelayed(std::move(map)));
 
-  auto result = x();
+  auto result = promise();
   EXPECT_THAT(result, IsReady(std::tuple("OK", false)));
   EXPECT_STREQ(JustElem<0>()(result.value()), "OK");
   EXPECT_EQ(JustElem<1>()(result.value()), false);
@@ -167,10 +178,11 @@ TEST(CheckDelayedTest, SeesDelayedWithMap) {
         execution_order.push_back('3');
         return i / 2;
       });
-  auto x = CheckDelayed(std::move(map));
+  auto promise =
+      AssertResultType<std::tuple<int, bool>>(CheckDelayed(std::move(map)));
 
-  EXPECT_THAT(x(), IsPending());
-  EXPECT_THAT(x(), IsReady(std::tuple(21, true)));
+  EXPECT_THAT(promise(), IsPending());
+  EXPECT_THAT(promise(), IsReady(std::tuple(21, true)));
   EXPECT_STREQ(execution_order.c_str(), "123");
 }
 
