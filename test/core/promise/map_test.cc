@@ -30,14 +30,15 @@ TEST(MapTest, Works) {
 }
 
 TEST(MapTest, TwoTyped) {
-  auto map = Map([]() { return absl::OkStatus(); },
-                 [](absl::Status s) {
-                   if (s.ok()) {
-                     return "OK";
-                   } else {
-                     return "ERROR";
-                   }
-                 });
+  auto map =
+      AssertResultType<const char*>(Map([]() { return absl::OkStatus(); },
+                                        [](absl::Status s) {
+                                          if (s.ok()) {
+                                            return "OK";
+                                          } else {
+                                            return "ERROR";
+                                          }
+                                        }));
   EXPECT_THAT(map(), IsReady("OK"));
 }
 
@@ -84,7 +85,7 @@ TEST(MapTest, NestedMaps) {
 TEST(MapTest, NestedMapsWithDifferentTypes) {
   int i = 30;
   std::string execution_order;
-  auto map1 = Map(
+  auto map1 = AssertResultType<absl::Status>(Map(
       [i, &execution_order]() {
         execution_order.push_back('1');
         return i;
@@ -93,15 +94,16 @@ TEST(MapTest, NestedMapsWithDifferentTypes) {
         execution_order.push_back('2');
         EXPECT_EQ(i, 30);
         return absl::OkStatus();
-      });
-  auto map2 = Map(std::move(map1), [&execution_order](absl::Status s) {
-    execution_order.push_back('3');
-    if (s.ok()) {
-      return "OK";
-    } else {
-      return "ERROR";
-    }
-  });
+      }));
+  auto map2 = AssertResultType<std::string>(
+      Map(std::move(map1), [&execution_order](absl::Status s) -> std::string {
+        execution_order.push_back('3');
+        if (s.ok()) {
+          return "OK";
+        } else {
+          return "ERROR";
+        }
+      }));
 
   EXPECT_THAT(map2(), IsReady("OK"));
   EXPECT_STREQ(execution_order.c_str(), "123");
