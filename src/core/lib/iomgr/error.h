@@ -94,12 +94,6 @@ grpc_error_handle grpc_error_set_int(grpc_error_handle src,
 /// intptr_t for `p`, even if the value of `p` is not used.
 bool grpc_error_get_int(grpc_error_handle error,
                         grpc_core::StatusIntProperty which, intptr_t* p);
-grpc_error_handle grpc_error_set_str(grpc_error_handle src,
-                                     grpc_core::StatusStrProperty which,
-                                     absl::string_view str);
-/// Returns false if the specified string is not set.
-bool grpc_error_get_str(grpc_error_handle error,
-                        grpc_core::StatusStrProperty which, std::string* str);
 
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level

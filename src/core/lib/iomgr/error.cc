@@ -145,29 +145,6 @@ bool grpc_error_get_int(grpc_error_handle error,
   }
 }
 
-grpc_error_handle grpc_error_set_str(grpc_error_handle src,
-                                     grpc_core::StatusStrProperty which,
-                                     absl::string_view str) {
-  if (src.ok()) {
-    src = absl::UnknownError("");
-    StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
-                 GRPC_STATUS_OK);
-  }
-  grpc_core::StatusSetStr(&src, which, str);
-  return src;
-}
-
-bool grpc_error_get_str(grpc_error_handle error,
-                        grpc_core::StatusStrProperty which, std::string* s) {
-  std::optional<std::string> value = grpc_core::StatusGetStr(error, which);
-  if (value.has_value()) {
-    *s = std::move(*value);
-    return true;
-  } else {
-    return false;
-  }
-}
-
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
   if (src.ok()) {
