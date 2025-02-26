@@ -203,6 +203,7 @@ grpc_cc_test(
         "absl/log:log",
     ],
     tags = [
+        "grpc:no-internal-poller",
         "requires-net:ipv4",
         "requires-net:loopback",
     ],
@@ -253,6 +254,7 @@ grpc_cc_test(
         "absl/strings:str_format",
     ],
     tags = [
+        "grpc:no-internal-poller",
         "no_windows",
         "requires-net:ipv4",
         "requires-net:loopback",

@@ -232,6 +232,10 @@ grpc_cc_test(
     name = "ping_configuration_test",
     srcs = ["ping_configuration_test.cc"],
     external_deps = ["gtest"],
+    tags = [
+        # HTTP2 pings configuration is different internally.
+        "grpc:no-internal-poller",
+    ],
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -404,6 +408,8 @@ grpc_cc_test(
     flaky = True,
     shard_count = 7,
     tags = [
+        # TODO(yashkt): Re-enable after fixing b/167620746
+        "grpc:no-internal-poller",
         "requires-net:ipv4",
         "requires-net:loopback",
     ],

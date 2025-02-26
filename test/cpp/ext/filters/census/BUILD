@@ -60,6 +60,8 @@ grpc_cc_test(
     linkstatic = True,
     tags = [
         "census_test",
+        # Incompatible with internal stats engine.
+        "grpc:no-internal-poller",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
@@ -88,6 +90,8 @@ grpc_cc_test(
     linkstatic = True,
     tags = [
         "census_test",
+        # Incompatible with internal stats engine.
+        "grpc:no-internal-poller",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [

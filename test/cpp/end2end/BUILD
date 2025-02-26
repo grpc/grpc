@@ -333,6 +333,8 @@ grpc_cc_test(
     # iOS. Figure out why.
     tags = [
         "cpp_end2end_test",
+        # b/117517566.
+        "grpc:no-internal-poller",
         "no_test_ios",
     ],
     deps = [
@@ -428,7 +430,13 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        # Will fail as sync health check service is enabled by default internally, which is however
+        # disabled in OSS:
+        # b/117623310.
+        "grpc:no-internal-poller",
+    ],
     deps = [
         ":test_health_check_service_impl",
         ":test_service_impl",
@@ -537,6 +545,8 @@ grpc_cc_test(
     tags = [
         "cpp_end2end_test",
         "cpp_lb_end2end_test",
+        # b/117575949.
+        "grpc:no-internal-poller",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
@@ -655,7 +665,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        # b/117623310.
+        "grpc:no-internal-poller",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
