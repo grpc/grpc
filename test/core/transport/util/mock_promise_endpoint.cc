@@ -64,7 +64,8 @@ void MockPromiseEndpoint::ExpectReadClose(
       .WillOnce(WithArgs<0, 1>(
           [status = std::move(status), schedule_on_event_engine](
               absl::AnyInvocable<void(absl::Status)> on_read,
-              grpc_event_engine::experimental::SliceBuffer* buffer) {
+              GRPC_UNUSED grpc_event_engine::experimental::SliceBuffer*
+                  buffer) {
             schedule_on_event_engine->Run(
                 [on_read = std::move(on_read), status]() mutable {
                   on_read(status);
