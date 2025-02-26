@@ -454,10 +454,9 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
       grpc_error_handle error;
       auto grpc_message = b->Take(GrpcMessageMetadata());
       if (*grpc_status != GRPC_STATUS_OK) {
-        error = absl::Status(static_cast<absl::StatusCode>(*grpc_status),
-                             grpc_message.has_value()
-                                 ? grpc_message->as_string_view()
-                                 : "");
+        error = absl::Status(
+            static_cast<absl::StatusCode>(*grpc_status),
+            grpc_message.has_value() ? grpc_message->as_string_view() : "");
       }
       SetFinalStatus(error);
     } else if (!is_client()) {
