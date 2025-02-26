@@ -142,7 +142,7 @@ auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
 auto ProcessHttp2PingFrame(Http2PingFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2PingFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2PingFrame Promise { ack="
@@ -169,7 +169,7 @@ auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2WindowUpdateFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2WindowUpdateFrame Promise { "
@@ -222,14 +222,12 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
       [](Http2SettingsFrame frame) {
         return ProcessHttp2SettingsFrame(std::move(frame));
       },
-      [](Http2PingFrame frame) {
-        return ProcessHttp2PingFrame(std::move(frame));
-      },
+      [](Http2PingFrame frame) { return ProcessHttp2PingFrame(frame); },
       [](Http2GoawayFrame frame) {
         return ProcessHttp2GoawayFrame(std::move(frame));
       },
       [](Http2WindowUpdateFrame frame) {
-        return ProcessHttp2WindowUpdateFrame(std::move(frame));
+        return ProcessHttp2WindowUpdateFrame(frame);
       },
       [](Http2ContinuationFrame frame) {
         return ProcessHttp2ContinuationFrame(std::move(frame));
