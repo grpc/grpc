@@ -49,13 +49,9 @@ TEST(ErrorTest, SetGetInt) {
 TEST(ErrorTest, SetGetStr) {
   grpc_error_handle error = GRPC_ERROR_CREATE("Test");
 
-  std::string str;
-  EXPECT_TRUE(grpc_error_get_str(
-      error, grpc_core::StatusStrProperty::kDescription, &str));
-  EXPECT_EQ(str, "Test");
-
   error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
                              "longer message");
+  std::string str;
   EXPECT_TRUE(grpc_error_get_str(
       error, grpc_core::StatusStrProperty::kGrpcMessage, &str));
   EXPECT_EQ(str, "longer message");

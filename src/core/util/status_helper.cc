@@ -73,8 +73,6 @@ const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
 
 const char* GetStatusStrPropertyUrl(StatusStrProperty key) {
   switch (key) {
-    case StatusStrProperty::kDescription:
-      return TYPE_URL(TYPE_STR_TAG "description");
     case StatusStrProperty::kGrpcMessage:
       return TYPE_URL(TYPE_STR_TAG "grpc_message");
   }

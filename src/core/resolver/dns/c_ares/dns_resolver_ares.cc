@@ -330,11 +330,9 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     GRPC_TRACE_VLOG(cares_resolver, 2)
         << "(c-ares resolver) resolver:" << this
         << " dns resolution failed: " << StatusToString(error);
-    std::string error_message;
-    grpc_error_get_str(error, StatusStrProperty::kDescription, &error_message);
     absl::Status status = absl::UnavailableError(
         absl::StrCat("DNS resolution failed for ", resolver_->name_to_resolve(),
-                     ": ", error_message));
+                     ": ", error.message()));
     result.addresses = status;
     result.service_config = status;
   }

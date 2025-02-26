@@ -54,14 +54,14 @@ TEST(StatusUtilTest, GetIntNotExistent) {
 
 TEST(StatusUtilTest, SetAndGetStr) {
   absl::Status s = absl::CancelledError();
-  StatusSetStr(&s, StatusStrProperty::kDescription, "value");
-  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kDescription));
+  StatusSetStr(&s, StatusStrProperty::kGrpcMessage, "value");
+  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kGrpcMessage));
 }
 
 TEST(StatusUtilTest, GetStrNotExistent) {
   absl::Status s = absl::CancelledError();
   EXPECT_EQ(std::optional<std::string>(),
-            StatusGetStr(s, StatusStrProperty::kDescription));
+            StatusGetStr(s, StatusStrProperty::kGrpcMessage));
 }
 
 TEST(StatusUtilTest, AddAndGetChildren) {
@@ -121,9 +121,9 @@ TEST(StatusUtilTest, ErrorWithIntPropertyToString) {
 
 TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetStr(&s, StatusStrProperty::kDescription, "Hey");
+  StatusSetStr(&s, StatusStrProperty::kGrpcMessage, "Hey");
   std::string t = StatusToString(s);
-  EXPECT_EQ("CANCELLED:Message {description:\"Hey\"}", t);
+  EXPECT_EQ("CANCELLED:Message {grpc_message:\"Hey\"}", t);
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
@@ -132,12 +132,12 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   absl::Status s1 = absl::AbortedError("Message1");
   StatusAddChild(&s, s1);
   absl::Status s2 = absl::AlreadyExistsError("Message2");
-  StatusSetStr(&s2, StatusStrProperty::kDescription, "value");
+  StatusSetStr(&s2, StatusStrProperty::kGrpcMessage, "value");
   StatusAddChild(&s, s2);
   std::string t = StatusToString(s);
   EXPECT_EQ(
       "CANCELLED:Message {stream_id:2021, children:["
-      "ABORTED:Message1, ALREADY_EXISTS:Message2 {description:\"value\"}]}",
+      "ABORTED:Message1, ALREADY_EXISTS:Message2 {grpc_message:\"value\"}]}",
       t);
 }
 
