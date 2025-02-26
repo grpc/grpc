@@ -141,9 +141,9 @@ TEST(StatusUtilTest, ErrorWithIntPropertyToString) {
 
 TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetStr(&s, StatusStrProperty::kDescription, "Hey");
+  StatusSetStr(&s, StatusStrProperty::kFile, "foo.cc");
   std::string t = StatusToString(s);
-  EXPECT_EQ("CANCELLED:Message {description:\"Hey\"}", t);
+  EXPECT_EQ("CANCELLED:Message {file:\"foo.cc\"}", t);
 }
 
 TEST(StatusUtilTest, ErrorWithTimePropertyToString) {

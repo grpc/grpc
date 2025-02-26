@@ -50,17 +50,7 @@ void grpc_error_get_status(grpc_error_handle error,
   // Fast path: We expect no error.
   if (GPR_LIKELY(error.ok())) {
     if (code != nullptr) *code = GRPC_STATUS_OK;
-    if (message != nullptr) {
-      // Normally, we call grpc_error_get_str(
-      //   error, grpc_core::StatusStrProperty::kGrpcMessage, message).
-      // We can fastpath since we know that:
-      // 1) Error is null
-      // 2) which == grpc_core::StatusStrProperty::kGrpcMessage
-      // 3) The resulting message is statically known.
-      // 4) Said resulting message is "".
-      // This means 3 movs, instead of 10s of instructions and a strlen.
-      *message = "";
-    }
+    if (message != nullptr) *message = "";
     if (http_error != nullptr) {
       *http_error = GRPC_HTTP2_NO_ERROR;
     }
@@ -119,14 +109,9 @@ void grpc_error_get_status(grpc_error_handle error,
   // If the error has a status message, use it.  Otherwise, fall back to
   // the error description.
   if (message != nullptr) {
-    if (!grpc_error_get_str(
-            found_error, grpc_core::StatusStrProperty::kGrpcMessage, message)) {
-      if (!grpc_error_get_str(found_error,
-                              grpc_core::StatusStrProperty::kDescription,
-                              message)) {
-        *message = grpc_core::StatusToString(error);
-      }
-    }
+    *message = found_error.message().empty()
+                   ? grpc_core::StatusToString(error)
+                   : std::string(found_error.message());
   }
 }
 

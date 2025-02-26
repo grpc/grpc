@@ -65,15 +65,11 @@ TEST(ErrorTest, SetGetStr) {
   // Windows. All should at least
   // contain error_test.c
 #endif
+  error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kFile,
+                             "foo.cc");
   EXPECT_TRUE(grpc_error_get_str(
-      error, grpc_core::StatusStrProperty::kDescription, &str));
-  EXPECT_EQ(str, "Test");
-
-  error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
-                             "longer message");
-  EXPECT_TRUE(grpc_error_get_str(
-      error, grpc_core::StatusStrProperty::kGrpcMessage, &str));
-  EXPECT_EQ(str, "longer message");
+      error, grpc_core::StatusStrProperty::kFile, &str));
+  EXPECT_EQ(str, "foo.cc");
 }
 
 TEST(ErrorTest, CopyAndUnRef) {
@@ -99,31 +95,21 @@ TEST(ErrorTest, CopyAndUnRef) {
 }
 
 TEST(ErrorTest, CreateReferencing) {
-  grpc_error_handle child =
-      grpc_error_set_str(GRPC_ERROR_CREATE("Child"),
-                         grpc_core::StatusStrProperty::kGrpcMessage, "message");
+  grpc_error_handle child = GRPC_ERROR_CREATE("message");
   grpc_error_handle parent = GRPC_ERROR_CREATE_REFERENCING("Parent", &child, 1);
   EXPECT_NE(parent, absl::OkStatus());
 }
 
 TEST(ErrorTest, CreateReferencingMany) {
   grpc_error_handle children[3];
-  children[0] =
-      grpc_error_set_str(GRPC_ERROR_CREATE("Child1"),
-                         grpc_core::StatusStrProperty::kGrpcMessage, "message");
+  children[0] = GRPC_ERROR_CREATE("Child1");
   children[1] =
       grpc_error_set_int(GRPC_ERROR_CREATE("Child2"),
                          grpc_core::StatusIntProperty::kHttp2Error, 5);
-  children[2] = grpc_error_set_str(GRPC_ERROR_CREATE("Child3"),
-                                   grpc_core::StatusStrProperty::kGrpcMessage,
-                                   "message 3");
-
+  children[2] = GRPC_ERROR_CREATE("Child3");
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING("Parent", children, 3);
   EXPECT_NE(parent, absl::OkStatus());
-
-  for (size_t i = 0; i < 3; ++i) {
-  }
 }
 
 TEST(ErrorTest, PrintErrorString) {
@@ -132,29 +118,19 @@ TEST(ErrorTest, PrintErrorString) {
       GRPC_STATUS_UNIMPLEMENTED);
   error =
       grpc_error_set_int(error, grpc_core::StatusIntProperty::kHttp2Error, 666);
-  error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
-                             "message");
   //  VLOG(2) << grpc_core::StatusToString(error);
 }
 
 TEST(ErrorTest, PrintErrorStringReference) {
   grpc_error_handle children[2];
-  children[0] = grpc_error_set_str(
-      grpc_error_set_int(GRPC_ERROR_CREATE("1"),
-                         grpc_core::StatusIntProperty::kRpcStatus,
-                         GRPC_STATUS_UNIMPLEMENTED),
-      grpc_core::StatusStrProperty::kGrpcMessage, "message for child 1");
-  children[1] = grpc_error_set_str(
-      grpc_error_set_int(GRPC_ERROR_CREATE("2sd"),
-                         grpc_core::StatusIntProperty::kRpcStatus,
-                         GRPC_STATUS_INTERNAL),
-      grpc_core::StatusStrProperty::kGrpcMessage, "message for child 2");
-
+  children[0] = grpc_error_set_int(GRPC_ERROR_CREATE("1"),
+                                   grpc_core::StatusIntProperty::kRpcStatus,
+                                   GRPC_STATUS_UNIMPLEMENTED);
+  children[1] = grpc_error_set_int(GRPC_ERROR_CREATE("2sd"),
+                                   grpc_core::StatusIntProperty::kRpcStatus,
+                                   GRPC_STATUS_INTERNAL);
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING("Parent", children, 2);
-
-  for (size_t i = 0; i < 2; ++i) {
-  }
 }
 
 TEST(ErrorTest, TestOsError) {
