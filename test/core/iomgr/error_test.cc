@@ -65,10 +65,10 @@ TEST(ErrorTest, SetGetStr) {
   // Windows. All should at least
   // contain error_test.c
 #endif
-  error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kFile,
-                             "foo.cc");
-  EXPECT_TRUE(grpc_error_get_str(
-      error, grpc_core::StatusStrProperty::kFile, &str));
+  error =
+      grpc_error_set_str(error, grpc_core::StatusStrProperty::kFile, "foo.cc");
+  EXPECT_TRUE(
+      grpc_error_get_str(error, grpc_core::StatusStrProperty::kFile, &str));
   EXPECT_EQ(str, "foo.cc");
 }
 

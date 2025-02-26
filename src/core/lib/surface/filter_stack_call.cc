@@ -915,9 +915,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
                       absl::Status(
                           static_cast<absl::StatusCode>(
                               op->data.send_status_from_server.status),
-                          message.empty()
-                              ? "Server returned error"
-                              : message),
+                          message.empty() ? "Server returned error" : message),
                       StatusIntProperty::kRpcStatus,
                       static_cast<intptr_t>(
                           op->data.send_status_from_server.status));
