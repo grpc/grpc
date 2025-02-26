@@ -199,7 +199,7 @@ def _generate_pb2_grpc_src_impl(context):
         # is virtual imports
         out_path = get_include_directory(out_files[0])
     else:
-        out_path = context.genfiles_dir.path
+        out_path = out_dir.path
     arguments += get_plugin_args(
         context.executable._grpc_plugin,
         plugin_flags,
