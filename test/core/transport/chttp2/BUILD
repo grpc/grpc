@@ -496,6 +496,7 @@ grpc_cc_test(
         "fuzztest",
         "fuzztest_main",
     ],
+    tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:gpr",
