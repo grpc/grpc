@@ -71,6 +71,11 @@
   expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: error_flatten
+  description: Flatten errors to ordinary absl::Status form.
+  expiry: 2025/06/01
+  owner: roth@google.com
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2025/05/01
