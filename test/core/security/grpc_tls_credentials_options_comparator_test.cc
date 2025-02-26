@@ -22,7 +22,7 @@
 
 #include <string>
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 
 #include <grpc/credentials.h>
 

@@ -16,7 +16,7 @@
 
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc_security.h>
 
 #include "absl/log/check.h"

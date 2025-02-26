@@ -17,7 +17,7 @@
 #ifdef GPR_WINDOWS
 #include <grpc/grpc.h>
 #include <grpc/support/log_windows.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "absl/status/status.h"
 #include "absl/time/time.h"

@@ -16,8 +16,8 @@
 
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>

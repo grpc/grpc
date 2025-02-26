@@ -17,7 +17,7 @@
 //
 
 #include <grpc/impl/grpc_types.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/security/context/security_context.h"

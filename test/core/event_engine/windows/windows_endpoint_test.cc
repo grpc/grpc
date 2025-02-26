@@ -18,7 +18,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"

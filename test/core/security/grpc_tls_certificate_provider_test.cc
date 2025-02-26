@@ -16,10 +16,10 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <deque>
 #include <list>

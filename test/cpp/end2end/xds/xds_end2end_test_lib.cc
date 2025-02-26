@@ -15,9 +15,9 @@
 
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpcpp/security/tls_certificate_provider.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <functional>
 #include <map>

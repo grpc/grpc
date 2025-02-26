@@ -27,7 +27,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/server_posix.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <memory>
 #include <vector>

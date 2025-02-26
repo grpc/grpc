@@ -18,7 +18,7 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>

@@ -18,7 +18,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <stdio.h>
 #include <string.h>
 

@@ -14,12 +14,12 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <memory>
 

@@ -17,7 +17,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <stddef.h>
 #include <stdint.h>
 

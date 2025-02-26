@@ -624,6 +624,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "absl/strings:str_format",
+        "absl/strings",
     ],
     public_hdrs = [
         "lib/promise/poll.h",

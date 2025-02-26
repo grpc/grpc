@@ -16,7 +16,7 @@
 //
 //
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -27,7 +27,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/test/default_reactor_test_peer.h>
 #include <grpcpp/test/mock_stream.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <climits>
 #include <iostream>

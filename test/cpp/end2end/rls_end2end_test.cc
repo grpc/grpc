@@ -21,7 +21,7 @@
 //   fires; request is processed at that point
 // - find some deterministic way to exercise adaptive throttler code
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/credentials.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
@@ -29,7 +29,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <deque>
 #include <map>

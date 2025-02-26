@@ -20,7 +20,7 @@
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "absl/types/span.h"
 #include "src/core/tsi/alts/crypt/gsec.h"

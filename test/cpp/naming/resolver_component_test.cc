@@ -18,7 +18,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/alloc.h>

@@ -14,7 +14,7 @@
 
 #include "src/core/config/core_configuration.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <chrono>
 #include <functional>

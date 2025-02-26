@@ -22,7 +22,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <openssl/evp.h>
 #include <string.h>
 

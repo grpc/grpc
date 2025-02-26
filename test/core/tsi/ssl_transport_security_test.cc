@@ -21,7 +21,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/pem.h>

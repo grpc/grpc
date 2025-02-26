@@ -20,7 +20,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <stdio.h>
 #include <stdlib.h>
 

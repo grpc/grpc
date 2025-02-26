@@ -20,7 +20,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

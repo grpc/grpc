@@ -18,7 +18,7 @@
 
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
