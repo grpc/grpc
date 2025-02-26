@@ -358,6 +358,10 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
+    tags = [
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "//:channel_stack_builder",
         "//:gpr",
@@ -399,6 +403,10 @@ grpc_cc_test(
     ],
     flaky = True,
     shard_count = 7,
+    tags = [
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
