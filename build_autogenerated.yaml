@@ -21365,11 +21365,12 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
   - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
 - destination: third_party/protoc-gen-validate
-  hash: 9372f9ecde8fbadf83c8c7de3dbb49b11067aa26fb608c501106d0b4bf06c28f
+  hash: ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
   proto_prefix: third_party/protoc-gen-validate/
-  strip_prefix: protoc-gen-validate-1.0.4
+  strip_prefix: protoc-gen-validate-1.2.1
   urls:
-  - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.0.4.zip
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
+  - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
 - destination: third_party/xds
   hash: dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
   proto_prefix: third_party/xds/
