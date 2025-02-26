@@ -182,6 +182,8 @@ then
 
   time curl -O https://download.visualstudio.microsoft.com/download/pr/14a45451-4cc9-48e1-af69-0aff75891d09/ff6e83986a2a9a535015fb3104a90a1b/dotnet-sdk-6.0.100-osx-x64.pkg
   time sudo installer -pkg ./dotnet-sdk-6.0.100-osx-x64.pkg -target /
+
+  export PATH="/:$PATH"
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
