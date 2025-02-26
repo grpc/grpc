@@ -32,6 +32,8 @@ grpc_cc_test(
         "otel/sdk/src/metrics",
     ],
     tags = [
+        # TODO(b/398739502): Remove after fixing
+        "grpc:broken-internally",
     ],
     deps = [
         "//:grpc++",
@@ -54,6 +56,8 @@ grpc_cc_test(
         "otel/sdk/src/metrics",
     ],
     tags = [
+        # TODO(b/398739502): Remove after fixing
+        "grpc:broken-internally",
     ],
     deps = [
         "//:grpc++",

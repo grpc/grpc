@@ -782,6 +782,8 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
+        # TODO(b/264692543): Re-enable after fixing
+        "grpc:broken-internally",
         "no_test_ios",
         "no_windows",
     ],
@@ -920,7 +922,11 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        # This test only works with the open source protobuf.
+        "grpc:broken-internally",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
