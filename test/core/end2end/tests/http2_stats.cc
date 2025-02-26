@@ -164,7 +164,10 @@ class FakeCallTracer : public ClientCallTracer {
         absl::Status /*status*/,
         grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) override {
-      if (IsCallTracerInTransportEnabled()) return;
+      if (IsCallTracerInTransportEnabled() ||
+          transport_stream_stats == nullptr /* cancelled call */) {
+        return;
+      }
       test_state_->ResetClientByteSizes(
           {transport_stream_stats->incoming.framing_bytes,
            transport_stream_stats->incoming.data_bytes,
