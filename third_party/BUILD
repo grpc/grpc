@@ -18,13 +18,19 @@ package(default_visibility = ["//:__subpackages__"])
 
 alias(
     name = "libssl",
-    actual = "@boringssl//:ssl",
+    actual = select({
+        "//:use_openssl": "//:openssl",
+        "//conditions:default": "@boringssl//:ssl",  
+    }),
     tags = ["manual"],
 )
 
 alias(
     name = "libcrypto",
-    actual = "@boringssl//:crypto",
+    actual = select({
+        "//:use_openssl": "//:openssl",
+        "//conditions:default": "@boringssl//:crypto",  
+    }),
     tags = ["manual"],
 )
 

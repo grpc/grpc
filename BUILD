@@ -2239,6 +2239,21 @@ grpc_cc_library(
     ],
 )
 
+config_setting(
+    name = "use_openssl",
+    values = {"define": "USE_OPENSSL=1"},
+)
+
+cc_library(
+    name = "openssl",
+    includes = ["/usr/include"],
+    linkopts = ["-L/usr/lib", "-lssl", "-lcrypto"],
+    copts = select({
+        ":use_openssl": ["-DUSE_OPENSSL=1"],
+        "//conditions:default": [],
+    }),
+)
+
 grpc_cc_library(
     name = "tsi",
     external_deps = [
@@ -2763,9 +2778,11 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     visibility = ["@grpc:grpcpp_gcp_observability"],
-    deps = [
-        "//src/cpp/ext/gcp:observability",
-    ],
+    deps = select({
+        "//:use_openssl":[] ,
+        "//conditions:default": ["grpcpp_otel_plugin",
+     "//src/cpp/ext/csm:csm_observability",
+    ],}),
 )
 
 # This is an EXPERIMENTAL target subject to change.

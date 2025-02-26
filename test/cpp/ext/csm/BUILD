@@ -31,7 +31,7 @@ grpc_cc_test(
         "gtest",
         "otel/sdk/src/metrics",
     ],
-    tags = [
+    tags = [ "use_openssl"
     ],
     deps = [
         "//:grpc++",
@@ -53,7 +53,7 @@ grpc_cc_test(
         "gtest",
         "otel/sdk/src/metrics",
     ],
-    tags = [
+    tags = [ "use_openssl"
     ],
     deps = [
         "//:grpc++",
