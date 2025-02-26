@@ -155,7 +155,9 @@ TEST(CheckDelayedTest, SeesImmediateWithMap) {
       CheckDelayed(std::move(map)));
 
   auto result = promise();
-  EXPECT_THAT(result, IsReady(std::tuple("OK", false)));
+  EXPECT_THAT(result, IsReady());
+  Poll<std::tuple<const char*, bool>> expected_result({"OK", false});
+  EXPECT_EQ(result, expected_result);
   EXPECT_STREQ(JustElem<0>()(result.value()), "OK");
   EXPECT_EQ(JustElem<1>()(result.value()), false);
 }
