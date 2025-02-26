@@ -116,7 +116,7 @@ auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
   HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2RstStreamFrame Factory";
-  return [frame1 = std::move(frame)]() -> absl::Status {
+  return [frame1 = frame]() -> absl::Status {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2RstStreamFrame Promise{ stream_id="
@@ -217,7 +217,7 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
         return ProcessHttp2HeaderFrame(std::move(frame));
       },
       [](Http2RstStreamFrame frame) {
-        return ProcessHttp2RstStreamFrame(std::move(frame));
+        return ProcessHttp2RstStreamFrame(frame);
       },
       [](Http2SettingsFrame frame) {
         return ProcessHttp2SettingsFrame(std::move(frame));
@@ -237,7 +237,7 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
       [](Http2SecurityFrame frame) {
         return ProcessHttp2SecurityFrame(std::move(frame));
       },
-      [](Http2UnknownFrame frame) {
+      [](GRPC_UNUSED Http2UnknownFrame frame) {
         // As per HTTP2 RFC, implementations MUST ignore and discard frames of
         // unknown types.
         return absl::OkStatus();
