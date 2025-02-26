@@ -56,7 +56,12 @@ grpc_cc_test(
         "otel/api",
         "otel/sdk/src/metrics",
     ],
-    tags = [],
+    tags = [
+        # TODO(b/398739502): Remove after fixing
+        "grpc:broken-internally",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
     deps = [
         ":otel_test_library",
         "//:grpc++",
