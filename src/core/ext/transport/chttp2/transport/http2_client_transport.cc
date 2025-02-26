@@ -290,11 +290,10 @@ auto Http2ClientTransport::ReadLoop() {
 
 auto Http2ClientTransport::OnReadLoopEnded() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport OnReadLoopEnded Factory";
-  return [](absl::Status status) -> absl::Status {
+  return [](absl::Status status) {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG << "Http2ClientTransport OnReadLoopEnded Promise Status="
                       << status;
-    return status;
   };
 }
 
@@ -324,7 +323,6 @@ auto Http2ClientTransport::OnWriteLoopEnded() {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG << "Http2ClientTransport OnWriteLoopEnded Promise Status="
                       << status;
-    return status;
   };
 }
 
