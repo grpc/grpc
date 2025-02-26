@@ -451,21 +451,13 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
   } else {
     std::optional<grpc_status_code> grpc_status = b->Take(GrpcStatusMetadata());
     if (grpc_status.has_value()) {
-      auto status_code = static_cast<absl::StatusCode>(*grpc_status);
       grpc_error_handle error;
       auto grpc_message = b->Take(GrpcMessageMetadata());
-      if (status_code != absl::StatusCode::kOk) {
-        if (grpc_message.has_value()) {
-          error = absl::Status(status_code, grpc_message->as_string_view());
-        } else {
-          Slice peer = GetPeerString();
-          error = grpc_error_set_int(
-              absl::Status(status_code,
-                           absl::StrCat("Error received from peer ",
-                                        peer.as_string_view())),
-              StatusIntProperty::kRpcStatus,
-              static_cast<intptr_t>(status_code));
-        }
+      if (*grpc_status != GRPC_STATUS_OK) {
+        error = absl::Status(static_cast<absl::StatusCode>(*grpc_status),
+                             grpc_message.has_value()
+                                 ? grpc_message->as_string_view()
+                                 : "");
       }
       SetFinalStatus(error);
     } else if (!is_client()) {

@@ -106,13 +106,7 @@ void grpc_error_get_status(grpc_error_handle error,
     }
   }
 
-  // If the error has a status message, use it.  Otherwise, fall back to
-  // the error description.
-  if (message != nullptr) {
-    *message = found_error.message().empty()
-                   ? grpc_core::StatusToString(error)
-                   : std::string(found_error.message());
-  }
+  if (message != nullptr) *message = std::string(found_error.message());
 }
 
 absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
