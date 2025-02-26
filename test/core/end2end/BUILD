@@ -202,6 +202,10 @@ grpc_cc_test(
         "absl/log:check",
         "absl/log:log",
     ],
+    tags = [
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "cq_verifier",
         "//:exec_ctx",
@@ -248,7 +252,11 @@ grpc_cc_test(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_windows",
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "cq_verifier",
         "//:gpr",
@@ -271,6 +279,10 @@ grpc_cc_test(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+    ],
+    tags = [
+        "requires-net:ipv4",
+        "requires-net:loopback",
     ],
     deps = [
         "cq_verifier",
