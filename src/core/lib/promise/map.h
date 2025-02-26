@@ -49,9 +49,9 @@ namespace grpc_core {
 // 1. Poll the promise.
 // 2. If the promise is pending, return Pending{}.
 // 3. If the promise is ready, return the result of the synchronous function.
-// Note: If the first argument is a promise factory, Map will invoke the
-// synchronous function with the promise (callable) returned by the
-// promise factory.
+// Note: If the first argument to the Map is a promise factory instead of a
+// promise, Map will pass the promise returned by the promise factory as a
+// parameter to the synchronous function.
 //
 // Example:
 // TEST(MapTest, Works) {
