@@ -59,7 +59,8 @@ namespace grpc_core {
 // Pending{}.
 //
 // The execution of promises in the AllOk combinator will stop if any one
-// promise returns a failure status.
+// promise returns a failure status. This failure status is returned by the
+// AllOk combinator.
 
 namespace promise_detail {
 
