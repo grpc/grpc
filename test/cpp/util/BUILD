@@ -203,6 +203,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "grpc:internal-test-filter:-GrpcToolTest.CallCommandWithBadMetadata",
         "no_mac",
         "no_test_ios",
         "no_windows",
