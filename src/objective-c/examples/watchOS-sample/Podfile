@@ -14,7 +14,7 @@ def grpc_deps
 end
 
 target 'watchOS-sample' do
-platform :ios, '11.0'
+platform :ios, '15.0'
   grpc_deps
 end
 
