@@ -62,8 +62,6 @@ enum class StatusIntProperty {
 
 /// This enum should have the same value of grpc_error_strs
 enum class StatusStrProperty {
-  /// top-level textual description of this error
-  kDescription,
   /// peer that we were trying to communicate when this error occurred
   kGrpcMessage,
 };

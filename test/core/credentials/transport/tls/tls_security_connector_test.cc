@@ -75,15 +75,8 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     if (expected_error_msg == nullptr) {
       EXPECT_EQ(error, absl::OkStatus());
     } else {
-      EXPECT_EQ(GetErrorMsg(error), expected_error_msg);
+      EXPECT_EQ(error.message(), expected_error_msg);
     }
-  }
-
-  static std::string GetErrorMsg(grpc_error_handle error) {
-    std::string error_str;
-    CHECK(
-        grpc_error_get_str(error, StatusStrProperty::kDescription, &error_str));
-    return error_str;
   }
 
   std::string root_cert_1_;

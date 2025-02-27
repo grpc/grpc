@@ -246,10 +246,7 @@ TEST(GrpcAwsRequestSignerTest, InvalidUrl) {
   grpc_core::AwsRequestSigner signer("access_key_id", "secret_access_key",
                                      "token", "POST", "invalid_url",
                                      "us-east-1", "", {}, &error);
-  std::string actual_error_description;
-  CHECK(grpc_error_get_str(error, grpc_core::StatusStrProperty::kDescription,
-                           &actual_error_description));
-  EXPECT_EQ(actual_error_description, "Invalid Aws request url.");
+  EXPECT_EQ(error.message(), "Invalid Aws request url.");
 }
 
 TEST(GrpcAwsRequestSignerTest, DuplicateRequestDate) {
@@ -258,10 +255,7 @@ TEST(GrpcAwsRequestSignerTest, DuplicateRequestDate) {
       "access_key_id", "secret_access_key", "token", "POST", "invalid_url",
       "us-east-1", "", {{"date", kBotoTestDate}, {"x-amz-date", kAmzTestDate}},
       &error);
-  std::string actual_error_description;
-  CHECK(grpc_error_get_str(error, grpc_core::StatusStrProperty::kDescription,
-                           &actual_error_description));
-  EXPECT_EQ(actual_error_description,
+  EXPECT_EQ(error.message(),
             "Only one of {date, x-amz-date} can be specified, not both.");
 }
 
