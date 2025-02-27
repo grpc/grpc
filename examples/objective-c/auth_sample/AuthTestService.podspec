@@ -7,8 +7,8 @@ Pod::Spec.new do |s|
   s.summary = "AuthTestService example"
   s.source = { :git => 'https://github.com/grpc/grpc.git' }
 
-  s.ios.deployment_target = "11.0"
-  s.osx.deployment_target = "10.14"
+  s.ios.deployment_target = "15.0"
+  s.osx.deployment_target = "11.0"
 
   # Base directory where the .proto files are.
   src = "../../protos"

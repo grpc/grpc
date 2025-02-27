@@ -207,7 +207,7 @@ grpc_objc_ios_unit_test(
 
 macos_unit_test(
     name = "MacTests",
-    minimum_os_version = "10.14",
+    minimum_os_version = "11.0",
     deps = [
         ":APIv2Tests-lib",
         ":InteropTestsLocalCleartext-lib",
