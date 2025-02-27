@@ -933,32 +933,6 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_cronet_hdrs",
-    hdrs = [
-        "include/grpc/grpc_cronet.h",
-    ],
-    deps = [
-        "gpr_public_hdrs",
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc++_cronet_credentials",
-    srcs = [
-        "src/cpp/client/cronet_credentials.cc",
-    ],
-    hdrs = [
-        "include/grpcpp/security/cronet_credentials.h",
-    ],
-    deps = [
-        "grpc++_base",
-        "grpc_cronet_hdrs",
-        "grpc_public_hdrs",
-    ],
-)
-
 # This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
     name = "grpc_authorization_provider",
