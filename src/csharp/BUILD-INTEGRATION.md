@@ -232,6 +232,7 @@ to perform code generation. Here is an overview of the available `grpc_csharp_pl
 | internal_access | off       | Generate classes with "internal" visibility              |
 | file_suffix     | Grpc.cs   | The suffix that will get appended to the name of the generated file. **Can only be used on the command line.** |
 | base_namespace | none       | *Experimental - may change or be removed.* Same as `base_namespace` for `protoc` [C# options](https://protobuf.dev/reference/csharp/csharp-generated/#compiler_options) .  **Can only be used on the command line.** |
+| enable_nrt      | off       | *Experimental - may change or be removed.* Enable generating code that supports C# *[nullable reference types](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-8.0/nullable-reference-types)* |
 
 To use these options with `Grpc.Tools` specify them in the __GrpcOutputOptions__
 metadata in the `<Protobuf>` item.
@@ -292,6 +293,10 @@ following properties change the behavior of `Grpc.Tools`:
 | `Protobuf_OutputPath`| Default: `IntermediateOutputPath` - ususally the `obj` directory. Sets the default value for `OutputDir` on `<Protobuf>` items.|
 | `EnableDefaultProtobufItems` | Default: `false`. If `true` then `.proto` files under the project are automatically included without the need to specify any `<Protobuf>` items. |
 | `Protobuf_StandardImportsPath` | The path for protobuf's [well known types](https://protobuf.dev/reference/protobuf/google.protobuf/) included in the NuGet package. It is automcatically passed to `protoc`  via the `-I/--proto_path` option. |
+| `Protobuf_EnableNRT_Supported` | Default: `false`. *Experimental*. Set tp `true` when the `protoc` compiler supports generation code for null reference types. **TODO** default should be changed to `true` when protoc and plugin supports null reference types code generation. |
+| `gRPC_NullableReferenceTypes` | Default: depends on projects `<Nullable>` setting and if `Protobuf_EnableNRT_Supported` is `true`. Allows you to force off null reference types code generation in the gRPC C# plugin if set to `disable`. |
+| `Protobuf_NullableReferenceTypes` | Default: depends on projects `<Nullable>` setting and if `Protobuf_EnableNRT_Supported` is `true`. Allows you to force off null reference types code generation in the `protoc` compiler if set to `disable`. |
+
 
 # Scenarios and Examples
 
