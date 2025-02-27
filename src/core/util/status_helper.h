@@ -102,7 +102,8 @@ GRPC_MUST_USE_RESULT std::vector<absl::Status> StatusGetChildren(
 GRPC_MUST_USE_RESULT std::string StatusToString(const absl::Status& status);
 
 /// Adds prefix to the message of status.
-absl::Status AddMessagePrefix(absl::string_view prefix, absl::Status status);
+absl::Status AddMessagePrefix(absl::string_view prefix,
+                              const absl::Status& status);
 
 namespace internal {
 

@@ -24,6 +24,7 @@
 
 #include <vector>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/status_helper.h"
 
@@ -47,6 +48,29 @@ void grpc_error_get_status(grpc_error_handle error,
                            grpc_status_code* code, std::string* message,
                            grpc_http2_error_code* http_error,
                            const char** error_string) {
+  if (error_string != nullptr && status != GRPC_STATUS_OK) {
+    *error_string = gpr_strdup(grpc_core::StatusToString(error).c_str());
+  }
+
+  if (grpc_core::IsErrorFlattenEnabled()) {
+    if (code != nullptr) *code = static_cast<grpc_status_code>(error.code());
+    if (message != nullptr) *message = std::string(error.message());
+    if (http_error != nullptr) {
+      intptr_t integer;
+      if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kHttp2Error,
+                             &integer)) {
+        *http_error = static_cast<grpc_http2_error_code>(integer);
+      } else if (error.code() != absl::StatusCode::kUnknown) {
+        *http_error = grpc_status_to_http2_error(
+            static_cast<grpc_status_code>(error.code()));
+      } else {
+        *http_error =
+            error.ok() ? GRPC_HTTP2_NO_ERROR : GRPC_HTTP2_INTERNAL_ERROR;
+      }
+    }
+    return;
+  }
+
   // Fast path: We expect no error.
   if (GPR_LIKELY(error.ok())) {
     if (code != nullptr) *code = GRPC_STATUS_OK;
@@ -96,10 +120,6 @@ void grpc_error_get_status(grpc_error_handle error,
     status = static_cast<grpc_status_code>(found_error.code());
   }
   if (code != nullptr) *code = status;
-
-  if (error_string != nullptr && status != GRPC_STATUS_OK) {
-    *error_string = gpr_strdup(grpc_core::StatusToString(error).c_str());
-  }
 
   if (http_error != nullptr) {
     if (grpc_error_get_int(
