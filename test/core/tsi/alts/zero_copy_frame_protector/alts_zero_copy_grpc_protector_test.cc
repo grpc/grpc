@@ -20,9 +20,9 @@
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
 
 #include "absl/types/span.h"
+#include "gtest/gtest.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 #include "src/core/tsi/transport_security_grpc.h"

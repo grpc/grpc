@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
@@ -23,7 +22,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/xds_server_builder.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <optional>
@@ -33,6 +31,8 @@
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/env.h"
 #include "src/core/util/time.h"

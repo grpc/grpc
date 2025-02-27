@@ -28,12 +28,12 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/slice.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <thread>
 
 #include "absl/memory/memory.h"
+#include "gtest/gtest.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

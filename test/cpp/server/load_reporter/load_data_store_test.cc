@@ -20,11 +20,11 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
-#include <gtest/gtest.h>
 
 #include <set>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "src/cpp/server/load_reporter/constants.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

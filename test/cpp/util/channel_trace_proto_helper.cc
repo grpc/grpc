@@ -22,8 +22,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/support/config.h>
-#include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/json/json.h"
