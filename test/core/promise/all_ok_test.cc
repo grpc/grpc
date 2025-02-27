@@ -177,6 +177,15 @@ TEST(AllOkTest, WithMixedTypesFailure) {
         absl::StrAppend(&execution_order, "1");
         return absl::OkStatus();
       },
+      [i = 2, &execution_order]() mutable -> Poll<absl::Status> {
+        if (i == 0) {
+          absl::StrAppend(&execution_order, "4");
+          return absl::UnknownError("failed");
+        }
+        absl::StrAppend(&execution_order, "4_P");
+        i--;
+        return Pending{};
+      },
       [&execution_order]() -> Poll<StatusFlag> {
         absl::StrAppend(&execution_order, "2");
         return Success{};
@@ -189,22 +198,14 @@ TEST(AllOkTest, WithMixedTypesFailure) {
         absl::StrAppend(&execution_order, "3_P");
         i--;
         return Pending{};
-      },
-      [i = 2, &execution_order]() mutable -> Poll<absl::Status> {
-        if (i == 0) {
-          absl::StrAppend(&execution_order, "4");
-          return absl::UnknownError("failed");
-        }
-        absl::StrAppend(&execution_order, "4_P");
-        i--;
-        return Pending{};
       }));
+
   EXPECT_EQ(all_ok1(), Poll<absl::Status>(Pending{}));
-  EXPECT_STREQ(execution_order.c_str(), "123_P4_P");
+  EXPECT_STREQ(execution_order.c_str(), "14_P23_P");
 
   execution_order.clear();
   EXPECT_EQ(all_ok1(), Poll<absl::Status>(Pending{}));
-  EXPECT_STREQ(execution_order.c_str(), "34_P");
+  EXPECT_STREQ(execution_order.c_str(), "4_P3");
 
   execution_order.clear();
   // The failed promise here returned an absl::Status, and the AllOk combinator
