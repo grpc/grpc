@@ -20,6 +20,7 @@
 
 #include "absl/utility/utility.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/promise/promise.h"
 
 namespace grpc_core {
 
@@ -129,75 +130,126 @@ TYPED_TEST(AllOkTest, AllOkIter) {
 }
 
 TEST(AllOkTest, WithMixedTypesSuccess) {
-  auto all_ok1 = AllOk<absl::Status>(
-      []() -> Poll<absl::Status> { return absl::OkStatus(); },
-      []() -> Poll<StatusFlag> { return Success{}; },
-      [i = 1]() mutable -> Poll<StatusFlag> {
+  std::string execution_order;
+  auto all_ok1 = AssertResultType<absl::Status>(AllOk<absl::Status>(
+      [&execution_order]() -> Poll<absl::Status> {
+        absl::StrAppend(&execution_order, "1");
+        return absl::OkStatus();
+      },
+      [&execution_order]() -> Poll<StatusFlag> {
+        absl::StrAppend(&execution_order, "2");
+        return Success{};
+      },
+      [i = 1, &execution_order]() mutable -> Poll<StatusFlag> {
         if (i == 0) {
+          absl::StrAppend(&execution_order, "3");
           return Success{};
         }
+        absl::StrAppend(&execution_order, "3_P");
         i--;
         return Pending{};
       },
-      [i = 2]() mutable -> Poll<absl::Status> {
+      [i = 2, &execution_order]() mutable -> Poll<absl::Status> {
         if (i == 0) {
+          absl::StrAppend(&execution_order, "4");
           return absl::OkStatus();
         }
+        absl::StrAppend(&execution_order, "4_P");
         i--;
         return Pending{};
-      });
+      }));
   EXPECT_EQ(all_ok1(), Poll<absl::Status>(Pending{}));
+  EXPECT_STREQ(execution_order.c_str(), "123_P4_P");
+
+  execution_order.clear();
   EXPECT_EQ(all_ok1(), Poll<absl::Status>(Pending{}));
+  EXPECT_STREQ(execution_order.c_str(), "34_P");
+
+  execution_order.clear();
   EXPECT_EQ(all_ok1(), Poll<absl::Status>(absl::OkStatus()));
+  EXPECT_STREQ(execution_order.c_str(), "4");
 }
 
 TEST(AllOkTest, WithMixedTypesFailure) {
-  auto all_ok1 = AllOk<absl::Status>(
-      []() -> Poll<absl::Status> { return absl::OkStatus(); },
-      []() -> Poll<StatusFlag> { return Success{}; },
-      [i = 1]() mutable -> Poll<StatusFlag> {
+  std::string execution_order;
+  auto all_ok1 = AssertResultType<absl::Status>(AllOk<absl::Status>(
+      [&execution_order]() -> Poll<absl::Status> {
+        absl::StrAppend(&execution_order, "1");
+        return absl::OkStatus();
+      },
+      [&execution_order]() -> Poll<StatusFlag> {
+        absl::StrAppend(&execution_order, "2");
+        return Success{};
+      },
+      [i = 1, &execution_order]() mutable -> Poll<StatusFlag> {
         if (i == 0) {
+          absl::StrAppend(&execution_order, "3");
           return Success{};
         }
+        absl::StrAppend(&execution_order, "3_P");
         i--;
         return Pending{};
       },
-      [i = 2]() mutable -> Poll<absl::Status> {
+      [i = 2, &execution_order]() mutable -> Poll<absl::Status> {
         if (i == 0) {
+          absl::StrAppend(&execution_order, "4");
           return absl::UnknownError("failed");
         }
+        absl::StrAppend(&execution_order, "4_P");
         i--;
         return Pending{};
-      });
+      }));
   EXPECT_EQ(all_ok1(), Poll<absl::Status>(Pending{}));
+  EXPECT_STREQ(execution_order.c_str(), "123_P4_P");
+
+  execution_order.clear();
   EXPECT_EQ(all_ok1(), Poll<absl::Status>(Pending{}));
+  EXPECT_STREQ(execution_order.c_str(), "34_P");
+
+  execution_order.clear();
   // The failed promise here returned an absl::Status, and the AllOk combinator
   // will propagate the same failure status.
   EXPECT_EQ(all_ok1(), Poll<absl::Status>(absl::UnknownError("failed")));
+  EXPECT_STREQ(execution_order.c_str(), "4");
 }
 
 TEST(AllOkTest, WithMixedTypesFailure2) {
-  auto all_ok1 = AllOk<absl::Status>(
-      []() -> Poll<absl::Status> { return absl::OkStatus(); },
-      []() -> Poll<StatusFlag> { return Success{}; },
-      [i = 1]() mutable -> Poll<StatusFlag> {
+  std::string execution_order;
+  auto all_ok1 = AssertResultType<absl::Status>(AllOk<absl::Status>(
+      [&execution_order]() -> Poll<absl::Status> {
+        absl::StrAppend(&execution_order, "1");
+        return absl::OkStatus();
+      },
+      [&execution_order]() -> Poll<StatusFlag> {
+        absl::StrAppend(&execution_order, "2");
+        return Success{};
+      },
+      [i = 1, &execution_order]() mutable -> Poll<StatusFlag> {
         if (i == 0) {
+          absl::StrAppend(&execution_order, "3");
           return Failure{};
         }
+        absl::StrAppend(&execution_order, "3_P");
         i--;
         return Pending{};
       },
-      [i = 2]() mutable -> Poll<absl::Status> {
+      [i = 2, &execution_order]() mutable -> Poll<absl::Status> {
         if (i == 0) {
+          absl::StrAppend(&execution_order, "4");
           return absl::OkStatus();
         }
+        absl::StrAppend(&execution_order, "4_P");
         i--;
         return Pending{};
-      });
+      }));
   EXPECT_EQ(all_ok1(), Poll<absl::Status>(Pending{}));
+  EXPECT_STREQ(execution_order.c_str(), "123_P4_P");
+
+  execution_order.clear();
   // The failed promise here returned a StatusFlag, but the AllOk combinator
   // will cast it to absl::CancelledError().
   EXPECT_EQ(all_ok1(), Poll<absl::Status>(absl::CancelledError()));
+  EXPECT_STREQ(execution_order.c_str(), "3");
 }
 
 }  // namespace grpc_core
