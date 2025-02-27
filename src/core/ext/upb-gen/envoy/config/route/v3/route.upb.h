@@ -467,13 +467,19 @@ UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_typed_per_filter_config
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, sizeof(*val));
 }
-UPB_INLINE const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_next(const envoy_config_route_v3_RouteConfiguration* msg, size_t* iter) {
+UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_next(const envoy_config_route_v3_RouteConfiguration* msg, upb_StringView* key, const struct google_protobuf_Any** val,
+                           size_t* iter) {
   const upb_MiniTableField field = {16, UPB_SIZE(56, 120), 0, 8, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry*)_upb_map_next(map, iter);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
 }
 UPB_INLINE const upb_Map* _envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_upb_map(envoy_config_route_v3_RouteConfiguration* msg) {
   const upb_MiniTableField field = {16, UPB_SIZE(56, 120), 0, 8, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -824,14 +830,6 @@ UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_typed_per_filter_config
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-UPB_INLINE envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_nextmutable(envoy_config_route_v3_RouteConfiguration* msg, size_t* iter) {
-  const upb_MiniTableField field = {16, UPB_SIZE(56, 120), 0, 8, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init);
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_metadata(envoy_config_route_v3_RouteConfiguration *msg, struct envoy_config_core_v3_Metadata* value) {
   const upb_MiniTableField field = {17, UPB_SIZE(60, 128), 67, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

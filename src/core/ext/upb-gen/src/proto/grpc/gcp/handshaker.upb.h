@@ -230,12 +230,18 @@ UPB_INLINE bool grpc_gcp_Identity_attributes_get(const grpc_gcp_Identity* msg, u
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, 0);
 }
-UPB_INLINE const grpc_gcp_Identity_AttributesEntry* grpc_gcp_Identity_attributes_next(const grpc_gcp_Identity* msg, size_t* iter) {
+UPB_INLINE bool grpc_gcp_Identity_attributes_next(const grpc_gcp_Identity* msg, upb_StringView* key, upb_StringView* val,
+                           size_t* iter) {
   const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__gcp__Identity__AttributesEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (const grpc_gcp_Identity_AttributesEntry*)_upb_map_next(map, iter);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
 }
 UPB_INLINE const upb_Map* _grpc_gcp_Identity_attributes_upb_map(grpc_gcp_Identity* msg) {
   const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -275,13 +281,6 @@ UPB_INLINE bool grpc_gcp_Identity_attributes_delete(grpc_gcp_Identity* msg, upb_
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-UPB_INLINE grpc_gcp_Identity_AttributesEntry* grpc_gcp_Identity_attributes_nextmutable(grpc_gcp_Identity* msg, size_t* iter) {
-  const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__gcp__Identity__AttributesEntry_msg_init);
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (grpc_gcp_Identity_AttributesEntry*)_upb_map_next(map, iter);
 }
 
 /* grpc.gcp.Identity.AttributesEntry */
@@ -944,13 +943,19 @@ UPB_INLINE bool grpc_gcp_StartServerHandshakeReq_handshake_parameters_get(const 
   if (!map) return false;
   return _upb_Map_Get(map, &key, sizeof(key), val, sizeof(*val));
 }
-UPB_INLINE const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* grpc_gcp_StartServerHandshakeReq_handshake_parameters_next(const grpc_gcp_StartServerHandshakeReq* msg, size_t* iter) {
+UPB_INLINE bool grpc_gcp_StartServerHandshakeReq_handshake_parameters_next(const grpc_gcp_StartServerHandshakeReq* msg, int32_t* key, const grpc_gcp_ServerHandshakeParameters** val,
+                           size_t* iter) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__gcp__StartServerHandshakeReq__HandshakeParametersEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__gcp__ServerHandshakeParameters_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry*)_upb_map_next(map, iter);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
 }
 UPB_INLINE const upb_Map* _grpc_gcp_StartServerHandshakeReq_handshake_parameters_upb_map(grpc_gcp_StartServerHandshakeReq* msg) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1088,14 +1093,6 @@ UPB_INLINE bool grpc_gcp_StartServerHandshakeReq_handshake_parameters_delete(grp
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, sizeof(key), NULL);
-}
-UPB_INLINE grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* grpc_gcp_StartServerHandshakeReq_handshake_parameters_nextmutable(grpc_gcp_StartServerHandshakeReq* msg, size_t* iter) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__gcp__StartServerHandshakeReq__HandshakeParametersEntry_msg_init);
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__gcp__ServerHandshakeParameters_msg_init);
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE void grpc_gcp_StartServerHandshakeReq_set_in_bytes(grpc_gcp_StartServerHandshakeReq *msg, upb_StringView value) {
   const upb_MiniTableField field = {3, UPB_SIZE(36, 16), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
