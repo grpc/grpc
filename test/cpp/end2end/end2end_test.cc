@@ -60,6 +60,7 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif  // GRPC_POSIX_SOCKET_EV
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 using std::chrono::system_clock;
@@ -1514,8 +1515,7 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
+    EXPECT_THAT(context.debug_error_string(), ::testing::HasSubstr("INTERNAL"));
   }
 }
 
@@ -1693,7 +1693,7 @@ TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_TRUE(s.error_message().empty());
+  EXPECT_EQ(s.error_message(), "");
 }
 
 // Make the response larger than the flow control window.
