@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <cstdint>
 #include <cstring>
 #include <string>
 
@@ -226,6 +227,32 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
   return socket;
 }
 
+static const uint8_t kV4LinkLocalPrefix[] = {0xa9, 0xfe};
+static const uint8_t kV6LinkLocalPrefix[] = {0xfe, 0x80};
+
+bool IsSockAddrLinkLocal(const EventEngine::ResolvedAddress* resolved_addr) {
+  const sockaddr* addr = resolved_addr->address();
+  if (addr->sa_family == AF_INET) {
+    const sockaddr_in* addr4 = reinterpret_cast<const sockaddr_in*>(addr);
+    if (memcmp(&addr4->sin_addr.s_addr, kV4LinkLocalPrefix,
+               sizeof(kV4LinkLocalPrefix)) == 0) {
+      return true;
+    }
+  } else if (addr->sa_family == AF_INET6) {
+    const sockaddr_in6* addr6 = reinterpret_cast<const sockaddr_in6*>(addr);
+    uint32_t first32bits;
+    memcpy(&first32bits, &addr6->sin6_addr, 4);
+    uint32_t mask = (~(static_cast<uint32_t>(0))) << 22;
+    first32bits &= htonl(mask);
+    if (memcmp(&first32bits, kV6LinkLocalPrefix, sizeof(kV6LinkLocalPrefix)) ==
+        0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port) {
@@ -270,6 +297,10 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     }
     addr = EventEngine::ResolvedAddress(ifa_it->ifa_addr, len);
     ResolvedAddressSetPort(addr, requested_port);
+    if (options.exclude_link_local_addresses && IsSockAddrLinkLocal(&addr)) {
+      /* Exclude link-local addresses. */
+      continue;
+    }
     std::string addr_str = *ResolvedAddressToString(addr);
     VLOG(2) << absl::StrFormat(
         "Adding local addr from interface %s flags 0x%x to server: %s",

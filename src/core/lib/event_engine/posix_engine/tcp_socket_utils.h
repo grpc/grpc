@@ -71,6 +71,7 @@ struct PosixTcpOptions {
   bool expand_wildcard_addrs = false;
   bool allow_reuse_port = false;
   int dscp = kDscpNotSet;
+  bool exclude_link_local_addresses = false;
   grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota;
   struct grpc_socket_mutator* socket_mutator = nullptr;
   grpc_event_engine::experimental::MemoryAllocatorFactory*
@@ -142,6 +143,7 @@ struct PosixTcpOptions {
     expand_wildcard_addrs = other.expand_wildcard_addrs;
     allow_reuse_port = other.allow_reuse_port;
     dscp = other.dscp;
+    exclude_link_local_addresses = other.exclude_link_local_addresses;
   }
 };
 
