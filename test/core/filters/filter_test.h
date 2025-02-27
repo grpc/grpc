@@ -17,7 +17,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include "gtest/gtest.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -33,6 +32,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/resource_quota/arena.h"

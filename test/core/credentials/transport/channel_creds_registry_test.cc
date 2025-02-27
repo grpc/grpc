@@ -23,13 +23,13 @@
 
 #include <optional>
 
+#include "gmock/gmock.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/composite/composite_channel_credentials.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "test/core/test_util/test_config.h"
-#include "gmock/gmock.h"
 
 namespace grpc_core {
 namespace testing {

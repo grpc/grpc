@@ -20,9 +20,9 @@
 
 #include <grpc/grpc.h>
 
+#include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "test/core/test_util/test_config.h"
-#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

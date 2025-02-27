@@ -18,9 +18,9 @@
 
 #include <grpc/grpc_security.h>
 
-#include "test/core/test_util/test_config.h"
-#include "gmock/gmock.h"
 #include "absl/log/check.h"
+#include "gmock/gmock.h"
+#include "test/core/test_util/test_config.h"
 
 namespace testing {
 

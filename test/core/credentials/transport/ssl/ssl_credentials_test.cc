@@ -23,11 +23,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "gtest/gtest.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
-#include "gtest/gtest.h"
 
 TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
   grpc_ssl_pem_key_cert_pair grpc_pairs[] = {{"private_key1", "cert_chain1"},

@@ -13,9 +13,6 @@
 // limitations under the License.
 //
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -25,6 +22,8 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "envoy/config/listener/v3/listener.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "test/core/test_util/fake_stats_plugin.h"

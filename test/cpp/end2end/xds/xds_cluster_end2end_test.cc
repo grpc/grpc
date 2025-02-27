@@ -13,9 +13,6 @@
 // limitations under the License.
 //
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <numeric>
 #include <string>
 #include <vector>
@@ -23,6 +20,8 @@
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"

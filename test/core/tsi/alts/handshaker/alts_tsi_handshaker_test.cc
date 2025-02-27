@@ -20,10 +20,10 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
-#include "gtest/gtest.h"
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"

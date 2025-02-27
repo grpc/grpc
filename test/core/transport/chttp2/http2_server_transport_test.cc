@@ -19,7 +19,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
 
 #include "gtest/gtest.h"
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 

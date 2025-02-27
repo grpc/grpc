@@ -13,9 +13,7 @@
 // limitations under the License.
 //
 
-#include "gmock/gmock.h"
 #include <grpc/event_engine/endpoint_config.h>
-#include "gtest/gtest.h"
 
 #include <vector>
 
@@ -24,6 +22,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"

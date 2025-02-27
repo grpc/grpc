@@ -24,12 +24,12 @@
 
 #include <string>
 
+#include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/host_port.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
-#include "gtest/gtest.h"
 
 TEST(ServerChttp2, UnparsableTarget) {
   grpc_channel_args args = {0, nullptr};

@@ -20,12 +20,12 @@
 
 #include <grpc/grpc_security.h>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/test_util/test_config.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

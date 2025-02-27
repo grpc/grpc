@@ -17,7 +17,6 @@
 //
 
 #include <fcntl.h>
-#include "gmock/gmock.h"
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -44,6 +43,7 @@
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "gmock/gmock.h"
 #include "src/core/credentials/transport/alts/alts_credentials.h"
 #include "src/core/credentials/transport/alts/alts_security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
