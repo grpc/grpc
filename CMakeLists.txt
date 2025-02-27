@@ -9610,6 +9610,7 @@ add_executable(cancel_callback_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/transport/status_conversion.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
@@ -10780,6 +10781,7 @@ add_executable(chunked_vector_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/transport/status_conversion.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
@@ -14989,6 +14991,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/transport/status_conversion.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
@@ -15795,6 +15798,7 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/status_conversion.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
@@ -15872,6 +15876,7 @@ add_executable(for_each_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/transport/status_conversion.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
@@ -19393,6 +19398,7 @@ add_executable(interceptor_list_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/transport/status_conversion.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
@@ -20437,6 +20443,7 @@ add_executable(map_pipe_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/transport/status_conversion.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
@@ -22381,6 +22388,7 @@ add_executable(periodic_update_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/transport/status_conversion.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc

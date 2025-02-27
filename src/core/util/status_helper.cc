@@ -18,7 +18,7 @@
 
 #include "src/core/util/status_helper.h"
 
-#include <grpc/support/port_platform.h>
+#include <grpc/status.h>
 #include <string.h>
 
 #include <utility>
@@ -36,6 +36,8 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/status_conversion.h"
+#include "src/core/util/time.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 
@@ -131,8 +133,8 @@ namespace {
 
 absl::Status ReplaceStatusCode(const absl::Status& status,
                                absl::StatusCode code) {
-  absl::Status new_status(code, status->message());
-  status->ForEachPayload(
+  absl::Status new_status(code, status.message());
+  status.ForEachPayload(
       [&](absl::string_view type_url, const absl::Cord& payload) {
         new_status.SetPayload(type_url, payload);
       });
@@ -154,7 +156,7 @@ void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
     if (key == StatusIntProperty::kHttp2Error &&
         status->code() == absl::StatusCode::kUnknown) {
       grpc_status_code code = grpc_http2_error_to_grpc_status(
-          static_cast<grpc_http2_error_code>(integer), Timestamp::InfFuture());
+          static_cast<grpc_http2_error_code>(value), Timestamp::InfFuture());
       *status = ReplaceStatusCode(*status, static_cast<absl::StatusCode>(code));
       // Do NOT return here -- still want to set the payload.
     }
@@ -166,7 +168,7 @@ void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
 std::optional<intptr_t> StatusGetInt(const absl::Status& status,
                                      StatusIntProperty key) {
   if (IsErrorFlattenEnabled() && key == StatusIntProperty::kRpcStatus) {
-    return status.code();
+    return static_cast<intptr_t>(status.code());
   }
   auto p = status.GetPayload(GetStatusIntPropertyUrl(key));
   if (p.has_value()) {
@@ -189,8 +191,8 @@ namespace {
 
 absl::Status ReplaceStatusMessage(const absl::Status& status,
                                   absl::string_view message) {
-  absl::Status new_status(status->code(), message);
-  status->ForEachPayload(
+  absl::Status new_status(status.code(), message);
+  status.ForEachPayload(
       [&](absl::string_view type_url, const absl::Cord& payload) {
         new_status.SetPayload(type_url, payload);
       });
@@ -211,7 +213,7 @@ void StatusSetStr(absl::Status* status, StatusStrProperty key,
 std::optional<std::string> StatusGetStr(const absl::Status& status,
                                         StatusStrProperty key) {
   if (IsErrorFlattenEnabled() && key == StatusStrProperty::kGrpcMessage) {
-    return status.message();
+    return std::string(status.message());
   }
   auto p = status.GetPayload(GetStatusStrPropertyUrl(key));
   if (p.has_value()) {
