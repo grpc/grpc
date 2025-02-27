@@ -266,8 +266,8 @@ finish:
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (!error.ok()) {
-    error = grpc_core::AddMessagePrefix("Failed to connect to remote host",
-                                        error);
+    error =
+        grpc_core::AddMessagePrefix("Failed to connect to remote host", error);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
