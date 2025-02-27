@@ -20,9 +20,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "gmock/gmock.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "test/core/test_util/test_config.h"
-#include "gmock/gmock.h"
 
 namespace grpc_core {
 namespace testing {

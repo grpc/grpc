@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -36,8 +38,6 @@
 #include "src/core/util/string.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
-#include "gtest/gtest.h"
-#include "absl/log/log.h"
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
 #define TSI_OPENSSL_ALPN_SUPPORT 1

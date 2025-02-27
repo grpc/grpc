@@ -20,11 +20,11 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include "gtest/gtest.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "gtest/gtest.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/crash.h"

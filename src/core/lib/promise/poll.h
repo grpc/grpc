@@ -309,7 +309,6 @@ void PollValueStringify(Sink& sink, const absl::StatusOr<T>& value) {
   PollValueStringify(sink, *value);
 }
 
-
 template <typename Sink, typename T>
 void AbslStringify(Sink& sink, const Poll<T>& poll) {
   if (poll.pending()) {

@@ -21,10 +21,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "gtest/gtest.h"
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/tmpfile.h"
-#include "gtest/gtest.h"
 
 #ifdef GPR_WINDOWS
 

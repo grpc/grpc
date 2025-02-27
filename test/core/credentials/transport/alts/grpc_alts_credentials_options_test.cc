@@ -23,8 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/util/crash.h"
 #include "gtest/gtest.h"
+#include "src/core/util/crash.h"
 
 #define ALTS_CLIENT_OPTIONS_TEST_TARGET_SERVICE_ACCOUNT_1 "abc@google.com"
 #define ALTS_CLIENT_OPTIONS_TEST_TARGET_SERVICE_ACCOUNT_2 "def@google.com"

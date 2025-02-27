@@ -17,7 +17,6 @@
 //
 
 #include "gtest/gtest.h"
-
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/test_util/test_config.h"
 

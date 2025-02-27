@@ -20,12 +20,12 @@
 
 #include <string.h>
 
+#include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
-#include "gtest/gtest.h"
-#include "absl/log/log.h"
 
 TEST(AuthContextTest, EmptyContext) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =

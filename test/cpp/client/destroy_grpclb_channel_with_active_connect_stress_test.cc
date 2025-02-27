@@ -16,7 +16,6 @@
 //
 //
 
-#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -35,6 +34,7 @@
 #include <sstream>
 #include <thread>
 
+#include "gmock/gmock.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr.h"

@@ -24,6 +24,7 @@
 #include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
 
+#include "gmock/gmock.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "src/core/credentials/transport/tls/tls_security_connector.h"
@@ -31,7 +32,6 @@
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
-#include "gmock/gmock.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"

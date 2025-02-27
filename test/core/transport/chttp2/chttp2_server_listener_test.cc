@@ -17,11 +17,11 @@
 //
 
 #include <grpc/grpc.h>
-#include "gtest/gtest.h"
 
 #include <thread>
 
 #include "absl/synchronization/notification.h"
+#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
