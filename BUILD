@@ -1545,6 +1545,7 @@ grpc_cc_library(
         "//src/core:slice_refcount",
         "//src/core:socket_mutator",
         "//src/core:stats_data",
+        "//src/core:status_helper",
         "//src/core:strerror",
         "//src/core:sync",
         "//src/core:time",
