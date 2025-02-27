@@ -236,8 +236,8 @@ def check_linker_need_libatomic():
     return cpp_test.returncode == 0
 
 
-# When building extensions for macOS on a system running macOS 10.14 or newer,
-# make sure they target macOS 10.14 or newer to use C++17 stdlib properly.
+# When building extensions for macOS on a system running macOS 11.0 or newer,
+# make sure they target macOS 11.0 or newer to use C++17 stdlib properly.
 # This overrides the default behavior of distutils, which targets the macOS
 # version Python was built on. You can further customize the target macOS
 # version by setting the MACOSX_DEPLOYMENT_TARGET environment variable before
@@ -249,7 +249,7 @@ if sys.platform == "darwin":
             10,
             14,
         ):
-            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.14"
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "11.0"
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.

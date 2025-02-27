@@ -353,7 +353,7 @@ def ios_cc_test(
             size = kwargs.get("size"),
             data = kwargs.get("data"),
             tags = ios_tags,
-            minimum_os_version = "11.0",
+            minimum_os_version = "15.0",
             runner = test_runner,
             deps = ios_test_deps,
         )

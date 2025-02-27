@@ -1,5 +1,5 @@
 source 'https://github.com/CocoaPods/Specs.git'
-platform :ios, '11.0'
+platform :ios, '15.0'
 
 # Without this we get linker errors due to files with same names but different paths
 # ref: https://github.com/CocoaPods/CocoaPods/issues/8289#issuecomment-1022723820

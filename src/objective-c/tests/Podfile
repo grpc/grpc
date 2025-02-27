@@ -27,7 +27,7 @@ target 'TvTests' do
 end
 
 target 'MacTests' do
-  platform :osx, '10.14'
+  platform :osx, '11.0'
   grpc_deps
 end
 
@@ -36,13 +36,13 @@ end
   InteropTests
 ).each do |target_name|
   target target_name do
-    platform :ios, '11.0'
+    platform :ios, '15.0'
     grpc_deps
   end
 end
 
 target 'PerfTests' do
-  platform :ios, '11.0'
+  platform :ios, '15.0'
   grpc_deps
 end
 
