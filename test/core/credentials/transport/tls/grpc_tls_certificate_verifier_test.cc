@@ -16,7 +16,6 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 
-#include <gmock/gmock.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
@@ -24,13 +23,14 @@
 #include <deque>
 #include <list>
 
-#include "absl/log/log.h"
 #include "src/core/credentials/transport/tls/tls_security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gmock/gmock.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 

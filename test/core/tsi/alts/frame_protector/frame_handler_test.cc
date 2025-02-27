@@ -19,7 +19,7 @@
 #include "src/core/tsi/alts/frame_protector/frame_handler.h"
 
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

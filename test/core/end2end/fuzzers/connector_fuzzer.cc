@@ -12,12 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <google/protobuf/text_format.h>
-
 #include <memory>
 
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/fake/fake_security_connector.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
@@ -32,6 +28,9 @@
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
+#include <google/protobuf/text_format.h>
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;

@@ -25,7 +25,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <algorithm>
 #include <condition_variable>

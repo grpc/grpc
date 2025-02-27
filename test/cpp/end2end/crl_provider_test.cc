@@ -29,7 +29,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <memory>
 #include <string>

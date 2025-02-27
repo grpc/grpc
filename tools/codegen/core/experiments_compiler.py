@@ -73,7 +73,7 @@ def _EXPERIMENTS_TEST_SKELETON(defs, test_body):
 
 #include <memory>
 
-#include "gtest/gtest.h"
+#include "testing/base/public/gunit.h"
 
 #include "src/core/lib/experiments/config.h"
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -28,7 +28,7 @@
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <algorithm>
 #include <chrono>

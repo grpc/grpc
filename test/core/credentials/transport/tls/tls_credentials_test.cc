@@ -16,12 +16,12 @@
 
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 
-#include <gmock/gmock.h>
 #include <grpc/grpc_security.h>
 #include <gtest/gtest.h>
 
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
 
 namespace grpc_core {
 namespace testing {

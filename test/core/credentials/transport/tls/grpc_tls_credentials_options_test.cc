@@ -18,7 +18,6 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 
-#include <gmock/gmock.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/support/alloc.h>
@@ -32,6 +31,7 @@
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gmock/gmock.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"

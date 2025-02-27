@@ -16,7 +16,7 @@
 #ifndef GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
 #define GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
@@ -24,7 +24,7 @@
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/xds_server_builder.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <memory>
 #include <optional>

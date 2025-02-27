@@ -16,7 +16,7 @@
 //
 //
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
@@ -29,7 +29,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"

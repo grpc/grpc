@@ -20,7 +20,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <openssl/crypto.h>
 #include <string.h>
 

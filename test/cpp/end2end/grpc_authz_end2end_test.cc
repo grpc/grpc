@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -20,7 +20,7 @@
 #include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <memory>
 

@@ -18,7 +18,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <string.h>

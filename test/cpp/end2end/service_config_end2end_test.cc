@@ -16,7 +16,7 @@
 //
 //
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -29,7 +29,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/validate_service_config.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <algorithm>
 #include <memory>

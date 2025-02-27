@@ -16,11 +16,11 @@
 
 #include "src/core/credentials/call/external/aws_request_signer.h"
 
-#include <gmock/gmock.h>
 #include <grpc/grpc_security.h>
 
-#include "absl/log/check.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "absl/log/check.h"
 
 namespace testing {
 

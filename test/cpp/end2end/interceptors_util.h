@@ -20,7 +20,7 @@
 #define GRPC_TEST_CPP_END2END_INTERCEPTORS_UTIL_H
 
 #include <grpcpp/channel.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <condition_variable>
 

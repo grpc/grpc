@@ -23,7 +23,7 @@
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <condition_variable>
 #include <memory>
