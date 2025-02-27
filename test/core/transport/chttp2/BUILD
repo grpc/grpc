@@ -507,8 +507,6 @@ grpc_cc_test(
     external_deps = [
         "absl/log:log",
         "gtest",
-        "fuzztest",
-        "fuzztest_main",
     ],
     tags = ["no_windows"],
     uses_polling = False,

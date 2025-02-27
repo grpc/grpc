@@ -18643,7 +18643,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(http2_client_transport_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::int128
     ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
