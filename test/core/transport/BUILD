@@ -251,3 +251,20 @@ grpc_cc_benchmark(
         "//src/core:default_event_engine",
     ],
 )
+
+grpc_cc_test(
+    name = "auth_context_test",
+    srcs = ["auth_context_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)

@@ -185,6 +185,7 @@ grpc_cc_library(
             "//test/core/event_engine/fuzzing_event_engine",
             "//test/core/test_util:fuzz_config_vars",
             "//test/core/test_util:grpc_test_util",
+            "//test/core/test_util:test_call_creds",
         ] + (["//test/core/test_util:fuzz_config_vars_helpers"] if fuzz else []),
         alwayslink = 1,
     )
@@ -201,6 +202,11 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+    ],
+    tags = [
+        "grpc:no-internal-poller",
+        "requires-net:ipv4",
+        "requires-net:loopback",
     ],
     deps = [
         "cq_verifier",
@@ -248,7 +254,12 @@ grpc_cc_test(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "grpc:no-internal-poller",
+        "no_windows",
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "cq_verifier",
         "//:gpr",
@@ -271,6 +282,10 @@ grpc_cc_test(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+    ],
+    tags = [
+        "requires-net:ipv4",
+        "requires-net:loopback",
     ],
     deps = [
         "cq_verifier",
