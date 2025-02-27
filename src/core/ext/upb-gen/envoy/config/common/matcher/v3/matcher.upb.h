@@ -1131,13 +1131,19 @@ UPB_INLINE bool envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, sizeof(*val));
 }
-UPB_INLINE const envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry* envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_next(const envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap* msg, size_t* iter) {
+UPB_INLINE bool envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_next(const envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap* msg, upb_StringView* key, const envoy_config_common_matcher_v3_Matcher_OnMatch** val,
+                           size_t* iter) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__common__matcher__v3__Matcher__MatcherTree__MatchMap__MapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__common__matcher__v3__Matcher__OnMatch_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (const envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry*)_upb_map_next(map, iter);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
 }
 UPB_INLINE const upb_Map* _envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_upb_map(envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap* msg) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1172,14 +1178,6 @@ UPB_INLINE bool envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-UPB_INLINE envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry* envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_nextmutable(envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap* msg, size_t* iter) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__common__matcher__v3__Matcher__MatcherTree__MatchMap__MapEntry_msg_init);
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__common__matcher__v3__Matcher__OnMatch_msg_init);
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry*)_upb_map_next(map, iter);
 }
 
 /* envoy.config.common.matcher.v3.Matcher.MatcherTree.MatchMap.MapEntry */
