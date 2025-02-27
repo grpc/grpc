@@ -62,6 +62,7 @@ grpc_cc_test(
         "census_test",
         # Incompatible with internal stats engine.
         "grpc:no-internal-poller",
+        "grpc:no-internal-test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
