@@ -14,7 +14,7 @@
 
 #include "src/core/lib/security/authorization/cel_authorization_engine.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

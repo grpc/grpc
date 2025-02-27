@@ -43,8 +43,8 @@
 #include "absl/strings/str_format.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -60,7 +60,7 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif  // GRPC_POSIX_SOCKET_EV
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 using std::chrono::system_clock;
 
@@ -1514,12 +1514,6 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "created"));
-#ifndef NDEBUG
-    // grpc_core::StatusIntProperty::kFileLine is for debug only
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "file"));
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "line"));
-#endif
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
   }

@@ -548,10 +548,10 @@
   )
 
   set(gRPC_ADDITIONAL_DLL_SRC
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
-    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+    src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc
+    src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc
+    src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc
+    src/core/credentials/transport/tls/grpc_tls_credentials_options.cc
   )
 
   set(gRPC_ADDITIONAL_DLL_CXX_SRC

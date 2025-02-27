@@ -73,6 +73,10 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
+    tags = [
+        # channel stacks are allowed to be different internally
+        "grpc:no-internal-poller",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

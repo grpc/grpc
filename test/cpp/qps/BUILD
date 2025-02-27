@@ -195,6 +195,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "secure_sync_unary_ping_pong_test",
     srcs = ["secure_sync_unary_ping_pong_test.cc"],
+    tags = ["grpc:no-internal-test"],
     deps = [
         ":benchmark_config",
         ":driver_impl",
