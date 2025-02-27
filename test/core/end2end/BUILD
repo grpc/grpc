@@ -473,29 +473,44 @@ grpc_core_end2end_test_suite(
     name = "end2end_http2",
     config_src = "end2end_http2_config.cc",
     flaky = True,
+    tags = [
+        "grpc:no-internal-poller",
+    ],
 )
 
 grpc_core_end2end_test_suite(
     name = "end2end_http2_security",
     config_src = "end2end_http2_security_config.cc",
     flaky = True,
+    tags = [
+        "grpc:no-internal-poller",
+    ],
 )
 
 grpc_core_end2end_test_suite(
     name = "end2end_posix",
     config_src = "end2end_posix_config.cc",
     flaky = True,
+    tags = [
+        "grpc:no-internal-poller",
+    ],
 )
 
 grpc_core_end2end_test_suite(
     name = "end2end_chaotic_good",
     config_src = "end2end_chaotic_good_config.cc",
     flaky = True,
-    tags = ["no_windows"],
+    tags = [
+        "grpc:no-internal-poller",
+        "no_windows",
+    ],
 )
 
 grpc_core_end2end_test_suite(
     name = "end2end_inproc",
     config_src = "end2end_inproc_config.cc",
     flaky = True,
+    tags = [
+        "grpc:no-internal-poller",
+    ],
 )

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <random>
 #include <unordered_map>

@@ -18,7 +18,7 @@
 
 #include <grpc/grpc.h>
 #include <grpcpp/support/config.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "absl/log/check.h"
 #include "google/protobuf/duration.upb.h"

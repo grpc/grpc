@@ -24,7 +24,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <stdint.h>
 #include <string.h>
 

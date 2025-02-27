@@ -18,7 +18,7 @@
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/support/port_platform.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <memory>
 #include <string>

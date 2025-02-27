@@ -20,7 +20,7 @@
 
 #include <grpc/support/port_platform.h>
 #include <grpcpp/grpcpp.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <atomic>
 #include <chrono>

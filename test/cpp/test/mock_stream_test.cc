@@ -17,7 +17,7 @@
 //
 
 #include <grpcpp/test/mock_stream.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "absl/memory/memory.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

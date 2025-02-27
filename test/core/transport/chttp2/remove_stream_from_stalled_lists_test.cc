@@ -26,7 +26,7 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <string.h>
 
 #include <algorithm>

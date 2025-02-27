@@ -17,7 +17,7 @@
 //
 
 #include <fcntl.h>
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

@@ -20,7 +20,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>

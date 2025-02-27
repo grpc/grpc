@@ -13,10 +13,10 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <unistd.h>
 
 #include <cstddef>

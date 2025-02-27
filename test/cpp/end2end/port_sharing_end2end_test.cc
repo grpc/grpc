@@ -27,7 +27,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <mutex>
 #include <thread>

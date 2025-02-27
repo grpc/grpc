@@ -19,7 +19,7 @@
 #ifndef GRPCPP_TEST_MOCK_STREAM_H
 #define GRPCPP_TEST_MOCK_STREAM_H
 
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpcpp/impl/call.h>
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/async_unary_call.h>

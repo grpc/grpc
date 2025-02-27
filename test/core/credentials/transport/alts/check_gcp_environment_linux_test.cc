@@ -18,13 +18,13 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-#include <gtest/gtest.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/tmpfile.h"
+#include "gtest/gtest.h"
 
 #if GPR_LINUX
 

@@ -60,7 +60,7 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif  // GRPC_POSIX_SOCKET_EV
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 using std::chrono::system_clock;
 

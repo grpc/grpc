@@ -14,7 +14,7 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <chrono>
 

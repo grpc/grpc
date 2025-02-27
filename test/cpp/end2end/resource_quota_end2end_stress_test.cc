@@ -17,7 +17,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/server_callback.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <memory>
 #include <string>

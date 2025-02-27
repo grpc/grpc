@@ -17,7 +17,7 @@
 //
 
 #include <address_sorting/address_sorting.h>
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
