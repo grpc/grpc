@@ -191,7 +191,7 @@ void Call::PublishToParent(Call* parent) {
         cc->sibling_prev->child_->sibling_next = this;
   }
   if (parent->Completed()) {
-    CancelWithError(absl::CancelledError());
+    CancelWithError(absl::CancelledError("CANCELLED"));
   }
 }
 
@@ -238,7 +238,7 @@ void Call::PropagateCancellationToChildren() {
         Call* next_child_call = child->child_->sibling_next;
         if (child->cancellation_is_inherited_) {
           child->InternalRef("propagate_cancel");
-          child->CancelWithError(absl::CancelledError());
+          child->CancelWithError(absl::CancelledError("CANCELLED"));
           child->InternalUnref("propagate_cancel");
         }
         child = next_child_call;
@@ -414,7 +414,8 @@ grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
     return GRPC_CALL_ERROR;
   }
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::Call::FromC(call)->CancelWithError(absl::CancelledError());
+  grpc_core::Call::FromC(call)->CancelWithError(
+      absl::CancelledError("CANCELLED"));
   return GRPC_CALL_OK;
 }
 
@@ -435,7 +436,8 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
 }
 
 void grpc_call_cancel_internal(grpc_call* call) {
-  grpc_core::Call::FromC(call)->CancelWithError(absl::CancelledError());
+  grpc_core::Call::FromC(call)->CancelWithError(
+      absl::CancelledError("CANCELLED"));
 }
 
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(

@@ -273,7 +273,7 @@ void FilterStackCall::ExternalUnref() {
   destroy_called_ = true;
   bool cancel = gpr_atm_acq_load(&received_final_op_atm_) == 0;
   if (cancel) {
-    CancelWithError(absl::CancelledError());
+    CancelWithError(absl::CancelledError("CANCELLED"));
   } else {
     // Unset the call combiner cancellation closure.  This has the
     // effect of scheduling the previously set cancellation closure, if
