@@ -49,7 +49,7 @@ class LargeMetadataTest {
       } else {
         num_requests_accepted++;
         EXPECT_EQ(status.status(), GRPC_STATUS_OK);
-        EXPECT_EQ(status.message(), "xyz");
+        EXPECT_EQ(status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
       }
     }
     return num_requests_accepted;

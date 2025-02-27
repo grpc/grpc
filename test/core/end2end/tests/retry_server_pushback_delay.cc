@@ -100,7 +100,7 @@ CORE_END2END_TEST(RetryTests, RetryServerPushbackDelay) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "message2");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "message2");
   EXPECT_EQ(s->method(), "/service/method");
   EXPECT_FALSE(client_close2.was_cancelled());
 }

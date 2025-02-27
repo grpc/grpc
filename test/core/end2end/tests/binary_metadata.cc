@@ -86,7 +86,8 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
   test.Step();
 
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), status_string.as_string_view());
+  EXPECT_EQ(server_status.message(),
+            IsErrorFlattenEnabled() ? "" : status_string.as_string_view());
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), request_payload);
