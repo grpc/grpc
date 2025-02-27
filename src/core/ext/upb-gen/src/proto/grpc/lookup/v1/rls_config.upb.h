@@ -304,12 +304,18 @@ UPB_INLINE bool grpc_lookup_v1_GrpcKeyBuilder_constant_keys_get(const grpc_looku
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, 0);
 }
-UPB_INLINE const grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry* grpc_lookup_v1_GrpcKeyBuilder_constant_keys_next(const grpc_lookup_v1_GrpcKeyBuilder* msg, size_t* iter) {
+UPB_INLINE bool grpc_lookup_v1_GrpcKeyBuilder_constant_keys_next(const grpc_lookup_v1_GrpcKeyBuilder* msg, upb_StringView* key, upb_StringView* val,
+                           size_t* iter) {
   const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 0, 3, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (const grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry*)_upb_map_next(map, iter);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
 }
 UPB_INLINE const upb_Map* _grpc_lookup_v1_GrpcKeyBuilder_constant_keys_upb_map(grpc_lookup_v1_GrpcKeyBuilder* msg) {
   const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 0, 3, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -418,13 +424,6 @@ UPB_INLINE bool grpc_lookup_v1_GrpcKeyBuilder_constant_keys_delete(grpc_lookup_v
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-UPB_INLINE grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry* grpc_lookup_v1_GrpcKeyBuilder_constant_keys_nextmutable(grpc_lookup_v1_GrpcKeyBuilder* msg, size_t* iter) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 0, 3, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init);
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry*)_upb_map_next(map, iter);
 }
 
 /* grpc.lookup.v1.GrpcKeyBuilder.Name */
@@ -786,12 +785,18 @@ UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_get(const grpc_looku
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, 0);
 }
-UPB_INLINE const grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry* grpc_lookup_v1_HttpKeyBuilder_constant_keys_next(const grpc_lookup_v1_HttpKeyBuilder* msg, size_t* iter) {
+UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_next(const grpc_lookup_v1_HttpKeyBuilder* msg, upb_StringView* key, upb_StringView* val,
+                           size_t* iter) {
   const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, 2, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (const grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry*)_upb_map_next(map, iter);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
 }
 UPB_INLINE const upb_Map* _grpc_lookup_v1_HttpKeyBuilder_constant_keys_upb_map(grpc_lookup_v1_HttpKeyBuilder* msg) {
   const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, 2, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -943,13 +948,6 @@ UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_delete(grpc_lookup_v
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-UPB_INLINE grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry* grpc_lookup_v1_HttpKeyBuilder_constant_keys_nextmutable(grpc_lookup_v1_HttpKeyBuilder* msg, size_t* iter) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, 2, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry*)_upb_map_next(map, iter);
 }
 
 /* grpc.lookup.v1.HttpKeyBuilder.ConstantKeysEntry */
