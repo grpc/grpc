@@ -52,13 +52,11 @@ brew install gnupg
 
 MONO_MACOS_PKG_DOWNLOAD_URL=https://download.mono-project.com/archive/6.12.0/macos-10-universal/MonoFramework-MDK-6.12.0.206.macos10.xamarin.universal.pkg
 mkdir -p /tmp/mono-install
-cd /tmp/mono-install
-wget -q -O ./mono-installer.pkg "$MONO_MACOS_PKG_DOWNLOAD_URL"
-sudo installer -pkg ./mono-installer.pkg -target /
-#exec bash -l
+wget -q -O /tmp/mono-install/mono-installer.pkg "$MONO_MACOS_PKG_DOWNLOAD_URL"
+sudo installer -pkg /tmp/mono-install/mono-installer.pkg -target /
 export PATH="/Library/Frameworks/Mono.framework/Versions/Current/Commands/:$PATH"
 mono --version
-cd ../..
+
 
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.16.0
