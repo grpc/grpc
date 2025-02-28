@@ -404,7 +404,7 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
   const auto status = server_trailing_metadata->get(GrpcStatusMetadata())
                           .value_or(GRPC_STATUS_UNKNOWN);
   *out_status = status;
-  if (IsErrorFlattenEnabled() && status != GRPC_STATUS_OK) {
+  if (!IsErrorFlattenEnabled() || status != GRPC_STATUS_OK) {
     Slice message_slice;
     if (Slice* message =
             server_trailing_metadata->get_pointer(GrpcMessageMetadata())) {
