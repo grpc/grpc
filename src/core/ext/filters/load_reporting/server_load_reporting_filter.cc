@@ -44,7 +44,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/channel/call_finalization.h"
+#include "src/core/call/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"

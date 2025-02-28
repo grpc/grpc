@@ -118,3 +118,17 @@ grpc_cc_test(
         "//src/core:filter_fusion",
     ],
 )
+
+grpc_cc_test(
+    name = "call_finalization_test",
+    srcs = ["call_finalization_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/promise:test_context",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

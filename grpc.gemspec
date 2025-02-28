@@ -1233,7 +1233,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/address_utils/parse_address.h )
   s.files += %w( src/core/lib/address_utils/sockaddr_utils.cc )
   s.files += %w( src/core/lib/address_utils/sockaddr_utils.h )
-  s.files += %w( src/core/lib/channel/call_finalization.h )
+  s.files += %w( src/core/call/call_finalization.h )
   s.files += %w( src/core/lib/channel/channel_args.cc )
   s.files += %w( src/core/lib/channel/channel_args.h )
   s.files += %w( src/core/lib/channel/channel_args_preconditioning.cc )

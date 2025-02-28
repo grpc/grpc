@@ -42,7 +42,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/filter/blackboard.h"
 #include "src/core/filter/filter_args.h"
-#include "src/core/lib/channel/call_finalization.h"
+#include "src/core/call/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"

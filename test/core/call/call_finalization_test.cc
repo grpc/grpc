@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/channel/call_finalization.h"
+#include "src/core/call/call_finalization.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 

@@ -8752,7 +8752,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_finalization",
     hdrs = [
-        "lib/channel/call_finalization.h",
+        "call/call_finalization.h",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [

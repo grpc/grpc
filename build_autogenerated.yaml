@@ -821,7 +821,7 @@ libs:
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/call_finalization.h
+  - src/core/call/call_finalization.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h
@@ -2360,7 +2360,7 @@ libs:
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/call_finalization.h
+  - src/core/call/call_finalization.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h
@@ -4408,7 +4408,7 @@ libs:
   - src/core/handshaker/security/security_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/call_finalization.h
+  - src/core/call/call_finalization.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h
@@ -6420,7 +6420,7 @@ targets:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/call_finalization.h
+  - src/core/call/call_finalization.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h
@@ -10561,7 +10561,7 @@ targets:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/call_finalization.h
+  - src/core/call/call_finalization.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h

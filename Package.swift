@@ -1227,7 +1227,7 @@ let package = Package(
         "src/core/lib/address_utils/parse_address.h",
         "src/core/lib/address_utils/sockaddr_utils.cc",
         "src/core/lib/address_utils/sockaddr_utils.h",
-        "src/core/lib/channel/call_finalization.h",
+        "src/core/call/call_finalization.h",
         "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_args_preconditioning.cc",
