@@ -1629,7 +1629,7 @@ let package = Package(
         "src/core/lib/transport/bdp_estimator.h",
         "src/core/call/call_arena_allocator.cc",
         "src/core/call/call_arena_allocator.h",
-        "src/core/lib/transport/call_destination.h",
+        "src/core/call/call_destination.h",
         "src/core/lib/transport/call_filters.cc",
         "src/core/lib/transport/call_filters.h",
         "src/core/lib/transport/call_final_info.cc",

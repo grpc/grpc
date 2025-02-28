@@ -38,7 +38,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/call/call_arena_allocator.h"
-#include "src/core/lib/transport/call_destination.h"
+#include "src/core/call/call_destination.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/cpp_impl_of.h"
 #include "src/core/util/ref_counted.h"

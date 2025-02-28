@@ -1631,7 +1631,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/bdp_estimator.h )
   s.files += %w( src/core/call/call_arena_allocator.cc )
   s.files += %w( src/core/call/call_arena_allocator.h )
-  s.files += %w( src/core/lib/transport/call_destination.h )
+  s.files += %w( src/core/call/call_destination.h )
   s.files += %w( src/core/lib/transport/call_filters.cc )
   s.files += %w( src/core/lib/transport/call_filters.h )
   s.files += %w( src/core/lib/transport/call_final_info.cc )
