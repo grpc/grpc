@@ -374,9 +374,11 @@ RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
 }
 
 uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
+  // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   // TODO(tjagtap) : [PH2][P0] Validate implementation.
   grpc_core::MutexLock lock(&transport_mutex_);
-  const uint32_t stream_id = next_stream_id_++;
+  const uint32_t stream_id = next_stream_id_;
+  next_stream_id_ += 2;
   const bool on_done_added =
       call_handler.OnDone([self = RefAsSubclass<Http2ClientTransport>(),
                            stream_id](bool cancelled) {
