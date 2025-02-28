@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/surface/server_call.h"
+#include "src/core/call/server_call.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>

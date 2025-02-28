@@ -1033,7 +1033,7 @@ libs:
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
-  - src/core/lib/surface/server_call.h
+  - src/core/call/server_call.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/call_arena_allocator.h
@@ -1897,7 +1897,7 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server_call.cc
+  - src/core/call/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
@@ -2567,7 +2567,7 @@ libs:
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
-  - src/core/lib/surface/server_call.h
+  - src/core/call/server_call.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/call_arena_allocator.h
@@ -3003,7 +3003,7 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server_call.cc
+  - src/core/call/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
@@ -4616,7 +4616,7 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server_call.h
+  - src/core/call/server_call.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
@@ -4923,7 +4923,7 @@ libs:
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server_call.cc
+  - src/core/call/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/call_arena_allocator.cc
@@ -6616,7 +6616,7 @@ targets:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server_call.h
+  - src/core/call/server_call.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
@@ -6888,7 +6888,7 @@ targets:
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server_call.cc
+  - src/core/call/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/call_arena_allocator.cc
@@ -10757,7 +10757,7 @@ targets:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server_call.h
+  - src/core/call/server_call.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
@@ -11029,7 +11029,7 @@ targets:
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server_call.cc
+  - src/core/call/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/call_arena_allocator.cc

@@ -1604,8 +1604,8 @@
     <file baseinstalldir="/" name="src/core/lib/surface/legacy_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/legacy_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/server_call.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/server_call.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/server_call.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/server_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
