@@ -282,7 +282,7 @@ void HttpRequest::AppendError(grpc_error_handle error) {
     overall_error_ = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
   }
   auto addr_text = ResolvedAddressToURI(addresses_[next_address_ - 1]);
-  if (addr_text.ok()) error = AddMessagePrefix(*addr_text, std::move(error));
+  if (addr_text.ok()) error = AddMessagePrefix(*addr_text, error);
   overall_error_ = grpc_error_add_child(overall_error_, std::move(error));
 }
 
