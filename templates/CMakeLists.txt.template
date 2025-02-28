@@ -304,6 +304,10 @@
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
   option(gRPC_DOWNLOAD_ARCHIVES "Download archives for empty 3rd party directories" ON)
 
+  if(gRPC_BUILD_TESTS)
+    enable_testing()
+  endif()
+
   set(gRPC_INSTALL_default ON)
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # Disable gRPC_INSTALL by default if building as a submodule
