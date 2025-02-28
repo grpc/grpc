@@ -144,22 +144,11 @@ absl::Status ReplaceStatusCode(const absl::Status& status,
 }  // namespace
 
 void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
-  if (IsErrorFlattenEnabled()) {
+  if (IsErrorFlattenEnabled() && key == StatusIntProperty::kRpcStatus) {
     // When setting the RPC status, just replace the top-level status code.
-    if (key == StatusIntProperty::kRpcStatus) {
-      *status =
-          ReplaceStatusCode(*status, static_cast<absl::StatusCode>(value));
-      return;
-    }
-    // When setting the HTTP2 error, if the status code is UNKNOWN, then
-    // set the status by converting the HTTP2 error.
-    if (key == StatusIntProperty::kHttp2Error &&
-        status->code() == absl::StatusCode::kUnknown) {
-      grpc_status_code code = grpc_http2_error_to_grpc_status(
-          static_cast<grpc_http2_error_code>(value), Timestamp::InfFuture());
-      *status = ReplaceStatusCode(*status, static_cast<absl::StatusCode>(code));
-      // Do NOT return here -- still want to set the payload.
-    }
+    *status =
+        ReplaceStatusCode(*status, static_cast<absl::StatusCode>(value));
+    return;
   }
   status->SetPayload(GetStatusIntPropertyUrl(key),
                      absl::Cord(std::to_string(value)));
@@ -204,7 +193,13 @@ absl::Status ReplaceStatusMessage(const absl::Status& status,
 void StatusSetStr(absl::Status* status, StatusStrProperty key,
                   absl::string_view value) {
   if (IsErrorFlattenEnabled() && key == StatusStrProperty::kGrpcMessage) {
-    if (!status->ok()) *status = ReplaceStatusMessage(*status, value);
+    if (!status->ok()) {
+      *status = ReplaceStatusMessage(
+          *status,
+          status->message().empty()
+              ? value
+              : absl::StrCat(value, " (", status->message(), ")"));
+    }
     return;
   }
   status->SetPayload(GetStatusStrPropertyUrl(key), absl::Cord(value));

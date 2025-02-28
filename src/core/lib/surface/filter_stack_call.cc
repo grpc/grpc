@@ -451,22 +451,12 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
   } else {
     std::optional<grpc_status_code> grpc_status = b->Take(GrpcStatusMetadata());
     if (grpc_status.has_value()) {
-      grpc_status_code status_code = *grpc_status;
-      grpc_error_handle error;
-      if (status_code != GRPC_STATUS_OK) {
-        Slice peer = GetPeerString();
-        error = grpc_error_set_int(
-            GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ",
-                                           peer.as_string_view())),
-            StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
-      }
       auto grpc_message = b->Take(GrpcMessageMetadata());
-      if (grpc_message.has_value()) {
-        error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
-                                   grpc_message->as_string_view());
-      } else if (!error.ok()) {
-        error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage, "");
-      }
+      absl::string_view message;
+      if (grpc_message.has_value()) message = grpc_message->as_string_view();
+      grpc_error_handle error = grpc_error_set_int(
+          GRPC_ERROR_CREATE(message),
+          StatusIntProperty::kRpcStatus, static_cast<intptr_t>(*grpc_status));
       SetFinalStatus(error);
     } else if (!is_client()) {
       SetFinalStatus(absl::OkStatus());

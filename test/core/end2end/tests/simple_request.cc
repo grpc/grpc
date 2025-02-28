@@ -73,7 +73,6 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   test.Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
   EXPECT_EQ(server_status.message(), "xyz");
-  EXPECT_THAT(server_status.error_string(), HasSubstr("UNIMPLEMENTED"));
   EXPECT_THAT(server_status.error_string(), HasSubstr("xyz"));
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
