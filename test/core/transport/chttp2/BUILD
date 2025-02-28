@@ -508,6 +508,7 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
+    tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -517,6 +518,7 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/chttp2:http2_frame_test_helper",
         "//test/core/transport/util:mock_promise_endpoint",
+        "//test/core/transport/util:transport_test",
     ],
 )
 
