@@ -57,6 +57,7 @@ sudo installer -pkg ./mono-installer.pkg -target /
 #exec bash -l
 export PATH="/Library/Frameworks/Mono.framework/Versions/Current/Commands/:$PATH"
 mono --version
+cd ../..
 
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.16.0
