@@ -123,12 +123,14 @@ class Http2ClientTransport final : public ClientTransport {
     // Transport holds one CallHandler object for each Stream.
     CallHandler call;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
+    // TODO(tjagtap) : [PH2][P2] : May be add state of Stream - Idle , Open etc
+    // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   };
 
   // TODO(tjagtap) : [PH2][P0] : Decide data type and queue name
   // MpscReceiver<ClientFrame> outgoing_frames_;
 
-  grpc_core::Mutex transport_mutex_;
+  Mutex transport_mutex_;
   // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this mapping
   // up in the on_done of the CallInitiator or CallHandler
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_

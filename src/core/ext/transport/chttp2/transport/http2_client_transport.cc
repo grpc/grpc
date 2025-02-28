@@ -362,7 +362,7 @@ Http2ClientTransport::~Http2ClientTransport() {
 
 RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
     uint32_t stream_id) {
-  grpc_core::MutexLock lock(&transport_mutex_);
+  MutexLock lock(&transport_mutex_);
   auto it = stream_list_.find(stream_id);
   if (it == stream_list_.end()) {
     HTTP2_CLIENT_DLOG
@@ -376,7 +376,7 @@ RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
 uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   // TODO(tjagtap) : [PH2][P0] Validate implementation.
-  grpc_core::MutexLock lock(&transport_mutex_);
+  MutexLock lock(&transport_mutex_);
   const uint32_t stream_id = next_stream_id_;
   next_stream_id_ += 2;
   const bool on_done_added =
@@ -388,7 +388,7 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
         if (cancelled) {
           // TODO(tjagtap) : [PH2][P1] Cancel implementation.
         }
-        grpc_core::MutexLock lock(&self->transport_mutex_);
+        MutexLock lock(&self->transport_mutex_);
         self->stream_list_.erase(stream_id);
       });
   if (!on_done_added) return 0;
