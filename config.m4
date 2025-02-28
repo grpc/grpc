@@ -694,7 +694,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/call/call_arena_allocator.cc \
     src/core/call/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
-    src/core/lib/transport/call_spine.cc \
+    src/core/call/call_spine.cc \
     src/core/lib/transport/call_state.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \

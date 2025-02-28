@@ -8914,10 +8914,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_spine",
     srcs = [
-        "lib/transport/call_spine.cc",
+        "call/call_spine.cc",
     ],
     hdrs = [
-        "lib/transport/call_spine.h",
+        "call/call_spine.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",

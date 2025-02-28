@@ -24,7 +24,7 @@
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/transport/call_spine.h"
+#include "src/core/call/call_spine.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/notification.h"
 

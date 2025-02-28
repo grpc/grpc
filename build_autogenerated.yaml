@@ -1040,7 +1040,7 @@ libs:
   - src/core/call/call_destination.h
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
+  - src/core/call/call_spine.h
   - src/core/lib/transport/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
@@ -1904,7 +1904,7 @@ libs:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
+  - src/core/call/call_spine.cc
   - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -2574,7 +2574,7 @@ libs:
   - src/core/call/call_destination.h
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
+  - src/core/call/call_spine.h
   - src/core/lib/transport/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
@@ -3010,7 +3010,7 @@ libs:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
+  - src/core/call/call_spine.cc
   - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -4622,7 +4622,7 @@ libs:
   - src/core/call/call_destination.h
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
+  - src/core/call/call_spine.h
   - src/core/lib/transport/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
@@ -4929,7 +4929,7 @@ libs:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
+  - src/core/call/call_spine.cc
   - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -6622,7 +6622,7 @@ targets:
   - src/core/call/call_destination.h
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
+  - src/core/call/call_spine.h
   - src/core/lib/transport/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
@@ -6894,7 +6894,7 @@ targets:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
+  - src/core/call/call_spine.cc
   - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -10763,7 +10763,7 @@ targets:
   - src/core/call/call_destination.h
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
+  - src/core/call/call_spine.h
   - src/core/lib/transport/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
@@ -11035,7 +11035,7 @@ targets:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
+  - src/core/call/call_spine.cc
   - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -15139,7 +15139,7 @@ targets:
   - src/core/call/call_arena_allocator.h
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
+  - src/core/call/call_spine.h
   - src/core/lib/transport/call_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -15213,7 +15213,7 @@ targets:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
+  - src/core/call/call_spine.cc
   - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/message.cc

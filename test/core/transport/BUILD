@@ -169,54 +169,12 @@ grpc_cc_test(
     ],
 )
 
-grpc_fuzz_test(
-    name = "call_spine",
-    srcs = ["call_spine_test.cc"],
-    external_deps = [
-        "fuzztest",
-        "fuzztest_main",
-        "gtest",
-    ],
-    deps = [
-        "//src/core:call_spine",
-        "//test/core/call/yodel:yodel_test",
-    ],
-)
-
-grpc_cc_library(
-    name = "call_spine_benchmarks",
-    testonly = 1,
-    hdrs = ["call_spine_benchmarks.h"],
-    external_deps = ["benchmark"],
-    visibility = ["//test/core:__subpackages__"],
-    deps = [
-        "//:exec_ctx",
-        "//src/core:all_ok",
-        "//src/core:call_spine",
-        "//src/core:default_event_engine",
-        "//src/core:map",
-        "//src/core:notification",
-        "//src/core:resource_quota",
-    ],
-)
-
-grpc_cc_benchmark(
-    name = "bm_call_spine",
-    srcs = ["bm_call_spine.cc"],
-    monitoring = HISTORY,
-    deps = [
-        ":call_spine_benchmarks",
-        "//:grpc",
-        "//src/core:default_event_engine",
-    ],
-)
-
 grpc_cc_benchmark(
     name = "bm_metadata",
     srcs = ["bm_metadata.cc"],
     monitoring = HISTORY,
     deps = [
-        ":call_spine_benchmarks",
+        "//test/core/call:call_spine_benchmarks",
         "//:grpc",
         "//src/core:default_event_engine",
     ],

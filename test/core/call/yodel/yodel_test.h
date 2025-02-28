@@ -28,7 +28,7 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/call/call_arena_allocator.h"
-#include "src/core/lib/transport/call_spine.h"
+#include "src/core/call/call_spine.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/util/debug_location.h"
 #include "test/core/call/yodel/fuzzer.pb.h"

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
+#ifndef GRPC_SRC_CORE_CALL_CALL_SPINE_H
+#define GRPC_SRC_CORE_CALL_CALL_SPINE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -599,4 +599,4 @@ void ForwardCall(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
+#endif  // GRPC_SRC_CORE_CALL_CALL_SPINE_H

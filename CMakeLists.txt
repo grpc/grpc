@@ -2782,7 +2782,7 @@ add_library(grpc
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
+  src/core/call/call_spine.cc
   src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -3525,7 +3525,7 @@ add_library(grpc_unsecure
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
+  src/core/call/call_spine.cc
   src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -5713,7 +5713,7 @@ add_library(grpc_authorization_provider
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
+  src/core/call/call_spine.cc
   src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -9443,7 +9443,7 @@ add_executable(call_utils_test
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
+  src/core/call/call_spine.cc
   src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -15555,7 +15555,7 @@ add_executable(filter_fusion_test
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
+  src/core/call/call_spine.cc
   src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -24916,7 +24916,7 @@ add_executable(request_buffer_test
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
+  src/core/call/call_spine.cc
   src/core/lib/transport/call_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/message.cc

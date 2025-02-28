@@ -17,7 +17,7 @@
 
 #include "absl/log/log.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
-#include "src/core/lib/transport/call_spine.h"
+#include "src/core/call/call_spine.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {

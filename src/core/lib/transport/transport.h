@@ -52,7 +52,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/lib/transport/call_final_info.h"
-#include "src/core/lib/transport/call_spine.h"
+#include "src/core/call/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"

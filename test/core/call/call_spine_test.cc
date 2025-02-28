@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/transport/call_spine.h"
+#include "src/core/call/call_spine.h"
 
 #include <grpc/grpc.h>
 
