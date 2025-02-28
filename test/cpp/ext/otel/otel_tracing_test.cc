@@ -675,7 +675,7 @@ TEST_F(OTelTracingTest, PropagationParentToChild) {
 
 class OTelTracingTestForTransparentRetries : public OTelTracingTest {
  protected:
-  void SetUp() {
+  void SetUp() override {
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           // Register FailFirstCallFilter to simulate transparent retries.
