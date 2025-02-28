@@ -72,6 +72,15 @@ struct Payload {
     if (payload.x == nullptr) return os << "Payload{nullptr}";
     return os << "Payload{" << *payload.x << "}";
   }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Payload& payload) {
+    if (payload.x == nullptr) {
+      sink.Append("Payload{nullptr}");
+    } else {
+      sink.Append(absl::StrCat(*payload.x));
+    }
+  }
 };
 Payload MakePayload(int value) { return Payload{std::make_unique<int>(value)}; }
 

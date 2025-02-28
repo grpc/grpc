@@ -35,7 +35,6 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * The authority for the RPC. If nil, the default authority will be used.
  *
- * Note: This property does not have effect on Cronet transport and will be ignored.
  * Note: This property cannot be used to validate a self-signed server certificate. It control the
  *       :authority header field of the call and performs an extra check that server's certificate
  *       matches the :authority header.
@@ -235,7 +234,6 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * The authority for the RPC. If nil, the default authority will be used.
  *
- * Note: This property does not have effect on Cronet transport and will be ignored.
  * Note: This property cannot be used to validate a self-signed server certificate. It control the
  *       :authority header field of the call and performs an extra check that server's certificate
  *       matches the :authority header.

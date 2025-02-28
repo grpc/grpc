@@ -27,13 +27,13 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 #include <time.h>
 
 #include <mutex>
 #include <thread>
 
 #include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

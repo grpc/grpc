@@ -724,11 +724,7 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
   grpc_core::RefCountedPtr<grpc_chttp2_transport> t(
       static_cast<grpc_chttp2_transport*>(tp));
   t->destroying = 1;
-  close_transport_locked(
-      t.get(),
-      grpc_error_set_int(GRPC_ERROR_CREATE("Transport destroyed"),
-                         grpc_core::StatusIntProperty::kOccurredDuringWrite,
-                         t->write_state));
+  close_transport_locked(t.get(), GRPC_ERROR_CREATE("Transport destroyed"));
   t->memory_owner.Reset();
 }
 
@@ -2857,9 +2853,7 @@ static void read_action_locked(
   }
   grpc_error_handle err = error;
   if (!err.ok()) {
-    err = grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1),
-        grpc_core::StatusIntProperty::kOccurredDuringWrite, t->write_state);
+    err = GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1);
   }
   std::swap(err, error);
   read_action_parse_loop_locked(std::move(t), std::move(err));

@@ -31,7 +31,10 @@ grpc_cc_test(
         "gtest",
         "otel/sdk/src/metrics",
     ],
-    tags = [ "use_openssl"
+  
+    tags = [ "use_openssl",
+        # TODO(b/398739502): Remove after fixing
+        "grpc:broken-internally",
     ],
     deps = [
         "//:grpc++",
@@ -53,7 +56,10 @@ grpc_cc_test(
         "gtest",
         "otel/sdk/src/metrics",
     ],
-    tags = [ "use_openssl"
+
+    tags = [ "use_openssl",
+        # TODO(b/398739502): Remove after fixing
+        "grpc:broken-internally",
     ],
     deps = [
         "//:grpc++",

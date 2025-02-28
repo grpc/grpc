@@ -45,6 +45,8 @@ grpc_cc_test(
     tags = [
         "no_mac",
         "no_windows",
+        "requires-net:ipv4",
+        "requires-net:loopback",
     ],
     uses_event_engine = True,
     uses_polling = True,
