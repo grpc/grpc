@@ -48,6 +48,7 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 brew config
 
 brew install cmake
+brew install gnupg
 
 MONO_MACOS_PKG_DOWNLOAD_URL=https://download.mono-project.com/archive/6.12.0/macos-10-universal/MonoFramework-MDK-6.12.0.206.macos10.xamarin.universal.pkg
 mkdir -p /tmp/mono-install
