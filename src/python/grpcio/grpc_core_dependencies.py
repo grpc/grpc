@@ -651,7 +651,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/surface/channel_create.cc',
     'src/core/lib/surface/channel_init.cc',
     'src/core/lib/surface/channel_stack_type.cc',
-    'src/core/lib/surface/client_call.cc',
+    'src/core/call/client_call.cc',
     'src/core/lib/surface/completion_queue.cc',
     'src/core/lib/surface/completion_queue_factory.cc',
     'src/core/lib/surface/connection_context.cc',

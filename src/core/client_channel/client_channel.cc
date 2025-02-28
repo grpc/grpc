@@ -75,7 +75,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/client_call.h"
+#include "src/core/call/client_call.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"

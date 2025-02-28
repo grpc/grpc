@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_SURFACE_CLIENT_CALL_H
-#define GRPC_SRC_CORE_LIB_SURFACE_CLIENT_CALL_H
+#ifndef GRPC_SRC_CORE_CALL_CLIENT_CALL_H
+#define GRPC_SRC_CORE_CALL_CLIENT_CALL_H
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -189,4 +189,4 @@ grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SURFACE_CLIENT_CALL_H
+#endif  // GRPC_SRC_CORE_CALL_CLIENT_CALL_H

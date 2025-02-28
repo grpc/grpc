@@ -1023,7 +1023,7 @@ libs:
   - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/client_call.h
+  - src/core/call/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/connection_context.h
@@ -1886,7 +1886,7 @@ libs:
   - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/client_call.cc
+  - src/core/call/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/connection_context.cc
@@ -2557,7 +2557,7 @@ libs:
   - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/client_call.h
+  - src/core/call/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/connection_context.h
@@ -2992,7 +2992,7 @@ libs:
   - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/client_call.cc
+  - src/core/call/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/connection_context.cc
@@ -4607,7 +4607,7 @@ libs:
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/client_call.h
+  - src/core/call/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/connection_context.h
@@ -4914,7 +4914,7 @@ libs:
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/client_call.cc
+  - src/core/call/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/connection_context.cc
@@ -6608,7 +6608,7 @@ targets:
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/client_call.h
+  - src/core/call/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
@@ -6880,7 +6880,7 @@ targets:
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/client_call.cc
+  - src/core/call/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
@@ -10749,7 +10749,7 @@ targets:
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/client_call.h
+  - src/core/call/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
@@ -11021,7 +11021,7 @@ targets:
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/client_call.cc
+  - src/core/call/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc

@@ -2764,7 +2764,7 @@ add_library(grpc
   src/core/lib/surface/channel_create.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
+  src/core/call/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/connection_context.cc
@@ -3507,7 +3507,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/channel_create.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
+  src/core/call/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/connection_context.cc
@@ -5698,7 +5698,7 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
+  src/core/call/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/connection_context.cc
@@ -9429,7 +9429,7 @@ add_executable(call_utils_test
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
+  src/core/call/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
@@ -15541,7 +15541,7 @@ add_executable(filter_fusion_test
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
+  src/core/call/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc

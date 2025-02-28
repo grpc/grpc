@@ -1583,8 +1583,8 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/client_call.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/client_call.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/client_call.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/client_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.cc" role="src" />
