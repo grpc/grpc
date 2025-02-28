@@ -1036,7 +1036,7 @@ libs:
   - src/core/call/server_call.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_arena_allocator.h
+  - src/core/call/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -1901,7 +1901,7 @@ libs:
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_arena_allocator.cc
+  - src/core/call/call_arena_allocator.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_spine.cc
@@ -2570,7 +2570,7 @@ libs:
   - src/core/call/server_call.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_arena_allocator.h
+  - src/core/call/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -3007,7 +3007,7 @@ libs:
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_arena_allocator.cc
+  - src/core/call/call_arena_allocator.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_spine.cc
@@ -4618,7 +4618,7 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/call/server_call.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/call_arena_allocator.h
+  - src/core/call/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -4926,7 +4926,7 @@ libs:
   - src/core/call/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/call_arena_allocator.cc
+  - src/core/call/call_arena_allocator.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_spine.cc
@@ -6618,7 +6618,7 @@ targets:
   - src/core/lib/surface/lame_client.h
   - src/core/call/server_call.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/call_arena_allocator.h
+  - src/core/call/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -6891,7 +6891,7 @@ targets:
   - src/core/call/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/call_arena_allocator.cc
+  - src/core/call/call_arena_allocator.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_spine.cc
@@ -10759,7 +10759,7 @@ targets:
   - src/core/lib/surface/lame_client.h
   - src/core/call/server_call.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/call_arena_allocator.h
+  - src/core/call/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -11032,7 +11032,7 @@ targets:
   - src/core/call/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/call_arena_allocator.cc
+  - src/core/call/call_arena_allocator.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_spine.cc
@@ -15136,7 +15136,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/transport/call_arena_allocator.h
+  - src/core/call/call_arena_allocator.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_spine.h
@@ -15210,7 +15210,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/transport/call_arena_allocator.cc
+  - src/core/call/call_arena_allocator.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_spine.cc

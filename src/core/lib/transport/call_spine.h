@@ -27,7 +27,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"

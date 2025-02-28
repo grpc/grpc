@@ -2779,7 +2779,7 @@ add_library(grpc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/bdp_estimator.cc
-  src/core/lib/transport/call_arena_allocator.cc
+  src/core/call/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_spine.cc
@@ -3522,7 +3522,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/bdp_estimator.cc
-  src/core/lib/transport/call_arena_allocator.cc
+  src/core/call/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_spine.cc
@@ -5710,7 +5710,7 @@ add_library(grpc_authorization_provider
   src/core/call/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/transport/call_arena_allocator.cc
+  src/core/call/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_spine.cc
@@ -9440,7 +9440,7 @@ add_executable(call_utils_test
   src/core/call/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/transport/call_arena_allocator.cc
+  src/core/call/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_spine.cc
@@ -15552,7 +15552,7 @@ add_executable(filter_fusion_test
   src/core/call/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/transport/call_arena_allocator.cc
+  src/core/call/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_spine.cc
@@ -24913,7 +24913,7 @@ add_executable(request_buffer_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/transport/call_arena_allocator.cc
+  src/core/call/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_spine.cc

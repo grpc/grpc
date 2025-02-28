@@ -35,7 +35,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/ref_counted_ptr.h"

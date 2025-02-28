@@ -1611,8 +1611,8 @@
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_arena_allocator.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_arena_allocator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_destination.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_filters.h" role="src" />

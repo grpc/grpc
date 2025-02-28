@@ -24,7 +24,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"

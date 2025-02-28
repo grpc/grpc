@@ -9025,10 +9025,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_arena_allocator",
     srcs = [
-        "lib/transport/call_arena_allocator.cc",
+        "call/call_arena_allocator.cc",
     ],
     hdrs = [
-        "lib/transport/call_arena_allocator.h",
+        "call/call_arena_allocator.h",
     ],
     deps = [
         "arena",

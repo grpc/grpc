@@ -23,7 +23,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/call/client_call.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/call/call_arena_allocator.h"
 
 namespace grpc_core {
 namespace {
