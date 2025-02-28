@@ -113,12 +113,15 @@ grpc_cc_test(
         "otel/exporters/memory:in_memory_span_exporter",
         "otel/sdk/src/trace",
     ],
-    tags = [],
+    tags = [
+        "grpc:broken-internally",
+    ],
     deps = [
         ":otel_test_library",
         "//:grpc++",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
+        "//test/core/test_util:fail_first_call_filter",
         "//test/core/test_util:grpc_test_util",
     ],
 )

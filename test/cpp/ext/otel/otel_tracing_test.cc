@@ -31,6 +31,7 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/host_port.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "test/core/test_util/fail_first_call_filter.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/port.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -52,7 +53,6 @@ using ::testing::VariantWith;
 class OTelTracingTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    grpc_core::CoreConfiguration::Reset();
     grpc_init();
     data_ =
         std::make_shared<opentelemetry::exporter::memory::InMemorySpanData>(10);
@@ -100,6 +100,7 @@ class OTelTracingTest : public ::testing::Test {
     grpc_core::ServerCallTracerFactory::TestOnlyReset();
     grpc_core::GlobalStatsPluginRegistryTestPeer::
         ResetGlobalStatsPluginRegistry();
+    grpc_core::CoreConfiguration::Reset();
   }
 
   void SendRPC(EchoTestService::Stub* stub) {
@@ -564,76 +565,6 @@ TEST_F(OTelTracingTest, Retries) {
   EXPECT_EQ(server_span_count, 3);
 }
 
-TEST_F(OTelTracingTest, TransparentRetries) {
-  {
-    // Start a bidi stream to make sure there is an ongoing RPC at the server.
-    grpc::ClientContext bidi_stream_context;
-    std::unique_ptr<ClientReaderWriterInterface<EchoRequest, EchoResponse>>
-        stream = stub_->BidiStream(&bidi_stream_context);
-    EchoRequest request;
-    request.set_message("foo");
-    EchoResponse bidi_response;
-    EXPECT_TRUE(stream->Write(request));
-    EXPECT_TRUE(stream->Read(&bidi_response));
-    // Start a new echo RPC which will remain pending till the bidi stream ends.
-    ClientContext echo_context;
-    echo_context.set_wait_for_ready(true);
-    EchoResponse echo_response;
-    absl::Notification notify;
-    stub_->async()->Echo(
-        &echo_context, &request, &echo_response, [&notify](Status s) {
-          EXPECT_TRUE(s.ok())
-              << "code=" << s.error_code() << " message=" << s.error_message();
-          notify.Notify();
-        });
-    // Restart the server which will result in the bidi stream failing and the
-    // new echo RPC starting.
-    RestartServer();
-    stream->WritesDone();
-    EXPECT_FALSE(stream->Read(&bidi_response));
-    EXPECT_EQ(stream->Finish().error_code(), StatusCode::UNAVAILABLE);
-    // The Echo RPC should have been transparently retried and finished
-    // successfully.
-    notify.WaitForNotificationWithTimeout(absl::Seconds(5));
-  }
-  auto spans = GetSpans(7);
-  // 2 client spans, 3 attempt spans, 2 server spans. There are cases where the
-  // Echo RPC will be transparently retried multiple times while the server is
-  // being restarted, so there might more than 7 spans.
-  EXPECT_GE(spans.size(), 7);
-  struct AttemptAttributes {
-    std::string PrettyPrint() {
-      return absl::StrFormat(
-          "previous-rpc-attempts: %lu, transparent-retry: %s",
-          previous_rpc_attempts, transparent_retry ? "true" : "false");
-    }
-    uint64_t previous_rpc_attempts;
-    bool transparent_retry;
-  };
-  std::vector<AttemptAttributes> attempt_attributes;
-  uint64_t server_span_count = 0;
-  for (const auto& span : spans) {
-    if (span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo") {
-      attempt_attributes.push_back(
-          {std::get<uint64_t>(
-               span->GetAttributes().at("previous-rpc-attempts")),
-           std::get<bool>(span->GetAttributes().at("transparent-retry"))});
-    } else if (span->GetName() == "Recv.grpc.testing.EchoTestService/Echo") {
-      ++server_span_count;
-    }
-  }
-  EXPECT_GE(attempt_attributes.size(), 2);
-  EXPECT_THAT(attempt_attributes[0], FieldsAre(/*previous-rpc-attempts=*/0,
-                                               /*transparent-retry=*/false))
-      << attempt_attributes[0].PrettyPrint();
-  for (int i = 1; i < attempt_attributes.size(); ++i) {
-    EXPECT_THAT(attempt_attributes[i], FieldsAre(/*previous-rpc-attempts=*/0,
-                                                 /*transparent-retry=*/true))
-        << attempt_attributes[i].PrettyPrint();
-  }
-  EXPECT_EQ(server_span_count, 1);
-}
-
 // An Echo Service that propagates an Echo request to another server.
 class PropagatingEchoTestServiceImpl : public EchoTestService::CallbackService {
  public:
@@ -740,6 +671,58 @@ TEST_F(OTelTracingTest, PropagationParentToChild) {
       });
   ASSERT_NE(server_span, spans.end());
   EXPECT_EQ((*server_span)->GetTraceId(), (*test_span)->GetTraceId());
+}
+
+class OTelTracingTestForTransparentRetries : public OTelTracingTest {
+ protected:
+  void SetUp() {
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          // Register FailFirstCallFilter to simulate transparent retries.
+          builder->channel_init()->RegisterFilter(
+              GRPC_CLIENT_SUBCHANNEL,
+              &grpc_core::testing::FailFirstCallFilter::kFilterVtable);
+        });
+    OTelTracingTest::SetUp();
+  }
+};
+
+TEST_F(OTelTracingTestForTransparentRetries, TransparentRetries) {
+  SendRPC(stub_.get());
+  auto spans = GetSpans(4);
+  // 1 client spans, 2 attempt spans, 1 server span.
+  EXPECT_EQ(spans.size(), 4);
+  struct AttemptAttributes {
+    std::string PrettyPrint() {
+      return absl::StrFormat(
+          "previous-rpc-attempts: %lu, transparent-retry: %s",
+          previous_rpc_attempts, transparent_retry ? "true" : "false");
+    }
+    uint64_t previous_rpc_attempts;
+    bool transparent_retry;
+  };
+  std::vector<AttemptAttributes> attempt_attributes;
+  uint64_t server_span_count = 0;
+  for (const auto& span : spans) {
+    if (span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo") {
+      attempt_attributes.push_back(
+          {std::get<uint64_t>(
+               span->GetAttributes().at("previous-rpc-attempts")),
+           std::get<bool>(span->GetAttributes().at("transparent-retry"))});
+    } else if (span->GetName() == "Recv.grpc.testing.EchoTestService/Echo") {
+      ++server_span_count;
+    }
+  }
+  EXPECT_EQ(attempt_attributes.size(), 2);
+  EXPECT_THAT(attempt_attributes[0], FieldsAre(/*previous-rpc-attempts=*/0,
+                                               /*transparent-retry=*/false))
+      << attempt_attributes[0].PrettyPrint();
+  for (int i = 1; i < attempt_attributes.size(); ++i) {
+    EXPECT_THAT(attempt_attributes[i], FieldsAre(/*previous-rpc-attempts=*/0,
+                                                 /*transparent-retry=*/true))
+        << attempt_attributes[i].PrettyPrint();
+  }
+  EXPECT_EQ(server_span_count, 1);
 }
 
 }  // namespace

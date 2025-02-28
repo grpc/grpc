@@ -12844,6 +12844,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/end2end/tests/no_logging.cc
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+    test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/fuzz_config_vars.cc
     test/core/test_util/test_lb_policies.cc
@@ -13025,6 +13026,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/end2end/tests/write_buffering_at_end.cc
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+    test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/fuzz_config_vars.cc
     test/core/test_util/test_lb_policies.cc
@@ -13117,6 +13119,7 @@ add_executable(end2end_http2_no_logging_test
   test/core/end2end/tests/no_logging.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
@@ -13208,6 +13211,7 @@ add_executable(end2end_http2_security_no_logging_test
   test/core/end2end/tests/no_logging.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
@@ -13387,6 +13391,7 @@ add_executable(end2end_http2_security_test
   test/core/end2end/tests/write_buffering_at_end.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
@@ -13566,6 +13571,7 @@ add_executable(end2end_http2_test
   test/core/end2end/tests/write_buffering_at_end.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
@@ -13657,6 +13663,7 @@ add_executable(end2end_inproc_no_logging_test
   test/core/end2end/tests/no_logging.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
@@ -13836,6 +13843,7 @@ add_executable(end2end_inproc_test
   test/core/end2end/tests/write_buffering_at_end.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
@@ -13927,6 +13935,7 @@ add_executable(end2end_posix_no_logging_test
   test/core/end2end/tests/no_logging.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
@@ -14106,6 +14115,7 @@ add_executable(end2end_posix_test
   test/core/end2end/tests/write_buffering_at_end.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
@@ -21848,6 +21858,7 @@ add_executable(otel_tracing_test
   src/cpp/ext/otel/otel_client_call_tracer.cc
   src/cpp/ext/otel/otel_plugin.cc
   src/cpp/ext/otel/otel_server_call_tracer.cc
+  test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/cpp/end2end/test_service_impl.cc
   test/cpp/ext/otel/otel_test_library.cc
