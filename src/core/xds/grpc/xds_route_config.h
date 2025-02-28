@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "re2/re2.h"
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_http_filter.h"

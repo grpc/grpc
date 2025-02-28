@@ -59,7 +59,7 @@
 #include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/resolved_address.h"

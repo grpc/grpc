@@ -43,7 +43,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/util/env.h"
 #include "src/core/util/gethostname.h"
 #include "src/core/util/host_port.h"

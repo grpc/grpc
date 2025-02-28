@@ -35,7 +35,7 @@
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"

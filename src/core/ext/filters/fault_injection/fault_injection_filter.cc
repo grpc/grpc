@@ -38,7 +38,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/sleep.h"

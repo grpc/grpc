@@ -2607,7 +2607,7 @@ add_library(grpc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
+  src/core/call/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -3355,7 +3355,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
+  src/core/call/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -5542,7 +5542,7 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
+  src/core/call/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -9283,7 +9283,7 @@ add_executable(call_utils_test
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
+  src/core/call/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -15395,7 +15395,7 @@ add_executable(filter_fusion_test
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
+  src/core/call/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc

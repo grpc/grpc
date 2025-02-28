@@ -2022,8 +2022,8 @@ src/core/lib/channel/connected_channel.cc \
 src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
-src/core/lib/channel/status_util.cc \
-src/core/lib/channel/status_util.h \
+src/core/call/status_util.cc \
+src/core/call/status_util.h \
 src/core/lib/compression/compression.cc \
 src/core/lib/compression/compression_internal.cc \
 src/core/lib/compression/compression_internal.h \

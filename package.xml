@@ -1231,8 +1231,8 @@
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/status_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />

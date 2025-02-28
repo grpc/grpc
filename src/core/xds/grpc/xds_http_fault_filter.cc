@@ -36,7 +36,7 @@
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
