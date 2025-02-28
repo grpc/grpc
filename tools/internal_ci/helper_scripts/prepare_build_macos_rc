@@ -55,6 +55,7 @@ cd /tmp/mono-install
 wget -q -O ./mono-installer.pkg "$MONO_MACOS_PKG_DOWNLOAD_URL"
 sudo installer -pkg ./mono-installer.pkg -target /
 #exec bash -l
+export PATH="/Library/Frameworks/Mono.framework/Versions/Current/Commands/:$PATH"
 mono --version
 
 # Add GCP credentials for BQ access
