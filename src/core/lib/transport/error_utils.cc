@@ -80,7 +80,7 @@ void grpc_error_get_status(grpc_error_handle error,
     }
     if (http_error != nullptr) {
       // If the HTTP2 error code attribute is present, use it.  Otherwise,
-      // if the statuc code is something other than UNKNOWN, convert from
+      // if the status code is something other than UNKNOWN, convert from
       // that.  Otherwise, set a default based on whether the status
       // code is OK.
       if (http_error_code.has_value()) {
