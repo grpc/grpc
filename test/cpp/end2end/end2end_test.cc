@@ -44,6 +44,7 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/call/call_credentials.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
@@ -1515,7 +1516,13 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
-    EXPECT_THAT(context.debug_error_string(), ::testing::HasSubstr("INTERNAL"));
+    if (grpc_core::IsErrorFlattenEnabled()) {
+      EXPECT_THAT(context.debug_error_string(),
+                  ::testing::HasSubstr("INTERNAL"));
+    } else {
+      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
+      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
+    }
   }
 }
 

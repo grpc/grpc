@@ -87,6 +87,9 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
+            "xds_end2end_test": [
+                "error_flatten",
+            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -148,6 +151,9 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
+            "xds_end2end_test": [
+                "error_flatten",
+            ],
         },
         "on": {
             "core_end2end_test": [
@@ -194,6 +200,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "error_flatten",
             ],
         },
         "on": {

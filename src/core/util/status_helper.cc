@@ -146,8 +146,7 @@ absl::Status ReplaceStatusCode(const absl::Status& status,
 void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
   if (IsErrorFlattenEnabled() && key == StatusIntProperty::kRpcStatus) {
     // When setting the RPC status, just replace the top-level status code.
-    *status =
-        ReplaceStatusCode(*status, static_cast<absl::StatusCode>(value));
+    *status = ReplaceStatusCode(*status, static_cast<absl::StatusCode>(value));
     return;
   }
   status->SetPayload(GetStatusIntPropertyUrl(key),
@@ -195,10 +194,9 @@ void StatusSetStr(absl::Status* status, StatusStrProperty key,
   if (IsErrorFlattenEnabled() && key == StatusStrProperty::kGrpcMessage) {
     if (!status->ok()) {
       *status = ReplaceStatusMessage(
-          *status,
-          status->message().empty()
-              ? value
-              : absl::StrCat(value, " (", status->message(), ")"));
+          *status, status->message().empty()
+                       ? value
+                       : absl::StrCat(value, " (", status->message(), ")"));
     }
     return;
   }
@@ -229,9 +227,8 @@ void StatusAddChild(absl::Status* status, absl::Status child) {
     // Parent and child are both non-OK, so we need to merge.
     absl::Status new_status(
         // Prefer any other code over UNKNOWN.
-        status->code() == absl::StatusCode::kUnknown
-            ? child.code()
-            : status->code(),
+        status->code() == absl::StatusCode::kUnknown ? child.code()
+                                                     : status->code(),
         absl::StrCat(status->message(), " (", child.message(), ")"));
     // TODO(roth): Remove this once we eliminate all status attributes.
     status->ForEachPayload(
