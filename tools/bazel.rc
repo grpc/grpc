@@ -67,7 +67,7 @@ build:asan --copt=-DADDRESS_SANITIZER  # used by absl
 build:asan --linkopt=-fsanitize=address
 build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
-build:asan --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
+#build:asan --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
 
 build:fuzzer_asan --strip=never
 build:fuzzer_asan --define=grpc_build_fuzzers=true
@@ -86,7 +86,7 @@ build:fuzzer_asan --copt=-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 build:fuzzer_asan --linkopt=-fsanitize=fuzzer,address
 build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:fuzzer_asan --action_env=LSAN_OPTIONS=suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
-build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
+#build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
 
 build:coverage --copt=-fprofile-instr-generate
 build:coverage --copt=-fcoverage-mapping
@@ -115,7 +115,7 @@ build:asan_macos --copt=-fno-omit-frame-pointer
 build:asan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:asan_macos --linkopt=-fsanitize=address
 build:asan_macos --action_env=ASAN_OPTIONS=detect_leaks=0
-build:asan_macos --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
+#build:asan_macos --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
 build:asan_macos --dynamic_mode=off
 
 build:msan --strip=never
