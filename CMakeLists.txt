@@ -2783,7 +2783,7 @@ add_library(grpc
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/call/call_spine.cc
-  src/core/lib/transport/call_state.cc
+  src/core/call/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
@@ -3526,7 +3526,7 @@ add_library(grpc_unsecure
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/call/call_spine.cc
-  src/core/lib/transport/call_state.cc
+  src/core/call/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
@@ -5714,7 +5714,7 @@ add_library(grpc_authorization_provider
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/call/call_spine.cc
-  src/core/lib/transport/call_state.cc
+  src/core/call/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
@@ -9047,7 +9047,7 @@ add_executable(call_filters_test
   src/core/lib/surface/channel_stack_type.cc
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_state.cc
+  src/core/call/call_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
@@ -9159,7 +9159,7 @@ add_executable(call_state_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/transport/call_state.cc
+  src/core/call/call_state.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
@@ -9444,7 +9444,7 @@ add_executable(call_utils_test
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/call/call_spine.cc
-  src/core/lib/transport/call_state.cc
+  src/core/call/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
@@ -15556,7 +15556,7 @@ add_executable(filter_fusion_test
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/call/call_spine.cc
-  src/core/lib/transport/call_state.cc
+  src/core/call/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
@@ -24917,7 +24917,7 @@ add_executable(request_buffer_test
   src/core/call/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/call/call_spine.cc
-  src/core/lib/transport/call_state.cc
+  src/core/call/call_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc

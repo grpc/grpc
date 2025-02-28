@@ -54,20 +54,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "call_state_test",
-    srcs = ["call_state_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//src/core:call_state",
-        "//test/core/promise:poll_matcher",
-    ],
-)
-
-grpc_cc_test(
     name = "connectivity_state_test",
     srcs = ["connectivity_state_test.cc"],
     external_deps = [

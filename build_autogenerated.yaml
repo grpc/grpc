@@ -1041,7 +1041,7 @@ libs:
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/call/call_spine.h
-  - src/core/lib/transport/call_state.h
+  - src/core/call/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -1905,7 +1905,7 @@ libs:
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/call/call_spine.cc
-  - src/core/lib/transport/call_state.cc
+  - src/core/call/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/interception_chain.cc
@@ -2575,7 +2575,7 @@ libs:
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/call/call_spine.h
-  - src/core/lib/transport/call_state.h
+  - src/core/call/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -3011,7 +3011,7 @@ libs:
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/call/call_spine.cc
-  - src/core/lib/transport/call_state.cc
+  - src/core/call/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/interception_chain.cc
@@ -4623,7 +4623,7 @@ libs:
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/call/call_spine.h
-  - src/core/lib/transport/call_state.h
+  - src/core/call/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -4930,7 +4930,7 @@ libs:
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/call/call_spine.cc
-  - src/core/lib/transport/call_state.cc
+  - src/core/call/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/interception_chain.cc
@@ -6218,7 +6218,7 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_state.h
+  - src/core/call/call_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
@@ -6286,7 +6286,7 @@ targets:
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_state.cc
+  - src/core/call/call_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
@@ -6343,7 +6343,7 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/transport/call_state.h
+  - src/core/call/call_state.h
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
@@ -6359,7 +6359,7 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/transport/call_state.cc
+  - src/core/call/call_state.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -6623,7 +6623,7 @@ targets:
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/call/call_spine.h
-  - src/core/lib/transport/call_state.h
+  - src/core/call/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -6895,7 +6895,7 @@ targets:
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/call/call_spine.cc
-  - src/core/lib/transport/call_state.cc
+  - src/core/call/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/interception_chain.cc
@@ -10764,7 +10764,7 @@ targets:
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/call/call_spine.h
-  - src/core/lib/transport/call_state.h
+  - src/core/call/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -11036,7 +11036,7 @@ targets:
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/call/call_spine.cc
-  - src/core/lib/transport/call_state.cc
+  - src/core/call/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/interception_chain.cc
@@ -15140,7 +15140,7 @@ targets:
   - src/core/call/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/call/call_spine.h
-  - src/core/lib/transport/call_state.h
+  - src/core/call/call_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
@@ -15214,7 +15214,7 @@ targets:
   - src/core/call/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/call/call_spine.cc
-  - src/core/lib/transport/call_state.cc
+  - src/core/call/call_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc

@@ -8766,10 +8766,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_state",
     srcs = [
-        "lib/transport/call_state.cc",
+        "call/call_state.cc",
     ],
     hdrs = [
-        "lib/transport/call_state.h",
+        "call/call_state.h",
     ],
     deps = [
         "activity",

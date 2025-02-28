@@ -1620,8 +1620,8 @@
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/call_spine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/call_spine.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_state.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_state.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/custom_metadata.h" role="src" />
