@@ -231,7 +231,7 @@ def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, 
             deps = _DEPS + deps + ["end2end_test_lib_no_fuzztest_gtest"],
             data = _DATA,
             shard_count = shard_count,
-            tags = tags + ["core_end2end_test"],
+            tags = tags + ["core_end2end_test", "grpc:no-internal-poller"],
             flaky = flaky,
         )
 

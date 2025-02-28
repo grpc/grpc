@@ -69,7 +69,6 @@ TraceFlag client_channel_lb_call_trace(false, "client_channel_lb_call");
 TraceFlag client_idle_filter_trace(false, "client_idle_filter");
 TraceFlag compression_trace(false, "compression");
 TraceFlag connectivity_state_trace(false, "connectivity_state");
-TraceFlag cronet_trace(false, "cronet");
 TraceFlag dns_resolver_trace(false, "dns_resolver");
 TraceFlag environment_autodetect_trace(false, "environment_autodetect");
 TraceFlag event_engine_trace(false, "event_engine");
@@ -153,7 +152,6 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"client_idle_filter", &client_idle_filter_trace},
           {"compression", &compression_trace},
           {"connectivity_state", &connectivity_state_trace},
-          {"cronet", &cronet_trace},
           {"dns_resolver", &dns_resolver_trace},
           {"environment_autodetect", &environment_autodetect_trace},
           {"event_engine", &event_engine_trace},

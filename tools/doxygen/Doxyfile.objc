@@ -804,7 +804,6 @@ doc/workarounds.md \
 doc/xds-test-descriptions.md \
 src/objective-c/GRPCClient/GRPCCall+ChannelArg.h \
 src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h \
-src/objective-c/GRPCClient/GRPCCall+Cronet.h \
 src/objective-c/GRPCClient/GRPCCall+GID.h \
 src/objective-c/GRPCClient/GRPCCall+Interceptor.h \
 src/objective-c/GRPCClient/GRPCCall+OAuth2.h \

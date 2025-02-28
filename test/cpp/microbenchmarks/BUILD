@@ -410,6 +410,10 @@ grpc_cc_benchmark(
         "otel/sdk/src/metrics",
     ],
     monitoring = HISTORY,
+    tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
     deps = [
         ":helpers",
         "//src/core:metrics",

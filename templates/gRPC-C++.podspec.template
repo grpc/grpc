@@ -118,8 +118,8 @@
       :tag => "v#{version}",
     }
 
-    s.ios.deployment_target = '11.0'
-    s.osx.deployment_target = '10.14'
+    s.ios.deployment_target = '15.0'
+    s.osx.deployment_target = '11.0'
     s.tvos.deployment_target = '13.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
@@ -200,25 +200,6 @@
       ss.dependency "#{s.name}/Interface", version
 
       ss.source_files = ${ruby_multiline_list(grpcpp_proto_files, 22)}
-    end
-
-    s.subspec 'Cronet-Interface' do |ss|
-      ss.header_mappings_dir = 'include/grpcpp'
-      ss.public_header_files = "include/grpcpp/security/cronet_credentials.h",
-                               "include/grpcpp/security/cronet_credentials_impl.h"
-      ss.source_files = "include/grpcpp/security/cronet_credentials.h",
-                        "include/grpcpp/security/cronet_credentials_impl.h"
-    end
-
-    s.subspec 'Cronet-Implementation' do |ss|
-      ss.header_mappings_dir = '.'
-      ss.dependency "#{s.name}/Cronet-Interface", version
-      ss.dependency "#{s.name}/Implementation", version
-      ss.dependency "#{s.name}/Privacy", version
-
-      ss.dependency 'gRPC-Core/Cronet-Implementation', version
-
-      ss.source_files = "src/cpp/client/cronet_credentials.cc"
     end
 
     # patch include of openssl to openssl_grpc

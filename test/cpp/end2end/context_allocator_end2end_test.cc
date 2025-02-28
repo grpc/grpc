@@ -24,7 +24,6 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/message_allocator.h>
-#include <gtest/gtest.h>
 
 #include <algorithm>
 #include <atomic>
@@ -37,6 +36,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"

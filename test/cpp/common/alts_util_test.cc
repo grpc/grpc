@@ -19,8 +19,8 @@
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
 #include <grpcpp/security/auth_context.h>
-#include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"

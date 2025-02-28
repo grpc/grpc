@@ -13,8 +13,7 @@
 // limitations under the License.
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 
-#include <gtest/gtest.h>
-
+#include "gtest/gtest.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/test_util/test_config.h"
 
