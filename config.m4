@@ -692,7 +692,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/call/call_arena_allocator.cc \
-    src/core/lib/transport/call_filters.cc \
+    src/core/call/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/call_state.cc \
