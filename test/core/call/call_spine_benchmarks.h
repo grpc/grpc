@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
-#define GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
+#ifndef GRPC_TEST_CORE_CALL_CALL_SPINE_BENCHMARKS_H
+#define GRPC_TEST_CORE_CALL_CALL_SPINE_BENCHMARKS_H
 
 #include <memory>
 
@@ -363,4 +363,4 @@ class TransportFixture {
   BENCHMARK(BM_UnaryWithSpawnPerEnd<Fixture>); \
   BENCHMARK(BM_ClientToServerStreaming<Fixture>)
 
-#endif  // GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
+#endif  // GRPC_TEST_CORE_CALL_CALL_SPINE_BENCHMARKS_H
