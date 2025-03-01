@@ -160,9 +160,9 @@ grpc_cc_benchmark(
     srcs = ["bm_metadata.cc"],
     monitoring = HISTORY,
     deps = [
-        "//test/core/call:call_spine_benchmarks",
         "//:grpc",
         "//src/core:default_event_engine",
+        "//test/core/call:call_spine_benchmarks",
     ],
 )
 
