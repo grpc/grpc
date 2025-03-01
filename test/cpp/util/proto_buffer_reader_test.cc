@@ -16,8 +16,8 @@
 
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/proto_buffer_reader.h>
-#include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {

@@ -50,6 +50,7 @@
   expiry: 2025/06/01
   owner: roth@google.com
   test_tags: []
+  allow_in_fuzzing_config: false
 - name: call_tracer_transport_fix
   description: Use the correct call tracer in transport
   expiry: 2025/06/01
@@ -147,7 +148,7 @@
   description:
     Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on
     creation and destruction.
-  expiry: 2025/03/02
+  expiry: 2025/06/01
   owner: hork@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test"]
 - name: promise_based_http2_client_transport

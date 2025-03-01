@@ -25,7 +25,7 @@ using grpc_event_engine::experimental::EventEngine;
 using testing::WithArgs;
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace util {
 namespace testing {
 
 void MockPromiseEndpoint::ExpectRead(
@@ -51,6 +51,26 @@ void MockPromiseEndpoint::ExpectRead(
             } else {
               return true;
             }
+          }));
+}
+
+void MockPromiseEndpoint::ExpectReadClose(
+    absl::Status status,
+    grpc_event_engine::experimental::EventEngine* schedule_on_event_engine) {
+  DCHECK_NE(status, absl::OkStatus());
+  DCHECK_NE(schedule_on_event_engine, nullptr);
+  EXPECT_CALL(*endpoint, Read)
+      .InSequence(read_sequence)
+      .WillOnce(WithArgs<0, 1>(
+          [status = std::move(status), schedule_on_event_engine](
+              absl::AnyInvocable<void(absl::Status)> on_read,
+              GRPC_UNUSED grpc_event_engine::experimental::SliceBuffer*
+                  buffer) {
+            schedule_on_event_engine->Run(
+                [on_read = std::move(on_read), status]() mutable {
+                  on_read(status);
+                });
+            return false;
           }));
 }
 
@@ -109,5 +129,5 @@ void MockPromiseEndpoint::CaptureWrites(SliceBuffer& writes,
 }
 
 }  // namespace testing
-}  // namespace chaotic_good
+}  // namespace util
 }  // namespace grpc_core

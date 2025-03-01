@@ -267,7 +267,7 @@ def server_server_latency(labels: Mapping[str, str]) -> view_module.View:
     view = view_module.View(
         "grpc.io/server/server_latency",
         "The total time taken by an RPC from server transport's"
-        + " (HTTP2 / inproc / cronet) perspective.",
+        + " (HTTP2 / inproc) perspective.",
         [TagKey(key) for key in labels.keys()]
         + [server_method_tag_key(), server_status_tag_key()],
         _measures.SERVER_SERVER_LATENCY_MEASURE,

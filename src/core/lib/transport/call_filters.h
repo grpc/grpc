@@ -186,6 +186,12 @@ class NextMessage {
     DCHECK(has_value());
     return *message_;
   }
+  const Message& value() const {
+    DCHECK_NE(message_, taken());
+    DCHECK(ok());
+    DCHECK(has_value());
+    return *message_;
+  }
   MessageHandle TakeValue() {
     DCHECK_NE(message_, taken());
     DCHECK(ok());
@@ -198,6 +204,19 @@ class NextMessage {
     DCHECK(!progressed());
     (call_state_->*on_progress)();
     call_state_ = nullptr;
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const NextMessage& msg) {
+    if (!msg.ok()) {
+      sink.Append("<failure>");
+      return;
+    }
+    if (!msg.has_value()) {
+      sink.Append("<end-of-stream>");
+      return;
+    }
+    AbslStringify(sink, msg.value());
   }
 
  private:

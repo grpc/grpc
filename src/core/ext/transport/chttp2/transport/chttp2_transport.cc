@@ -724,11 +724,7 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
   grpc_core::RefCountedPtr<grpc_chttp2_transport> t(
       static_cast<grpc_chttp2_transport*>(tp));
   t->destroying = 1;
-  close_transport_locked(
-      t.get(),
-      grpc_error_set_int(GRPC_ERROR_CREATE("Transport destroyed"),
-                         grpc_core::StatusIntProperty::kOccurredDuringWrite,
-                         t->write_state));
+  close_transport_locked(t.get(), GRPC_ERROR_CREATE("Transport destroyed"));
   t->memory_owner.Reset();
 }
 
@@ -2311,11 +2307,16 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                             &http_error, nullptr);
       grpc_core::MaybeTarpit(
           t, tarpit,
-          [id = s->id, http_error,
+          [s, http_error,
            remove_stream_handle = grpc_chttp2_mark_stream_closed(
                t, s, 1, 1, due_to_error)](grpc_chttp2_transport* t) {
+            // Do not send RST_STREAM from the client for a stream that hasn't
+            // sent headers yet (still in "idle" state). Note that since we have
+            // marked the stream closed above, we won't be writing to it
+            // anymore.
+            if (t->is_client && !s->sent_initial_metadata) return;
             grpc_chttp2_add_rst_stream_to_next_write(
-                t, id, static_cast<uint32_t>(http_error), nullptr);
+                t, s->id, static_cast<uint32_t>(http_error), nullptr);
             grpc_chttp2_initiate_write(t,
                                        GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
           });
@@ -2857,9 +2858,7 @@ static void read_action_locked(
   }
   grpc_error_handle err = error;
   if (!err.ok()) {
-    err = grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1),
-        grpc_core::StatusIntProperty::kOccurredDuringWrite, t->write_state);
+    err = GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1);
   }
   std::swap(err, error);
   read_action_parse_loop_locked(std::move(t), std::move(err));

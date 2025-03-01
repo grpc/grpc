@@ -21,9 +21,9 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/config.h>
-#include <gtest/gtest.h>
 #include <sys/socket.h>
 
+#include "gtest/gtest.h"
 #include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"

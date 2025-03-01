@@ -17,7 +17,6 @@
 //
 
 #include <grpc/grpc.h>
-#include <gtest/gtest.h>
 #include <spawn.h>
 
 #include <sstream>
@@ -28,6 +27,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/time/time.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

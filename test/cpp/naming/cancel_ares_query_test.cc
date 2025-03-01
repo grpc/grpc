@@ -16,7 +16,6 @@
 //
 //
 
-#include <gmock/gmock.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -31,6 +30,7 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "gmock/gmock.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"

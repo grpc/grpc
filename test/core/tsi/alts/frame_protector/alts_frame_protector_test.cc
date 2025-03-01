@@ -19,9 +19,9 @@
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
 #include <stdbool.h>
 
+#include "gtest/gtest.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"

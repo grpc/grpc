@@ -37,7 +37,7 @@ DebugOnlyTraceFlag fd_trace_trace(false, "fd_trace");
 DebugOnlyTraceFlag lb_policy_refcount_trace(false, "lb_policy_refcount");
 DebugOnlyTraceFlag party_state_trace(false, "party_state");
 DebugOnlyTraceFlag pending_tags_trace(false, "pending_tags");
-DebugOnlyTraceFlag ph2_trace(false, "ph2");
+DebugOnlyTraceFlag http2_ph2_transport_trace(false, "http2_ph2_transport");
 DebugOnlyTraceFlag polling_trace(false, "polling");
 DebugOnlyTraceFlag polling_api_trace(false, "polling_api");
 DebugOnlyTraceFlag promise_primitives_trace(false, "promise_primitives");
@@ -69,7 +69,6 @@ TraceFlag client_channel_lb_call_trace(false, "client_channel_lb_call");
 TraceFlag client_idle_filter_trace(false, "client_idle_filter");
 TraceFlag compression_trace(false, "compression");
 TraceFlag connectivity_state_trace(false, "connectivity_state");
-TraceFlag cronet_trace(false, "cronet");
 TraceFlag dns_resolver_trace(false, "dns_resolver");
 TraceFlag environment_autodetect_trace(false, "environment_autodetect");
 TraceFlag event_engine_trace(false, "event_engine");
@@ -153,7 +152,6 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"client_idle_filter", &client_idle_filter_trace},
           {"compression", &compression_trace},
           {"connectivity_state", &connectivity_state_trace},
-          {"cronet", &cronet_trace},
           {"dns_resolver", &dns_resolver_trace},
           {"environment_autodetect", &environment_autodetect_trace},
           {"event_engine", &event_engine_trace},
@@ -227,7 +225,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"lb_policy_refcount", &lb_policy_refcount_trace},
           {"party_state", &party_state_trace},
           {"pending_tags", &pending_tags_trace},
-          {"ph2", &ph2_trace},
+          {"http2_ph2_transport", &http2_ph2_transport_trace},
           {"polling", &polling_trace},
           {"polling_api", &polling_api_trace},
           {"promise_primitives", &promise_primitives_trace},

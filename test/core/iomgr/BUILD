@@ -117,7 +117,11 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_windows",
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -191,6 +195,10 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
+    tags = [
+        # TODO(b/168022461): Remove this tag once the bug is fixed.
+        "grpc:fails-internally",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -227,7 +235,11 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_windows",
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -247,6 +259,8 @@ grpc_cc_test(
         "endpoint_test",
         "event_engine_client_test",
         "no_windows",
+        "requires-net:ipv4",
+        "requires-net:loopback",
     ],
     deps = [
         "//:gpr",
@@ -270,6 +284,8 @@ grpc_cc_test(
         "event_engine_listener_test",
         "no_mac",  # TODO(jtattermusch): Reenable once https://github.com/grpc/grpc/issues/21282 is fixed.
         "no_windows",
+        "requires-net:ipv4",
+        "requires-net:loopback",
     ],
     deps = [
         ":endpoint_tests",

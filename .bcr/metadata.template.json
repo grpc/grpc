@@ -1,0 +1,14 @@
+{
+    "homepage": "https://github.com/grpc/grpc",
+    "maintainers": [
+        {
+            "email": "bcr-maintainers@bazel.build",
+            "name": "No Maintainer Specified"
+        }
+    ],
+    "repository": [
+        "github:grpc/grpc"
+    ],
+    "versions": [],
+    "yanked_versions": {}
+}
