@@ -29,35 +29,7 @@
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
-// Mapping combinator.
-//
-// Input:
-// 1. The first argument is a promise.
-// 2. The second argument is a synchronous function.
-// 3. The synchronous function MUST be callable with the result type of the
-// promise.
-// 4. If the promise returns void, the synchronous function MUST be callable
-// with Empty.
-//
-// Return:
-// Mapping combinator returns Poll<T> where T is the return type of the
-// synchronous function.
-// Note: If the synchronous function returns void, the result type of the
-// mapping combinator will be Poll<Empty>.
-//
-// Polling the mapping combinator works as follows:
-// 1. Poll the promise.
-// 2. If the promise is pending, return Pending{}.
-// 3. If the promise is ready, return the result of the synchronous function.
-// Note: If the first argument to the Map is a promise factory instead of a
-// promise, Map will pass the promise returned by the promise factory as a
-// parameter to the synchronous function.
-//
-// Example:
-// TEST(MapTest, Works) {
-//   Promise<int> x = Map([]() { return 42; }, [](int i) { return i / 2; });
-//   EXPECT_THAT(x(), IsReady(21));
-// }
+
 namespace promise_detail {
 
 template <typename Fn, typename Arg, typename SfinaeVoid = void>
@@ -129,6 +101,35 @@ class FusedFns {
 
 }  // namespace promise_detail
 
+// Mapping combinator.
+//
+// Input:
+// 1. The first argument is a promise.
+// 2. The second argument is a synchronous function.
+// 3. The synchronous function MUST be callable with the result type of the
+// promise.
+// 4. If the promise returns void, the synchronous function MUST be callable
+// with Empty.
+//
+// Return:
+// Mapping combinator returns Poll<T> where T is the return type of the
+// synchronous function.
+// Note: If the synchronous function returns void, the result type of the
+// mapping combinator will be Poll<Empty>.
+//
+// Polling the mapping combinator works as follows:
+// 1. Poll the promise.
+// 2. If the promise is pending, return Pending{}.
+// 3. If the promise is ready, return the result of the synchronous function.
+// Note: If the first argument to the Map is a promise factory instead of a
+// promise, Map will pass the promise returned by the promise factory as a
+// parameter to the synchronous function.
+//
+// Example:
+// TEST(MapTest, Works) {
+//   Promise<int> x = Map([]() { return 42; }, [](int i) { return i / 2; });
+//   EXPECT_THAT(x(), IsReady(21));
+// }
 template <typename Promise, typename Fn>
 class Map {
   using PromiseType = promise_detail::PromiseLike<Promise>;
