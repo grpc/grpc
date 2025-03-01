@@ -62,6 +62,8 @@ mono --version
 pip install --user google-api-python-client oauth2client six==1.16.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 #DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+echo $DIR
 pwd
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
@@ -117,7 +119,7 @@ then
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
 
   # Needed for ios-binary-size
-  time pip install --user -r requirements.macos.txt
+  time pip install --user -r $DIR/requirements.macos.txt
 
   # Store intermediate build files of ObjC tests into /tmpfs
   # TODO(jtattermusch): this has likely been done to avoid running
@@ -134,7 +136,7 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
 then
   # python
-  time pip install --user -r requirements.macos.txt
+  time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
 
   # Install Python 3.9 if it doesn't exist
