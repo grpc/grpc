@@ -31,7 +31,7 @@ grpc_cc_benchmark(
         "//src/core:chaotic_good_server_transport",
         "//src/core:default_event_engine",
         "//test/core/test_util:passthrough_endpoint",
-        "//test/core/transport:call_spine_benchmarks",
+        "//test/core/call:call_spine_benchmarks",
     ],
 )
 
@@ -45,6 +45,6 @@ grpc_cc_benchmark(
         "//src/core:chaotic_good_server_transport",
         "//src/core:default_event_engine",
         "//test/core/test_util:passthrough_endpoint",
-        "//test/core/transport:call_spine_benchmarks",
+        "//test/core/call:call_spine_benchmarks",
     ],
 )

@@ -21,7 +21,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/transport.h"
-#include "test/core/transport/call_spine_benchmarks.h"
+#include "test/core/call/call_spine_benchmarks.h"
 
 namespace grpc_core {
 

@@ -146,7 +146,7 @@ grpc_cc_benchmark(
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",
-        "//test/core/transport:call_spine_benchmarks",
+        "//test/core/call:call_spine_benchmarks",
     ],
 )
 
@@ -157,7 +157,7 @@ grpc_cc_benchmark(
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",
-        "//test/core/transport:call_spine_benchmarks",
+        "//test/core/call:call_spine_benchmarks",
     ],
 )
 
