@@ -46,7 +46,7 @@ ulimit -a
 # because it should be the same as below unless it's been updated.
 # - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
 brew config
-brew untap homebrew/cask
+#brew untap homebrew/cask
 rm -rf $(brew --caskroom)/adoptopenjdk8
 brew update
 
