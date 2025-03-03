@@ -117,18 +117,29 @@ class Http2ClientTransport final : public ClientTransport {
   // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
   Http2FrameHeader current_frame_header_;
 
+  // Managing the streams
   struct Stream : public RefCounted<Stream> {
     explicit Stream(CallHandler call) : call(std::move(call)) {}
     // Transport holds one CallHandler object for each Stream.
     CallHandler call;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
+    // TODO(tjagtap) : [PH2][P2] : May be add state of Stream - Idle , Open etc
+    // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   };
 
-  Mutex stream_list_mutex_;
+  // TODO(tjagtap) : [PH2][P0] : Decide data type and queue name
+  // MpscReceiver<ClientFrame> outgoing_frames_;
+
+  Mutex transport_mutex_;
   // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this mapping
   // up in the on_done of the CallInitiator or CallHandler
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
-      ABSL_GUARDED_BY(stream_list_mutex_);
+      ABSL_GUARDED_BY(transport_mutex_);
+
+  uint32_t next_stream_id_ ABSL_GUARDED_BY(transport_mutex_) = 1;
+
+  uint32_t MakeStream(CallHandler call_handler);
+  RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 };
 
 }  // namespace http2
