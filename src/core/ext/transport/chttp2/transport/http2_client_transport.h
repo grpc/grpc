@@ -25,6 +25,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
@@ -127,8 +128,7 @@ class Http2ClientTransport final : public ClientTransport {
     // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   };
 
-  // TODO(tjagtap) : [PH2][P0] : Decide data type and queue name
-  // MpscReceiver<ClientFrame> outgoing_frames_;
+  MpscReceiver<Http2Frame> outgoing_frames_;
 
   Mutex transport_mutex_;
   // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this mapping
