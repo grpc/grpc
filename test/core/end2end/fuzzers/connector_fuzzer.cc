@@ -172,7 +172,7 @@ void RunConnectorFuzzer(
         make_security_connector,
     absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector) {
   if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
-    return; // Not supported without event engine
+    return;  // Not supported without event engine
   }
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();
