@@ -5425,6 +5425,7 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/status_flag.h
   - src/core/util/bitset.h
   - src/core/util/glob.h
@@ -15862,8 +15863,8 @@ targets:
   - test/cpp/server/server_request_call_test.cc
   deps:
   - gtest
-  - grpc++_unsecure
-  - grpc_test_util_unsecure
+  - grpc++
+  - grpc_test_util
   platforms:
   - linux
   - posix

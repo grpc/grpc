@@ -26624,8 +26624,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_request_call_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_unsecure
-    grpc_test_util_unsecure
+    grpc++
+    grpc_test_util
   )
 
 

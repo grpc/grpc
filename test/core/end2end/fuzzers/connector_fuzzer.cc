@@ -171,12 +171,9 @@ void RunConnectorFuzzer(
     absl::FunctionRef<RefCountedPtr<grpc_channel_security_connector>()>
         make_security_connector,
     absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector) {
-  static const int once = []() {
-    ForceEnableExperiment("event_engine_client", true);
-    ForceEnableExperiment("event_engine_listener", true);
-    return 42;
-  }();
-  CHECK_EQ(once, 42);  // avoid unused variable warning
+  if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
+    return;  // Not supported without event engine
+  }
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();
   ConnectorFuzzer(msg, make_security_connector, make_connector).Run();
