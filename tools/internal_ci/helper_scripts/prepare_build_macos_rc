@@ -65,39 +65,10 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
-  # Workaround for https://github.com/rvm/rvm/issues/5133
-  export CURL_CA_BUNDLE=$(pwd)/etc/roots.pem
-
-  # Fetch keys per https://rvm.io/rvm/install
-  gpg_recv_keys_success=0
-  for ((i=0;i<5;i++)); do
-    # Use the Ubuntu keyserver instead of pool.sks-keyservers.net because sks-keyservers is now deprecated.
-    GPG_KEYSERVER_ADDRESS="keyserver.ubuntu.com"
-    gpg --keyserver "hkp://${GPG_KEYSERVER_ADDRESS}" --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB \
-      && gpg_recv_keys_success=1
-    [[ "$gpg_recv_keys_success" == 1 ]] && break
-    sleep 3
-  done
-  [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
-  # fix .rvm directory ownership on kokoro monterey image
-  sudo chown -R "${USER}" ~/.rvm
-  rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
-  # stop echoing bash commands temporarily to prevent rvm from polluting the logs
-  set +x
-  source $HOME/.rvm/scripts/rvm
-
-  RUBY_VERSION=3.2.0
-  echo "Installing ruby-${RUBY_VERSION}"
-  time rvm install "ruby-${RUBY_VERSION}"
-  echo "Setting default ruby version."
-  rvm use "$RUBY_VERSION" --default
-  echo "Updating osx-ssl-certs."
-  gem install bundler -v 2.4
-  rvm osx-ssl-certs status all
-  rvm osx-ssl-certs update all
-
-  # restore echo
-  set -x
+  brew install rbenv ruby-build
+  rbenv install 3.4.2
+  rbenv global 3.4.2
+  ruby --version
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
@@ -199,14 +170,23 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
   time brew install php@8.1 || true
-  export LDFLAGS="-L/usr/local/opt/php@8.1/lib ${LDFLAGS}"
-  export CPPFLAGS="-I/usr/local/opt/php@8.1/include ${CPPFLAGS}"
-  export PATH="/usr/local/opt/php@8.1/bin:/usr/local/opt/php@8.1/sbin:${PATH}"
+  if [ -e "/usr/local/opt/php@8.1/" ]; then
+    PHP_PATH="/usr/local/opt/php@8.1/"
+  elif [ -e "/opt/homebrew/opt/php@8.1" ]; then
+    PHP_PATH="/usr/local/opt/php@8.1/"
+  else
+    echo "Error: Unable to check php install path" >&2
+    exit 1
+  fi
+
+  export LDFLAGS="-L${PHP_PATH}/lib ${LDFLAGS}"
+  export CPPFLAGS="-I${PHP_PATH}include ${CPPFLAGS}"
+  export PATH="${PHP_PATH}/bin:${PHP_PATH}/sbin:${PATH}"
 
   # the exit code from "brew install php@8.1" is useless
   # so instead we check if PHP was indeed installed successfully.
   # Failing early is better than cryptic errors later in the build process.
-  /usr/local/opt/php@8.1/bin/php --version
+  php --version
 
   # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
   mkdir -p /usr/local/lib/php/pecl
