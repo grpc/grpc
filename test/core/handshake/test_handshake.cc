@@ -63,6 +63,8 @@ void Handshake(HandshakerType handshaker_type,
 absl::StatusOr<std::tuple<ChannelArgs, ChannelArgs>> TestHandshake(
     ChannelArgs client_args, ChannelArgs server_args,
     const fuzzing_event_engine::Actions& actions) {
+  CHECK(IsEventEngineClientEnabled());
+  CHECK(IsEventEngineListenerEnabled());
   grpc_timer_manager_set_start_threaded(false);
   grpc_init();
   const int kPort = 1234;

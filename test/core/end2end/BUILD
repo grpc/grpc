@@ -204,6 +204,7 @@ grpc_cc_test(
         "absl/log:log",
     ],
     tags = [
+        "grpc:broken-internally",  # remove once converted to gtest
         "grpc:no-internal-poller",
         "requires-net:ipv4",
         "requires-net:loopback",
@@ -233,6 +234,9 @@ grpc_cc_test(
         "absl/log:check",
         "absl/log:log",
     ],
+    tags = [
+        "grpc:broken-internally",  # remove once converted to gtest
+    ],
     deps = [
         "cq_verifier",
         "//:channel_arg_names",
@@ -255,6 +259,7 @@ grpc_cc_test(
         "absl/strings:str_format",
     ],
     tags = [
+        "grpc:broken-internally",  # remove once converted to gtest
         "grpc:no-internal-poller",
         "no_windows",
         "requires-net:ipv4",
@@ -316,6 +321,9 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+    ],
+    tags = [
+        "grpc:broken-internally",  # remove once converted to gtest
     ],
     deps = [
         "cq_verifier",

@@ -553,6 +553,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "fail_first_call_filter",
+    testonly = True,
+    srcs = ["fail_first_call_filter.cc"],
+    hdrs = ["fail_first_call_filter.h"],
+    external_deps = [],
+    deps = ["//:grpc"],
+)
+
+grpc_cc_library(
     name = "test_call_creds",
     testonly = True,
     srcs = ["test_call_creds.cc"],
