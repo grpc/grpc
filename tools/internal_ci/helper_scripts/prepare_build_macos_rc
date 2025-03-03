@@ -50,14 +50,6 @@ brew config
 brew install cmake
 brew install gnupg
 
-MONO_MACOS_PKG_DOWNLOAD_URL=https://download.mono-project.com/archive/6.12.0/macos-10-universal/MonoFramework-MDK-6.12.0.206.macos10.xamarin.universal.pkg
-mkdir -p /tmp/mono-install
-wget -q -O /tmp/mono-install/mono-installer.pkg "$MONO_MACOS_PKG_DOWNLOAD_URL"
-sudo installer -pkg /tmp/mono-install/mono-installer.pkg -target /
-export PATH="/Library/Frameworks/Mono.framework/Versions/Current/Commands/:$PATH"
-mono --version
-
-
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.16.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
@@ -193,6 +185,14 @@ then
 
   time curl -O https://download.visualstudio.microsoft.com/download/pr/14a45451-4cc9-48e1-af69-0aff75891d09/ff6e83986a2a9a535015fb3104a90a1b/dotnet-sdk-6.0.100-osx-x64.pkg
   time sudo installer -pkg ./dotnet-sdk-6.0.100-osx-x64.pkg -target /
+
+  #install mono
+  MONO_MACOS_PKG_DOWNLOAD_URL=https://download.mono-project.com/archive/6.12.0/macos-10-universal/MonoFramework-MDK-6.12.0.206.macos10.xamarin.universal.pkg
+  mkdir -p /tmp/mono-install
+  wget -q -O /tmp/mono-install/mono-installer.pkg "$MONO_MACOS_PKG_DOWNLOAD_URL"
+  sudo installer -pkg /tmp/mono-install/mono-installer.pkg -target /
+  export PATH="/Library/Frameworks/Mono.framework/Versions/Current/Commands/:$PATH"
+  mono --version
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
