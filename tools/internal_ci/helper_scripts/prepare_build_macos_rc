@@ -66,8 +66,8 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   brew install rbenv ruby-build
-  rbenv install 3.4.2
-  rbenv global 3.4.2
+  rbenv install 3.2.0
+  rbenv global 3.2.0
   ruby --version
 fi
 
