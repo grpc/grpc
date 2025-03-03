@@ -291,7 +291,10 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:all_ok"],
+    deps = [
+        "//:promise",
+        "//src/core:all_ok",
+    ],
 )
 
 grpc_cc_test(
