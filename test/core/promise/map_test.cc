@@ -31,8 +31,8 @@ TEST(MapTest, Works) {
 
 TEST(MapTest, TwoTyped) {
   auto map =
-      AssertResultType<const char*>(Map([]() { return absl::OkStatus(); },
-                                        [](absl::Status s) {
+      AssertResultType<std::string>(Map([]() { return absl::OkStatus(); },
+                                        [](absl::Status s) -> std::string {
                                           if (s.ok()) {
                                             return "OK";
                                           } else {
@@ -41,7 +41,7 @@ TEST(MapTest, TwoTyped) {
                                         }));
   auto result = map();
   EXPECT_THAT(result, IsReady());
-  EXPECT_STREQ(result.value(), "OK");
+  EXPECT_EQ(result.value(), std::string("OK"));
 }
 
 TEST(MapTest, ReturnsPending) {
