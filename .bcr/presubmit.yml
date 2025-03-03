@@ -36,8 +36,8 @@ tasks:
     platform: "windows"
     bazel: ${{ bazel }}
     build_flags:
-    - '--cxxopt=-std=c++17'
-    - '--host_cxxopt=-std=c++17'
+    - '--cxxopt=/std:c++17'
+    - '--host_cxxopt=/std:c++17'
     build_targets:
       - "@grpc//:grpc"
       - "@grpc//:grpc_unsecure"
