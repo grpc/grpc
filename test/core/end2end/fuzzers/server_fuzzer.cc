@@ -96,7 +96,7 @@ void RunServerFuzzer(
     absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
         server_setup) {
   if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
-    return; // Not supported without event engine
+    return;  // Not supported without event engine
   }
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();

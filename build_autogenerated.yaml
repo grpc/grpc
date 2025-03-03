@@ -15863,8 +15863,8 @@ targets:
   - test/cpp/server/server_request_call_test.cc
   deps:
   - gtest
-  - grpc++_unsecure
-  - grpc_test_util_unsecure
+  - grpc++
+  - grpc_test_util
   platforms:
   - linux
   - posix
