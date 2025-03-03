@@ -116,9 +116,6 @@ cq_refcount:
   debug_only: true
   default: false
   description: Completion queue refcounting.
-cronet:
-  default: false
-  description: Cronet transport engine.
 dns_resolver:
   default: false
   description: The active DNS resolver.

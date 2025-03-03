@@ -24,11 +24,11 @@
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/util/env.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
@@ -95,12 +95,9 @@ void RunServerFuzzer(
     const fuzzer_input::Msg& msg,
     absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
         server_setup) {
-  static const int once = []() {
-    ForceEnableExperiment("event_engine_client", true);
-    ForceEnableExperiment("event_engine_listener", true);
-    return 42;
-  }();
-  CHECK_EQ(once, 42);  // avoid unused variable warning
+  if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
+    return;  // Not supported without event engine
+  }
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();
   testing::ServerFuzzer(msg, server_setup).Run(msg.api_actions());

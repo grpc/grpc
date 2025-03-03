@@ -51,6 +51,7 @@
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
@@ -265,14 +266,8 @@ finish:
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (!error.ok()) {
-    std::string str;
-    bool ret = grpc_error_get_str(
-        error, grpc_core::StatusStrProperty::kDescription, &str);
-    CHECK(ret);
-    std::string description =
-        absl::StrCat("Failed to connect to remote host: ", str);
-    error = grpc_error_set_str(
-        error, grpc_core::StatusStrProperty::kDescription, description);
+    error =
+        grpc_core::AddMessagePrefix("Failed to connect to remote host", error);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is

@@ -1,0 +1,34 @@
+diff --git a/bazel/cython_library.bzl b/bazel/cython_library.bzl
+index dc2ef7a890..93e99962db 100644
+--- a/bazel/cython_library.bzl
++++ b/bazel/cython_library.bzl
+@@ -72,7 +72,10 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
+         native.cc_binary(
+             name = shared_object_name,
+             srcs = [stem + ".cpp"],
+-            deps = deps + ["@local_config_python//:python_headers"],
++            deps = deps + [
++                "@rules_python//python/cc:current_py_cc_headers",
++                "@rules_python//python/cc:current_py_cc_libs",
++            ],
+             defines = defines,
+             linkshared = 1,
+         )
++grpc_repo_deps_ext = module_extension(implementation = lambda ctx: grpc_deps(bzlmod = True))
+diff --git a/bazel/python_rules.bzl b/bazel/python_rules.bzl
+index f5fa1a0550..56b2a2d42c 100644
+--- a/bazel/python_rules.bzl
++++ b/bazel/python_rules.bzl
+@@ -191,11 +191,7 @@ def _generate_pb2_grpc_src_impl(context):
+     arguments = []
+     tools = [context.executable._protoc, context.executable._grpc_plugin]
+     out_dir = get_out_dir(protos, context)
+-    if out_dir.import_path:
+-        # is virtual imports
+-        out_path = out_dir.path
+-    else:
+-        out_path = context.genfiles_dir.path
++    out_path = out_dir.path
+     arguments += get_plugin_args(
+         context.executable._grpc_plugin,
+         plugin_flags,

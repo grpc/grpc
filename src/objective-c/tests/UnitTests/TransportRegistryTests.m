@@ -18,7 +18,6 @@
 
 #import <XCTest/XCTest.h>
 
-#import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCTransport.h>
 #import "src/objective-c/GRPCClient/private/GRPCTransport+Private.h"
 
@@ -36,16 +35,6 @@
   XCTAssertNotNil(secureTransportFactory);
   XCTAssertNotNil(insecureTransportFactory);
   XCTAssertNotEqual(secureTransportFactory, insecureTransportFactory);
-}
-
-- (void)testCronetImplementationNotExistAndFallBack {
-  id<GRPCTransportFactory> secureTransportFactory = [[GRPCTransportRegistry sharedInstance]
-      getTransportFactoryWithID:GRPCDefaultTransportImplList.core_secure];
-  id<GRPCTransportFactory> cronetTransportFactory =
-      [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithID:gGRPCCoreCronetID];
-  XCTAssertNotNil(secureTransportFactory);
-  XCTAssertNotNil(cronetTransportFactory);
-  XCTAssertEqual(secureTransportFactory, cronetTransportFactory);
 }
 
 @end

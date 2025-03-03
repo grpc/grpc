@@ -19,8 +19,8 @@
 #include "src/core/tsi/alts/frame_protector/alts_counter.h"
 
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 

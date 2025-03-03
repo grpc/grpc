@@ -20,11 +20,11 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_crl_provider.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 
 #include "absl/log/check.h"
+#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/tls_test_utils.h"

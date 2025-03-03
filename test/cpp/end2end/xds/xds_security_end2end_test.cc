@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -27,7 +26,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/xds_server_builder.h>
-#include <gtest/gtest.h>
 
 #include <map>
 #include <memory>
@@ -52,13 +50,15 @@
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
+#include "src/core/credentials/transport/tls/certificate_provider_registry.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
-#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/env.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
