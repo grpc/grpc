@@ -382,11 +382,11 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
   const bool on_done_added =
       call_handler.OnDone([self = RefAsSubclass<Http2ClientTransport>(),
                            stream_id](bool cancelled) {
-        HTTP2_CLIENT_DLOG << "CHAOTIC_GOOD: Client call " << self.get()
-                          << " id=" << stream_id
+        HTTP2_CLIENT_DLOG << "Client call " << self.get() << " id=" << stream_id
                           << " done: cancelled=" << cancelled;
         if (cancelled) {
           // TODO(tjagtap) : [PH2][P1] Cancel implementation.
+          LOG(DFATAL) << "Cancel not implemented";
         }
         MutexLock lock(&self->transport_mutex_);
         self->stream_list_.erase(stream_id);
