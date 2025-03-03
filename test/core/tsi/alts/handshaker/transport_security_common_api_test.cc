@@ -18,10 +18,11 @@
 
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
-#include <gtest/gtest.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "gtest/gtest.h"
 
 const size_t kMaxRpcVersionMajor = 3;
 const size_t kMaxRpcVersionMinor = 2;

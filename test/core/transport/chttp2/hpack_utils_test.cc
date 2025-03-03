@@ -13,13 +13,13 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
-#include <gtest/gtest.h>
 
 #include <random>
 #include <unordered_map>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
 
 namespace grpc_core {

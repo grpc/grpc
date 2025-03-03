@@ -57,18 +57,12 @@ const absl::string_view kChildrenPropertyUrl = TYPE_URL(TYPE_CHILDREN_TAG);
 
 const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
   switch (key) {
-    case StatusIntProperty::kFileLine:
-      return TYPE_URL(TYPE_INT_TAG "file_line");
     case StatusIntProperty::kStreamId:
       return TYPE_URL(TYPE_INT_TAG "stream_id");
     case StatusIntProperty::kRpcStatus:
       return TYPE_URL(TYPE_INT_TAG "grpc_status");
     case StatusIntProperty::kHttp2Error:
       return TYPE_URL(TYPE_INT_TAG "http2_error");
-    case StatusIntProperty::kFd:
-      return TYPE_URL(TYPE_INT_TAG "fd");
-    case StatusIntProperty::kOccurredDuringWrite:
-      return TYPE_URL(TYPE_INT_TAG "occurred_during_write");
     case StatusIntProperty::ChannelConnectivityState:
       return TYPE_URL(TYPE_INT_TAG "channel_connectivity_state");
     case StatusIntProperty::kLbPolicyDrop:
@@ -79,20 +73,8 @@ const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
 
 const char* GetStatusStrPropertyUrl(StatusStrProperty key) {
   switch (key) {
-    case StatusStrProperty::kDescription:
-      return TYPE_URL(TYPE_STR_TAG "description");
-    case StatusStrProperty::kFile:
-      return TYPE_URL(TYPE_STR_TAG "file");
     case StatusStrProperty::kGrpcMessage:
       return TYPE_URL(TYPE_STR_TAG "grpc_message");
-  }
-  GPR_UNREACHABLE_CODE(return "unknown");
-}
-
-const char* GetStatusTimePropertyUrl(StatusTimeProperty key) {
-  switch (key) {
-    case StatusTimeProperty::kCreated:
-      return TYPE_URL(TYPE_TIME_TAG "created_time");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -133,16 +115,9 @@ std::vector<absl::Status> ParseChildren(absl::Cord children) {
 }  // namespace
 
 absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
-                          const DebugLocation& location,
+                          const DebugLocation& /*location*/,
                           std::vector<absl::Status> children) {
   absl::Status s(code, msg);
-  if (location.file() != nullptr) {
-    StatusSetStr(&s, StatusStrProperty::kFile, location.file());
-  }
-  if (location.line() != -1) {
-    StatusSetInt(&s, StatusIntProperty::kFileLine, location.line());
-  }
-  StatusSetTime(&s, StatusTimeProperty::kCreated, absl::Now());
   for (const absl::Status& child : children) {
     if (!child.ok()) {
       StatusAddChild(&s, child);
@@ -185,34 +160,6 @@ std::optional<std::string> StatusGetStr(const absl::Status& status,
   auto p = status.GetPayload(GetStatusStrPropertyUrl(key));
   if (p.has_value()) {
     return std::string(*p);
-  }
-  return {};
-}
-
-void StatusSetTime(absl::Status* status, StatusTimeProperty key,
-                   absl::Time time) {
-  std::string time_str =
-      absl::FormatTime(absl::RFC3339_full, time, absl::UTCTimeZone());
-  status->SetPayload(GetStatusTimePropertyUrl(key),
-                     absl::Cord(std::move(time_str)));
-}
-
-std::optional<absl::Time> StatusGetTime(const absl::Status& status,
-                                        StatusTimeProperty key) {
-  auto p = status.GetPayload(GetStatusTimePropertyUrl(key));
-  if (p.has_value()) {
-    auto sv = p->TryFlat();
-    absl::Time time;
-    if (sv.has_value()) {
-      if (absl::ParseTime(absl::RFC3339_full, sv.value(), &time, nullptr)) {
-        return time;
-      }
-    } else {
-      std::string s = std::string(*p);
-      if (absl::ParseTime(absl::RFC3339_full, s, &time, nullptr)) {
-        return time;
-      }
-    }
   }
   return {};
 }

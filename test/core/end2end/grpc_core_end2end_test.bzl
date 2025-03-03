@@ -68,6 +68,7 @@ _DEPS = [
     "//src/core:stats_data",
     "//src/core:status_helper",
     "//src/core:time",
+    "//test/core/test_util:fail_first_call_filter",
     "//test/core/test_util:fake_stats_plugin",
     "//test/core/test_util:grpc_test_util",
     "//test/core/test_util:test_lb_policies",
@@ -198,7 +199,6 @@ def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, 
         shard_count = shard_count,
         tags = tags + ["core_end2end_test"],
         flaky = flaky,
-        args = ["--gtest_shuffle"],
     )
 
     if enable_fuzzing:
@@ -231,9 +231,8 @@ def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, 
             deps = _DEPS + deps + ["end2end_test_lib_no_fuzztest_gtest"],
             data = _DATA,
             shard_count = shard_count,
-            tags = tags + ["core_end2end_test"],
+            tags = tags + ["core_end2end_test", "grpc:fails-internally", "grpc:no-internal-poller"],
             flaky = flaky,
-            args = ["--gtest_shuffle"],
         )
 
     if enable_fuzzing and with_no_logging_test:

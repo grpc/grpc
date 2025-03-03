@@ -29,7 +29,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "src/core/config/core_configuration.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/down_cast.h"
 
 namespace grpc_core {
@@ -55,11 +55,11 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
     parts.push_back(
         absl::StrFormat("certificate_file=\"%s\", ", identity_cert_file_));
   }
-  if (!identity_cert_file_.empty()) {
+  if (!private_key_file_.empty()) {
     parts.push_back(
         absl::StrFormat("private_key_file=\"%s\", ", private_key_file_));
   }
-  if (!identity_cert_file_.empty()) {
+  if (!root_cert_file_.empty()) {
     parts.push_back(
         absl::StrFormat("ca_certificate_file=\"%s\", ", root_cert_file_));
   }

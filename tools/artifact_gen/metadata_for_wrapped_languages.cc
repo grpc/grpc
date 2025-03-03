@@ -18,6 +18,7 @@
 #include <optional>
 #include <set>
 #include <vector>
+#include <regex>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -28,6 +29,58 @@
 #include "utils.h"
 
 namespace {
+void AddCApis(nlohmann::json& config) {
+  std::set<std::string> headers;
+  for (const auto& lib : config["libs"]) {
+    if (lib["name"] == "grpc" || lib["name"] == "gpr") {
+      for (const auto& header : lib["public_headers"]) {
+        headers.insert(header);
+      }
+    }
+  }
+  std::regex re_api(R"((?:GPRAPI|GRPCAPI|CENSUSAPI)([^#;]*);)");
+  std::vector<nlohmann::json> apis;
+  std::set<std::string> c_api_headers;
+  for (const auto& header : headers) {
+    auto header_file = LoadString("../../" + header);
+    for (std::smatch match; std::regex_search(header_file, match, re_api);) {
+      std::string api_declaration = match[1];
+      for (char& c : api_declaration) {
+        if (c == '\t' || c == '\n') {
+          c = ' ';
+        }
+      }
+      absl::RemoveExtraAsciiWhitespace(&api_declaration);
+      auto first_paren = api_declaration.find('(');
+      auto type_and_name = api_declaration.substr(0, first_paren);
+      auto args_and_close = api_declaration.substr(first_paren + 1);
+      args_and_close = args_and_close.substr(0, args_and_close.rfind(')'));
+      auto args = absl::StripAsciiWhitespace(args_and_close);
+      auto last_space = type_and_name.rfind(' ');
+      auto last_star = type_and_name.rfind('*');
+      auto type_end = last_space == std::string::npos ? last_star : (
+        last_star == std::string::npos ? last_space : std::max(last_space, last_star)
+      );
+      auto return_type_unstripped = type_and_name.substr(0, type_end + 1);
+      auto return_type = absl::StripAsciiWhitespace(return_type_unstripped);
+      auto name_unstripped = type_and_name.substr(type_end + 1);
+      auto name = absl::StripAsciiWhitespace(name_unstripped);
+      auto api = nlohmann::json{
+        {"name", name},
+        {"return_type", return_type},
+        {"arguments", args},
+        {"header", header}
+      };
+      apis.push_back(api);
+      auto first_slash = header.find('/');
+      c_api_headers.insert(header.substr(first_slash + 1));
+      header_file = match.suffix();
+    }
+  }
+  config["c_apis"] = apis;
+  config["c_api_headers"] = c_api_headers;
+}
+
 void AddPhpConfig(nlohmann::json& config) {
   std::set<std::string> srcs;
   for (const auto& src : config["php_config_m4"]["src"]) {
@@ -237,6 +290,7 @@ void ExpandTransitiveDeps(nlohmann::json& config) {
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
+  AddCApis(config);
   AddBoringSslMetadata(config);
   AddAbseilMetadata(config);
   ExpandTransitiveDeps(config);

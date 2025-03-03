@@ -56,7 +56,12 @@ grpc_cc_test(
         "otel/api",
         "otel/sdk/src/metrics",
     ],
-    tags = [],
+    tags = [
+        # TODO(b/398739502): Remove after fixing
+        "grpc:broken-internally",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
     deps = [
         ":otel_test_library",
         "//:grpc++",
@@ -93,7 +98,10 @@ grpc_cc_test(
         "gtest",
         "otel/api",
     ],
-    tags = [],
+    tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
     deps = [
         "//:grpc++",
         "//src/cpp/ext/otel:otel_plugin",
@@ -113,12 +121,18 @@ grpc_cc_test(
         "otel/exporters/memory:in_memory_span_exporter",
         "otel/sdk/src/trace",
     ],
-    tags = [],
+    tags = [
+        # TODO(b/398739502): Remove after fixing
+        "grpc:broken-internally",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
     deps = [
         ":otel_test_library",
         "//:grpc++",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
+        "//test/core/test_util:fail_first_call_filter",
         "//test/core/test_util:grpc_test_util",
     ],
 )

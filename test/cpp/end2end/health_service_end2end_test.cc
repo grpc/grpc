@@ -25,13 +25,13 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"

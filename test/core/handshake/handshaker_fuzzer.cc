@@ -36,6 +36,12 @@ auto AnyChannelArgs() {
 // Without supplying channel args, we should expect basic TCP connections to
 // succeed every time.
 void BasicHandshakeSucceeds(const fuzzing_event_engine::Actions& actions) {
+  if (!IsEventEngineClientEnabled()) {
+    GTEST_SKIP() << "Needs event_engine_client experiment";
+  }
+  if (!IsEventEngineListenerEnabled()) {
+    GTEST_SKIP() << "Needs event_engine_listener experiment";
+  }
   CHECK_OK(TestHandshake(BaseChannelArgs(), BaseChannelArgs(), actions));
 }
 FUZZ_TEST(HandshakerFuzzer, BasicHandshakeSucceeds);
@@ -49,6 +55,12 @@ TEST(HandshakerFuzzer, BasicHandshakeSucceedsRegression1) {
 void RandomChannelArgsDontCauseCrashes(
     const ChannelArgs& client_args, const ChannelArgs& server_args,
     const fuzzing_event_engine::Actions& actions) {
+  if (!IsEventEngineClientEnabled()) {
+    GTEST_SKIP() << "Needs event_engine_client experiment";
+  }
+  if (!IsEventEngineListenerEnabled()) {
+    GTEST_SKIP() << "Needs event_engine_listener experiment";
+  }
   std::ignore = TestHandshake(client_args, server_args, actions);
 }
 FUZZ_TEST(HandshakerFuzzer, RandomChannelArgsDontCauseCrashes)

@@ -68,7 +68,6 @@ extern TraceFlag client_channel_lb_call_trace;
 extern TraceFlag client_idle_filter_trace;
 extern TraceFlag compression_trace;
 extern TraceFlag connectivity_state_trace;
-extern TraceFlag cronet_trace;
 extern TraceFlag dns_resolver_trace;
 extern TraceFlag environment_autodetect_trace;
 extern TraceFlag event_engine_trace;

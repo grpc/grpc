@@ -36,11 +36,6 @@ TEST(StatusUtilTest, CreateStatus) {
                    {absl::OkStatus(), absl::CancelledError()});
   EXPECT_EQ(absl::StatusCode::kUnknown, s.code());
   EXPECT_EQ("Test", s.message());
-#ifndef NDEBUG
-  EXPECT_EQ(true, StatusGetStr(s, StatusStrProperty::kFile).has_value());
-  EXPECT_EQ(true, StatusGetInt(s, StatusIntProperty::kFileLine).has_value());
-#endif
-  EXPECT_EQ(true, StatusGetTime(s, StatusTimeProperty::kCreated).has_value());
   EXPECT_THAT(StatusGetChildren(s),
               ::testing::ElementsAre(absl::CancelledError()));
 }
@@ -59,27 +54,14 @@ TEST(StatusUtilTest, GetIntNotExistent) {
 
 TEST(StatusUtilTest, SetAndGetStr) {
   absl::Status s = absl::CancelledError();
-  StatusSetStr(&s, StatusStrProperty::kFile, "value");
-  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kFile));
+  StatusSetStr(&s, StatusStrProperty::kGrpcMessage, "value");
+  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kGrpcMessage));
 }
 
 TEST(StatusUtilTest, GetStrNotExistent) {
   absl::Status s = absl::CancelledError();
   EXPECT_EQ(std::optional<std::string>(),
-            StatusGetStr(s, StatusStrProperty::kFile));
-}
-
-TEST(StatusUtilTest, SetAndGetTime) {
-  absl::Status s = absl::CancelledError();
-  absl::Time t = absl::Now();
-  StatusSetTime(&s, StatusTimeProperty::kCreated, t);
-  EXPECT_EQ(t, StatusGetTime(s, StatusTimeProperty::kCreated));
-}
-
-TEST(StatusUtilTest, GetTimeNotExistent) {
-  absl::Status s = absl::CancelledError();
-  EXPECT_EQ(std::optional<absl::Time>(),
-            StatusGetTime(s, StatusTimeProperty::kCreated));
+            StatusGetStr(s, StatusStrProperty::kGrpcMessage));
 }
 
 TEST(StatusUtilTest, AddAndGetChildren) {
@@ -97,7 +79,6 @@ TEST(StatusUtilTest, AddAndGetChildren) {
 TEST(StatusUtilTest, ToAndFromProto) {
   absl::Status s = absl::CancelledError("Message");
   StatusSetInt(&s, StatusIntProperty::kStreamId, 2021);
-  StatusSetStr(&s, StatusStrProperty::kFile, "value");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
   size_t len;
@@ -110,7 +91,6 @@ TEST(StatusUtilTest, ToAndFromProto) {
 TEST(StatusUtilTest, ToAndFromProtoWithNonUTF8Characters) {
   absl::Status s = absl::CancelledError("_\xAB\xCD\xEF_");
   StatusSetInt(&s, StatusIntProperty::kStreamId, 2021);
-  StatusSetStr(&s, StatusStrProperty::kFile, "!\xFF\xCC\xAA!");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
   size_t len;
@@ -141,19 +121,9 @@ TEST(StatusUtilTest, ErrorWithIntPropertyToString) {
 
 TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetStr(&s, StatusStrProperty::kDescription, "Hey");
+  StatusSetStr(&s, StatusStrProperty::kGrpcMessage, "Hey");
   std::string t = StatusToString(s);
-  EXPECT_EQ("CANCELLED:Message {description:\"Hey\"}", t);
-}
-
-TEST(StatusUtilTest, ErrorWithTimePropertyToString) {
-  absl::Status s = absl::CancelledError("Message");
-  absl::Time t = absl::FromCivil(absl::CivilSecond(2021, 4, 29, 8, 56, 30),
-                                 absl::LocalTimeZone());
-  StatusSetTime(&s, StatusTimeProperty::kCreated, t);
-  EXPECT_EQ(StatusToString(s),
-            absl::StrCat("CANCELLED:Message {created_time:\"",
-                         absl::FormatTime(t), "\"}"));
+  EXPECT_EQ("CANCELLED:Message {grpc_message:\"Hey\"}", t);
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
@@ -162,12 +132,12 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   absl::Status s1 = absl::AbortedError("Message1");
   StatusAddChild(&s, s1);
   absl::Status s2 = absl::AlreadyExistsError("Message2");
-  StatusSetStr(&s2, StatusStrProperty::kFile, "value");
+  StatusSetStr(&s2, StatusStrProperty::kGrpcMessage, "value");
   StatusAddChild(&s, s2);
   std::string t = StatusToString(s);
   EXPECT_EQ(
       "CANCELLED:Message {stream_id:2021, children:["
-      "ABORTED:Message1, ALREADY_EXISTS:Message2 {file:\"value\"}]}",
+      "ABORTED:Message1, ALREADY_EXISTS:Message2 {grpc_message:\"value\"}]}",
       t);
 }
 
