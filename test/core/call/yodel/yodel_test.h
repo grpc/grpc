@@ -15,9 +15,8 @@
 #ifndef GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 #define GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 
-#include <grpc/event_engine/event_engine.h>
-
 #include <google/protobuf/text_format.h>
+#include <grpc/event_engine/event_engine.h>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
