@@ -187,12 +187,13 @@ then
   time sudo installer -pkg ./dotnet-sdk-6.0.100-osx-x64.pkg -target /
 
   #install mono
-  MONO_MACOS_PKG_DOWNLOAD_URL=https://download.mono-project.com/archive/6.12.0/macos-10-universal/MonoFramework-MDK-6.12.0.206.macos10.xamarin.universal.pkg
+  MONO_MACOS_PKG_DOWNLOAD_URL=https://download.mono-project.com/archive/mdk-latest-stable.pkg
   mkdir -p /tmp/mono-install
   wget -q -O /tmp/mono-install/mono-installer.pkg "$MONO_MACOS_PKG_DOWNLOAD_URL"
   sudo installer -pkg /tmp/mono-install/mono-installer.pkg -target /
   export PATH="/Library/Frameworks/Mono.framework/Versions/Current/Commands/:$PATH"
   mono --version
+
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
