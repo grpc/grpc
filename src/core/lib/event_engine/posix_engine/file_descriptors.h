@@ -34,7 +34,7 @@ namespace grpc_event_engine::experimental {
 // will also be packed here.
 class Int64Result final : public PosixResult {
  public:
-  static Int64Result WrongGeneration(int64_t result) {
+  static Int64Result WrongGeneration() {
     return Int64Result(OperationResultKind::kWrongGeneration, 0, -1);
   }
 
@@ -203,7 +203,7 @@ class FileDescriptors {
                  ? Int64Result(OperationResultKind::kError, errno, result)
                  : Int64Result(result);
     } else {
-      return Int64Result::WrongGeneration(-1);
+      return Int64Result::WrongGeneration();
     }
   }
 
@@ -216,7 +216,7 @@ class FileDescriptors {
                  ? Int64Result(OperationResultKind::kError, errno, result)
                  : Int64Result(result);
     } else {
-      return Int64Result::WrongGeneration(-1);
+      return Int64Result::WrongGeneration();
     }
   }
 

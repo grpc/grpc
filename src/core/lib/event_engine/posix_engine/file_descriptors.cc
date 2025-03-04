@@ -704,7 +704,7 @@ IF_POSIX_SOCKET(
     {
       auto f = descriptors_.GetRawFileDescriptor(fd);
       if (!f.has_value()) {
-        return Int64Result::WrongGeneration(-1);
+        return Int64Result::WrongGeneration();
       }
       if (setsockopt(*f, level, optname, &optval, sizeof(optval)) < 0) {
         return Int64Result(OperationResultKind::kError, errno, optval);
