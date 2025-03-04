@@ -194,6 +194,10 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   void BeforeFork();
   void AfterFork(bool advance_generation);
 
+  // Needed for fork support
+  std::weak_ptr<PosixEventEngine> pointer() {
+    return std::static_pointer_cast<PosixEventEngine>(shared_from_this());
+  }
 #endif  // GRPC_POSIX_SOCKET_TCP
 
  private:
