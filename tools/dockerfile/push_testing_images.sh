@@ -18,16 +18,16 @@
 # they simply provide an easily reproducible environment for running gRPC
 # tests.
 
-set -ex
+set -e
 
 cd $(dirname $0)/../..
-git_root=$(pwd)
-cd -
 
 # Recognized env variables that can be used as params.
 #  LOCAL_ONLY_MODE: if set (e.g. LOCAL_ONLY_MODE=true), script will only operate locally and it won't query artifact registry and won't upload to it.
 #  CHECK_MODE: if set, the script will check that all the .current_version files are up-to-date (used by sanity tests).
 #  SKIP_UPLOAD: if set, script won't push docker images it built to artifact registry.
+#  HOST_ARCH_ONLY: if set, script will build docker images with the same architecture as the machine running the script.
+#  ALWAYS_BUILD: if set, script will build docker images all the times.
 
 # How to configure docker before running this script for the first time:
 # Configure docker:
@@ -43,14 +43,16 @@ then
   docker run --rm -it debian:11 bash -c 'echo "sudoless docker run works!"' || \
       (echo "Error: docker not installed or sudoless docker doesn't work?" && exit 1)
 
-  # Some of the images we build are for arm64 architecture and the easiest
-  # way of allowing them to build locally on x64 machine is to use
-  # qemu binfmt-misc hook that automatically runs arm64 binaries under
-  # an emulator.
-  # Perform a check that "qemu-user-static" with binfmt-misc hook
-  # is installed, to give an early warning (otherwise building arm64 images won't work)
-  docker run --rm -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
-      (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
+  if [ "${HOST_ARCH_ONLY}" == "" ]; then
+    # Some of the images we build are for arm64 architecture and the easiest
+    # way of allowing them to build locally on x64 machine is to use
+    # qemu binfmt-misc hook that automatically runs arm64 binaries under
+    # an emulator.
+    # Perform a check that "qemu-user-static" with binfmt-misc hook
+    # is installed, to give an early warning (otherwise building arm64 images won't work)
+    docker run --rm -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
+        (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
+  fi
 fi
 
 ARTIFACT_REGISTRY_PREFIX=us-docker.pkg.dev/grpc-testing/testing-images-public
@@ -97,9 +99,19 @@ do
     DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
   fi
 
-  echo "Visiting ${DOCKERFILE_DIR}"
+  echo "* Visiting ${DOCKERFILE_DIR}"
 
-  if [ "${LOCAL_ONLY_MODE}" == "" ]
+  # if HOST_ARCH_ONLY is set, skip if the docker image's arthiecture doesn't match with the host architecture
+  if [ "${HOST_ARCH_ONLY}" != "" ]; then
+    [[ "$(uname -m)" == aarch64 ]] && is_host_arm=1 || is_host_arm=0
+    [[ "$DOCKER_IMAGE_NAME" == *arm* || "$DOCKER_IMAGE_NAME" == *aarch* ]] && is_docker_for_arm=1 || is_docker_for_arm=0
+    if [ "$is_host_arm" != "$is_docker_for_arm" ]; then
+      echo "Skipped due to the different architecture " ${DOCKER_IMAGE_NAME}
+      continue
+    fi
+  fi
+
+  if [[ -z "${LOCAL_ONLY_MODE}" && -z "${ALWAYS_BUILD}" ]]
   then
     # value obtained here corresponds to the "RepoDigests" from "docker image inspect", but without the need to actually pull the image
     DOCKER_IMAGE_DIGEST_REMOTE=$(gcloud artifacts docker images describe "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" --format=json | jq -r '.image_summary.digest')
@@ -155,8 +167,12 @@ do
 
   if [ "${LOCAL_BUILD_REQUIRED}" == "" ]
   then
-    echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed. Will skip 'docker build'."
-    continue
+    if [ "${ALWAYS_BUILD}" == "" ]; then
+      echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed. Will skip 'docker build'."
+      continue
+    else
+      echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed but will do 'docker build' anyway."
+    fi
   fi
 
   if [ "${CHECK_MODE}" != "" ] && [ "${DIGEST_MISSING_IN_CURRENT_VERSION_FILE}" != "" ]
@@ -165,7 +181,6 @@ do
     CHECK_FAILED=true
     continue
   fi
-
   if [ "${CHECK_MODE}" != "" ]
   then
     echo "CHECK FAILED: Dockerfile for ${DOCKER_IMAGE_NAME} has changed, but the ${DOCKERFILE_DIR}.current_version is not up to date."
@@ -179,6 +194,7 @@ do
   # - one for image identification based on Dockerfile hash
   # - one to exclude it from the GCP Vulnerability Scanner
   docker build \
+    ${ALWAYS_BUILD:+--no-cache --pull} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
     ${DOCKERFILE_DIR}
