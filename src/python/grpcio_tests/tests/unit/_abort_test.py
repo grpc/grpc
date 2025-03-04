@@ -92,7 +92,6 @@ def invalid_code_unary_unary(request, servicer_context):
     )
 
 
-<<<<<<< HEAD
 RPC_METHOD_HANDLERS = {
     _ABORT: grpc.unary_unary_rpc_method_handler(abort_unary_unary),
     _ABORT_WITH_STATUS: grpc.unary_unary_rpc_method_handler(
@@ -102,27 +101,6 @@ RPC_METHOD_HANDLERS = {
         invalid_code_unary_unary
     ),
 }
-=======
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == _ABORT:
-            return grpc.unary_unary_rpc_method_handler(abort_unary_unary)
-        elif handler_call_details.method == _ABORT_WITH_SERVER_CODE:
-            return grpc.unary_unary_rpc_method_handler(
-                abort_unary_unary_with_server_error
-            )
-        elif handler_call_details.method == _ABORT_WITH_STATUS:
-            return grpc.unary_unary_rpc_method_handler(
-                abort_with_status_unary_unary
-            )
-        elif handler_call_details.method == _INVALID_CODE:
-            return grpc.stream_stream_rpc_method_handler(
-                invalid_code_unary_unary
-            )
-        else:
-            return None
->>>>>>> parent of 9ba8bb5dd2 (Revert "[AbortError] And and check AbortError while abort" (#36076))
-
 
 class AbortTest(unittest.TestCase):
     def setUp(self):
