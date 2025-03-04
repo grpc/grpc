@@ -38,6 +38,7 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -355,7 +356,10 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     if (read_bytes <= 0) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
-      if (read_bytes == 0) {
+      if (res.kind() == OperationResultKind::kWrongGeneration) {
+        status = TcpAnnotateError(
+            absl::InternalError("Descriptor was opened before fork"));
+      } else if (read_bytes == 0) {
         status = TcpAnnotateError(absl::InternalError("Socket closed"));
       } else {
         status = TcpAnnotateError(absl::InternalError(
@@ -363,7 +367,6 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       }
       return true;
     }
-
     grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     AddToEstimate(static_cast<size_t>(read_bytes));
     DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
@@ -600,6 +603,17 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
   grpc_core::ReleasableMutexLock lock(&read_mu_);
+  if (handle_->IsHandleShutdown()) {
+    engine_->Run(
+        [on_read = std::move(on_read),
+         status = TcpAnnotateError(absl::InternalError("Handle was shut down")),
+         this]() mutable {
+          GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+              << "Endpoint[" << this << "]: Read failed: " << status;
+          on_read(status);
+        });
+    return false;
+  }
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "Endpoint[" << this << "]: Read";
   CHECK(read_cb_ == nullptr);
@@ -1179,19 +1193,19 @@ bool PosixEndpointImpl::Write(
 
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "Endpoint[" << this << "]: Write " << data->Length() << " bytes";
+  if (handle_->IsHandleShutdown()) {
+    status = TcpAnnotateError(absl::InternalError("EOF"));
+    engine_->Run(
+        [on_writable = std::move(on_writable), status, this]() mutable {
+          GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+              << "Endpoint[" << this << "]: Write failed: " << status;
+          on_writable(status);
+        });
+    return false;
+  }
 
   if (data->Length() == 0) {
     TcpShutdownTracedBufferList();
-    if (handle_->IsHandleShutdown()) {
-      status = TcpAnnotateError(absl::InternalError("EOF"));
-      engine_->Run(
-          [on_writable = std::move(on_writable), status, this]() mutable {
-            GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-                << "Endpoint[" << this << "]: Write failed: " << status;
-            on_writable(status);
-          });
-      return false;
-    }
     GRPC_TRACE_LOG(event_engine_endpoint, INFO)
         << "Endpoint[" << this << "]: Write skipped";
     return true;

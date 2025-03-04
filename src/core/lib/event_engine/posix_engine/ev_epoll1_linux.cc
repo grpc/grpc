@@ -47,7 +47,6 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
-#include "src/core/util/fork.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/sync.h"
@@ -60,7 +59,6 @@ class Epoll1EventHandle : public EventHandle {
  public:
   Epoll1EventHandle(const FileDescriptor& fd, Epoll1Poller* poller)
       : fd_(fd),
-        list_(this),
         poller_(poller),
         read_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
         write_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
@@ -135,7 +133,6 @@ class Epoll1EventHandle : public EventHandle {
   LockfreeEvent* ReadClosure() { return read_closure_.get(); }
   LockfreeEvent* WriteClosure() { return write_closure_.get(); }
   LockfreeEvent* ErrorClosure() { return error_closure_.get(); }
-  Epoll1Poller::HandlesList& ForkFdListPos() { return list_; }
   ~Epoll1EventHandle() override = default;
 
  private:
@@ -149,53 +146,14 @@ class Epoll1EventHandle : public EventHandle {
   std::atomic<bool> pending_read_{false};
   std::atomic<bool> pending_write_{false};
   std::atomic<bool> pending_error_{false};
-  Epoll1Poller::HandlesList list_;
   Epoll1Poller* poller_;
   std::unique_ptr<LockfreeEvent> read_closure_;
   std::unique_ptr<LockfreeEvent> write_closure_;
   std::unique_ptr<LockfreeEvent> error_closure_;
+  std::unique_ptr<LockfreeEvent> fork_closure_;
 };
 
 namespace {
-
-// Only used when GRPC_ENABLE_FORK_SUPPORT=1
-std::list<Epoll1Poller*> fork_poller_list;
-
-gpr_mu fork_fd_list_mu;
-
-void ForkPollerListAddPoller(Epoll1Poller* poller) {
-  if (grpc_core::Fork::Enabled()) {
-    gpr_mu_lock(&fork_fd_list_mu);
-    fork_poller_list.push_back(poller);
-    gpr_mu_unlock(&fork_fd_list_mu);
-  }
-}
-
-void ForkPollerListRemovePoller(Epoll1Poller* poller) {
-  if (grpc_core::Fork::Enabled()) {
-    gpr_mu_lock(&fork_fd_list_mu);
-    fork_poller_list.remove(poller);
-    gpr_mu_unlock(&fork_fd_list_mu);
-  }
-}
-
-bool InitEpoll1PollerLinux();
-
-// Called by the child process's post-fork handler to close open fds,
-// including the global epoll fd of each poller. This allows gRPC to shutdown in
-// the child process without interfering with connections or RPCs ongoing in the
-// parent.
-void ResetEventManagerOnFork() {
-  gpr_mu_lock(&fork_fd_list_mu);
-  // Delete all registered pollers. This also closes all open epoll_sets
-  while (!fork_poller_list.empty()) {
-    Epoll1Poller* poller = fork_poller_list.front();
-    fork_poller_list.pop_front();
-    poller->Close();
-  }
-  gpr_mu_unlock(&fork_fd_list_mu);
-  InitEpoll1PollerLinux();
-}
 
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
@@ -207,12 +165,6 @@ bool InitEpoll1PollerLinux() {
   auto fd = fds.EpollCreateAndCloexec();
   if (!fd.ok()) {
     return false;
-  }
-  if (grpc_core::Fork::Enabled()) {
-    if (grpc_core::Fork::RegisterResetChildPollingEngineFunc(
-            ResetEventManagerOnFork)) {
-      gpr_mu_init(&fork_fd_list_mu);
-    }
   }
   fds.Close(*fd);
   return true;
@@ -302,10 +254,7 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
             .ok());
   g_epoll_set_.num_events = 0;
   g_epoll_set_.cursor = 0;
-  ForkPollerListAddPoller(this);
 }
-
-void Epoll1Poller::Shutdown() { ForkPollerListRemovePoller(this); }
 
 void Epoll1Poller::Close() {
   grpc_core::MutexLock lock(&mu_);
@@ -510,14 +459,6 @@ std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler) {
   return nullptr;
 }
 
-void Epoll1Poller::PrepareFork() { Kick(); }
-
-// TODO(vigneshbabu): implement
-void Epoll1Poller::PostforkParent() {}
-
-// TODO(vigneshbabu): implement
-void Epoll1Poller::PostforkChild() {}
-
 }  // namespace grpc_event_engine::experimental
 
 #else  // defined(GRPC_LINUX_EPOLL)
@@ -531,8 +472,6 @@ using ::grpc_event_engine::experimental::Poller;
 Epoll1Poller::Epoll1Poller(Scheduler* /* engine */) {
   grpc_core::Crash("unimplemented");
 }
-
-void Epoll1Poller::Shutdown() { grpc_core::Crash("unimplemented"); }
 
 Epoll1Poller::~Epoll1Poller() { grpc_core::Crash("unimplemented"); }
 
@@ -564,12 +503,6 @@ void Epoll1Poller::Kick() { grpc_core::Crash("unimplemented"); }
 std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* /*scheduler*/) {
   return nullptr;
 }
-
-void Epoll1Poller::PrepareFork() {}
-
-void Epoll1Poller::PostforkParent() {}
-
-void Epoll1Poller::PostforkChild() {}
 
 }  // namespace grpc_event_engine::experimental
 

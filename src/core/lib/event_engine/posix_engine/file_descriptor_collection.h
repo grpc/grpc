@@ -19,6 +19,7 @@
 #include <optional>
 #include <unordered_set>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/sync.h"
@@ -43,7 +44,8 @@ class FileDescriptor {
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, FileDescriptor fd) {
-    sink.Append(absl::StrFormat("FD(%d)", fd.fd()));
+    sink.Append(
+        absl::StrFormat("FD(%d), generation: %d", fd.fd_, fd.generation_));
   }
 
  private:

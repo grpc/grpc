@@ -1858,22 +1858,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "forkable",
-    srcs = [
-        "lib/event_engine/forkable.cc",
-    ],
-    hdrs = [
-        "lib/event_engine/forkable.h",
-    ],
-    external_deps = ["absl/log:check"],
-    deps = [
-        "//:config_vars",
-        "//:gpr_platform",
-        "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "event_engine_poller",
     hdrs = [
         "lib/event_engine/poller.h",
@@ -2025,7 +2009,6 @@ grpc_cc_library(
         "event_engine_thread_local",
         "event_engine_work_queue",
         "examine_stack",
-        "forkable",
         "no_destruct",
         "notification",
         "sync",
@@ -2065,7 +2048,6 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_thread_pool",
-        "forkable",
         "notification",
         "posix_event_engine_timer",
         "sync",
@@ -2120,7 +2102,6 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_poller",
-        "forkable",
         "posix_event_engine_closure",
         "posix_event_engine_file_descriptors",
         "//:event_engine_base_hdrs",
@@ -2292,6 +2273,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
@@ -2331,7 +2313,6 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     deps = [
-        "forkable",
         "iomgr_port",
         "no_destruct",
         "posix_event_engine_event_poller",
@@ -2572,7 +2553,6 @@ grpc_cc_library(
         "event_engine_thread_pool",
         "event_engine_utils",
         "experiments",
-        "forkable",
         "init_internally",
         "iomgr_port",
         "native_posix_dns_resolver",
