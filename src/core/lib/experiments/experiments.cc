@@ -80,9 +80,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_pick_first_new =
-    "New pick_first impl with memory reduction.";
-const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -170,8 +167,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"pick_first_new", description_pick_first_new,
-     additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
     {"promise_based_http2_client_transport",
@@ -267,9 +262,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_pick_first_new =
-    "New pick_first impl with memory reduction.";
-const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -357,8 +349,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"pick_first_new", description_pick_first_new,
-     additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
     {"promise_based_http2_client_transport",
@@ -454,9 +444,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_pick_first_new =
-    "New pick_first impl with memory reduction.";
-const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -544,8 +531,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"pick_first_new", description_pick_first_new,
-     additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
     {"promise_based_http2_client_transport",
