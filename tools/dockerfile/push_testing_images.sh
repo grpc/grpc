@@ -28,7 +28,6 @@ cd -
 #  LOCAL_ONLY_MODE: if set (e.g. LOCAL_ONLY_MODE=true), script will only operate locally and it won't query artifact registry and won't upload to it.
 #  CHECK_MODE: if set, the script will check that all the .current_version files are up-to-date (used by sanity tests).
 #  SKIP_UPLOAD: if set, script won't push docker images it built to artifact registry.
-#  TRANSFER_FROM_DOCKERHUB: if set, will attempt to grab docker images missing in artifact registry from dockerhub instead of building them from scratch locally.
 
 # How to configure docker before running this script for the first time:
 # Configure docker:
@@ -174,28 +173,16 @@ do
     continue
   fi
 
-  if [ "${TRANSFER_FROM_DOCKERHUB}" == "" ]
-  then
-    echo "Running 'docker build' for ${DOCKER_IMAGE_NAME}"
-    echo "=========="
-    # Building a docker image with two tags;
-    # - one for image identification based on Dockerfile hash
-    # - one to exclude it from the GCP Vulnerability Scanner
-    docker build \
-      -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
-      -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
-      ${DOCKERFILE_DIR}
-    echo "=========="
-  else
-    # TRANSFER_FROM_DOCKERHUB is a temporary feature that pulls the corresponding image from dockerhub instead
-    # of building it from scratch locally. This should simplify the dockerhub -> artifact registry migration.
-    # TODO(jtattermusch): remove this feature in Q1 2023.
-    DOCKERHUB_ORGANIZATION=grpctesting
-    # pull image from dockerhub
-    docker pull ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
-    # add the artifact registry tag
-    docker tag ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
-  fi
+  echo "Running 'docker build' for ${DOCKER_IMAGE_NAME}"
+  echo "=========="
+  # Building a docker image with two tags;
+  # - one for image identification based on Dockerfile hash
+  # - one to exclude it from the GCP Vulnerability Scanner
+  docker build \
+    -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
+    -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
+    ${DOCKERFILE_DIR}
+  echo "=========="
 
   # After building the docker image locally, we don't know the image's RepoDigest (which is distinct from image's "Id" digest) yet
   # so we can only update the .current_version file with the image tag (which will be enough for running tests under docker locally).
