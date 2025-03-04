@@ -15,4 +15,4 @@
 proto_library and py_proto_library are in different Bazel packages.
 """
 
-import subpackage_pb2
+import in_subpackage.subpackage_pb2
