@@ -40,15 +40,12 @@ ulimit -a
 
 # Disable HOMEBREW update to avoid new updates which potentially have problems.
 # Brew packages installed when Kokoro image was built tend to have less conflict.
-#export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_AUTO_UPDATE=1
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
 # - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
 brew config
-#brew untap homebrew/cask
-rm -rf $(brew --caskroom)/adoptopenjdk8
-brew update
 
 brew install cmake
 brew install gnupg
@@ -69,9 +66,10 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   brew install rbenv ruby-build
-  rbenv install -L | grep -e "^3."
-  rbenv install 3.2.7
-  rbenv global 3.2.7
+  # Latest stable version available
+  RUBY_STABLE_VERSION=$(rbenv install -l | grep -v - | tail -1)
+  rbenv install $RUBY_STABLE_VERSION
+  rbenv global $RUBY_STABLE_VERSION
   ruby --version
 fi
 
