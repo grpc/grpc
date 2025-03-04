@@ -27,7 +27,7 @@ cd $(dirname $0)/../..
 #  CHECK_MODE: if set, the script will check that all the .current_version files are up-to-date (used by sanity tests).
 #  SKIP_UPLOAD: if set, script won't push docker images it built to artifact registry.
 #  HOST_ARCH_ONLY: if set, script will build docker images with the same architecture as the machine running the script.
-#  ALWAYS_BUILD: if set, script will build docker images all the times.
+#  ALWAYS_BUILD: if set, script will build docker images all the time.
 
 # How to configure docker before running this script for the first time:
 # Configure docker:
