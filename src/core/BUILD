@@ -7513,6 +7513,7 @@ grpc_cc_library(
         "http2_settings",
         "loop",
         "map",
+        "mpsc",
         "sync",
         ":match_promise",
         ":poll",

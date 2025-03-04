@@ -12483,6 +12483,8 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/cmdline.h
