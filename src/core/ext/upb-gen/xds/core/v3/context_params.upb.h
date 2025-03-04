@@ -79,12 +79,18 @@ UPB_INLINE bool xds_core_v3_ContextParams_params_get(const xds_core_v3_ContextPa
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, 0);
 }
-UPB_INLINE const xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParams_params_next(const xds_core_v3_ContextParams* msg, size_t* iter) {
+UPB_INLINE bool xds_core_v3_ContextParams_params_next(const xds_core_v3_ContextParams* msg, upb_StringView* key, upb_StringView* val,
+                           size_t* iter) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (const xds_core_v3_ContextParams_ParamsEntry*)_upb_map_next(map, iter);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
 }
 UPB_INLINE const upb_Map* _xds_core_v3_ContextParams_params_upb_map(xds_core_v3_ContextParams* msg) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -116,13 +122,6 @@ UPB_INLINE bool xds_core_v3_ContextParams_params_delete(xds_core_v3_ContextParam
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-UPB_INLINE xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParams_params_nextmutable(xds_core_v3_ContextParams* msg, size_t* iter) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (xds_core_v3_ContextParams_ParamsEntry*)_upb_map_next(map, iter);
 }
 
 /* xds.core.v3.ContextParams.ParamsEntry */

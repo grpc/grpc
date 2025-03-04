@@ -58,17 +58,21 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "cf2db029202bb8eb1471b9bae387cc475d15d9e99c547e6906155033f81249a5",
-            strip_prefix = "protobuf-2d4414f384dc499af113b5991ce3eaa9df6dd931",
+            sha256 = "4acba8d3443a4b86057daa2c0e99937b479913beba60863d1ccfeb424a0e8f88",
+            strip_prefix = "protobuf-b5816d4c48eeea817aa7410b4daa713d00f56b1b",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v29.0
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/2d4414f384dc499af113b5991ce3eaa9df6dd931.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/2d4414f384dc499af113b5991ce3eaa9df6dd931.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v30.0-rc2
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b5816d4c48eeea817aa7410b4daa713d00f56b1b.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/b5816d4c48eeea817aa7410b4daa713d00f56b1b.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
             ],
             patch_args = ["-p1"],
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+                "@googletest": "@com_google_googletest",
+            },
         )
 
     if "com_google_googletest" not in native.existing_rules():
