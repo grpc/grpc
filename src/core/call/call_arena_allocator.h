@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_ARENA_ALLOCATOR_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_ARENA_ALLOCATOR_H
+#ifndef GRPC_SRC_CORE_CALL_CALL_ARENA_ALLOCATOR_H
+#define GRPC_SRC_CORE_CALL_CALL_ARENA_ALLOCATOR_H
 
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
@@ -88,4 +88,4 @@ class CallArenaAllocator final : public ArenaFactory {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_ARENA_ALLOCATOR_H
+#endif  // GRPC_SRC_CORE_CALL_CALL_ARENA_ALLOCATOR_H

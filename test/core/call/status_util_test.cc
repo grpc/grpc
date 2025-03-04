@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 
 #include "gtest/gtest.h"
 
