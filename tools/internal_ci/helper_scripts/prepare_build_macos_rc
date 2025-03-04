@@ -67,6 +67,8 @@ if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   brew install rbenv ruby-build
   # Latest stable version available
+  rbenv install -l
+  rbenv install -l | grep -v - 
   RUBY_STABLE_VERSION=$(rbenv install -l | grep -v - | tail -1)
   rbenv install $RUBY_STABLE_VERSION
   rbenv global $RUBY_STABLE_VERSION
