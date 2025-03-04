@@ -25,13 +25,13 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 #include <string.h>
 
 #include <optional>
 #include <string>
 
 #include "absl/log/check.h"
+#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"

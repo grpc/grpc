@@ -165,7 +165,7 @@ TEST(RequestBufferTest, PushThenPullMessage) {
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
@@ -182,7 +182,7 @@ TEST(RequestBufferTest, PushThenPullMessageStreamBeforeInitialMetadata) {
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
@@ -199,7 +199,7 @@ TEST(RequestBufferTest, PushThenPullMessageStreamBeforeFirstMessage) {
   buffer.Commit(&reader);
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
@@ -215,11 +215,11 @@ TEST(RequestBufferTest, PullThenPushMessage) {
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  EXPECT_THAT(poll_msg, IsPending());
+  EXPECT_TRUE(poll_msg.pending());
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_WAKEUP(activity, EXPECT_THAT(pusher(), IsReady(49)));
   poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
@@ -236,11 +236,11 @@ TEST(RequestBufferTest, PullThenPushMessageSwitchBeforePullMessage) {
   buffer.Commit(&reader);
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  EXPECT_THAT(poll_msg, IsPending());
+  EXPECT_TRUE(poll_msg.pending());
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_WAKEUP(activity, EXPECT_THAT(pusher(), IsReady(0)));
   poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
@@ -256,12 +256,12 @@ TEST(RequestBufferTest, PullThenPushMessageSwitchBeforePushMessage) {
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  EXPECT_THAT(poll_msg, IsPending());
+  EXPECT_TRUE(poll_msg.pending());
   buffer.Commit(&reader);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_WAKEUP(activity, EXPECT_THAT(pusher(), IsReady(0)));
   poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
@@ -277,12 +277,12 @@ TEST(RequestBufferTest, PullThenPushMessageSwitchAfterPushMessage) {
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  EXPECT_THAT(poll_msg, IsPending());
+  EXPECT_TRUE(poll_msg.pending());
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_WAKEUP(activity, EXPECT_THAT(pusher(), IsReady(49)));
   buffer.Commit(&reader);
   poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
@@ -298,14 +298,14 @@ TEST(RequestBufferTest, PullEndOfStream) {
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
   EXPECT_EQ(buffer.FinishSends(), Success{});
   auto pull_msg2 = reader.PullMessage();
   poll_msg = pull_msg2();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
@@ -321,14 +321,14 @@ TEST(RequestBufferTest, PullEndOfStreamSwitchBeforePullMessage) {
   buffer.Commit(&reader);
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
   EXPECT_EQ(buffer.FinishSends(), Success{});
   auto pull_msg2 = reader.PullMessage();
   poll_msg = pull_msg2();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
@@ -348,14 +348,14 @@ TEST(RequestBufferTest, PullEndOfStreamSwitchBeforePushMessage) {
   EXPECT_THAT(pusher(), IsReady(0));
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
   EXPECT_EQ(buffer.FinishSends(), Success{});
   auto pull_msg2 = reader.PullMessage();
   poll_msg = pull_msg2();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
@@ -371,13 +371,13 @@ TEST(RequestBufferTest, PullEndOfStreamQueuedWithMessage) {
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
   auto pull_msg2 = reader.PullMessage();
   poll_msg = pull_msg2();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
@@ -399,13 +399,13 @@ TEST(RequestBufferTest,
   EXPECT_EQ(buffer.FinishSends(), Success{});
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
   auto pull_msg2 = reader.PullMessage();
   poll_msg = pull_msg2();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
@@ -423,13 +423,13 @@ TEST(RequestBufferTest,
   buffer.Commit(&reader);
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
   auto pull_msg2 = reader.PullMessage();
   poll_msg = pull_msg2();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
@@ -447,13 +447,13 @@ TEST(RequestBufferTest,
   auto pull_msg = reader.PullMessage();
   buffer.Commit(&reader);
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
   auto pull_msg2 = reader.PullMessage();
   poll_msg = pull_msg2();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
@@ -469,7 +469,7 @@ TEST(RequestBufferTest, PushThenPullMessageRepeatedly) {
     EXPECT_THAT(pusher(), IsReady(40 + 9 * (i + 1)));
     auto pull_msg = reader.PullMessage();
     auto poll_msg = pull_msg();
-    ASSERT_THAT(poll_msg, IsReady());
+    ASSERT_TRUE(poll_msg.ready());
     ASSERT_TRUE(poll_msg.value().ok());
     ASSERT_TRUE(poll_msg.value().value().has_value());
     EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage(i));
@@ -492,7 +492,7 @@ TEST(RequestBufferTest, PushSomeSwitchThenPushPullMessages) {
   for (int i = 0; i < 10; i++) {
     auto pull_msg = reader.PullMessage();
     auto poll_msg = pull_msg();
-    ASSERT_THAT(poll_msg, IsReady());
+    ASSERT_TRUE(poll_msg.ready());
     ASSERT_TRUE(poll_msg.value().ok());
     ASSERT_TRUE(poll_msg.value().value().has_value());
     EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage(i));
@@ -502,7 +502,7 @@ TEST(RequestBufferTest, PushSomeSwitchThenPushPullMessages) {
     EXPECT_THAT(pusher(), IsReady(0));
     auto pull_msg = reader.PullMessage();
     auto poll_msg = pull_msg();
-    ASSERT_THAT(poll_msg, IsReady());
+    ASSERT_TRUE(poll_msg.ready());
     ASSERT_TRUE(poll_msg.value().ok());
     ASSERT_TRUE(poll_msg.value().value().has_value());
     EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage(i));
@@ -600,16 +600,16 @@ TEST(RequestBufferTest, StreamingPushBeforeLastMessagePulled) {
   EXPECT_THAT(pusher2(), IsPending());
   auto pull1 = reader.PullMessage();
   EXPECT_WAKEUP(activity, auto poll1 = pull1());
-  ASSERT_THAT(poll1, IsReady());
+  ASSERT_TRUE(poll1.ready());
   ASSERT_TRUE(poll1.value().ok());
   ASSERT_TRUE(poll1.value().value().has_value());
   EXPECT_THAT(poll1.value().value().value(), IsTestMessage(1));
   auto pull2 = reader.PullMessage();
   auto poll2 = pull2();
-  EXPECT_THAT(poll2, IsPending());
+  EXPECT_TRUE(poll2.pending());
   EXPECT_WAKEUP(activity, EXPECT_THAT(pusher2(), IsReady(0)));
   poll2 = pull2();
-  ASSERT_THAT(poll2, IsReady());
+  ASSERT_TRUE(poll1.ready());
   ASSERT_TRUE(poll2.value().ok());
   ASSERT_TRUE(poll2.value().value().has_value());
   EXPECT_THAT(poll2.value().value().value(), IsTestMessage(2));
@@ -626,14 +626,14 @@ TEST(RequestBufferTest, SwitchAfterEndOfStream) {
   EXPECT_EQ(buffer.FinishSends(), Success{});
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
   buffer.Commit(&reader);
   auto pull_msg2 = reader.PullMessage();
   poll_msg = pull_msg2();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   EXPECT_FALSE(poll_msg.value().value().has_value());
 }
@@ -649,13 +649,13 @@ TEST(RequestBufferTest, NothingAfterEndOfStream) {
   EXPECT_EQ(buffer.FinishSends(), Success{});
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   ASSERT_TRUE(poll_msg.value().value().has_value());
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
   auto pull_msg2 = reader.PullMessage();
   poll_msg = pull_msg2();
-  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.ready());
   ASSERT_TRUE(poll_msg.value().ok());
   EXPECT_FALSE(poll_msg.value().value().has_value());
 }

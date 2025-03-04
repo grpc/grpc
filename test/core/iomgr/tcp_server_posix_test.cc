@@ -16,8 +16,7 @@
 //
 //
 
-#include <gtest/gtest.h>
-
+#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/time.h"
@@ -723,11 +722,6 @@ static bool FilterSpecialInterfaces(const char* ifname) {
 
 TEST(TcpServerPosixTest, MainTest) {
   grpc_closure destroyed;
-  grpc_arg chan_args[1];
-  chan_args[0].type = GRPC_ARG_INTEGER;
-  chan_args[0].key = const_cast<char*>(GRPC_ARG_EXPAND_WILDCARD_ADDRS);
-  chan_args[0].value.integer = 1;
-  const grpc_channel_args channel_args = {1, chan_args};
   struct ifaddrs* ifa = nullptr;
   struct ifaddrs* ifa_it;
   // Zalloc dst_addrs to avoid oversized frames.
@@ -790,9 +784,9 @@ TEST(TcpServerPosixTest, MainTest) {
     test_connect(1, nullptr, dst_addrs, true);
 
     // Test connect(2) with dst_addrs.
-    test_connect(1, &channel_args, dst_addrs, false);
+    test_connect(1, nullptr, dst_addrs, false);
     // Test connect(2) with dst_addrs.
-    test_connect(10, &channel_args, dst_addrs, false);
+    test_connect(10, nullptr, dst_addrs, false);
 
     GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                       grpc_schedule_on_exec_ctx);
