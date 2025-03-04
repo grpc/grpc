@@ -328,8 +328,9 @@ TEST_F(PollerForkTest, ListenerInParent) {
   SliceBuffer write_buffer;
   // 4M seems to be enough to fill the buffers on my Linux instance. May need to
   // be adjusted in the future!
-  write_buffer.Append(
-      Slice(MutableSlice::CreateUninitialized(4 * 1024 * 1024)));
+  MutableSlice slice = MutableSlice::CreateUninitialized(4 * 1024 * 1024);
+  std::fill(slice.begin(), slice.end(), 42);
+  write_buffer.Append(Slice(std::move(slice)));
   ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, nullptr));
   ASSERT_FALSE(endpoint->Write(write_status.Setter(), &write_buffer, nullptr))
       << "Need to send more data";
