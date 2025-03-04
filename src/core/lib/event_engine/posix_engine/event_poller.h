@@ -24,6 +24,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 
 namespace grpc_event_engine::experimental {
@@ -39,14 +40,15 @@ class PosixEventPoller;
 
 class EventHandle {
  public:
-  virtual int WrappedFd() = 0;
+  virtual FileDescriptor WrappedFd() = 0;
   // Delete the handle and optionally close the underlying file descriptor if
   // release_fd != nullptr. The on_done closure is scheduled to be invoked
   // after the operation is complete. After this operation, NotifyXXX and SetXXX
   // operations cannot be performed on the handle. In general, this method
   // should only be called after ShutdownHandle and after all existing NotifyXXX
   // closures have run and there is no waiting NotifyXXX closure.
-  virtual void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
+  virtual void OrphanHandle(PosixEngineClosure* on_done,
+                            FileDescriptor* release_fd,
                             absl::string_view reason) = 0;
   // Shutdown a handle. If there is an attempt to call NotifyXXX operations
   // after Shutdown handle, those closures will be run immediately with the
@@ -88,7 +90,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller,
                          public Forkable {
  public:
   // Return an opaque handle to perform actions on the provided file descriptor.
-  virtual EventHandle* CreateHandle(int fd, absl::string_view name,
+  virtual EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                                     bool track_err) = 0;
   virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
@@ -101,7 +103,11 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller,
   //    thread to return.
   // 3. Call Shutdown() on the poller.
   virtual void Shutdown() = 0;
+  FileDescriptors& GetFileDescriptors() { return file_descriptors_; }
   ~PosixEventPoller() override = default;
+
+ private:
+  FileDescriptors file_descriptors_;
 };
 
 }  // namespace grpc_event_engine::experimental

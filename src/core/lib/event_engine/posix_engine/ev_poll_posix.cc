@@ -34,6 +34,7 @@
 #include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
@@ -68,7 +69,7 @@ using Events = absl::InlinedVector<PollEventHandle*, 5>;
 
 class PollEventHandle : public EventHandle {
  public:
-  PollEventHandle(int fd, std::shared_ptr<PollPoller> poller)
+  PollEventHandle(FileDescriptor fd, std::shared_ptr<PollPoller> poller)
       : fd_(fd),
         pending_actions_(0),
         fork_fd_list_(this),
@@ -108,14 +109,14 @@ class PollEventHandle : public EventHandle {
     grpc_core::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListRemoveHandle(this);
   }
-  int WrappedFd() override { return fd_; }
+  FileDescriptor WrappedFd() override { return fd_; }
   bool IsOrphaned() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return is_orphaned_;
   }
   void CloseFd() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (!released_ && !closed_) {
       closed_ = true;
-      close(fd_);
+      poller_->GetFileDescriptors().Close(fd_);
     }
   }
   bool IsPollhup() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return pollhup_; }
@@ -132,7 +133,7 @@ class PollEventHandle : public EventHandle {
   void SetWatched(int watch_mask) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     watch_mask_ = watch_mask;
   }
-  void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
+  void OrphanHandle(PosixEngineClosure* on_done, FileDescriptor* release_fd,
                     absl::string_view reason) override;
   void ShutdownHandle(absl::Status why) override;
   void NotifyOnRead(PosixEngineClosure* on_read) override;
@@ -199,7 +200,7 @@ class PollEventHandle : public EventHandle {
   // required.
   grpc_core::Mutex mu_;
   std::atomic<int> ref_count_{1};
-  int fd_;
+  FileDescriptor fd_;
   int pending_actions_;
   PollPoller::HandlesList fork_fd_list_;
   PollPoller::HandlesList poller_handles_list_;
@@ -290,7 +291,8 @@ bool InitPollPollerPosix() {
 
 }  // namespace
 
-EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
+EventHandle* PollPoller::CreateHandle(FileDescriptor fd,
+                                      absl::string_view /*name*/,
                                       bool track_err) {
   // Avoid unused-parameter warning for debug-only parameter
   (void)track_err;
@@ -302,7 +304,8 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
   return handle;
 }
 
-void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
+void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done,
+                                   FileDescriptor* release_fd,
                                    absl::string_view /*reason*/) {
   ForceRemoveHandleFromPoller();
   {
@@ -327,7 +330,7 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
     }
     // signal read/write closed to OS so that future operations fail.
     if (!released_) {
-      shutdown(fd_, SHUT_RDWR);
+      poller_->GetFileDescriptors().Shutdown(fd_, SHUT_RDWR);
     }
     if (!IsWatched()) {
       CloseFd();
@@ -564,7 +567,7 @@ PollPoller::PollPoller(Scheduler* scheduler)
       num_poll_handles_(0),
       poll_handles_list_head_(nullptr),
       closed_(false) {
-  wakeup_fd_ = *CreateWakeupFd();
+  wakeup_fd_ = *CreateWakeupFd(&GetFileDescriptors());
   CHECK(wakeup_fd_ != nullptr);
   ForkPollerListAddPoller(this);
 }
@@ -577,7 +580,7 @@ PollPoller::PollPoller(Scheduler* scheduler, bool use_phony_poll)
       num_poll_handles_(0),
       poll_handles_list_head_(nullptr),
       closed_(false) {
-  wakeup_fd_ = *CreateWakeupFd();
+  wakeup_fd_ = *CreateWakeupFd(&GetFileDescriptors());
   CHECK(wakeup_fd_ != nullptr);
   ForkPollerListAddPoller(this);
 }
@@ -627,8 +630,11 @@ Poller::WorkResult PollPoller::Work(
       pfds = static_cast<struct pollfd*>(buf);
     }
 
+    auto& fds = GetFileDescriptors();
     pfd_count = 1;
-    pfds[0].fd = wakeup_fd_->ReadFd();
+    auto wakeup_fd = fds.GetFdForPolling(wakeup_fd_->ReadFd());
+    CHECK(wakeup_fd.has_value()) << "Wrong wakeup FD generation";
+    pfds[0].fd = *wakeup_fd;
     pfds[0].events = POLLIN;
     pfds[0].revents = 0;
     PollEventHandle* head = poll_handles_list_head_;
@@ -640,16 +646,23 @@ Poller::WorkResult PollPoller::Work(
         // poll handle list for the poller under the poller lock.
         CHECK(!head->IsOrphaned());
         if (!head->IsPollhup()) {
-          pfds[pfd_count].fd = head->WrappedFd();
-          watchers[pfd_count] = head;
-          // BeginPollLocked takes a ref of the handle. It also marks the
-          // fd as Watched with an appropriate watch_mask. The watch_mask
-          // is 0 if the fd is shutdown or if the fd is already ready (i.e
-          // both read and write events are already available) and doesn't
-          // need to be polled again. The watch_mask is > 0 otherwise
-          // indicating the fd needs to be polled.
-          pfds[pfd_count].events = head->BeginPollLocked(POLLIN, POLLOUT);
-          pfd_count++;
+          if (auto file_descriptor = fds.GetFdForPolling(head->WrappedFd());
+              file_descriptor.has_value()) {
+            pfds[pfd_count].fd = *file_descriptor;
+            watchers[pfd_count] = head;
+            // BeginPollLocked takes a ref of the handle. It also marks the
+            // fd as Watched with an appropriate watch_mask. The watch_mask
+            // is 0 if the fd is shutdown or if the fd is already ready (i.e
+            // both read and write events are already available) and doesn't
+            // need to be polled again. The watch_mask is > 0 otherwise
+            // indicating the fd needs to be polled.
+            pfds[pfd_count].events = head->BeginPollLocked(POLLIN, POLLOUT);
+            pfd_count++;
+          } else {
+            GRPC_TRACE_DLOG(polling, INFO)
+                << "Polling FD from a wrong generation: "
+                << head->WrappedFd().debug_fd();
+          }
         }
       }
       head = head->PollerHandlesListPos().next;
@@ -816,7 +829,8 @@ void PollPoller::Shutdown() { grpc_core::Crash("unimplemented"); }
 
 PollPoller::~PollPoller() { grpc_core::Crash("unimplemented"); }
 
-EventHandle* PollPoller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
+EventHandle* PollPoller::CreateHandle(FileDescriptor /*fd*/,
+                                      absl::string_view /*name*/,
                                       bool /*track_err*/) {
   grpc_core::Crash("unimplemented");
 }
