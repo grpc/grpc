@@ -38,15 +38,17 @@ namespace http2 {
 // [PH2][Pn] where n = 0 to 5.
 // This helps to maintain the uniformity for quick lookup and fixing.
 //
-// [PH2][P0] Must be fixed before the current PR is submitted.
-// [PH2][P1] Must be fixed before the current sub-project is considered
+// [PH2][P0] MUST be fixed before the current PR is submitted.
+// [PH2][P1] MUST be fixed before the current sub-project is considered
 //           complete.
-// [PH2][P2] Must be fixed before the current Milestone is considered
+// [PH2][P2] MUST be fixed before the current Milestone is considered
 //           complete.
-// [PH2][P3] Must be fixed before Milestone 3 is considered complete.
+// [PH2][P3] MUST be fixed before Milestone 3 is considered complete.
 // [PH2][P4] Can be fixed after roll out begins. Evaluate these during
 //           Milestone 4. Either do the TODOs or delete them.
-// [PH2][P5] This must be a separate standalone project.
+// [PH2][P5] This MUST be a separate standalone project.
+// [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
+//            in parallel.
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -71,6 +73,8 @@ class Http2ClientTransport final : public ClientTransport {
   ServerTransport* server_transport() override { return nullptr; }
   absl::string_view GetTransportName() const override { return "http2"; }
 
+  // TODO(tjagtap) : [PH2][EXT] : These can be removed when event engine rollout
+  // is complete.
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 
