@@ -6904,6 +6904,9 @@ grpc_cc_library(
         "opencensus-stats",
         "opencensus-tags",
     ],
+    tags = [
+        "grpc:broken-internally",
+    ],
     deps = [
         "arena_promise",
         "call_finalization",

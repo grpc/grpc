@@ -52,6 +52,9 @@ grpc_cc_library(
         "@com_google_protobuf//upb:base",
         "@com_google_protobuf//upb:mem",
     ],
+    tags = [
+        "grpc:broken-internally",
+    ],
     visibility = ["//:__subpackages__"],
     deps = [
         "//:call_tracer",
