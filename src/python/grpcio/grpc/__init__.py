@@ -21,6 +21,9 @@ import sys
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
+from grpc._errors import AbortError
+from grpc._errors import BaseError
+from grpc._errors import RpcError
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
@@ -305,13 +308,6 @@ class Status(abc.ABC):
         termination of the RPC.
       trailing_metadata: The trailing :term:`metadata` in the RPC.
     """
-
-
-#############################  gRPC Exceptions  ################################
-
-
-class RpcError(Exception):
-    """Raised by the gRPC library to indicate non-OK-status RPC termination."""
 
 
 ##############################  Shared Context  ################################
@@ -1241,8 +1237,8 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
             termination of the RPC.
 
         Raises:
-          Exception: An exception is always raised to signal the abortion the
-            RPC to the gRPC runtime.
+          AbortError: A grpc.AbortError is always raised to signal the abortion
+            the RPC to the gRPC runtime.
         """
         raise NotImplementedError()
 
@@ -1260,8 +1256,8 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
             StatusCode.OK.
 
         Raises:
-          Exception: An exception is always raised to signal the abortion the
-            RPC to the gRPC runtime.
+          AbortError: A grpc.AbortError is always raised to signal the abortion
+            the RPC to the gRPC runtime.
         """
         raise NotImplementedError()
 
@@ -2288,6 +2284,8 @@ __all__ = (
     "ServiceRpcHandler",
     "Server",
     "ServerInterceptor",
+    "AbortError",
+    "BaseError",
     "unary_unary_rpc_method_handler",
     "unary_stream_rpc_method_handler",
     "stream_unary_rpc_method_handler",

@@ -17,6 +17,7 @@ import logging
 import unittest
 
 import grpc
+from grpc._errors import UsageError
 from grpc.experimental import aio
 
 from src.proto.grpc.testing import messages_pb2
@@ -544,10 +545,10 @@ class TestStreamUnaryClientInterceptor(AioTestBase):
 
         call = stub.StreamingInputCall(request_iterator())
 
-        with self.assertRaises(grpc._cython.cygrpc.UsageError):
+        with self.assertRaises(UsageError):
             await call.write(request)
 
-        with self.assertRaises(grpc._cython.cygrpc.UsageError):
+        with self.assertRaises(UsageError):
             await call.done_writing()
 
         await channel.close()
