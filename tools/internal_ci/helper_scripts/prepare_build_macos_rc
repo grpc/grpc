@@ -73,6 +73,9 @@ then
   eval "$(rbenv init -)"
   rbenv global $RUBY_STABLE_VERSION
   ruby --version
+  gem install bundler
+  rvm osx-ssl-certs status all
+  rvm osx-ssl-certs update all
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
