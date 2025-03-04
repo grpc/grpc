@@ -97,10 +97,14 @@ RPC_METHOD_HANDLERS = {
     _ABORT_WITH_STATUS: grpc.unary_unary_rpc_method_handler(
         abort_with_status_unary_unary
     ),
+    _ABORT_WITH_SERVER_CODE: grpc.unary_unary_rpc_method_handler(
+        abort_unary_unary_with_server_error
+    ),
     _INVALID_CODE: grpc.stream_stream_rpc_method_handler(
         invalid_code_unary_unary
     ),
 }
+
 
 class AbortTest(unittest.TestCase):
     def setUp(self):
@@ -130,7 +134,12 @@ class AbortTest(unittest.TestCase):
 
     def test_server_abort_code(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary(_ABORT_WITH_SERVER_CODE)(_REQUEST)
+            self._channel.unary_unary(
+                grpc._common.fully_qualified_method(
+                    _SERVICE_NAME, _ABORT_WITH_SERVER_CODE
+                ),
+                _registered_method=True,
+            )(_REQUEST)
         rpc_error = exception_context.exception
 
         self.assertEqual(rpc_error.code(), grpc.StatusCode.INTERNAL)
