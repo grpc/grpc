@@ -68,6 +68,7 @@ then
   #brew install ruby@3.2
   brew install rbenv ruby-build
   # Latest stable version available
+  rbenv install -l
   RUBY_STABLE_VERSION="3.2.7" #$(rbenv install -l | grep -v - | tail -1)
   rbenv install $RUBY_STABLE_VERSION
   export PATH="$HOME/.rbenv/bin:$PATH"
