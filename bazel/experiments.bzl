@@ -40,6 +40,7 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "retry_in_callv3": "retry_in_callv3",
     "rq_fast_reject": "rq_fast_reject",
+    "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_listener": "server_listener",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
