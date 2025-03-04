@@ -367,6 +367,9 @@ struct grpc_completion_queue {
 
   grpc_closure pollset_shutdown_done;
   int num_polls;
+  gpr_mu work_mu;
+  gpr_cv work_cv;
+  bool waiting_for_kick;
 };
 
 // Forward declarations
@@ -539,6 +542,10 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
   cq->vtable = vtable;
   cq->poller_vtable = poller_vtable;
 
+  cq->waiting_for_kick = false;
+  gpr_mu_init(&cq->work_mu);
+  gpr_cv_init(&cq->work_cv);
+
   // One for destroy(), one for pollset_shutdown
   new (&cq->owning_refs) grpc_core::RefCount(
       2, GRPC_TRACE_FLAG_ENABLED(cq_refcount) ? "completion_queue" : nullptr);
@@ -688,6 +695,18 @@ bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag) {
   return cq->vtable->begin_op(cq, tag);
 }
 
+static grpc_error_handle cq_kick(grpc_completion_queue* cq,
+                                 grpc_pollset_worker* worker) {
+  gpr_mu_lock(&cq->work_mu);
+  LOG(INFO) << "[" << getpid() << "] Kicking";
+  // cq->waiting_for_kick = false;
+  grpc_error_handle kick_error =
+      cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), worker);
+  // gpr_cv_signal(&cq->work_cv);
+  gpr_mu_unlock(&cq->work_mu);
+  return kick_error;
+}
+
 // Queue a GRPC_OP_COMPLETED operation to a completion queue (with a
 // completion
 // type of GRPC_CQ_NEXT)
@@ -731,8 +750,7 @@ static void cq_end_op_for_next(
       // Only kick if this is the first item queued
       if (is_first) {
         gpr_mu_lock(cq->mu);
-        grpc_error_handle kick_error =
-            cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
+        grpc_error_handle kick_error = cq_kick(cq, nullptr);
         gpr_mu_unlock(cq->mu);
 
         if (!kick_error.ok()) {
@@ -807,8 +825,7 @@ static void cq_end_op_for_pluck(
       }
     }
 
-    grpc_error_handle kick_error =
-        cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), pluck_worker);
+    grpc_error_handle kick_error = cq_kick(cq, pluck_worker);
     gpr_mu_unlock(cq->mu);
     if (!kick_error.ok()) {
       LOG(ERROR) << "Kick failed: " << kick_error;
@@ -924,6 +941,29 @@ static void dump_pending_tags(grpc_completion_queue* cq) {
 static void dump_pending_tags(grpc_completion_queue* /*cq*/) {}
 #endif
 
+static grpc_error_handle cq_work(grpc_completion_queue* cq,
+                                 grpc_pollset_worker** worker,
+                                 gpr_timespec deadline) {
+  LOG(INFO) << "[" << getpid() << "] Entering work";
+  // gpr_mu_lock(&cq->work_mu);
+  grpc_error_handle err = cq->poller_vtable->work(
+      POLLSET_FROM_CQ(cq), worker,
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
+  // cq->waiting_for_kick = true;
+  /*
+
+  Does not work for server?
+
+  while (cq->waiting_for_kick) {
+    gpr_cv_wait(&cq->work_cv, &cq->work_mu, deadline);
+  }
+
+  */
+  // gpr_mu_unlock(&cq->work_mu);
+  LOG(INFO) << "[" << getpid() << "] Exiting work";
+  return err;
+}
+
 static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
                           void* reserved) {
   grpc_event ret;
@@ -1012,8 +1052,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
     // The main polling work happens in grpc_pollset_work
     gpr_mu_lock(cq->mu);
     cq->num_polls++;
-    grpc_error_handle err = cq->poller_vtable->work(
-        POLLSET_FROM_CQ(cq), nullptr, iteration_deadline);
+    grpc_error_handle err = cq_work(cq, nullptr, deadline);
     gpr_mu_unlock(cq->mu);
 
     if (!err.ok()) {
@@ -1034,7 +1073,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
   if (cqd->queue.num_items() > 0 &&
       cqd->pending_events.load(std::memory_order_acquire) > 0) {
     gpr_mu_lock(cq->mu);
-    (void)cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
+    (void)cq_kick(cq, nullptr);
     gpr_mu_unlock(cq->mu);
   }
 
@@ -1249,8 +1288,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       break;
     }
     cq->num_polls++;
-    grpc_error_handle err =
-        cq->poller_vtable->work(POLLSET_FROM_CQ(cq), &worker, deadline_millis);
+    grpc_error_handle err = cq_work(cq, &worker, deadline);
     if (!err.ok()) {
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);
@@ -1367,6 +1405,8 @@ void grpc_completion_queue_destroy(grpc_completion_queue* cq) {
   GRPC_TRACE_LOG(api, INFO) << "grpc_completion_queue_destroy(cq=" << cq << ")";
   grpc_completion_queue_shutdown(cq);
 
+  gpr_cv_destroy(&cq->work_cv);
+  gpr_mu_destroy(&cq->work_mu);
   grpc_core::ExecCtx exec_ctx;
   GRPC_CQ_INTERNAL_UNREF(cq, "destroy");
 }

@@ -45,6 +45,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/status.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -54,19 +55,19 @@ class WakeupFd {
   virtual absl::Status Wakeup() = 0;
   virtual ~WakeupFd() = default;
 
-  int ReadFd() { return read_fd_; }
-  int WriteFd() { return write_fd_; }
+  FileDescriptor ReadFd() { return read_fd_; }
+  FileDescriptor WriteFd() { return write_fd_; }
 
  protected:
-  WakeupFd() : read_fd_(0), write_fd_(0) {}
-  void SetWakeupFds(int read_fd, int write_fd) {
+  WakeupFd() {}
+  void SetWakeupFds(FileDescriptor read_fd, FileDescriptor write_fd) {
     read_fd_ = read_fd;
     write_fd_ = write_fd;
   }
 
  private:
-  int read_fd_;
-  int write_fd_;
+  FileDescriptor read_fd_;
+  FileDescriptor write_fd_;
 };
 
 }  // namespace grpc_event_engine::experimental

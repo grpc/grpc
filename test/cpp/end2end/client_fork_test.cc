@@ -30,14 +30,32 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 #include <grpcpp/server_context.h>
 #include <signal.h>
 
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
+#include "absl/strings/str_join.h"
 #include "src/core/util/fork.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
+
+std::string GetBacktrace() {
+  // constexpr std::string_view kBoop = "Boop";
+  // std::array<void*, 10> ptrs;
+  // int frame_count = absl::GetStackTrace(ptrs.data(), ptrs.size(), 1);
+  // std::vector<std::string> frames(frame_count);
+  // for (int i = 0; i < frame_count; ++i) {
+  //   std::array<char, 150> txt;
+  //   frames[i] = absl::StrCat("  ", i, " ",
+  //                            absl::Symbolize(ptrs[i], txt.data(), txt.size())
+  //                                ? std::string_view(txt.data(), txt.size())
+  //                                : kBoop);
+  // }
+  // return absl::StrJoin(frames, "\n");
+  return "";
+}
 
 namespace grpc {
 namespace testing {
@@ -50,10 +68,10 @@ class ServiceImpl final : public EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      LOG(INFO) << "recv msg " << request.message();
+      LOG(INFO) << "[" << getpid() << "] recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
-      LOG(INFO) << "wrote msg " << response.message();
+      LOG(INFO) << "[" << getpid() << "] wrote msg " << response.message();
     }
     return Status::OK;
   }
@@ -70,34 +88,42 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
   int port = grpc_pick_unused_port_or_die();
   std::string addr = absl::StrCat("localhost:", port);
 
+  LOG(INFO) << "[" << getpid() << "] Before first fork";
   pid_t server_pid = fork();
   switch (server_pid) {
     case -1:  // fork failed
       GTEST_FAIL() << "failure forking";
     case 0:  // post-fork child
     {
+      LOG(INFO) << "[" << getpid() << "] After first fork in server 1";
       ServiceImpl impl;
       grpc::ServerBuilder builder;
       builder.AddListeningPort(addr, grpc::InsecureServerCredentials());
       builder.RegisterService(&impl);
+      LOG(INFO) << "[" << getpid() << "] After first fork in server 2";
       std::unique_ptr<Server> server(builder.BuildAndStart());
+      LOG(INFO) << "[" << getpid() << "] After first fork in server 3";
       server->Wait();
       return;
     }
     default:  // post-fork parent
       break;
   }
-
+  LOG(INFO) << "[" << getpid() << "] After first fork in client";
   // Do a round trip before we fork.
   // NOTE: without this scope, test running with the epoll1 poller will fail.
   {
+    LOG(INFO) << "[" << getpid() << "] After first fork in client 1";
     std::unique_ptr<EchoTestService::Stub> stub = MakeStub(addr);
+    LOG(INFO) << "[" << getpid() << "] After first fork in client 2";
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
     context.set_wait_for_ready(true);
 
+    LOG(INFO) << "[" << getpid() << "] After first fork in client 3";
     auto stream = stub->BidiStream(&context);
+    LOG(INFO) << "[" << getpid() << "] After first fork in client 4";
 
     request.set_message("Hello");
     ASSERT_TRUE(stream->Write(request));
@@ -105,7 +131,9 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
     ASSERT_EQ(response.message(), request.message());
   }
   // Fork and do round trips in the post-fork parent and child.
+  LOG(INFO) << "[" << getpid() << "] Before fork 2";
   pid_t child_client_pid = fork();
+  LOG(INFO) << "[" << getpid() << "] After fork 2";
   switch (child_client_pid) {
     case -1:  // fork failed
       GTEST_FAIL() << "fork failed";
@@ -158,6 +186,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  absl::InitializeSymbolizer(argv[0]);
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc::testing::TestEnvironment env(&argc, argv);
