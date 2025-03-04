@@ -404,12 +404,14 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
   const auto status = server_trailing_metadata->get(GrpcStatusMetadata())
                           .value_or(GRPC_STATUS_UNKNOWN);
   *out_status = status;
-  Slice message_slice;
-  if (Slice* message =
-          server_trailing_metadata->get_pointer(GrpcMessageMetadata())) {
-    message_slice = message->Ref();
+  if (!IsErrorFlattenEnabled() || status != GRPC_STATUS_OK) {
+    Slice message_slice;
+    if (Slice* message =
+            server_trailing_metadata->get_pointer(GrpcMessageMetadata())) {
+      message_slice = message->Ref();
+    }
+    *out_status_details = message_slice.TakeCSlice();
   }
-  *out_status_details = message_slice.TakeCSlice();
   if (out_error_string != nullptr) {
     if (status != GRPC_STATUS_OK) {
       *out_error_string =

@@ -66,6 +66,7 @@ inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
+inline bool IsErrorFlattenEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
@@ -105,6 +106,7 @@ inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
+inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -147,6 +149,7 @@ inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
+inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -188,6 +191,7 @@ enum ExperimentIds {
   kExperimentIdCallv3ClientAuthFilter,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdDisableBufferHintOnHighMemoryPressure,
+  kExperimentIdErrorFlatten,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineDnsNonClientChannel,
@@ -237,6 +241,10 @@ inline bool IsChaoticGoodFramingLayerEnabled() {
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() {
   return IsExperimentEnabled<
       kExperimentIdDisableBufferHintOnHighMemoryPressure>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
+inline bool IsErrorFlattenEnabled() {
+  return IsExperimentEnabled<kExperimentIdErrorFlatten>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {

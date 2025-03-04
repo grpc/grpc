@@ -108,8 +108,7 @@ CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
   // The connection should be closed immediately after the max age grace period,
   // the in-progress RPC should fail.
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
-  EXPECT_THAT(server_status.message(),
-              ::testing::MatchesRegex("max connection age"));
+  EXPECT_EQ(server_status.message(), "max connection age");
 }
 
 CORE_END2END_TEST(Http2Tests, MaxAgeGracefullyClose) {

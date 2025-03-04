@@ -517,11 +517,15 @@ grpc_cc_library(
         "absl/time",
     ],
     deps = [
+        "experiments",
         "percent_encoding",
         "slice",
+        "status_conversion",
+        "time",
         "//:debug_location",
         "//:google_rpc_status_upb",
         "//:gpr",
+        "//:grpc_public_hdrs",
         "//:protobuf_any_upb",
     ],
 )
@@ -1743,6 +1747,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "experiments",
         "gpr_spinlock",
         "slice",
         "slice_refcount",
@@ -6472,6 +6477,7 @@ grpc_cc_library(
     external_deps = ["absl/status"],
     deps = [
         "error",
+        "experiments",
         "http2_errors",
         "status_conversion",
         "status_helper",

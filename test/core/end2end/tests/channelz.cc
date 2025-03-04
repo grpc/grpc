@@ -59,7 +59,8 @@ void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
   test.Expect(102, true);
   test.Expect(1, true);
   test.Step();
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(),
+            request_is_success && IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
 }
 
