@@ -65,14 +65,14 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
-  brew install ruby@3.2
-  #brew install rbenv ruby-build
+  #brew install ruby@3.2
+  brew install rbenv ruby-build
   # Latest stable version available
-  #RUBY_STABLE_VERSION=$(rbenv install -l | grep -v - | tail -1)
-  #rbenv install $RUBY_STABLE_VERSION
-  #export PATH="$HOME/.rbenv/bin:$PATH"
-  #eval "$(rbenv init -)"
-  #rbenv global $RUBY_STABLE_VERSION
+  RUBY_STABLE_VERSION="3.2.7" #$(rbenv install -l | grep -v - | tail -1)
+  rbenv install $RUBY_STABLE_VERSION
+  export PATH="$HOME/.rbenv/bin:$PATH"
+  eval "$(rbenv init -)"
+  rbenv global $RUBY_STABLE_VERSION
   ruby --version
   gem install bundler
   rvm osx-ssl-certs status all
