@@ -232,12 +232,6 @@ int PollElapsedTimeToMillis(grpc_core::Timestamp start) {
   }
 }
 
-// It is possible that GLIBC has epoll but the underlying kernel doesn't.
-// Create epoll_fd to make sure epoll support is available
-bool InitPollPollerPosix() {
-  return grpc_event_engine::experimental::SupportsWakeupFd();
-}
-
 }  // namespace
 
 EventHandle* PollPoller::CreateHandle(FileDescriptor fd,
@@ -604,10 +598,6 @@ Poller::WorkResult PollPoller::Work(
     }
     mu_.Unlock();
     if (!use_phony_poll_ || timeout_ms == 0 || pfd_count == 1) {
-      std::set<std::string> fds;
-      for (int i = 0; i < pfd_count; i++) {
-        fds.emplace(std::to_string(pfds[i].fd));
-      }
       // If use_phony_poll is true and pfd_count == 1, it implies only the
       // wakeup_fd is present. Allow the call to get blocked in this case as
       // well instead of crashing. This is because the poller::Work is called
@@ -720,7 +710,6 @@ Poller::WorkResult PollPoller::Work(
     }
     return Poller::WorkResult::kDeadlineExceeded;
   }
-
   // Run the provided callback synchronously.
   schedule_poll_again();
   // Process all pending events inline.
@@ -766,7 +755,8 @@ void PollPoller::AdvanceGeneration() {
 
 std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
                                            bool use_phony_poll) {
-  static bool kPollPollerSupported = InitPollPollerPosix();
+  static bool kPollPollerSupported =
+      grpc_event_engine::experimental::SupportsWakeupFd();
   if (kPollPollerSupported) {
     return std::make_shared<PollPoller>(scheduler, use_phony_poll);
   }
