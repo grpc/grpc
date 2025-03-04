@@ -61,6 +61,9 @@ using grpc_event_engine::experimental::EventEngine;
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
 
+// TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
+constexpr int kMpscSize = 10;
+
 void Http2ClientTransport::StartCall(GRPC_UNUSED CallHandler call_handler) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall Begin";
   // TODO(tjagtap) : [PH2][P1] : Implement this function.
@@ -332,7 +335,7 @@ auto Http2ClientTransport::OnWriteLoopEnded() {
 Http2ClientTransport::Http2ClientTransport(
     PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine)
-    : endpoint_(std::move(endpoint)) {
+    : endpoint_(std::move(endpoint)), outgoing_frames_(kMpscSize) {
   // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
   // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
 
