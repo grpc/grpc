@@ -40,7 +40,7 @@ CLASSIFIERS = [
 ]
 INSTALL_REQUIRES = [
     "grpcio>=1.49.0",
-    "protobuf>=5.26.1,<6.0dev",
+    "protobuf>=6.30.0,<7.0dev",
 ]
 
 SETUP_REQUIRES = INSTALL_REQUIRES + ["grpcio-tools>=1.49.0"]
