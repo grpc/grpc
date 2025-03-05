@@ -78,6 +78,14 @@ cleanup::job::cleanup_cluster_security() {
 }
 
 #######################################
+# The Gateway cluster is used by the gamma test suites.
+#######################################
+cleanup::job::cleanup_cluster_gamma() {
+  cleanup::activate_cluster GKE_CLUSTER_PSM_CSM
+  cleanup::run_clean "$1" --mode=k8s
+}
+
+#######################################
 # Set common variables for the cleanup script.
 # Globals:
 #   TEST_DRIVER_FLAGFILE: Relative path to test driver flagfile
@@ -131,6 +139,7 @@ main() {
     "cleanup_cluster_lb_secondary"
     "cleanup_cluster_security"
     "cleanup_cluster_url_map"
+    "cleanup_cluster_gamma"
   )
   for job_name in "${cleanup_jobs[@]}"; do
     echo "-------------------- Starting job ${job_name} --------------------"
