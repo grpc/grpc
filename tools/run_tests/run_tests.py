@@ -1070,8 +1070,7 @@ class CSharpLanguage(object):
                 if self.platform == "windows":
                     runtime_cmd = []
                 elif self.platform == "mac":
-                    # mono before version 5.2 on MacOS defaults to 32bit runtime
-                    runtime_cmd = ["mono", "--arch=64"]
+                    runtime_cmd = ["mono"]
                 else:
                     runtime_cmd = ["mono"]
             else:
