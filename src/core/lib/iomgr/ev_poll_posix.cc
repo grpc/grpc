@@ -38,6 +38,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -377,6 +378,11 @@ static void unref_by(grpc_fd* fd, int n) {
 }
 
 static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+    grpc_fd* gfd = new grpc_fd();
+    gfd->fd = fd;
+    return gfd;
+  }
   // Avoid unused-parameter warning for debug-only parameter
   (void)track_err;
   DCHECK(track_err == false);

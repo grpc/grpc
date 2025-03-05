@@ -27,6 +27,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
+    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_for_all_other_endpoints,event_engine_listener",
     "free_large_allocator": "free_large_allocator",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
@@ -52,6 +53,7 @@ EXPERIMENT_POLLERS = [
     "event_engine_dns",
     "event_engine_dns_non_client_channel",
     "event_engine_listener",
+    "event_engine_for_all_other_endpoints",
 ]
 
 EXPERIMENTS = {
@@ -63,6 +65,7 @@ EXPERIMENTS = {
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
+                "event_engine_for_all_other_endpoints",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
@@ -122,6 +125,7 @@ EXPERIMENTS = {
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
+                "event_engine_for_all_other_endpoints",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
@@ -167,6 +171,7 @@ EXPERIMENTS = {
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
+                "event_engine_for_all_other_endpoints",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
                 "retry_in_callv3",

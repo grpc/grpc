@@ -65,14 +65,12 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
                       .PreconditionChannelArgs(args);
   p.client = grpc_tcp_create(
       grpc_fd_create(sv[1], final_name.c_str(), false),
-      TcpOptionsFromEndpointConfig(
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(new_args)),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(new_args),
       "socketpair-server");
   final_name = absl::StrCat(name, ":server");
   p.server = grpc_tcp_create(
       grpc_fd_create(sv[0], final_name.c_str(), false),
-      TcpOptionsFromEndpointConfig(
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(new_args)),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(new_args),
       "socketpair-client");
   return p;
 }

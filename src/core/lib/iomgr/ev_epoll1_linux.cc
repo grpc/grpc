@@ -45,6 +45,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -332,6 +333,11 @@ static void fork_fd_list_remove_grpc_fd(grpc_fd* fd) {
 
 static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   grpc_fd* new_fd = nullptr;
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+    grpc_fd* gfd = new grpc_fd();
+    gfd->fd = fd;
+    return gfd;
+  }
 
   gpr_mu_lock(&fd_freelist_mu);
   if (fd_freelist != nullptr) {
