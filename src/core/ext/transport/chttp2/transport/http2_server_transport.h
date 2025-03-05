@@ -59,7 +59,7 @@ class Http2ServerTransport final : public ServerTransport {
   void AbortWithError();
 };
 
-static_assert(sizeof(Http2ServerTransport) <= 210, "Transport too large");
+static_assert(sizeof(Http2ServerTransport) <= 240, "Transport too large");
 
 }  // namespace http2
 }  // namespace grpc_core

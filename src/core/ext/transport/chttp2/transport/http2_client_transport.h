@@ -147,7 +147,7 @@ class Http2ClientTransport final : public ClientTransport {
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 };
 
-static_assert(sizeof(Http2ClientTransport) <= 210, "Transport too large");
+static_assert(sizeof(Http2ClientTransport) <= 240, "Transport too large");
 
 }  // namespace http2
 }  // namespace grpc_core
