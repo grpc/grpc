@@ -23,6 +23,7 @@
 #include <atomic>
 #include <limits>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/base/attributes.h"
@@ -637,6 +638,8 @@ class Party : public Activity, private Wakeable {
   std::atomic<Participant*> participants_[party_detail::kMaxParticipants] = {};
   RefCountedPtr<Arena> arena_;
 };
+
+static_assert(sizeof(Party) <= 180, "Party too large");
 
 template <>
 struct ContextSubclass<Party> {
