@@ -15,10 +15,10 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_UTIL_TRANSPORT_TEST_H
 #define GRPC_TEST_CORE_TRANSPORT_UTIL_TRANSPORT_TEST_H
 
-#include <google/protobuf/text_format.h>
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -37,6 +37,12 @@ class TransportTest : public ::testing::Test {
   const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>&
   event_engine() {
     return event_engine_;
+  }
+
+  ChannelArgs GetChannelArgs() {
+    return CoreConfiguration::Get()
+        .channel_args_preconditioning()
+        .PreconditionChannelArgs(nullptr);
   }
 
   RefCountedPtr<Arena> MakeArena() {
