@@ -12537,7 +12537,12 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chttp2/transport/http2_server_transport.h
+  - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/grpc_profiler.h
@@ -12547,10 +12552,14 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
+  - test/core/transport/util/transport_test.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
@@ -12563,7 +12572,12 @@ targets:
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
   uses_polling: false
 - name: http2_settings_test
   gtest: true
