@@ -713,7 +713,7 @@ grpc_cc_library(
         "//src/core:util/posix/cpu.cc",
         "//src/core:util/posix/stat.cc",
         "//src/core:util/posix/string.cc",
-        "//src/core:util/posix/thd.cc",
+        "//src/core:util/posix/thd.github.cc",
         "//src/core:util/posix/tmpfile.cc",
         "//src/core:util/string.cc",
         "//src/core:util/windows/cpu.cc",
@@ -1348,6 +1348,9 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_epoll1_linux.cc",
         "//src/core:lib/iomgr/ev_poll_posix.cc",
         "//src/core:lib/iomgr/ev_posix.cc",
+        "//src/core:lib/iomgr/event_engine_shims/closure.cc",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
+        "//src/core:lib/iomgr/event_engine_shims/tcp_client.cc",
         "//src/core:lib/iomgr/fork_posix.cc",
         "//src/core:lib/iomgr/fork_windows.cc",
         "//src/core:lib/iomgr/iocp_windows.cc",
@@ -1391,14 +1394,6 @@ grpc_cc_library(
         "//src/core:util/gethostname_fallback.cc",
         "//src/core:util/gethostname_host_name_max.cc",
         "//src/core:util/gethostname_sysconf.cc",
-    ] +
-    # TODO(vigneshbabu): remove these
-    # These headers used to be vended by this target, but they have to be
-    # removed after landing EventEngine.
-    [
-        "//src/core:lib/iomgr/event_engine_shims/closure.cc",
-        "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
-        "//src/core:lib/iomgr/event_engine_shims/tcp_client.cc",
     ],
     hdrs = [
         "//src/core:lib/iomgr/block_annotate.h",

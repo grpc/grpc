@@ -150,17 +150,6 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
 
 }  // namespace
 
-#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
-#ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
-
-bool SetSocketDualStack(int fd) {
-  const int off = 0;
-  return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
-}
-
-#endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
-#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
-
 PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   void* value;
   PosixTcpOptions options;
