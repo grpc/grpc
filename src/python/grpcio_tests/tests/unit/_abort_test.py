@@ -28,6 +28,7 @@ from tests.unit.framework.common import test_constants
 _SERVICE_NAME = "test"
 _ABORT = "abort"
 _ABORT_WITH_STATUS = "AbortWithStatus"
+_ABORT_WITH_SERVER_ERROR = "AbortWithServerError"
 _INVALID_CODE = "InvalidCode"
 
 _REQUEST = b"\x00\x00\x00"
@@ -97,7 +98,7 @@ RPC_METHOD_HANDLERS = {
     _ABORT_WITH_STATUS: grpc.unary_unary_rpc_method_handler(
         abort_with_status_unary_unary
     ),
-    _ABORT_WITH_SERVER_CODE: grpc.unary_unary_rpc_method_handler(
+    _ABORT_WITH_SERVER_ERROR: grpc.unary_unary_rpc_method_handler(
         abort_unary_unary_with_server_error
     ),
     _INVALID_CODE: grpc.stream_stream_rpc_method_handler(
@@ -136,7 +137,7 @@ class AbortTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 grpc._common.fully_qualified_method(
-                    _SERVICE_NAME, _ABORT_WITH_SERVER_CODE
+                    _SERVICE_NAME, _ABORT_WITH_SERVER_ERROR
                 ),
                 _registered_method=True,
             )(_REQUEST)
