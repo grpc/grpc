@@ -338,8 +338,11 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
     }
 
     if (try_new_thread && gpr_spinlock_trylock(&adding_thread_lock_)) {
+      // We re-acquire the thread state lock to verify it is not shutting down
+      // as we may have raced with `SetThreading(false)` call.
+      gpr_mu_lock(&ts->mu);
       cur_thread_count = static_cast<size_t>(gpr_atm_acq_load(&num_threads_));
-      if (cur_thread_count < max_threads_) {
+      if (!ts->shutdown && cur_thread_count < max_threads_) {
         // Increment num_threads (safe to do a store instead of a cas because we
         // always increment num_threads under the 'adding_thread_lock')
         gpr_atm_rel_store(&num_threads_, cur_thread_count + 1);
@@ -348,6 +351,7 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
             Thread(name_, &Executor::ThreadMain, &thd_state_[cur_thread_count]);
         thd_state_[cur_thread_count].thd.Start();
       }
+      gpr_mu_unlock(&ts->mu);
       gpr_spinlock_unlock(&adding_thread_lock_);
     }
   } while (retry_push);
