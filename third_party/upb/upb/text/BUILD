@@ -47,7 +47,6 @@ cc_library(
     deps = [
         ":internal",
         "//upb:base",
-        "//upb:eps_copy_input_stream",
         "//upb:message",
         "//upb:mini_table",
         "//upb:port",
@@ -99,9 +98,9 @@ cc_test(
         "//upb/message:internal",
         "//upb/test:test_proto_upb_minitable",
         "//upb/test:test_upb_proto",
-        "@com_google_absl//absl/log:absl_log",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@abseil-cpp//absl/log:absl_log",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 

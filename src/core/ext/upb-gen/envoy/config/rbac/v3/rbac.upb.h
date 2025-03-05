@@ -144,13 +144,19 @@ UPB_INLINE bool envoy_config_rbac_v3_RBAC_policies_get(const envoy_config_rbac_v
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, sizeof(*val));
 }
-UPB_INLINE const envoy_config_rbac_v3_RBAC_PoliciesEntry* envoy_config_rbac_v3_RBAC_policies_next(const envoy_config_rbac_v3_RBAC* msg, size_t* iter) {
+UPB_INLINE bool envoy_config_rbac_v3_RBAC_policies_next(const envoy_config_rbac_v3_RBAC* msg, upb_StringView* key, const envoy_config_rbac_v3_Policy** val,
+                           size_t* iter) {
   const upb_MiniTableField field = {2, 16, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__rbac__v3__RBAC__PoliciesEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__rbac__v3__Policy_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (const envoy_config_rbac_v3_RBAC_PoliciesEntry*)_upb_map_next(map, iter);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
 }
 UPB_INLINE const upb_Map* _envoy_config_rbac_v3_RBAC_policies_upb_map(envoy_config_rbac_v3_RBAC* msg) {
   const upb_MiniTableField field = {2, 16, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -206,14 +212,6 @@ UPB_INLINE bool envoy_config_rbac_v3_RBAC_policies_delete(envoy_config_rbac_v3_R
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-UPB_INLINE envoy_config_rbac_v3_RBAC_PoliciesEntry* envoy_config_rbac_v3_RBAC_policies_nextmutable(envoy_config_rbac_v3_RBAC* msg, size_t* iter) {
-  const upb_MiniTableField field = {2, 16, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__rbac__v3__RBAC__PoliciesEntry_msg_init);
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__rbac__v3__Policy_msg_init);
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (envoy_config_rbac_v3_RBAC_PoliciesEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE void envoy_config_rbac_v3_RBAC_set_audit_logging_options(envoy_config_rbac_v3_RBAC *msg, envoy_config_rbac_v3_RBAC_AuditLoggingOptions* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -404,13 +402,13 @@ UPB_INLINE bool envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_clear_is_optional(envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE bool envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_is_optional(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg) {
   bool default_val = false;
   bool ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -430,7 +428,7 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_rbac_v
   return sub;
 }
 UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_set_is_optional(envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig *msg, bool value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 

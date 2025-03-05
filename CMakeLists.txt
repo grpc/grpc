@@ -4011,7 +4011,6 @@ add_library(upb_message_lib
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
   third_party/upb/upb/message/compat.c
-  third_party/upb/upb/message/internal/compare_unknown.c
   third_party/upb/upb/message/internal/extension.c
   third_party/upb/upb/message/internal/message.c
   third_party/upb/upb/message/map.c
@@ -4020,8 +4019,6 @@ add_library(upb_message_lib
   third_party/upb/upb/mini_table/extension_registry.c
   third_party/upb/upb/mini_table/internal/message.c
   third_party/upb/upb/mini_table/message.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_message_lib PUBLIC cxx_std_17)
@@ -4212,9 +4209,12 @@ endif()
 
 
 add_library(upb_wire_lib
+  third_party/upb/upb/message/internal/iterator.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_wire_lib PUBLIC cxx_std_17)

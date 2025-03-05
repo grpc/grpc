@@ -1,5 +1,6 @@
 # TODO: describe this package.
 
+load("//bazel:proto_library.bzl", "proto_library")
 load(
     "//bazel:upb_proto_library.bzl",
     "upb_c_proto_library",
@@ -44,8 +45,8 @@ cc_test(
         "//upb:base",
         "//upb:mem",
         "//upb:reflection",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -60,8 +61,8 @@ cc_test(
         "//upb:base",
         "//upb:mem",
         "//upb:reflection",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 

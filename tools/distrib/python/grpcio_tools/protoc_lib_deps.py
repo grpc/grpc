@@ -220,6 +220,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/java/name_resolver.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/names.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/shared_code_generator.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/kotlin/field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/kotlin/file.cc',
     'third_party/protobuf/src/google/protobuf/compiler/kotlin/generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/kotlin/message.cc',
@@ -315,7 +316,6 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/repeated_ptr_field.cc',
     'third_party/protobuf/src/google/protobuf/service.cc',
     'third_party/protobuf/src/google/protobuf/stubs/common.cc',
-    'third_party/protobuf/src/google/protobuf/testing/file.cc',
     'third_party/protobuf/src/google/protobuf/text_format.cc',
     'third_party/protobuf/src/google/protobuf/unknown_field_set.cc',
     'third_party/protobuf/src/google/protobuf/wire_format.cc',
@@ -351,4 +351,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="2d4414f384dc499af113b5991ce3eaa9df6dd931"
+PROTOBUF_SUBMODULE_VERSION="d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e"

@@ -63,7 +63,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    "protobuf>=5.26.1,<6.0dev",
+    "protobuf>=6.30.0,<7.0dev",
     "grpcio>={version}".format(version=grpc_version.VERSION),
     "googleapis-common-protos>=1.5.5",
 )
