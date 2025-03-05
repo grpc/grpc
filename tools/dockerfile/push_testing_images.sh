@@ -66,6 +66,18 @@ ALL_DOCKERFILE_DIRS=(
   third_party/rake-compiler-dock/*
 )
 
+# a list of docker directories that are based on ARM64 base images
+ARM_DOCKERFILE_DIRS=(
+  tools/dockerfile/distribtest/python_alpine_aarch64
+  tools/dockerfile/distribtest/python_python39_buster_aarch64
+  tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64
+  tools/dockerfile/test/bazel_arm64
+  tools/dockerfile/test/csharp_debian11_arm64
+  tools/dockerfile/test/php8_debian12_arm64
+  tools/dockerfile/test/python_debian11_default_arm64
+  tools/dockerfile/test/ruby_debian11_arm64
+)
+
 CHECK_FAILED=""
 
 if [ "${CHECK_MODE}" != "" ]
@@ -104,9 +116,15 @@ do
   # if HOST_ARCH_ONLY is set, skip if the docker image's arthiecture doesn't match with the host architecture
   if [ "${HOST_ARCH_ONLY}" != "" ]; then
     [[ "$(uname -m)" == aarch64 ]] && is_host_arm=1 || is_host_arm=0
-    [[ "$DOCKER_IMAGE_NAME" == *arm* || "$DOCKER_IMAGE_NAME" == *aarch* ]] && is_docker_for_arm=1 || is_docker_for_arm=0
+    is_docker_for_arm=0
+    for ARM_DOCKERFILE_DIR in "${ARM_DOCKERFILE_DIRS[@]}"; do
+      if [ "$DOCKERFILE_DIR" == "$ARM_DOCKERFILE_DIR" ]; then
+        is_docker_for_arm=1
+        break
+      fi
+    done
     if [ "$is_host_arm" != "$is_docker_for_arm" ]; then
-      echo "Skipped due to the different architecture " ${DOCKER_IMAGE_NAME}
+      echo "Skipped due to the different architecture:" ${DOCKER_IMAGE_NAME}
       continue
     fi
   fi
