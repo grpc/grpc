@@ -18,17 +18,16 @@
 # they simply provide an easily reproducible environment for running gRPC
 # tests.
 
-set -ex
+set -e
 
 cd $(dirname $0)/../..
-git_root=$(pwd)
-cd -
 
 # Recognized env variables that can be used as params.
 #  LOCAL_ONLY_MODE: if set (e.g. LOCAL_ONLY_MODE=true), script will only operate locally and it won't query artifact registry and won't upload to it.
 #  CHECK_MODE: if set, the script will check that all the .current_version files are up-to-date (used by sanity tests).
 #  SKIP_UPLOAD: if set, script won't push docker images it built to artifact registry.
-#  TRANSFER_FROM_DOCKERHUB: if set, will attempt to grab docker images missing in artifact registry from dockerhub instead of building them from scratch locally.
+#  HOST_ARCH_ONLY: if set, script will build docker images with the same architecture as the machine running the script.
+#  ALWAYS_BUILD: if set, script will build docker images all the time.
 
 # How to configure docker before running this script for the first time:
 # Configure docker:
@@ -44,14 +43,16 @@ then
   docker run --rm -it debian:11 bash -c 'echo "sudoless docker run works!"' || \
       (echo "Error: docker not installed or sudoless docker doesn't work?" && exit 1)
 
-  # Some of the images we build are for arm64 architecture and the easiest
-  # way of allowing them to build locally on x64 machine is to use
-  # qemu binfmt-misc hook that automatically runs arm64 binaries under
-  # an emulator.
-  # Perform a check that "qemu-user-static" with binfmt-misc hook
-  # is installed, to give an early warning (otherwise building arm64 images won't work)
-  docker run --rm -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
-      (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
+  if [ "${HOST_ARCH_ONLY}" == "" ]; then
+    # Some of the images we build are for arm64 architecture and the easiest
+    # way of allowing them to build locally on x64 machine is to use
+    # qemu binfmt-misc hook that automatically runs arm64 binaries under
+    # an emulator.
+    # Perform a check that "qemu-user-static" with binfmt-misc hook
+    # is installed, to give an early warning (otherwise building arm64 images won't work)
+    docker run --rm -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
+        (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
+  fi
 fi
 
 ARTIFACT_REGISTRY_PREFIX=us-docker.pkg.dev/grpc-testing/testing-images-public
@@ -63,6 +64,18 @@ ALL_DOCKERFILE_DIRS=(
   tools/dockerfile/interoptest/*
   tools/dockerfile/distribtest/*
   third_party/rake-compiler-dock/*
+)
+
+# a list of docker directories that are based on ARM64 base images
+ARM_DOCKERFILE_DIRS=(
+  tools/dockerfile/distribtest/python_alpine_aarch64
+  tools/dockerfile/distribtest/python_python39_buster_aarch64
+  tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64
+  tools/dockerfile/test/bazel_arm64
+  tools/dockerfile/test/csharp_debian11_arm64
+  tools/dockerfile/test/php8_debian12_arm64
+  tools/dockerfile/test/python_debian11_default_arm64
+  tools/dockerfile/test/ruby_debian11_arm64
 )
 
 CHECK_FAILED=""
@@ -98,9 +111,25 @@ do
     DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
   fi
 
-  echo "Visiting ${DOCKERFILE_DIR}"
+  echo "* Visiting ${DOCKERFILE_DIR}"
 
-  if [ "${LOCAL_ONLY_MODE}" == "" ]
+  # if HOST_ARCH_ONLY is set, skip if the docker image's arthiecture doesn't match with the host architecture
+  if [ "${HOST_ARCH_ONLY}" != "" ]; then
+    [[ "$(uname -m)" == aarch64 ]] && is_host_arm=1 || is_host_arm=0
+    is_docker_for_arm=0
+    for ARM_DOCKERFILE_DIR in "${ARM_DOCKERFILE_DIRS[@]}"; do
+      if [ "$DOCKERFILE_DIR" == "$ARM_DOCKERFILE_DIR" ]; then
+        is_docker_for_arm=1
+        break
+      fi
+    done
+    if [ "$is_host_arm" != "$is_docker_for_arm" ]; then
+      echo "Skipped due to the different architecture:" ${DOCKER_IMAGE_NAME}
+      continue
+    fi
+  fi
+
+  if [[ -z "${LOCAL_ONLY_MODE}" && -z "${ALWAYS_BUILD}" ]]
   then
     # value obtained here corresponds to the "RepoDigests" from "docker image inspect", but without the need to actually pull the image
     DOCKER_IMAGE_DIGEST_REMOTE=$(gcloud artifacts docker images describe "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" --format=json | jq -r '.image_summary.digest')
@@ -156,8 +185,12 @@ do
 
   if [ "${LOCAL_BUILD_REQUIRED}" == "" ]
   then
-    echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed. Will skip 'docker build'."
-    continue
+    if [ "${ALWAYS_BUILD}" == "" ]; then
+      echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed. Will skip 'docker build'."
+      continue
+    else
+      echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed but will do 'docker build' anyway."
+    fi
   fi
 
   if [ "${CHECK_MODE}" != "" ] && [ "${DIGEST_MISSING_IN_CURRENT_VERSION_FILE}" != "" ]
@@ -166,7 +199,6 @@ do
     CHECK_FAILED=true
     continue
   fi
-
   if [ "${CHECK_MODE}" != "" ]
   then
     echo "CHECK FAILED: Dockerfile for ${DOCKER_IMAGE_NAME} has changed, but the ${DOCKERFILE_DIR}.current_version is not up to date."
@@ -174,28 +206,17 @@ do
     continue
   fi
 
-  if [ "${TRANSFER_FROM_DOCKERHUB}" == "" ]
-  then
-    echo "Running 'docker build' for ${DOCKER_IMAGE_NAME}"
-    echo "=========="
-    # Building a docker image with two tags;
-    # - one for image identification based on Dockerfile hash
-    # - one to exclude it from the GCP Vulnerability Scanner
-    docker build \
-      -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
-      -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
-      ${DOCKERFILE_DIR}
-    echo "=========="
-  else
-    # TRANSFER_FROM_DOCKERHUB is a temporary feature that pulls the corresponding image from dockerhub instead
-    # of building it from scratch locally. This should simplify the dockerhub -> artifact registry migration.
-    # TODO(jtattermusch): remove this feature in Q1 2023.
-    DOCKERHUB_ORGANIZATION=grpctesting
-    # pull image from dockerhub
-    docker pull ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
-    # add the artifact registry tag
-    docker tag ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
-  fi
+  echo "Running 'docker build' for ${DOCKER_IMAGE_NAME}"
+  echo "=========="
+  # Building a docker image with two tags;
+  # - one for image identification based on Dockerfile hash
+  # - one to exclude it from the GCP Vulnerability Scanner
+  docker build \
+    ${ALWAYS_BUILD:+--no-cache --pull} \
+    -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
+    -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
+    ${DOCKERFILE_DIR}
+  echo "=========="
 
   # After building the docker image locally, we don't know the image's RepoDigest (which is distinct from image's "Id" digest) yet
   # so we can only update the .current_version file with the image tag (which will be enough for running tests under docker locally).
