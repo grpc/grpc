@@ -257,6 +257,31 @@ class MpscReceiver {
       return Pending{};
     };
   }
+  // Returns a promise that will resolve to ValueOrFailure<std::vector<T>>.
+  // If receiving is closed, the promise will resolve to failure.
+  // Otherwise, the promise returns all the items enqueued till now and removes
+  // said items from the queue.
+  auto NextBatch() {
+    return [this]() -> Poll<ValueOrFailure<std::vector<T>>> {
+      if (buffer_it_ != buffer_.end()) {
+        std::vector<T> tmp_buffer;
+        std::move(buffer_it_, buffer_.end(), std::back_inserter(tmp_buffer));
+        buffer_.clear();
+        buffer_it_ = buffer_.end();
+        return tmp_buffer;
+      }
+
+      auto p = center_->PollReceiveBatch(buffer_);
+      if (bool* r = p.value_if_ready()) {
+        if (!*r) return Failure{};
+        auto tmp_buffer(std::move(buffer_));
+        buffer_.clear();
+        buffer_it_ = buffer_.end();
+        return tmp_buffer;
+      }
+      return Pending{};
+    };
+  }
 
  private:
   // Received items. We move out of here one by one, but don't resize the
