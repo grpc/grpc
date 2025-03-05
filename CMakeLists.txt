@@ -3092,7 +3092,7 @@ add_library(grpc_test_util
   test/core/event_engine/test_init.cc
   test/core/test_util/build.cc
   test/core/test_util/port.cc
-  test/core/test_util/port_isolated_runtime_environment.cc
+  test/core/test_util/port_ci.cc
   test/core/test_util/port_server_client.cc
   test/core/test_util/reconnect_server.cc
   test/core/test_util/stack_tracer.cc
@@ -3159,7 +3159,7 @@ add_library(grpc_test_util_unsecure
   test/core/event_engine/test_init.cc
   test/core/test_util/build.cc
   test/core/test_util/port.cc
-  test/core/test_util/port_isolated_runtime_environment.cc
+  test/core/test_util/port_ci.cc
   test/core/test_util/port_server_client.cc
   test/core/test_util/reconnect_server.cc
   test/core/test_util/stack_tracer.cc
@@ -3555,6 +3555,7 @@ add_library(grpc_unsecure
   src/core/load_balancing/outlier_detection/outlier_detection.cc
   src/core/load_balancing/pick_first/pick_first.cc
   src/core/load_balancing/priority/priority.cc
+  src/core/load_balancing/ring_hash/ring_hash.cc
   src/core/load_balancing/rls/rls.cc
   src/core/load_balancing/round_robin/round_robin.cc
   src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
@@ -26624,8 +26625,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_request_call_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_unsecure
-    grpc_test_util_unsecure
+    grpc++
+    grpc_test_util
   )
 
 

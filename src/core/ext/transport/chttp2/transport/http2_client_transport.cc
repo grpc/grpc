@@ -21,6 +21,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 
@@ -42,6 +43,8 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -57,6 +60,9 @@ using grpc_event_engine::experimental::EventEngine;
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
+
+// TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
+constexpr int kMpscSize = 10;
 
 void Http2ClientTransport::StartCall(GRPC_UNUSED CallHandler call_handler) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall Begin";
@@ -329,7 +335,7 @@ auto Http2ClientTransport::OnWriteLoopEnded() {
 Http2ClientTransport::Http2ClientTransport(
     PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine)
-    : endpoint_(std::move(endpoint)) {
+    : endpoint_(std::move(endpoint)), outgoing_frames_(kMpscSize) {
   // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
   // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
 
@@ -345,7 +351,8 @@ Http2ClientTransport::Http2ClientTransport(
   write_party_ = Party::Make(std::move(write_party_arena));
 
   general_party_->Spawn("ReadLoop", ReadLoop(), OnReadLoopEnded());
-  write_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
+  // TODO(tjagtap) : [PH2][P2] Fix when needed.
+  general_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
@@ -355,6 +362,43 @@ Http2ClientTransport::~Http2ClientTransport() {
   general_party_.reset();
   write_party_.reset();
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
+}
+
+RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
+    uint32_t stream_id) {
+  MutexLock lock(&transport_mutex_);
+  auto it = stream_list_.find(stream_id);
+  if (it == stream_list_.end()) {
+    HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport::LookupStream Stream not found stream_id="
+        << stream_id;
+    return nullptr;
+  }
+  return it->second;
+}
+
+uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
+  // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
+  // TODO(tjagtap) : [PH2][P0] Validate implementation.
+  MutexLock lock(&transport_mutex_);
+  const uint32_t stream_id = next_stream_id_;
+  next_stream_id_ += 2;
+  const bool on_done_added =
+      call_handler.OnDone([self = RefAsSubclass<Http2ClientTransport>(),
+                           stream_id](bool cancelled) {
+        HTTP2_CLIENT_DLOG << "CHAOTIC_GOOD: Client call " << self.get()
+                          << " id=" << stream_id
+                          << " done: cancelled=" << cancelled;
+        if (cancelled) {
+          // TODO(tjagtap) : [PH2][P1] Cancel implementation.
+        }
+        MutexLock lock(&self->transport_mutex_);
+        self->stream_list_.erase(stream_id);
+      });
+  if (!on_done_added) return 0;
+  stream_list_.emplace(stream_id,
+                       MakeRefCounted<Stream>(std::move(call_handler)));
+  return stream_id;
 }
 
 }  // namespace http2

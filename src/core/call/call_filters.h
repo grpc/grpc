@@ -971,6 +971,30 @@ struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
                  absl::enable_if_t<std::is_same<absl::StatusOr<T>,
                                                 PromiseResult<R>>::value>> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
+#if defined(__GNUC__) && __GNUC__ == 9
+    // Workaround for a bug in GNU C++ 9 compilers that fail to compile this
+    // class.
+    class Promise {
+     public:
+      Promise(T value, typename FilterType::Call* call_data,
+              FilterType* channel_data)
+          : impl_(std::make_unique<R>(
+                (call_data->*impl)(std::move(value), channel_data))) {}
+
+      Poll<ResultOr<T>> PollOnce() {
+        auto p = (*impl_)();
+        auto* r = p.value_if_ready();
+        if (r == nullptr) return Pending{};
+        this->~Promise();
+        if (r->ok()) return ResultOr<T>{std::move(**r), nullptr};
+        return ResultOr<T>{nullptr,
+                           CancelledServerMetadataFromStatus(r->status())};
+      }
+
+     private:
+      std::unique_ptr<R> impl_;
+    };
+#else
     class Promise {
      public:
       Promise(T value, typename FilterType::Call* call_data,
@@ -990,6 +1014,7 @@ struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
      private:
       GPR_NO_UNIQUE_ADDRESS R impl_;
     };
+#endif
     to.Add(sizeof(Promise), alignof(Promise),
            Operator<T>{
                channel_data,

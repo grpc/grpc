@@ -25,6 +25,7 @@
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
@@ -38,15 +39,17 @@ namespace http2 {
 // [PH2][Pn] where n = 0 to 5.
 // This helps to maintain the uniformity for quick lookup and fixing.
 //
-// [PH2][P0] Must be fixed before the current PR is submitted.
-// [PH2][P1] Must be fixed before the current sub-project is considered
+// [PH2][P0] MUST be fixed before the current PR is submitted.
+// [PH2][P1] MUST be fixed before the current sub-project is considered
 //           complete.
-// [PH2][P2] Must be fixed before the current Milestone is considered
+// [PH2][P2] MUST be fixed before the current Milestone is considered
 //           complete.
-// [PH2][P3] Must be fixed before Milestone 3 is considered complete.
+// [PH2][P3] MUST be fixed before Milestone 3 is considered complete.
 // [PH2][P4] Can be fixed after roll out begins. Evaluate these during
 //           Milestone 4. Either do the TODOs or delete them.
-// [PH2][P5] This must be a separate standalone project.
+// [PH2][P5] This MUST be a separate standalone project.
+// [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
+//            in parallel.
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -71,6 +74,8 @@ class Http2ClientTransport final : public ClientTransport {
   ServerTransport* server_transport() override { return nullptr; }
   absl::string_view GetTransportName() const override { return "http2"; }
 
+  // TODO(tjagtap) : [PH2][EXT] : These can be removed when event engine rollout
+  // is complete.
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 
@@ -117,18 +122,28 @@ class Http2ClientTransport final : public ClientTransport {
   // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
   Http2FrameHeader current_frame_header_;
 
+  // Managing the streams
   struct Stream : public RefCounted<Stream> {
     explicit Stream(CallHandler call) : call(std::move(call)) {}
     // Transport holds one CallHandler object for each Stream.
     CallHandler call;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
+    // TODO(tjagtap) : [PH2][P2] : May be add state of Stream - Idle , Open etc
+    // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   };
 
-  Mutex stream_list_mutex_;
+  MpscReceiver<Http2Frame> outgoing_frames_;
+
+  Mutex transport_mutex_;
   // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this mapping
   // up in the on_done of the CallInitiator or CallHandler
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
-      ABSL_GUARDED_BY(stream_list_mutex_);
+      ABSL_GUARDED_BY(transport_mutex_);
+
+  uint32_t next_stream_id_ ABSL_GUARDED_BY(transport_mutex_) = 1;
+
+  uint32_t MakeStream(CallHandler call_handler);
+  RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 };
 
 }  // namespace http2

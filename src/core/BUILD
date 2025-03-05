@@ -1234,6 +1234,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "inter_activity_mutex",
+    hdrs = [
+        "lib/promise/inter_activity_mutex.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log",
+    ],
+    deps = [
+        "activity",
+        "dump_args",
+        "poll",
+        "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "inter_activity_pipe",
     hdrs = [
         "lib/promise/inter_activity_pipe.h",
@@ -6904,6 +6921,9 @@ grpc_cc_library(
         "opencensus-stats",
         "opencensus-tags",
     ],
+    tags = [
+        "grpc:broken-internally",
+    ],
     deps = [
         "arena_promise",
         "call_finalization",
@@ -7510,6 +7530,7 @@ grpc_cc_library(
         "http2_settings",
         "loop",
         "map",
+        "mpsc",
         "sync",
         ":match_promise",
         ":poll",

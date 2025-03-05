@@ -646,28 +646,30 @@ void RetryFilter::LegacyCallData::CallAttempt::OnPerAttemptRecvTimerLocked(
       << ", per_attempt_recv_timer_handle_.has_value()="
       << call_attempt->per_attempt_recv_timer_handle_.has_value();
   CallCombinerClosureList closures;
-  call_attempt->per_attempt_recv_timer_handle_.reset();
-  // Cancel this attempt.
-  // TODO(roth): When implementing hedging, we should not cancel the
-  // current attempt.
-  call_attempt->MaybeAddBatchForCancelOp(
-      grpc_error_set_int(
-          GRPC_ERROR_CREATE("retry perAttemptRecvTimeout exceeded"),
-          StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED),
-      &closures);
-  // Check whether we should retry.
-  if (call_attempt->ShouldRetry(/*status=*/std::nullopt,
-                                /*server_pushback_ms=*/std::nullopt)) {
-    // Mark current attempt as abandoned.
-    call_attempt->Abandon();
-    // We are retrying.  Start backoff timer.
-    calld->StartRetryTimer(/*server_pushback=*/std::nullopt);
-  } else {
-    // Not retrying, so commit the call.
-    calld->RetryCommit(call_attempt);
-    // If retry state is no longer needed, switch to fast path for
-    // subsequent batches.
-    call_attempt->MaybeSwitchToFastPath();
+  if (call_attempt->per_attempt_recv_timer_handle_.has_value()) {
+    call_attempt->per_attempt_recv_timer_handle_.reset();
+    // Cancel this attempt.
+    // TODO(roth): When implementing hedging, we should not cancel the
+    // current attempt.
+    call_attempt->MaybeAddBatchForCancelOp(
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE("retry perAttemptRecvTimeout exceeded"),
+            StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED),
+        &closures);
+    // Check whether we should retry.
+    if (call_attempt->ShouldRetry(/*status=*/std::nullopt,
+                                  /*server_pushback_ms=*/std::nullopt)) {
+      // Mark current attempt as abandoned.
+      call_attempt->Abandon();
+      // We are retrying.  Start backoff timer.
+      calld->StartRetryTimer(/*server_pushback=*/std::nullopt);
+    } else {
+      // Not retrying, so commit the call.
+      calld->RetryCommit(call_attempt);
+      // If retry state is no longer needed, switch to fast path for
+      // subsequent batches.
+      call_attempt->MaybeSwitchToFastPath();
+    }
   }
   closures.RunClosures(calld->call_combiner_);
   call_attempt->Unref(DEBUG_LOCATION, "OnPerAttemptRecvTimer");

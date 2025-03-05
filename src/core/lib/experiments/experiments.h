@@ -65,7 +65,6 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
-inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
@@ -104,7 +103,6 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
-inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -146,7 +144,6 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
-inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -187,7 +184,6 @@ enum ExperimentIds {
   kExperimentIdCallTracerTransportFix,
   kExperimentIdCallv3ClientAuthFilter,
   kExperimentIdChaoticGoodFramingLayer,
-  kExperimentIdDisableBufferHintOnHighMemoryPressure,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineDnsNonClientChannel,
@@ -232,11 +228,6 @@ inline bool IsCallv3ClientAuthFilterEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodFramingLayer>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_DISABLE_BUFFER_HINT_ON_HIGH_MEMORY_PRESSURE
-inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() {
-  return IsExperimentEnabled<
-      kExperimentIdDisableBufferHintOnHighMemoryPressure>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {

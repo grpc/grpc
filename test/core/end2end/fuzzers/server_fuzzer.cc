@@ -95,12 +95,9 @@ void RunServerFuzzer(
     const fuzzer_input::Msg& msg,
     absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
         server_setup) {
-  static const int once = []() {
-    ForceEnableExperiment("event_engine_client", true);
-    ForceEnableExperiment("event_engine_listener", true);
-    return 42;
-  }();
-  CHECK_EQ(once, 42);  // avoid unused variable warning
+  if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
+    return;  // Not supported without event engine
+  }
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();
   testing::ServerFuzzer(msg, server_setup).Run(msg.api_actions());

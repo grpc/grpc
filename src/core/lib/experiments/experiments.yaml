@@ -66,11 +66,6 @@
   expiry: 2025/06/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
-- name: disable_buffer_hint_on_high_memory_pressure
-  description: Disable buffer hint flag parsing in the transport under high memory pressure.
-  expiry: 2025/03/01
-  owner: vigneshbabu@google.com
-  test_tags: []
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2025/05/01
