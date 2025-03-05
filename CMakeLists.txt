@@ -3092,7 +3092,7 @@ add_library(grpc_test_util
   test/core/event_engine/test_init.cc
   test/core/test_util/build.cc
   test/core/test_util/port.cc
-  test/core/test_util/port_isolated_runtime_environment.cc
+  test/core/test_util/port_ci.cc
   test/core/test_util/port_server_client.cc
   test/core/test_util/reconnect_server.cc
   test/core/test_util/stack_tracer.cc
@@ -3159,7 +3159,7 @@ add_library(grpc_test_util_unsecure
   test/core/event_engine/test_init.cc
   test/core/test_util/build.cc
   test/core/test_util/port.cc
-  test/core/test_util/port_isolated_runtime_environment.cc
+  test/core/test_util/port_ci.cc
   test/core/test_util/port_server_client.cc
   test/core/test_util/reconnect_server.cc
   test/core/test_util/stack_tracer.cc
