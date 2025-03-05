@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 
 licenses(["notice"])
 
@@ -30,6 +31,18 @@ grpc_proto_library(
     has_services = True,
     well_known_protos = True,
 )
+
+# proto_library(
+#     name = "channelz_proto_descriptors",
+#     srcs = ["channelz.proto"],
+#     # strip_import_prefix = "/src/proto/grpc/channelz",
+#     deps = [
+#         "@com_google_protobuf//:any_proto",
+#         "@com_google_protobuf//:duration_proto",
+#         "@com_google_protobuf//:timestamp_proto",
+#         "@com_google_protobuf//:wrappers_proto",
+#     ],
+# )
 
 filegroup(
     name = "channelz_proto_file",
