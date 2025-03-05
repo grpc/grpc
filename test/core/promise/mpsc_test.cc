@@ -235,6 +235,21 @@ TEST(MpscTest, CloseFailsNext) {
   activity.Deactivate();
 }
 
+TEST(MpscTest, BigBufferBulkReceive) {
+  MpscReceiver<Payload> receiver(50);
+  MpscSender<Payload> sender = receiver.MakeSender();
+
+  for (int i = 0; i < 25; i++) {
+    EXPECT_THAT(sender.Send(MakePayload(i))(), IsReady(true));
+  }
+  auto result = receiver.NextBatch()();
+  std::vector<Payload> expected;
+  for (int i = 0; i < 25; i++) {
+    expected.emplace_back(MakePayload(i));
+  }
+  EXPECT_THAT(result, IsReady(expected));
+}
+
 TEST(MpscTest, BulkReceive) {
   MpscReceiver<Payload> receiver(1);
   MpscSender<Payload> sender = receiver.MakeSender();
@@ -285,9 +300,21 @@ TEST(MpscTest, BulkReceiveAfterClose) {
   EXPECT_THAT(result, IsReady(Failure{}));
 }
 
-TEST(MpscTest, ManySendsBulkReceive) {
-  MpscReceiver<Payload> receiver(10);
+TEST(MpscTest, CloseAfterBulkReceive) {
   StrictMock<MockActivity> activity;
+  MpscReceiver<Payload> receiver(1);
+  activity.Activate();
+  auto next = receiver.NextBatch();
+  EXPECT_THAT(next(), IsPending());
+  EXPECT_CALL(activity, WakeupRequested());
+  receiver.MarkClosed();
+  EXPECT_THAT(next(), IsReady(Failure{}));
+  activity.Deactivate();
+}
+
+TEST(MpscTest, ManySendsBulkReceive) {
+  StrictMock<MockActivity> activity;
+  MpscReceiver<Payload> receiver(10);
 
   auto multi_send = [i = 0, max = 100,
                      sender =
@@ -325,6 +352,7 @@ TEST(MpscTest, ManySendsBulkReceive) {
     activity.Deactivate();
   }
 
+  EXPECT_THAT(multi_send(), IsReady(Success{}));
   activity.Activate();
   EXPECT_THAT(receiver.NextBatch()(), IsPending());
   activity.Deactivate();
