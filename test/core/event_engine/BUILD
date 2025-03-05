@@ -38,25 +38,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "forkable_test",
-    srcs = ["forkable_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
-    tags = [
-        "grpc:fails-internally",
-    ],
-    deps = [
-        "//:config_vars",
-        "//:gpr",
-        "//:gpr_platform",
-        "//src/core:forkable",
-        "//src/core:no_destruct",
-    ],
-)
-
-grpc_cc_test(
     name = "thread_pool_test",
     srcs = ["thread_pool_test.cc"],
     external_deps = [
