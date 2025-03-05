@@ -21,8 +21,8 @@
 #include <optional>
 #include <vector>
 
+#include "src/core/call/status_util.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/status_util.h"
 
 namespace grpc_core {
 

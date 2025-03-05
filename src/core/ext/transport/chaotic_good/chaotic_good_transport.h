@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "absl/strings/escaping.h"
+#include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good/data_endpoints.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -36,7 +37,6 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 
 namespace grpc_core {

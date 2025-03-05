@@ -19,7 +19,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/client_channel/load_balanced_call_destination.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "test/core/transport/call_spine_benchmarks.h"
+#include "test/core/call/call_spine_benchmarks.h"
 
 namespace grpc_core {
 namespace {

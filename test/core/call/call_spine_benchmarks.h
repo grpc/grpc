@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
-#define GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
+#ifndef GRPC_TEST_CORE_CALL_CALL_SPINE_BENCHMARKS_H
+#define GRPC_TEST_CORE_CALL_CALL_SPINE_BENCHMARKS_H
 
 #include <memory>
 
 #include "benchmark/benchmark.h"
+#include "src/core/call/call_spine.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/notification.h"
 
@@ -363,4 +363,4 @@ class TransportFixture {
   BENCHMARK(BM_UnaryWithSpawnPerEnd<Fixture>); \
   BENCHMARK(BM_ClientToServerStreaming<Fixture>)
 
-#endif  // GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
+#endif  // GRPC_TEST_CORE_CALL_CALL_SPINE_BENCHMARKS_H
