@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H
 
+#include <grpc/byte_buffer.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/passive_listener.h>
 #include <grpc/support/port_platform.h>
@@ -35,7 +36,10 @@ namespace grpc_core {
 
 struct AcceptorDeleter {
   void operator()(grpc_tcp_server_acceptor* acceptor) const {
-    gpr_free(acceptor);
+    if (acceptor != nullptr) {
+      grpc_byte_buffer_destroy(acceptor->pending_data);
+      gpr_free(acceptor);
+    }
   }
 };
 

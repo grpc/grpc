@@ -444,6 +444,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = 0;
     acceptor->external_connection = false;
+    acceptor->pending_data = nullptr;
     sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, NULL, acceptor);
   }
   // As we were notified from the IOCP of one and exactly one accept,
@@ -656,6 +657,7 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
     acceptor->port_index = -1;
     acceptor->fd_index = -1;
     acceptor->external_connection = false;
+    acceptor->pending_data = nullptr;
     on_accept_cb(on_accept_cb_arg,
                  grpc_event_engine_endpoint_create(std::move(endpoint)),
                  nullptr, acceptor);
