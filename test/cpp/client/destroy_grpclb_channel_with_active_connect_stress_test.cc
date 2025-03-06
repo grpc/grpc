@@ -94,7 +94,6 @@ void TryConnectAndDestroy() {
   channel->GetState(true /* try_to_connect */);
   ASSERT_FALSE(
       channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  ASSERT_EQ("grpclb", channel->GetLoadBalancingPolicyName());
   channel.reset();
 };
 

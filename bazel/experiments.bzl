@@ -22,7 +22,6 @@ EXPERIMENT_ENABLES = {
     "call_tracer_transport_fix": "call_tracer_transport_fix",
     "callv3_client_auth_filter": "callv3_client_auth_filter",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
-    "disable_buffer_hint_on_high_memory_pressure": "disable_buffer_hint_on_high_memory_pressure",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",

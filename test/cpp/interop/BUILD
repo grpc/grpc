@@ -483,7 +483,12 @@ grpc_cc_library(
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
     ],
-    tags = ["nobuilder","use_openssl"],
+    tags = [
+        "nobuilder",
+        # TODO(stanleycheung): the following will only work if :grpcpp_gcp_observability works
+        "grpc:broken-internally",
+        "use_openssl",
+    ],
     deps = [
         ":client_helper_lib",
         "//:grpcpp_gcp_observability",

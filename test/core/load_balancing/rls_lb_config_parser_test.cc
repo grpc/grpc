@@ -285,7 +285,7 @@ TEST_F(RlsConfigParsingTest, ClampMaxAge) {
   EXPECT_EQ(rls_lb_config->stale_age(), rls_lb_config->kMaxMaxAge);
 }
 
-TEST_F(RlsConfigParsingTest, ClampStaleAge) {
+TEST_F(RlsConfigParsingTest, ClampStaleAgeToMaxAge) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
@@ -326,6 +326,51 @@ TEST_F(RlsConfigParsingTest, ClampStaleAge) {
   auto* rls_lb_config = DownCast<RlsLbConfig*>(lb_config.get());
   EXPECT_EQ(rls_lb_config->max_age(), Duration::Seconds(182));
   EXPECT_EQ(rls_lb_config->stale_age(), Duration::Seconds(182));
+}
+
+TEST_F(RlsConfigParsingTest, DoNotClampMaxAgeIfStaleAgeIsSet) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"rls_experimental\":{\n"
+      "      \"routeLookupConfig\":{\n"
+      "        \"lookupService\":\"rls.example.com:80\",\n"
+      "        \"cacheSizeBytes\":1,\n"
+      "        \"maxAge\":\"350s\",\n"
+      "        \"staleAge\":\"310s\",\n"
+      "        \"grpcKeybuilders\":[\n"
+      "          {\n"
+      "            \"names\":[\n"
+      "              {\"service\":\"foo\"}\n"
+      "            ]\n"
+      "          }\n"
+      "        ]\n"
+      "      },\n"
+      "      \"childPolicy\":[\n"
+      "        {\"unknown\":{}},\n"  // Okay, since the next one exists.
+      "        {\"grpclb\":{}}\n"
+      "      ],\n"
+      "      \"childPolicyConfigTargetFieldName\":\"target\"\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  ASSERT_NE(*service_config, nullptr);
+  auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), RlsLbConfig::Name());
+  auto* rls_lb_config = DownCast<RlsLbConfig*>(lb_config.get());
+  // Allow maxAge to exceed 300s if staleAge is set, but still clamp
+  // staleAge to 300s.
+  EXPECT_EQ(rls_lb_config->max_age(), Duration::Seconds(350));
+  EXPECT_EQ(rls_lb_config->stale_age(), Duration::Seconds(300));
 }
 
 //

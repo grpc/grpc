@@ -32,9 +32,7 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:parse",
     ],
-    deps = [
-        "//:gpr",
-    ],
+    deps = ["//:gpr"],
 )
 
 grpc_cc_library(

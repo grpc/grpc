@@ -114,14 +114,6 @@ DATA_ENDPOINTS_TEST(CanRead) {
   WaitForAllPendingWork();
 }
 
-namespace {
-yodel::Msg ParseTestProto(const std::string& text) {
-  yodel::Msg msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(text, &msg));
-  return msg;
-}
-}  // namespace
-
 TEST(DataEndpointsTest, CanMultiWriteRegression) {
   CanMultiWrite(ParseTestProto(
       R"pb(event_engine_actions {
