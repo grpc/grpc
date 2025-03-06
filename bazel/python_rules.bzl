@@ -328,3 +328,36 @@ def py_grpc_library(
         grpc_library = grpc_library,
         **kwargs
     )
+
+def _relocate_proto_impl(ctx):
+    files = ctx.files.srcs
+    relocated_files = []
+    proto_infos = []
+    prefix_to_remove = ctx.attr.prefix
+
+    for orig in files:
+        # Dynamically remove the specified prefix.
+        path = orig.short_path.removeprefix(prefix_to_remove)
+        new = ctx.actions.declare_file(ctx.label.name + "/" + path)
+        ctx.actions.symlink(output = new, target_file = orig)
+        relocated_files.append(new)
+
+    for dep in ctx.attr.srcs:
+        if ProtoInfo in dep:
+            proto_infos.append(dep[ProtoInfo])
+
+    return [
+        DefaultInfo(files = depset(relocated_files)),
+        proto_infos[0]
+    ]
+
+relocate_proto = rule(
+    implementation = _relocate_proto_impl,
+    attrs = {
+        "srcs": attr.label_list(allow_files = True, providers = [[ProtoInfo]]),
+        "prefix": attr.string(
+            mandatory = True,
+            doc = "The prefix to remove from the original file paths.",
+        ),
+    },
+)
