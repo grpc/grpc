@@ -121,7 +121,7 @@
   description: Experiment to throttle pings to a period of 1 min when
     GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of
     completely blocking).
-  expiry: 2025/01/30
+  expiry: 2025/06/30
   owner: yashkt@google.com
   test_tags: []
 - name: monitoring_experiment
