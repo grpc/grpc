@@ -22,25 +22,25 @@
 namespace grpc_event_engine::experimental {
 
 bool UseEventEngineClient() {
-#if defined(GRPC_POSIX_SOCKET_TCP) && \
-    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-  return grpc_core::IsEventEngineClientEnabled();
-#elif defined(GPR_WINDOWS) && !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-  return grpc_core::IsEventEngineClientEnabled();
-#elif GRPC_IOS_EVENT_ENGINE_CLIENT
+#if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+  return false;
+#elif defined(GRPC_IOS_EVENT_ENGINE_CLIENT)
   return true;
 #else
-  return false;
+  return grpc_core::IsEventEngineClientEnabled();
 #endif
 }
 
 bool UseEventEngineListener() {
-#if defined(GRPC_POSIX_SOCKET_TCP) && \
-    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-  return grpc_core::IsEventEngineListenerEnabled();
-#else
+#if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
   return false;
+#else
+  return grpc_core::IsEventEngineListenerEnabled();
 #endif
+}
+
+bool UsePollsetAlternative() {
+  return UseEventEngineClient() && UseEventEngineListener();
 }
 
 }  // namespace grpc_event_engine::experimental
