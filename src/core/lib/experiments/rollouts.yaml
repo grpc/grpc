@@ -78,8 +78,6 @@
   default: true
 - name: monitoring_experiment
   default: true
-- name: pick_first_new
-  default: true
 - name: posix_ee_skip_grpc_init
   default: false
 - name: promise_based_http2_client_transport

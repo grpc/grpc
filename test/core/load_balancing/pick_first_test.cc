@@ -1057,7 +1057,6 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
 }
 
 TEST_F(PickFirstTest, AddressUpdateRemovedSelectedAddress) {
-  if (!IsPickFirstNewEnabled()) return;
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};

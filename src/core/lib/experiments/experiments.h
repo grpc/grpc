@@ -79,8 +79,6 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
-inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
@@ -122,8 +120,6 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
-inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
@@ -165,8 +161,6 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
-inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
@@ -201,7 +195,6 @@ enum ExperimentIds {
   kExperimentIdMaxPingsWoDataThrottle,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
-  kExperimentIdPickFirstNew,
   kExperimentIdPosixEeSkipGrpcInit,
   kExperimentIdPromiseBasedHttp2ClientTransport,
   kExperimentIdPromiseBasedHttp2ServerTransport,
@@ -279,10 +272,6 @@ inline bool IsMonitoringExperimentEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MULTIPING
 inline bool IsMultipingEnabled() {
   return IsExperimentEnabled<kExperimentIdMultiping>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
-inline bool IsPickFirstNewEnabled() {
-  return IsExperimentEnabled<kExperimentIdPickFirstNew>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
 inline bool IsPosixEeSkipGrpcInitEnabled() {
