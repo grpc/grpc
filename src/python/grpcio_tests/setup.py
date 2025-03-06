@@ -46,7 +46,7 @@ INSTALL_REQUIRES = (
     "grpcio-observability>={version}".format(version=grpc_version.VERSION),
     "xds-protos>={version}".format(version=grpc_version.VERSION),
     "oauth2client>=1.4.7",
-    "protobuf>=5.26.1,<6.0dev",
+    "protobuf>=6.30.0,<7.0dev",
     "google-auth>=1.17.2",
     "requests>=2.14.2",
     "absl-py>=1.4.0",

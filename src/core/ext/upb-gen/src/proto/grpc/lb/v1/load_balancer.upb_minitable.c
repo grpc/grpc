@@ -203,9 +203,9 @@ const upb_MiniTable grpc__lb__v1__ServerList_msg_init = {
 const upb_MiniTable* grpc__lb__v1__ServerList_msg_init_ptr = &grpc__lb__v1__ServerList_msg_init;
 static const upb_MiniTableField grpc_lb_v1_Server__fields[4] = {
   {1, 16, 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(24, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {4, 12, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {4, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable grpc__lb__v1__Server_msg_init = {
@@ -218,9 +218,9 @@ const upb_MiniTable grpc__lb__v1__Server_msg_init = {
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_psb_1bt},
-    {0x000800003f000010, &upb_psv4_1bt},
+    {0x000c00003f000010, &upb_psv4_1bt},
     {0x002000003f00001a, &upb_pss_1bt},
-    {0x000c00003f000020, &upb_psb1_1bt},
+    {0x000800003f000020, &upb_psb1_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
