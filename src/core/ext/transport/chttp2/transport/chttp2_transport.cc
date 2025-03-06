@@ -2307,6 +2307,8 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                             &http_error, nullptr);
       grpc_core::MaybeTarpit(
           t, tarpit,
+          // Capture the individual fields of the stream by value, since the
+          // stream state might have been deleted by the time we run the lambda.
           [id = s->id, sent_initial_metadata = s->sent_initial_metadata,
            http_error,
            remove_stream_handle = grpc_chttp2_mark_stream_closed(
