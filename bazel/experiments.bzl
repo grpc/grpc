@@ -27,12 +27,15 @@ EXPERIMENT_ENABLES = {
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
+    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
     "free_large_allocator": "free_large_allocator",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
+    "pick_first_new": "pick_first_new",
+    "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
     "posix_ee_skip_grpc_init": "posix_ee_skip_grpc_init",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
@@ -52,6 +55,7 @@ EXPERIMENT_POLLERS = [
     "event_engine_dns",
     "event_engine_dns_non_client_channel",
     "event_engine_listener",
+    "event_engine_for_all_other_endpoints",
 ]
 
 EXPERIMENTS = {
@@ -64,6 +68,7 @@ EXPERIMENTS = {
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "pollset_alternative",
                 "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
             ],
@@ -90,8 +95,12 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_client",
+                "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "server_listener",
+            ],
+            "cpp_lb_end2end_test": [
+                "pick_first_new",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -99,10 +108,14 @@ EXPERIMENTS = {
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
+            "lb_unit_test": [
+                "pick_first_new",
+            ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "pick_first_new",
                 "server_listener",
             ],
         },
@@ -116,6 +129,7 @@ EXPERIMENTS = {
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "pollset_alternative",
                 "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
             ],
@@ -138,9 +152,17 @@ EXPERIMENTS = {
         },
         "on": {
             "core_end2end_test": [
+                "event_engine_for_all_other_endpoints",
                 "server_listener",
             ],
+            "cpp_lb_end2end_test": [
+                "pick_first_new",
+            ],
+            "lb_unit_test": [
+                "pick_first_new",
+            ],
             "xds_end2end_test": [
+                "pick_first_new",
                 "server_listener",
             ],
         },
@@ -154,6 +176,7 @@ EXPERIMENTS = {
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "pollset_alternative",
                 "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
             ],
@@ -180,8 +203,12 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_client",
+                "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "server_listener",
+            ],
+            "cpp_lb_end2end_test": [
+                "pick_first_new",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -189,10 +216,14 @@ EXPERIMENTS = {
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
+            "lb_unit_test": [
+                "pick_first_new",
+            ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "pick_first_new",
                 "server_listener",
             ],
         },

@@ -71,6 +71,8 @@ inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
+inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -79,6 +81,9 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
+inline bool IsPickFirstNewEnabled() { return true; }
+inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
@@ -112,6 +117,8 @@ inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
+inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -120,6 +127,9 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
+inline bool IsPickFirstNewEnabled() { return true; }
+inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
@@ -153,6 +163,8 @@ inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
+inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -161,6 +173,9 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
+inline bool IsPickFirstNewEnabled() { return true; }
+inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
@@ -189,12 +204,15 @@ enum ExperimentIds {
   kExperimentIdEventEngineDnsNonClientChannel,
   kExperimentIdEventEngineListener,
   kExperimentIdEventEngineCallbackCq,
+  kExperimentIdEventEngineForAllOtherEndpoints,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMaxPingsWoDataThrottle,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
+  kExperimentIdPickFirstNew,
+  kExperimentIdPollsetAlternative,
   kExperimentIdPosixEeSkipGrpcInit,
   kExperimentIdPromiseBasedHttp2ClientTransport,
   kExperimentIdPromiseBasedHttp2ServerTransport,
@@ -249,6 +267,10 @@ inline bool IsEventEngineListenerEnabled() {
 inline bool IsEventEngineCallbackCqEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineCallbackCq>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
+inline bool IsEventEngineForAllOtherEndpointsEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEngineForAllOtherEndpoints>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {
   return IsExperimentEnabled<kExperimentIdFreeLargeAllocator>();
@@ -272,6 +294,14 @@ inline bool IsMonitoringExperimentEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MULTIPING
 inline bool IsMultipingEnabled() {
   return IsExperimentEnabled<kExperimentIdMultiping>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
+inline bool IsPickFirstNewEnabled() {
+  return IsExperimentEnabled<kExperimentIdPickFirstNew>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_POLLSET_ALTERNATIVE
+inline bool IsPollsetAlternativeEnabled() {
+  return IsExperimentEnabled<kExperimentIdPollsetAlternative>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
 inline bool IsPosixEeSkipGrpcInitEnabled() {

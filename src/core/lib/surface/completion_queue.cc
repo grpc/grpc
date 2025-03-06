@@ -17,32 +17,24 @@
 //
 #include "src/core/lib/surface/completion_queue.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <inttypes.h>
 #include <stdio.h>
 
 #include <algorithm>
 #include <atomic>
-#include <new>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/telemetry/stats.h"
@@ -53,10 +45,11 @@
 #include "src/core/util/spinlock.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
-
-#ifdef GPR_WINDOWS
-#include "src/core/lib/experiments/experiments.h"
-#endif
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 namespace {
 
@@ -73,7 +66,7 @@ struct plucker {
   void* tag;
 };
 struct cq_poller_vtable {
-  bool can_get_pollset;
+  bool (*can_get_pollset)();
   bool can_listen;
   size_t (*size)(void);
   void (*init)(grpc_pollset* pollset, gpr_mu** mu);
@@ -186,16 +179,83 @@ void non_polling_poller_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   }
 }
 
+bool maybe_event_engine_poller_can_get_pollset() {
+  return !grpc_event_engine::experimental::UsePollsetAlternative();
+}
+
+bool non_polling_poller_can_never_get_pollset() { return false; }
+
+// maybe_event_engine*: If iomgr isn't relied upon for polling, then we can use
+// the non-polling poller implementations below.
+size_t maybe_event_engine_poller_size(void) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    return non_polling_poller_size();
+  } else {
+    return grpc_pollset_size();
+  }
+}
+
+void maybe_event_engine_poller_init(grpc_pollset* pollset, gpr_mu** mu) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    non_polling_poller_init(pollset, mu);
+  } else {
+    grpc_pollset_init(pollset, mu);
+  }
+}
+
+void maybe_event_engine_poller_destroy(grpc_pollset* pollset) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    non_polling_poller_destroy(pollset);
+  } else {
+    grpc_pollset_destroy(pollset);
+  }
+}
+
+grpc_error_handle maybe_event_engine_pollset_work(
+    grpc_pollset* pollset, grpc_pollset_worker** worker,
+    grpc_core::Timestamp deadline) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    return non_polling_poller_work(pollset, worker, deadline);
+  } else {
+    return grpc_pollset_work(pollset, worker, deadline);
+  }
+}
+
+grpc_error_handle maybe_event_engine_poller_kick(
+    grpc_pollset* pollset, grpc_pollset_worker* specific_worker) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    return non_polling_poller_kick(pollset, specific_worker);
+  } else {
+    return grpc_pollset_kick(pollset, specific_worker);
+  }
+}
+
+void maybe_event_engine_poller_shutdown(grpc_pollset* pollset,
+                                        grpc_closure* closure) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    non_polling_poller_shutdown(pollset, closure);
+  } else {
+    grpc_pollset_shutdown(pollset, closure);
+  }
+}
+
+// TODO(hork): Once EE is the default everywhere, the only variations will be
+// the bool args controlling whether the poller can get a pollset and whether it
+// can listen.
 const cq_poller_vtable g_poller_vtable_by_poller_type[] = {
     // GRPC_CQ_DEFAULT_POLLING
-    {true, true, grpc_pollset_size, grpc_pollset_init, grpc_pollset_kick,
-     grpc_pollset_work, grpc_pollset_shutdown, grpc_pollset_destroy},
+    {maybe_event_engine_poller_can_get_pollset, true,
+     maybe_event_engine_poller_size, maybe_event_engine_poller_init,
+     maybe_event_engine_poller_kick, maybe_event_engine_pollset_work,
+     maybe_event_engine_poller_shutdown, maybe_event_engine_poller_destroy},
     // GRPC_CQ_NON_LISTENING
-    {true, false, grpc_pollset_size, grpc_pollset_init, grpc_pollset_kick,
-     grpc_pollset_work, grpc_pollset_shutdown, grpc_pollset_destroy},
+    {maybe_event_engine_poller_can_get_pollset, false,
+     maybe_event_engine_poller_size, maybe_event_engine_poller_init,
+     maybe_event_engine_poller_kick, maybe_event_engine_pollset_work,
+     maybe_event_engine_poller_shutdown, maybe_event_engine_poller_destroy},
     // GRPC_CQ_NON_POLLING
-    {false, false, non_polling_poller_size, non_polling_poller_init,
-     non_polling_poller_kick, non_polling_poller_work,
+    {non_polling_poller_can_never_get_pollset, false, non_polling_poller_size,
+     non_polling_poller_init, non_polling_poller_kick, non_polling_poller_work,
      non_polling_poller_shutdown, non_polling_poller_destroy},
 };
 
@@ -1372,7 +1432,7 @@ void grpc_completion_queue_destroy(grpc_completion_queue* cq) {
 }
 
 grpc_pollset* grpc_cq_pollset(grpc_completion_queue* cq) {
-  return cq->poller_vtable->can_get_pollset ? POLLSET_FROM_CQ(cq) : nullptr;
+  return cq->poller_vtable->can_get_pollset() ? POLLSET_FROM_CQ(cq) : nullptr;
 }
 
 bool grpc_cq_can_listen(grpc_completion_queue* cq) {
