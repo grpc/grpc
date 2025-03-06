@@ -13,9 +13,9 @@
 # limitations under the License.
 """Generates and compiles Python gRPC stubs from proto_library rules."""
 
+load("@com_google_protobuf//bazel:py_proto_library.bzl", protobuf_py_proto_library = "py_proto_library")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
-load("@com_google_protobuf//bazel:py_proto_library.bzl", protobuf_py_proto_library = "py_proto_library")
 load(
     "//bazel:protobuf.bzl",
     "declare_out_files",
