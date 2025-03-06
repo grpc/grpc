@@ -18,5 +18,6 @@ RUN pacman --noconfirm -Syy
 RUN pacman --noconfirm -S openssl
 RUN pacman --noconfirm -S python
 RUN pacman --noconfirm -S python-pip
-RUN python3 -m pip install virtualenv
 RUN pacman --noconfirm -S base-devel
+
+RUN python3 -m pip install --break-system-packages virtualenv
