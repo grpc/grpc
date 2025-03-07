@@ -40,7 +40,7 @@ static VALUE grpc_rb_cCallCredentials = Qnil;
  * object that is used to hold references to any objects used to create the
  * credentials. */
 typedef struct grpc_rb_call_credentials {
-  /* Holder of ruby objects involved in contructing the credentials */
+  /* Holder of ruby objects involved in constructing the credentials */
   VALUE mark;
 
   /* The actual credentials */

@@ -138,7 +138,7 @@ end
 
 GoogleRpcStatusTestStub = GoogleRpcStatusTestService.rpc_stub_class
 
-describe 'receving a google rpc status from a remote endpoint' do
+describe 'receiving a google rpc status from a remote endpoint' do
   def start_server(encoded_rpc_status)
     @srv = new_rpc_server_for_testing(pool_size: 1)
     @server_port = @srv.add_http2_port('localhost:0',
