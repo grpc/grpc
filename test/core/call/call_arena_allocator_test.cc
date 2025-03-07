@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/call/call_arena_allocator.h"
 
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>

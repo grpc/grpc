@@ -17,7 +17,7 @@
 
 #include <utility>
 
-#include "src/core/lib/transport/call_spine.h"
+#include "src/core/call/call_spine.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
 

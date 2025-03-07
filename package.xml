@@ -106,10 +106,26 @@
     <file baseinstalldir="/" name="include/grpc/support/thd_id.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_arena_allocator.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_arena_allocator.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_destination.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_filters.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_filters.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_finalization.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_spine.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_spine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_state.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/call_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/client_call.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/client_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/request_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/request_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/security_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/security_context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/server_call.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/server_call.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/status_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channel_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channel_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz.cc" role="src" />
@@ -1215,7 +1231,6 @@
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/sockaddr_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/sockaddr_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/call_finalization.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args_preconditioning.cc" role="src" />
@@ -1231,8 +1246,6 @@
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />
@@ -1583,8 +1596,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/client_call.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/client_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.cc" role="src" />
@@ -1604,24 +1615,13 @@
     <file baseinstalldir="/" name="src/core/lib/surface/legacy_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/legacy_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/server_call.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/server_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_destination.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_filters.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_spine.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_spine.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_state.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/custom_metadata.h" role="src" />

@@ -20,12 +20,12 @@
 
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
