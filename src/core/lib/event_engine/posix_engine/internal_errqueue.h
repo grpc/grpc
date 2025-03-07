@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -161,7 +162,8 @@ struct tcp_info {
 #define TCP_INFO 11
 #endif
 
-int GetSocketTcpInfo(tcp_info* info, int fd);
+PosixResult GetSocketTcpInfo(tcp_info* info, FileDescriptors* fds,
+                             const FileDescriptor& fd);
 
 #endif  // GRPC_LINUX_ERRQUEUE
 
