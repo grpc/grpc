@@ -54,7 +54,7 @@ namespace http2 {
 // TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
 constexpr int kMpscSize = 10;
 
-auto ProcessHttp2DataFrame(Http2DataFrame frame) {
+inline auto ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame Factory";
   return
@@ -68,7 +68,7 @@ auto ProcessHttp2DataFrame(Http2DataFrame frame) {
       };
 }
 
-auto ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
+inline auto ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2HeaderFrame Factory";
   return
@@ -83,7 +83,7 @@ auto ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
       };
 }
 
-auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame) {
+inline auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2RstStreamFrame Factory";
   return
@@ -96,7 +96,7 @@ auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame) {
       };
 }
 
-auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
+inline auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
   return
@@ -112,7 +112,7 @@ auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
       };
 }
 
-auto ProcessHttp2PingFrame(Http2PingFrame frame) {
+inline auto ProcessHttp2PingFrame(Http2PingFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2PingFrame Factory";
   return
@@ -125,7 +125,7 @@ auto ProcessHttp2PingFrame(Http2PingFrame frame) {
       };
 }
 
-auto ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
+inline auto ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Factory";
   return
@@ -140,7 +140,7 @@ auto ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
       };
 }
 
-auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame) {
+inline auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2WindowUpdateFrame Factory";
@@ -155,7 +155,7 @@ auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame) {
       };
 }
 
-auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame) {
+inline auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-continuation
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2ContinuationFrame Factory";
@@ -171,7 +171,7 @@ auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame) {
       };
 }
 
-auto ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
+inline auto ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
   // TODO(tjagtap) : [PH2][P2] : This is not in the RFC. Understand usage.
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SecurityFrame Factory";
   return
