@@ -160,30 +160,34 @@ def _generate_py_impl(context):
         out_pyinfo,
     ]
 
-# py_proto_library = rule(
-#     attrs = {
-#         "deps": attr.label_list(
-#             mandatory = True,
-#             allow_empty = False,
-#             providers = [ProtoInfo],
-#             aspects = [_gen_py_aspect],
-#         ),
-#         "_protoc": attr.label(
-#             default = Label("@com_google_protobuf//:protoc"),
-#             providers = ["files_to_run"],
-#             executable = True,
-#             cfg = "exec",
-#         ),
-#         "_protobuf_library": attr.label(
-#             default = Label("@com_google_protobuf//:protobuf_python"),
-#             providers = [PyInfo],
-#         ),
-#         "imports": attr.string_list(),
-#     },
-#     implementation = _generate_py_impl,
-# )
+_py_proto_library = rule(
+    attrs = {
+        "deps": attr.label_list(
+            mandatory = True,
+            allow_empty = False,
+            providers = [ProtoInfo],
+            aspects = [_gen_py_aspect],
+        ),
+        "_protoc": attr.label(
+            default = Label("@com_google_protobuf//:protoc"),
+            providers = ["files_to_run"],
+            executable = True,
+            cfg = "exec",
+        ),
+        "_protobuf_library": attr.label(
+            default = Label("@com_google_protobuf//:protobuf_python"),
+            providers = [PyInfo],
+        ),
+        "imports": attr.string_list(),
+    },
+    implementation = _generate_py_impl,
+)
 
-py_proto_library = protobuf_py_proto_library
+def py_proto_library(name, deps, imports = [], use_protobuf = True, **kwargs):
+    if use_protobuf:
+        protobuf_py_proto_library(name = name, deps = deps, imports = imports, **kwargs)
+    else:
+        _py_proto_library(name = name, deps = deps, **kwargs)
 
 def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
