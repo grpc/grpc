@@ -79,14 +79,14 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
-inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
+inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
@@ -120,14 +120,14 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
-inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
+inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
@@ -161,14 +161,14 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
-inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
+inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
@@ -195,13 +195,13 @@ enum ExperimentIds {
   kExperimentIdMaxPingsWoDataThrottle,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
-  kExperimentIdPickFirstNew,
   kExperimentIdPosixEeSkipGrpcInit,
   kExperimentIdPromiseBasedHttp2ClientTransport,
   kExperimentIdPromiseBasedHttp2ServerTransport,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdRetryInCallv3,
   kExperimentIdRqFastReject,
+  kExperimentIdRstStreamFix,
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdServerListener,
   kExperimentIdTcpFrameSizeTuning,
@@ -273,10 +273,6 @@ inline bool IsMonitoringExperimentEnabled() {
 inline bool IsMultipingEnabled() {
   return IsExperimentEnabled<kExperimentIdMultiping>();
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
-inline bool IsPickFirstNewEnabled() {
-  return IsExperimentEnabled<kExperimentIdPickFirstNew>();
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
 inline bool IsPosixEeSkipGrpcInitEnabled() {
   return IsExperimentEnabled<kExperimentIdPosixEeSkipGrpcInit>();
@@ -300,6 +296,10 @@ inline bool IsRetryInCallv3Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_RQ_FAST_REJECT
 inline bool IsRqFastRejectEnabled() {
   return IsExperimentEnabled<kExperimentIdRqFastReject>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
+inline bool IsRstStreamFixEnabled() {
+  return IsExperimentEnabled<kExperimentIdRstStreamFix>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
