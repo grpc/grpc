@@ -12487,6 +12487,7 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
+  - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
@@ -12508,6 +12509,7 @@ targets:
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
+  - src/core/ext/transport/chttp2/transport/http2_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/cmdline.cc
