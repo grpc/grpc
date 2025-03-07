@@ -183,11 +183,13 @@ _py_proto_library = rule(
     implementation = _generate_py_impl,
 )
 
-def py_proto_library(name, deps, imports = [], use_protobuf = True, **kwargs):
+def py_proto_library(name, deps, use_protobuf = True, **kwargs):
+    # Filter out 'imports' if use_protobuf is True
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k != "imports" or not use_protobuf}
     if use_protobuf:
-        protobuf_py_proto_library(name = name, deps = deps, imports = imports, **kwargs)
+        protobuf_py_proto_library(name = name, deps = deps, **filtered_kwargs)
     else:
-        _py_proto_library(name = name, deps = deps, **kwargs)
+        _py_proto_library(name = name, deps = deps, **filtered_kwargs)
 
 def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
