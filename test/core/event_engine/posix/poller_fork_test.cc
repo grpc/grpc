@@ -36,12 +36,18 @@
 #include <memory>
 #include <optional>
 #include <queue>
+#include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "absl/cleanup/cleanup.h"
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/substitute.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
@@ -52,7 +58,23 @@
 
 namespace grpc_event_engine::experimental {
 
+std::string GetBacktrace() {
+  std::array<void*, 10> ptrs;
+  int frames = absl::GetStackTrace(ptrs.data(), ptrs.size(), 1);
+  std::vector<std::string> bt(frames);
+  for (int i = 0; i < frames; ++i) {
+    std::array<char, 150> frame{0};
+    std::string frame_str = absl::Symbolize(ptrs[i], frame.data(), frame.size())
+                                ? std::string(frame.data(), frame.size())
+                                : "<Boop>";
+    bt[i] = absl::Substitute("  $0 $1", i, frame_str);
+  }
+  return absl::StrJoin(bt, "\n");
+}
+
 namespace {
+
+thread_local bool is_in_scheduler = false;
 
 MATCHER(IsOk, "is ok") { return arg.ok(); }
 
@@ -380,8 +402,10 @@ TEST_F(PollerForkTest, ListenerInChild) {
   LOG(INFO) << "After fork in child";
   EXPECT_THAT(read_status.AwaitStatus(),
               StatusIs(absl::StatusCode::kResourceExhausted));
+  LOG(INFO) << "Before write done";
   EXPECT_THAT(write_status.AwaitStatus(),
               StatusIs(absl::StatusCode::kResourceExhausted));
+  LOG(INFO) << "After write done";
   // Starting read and write post-fork will fail asynchronously and return the
   // status.
   ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, nullptr));
@@ -389,6 +413,119 @@ TEST_F(PollerForkTest, ListenerInChild) {
   EXPECT_THAT(read_status.AwaitStatus(), StatusIs(absl::StatusCode::kInternal));
   EXPECT_THAT(write_status.AwaitStatus(),
               StatusIs(absl::StatusCode::kInternal));
+}
+
+class TestScheduler {
+ public:
+  static std::shared_ptr<TestScheduler> Start() {
+    auto scheduler = std::make_shared<TestScheduler>();
+    scheduler->Start(scheduler);
+    return scheduler;
+  }
+
+  ~TestScheduler() {
+    {
+      grpc_core::MutexLock lock(&mu_);
+      done_ = true;
+      cond_.SignalAll();
+    }
+    if (background_thread_.joinable()) {
+      background_thread_.join();
+    }
+  }
+
+  void Schedule(absl::AnyInvocable<void() const> op)
+      ABSL_NO_THREAD_SAFETY_ANALYSIS {
+    if (is_in_scheduler) {
+      pending_.push(std::move(op));
+    } else {
+      grpc_core::MutexLock lock(&mu_);
+      pending_.push(std::move(op));
+    }
+    cond_.SignalAll();
+  }
+
+ private:
+  void Start(std::shared_ptr<TestScheduler> scheduler) {
+    background_thread_ = std::thread(
+        [scheduler = std::move(scheduler)]() { scheduler->EventQueue(); });
+  }
+
+  void EventQueue() {
+    is_in_scheduler = true;
+    absl::Cleanup reset_is_in_scheduler = []() { is_in_scheduler = false; };
+    grpc_core::MutexLock lock(&mu_);
+    while (!done_) {
+      while (!pending_.empty()) {
+        pending_.front()();
+        pending_.pop();
+      }
+      cond_.Wait(&mu_);
+    }
+  }
+
+  std::thread background_thread_;
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cond_;
+  std::queue<absl::AnyInvocable<void() const>> pending_ ABSL_GUARDED_BY(&mu_);
+  bool done_ ABSL_GUARDED_BY(&mu_) = false;
+};
+
+class PollCycle {
+ public:
+  explicit PollCycle(std::shared_ptr<TestScheduler> scheduler,
+                     absl::AnyInvocable<void() const> op)
+      : scheduler_(std::move(scheduler)), op_(std::move(op)), is_scheduled_(1) {
+    scheduler_->Schedule([this]() { Op(); });
+  }
+
+  ~PollCycle() {
+    grpc_core::MutexLock lock(&mu_);
+    done_ = true;
+    while (is_scheduled_ > 0) {
+      cond_.Wait(&mu_);
+    }
+  }
+
+ private:
+  void Op() {
+    grpc_core::MutexLock lock(&mu_);
+    --is_scheduled_;
+    CHECK_EQ(is_scheduled_, 0);
+    op_();
+    if (!done_) {
+      scheduler_->Schedule([this]() { Op(); });
+      ++is_scheduled_;
+    }
+    cond_.SignalAll();
+  }
+
+  std::shared_ptr<TestScheduler> scheduler_;
+  absl::AnyInvocable<void() const> op_;
+  grpc_core::Mutex mu_;
+  bool done_ ABSL_GUARDED_BY(&mu_) = false;
+  int is_scheduled_ ABSL_GUARDED_BY(&mu_) = 0;
+  grpc_core::CondVar cond_;
+};
+
+TEST(ExperimentalAsyncPollTest, AsyncPollTest) {
+  auto scheduler = TestScheduler::Start();
+  grpc_core::Mutex op_mu;
+  grpc_core::CondVar cond;
+  int runs = 0;
+
+  auto cycle = std::make_unique<PollCycle>(scheduler, [&]() {
+    grpc_core::MutexLock lock(&op_mu);
+    runs++;
+    cond.SignalAll();
+  });
+  {
+    grpc_core::MutexLock lock(&op_mu);
+    while (runs < 5) {
+      cond.Wait(&op_mu);
+    }
+  }
+  cycle.reset();
 }
 
 }  // namespace grpc_event_engine::experimental

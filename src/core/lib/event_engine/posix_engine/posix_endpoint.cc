@@ -96,9 +96,9 @@ namespace {
 
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
-ssize_t TcpSend(FileDescriptors* fds, const FileDescriptor& fd,
-                const struct msghdr* msg, int* saved_errno,
-                int additional_flags = 0) {
+Int64Result TcpSend(FileDescriptors* fds, const FileDescriptor& fd,
+                    const struct msghdr* msg, int* saved_errno,
+                    int additional_flags = 0) {
   GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
   Int64Result send_result;
   do {
@@ -106,7 +106,7 @@ ssize_t TcpSend(FileDescriptors* fds, const FileDescriptor& fd,
     send_result = fds->SendMsg(fd, msg, SENDMSG_FLAGS | additional_flags);
     *saved_errno = send_result.errno_value();
   } while (send_result.IsPosixError(EINTR));
-  return *send_result;
+  return send_result;
 }
 
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -211,9 +211,16 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 }
 #endif  // GRPC_LINUX_ERRQUEUE
 
-absl::Status PosixOSError(int error_no, absl::string_view call_name) {
-  return absl::UnknownError(absl::StrCat(
-      call_name, ": ", grpc_core::StrError(error_no), " (", error_no, ")"));
+absl::Status PosixOSError(const Int64Result& error_no,
+                          absl::string_view call_name) {
+  if (error_no.kind() == OperationResultKind::kError) {
+    return absl::UnknownError(absl::StrCat(
+        call_name, ": ", grpc_core::StrError(error_no.errno_value()), " (",
+        error_no.errno_value(), ")"));
+  } else {
+    return absl::UnknownError(
+        absl::StrCat(call_name, ": Wrong file descriptor generation"));
+  }
 }
 
 }  // namespace
@@ -861,7 +868,7 @@ void PosixEndpointImpl::HandleError(absl::Status status) {
 
 bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
                                             size_t sending_length,
-                                            ssize_t* sent_length,
+                                            Int64Result* sent_length,
                                             int* saved_errno,
                                             int additional_flags) {
   auto& fds = poller_->GetFileDescriptors();
@@ -889,11 +896,14 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
 
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
   grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
-  ssize_t length = TcpSend(&fds, fd_, msg, saved_errno, additional_flags);
+  Int64Result length = TcpSend(&fds, fd_, msg, saved_errno, additional_flags);
+  if (!length.ok()) {
+    return false;
+  }
   *sent_length = length;
   // Only save timestamps if all the bytes were taken by sendmsg.
-  if (sending_length == static_cast<size_t>(length)) {
-    traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + length),
+  if (sending_length == static_cast<size_t>(*length)) {
+    traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + *length),
                                 &poller_->GetFileDescriptors(), fd_,
                                 outgoing_buffer_arg_);
     outgoing_buffer_arg_ = nullptr;
@@ -915,7 +925,7 @@ void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {}
 
 bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* /*msg*/,
                                             size_t /*sending_length*/,
-                                            ssize_t* /*sent_length*/,
+                                            Int64Result* /*sent_length*/,
                                             int* /*saved_errno*/,
                                             int /*additional_flags*/) {
   grpc_core::Crash("Write with timestamps not supported for this platform");
@@ -943,7 +953,6 @@ void PosixEndpointImpl::TcpShutdownTracedBufferList() {
 bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
                                         absl::Status& status) {
   msg_iovlen_type iov_size;
-  ssize_t sent_length = 0;
   size_t sending_length;
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
@@ -957,6 +966,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
   // being populated in most cases.
   iovec iov[MAX_WRITE_IOVEC];
   while (true) {
+    Int64Result send_status;
     sending_length = 0;
     iov_size = record->PopulateIovs(&unwind_slice_idx, &unwind_byte_idx,
                                     &sending_length, iov);
@@ -973,7 +983,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
     saved_errno = 0;
     if (outgoing_buffer_arg_ != nullptr) {
       if (!ts_capable_ ||
-          !WriteWithTimestamps(&msg, sending_length, &sent_length, &saved_errno,
+          !WriteWithTimestamps(&msg, sending_length, &send_status, &saved_errno,
                                MSG_ZEROCOPY)) {
         // We could not set socket options to collect Fathom timestamps.
         // Fallback on writing without timestamps.
@@ -988,7 +998,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
       msg.msg_controllen = 0;
       grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
-      sent_length = TcpSend(&poller_->GetFileDescriptors(), fd_, &msg,
+      send_status = TcpSend(&poller_->GetFileDescriptors(), fd_, &msg,
                             &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp_zerocopy_send_ctx_->UpdateZeroCopyOptMemStateAfterSend(
@@ -1019,21 +1029,22 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
 #endif
       }
     }
-    if (sent_length < 0) {
+    if (!send_status.ok()) {
       // If this particular send failed, drop ref taken earlier in this method.
       tcp_zerocopy_send_ctx_->UndoSend();
-      if (saved_errno == EAGAIN || saved_errno == ENOBUFS) {
+      if (send_status.IsPosixError(EAGAIN) ||
+          send_status.IsPosixError(ENOBUFS)) {
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        status = TcpAnnotateError(PosixOSError(saved_errno, "sendmsg"));
+        status = TcpAnnotateError(PosixOSError(send_status, "sendmsg"));
         TcpShutdownTracedBufferList();
         return true;
       }
     }
-    bytes_counter_ += sent_length;
+    bytes_counter_ += *send_status;
     record->UpdateOffsetForBytesSent(sending_length,
-                                     static_cast<size_t>(sent_length));
+                                     static_cast<size_t>(*send_status));
     if (record->AllSlicesSent()) {
       return true;
     }
@@ -1055,7 +1066,6 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
-  ssize_t sent_length = 0;
   size_t sending_length;
   size_t trailing;
   size_t unwind_slice_idx;
@@ -1068,6 +1078,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
   size_t outgoing_slice_idx = 0;
 
   while (true) {
+    Int64Result send_result;
     sending_length = 0;
     unwind_slice_idx = outgoing_slice_idx;
     unwind_byte_idx = outgoing_byte_idx_;
@@ -1094,7 +1105,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     saved_errno = 0;
     if (outgoing_buffer_arg_ != nullptr) {
       if (!ts_capable_ || !WriteWithTimestamps(&msg, sending_length,
-                                               &sent_length, &saved_errno, 0)) {
+                                               &send_result, &saved_errno, 0)) {
         // We could not set socket options to collect Fathom timestamps.
         // Fallback on writing without timestamps.
         ts_capable_ = false;
@@ -1108,12 +1119,13 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       msg.msg_controllen = 0;
       grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
-      sent_length =
+      send_result =
           TcpSend(&poller_->GetFileDescriptors(), fd_, &msg, &saved_errno);
     }
 
-    if (sent_length < 0) {
-      if (saved_errno == EAGAIN || saved_errno == ENOBUFS) {
+    if (!send_result.ok()) {
+      if (send_result.IsPosixError(EAGAIN) ||
+          send_result.IsPosixError(ENOBUFS)) {
         outgoing_byte_idx_ = unwind_byte_idx;
         // unref all and forget about all slices that have been written to this
         // point
@@ -1122,7 +1134,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
         }
         return false;
       } else {
-        status = TcpAnnotateError(PosixOSError(saved_errno, "sendmsg"));
+        status = TcpAnnotateError(PosixOSError(send_result, "sendmsg"));
         outgoing_buffer_->Clear();
         TcpShutdownTracedBufferList();
         return true;
@@ -1130,8 +1142,8 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     }
 
     CHECK_EQ(outgoing_byte_idx_, 0u);
-    bytes_counter_ += sent_length;
-    trailing = sending_length - static_cast<size_t>(sent_length);
+    bytes_counter_ += *send_result;
+    trailing = sending_length - static_cast<size_t>(*send_result);
     while (trailing > 0) {
       size_t slice_length;
       outgoing_slice_idx--;
