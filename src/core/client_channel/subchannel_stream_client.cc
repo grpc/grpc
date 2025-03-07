@@ -411,6 +411,10 @@ void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
   // Clean up.
   self->recv_trailing_metadata_.Clear();
   // Report call end.
+  // Note: We hold a ref to the SubchannelStreamClient here to ensure
+  // that it lives long enough for us to release the mutex, since the
+  // call to CallEndedLocked() may release the last ref.
+  auto subchannel_stream_client = self->subchannel_stream_client_->Ref();
   MutexLock lock(&self->subchannel_stream_client_->mu_);
   if (self->subchannel_stream_client_->event_handler_ != nullptr) {
     self->subchannel_stream_client_->event_handler_
