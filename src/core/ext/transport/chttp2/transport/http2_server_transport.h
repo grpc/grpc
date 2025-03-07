@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SERVER_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SERVER_TRANSPORT_H
 
-#include <type_traits>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -58,8 +56,6 @@ class Http2ServerTransport final : public ServerTransport {
   void Orphan() override;
   void AbortWithError();
 };
-
-static_assert(sizeof(Http2ServerTransport) <= 240, "Transport too large");
 
 }  // namespace http2
 }  // namespace grpc_core

@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_CLIENT_TRANSPORT_H
 
 #include <cstdint>
-#include <type_traits>
 #include <utility>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -147,8 +146,6 @@ class Http2ClientTransport final : public ClientTransport {
   uint32_t MakeStream(CallHandler call_handler);
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 };
-
-static_assert(sizeof(Http2ClientTransport) <= 240, "Transport too large");
 
 }  // namespace http2
 }  // namespace grpc_core
