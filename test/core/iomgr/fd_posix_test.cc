@@ -513,6 +513,9 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 TEST(FdPosixTest, MainTest) {
   grpc_closure destroyed;
   grpc_init();
+  if (grpc_core::IsPollsetAlternativeEnabled()) {
+    GTEST_SKIP() << "Skipping test for since we're using pollset alternative";
+  }
   {
     grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));

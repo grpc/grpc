@@ -1469,6 +1469,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_arg_names",
+        "config",
         "config_vars",
         "debug_location",
         "exec_ctx",
@@ -1481,6 +1482,7 @@ grpc_cc_library(
         "iomgr_timer",
         "orphanable",
         "parse_address",
+        "ref_counted_ptr",
         "resource_quota_api",
         "sockaddr_utils",
         "stats",
@@ -1893,6 +1895,7 @@ grpc_cc_library(
         "//src/core:error_utils",
         "//src/core:event_engine_common",
         "//src/core:event_engine_context",
+        "//src/core:event_engine_shim",
         "//src/core:experiments",
         "//src/core:filter_args",
         "//src/core:for_each",
