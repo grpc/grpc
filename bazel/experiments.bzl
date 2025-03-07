@@ -27,6 +27,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
+    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
     "free_large_allocator": "free_large_allocator",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
@@ -52,6 +53,7 @@ EXPERIMENT_POLLERS = [
     "event_engine_dns",
     "event_engine_dns_non_client_channel",
     "event_engine_listener",
+    "event_engine_for_all_other_endpoints",
 ]
 
 EXPERIMENTS = {
@@ -90,6 +92,7 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_client",
+                "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "server_listener",
             ],
@@ -138,6 +141,7 @@ EXPERIMENTS = {
         },
         "on": {
             "core_end2end_test": [
+                "event_engine_for_all_other_endpoints",
                 "server_listener",
             ],
             "xds_end2end_test": [
@@ -180,6 +184,7 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_client",
+                "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "server_listener",
             ],

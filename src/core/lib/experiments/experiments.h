@@ -71,6 +71,8 @@ inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
+inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -112,6 +114,8 @@ inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
+inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -153,6 +157,8 @@ inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
+inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -189,6 +195,7 @@ enum ExperimentIds {
   kExperimentIdEventEngineDnsNonClientChannel,
   kExperimentIdEventEngineListener,
   kExperimentIdEventEngineCallbackCq,
+  kExperimentIdEventEngineForAllOtherEndpoints,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
@@ -248,6 +255,10 @@ inline bool IsEventEngineListenerEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineCallbackCq>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
+inline bool IsEventEngineForAllOtherEndpointsEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEngineForAllOtherEndpoints>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {
