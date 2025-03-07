@@ -7528,6 +7528,7 @@ grpc_cc_library(
         "channel_args",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_transport",
         "loop",
         "map",
         "mpsc",
