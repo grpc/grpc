@@ -373,7 +373,6 @@ class RetryFilter::LegacyCallData final {
   const internal::RetryMethodConfig* retry_policy_ = nullptr;
   BackOff retry_backoff_;
 
-  grpc_slice path_;  // Request path.
   Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;

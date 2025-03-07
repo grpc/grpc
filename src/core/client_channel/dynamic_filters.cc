@@ -55,7 +55,6 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
   const grpc_call_element_args call_args = {
       call_stack,         // call_stack
       nullptr,            // server_transport_data
-      args.path,          // path
       args.start_time,    // start_time
       args.deadline,      // deadline
       args.arena,         // arena
