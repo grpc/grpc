@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+"""Copy protos from proto directory to python ancillary packages directory."""
 
 set -e
 
@@ -34,7 +34,6 @@ copy_proto() {
   echo "Copied: $src_file -> $dst_file"
 }
 
-# copy_proto proto_name src_subdir dst_subdir
 copy_proto "channelz" "channelz" "grpcio_channelz/grpc_channelz/v1"
 copy_proto "health" "health/v1" "grpcio_health_checking/grpc_health/v1"
 copy_proto "reflection" "reflection/v1alpha" "grpcio_reflection/grpc_reflection/v1alpha"
