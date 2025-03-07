@@ -37,9 +37,8 @@ class PollEventHandle;
 class PollPoller : public PosixEventPoller,
                    public std::enable_shared_from_this<PollPoller> {
  public:
-  explicit PollPoller(Scheduler* scheduler);
-  PollPoller(Scheduler* scheduler, bool use_phony_poll);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
+  explicit PollPoller(Scheduler* scheduler, bool use_phony_poll = false);
+  EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
@@ -47,16 +46,13 @@ class PollPoller : public PosixEventPoller,
   std::string Name() override { return "poll"; }
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
-  void Shutdown() override;
   bool CanTrackErrors() const override { return false; }
   ~PollPoller() override;
 
-  // Forkable
-  void PrepareFork() override;
-  void PostforkParent() override;
-  void PostforkChild() override;
-
   void Close();
+
+  // Forkable
+  void AdvanceGeneration() override;
 
  private:
   void KickExternal(bool ext);

@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/proto/grpc/testing/echo_messages.pb.h"
+
 #ifndef GRPC_ENABLE_FORK_SUPPORT
 // No-op for builds without fork support.
 int main(int /* argc */, char** /* argv */) { return 0; }
@@ -28,20 +30,86 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 #include <signal.h>
 
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
+#include "absl/strings/str_join.h"
 #include "src/core/util/fork.h"
+#include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
+std::string GetBacktrace() {
+  // constexpr std::string_view kBoop = "Boop";
+  // std::array<void*, 10> ptrs;
+  // int frame_count = absl::GetStackTrace(ptrs.data(), ptrs.size(), 1);
+  // std::vector<std::string> frames(frame_count);
+  // for (int i = 0; i < frame_count; ++i) {
+  //   std::array<char, 150> txt;
+  //   frames[i] = absl::StrCat("  ", i, " ",
+  //                            absl::Symbolize(ptrs[i], txt.data(), txt.size())
+  //                                ? std::string_view(txt.data(), txt.size())
+  //                                : kBoop);
+  // }
+  // return absl::StrJoin(frames, "\n");
+  return "";
+}
+
 namespace grpc {
 namespace testing {
 namespace {
+
+class EchoClientBidiReactor
+    : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
+ public:
+  void OnDone(const grpc::Status& /*s*/) override {
+    LOG(INFO) << "Everything done";
+    grpc_core::MutexLock lock(&mu_);
+    all_done_ = true;
+    cond_.SignalAll();
+  }
+
+  void OnReadDone(bool ok) override {
+    LOG(INFO) << "Read done: " << ok;
+    grpc_core::MutexLock lock(&mu_);
+    read_ = true;
+    cond_.SignalAll();
+  }
+
+  void OnWriteDone(bool ok) override {
+    LOG(INFO) << "Write done: " << ok;
+    grpc_core::MutexLock lock(&mu_);
+    write_ = true;
+    cond_.SignalAll();
+  }
+
+  void WaitReadWriteDone() {
+    grpc_core::MutexLock lock(&mu_);
+    while (!read_ || !write_) {
+      cond_.Wait(&mu_);
+    }
+  }
+
+  void WaitAllDone() {
+    grpc_core::MutexLock lock(&mu_);
+    while (!all_done_) {
+      cond_.Wait(&mu_);
+    }
+  }
+
+ private:
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cond_;
+  bool read_ ABSL_GUARDED_BY(&mu_) = false;
+  bool write_ ABSL_GUARDED_BY(&mu_) = false;
+  bool all_done_ ABSL_GUARDED_BY(&mu_) = false;
+};
 
 class ServiceImpl final : public EchoTestService::Service {
   Status BidiStream(
@@ -50,18 +118,40 @@ class ServiceImpl final : public EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      LOG(INFO) << "recv msg " << request.message();
+      LOG(INFO) << "[" << getpid() << "] recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
-      LOG(INFO) << "wrote msg " << response.message();
+      LOG(INFO) << "[" << getpid() << "] wrote msg " << response.message();
     }
     return Status::OK;
   }
 };
 
-std::unique_ptr<EchoTestService::Stub> MakeStub(const std::string& addr) {
-  return EchoTestService::NewStub(
+std::pair<std::string, std::string> DoExchange(absl::string_view label,
+                                               const std::string& addr) {
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_wait_for_ready(true);
+
+  std::unique_ptr<EchoTestService::Stub> stub = EchoTestService::NewStub(
       grpc::CreateChannel(addr, InsecureChannelCredentials()));
+  EchoClientBidiReactor reactor;
+  stub->async()->BidiStream(&context, &reactor);
+  request.set_message("Hello again from child");
+  reactor.StartWrite(&request);
+  reactor.StartRead(&response);
+  reactor.StartCall();
+  LOG(INFO) << label << " Doing the call";
+  reactor.WaitReadWriteDone();
+  reactor.StartWritesDone();
+  reactor.WaitAllDone();
+  LOG(INFO) << label << " #########";
+  LOG(INFO) << label << " #########";
+  LOG(INFO) << label << " #########";
+  LOG(INFO) << label << " #########";
+  LOG(INFO) << label << " #########";
+  return {response.message(), request.message()};
 }
 
 TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
@@ -70,41 +160,37 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
   int port = grpc_pick_unused_port_or_die();
   std::string addr = absl::StrCat("localhost:", port);
 
+  LOG(INFO) << "[" << getpid() << "] Before first fork";
   pid_t server_pid = fork();
   switch (server_pid) {
     case -1:  // fork failed
       GTEST_FAIL() << "failure forking";
     case 0:  // post-fork child
     {
+      LOG(INFO) << "[" << getpid() << "] After first fork in server 1";
       ServiceImpl impl;
       grpc::ServerBuilder builder;
       builder.AddListeningPort(addr, grpc::InsecureServerCredentials());
       builder.RegisterService(&impl);
+      LOG(INFO) << "[" << getpid() << "] After first fork in server 2";
       std::unique_ptr<Server> server(builder.BuildAndStart());
+      LOG(INFO) << "[" << getpid() << "] After first fork in server 3";
       server->Wait();
       return;
     }
     default:  // post-fork parent
       break;
   }
-
+  LOG(INFO) << "[" << getpid() << "] After first fork in client";
   // Do a round trip before we fork.
   // NOTE: without this scope, test running with the epoll1 poller will fail.
   {
-    std::unique_ptr<EchoTestService::Stub> stub = MakeStub(addr);
-    EchoRequest request;
-    EchoResponse response;
-    ClientContext context;
-    context.set_wait_for_ready(true);
-
-    auto stream = stub->BidiStream(&context);
-
-    request.set_message("Hello");
-    ASSERT_TRUE(stream->Write(request));
-    ASSERT_TRUE(stream->Read(&response));
-    ASSERT_EQ(response.message(), request.message());
+    auto [res, req] =
+        DoExchange(absl::StrCat("[", getpid(), "] In first-fork parent"), addr);
+    EXPECT_EQ(res, req);
   }
   // Fork and do round trips in the post-fork parent and child.
+  LOG(INFO) << "[" << getpid() << "] Before fork 2";
   pid_t child_client_pid = fork();
   switch (child_client_pid) {
     case -1:  // fork failed
@@ -112,35 +198,17 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
     case 0:  // post-fork child
     {
       VLOG(2) << "In post-fork child";
-      EchoRequest request;
-      EchoResponse response;
-      ClientContext context;
-      context.set_wait_for_ready(true);
-
-      std::unique_ptr<EchoTestService::Stub> stub = MakeStub(addr);
-      auto stream = stub->BidiStream(&context);
-
-      request.set_message("Hello again from child");
-      ASSERT_TRUE(stream->Write(request));
-      ASSERT_TRUE(stream->Read(&response));
-      ASSERT_EQ(response.message(), request.message());
+      auto [res, req] =
+          DoExchange(absl::StrCat("[", getpid(), "] In post-fork child"), addr);
+      EXPECT_EQ(res, req);
       exit(0);
     }
     default:  // post-fork parent
     {
       VLOG(2) << "In post-fork parent";
-      EchoRequest request;
-      EchoResponse response;
-      ClientContext context;
-      context.set_wait_for_ready(true);
-
-      std::unique_ptr<EchoTestService::Stub> stub = MakeStub(addr);
-      auto stream = stub->BidiStream(&context);
-
-      request.set_message("Hello again from parent");
-      EXPECT_TRUE(stream->Write(request));
-      EXPECT_TRUE(stream->Read(&response));
-      EXPECT_EQ(response.message(), request.message());
+      auto [res, req] = DoExchange(
+          absl::StrCat("[", getpid(), "] In post-fork parent"), addr);
+      EXPECT_EQ(res, req);
 
       // Wait for the post-fork child to exit; ensure it exited cleanly.
       int child_status;
@@ -158,6 +226,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  absl::InitializeSymbolizer(argv[0]);
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc::testing::TestEnvironment env(&argc, argv);
