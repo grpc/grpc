@@ -11,7 +11,7 @@ is intended to be language-agnostic.
 From the perspective of an application, a gRPC client channel is an
 abstraction representing a connection to a particular server name,
 which we refer to as a **target**, specified in URI form (see [Target
-Names](#target-name) below).  The channel is designed to transparently
+Names](#target-names) below).  The channel is designed to transparently
 handle all of the details of name resolution, connection management,
 and load balancing, so that the application does not need to handle
 those details.  Applications can simply create a channel and start
@@ -25,8 +25,8 @@ The gRPC API in each language will have a way for the application to
 create a channel to a particular target.  Channel creation will take
 the following parameters:
 
-* [Target Name](#target-name)  
-* [Channel Credentials](#channel-creds)  
+* [Target Name](#target-names)
+* [Channel Credentials](#channel-credentials)
 * Options to control the channel's behavior (optional)
 
 Applications should generally create a channel for a given target once
@@ -34,11 +34,11 @@ when they first need it and keep it around as long as they need it.
 It is considered an anti-pattern for the application to create a separate
 channel for each RPC.
 
-### Target Names {#target-name}
+### Target Names
 
 The target name is expressed in URI syntax as defined in [RFC
 3986](https://tools.ietf.org/html/rfc3986).  The scheme of the
-URI indicates which [Name Resolver](#name-resolver) to use to
+URI indicates which [Name Resolver](#name-resolvers) to use to
 convert that name into a set of addresses and an optional [Service
 Config](#service-config).
 
@@ -48,18 +48,18 @@ there is no resolver registered for that URI, the channel will prepend
 to use something like `server.example.com` as a target name instead of
 `dns:///server.example.com`.
 
-### Channel Credentials {#channel-creds}
+### Channel Credentials
 
 Channel credentials are used to configure transport-level security.  gRPC
 provides several channel credential types, including InsecureCredentials,
 which supports plaintext connections, and TlsCredentials, which supports
 TLS encryption.
 
-## Service Config {#service-config}
+## Service Config
 
 The service config allows the behavior of a channel to be customized to
-talk to a particular [target name](#target-name).  It allows setting
-parameters like the [Load Balancing Policy](#load-balancing-policy)
+talk to a particular [target name](#target-names).  It allows setting
+parameters like the [Load Balancing Policy](#load-balancing-policies)
 or per-method default [deadline](#deadline).  The service config is
 typically maintained by the target owner.
 
@@ -71,7 +71,7 @@ form, as per the normal [protobuf-to-JSON conversion
 rules](https://developers.google.com/protocol-buffers/docs/proto3#json).
 
 The recommended way to distribute a service config to clients is to do
-so dynamically via the [resolver](#name-resolver) plugin, so that target
+so dynamically via the [resolver](#name-resolvers) plugin, so that target
 owners can change the config without having to touch each individual
 client.  (As an example, the [DNS resolver](#dns-resolver) supports
 fetching the service config from a DNS TXT record, as described in [gRFC
@@ -80,7 +80,7 @@ However, the channel also provides two related options via the client API:
 
 * A string option to set the default service config for the channel in JSON
   form.  If not set, defaults to `{}` (an empty config).  The default config
-  is used when the resolver does not return any service config.  
+  is used when the resolver does not return any service config.
 * A boolean option to tell the resolver not to fetch the service config.  By
   default, resolvers will fetch the service config if supported.
 
@@ -89,7 +89,7 @@ However, the channel also provides two related options via the client API:
 The primary use of the channel is for the application to send RPCs to
 the service.
 
-### deadline {#deadline}
+### deadline
 
 The application can optionally set a deadline on the RPC, which is an
 absolute time by which the RPC must be finished.
@@ -107,7 +107,7 @@ DEADLINE\_EXCEEDED error.
 If an RPC has no deadline set, it will not complete until it either
 encounters an error or finishes successfully.
 
-### wait\_for\_ready {#wait_for_ready}
+### wait\_for\_ready
 
 Each RPC has a boolean attribute called wait\_for\_ready that controls
 the behavior in the following connectivity failure scenarios:
@@ -115,7 +115,7 @@ the behavior in the following connectivity failure scenarios:
 * The RPC is waiting for the initial name resolution result, and the
   resolver fails, thus causing the channel to report connectivity state
   TRANSIENT\_FAILURE.  (See [Starting Name
-  Resolution](#starting-name-resolution).)  
+  Resolution](#starting-name-resolution).)
 * The RPC is waiting for a load balancing decision, and the load balancing
   policy reports a failure, such as when it has not been able to establish
   a connection to any server address and reports connectivity state
@@ -138,7 +138,7 @@ failure while the RPC is in flight.
 Every RPC completes with a status.  For a comprehensive
 list of gRPC status codes, see the [Status Codes](statuscodes.md) doc.
 
-### Retries {#retries}
+### Retries
 
 The gRPC channel supports retries for RPCs, as described in [gRFC
 A6](https://github.com/grpc/proposal/blob/master/A6-client-retries.md).
@@ -150,7 +150,7 @@ how many times they can be retried, backoff behavior, etc.
 
 Each retry attempt goes through load balancing independently.
 
-## Connectivity State API {#connectivity-state-api}
+## Connectivity State API
 
 The channel API provides a way for the application to be informed of
 the current connectivity state of the channel.  The connectivity state
@@ -184,12 +184,12 @@ details on how the channel's connectivity state is determined.
 
 The main components of the client channel are:
 
-* The [Name Resolver](#name-resolver), which is responsible for resolving
+* The [Name Resolver](#name-resolvers), which is responsible for resolving
   the channel's target name and returning a list of endpoint addresses and
-  an optional [Service Config](#service-config).  
+  an optional [Service Config](#service-config).
 * [Subchannels](#subchannels), each of which represents a potential or
-  established connection to a particular endpoint address.  
-* The [Load Balancing Policy](#load-balancing-policy), which is
+  established connection to a particular endpoint address.
+* The [Load Balancing Policy](#load-balancing-policies), which is
   responsible for creating subchannels, managing their connectivity states,
   and determining which RPCs are sent on which subchannels.
 
@@ -200,20 +200,20 @@ as shown in the following diagram:
 ![image](images/client_channel.png)
 
 1. The channel instantiates the name resolver and asks it to resolve the
-   target URI.  
-2. The resolver returns a list of addresses and an optional service config.  
+   target URI.
+2. The resolver returns a list of addresses and an optional service config.
 3. The channel chooses the LB policy based on the service config.  It
    instantiates the LB policy and gives it the list of addresses and its
-   config from the service config.  
+   config from the service config.
 4. The LB policy creates a subchannel for each address and asks those
    subchannels to establish connections.
 
 Then, as each RPC is sent on the channel, the channel asks the LB policy
 which subchannel to send the RPC on.
 
-## Name Resolvers {#name-resolver}
+## Name Resolvers
 
-As described under [Target Names](#target-name) above, the URI scheme
+As described under [Target Names](#target-names) above, the URI scheme
 of the target name indicates which resolver implementation to use.
 gRPC has a registry of resolver factories, registered by URI scheme.
 Only one resolver can be registered for a given scheme.  When a channel
@@ -231,13 +231,13 @@ use for a given target URI.  By default, the authority will be the path
 part of the URI without the leading `/`, and it will be percent-encoded.
 However, individual resolver factories may override that behavior.
 
-### Starting Name Resolution {#starting-name-resolution}
+### Starting Name Resolution
 
 When a channel is first created, it is in IDLE state, and it will not yet
 have started name resolution or establishing connections to endpoints.
 It will leave IDLE state when the application does one of two things:
 
-* Sends the first RPC on the channel.  
+* Sends the first RPC on the channel.
 * Uses the [connectivity state API](#connectivity-state-api) to request
   that the channel start to connect.
 
@@ -267,24 +267,24 @@ within the specified timeout period.  When this happens, the channel
 will drop all subchannel connections and stop name resolution, returning
 itself to its initial state.
 
-### Resolver Results {#resolver-results}
+### Resolver Results
 
 The resolver returns results that include the following information:
 
-* Endpoints: Either an error, or a list of endpoints, each of which has:  
-  * A list of one or more addresses.  
-  * A set of attributes (key/value pairs).  
-* A set of top-level attributes (key/value pairs).  
+* Endpoints: Either an error, or a list of endpoints, each of which has:
+  * A list of one or more addresses.
+  * A set of attributes (key/value pairs).
+* A set of top-level attributes (key/value pairs).
 * Service config: Either an error, a [service config](#service-config), or
-  nothing (if there is no service config to return).  
+  nothing (if there is no service config to return).
 * A resolution note string, which is used to provide context to be included
-  in RPC failure status messages generated by LB policies.  
+  in RPC failure status messages generated by LB policies.
 * A health result callback, to be invoked by the channel to indicate to the
   resolver whether the LB policy has accepted the result.
 
 Note that both the list of endpoints and the list of addresses within
 each endpoint are ordered lists, and the order of the elements may be
-significant to the [Load Balancing Policy](#load-balancing-policy).
+significant to the [Load Balancing Policy](#load-balancing-policies).
 For example, the [pick\_first](#pick_first) LB policy will attempt
 to connect to the addresses in the order in which they are listed.
 Thus, resolvers wishing to spread client load across servers may wish
@@ -368,9 +368,9 @@ The client channel chooses the LB policy as follows:
    set, use that policy.
 2. If the service config has its [loadBalancingPolicy
    field](https://github.com/grpc/grpc-proto/blob/f64271f4781075327df0a8bbffe8b5b0a84f51bc/grpc/service_config/service_config.proto#L313)
-   set, use that policy.  
+   set, use that policy.
 3. If the client application specified the LB policy to use via the channel
-   creation API, use that.  
+   creation API, use that.
 4. Otherwise, default to [pick\_first](#pick_first).
 
 ### Resolver API
@@ -380,7 +380,7 @@ The resolver API is designed to support two types of resolvers:
 * **Watch-based:** These resolvers operate in a pub/sub manner.  They
   establish a subscription to the data they need when they start up, and
   they will receive updates at any time when the data changes.  The xds
-  resolver is an example of a watch-based resolver.  
+  resolver is an example of a watch-based resolver.
 * **Polling:** These resolvers need to explicitly send a query to get data.
   When a query completes successfully, the resolver does not send another
   query unless explicitly requested to do so by the channel.  The dns
@@ -393,7 +393,7 @@ re-resolution.
 
 To support that, the resolver API has a method to request re-resolution.
 The channel will typically invoke this method at the request of a
-[Load Balancing Policy](#load-balancing-policy), usually when an
+[Load Balancing Policy](#load-balancing-policies), usually when an
 existing connection to an endpoint fails.  Note that this method does
 not necessarily need to trigger a re-resolution request immediately;
 the resolver implementation may perform caching or simply impose a
@@ -404,13 +404,13 @@ This method is a no-op for watch-based resolvers.
 
 gRPC comes with resolver implementations for the following schemes.
 
-#### dns Resolver {#dns-resolver}
+#### dns Resolver
 
 The DNS resolver accepts URIs of the form `dns:\[//authority/\]host\[:port\]`.
 
-* `host` is the host to resolve via DNS.  
+* `host` is the host to resolve via DNS.
 * `port` is the port to return for each address. If not specified, 443 is
-  used (but some implementations default to 80 for insecure channels).  
+  used (but some implementations default to 80 for insecure channels).
 * `authority` indicates the DNS server to use, although this is only
   supported by some implementations.
 
@@ -429,20 +429,20 @@ minimum time between DNS re-resolutions.
 The unix resolver (Unix systems only) accepts URIs of the form
 `unix:path` or `unix:///absolute\_path`.
 
-* `path` indicates the location of the desired socket.  
+* `path` indicates the location of the desired socket.
 * In the first form, the path may be relative or absolute; in the
   second form, the path must be absolute (i.e., the last of the three
   slashes is actually part of the path, so the path part of the URI is
   `/absolute_path`).
 
-## Subchannels {#subchannels}
+## Subchannels
 
 A subchannel represents a potential or established connection to a
 particular address.  The channel provides the implementation of a
-subchannel, but the [Load Balancing Policy](#load-balancing-policy)
+subchannel, but the [Load Balancing Policy](#load-balancing-policies)
 decides when to create subchannels and how to manage their connections.
 
-### Subchannel Connectivity States {#subchannel-connectivity-states}
+### Subchannel Connectivity States
 
 Subchannels report their connectivity state to the LB policy.
 The connectivity state semantics for a subchannel are shown in the
@@ -461,7 +461,7 @@ time between connection attempts starting, not ending; if a connection
 attempt lasts as long or longer than the backoff delay, then the next
 connection attempt may start immediately after the previous one ended.
 
-### Subchannel Health State {#subchannel-health-state}
+### Subchannel Health State
 
 Subchannels can also report their health state to the LB policy.
 This has similar semantics to the connectivity state, but it
@@ -491,8 +491,8 @@ to do the following:
   LB policies will generally start a watch as soon as the subchannel is
   created and not stop it until they unref the subchannel.  In some
   implementations, the watch may be an inherent part of creating the
-  subchannel.  
-* Start and stop [health state](#subchannel-health-state) watch.  
+  subchannel.
+* Start and stop [health state](#subchannel-health-state) watch.
 * Request that the subchannel initiate a connection attempt.  This may be
   called only when the subchannel is reporting connectivity state IDLE.
 
@@ -529,16 +529,16 @@ This approach also allows for sharing subchannels between channels
 (by having multiple channels share the same subchannel pool), which can
 reduce the number of connections being maintained to a given target.
 
-## Load Balancing Policies {#load-balancing-policy}
+## Load Balancing Policies
 
 A load balancing policy is responsible for the following channel-level
 behavior:
 
 * Decides what [subchannels](#subchannels) to create based on the list of
-  addresses returned by the resolver.  
-* Decides when to attempt to reconnect to each subchannel.  
+  addresses returned by the resolver.
+* Decides when to attempt to reconnect to each subchannel.
 * Decides when to request re-resolution from the [name
-  resolver](#name-resolver).  
+  resolver](#name-resolvers).
 * Sets the channel's [connectivity state](#connectivity-state-api).
 
 Then, on a per-RPC basis, the LB policy decides which subchannel to use
@@ -554,12 +554,12 @@ for that LB policy.  The factory has two methods:
 
 * **ParseLoadBalancingPolicyConfig()**: This method parses the LB policy
   config in JSON form and returns a parsed LB policy config.  This is called
-  as part of service config parsing, typically called from the resolver.  
+  as part of service config parsing, typically called from the resolver.
 * **CreateLoadBalancingPolicy()**: This method creates a new LB policy.  It
   takes as input the [helper](#helper-api) object that the policy will use
   to communicate with its parent.
 
-### Helper API {#helper-api}
+### Helper API
 
 When an LB policy is created, its parent must pass in a helper object,
 which the policy will use to communicate with its parent.  The helper
@@ -568,7 +568,7 @@ provides at least the following methods:
 * **CreateSubchannel()**: Called by the LB policy to create a subchannel for
   a particular address.
 * **UpdateState()**: Called by the LB policy to set the channel's connectivity
-  state and return a new [picker](#picker-api).  
+  state and return a new [picker](#picker-api).
 * **RequestReresolution()**: Called by the LB policy when it wants to trigger
   a new name resolution request on a polling resolver.  This is typically done
   when a subchannel's connection fails or when a connection attempt fails.
@@ -588,7 +588,7 @@ The LB policy object itself provides the following methods:
   start trying to connect.  For most policies, this is a no-op, but it is
   used by policies that connect lazily like [pick\_first](#pick_first).
 
-### Picker API {#picker-api}
+### Picker API
 
 The picker is the object used to actually decide which subchannel to
 use for each RPC sent on the channel.  The picker has only one method,
@@ -598,7 +598,7 @@ Pick(), which will synchronously return one of the following results:
   for the RPC.  The picker may also return a callback to be invoked when
   the RPC is complete, so that the picker can see the final status and
   trailing metadata of the RPC.  In general, pickers will provide this
-  result when the connectivity state is READY.  
+  result when the connectivity state is READY.
 * **Queue**: The LB policy does not currently have any subchannel with an
   established connection to send the RPC on, but it is still trying to
   connect.  The channel will queue the RPC, and it will try again later when
@@ -609,7 +609,7 @@ Pick(), which will synchronously return one of the following results:
   Note that the RPC may be [retried](#retries).  Note, however, that if the
   RPC is [wait\_for\_ready](#wait_for_ready), then it will be queued instead
   of being failed.  In general, pickers will provide this result when the
-  connectivity state is TRANSIENT\_FAILURE.  
+  connectivity state is TRANSIENT\_FAILURE.
 * **Drop**: This is similar to Fail, except that the RPC will be failed even
   if it is [wait\_for\_ready](#wait_for_ready).  In some implementations,
   this also inhibits retries.  In general, this is used when a control plane
@@ -627,7 +627,7 @@ report READY state due to having some working subchannel connections but
 still return Fail for an individual RPC that it cannot route to any of
 those working subchannel connections.
 
-### Aggregated Connectivity States {#aggregated-connectivity-states}
+### Aggregated Connectivity States
 
 As described under [Starting Name Resolution](#starting-name-resolution)
 above, once the LB policy is created, it is responsible for setting the
@@ -637,9 +637,9 @@ connectivity states of the underlying subchannels.  The normal aggregation
 rules (which should be used by all LB policies unless they have a specific
 reason to diverge from this) are as follows (first match wins):
 
-1. If there is any subchannel in state READY, report READY.  
-2. If there is any subchannel in state CONNECTING, report CONNECTING.  
-3. If there is any subchannel in state IDLE, report IDLE.  
+1. If there is any subchannel in state READY, report READY.
+2. If there is any subchannel in state CONNECTING, report CONNECTING.
+3. If there is any subchannel in state IDLE, report IDLE.
 4. Otherwise, all children are in state TRANSIENT\_FAILURE, so report
    TRANSIENT\_FAILURE.
 
@@ -666,14 +666,14 @@ In particular, this means that when the channel gets a new update from
 the resolver, it does the following:
 
 * Whenever a service config update comes in, the channel determines which
-  LB policy it should be using based on the new service config data.  
+  LB policy it should be using based on the new service config data.
 * If the new policy name is the same as the LB policy the channel had already
   been using, the LB policy does not need to change.  Instead, the channel
   will simply pass an update to the existing LB policy instance containing
-  the new address information from the resolver.  
+  the new address information from the resolver.
 * Otherwise, if the new policy name is *not* the same as the LB policy that
   the channel had already been using, the channel will construct a new LB
-  policy.  
+  policy.
 * If the channel is currently in a state other than READY, the new policy
   will be swapped into place immediately.  Otherwise, the channel will
   continue using the old LB policy until either the new policy reports READY
@@ -685,7 +685,7 @@ the resolver, it does the following:
 This document does not cover every LB policy provided by gRPC, but it
 does cover the two most basic ones: pick\_first and round\_robin.
 
-#### pick\_first {#pick_first}
+#### pick\_first
 
 The pick\_first policy establishes a connection on one subchannel and
 then uses that same subchannel for all picks until the connection fails
@@ -754,7 +754,7 @@ A61](https://github.com/grpc/proposal/blob/master/A61-IPv4-IPv6-dualstack-backen
 endpoints will delegate to a pick\_first child policy to choose an
 address within each endpoint.
 
-#### round\_robin {#round_robin}
+#### round\_robin
 
 The round\_robin policy spreads load across a set of endpoints by
 simply sending one RPC to each endpoint in order, wrapping around to
@@ -787,9 +787,9 @@ Specifically (first match wins):
   the picker will round-robin over all subchannels in READY state.  Note that
   whenever a new picker is returned, it will start from a random index in the
   list of endpoints.  The picker will need appropriate synchronization to
-  maintain the index as it processes picks.  
+  maintain the index as it processes picks.
 * If there is at least one child in state CONNECTING (or IDLE, as mentioned
-  above), report CONNECTING.  In this case, the picker will queue picks.  
+  above), report CONNECTING.  In this case, the picker will queue picks.
 * Otherwise, all subchannels are in TRANSIENT\_FAILURE state, so report
   TRANSIENT\_FAILURE state.  In this case, the picker will fail all picks
   with an RPC status that includes the error from the most recent subchannel
