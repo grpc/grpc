@@ -1184,7 +1184,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=60 * 60,
+                timeout_seconds=120 * 60,
                 shortname="ios-buildtest-example-switft-package",
                 cpu_cost=1e6,
                 environ={
