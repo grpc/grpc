@@ -451,7 +451,10 @@ following table:
 | State | Description | Possible Next States |
 | ----- | ----- | ----- |
 | **IDLE** | No connection exists.  This is the initial state.  A connection attempt may be requested by the LB policy. | CONNECTING: If the LB policy requests a connection. |
-| **CONNECTING** | A connection attempt is in progress. | READY: If the connection attempt succeeds. TRANSIENT\_FAILURE: If the connection attempt fails. |
+| **CONNECTING** | A connection attempt is in progress. | READY: If the
+connection attempt succeeds.\
+\
+TRANSIENT\_FAILURE: If the connection attempt fails. |
 | **READY** | A connection has been successfully established.  RPCs may be sent on the subchannel. | IDLE: When the connection terminates. |
 | **TRANSIENT\_FAILURE** | A connection attempt has failed and the subchannel is currently in backoff delay.  No connection attempt may be started in this state. | IDLE: When the backoff delay expires, the subchannel will transition to IDLE state to let the LB policy know that it can attempt to establish a connection again. |
 
@@ -650,10 +653,28 @@ generally expected connectivity state semantics:
 
 | State | Description | Possible Next States |
 | ----- | ----- | ----- |
-| **IDLE** | Initial state upon channel creation or IDLE timeout.  Name resolution is not running and there are no subchannels. Some LB policies (e.g., pick\_first) may also switch to this state from READY when a working connection to a server is closed.  In this case, name resolution is still running, but there are no subchannels. In this state, the picker will normally trigger a call to the LB policy's ExitIdle() method, and it will queue all picks. | CONNECTING: If the application requests that the channel connects or sends an RPC on the channel. |
-| **CONNECTING** | The channel is attempting to establish connection(s) to the server.  It may be attempting to resolve the server name or establishing connection(s) on subchannel(s). In this state, the picker will normally queue all picks. | READY: If the LB policy is able to establish a connection on at least one subchannel. TRANSIENT\_FAILURE: If name resolution fails or if the LB policy is unable to establish a connection on any subchannel. IDLE: If the channel's idle timeout occurs. |
-| **READY** | The LB policy has successfully established a connection on at least one subchannel.  RPCs may be sent on the channel. In this state, the picker will normally be able to complete all picks. | IDLE: In some LB policies, when the connection terminates.  Also happens when the channel's idle timeout occurs. |
-| **TRANSIENT\_FAILURE** | The channel is temporarily unable to establish a connection, either because name resolution failed or because the LB policy was unable to establish a connection on any subchannel. In this state, the picker will normally fail all picks. | READY: When the problem is resolved and connectivity is established. Note: In general, a channel will not report CONNECTING between TRANSIENT\_FAILURE and READY, but there are some cases in which this will happen. IDLE: If the channel's idle timeout occurs. |
+| **IDLE** | Initial state upon channel creation or IDLE timeout.  Name resolution is not running and there are no subchannels.\
+\
+Some LB policies (e.g., pick\_first) may also switch to this state from READY when a working connection to a server is closed.  In this case, name resolution is still running, but there are no subchannels.\
+\
+In this state, the picker will normally trigger a call to the LB policy's ExitIdle() method, and it will queue all picks. | CONNECTING: If the application requests that the channel connects or sends an RPC on the channel. |
+| **CONNECTING** | The channel is attempting to establish connection(s) to the server.  It may be attempting to resolve the server name or establishing connection(s) on subchannel(s).\
+\
+In this state, the picker will normally queue all picks. | READY: If the LB policy is able to establish a connection on at least one subchannel.\
+\
+TRANSIENT\_FAILURE: If name resolution fails or if the LB policy is unable to establish a connection on any subchannel.\
+\
+IDLE: If the channel's idle timeout occurs. |
+| **READY** | The LB policy has successfully established a connection on at least one subchannel.  RPCs may be sent on the channel.\
+\
+In this state, the picker will normally be able to complete all picks. | IDLE: In some LB policies, when the connection terminates.  Also happens when the channel's idle timeout occurs. |
+| **TRANSIENT\_FAILURE** | The channel is temporarily unable to establish a connection, either because name resolution failed or because the LB policy was unable to establish a connection on any subchannel.\
+\
+In this state, the picker will normally fail all picks. | READY: When the problem is resolved and connectivity is established.\
+\
+Note: In general, a channel will not report CONNECTING between TRANSIENT\_FAILURE and READY, but there are some cases in which this will happen.\
+\
+IDLE: If the channel's idle timeout occurs. |
 
 ### Gracefully Switching LB Policies
 
