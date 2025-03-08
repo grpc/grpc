@@ -451,8 +451,7 @@ following table:
 | State | Description | Possible Next States |
 | ----- | ----- | ----- |
 | **IDLE** | No connection exists.  This is the initial state.  A connection attempt may be requested by the LB policy. | CONNECTING: If the LB policy requests a connection. |
-| **CONNECTING** | A connection attempt is in progress. | READY: If the
-connection attempt succeeds.<br><br>TRANSIENT\_FAILURE: If the connection attempt fails. |
+| **CONNECTING** | A connection attempt is in progress. | READY: If the connection attempt succeeds.<br><br>TRANSIENT\_FAILURE: If the connection attempt fails. |
 | **READY** | A connection has been successfully established.  RPCs may be sent on the subchannel. | IDLE: When the connection terminates. |
 | **TRANSIENT\_FAILURE** | A connection attempt has failed and the subchannel is currently in backoff delay.  No connection attempt may be started in this state. | IDLE: When the backoff delay expires, the subchannel will transition to IDLE state to let the LB policy know that it can attempt to establish a connection again. |
 
