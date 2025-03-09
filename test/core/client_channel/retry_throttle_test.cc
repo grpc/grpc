@@ -103,6 +103,8 @@ TEST(ServerRetryThrottleMap, Replacement) {
   // Each failure decrements by 1.  Each success increments by 1.
   auto old_throttle_data =
       ServerRetryThrottleMap::Get()->GetDataForServer(kServerName, 4000, 1000);
+  EXPECT_EQ(old_throttle_data->max_milli_tokens(), 4000);
+  EXPECT_EQ(old_throttle_data->milli_token_ratio(), 1000);
   // Failure: token_count=3.  Above threshold.
   EXPECT_TRUE(old_throttle_data->RecordFailure());
   // Create new throttle data.
@@ -111,6 +113,9 @@ TEST(ServerRetryThrottleMap, Replacement) {
   // Each failure decrements by 1.  Each success increments by 3.
   auto throttle_data =
       ServerRetryThrottleMap::Get()->GetDataForServer(kServerName, 10000, 3000);
+  EXPECT_EQ(throttle_data->max_milli_tokens(), 10000);
+  EXPECT_EQ(throttle_data->milli_token_ratio(), 3000);
+  // Max milli tokens updated
   // Failure via old_throttle_data: token_count=6.5.
   EXPECT_TRUE(old_throttle_data->RecordFailure());
   // Failure: token_count=5.5.
