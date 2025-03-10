@@ -77,6 +77,7 @@ then
     #brew install ruby@3.2
   brew install rbenv ruby-build
   # Latest stable version available
+  
   rbenv install -l
   RUBY_STABLE_VERSION=$(rbenv install -l | grep -v - | tail -1)
   rbenv install $RUBY_STABLE_VERSION
@@ -85,8 +86,8 @@ then
   rbenv global $RUBY_STABLE_VERSION
   ruby --version
   gem install bundler
-  rvm osx-ssl-certs status all
-  rvm osx-ssl-certs update all
+  #rvm osx-ssl-certs status all
+  #rvm osx-ssl-certs update all
 elif [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   # Workaround for https://github.com/rvm/rvm/issues/5133
@@ -117,7 +118,7 @@ then
   rvm use "$RUBY_VERSION" --default
   echo "Updating osx-ssl-certs."
   gem install bundler -v 2.4
-    rvm osx-ssl-certs status all
+  rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
 
   # restore echo
