@@ -53,10 +53,10 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
 brew config
 
-if $is_sonoma; then
-  brew install cmake
-  brew install gnupg
-fi
+#if $is_sonoma; then
+#  brew install cmake
+#  brew install gnupg
+#fi
 
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.16.0
