@@ -334,7 +334,7 @@ if (result.service_config.IsError()) {
     service_config = channel.service_config;
   } else {
     // No previously returned valid config, so we fail.
-    self.SetConnectivityState(TRANSIENT_FAILURE);
+    channel.SetConnectivityState(TRANSIENT_FAILURE);
     health_status = UNAVAILABLE("no valid service config");
   }
 } else if (result.service_config.IsEmpty()) {
