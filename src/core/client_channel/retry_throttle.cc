@@ -49,9 +49,9 @@ T ClampedAdd(std::atomic<T>& value, T delta, T min, T max) {
 // ServerRetryThrottleData
 //
 
-ServerRetryThrottleData::ServerRetryThrottleData(
-    uintptr_t max_milli_tokens, uintptr_t milli_token_ratio,
-    uintptr_t milli_tokens)
+ServerRetryThrottleData::ServerRetryThrottleData(uintptr_t max_milli_tokens,
+                                                 uintptr_t milli_token_ratio,
+                                                 uintptr_t milli_tokens)
     : max_milli_tokens_(max_milli_tokens),
       milli_token_ratio_(milli_token_ratio),
       milli_tokens_(milli_tokens) {}
