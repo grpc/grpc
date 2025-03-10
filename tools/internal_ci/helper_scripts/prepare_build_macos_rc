@@ -31,6 +31,12 @@ df -h /tmpfs /
 launchctl limit maxfiles
 ulimit -a
 
+os_version=$(sw_vers -productVersion)
+is_sonoma=false
+if [[ "$os_version" == "14."* ]]; then
+  is_sonoma=true
+fi
+
 # WARNING: TRY TO KEEP THIS FILE AS LEAN AS POSSIBLE
 # The rules:
 # - think twice before adding installer that takes long time (builds are already slow)
@@ -47,8 +53,10 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
 brew config
 
-brew install cmake
-brew install gnupg
+if $is_sonoma; then
+  brew install cmake
+  brew install gnupg
+fi
 
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.16.0
@@ -63,13 +71,14 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
   export RUN_TESTS_FLAGS="--filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH $RUN_TESTS_FLAGS"
 fi
 
-if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
+
+if $is_sonoma && [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
-  #brew install ruby@3.2
+    #brew install ruby@3.2
   brew install rbenv ruby-build
   # Latest stable version available
   rbenv install -l
-  RUBY_STABLE_VERSION="3.2.7" #$(rbenv install -l | grep -v - | tail -1)
+  RUBY_STABLE_VERSION=$(rbenv install -l | grep -v - | tail -1)
   rbenv install $RUBY_STABLE_VERSION
   export PATH="$HOME/.rbenv/bin:$PATH"
   eval "$(rbenv init -)"
@@ -78,6 +87,41 @@ then
   gem install bundler
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
+elif [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
+then
+  # Workaround for https://github.com/rvm/rvm/issues/5133
+  export CURL_CA_BUNDLE=$(pwd)/etc/roots.pem
+
+  # Fetch keys per https://rvm.io/rvm/install
+  gpg_recv_keys_success=0
+  for ((i=0;i<5;i++)); do
+    # Use the Ubuntu keyserver instead of pool.sks-keyservers.net because sks-keyservers is now deprecated.
+    GPG_KEYSERVER_ADDRESS="keyserver.ubuntu.com"
+    gpg --keyserver "hkp://${GPG_KEYSERVER_ADDRESS}" --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB \
+      && gpg_recv_keys_success=1
+    [[ "$gpg_recv_keys_success" == 1 ]] && break
+    sleep 3
+  done
+  [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
+  # fix .rvm directory ownership on kokoro monterey image
+  sudo chown -R "${USER}" ~/.rvm
+  rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
+  # stop echoing bash commands temporarily to prevent rvm from polluting the logs
+  set +x
+  source $HOME/.rvm/scripts/rvm
+
+  RUBY_VERSION=3.2.0
+  echo "Installing ruby-${RUBY_VERSION}"
+  time rvm install "ruby-${RUBY_VERSION}"
+  echo "Setting default ruby version."
+  rvm use "$RUBY_VERSION" --default
+  echo "Updating osx-ssl-certs."
+  gem install bundler -v 2.4
+    rvm osx-ssl-certs status all
+  rvm osx-ssl-certs update all
+
+  # restore echo
+  set -x
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
