@@ -23,7 +23,6 @@ import grpc
 from grpc import AbortError
 
 from tests.unit import test_common
-from tests.unit.framework.common import test_constants
 
 _SERVICE_NAME = "test"
 _ABORT = "abort"
@@ -32,7 +31,6 @@ _ABORT_WITH_SERVER_ERROR = "AbortWithServerError"
 _INVALID_CODE = "InvalidCode"
 
 _REQUEST = b"\x00\x00\x00"
-_RESPONSE = b"\x00\x00\x00"
 
 _ABORT_DETAILS = "Abandon ship!"
 _ABORT_METADATA = (("a-trailing-metadata", "42"),)
