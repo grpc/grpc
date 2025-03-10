@@ -65,8 +65,8 @@ ServerRetryThrottleData::~ServerRetryThrottleData() {
 }
 
 void ServerRetryThrottleData::SetReplacement(
-    RefCountedPtr<ServerRetryThrottleData> old_throttle_data) {
-  replacement_.store(old_throttle_data.release(), std::memory_order_release);
+    RefCountedPtr<ServerRetryThrottleData> replacement) {
+  replacement_.store(replacement.release(), std::memory_order_release);
 }
 
 void ServerRetryThrottleData::GetReplacementThrottleDataIfNeeded(

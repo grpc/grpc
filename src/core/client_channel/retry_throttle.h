@@ -59,7 +59,7 @@ class ServerRetryThrottleData final
  private:
   friend ServerRetryThrottleMap;
 
-  void SetReplacement(RefCountedPtr<ServerRetryThrottleData> old_throttle_data);
+  void SetReplacement(RefCountedPtr<ServerRetryThrottleData> replacement);
 
   void GetReplacementThrottleDataIfNeeded(
       ServerRetryThrottleData** throttle_data);
