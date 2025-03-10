@@ -30,7 +30,7 @@ TEST(ServerRetryThrottleData, Basic) {
   // Token count starts at 4.
   // Each failure decrements by 1.  Each success increments by 1.6.
   auto throttle_data =
-      MakeRefCounted<ServerRetryThrottleData>(4000, 1600, nullptr);
+      MakeRefCounted<ServerRetryThrottleData>(4000, 1600, 4000);
   // Failure: token_count=3.  Above threshold.
   EXPECT_TRUE(throttle_data->RecordFailure());
   // Success: token_count=4.  Not incremented beyond max.
@@ -64,37 +64,6 @@ TEST(ServerRetryThrottleData, Basic) {
   EXPECT_TRUE(throttle_data->RecordFailure());
 }
 
-TEST(ServerRetryThrottleData, Replacement) {
-  // Create old throttle data.
-  // Max token count is 4, so threshold for retrying is 2.
-  // Token count starts at 4.
-  // Each failure decrements by 1.  Each success increments by 1.
-  auto old_throttle_data =
-      MakeRefCounted<ServerRetryThrottleData>(4000, 1000, nullptr);
-  // Failure: token_count=3.  Above threshold.
-  EXPECT_TRUE(old_throttle_data->RecordFailure());
-  // Create new throttle data.
-  // Max token count is 10, so threshold for retrying is 5.
-  // Token count starts at 7.5 (ratio inherited from old_throttle_data).
-  // Each failure decrements by 1.  Each success increments by 3.
-  auto throttle_data = MakeRefCounted<ServerRetryThrottleData>(
-      10000, 3000, old_throttle_data.get());
-  // Failure via old_throttle_data: token_count=6.5.
-  EXPECT_TRUE(old_throttle_data->RecordFailure());
-  // Failure: token_count=5.5.
-  EXPECT_TRUE(old_throttle_data->RecordFailure());
-  // Failure via old_throttle_data: token_count=4.5.  Below threshold.
-  EXPECT_FALSE(old_throttle_data->RecordFailure());
-  // Failure: token_count=3.5.  Below threshold.
-  EXPECT_FALSE(throttle_data->RecordFailure());
-  // Success: token_count=6.5.
-  throttle_data->RecordSuccess();
-  // Failure via old_throttle_data: token_count=5.5.  Above threshold.
-  EXPECT_TRUE(old_throttle_data->RecordFailure());
-  // Failure: token_count=4.5.  Below threshold.
-  EXPECT_FALSE(throttle_data->RecordFailure());
-}
-
 TEST(ServerRetryThrottleMap, Replacement) {
   const std::string kServerName = "server_name";
   // Create old throttle data.
@@ -105,17 +74,25 @@ TEST(ServerRetryThrottleMap, Replacement) {
       ServerRetryThrottleMap::Get()->GetDataForServer(kServerName, 4000, 1000);
   EXPECT_EQ(old_throttle_data->max_milli_tokens(), 4000);
   EXPECT_EQ(old_throttle_data->milli_token_ratio(), 1000);
+  EXPECT_EQ(old_throttle_data->milli_tokens(), 4000);
   // Failure: token_count=3.  Above threshold.
   EXPECT_TRUE(old_throttle_data->RecordFailure());
-  // Create new throttle data.
+  // Get the throttle data again with the same settings.  This should
+  // return the same object.
+  auto throttle_data =
+      ServerRetryThrottleMap::Get()->GetDataForServer(kServerName, 4000, 1000);
+  EXPECT_EQ(old_throttle_data, throttle_data);
+  // Get the throttle data with different settings.  This should create
+  // a new object.
   // Max token count is 10, so threshold for retrying is 5.
   // Token count starts at 7.5 (ratio inherited from old_throttle_data).
   // Each failure decrements by 1.  Each success increments by 3.
-  auto throttle_data =
+  throttle_data =
       ServerRetryThrottleMap::Get()->GetDataForServer(kServerName, 10000, 3000);
+  EXPECT_NE(old_throttle_data, throttle_data);
   EXPECT_EQ(throttle_data->max_milli_tokens(), 10000);
   EXPECT_EQ(throttle_data->milli_token_ratio(), 3000);
-  // Max milli tokens updated
+  EXPECT_EQ(throttle_data->milli_tokens(), 7500);
   // Failure via old_throttle_data: token_count=6.5.
   EXPECT_TRUE(old_throttle_data->RecordFailure());
   // Failure: token_count=5.5.
