@@ -27,7 +27,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "src/core/call/interception_chain..h"
+#include "src/core/call/interception_chain.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/lib/channel/channel_fwd.h"

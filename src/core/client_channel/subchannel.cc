@@ -35,7 +35,7 @@
 #include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "src/core/call/interception_chain..h"
+#include "src/core/call/interception_chain.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_internal.h"

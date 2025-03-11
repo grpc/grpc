@@ -903,8 +903,8 @@ src/core/call/call_state.h \
 src/core/call/client_call.cc \
 src/core/call/client_call.h \
 src/core/call/custom_metadata.h \
-src/core/call/interception_chain..cc \
-src/core/call/interception_chain..h \
+src/core/call/interception_chain.cc \
+src/core/call/interception_chain.h \
 src/core/call/message.cc \
 src/core/call/message.h \
 src/core/call/metadata.cc \

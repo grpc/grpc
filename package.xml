@@ -119,8 +119,8 @@
     <file baseinstalldir="/" name="src/core/call/client_call.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/client_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/custom_metadata.h" role="src" />
-    <file baseinstalldir="/" name="src/core/call/interception_chain..cc" role="src" />
-    <file baseinstalldir="/" name="src/core/call/interception_chain..h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/interception_chain.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/interception_chain.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/message.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/message.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/metadata.cc" role="src" />

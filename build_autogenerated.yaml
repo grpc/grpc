@@ -193,7 +193,7 @@ libs:
   - src/core/call/call_state.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
-  - src/core/call/interception_chain..h
+  - src/core/call/interception_chain.h
   - src/core/call/message.h
   - src/core/call/metadata.h
   - src/core/call/metadata_batch.h
@@ -1259,7 +1259,7 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
-  - src/core/call/interception_chain..cc
+  - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
   - src/core/call/metadata_batch.cc
@@ -2218,7 +2218,7 @@ libs:
   - src/core/call/call_state.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
-  - src/core/call/interception_chain..h
+  - src/core/call/interception_chain.h
   - src/core/call/message.h
   - src/core/call/metadata.h
   - src/core/call/metadata_batch.h
@@ -2714,7 +2714,7 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
-  - src/core/call/interception_chain..cc
+  - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
   - src/core/call/metadata_batch.cc
@@ -4378,7 +4378,7 @@ libs:
   - src/core/call/call_state.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
-  - src/core/call/interception_chain..h
+  - src/core/call/interception_chain.h
   - src/core/call/message.h
   - src/core/call/metadata.h
   - src/core/call/metadata_batch.h
@@ -4722,7 +4722,7 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
-  - src/core/call/interception_chain..cc
+  - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
   - src/core/call/metadata_batch.cc
@@ -6408,7 +6408,7 @@ targets:
   - src/core/call/call_state.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
-  - src/core/call/interception_chain..h
+  - src/core/call/interception_chain.h
   - src/core/call/message.h
   - src/core/call/metadata.h
   - src/core/call/metadata_batch.h
@@ -6717,7 +6717,7 @@ targets:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
-  - src/core/call/interception_chain..cc
+  - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
   - src/core/call/metadata_batch.cc
@@ -10549,7 +10549,7 @@ targets:
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/filter_fusion.h
-  - src/core/call/interception_chain..h
+  - src/core/call/interception_chain.h
   - src/core/call/message.h
   - src/core/call/metadata.h
   - src/core/call/metadata_batch.h
@@ -10858,7 +10858,7 @@ targets:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
-  - src/core/call/interception_chain..cc
+  - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
   - src/core/call/metadata_batch.cc

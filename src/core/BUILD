@@ -8916,10 +8916,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "interception_chain",
     srcs = [
-        "call/interception_chain..cc",
+        "call/interception_chain.cc",
     ],
     hdrs = [
-        "call/interception_chain..h",
+        "call/interception_chain.h",
     ],
     deps = [
         "call_destination",

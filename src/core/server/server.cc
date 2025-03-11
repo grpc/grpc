@@ -44,7 +44,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "src/core/call/interception_chain..h"
+#include "src/core/call/interception_chain.h"
 #include "src/core/call/server_call.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"

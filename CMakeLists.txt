@@ -2139,7 +2139,7 @@ add_library(grpc
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
-  src/core/call/interception_chain..cc
+  src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
   src/core/call/metadata_batch.cc
@@ -3228,7 +3228,7 @@ add_library(grpc_unsecure
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
-  src/core/call/interception_chain..cc
+  src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
   src/core/call/metadata_batch.cc
@@ -5503,7 +5503,7 @@ add_library(grpc_authorization_provider
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
-  src/core/call/interception_chain..cc
+  src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
   src/core/call/metadata_batch.cc
@@ -9262,7 +9262,7 @@ add_executable(call_utils_test
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
-  src/core/call/interception_chain..cc
+  src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
   src/core/call/metadata_batch.cc
@@ -15374,7 +15374,7 @@ add_executable(filter_fusion_test
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
-  src/core/call/interception_chain..cc
+  src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
   src/core/call/metadata_batch.cc
