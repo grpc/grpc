@@ -58,6 +58,17 @@ const char* const additional_constraints_event_engine_callback_cq = "{}";
 const uint8_t required_experiments_event_engine_callback_cq[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_for_all_other_endpoints =
+    "Use EventEngine endpoints for all call sites, including direct uses of "
+    "grpc_tcp_create.";
+const char* const additional_constraints_event_engine_for_all_other_endpoints =
+    "{}";
+const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineDns),
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -80,9 +91,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_pick_first_new =
-    "New pick_first impl with memory reduction.";
-const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -108,6 +116,10 @@ const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
 const char* const additional_constraints_rq_fast_reject = "{}";
+const char* const description_rst_stream_fix =
+    "Fix for RST_STREAM - do not send for idle streams "
+    "(https://github.com/grpc/grpc/issues/38758)";
+const char* const additional_constraints_rst_stream_fix = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -157,6 +169,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_callback_cq", description_event_engine_callback_cq,
      additional_constraints_event_engine_callback_cq,
      required_experiments_event_engine_callback_cq, 2, true, true},
+    {"event_engine_for_all_other_endpoints",
+     description_event_engine_for_all_other_endpoints,
+     additional_constraints_event_engine_for_all_other_endpoints,
+     required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -170,8 +186,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"pick_first_new", description_pick_first_new,
-     additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
     {"promise_based_http2_client_transport",
@@ -190,6 +204,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
+    {"rst_stream_fix", description_rst_stream_fix,
+     additional_constraints_rst_stream_fix, nullptr, 0, true, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -245,6 +261,17 @@ const char* const additional_constraints_event_engine_callback_cq = "{}";
 const uint8_t required_experiments_event_engine_callback_cq[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_for_all_other_endpoints =
+    "Use EventEngine endpoints for all call sites, including direct uses of "
+    "grpc_tcp_create.";
+const char* const additional_constraints_event_engine_for_all_other_endpoints =
+    "{}";
+const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineDns),
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -267,9 +294,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_pick_first_new =
-    "New pick_first impl with memory reduction.";
-const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -295,6 +319,10 @@ const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
 const char* const additional_constraints_rq_fast_reject = "{}";
+const char* const description_rst_stream_fix =
+    "Fix for RST_STREAM - do not send for idle streams "
+    "(https://github.com/grpc/grpc/issues/38758)";
+const char* const additional_constraints_rst_stream_fix = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -344,6 +372,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_callback_cq", description_event_engine_callback_cq,
      additional_constraints_event_engine_callback_cq,
      required_experiments_event_engine_callback_cq, 2, true, true},
+    {"event_engine_for_all_other_endpoints",
+     description_event_engine_for_all_other_endpoints,
+     additional_constraints_event_engine_for_all_other_endpoints,
+     required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -357,8 +389,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"pick_first_new", description_pick_first_new,
-     additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
     {"promise_based_http2_client_transport",
@@ -377,6 +407,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
+    {"rst_stream_fix", description_rst_stream_fix,
+     additional_constraints_rst_stream_fix, nullptr, 0, true, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -432,6 +464,17 @@ const char* const additional_constraints_event_engine_callback_cq = "{}";
 const uint8_t required_experiments_event_engine_callback_cq[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_for_all_other_endpoints =
+    "Use EventEngine endpoints for all call sites, including direct uses of "
+    "grpc_tcp_create.";
+const char* const additional_constraints_event_engine_for_all_other_endpoints =
+    "{}";
+const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineDns),
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -454,9 +497,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_pick_first_new =
-    "New pick_first impl with memory reduction.";
-const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -482,6 +522,10 @@ const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
 const char* const additional_constraints_rq_fast_reject = "{}";
+const char* const description_rst_stream_fix =
+    "Fix for RST_STREAM - do not send for idle streams "
+    "(https://github.com/grpc/grpc/issues/38758)";
+const char* const additional_constraints_rst_stream_fix = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -531,6 +575,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_callback_cq", description_event_engine_callback_cq,
      additional_constraints_event_engine_callback_cq,
      required_experiments_event_engine_callback_cq, 2, true, true},
+    {"event_engine_for_all_other_endpoints",
+     description_event_engine_for_all_other_endpoints,
+     additional_constraints_event_engine_for_all_other_endpoints,
+     required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -544,8 +592,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"pick_first_new", description_pick_first_new,
-     additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
     {"promise_based_http2_client_transport",
@@ -564,6 +610,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
+    {"rst_stream_fix", description_rst_stream_fix,
+     additional_constraints_rst_stream_fix, nullptr, 0, true, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,

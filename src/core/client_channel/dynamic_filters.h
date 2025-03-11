@@ -49,7 +49,6 @@ class DynamicFilters final : public RefCounted<DynamicFilters> {
     struct Args {
       RefCountedPtr<DynamicFilters> channel_stack;
       grpc_polling_entity* pollent;
-      grpc_slice path;
       gpr_cycle_counter start_time;
       Timestamp deadline;
       Arena* arena;

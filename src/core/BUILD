@@ -7528,6 +7528,7 @@ grpc_cc_library(
         "channel_args",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_transport",
         "loop",
         "map",
         "mpsc",
@@ -7559,12 +7560,55 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/log:check",
+        "absl/status",
+        "absl/status:statusor",
     ],
     deps = [
         "grpc_promise_endpoint",
         "//:grpc_base",
         "//:hpack_encoder",
         "//:hpack_parser",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_transport",
+    srcs = [
+        "ext/transport/chttp2/transport/http2_transport.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_transport.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "1999",
+        "arena",
+        "call_spine",
+        "channel_args",
+        "grpc_promise_endpoint",
+        "http2_settings",
+        "loop",
+        "map",
+        "mpsc",
+        "sync",
+        ":match_promise",
+        ":poll",
+        ":slice",
+        ":slice_buffer",
+        ":try_seq",
+        "//:chttp2_frame",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+        "//:promise",
+        "//:ref_counted_ptr",
     ],
 )
 

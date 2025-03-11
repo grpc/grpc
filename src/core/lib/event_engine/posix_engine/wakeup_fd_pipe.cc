@@ -64,9 +64,17 @@ absl::Status PipeWakeupFd::Init() {
                         absl::StrCat("pipe: ", grpc_core::StrError(errno)));
   }
   auto status = SetSocketNonBlocking(pipefd[0]);
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return status;
+  }
   status = SetSocketNonBlocking(pipefd[1]);
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return status;
+  }
   SetWakeupFds(pipefd[0], pipefd[1]);
   return absl::OkStatus();
 }
