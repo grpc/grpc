@@ -31,7 +31,7 @@
 // Since class size varies based on platform and compiler, we limit our
 // guardrail to only one platform.
 #define GRPC_CLASS_SIZE_BLOAT_GUARDRAIL(class_name, class_size) \
-  static_assert(sizeof(class_name) <= class_size, "Class size too large");
+  static_assert(sizeof(class_name) <= (class_size), "Class size too large");
 #else /* GPR_LINUX */
 #define GRPC_CLASS_SIZE_BLOAT_GUARDRAIL(class_name, class_size)
 #endif /* GPR_LINUX */
