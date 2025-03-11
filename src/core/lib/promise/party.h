@@ -35,6 +35,7 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/check_class_size.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted.h"
