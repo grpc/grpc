@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_MESSAGE_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_MESSAGE_H
+#ifndef GRPC_SRC_CORE_CALL_MESSAGE_H
+#define GRPC_SRC_CORE_CALL_MESSAGE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -63,4 +63,4 @@ using MessageHandle = Arena::PoolPtr<Message>;
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_MESSAGE_H
+#endif  // GRPC_SRC_CORE_CALL_MESSAGE_H

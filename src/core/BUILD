@@ -8984,10 +8984,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "message",
     srcs = [
-        "lib/transport/message.cc",
+        "call/message.cc",
     ],
     hdrs = [
-        "lib/transport/message.h",
+        "call/message.h",
     ],
     external_deps = ["absl/strings"],
     deps = [

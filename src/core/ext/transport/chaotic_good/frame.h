@@ -27,7 +27,7 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/message.h"
+#include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/util/match.h"
 

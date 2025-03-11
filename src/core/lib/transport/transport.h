@@ -54,7 +54,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/message.h"
+#include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"

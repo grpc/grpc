@@ -29,7 +29,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/transport/message.h"
+#include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/util/dual_ref_counted.h"
 
