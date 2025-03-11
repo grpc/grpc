@@ -357,8 +357,8 @@ TEST_F(PollerForkTest, ListenerInParent) {
   ASSERT_FALSE(endpoint->Write(write_status.Setter(), &write_buffer, nullptr))
       << "Need to send more data";
   LOG(INFO) << "Before fork in parent";
-  ee()->BeforeFork();
-  ee()->AfterFork(false);
+  ee()->fork_support_for_tests()->BeforeFork();
+  ee()->fork_support_for_tests()->AfterFork(false);
   LOG(INFO) << "After fork in parent";
   ASSERT_THAT(client.Read(write_buffer.Length()), IsOk());
   ASSERT_THAT(client.Write("Hi!"), IsOk());
@@ -397,8 +397,8 @@ TEST_F(PollerForkTest, ListenerInChild) {
   ASSERT_FALSE(endpoint->Write(write_status.Setter(), &write_buffer, nullptr))
       << "Need to send more data";
   LOG(INFO) << "Before fork in child";
-  ee()->BeforeFork();
-  ee()->AfterFork(true);
+  ee()->fork_support_for_tests()->BeforeFork();
+  ee()->fork_support_for_tests()->AfterFork(true);
   LOG(INFO) << "After fork in child";
   EXPECT_THAT(read_status.AwaitStatus(),
               StatusIs(absl::StatusCode::kResourceExhausted));

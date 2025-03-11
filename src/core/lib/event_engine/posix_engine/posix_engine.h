@@ -94,8 +94,45 @@ class AsyncConnect {
 };
 
 // A helper class to manager lifetime of the poller associated with the
-// posix EventEngine. It is defined in the impl file.
-class PosixEnginePollerManager;
+// posix EventEngine.
+class PosixEnginePollerManager
+    : public grpc_event_engine::experimental::Scheduler {
+ public:
+  explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
+  explicit PosixEnginePollerManager(
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller,
+      std::shared_ptr<ThreadPool> executor);
+  grpc_event_engine::experimental::PosixEventPoller* Poller() {
+    return poller_.get();
+  }
+
+  ThreadPool* Executor() { return executor_.get(); }
+
+  void Run(experimental::EventEngine::Closure* closure) override;
+  void Run(absl::AnyInvocable<void()>) override;
+
+  bool IsShuttingDown() {
+    return poller_state_.load(std::memory_order_acquire) ==
+           PollerState::kShuttingDown;
+  }
+  void TriggerShutdown();
+
+ private:
+  enum class PollerState { kExternal, kOk, kShuttingDown };
+  std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
+  std::atomic<PollerState> poller_state_{PollerState::kOk};
+  std::shared_ptr<ThreadPool> executor_;
+  bool trigger_shutdown_called_;
+};
+
+// An interface for objects that handle fork
+class ForkSupport {
+ public:
+  virtual ~ForkSupport() = default;
+  virtual void BeforeFork() = 0;
+  virtual void AfterFork(bool advance_generation) = 0;
+  virtual void SchedulePoller() = 0;
+};
 
 #endif  // GRPC_POSIX_SOCKET_TCP
 
@@ -128,10 +165,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   explicit PosixEventEngine(
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
           poller);
-  PosixEventEngine();
-#else   // GRPC_POSIX_SOCKET_TCP
-  PosixEventEngine();
 #endif  // GRPC_POSIX_SOCKET_TCP
+  PosixEventEngine();
 
   ~PosixEventEngine() override;
 
@@ -177,6 +212,9 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+  std::shared_ptr<ForkSupport> fork_support_for_tests() const {
+    return fork_support_;
+  }
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   // The posix EventEngine returned by this method would have a shared ownership
@@ -189,11 +227,6 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
           test_only_poller) {
     return std::make_shared<PosixEventEngine>(std::move(test_only_poller));
   }
-
-  // Called before fork is executed
-  void BeforeFork();
-  void AfterFork(bool advance_generation);
-
 #endif  // GRPC_POSIX_SOCKET_TCP
 
  private:
@@ -202,32 +235,12 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                                            absl::AnyInvocable<void()> cb);
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-  // RAII wrapper for a polling cycle. Starts a new one in ctor and stops
-  // in dtor.
-  class PollingCycle {
-   public:
-    explicit PollingCycle(
-        std::shared_ptr<PosixEnginePollerManager> poller_manager);
-    ~PollingCycle();
-
-   private:
-    void PollerWorkInternal();
-
-    std::shared_ptr<PosixEnginePollerManager> poller_manager_;
-    grpc_core::Mutex mu_;
-    std::atomic_bool done_{false};
-    int is_scheduled_ ABSL_GUARDED_BY(&mu_) = 0;
-    grpc_core::CondVar cond_;
-  };
-
   friend class AsyncConnect;
   struct ConnectionShard {
     grpc_core::Mutex mu;
     absl::flat_hash_map<int64_t, AsyncConnect*> pending_connections
         ABSL_GUARDED_BY(&mu);
   };
-
-  void SchedulePoller();
 
   ConnectionHandle CreateEndpointFromUnconnectedFdInternal(
       const FileDescriptor& fd, EventEngine::OnConnectCallback on_connect,
@@ -248,9 +261,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   std::shared_ptr<TimerManager> timer_manager_;
 #ifdef GRPC_POSIX_SOCKET_TCP
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
-  grpc_core::Mutex poll_cycle_mu_;
-  // Ensures there's ever only one of these.
-  std::optional<PollingCycle> polling_cycle_ ABSL_GUARDED_BY(&poll_cycle_mu_);
+  // This will exist in event engine and in the global list for fork.
+  std::shared_ptr<ForkSupport> fork_support_;
 #endif  // GRPC_POSIX_SOCKET_TCP
 };
 

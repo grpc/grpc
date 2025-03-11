@@ -24,7 +24,6 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
-#include <set>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -79,27 +78,28 @@ using namespace std::chrono_literals;
 
 namespace grpc_event_engine::experimental {
 
+#ifdef GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+
 namespace {
 
 // Fork support - mutex and global list of event engines
 grpc_core::Mutex fork_mu;
-// std::unordered_set needs a default ctor, so using std::set instead
-std::set<std::weak_ptr<EventEngine>, std::owner_less<>> event_engines_for_fork
+std::unordered_map<ForkSupport*, std::weak_ptr<ForkSupport>> fork_supports_
     ABSL_GUARDED_BY(&fork_mu);
 
 // "Locks" event engines and returns a collection so callbacks can be invoked
 // without holding a lock.
-std::vector<std::shared_ptr<PosixEventEngine>> LockEventEngines() {
+std::vector<std::shared_ptr<ForkSupport>> LockEventEngines() {
   grpc_core::MutexLock lock(&fork_mu);
-  std::vector<std::shared_ptr<PosixEventEngine>> engines;
+  std::vector<std::shared_ptr<ForkSupport>> engines;
   // Not all weak_ptrs might be locked. If an engine enters dtor, it will stop
   // on a mutex in DeregisterEventEngineForFork but the weak pointer will not
   // be lockable here.
-  engines.reserve(event_engines_for_fork.size());
-  for (const auto& engine : event_engines_for_fork) {
-    auto ptr = engine.lock();
+  engines.reserve(fork_supports_.size());
+  for (const auto& engine : fork_supports_) {
+    auto ptr = engine.second.lock();
     if (ptr != nullptr) {
-      engines.emplace_back(std::static_pointer_cast<PosixEventEngine>(ptr));
+      engines.emplace_back(std::move(ptr));
     }
   }
   return engines;
@@ -123,9 +123,9 @@ void PostForkInChild() {
   }
 }
 
-void RegisterEventEngineForFork(std::weak_ptr<EventEngine> engine) {
+void RegisterEventEngineForFork(std::shared_ptr<ForkSupport> fork_support) {
   grpc_core::MutexLock lock(&fork_mu);
-  event_engines_for_fork.emplace(engine);
+  fork_supports_[fork_support.get()] = fork_support;
   static bool handlers_installed = false;
   if (!handlers_installed) {
     pthread_atfork(PrepareFork, PostForkInParent, PostForkInChild);
@@ -133,12 +133,144 @@ void RegisterEventEngineForFork(std::weak_ptr<EventEngine> engine) {
   }
 }
 
-void DeregisterEventEngineForFork(std::weak_ptr<EventEngine> engine) {
+void DeregisterEventEngineForFork(ForkSupport* engine) {
   grpc_core::MutexLock lock(&fork_mu);
-  event_engines_for_fork.erase(engine);
+  fork_supports_.erase(engine);
+}
+
+// RAII wrapper for a polling cycle. Starts a new one in ctor and stops
+// in dtor.
+class PollingCycle {
+ public:
+  explicit PollingCycle(
+      std::shared_ptr<PosixEnginePollerManager> poller_manager);
+  ~PollingCycle();
+
+ private:
+  void PollerWorkInternal();
+
+  std::shared_ptr<PosixEnginePollerManager> poller_manager_;
+  grpc_core::Mutex mu_;
+  std::atomic_bool done_{false};
+  int is_scheduled_ ABSL_GUARDED_BY(&mu_) = 0;
+  grpc_core::CondVar cond_;
+};
+
+class PosixEngineForkSupport final : public ForkSupport {
+ public:
+  PosixEngineForkSupport(
+      std::shared_ptr<ThreadPool> executor,
+      std::shared_ptr<TimerManager> timer_manager,
+      std::shared_ptr<PosixEnginePollerManager> poller_manager)
+      : executor_(std::move(executor)),
+        timer_manager_(std::move(timer_manager)),
+        poller_manager_(std::move(poller_manager)) {}
+
+  ~PosixEngineForkSupport() override {
+    grpc_core::MutexLock lock(&poll_cycle_mu_);
+    polling_cycle_.reset();
+  }
+
+  void BeforeFork() override {
+    timer_manager_->PrepareFork();
+    {
+      grpc_core::MutexLock lock(&poll_cycle_mu_);
+      polling_cycle_.reset();
+    }
+    executor_->PrepareFork();
+  }
+
+  void AfterFork(bool advance_generation) override {
+    if (poller_manager_ != nullptr) {
+      if (advance_generation) {
+        poller_manager_->Poller()->AdvanceGeneration();
+      }
+      poller_manager_->Poller()->ResetKickState();
+    }
+    executor_->PostFork();
+    timer_manager_->PostFork();
+    SchedulePoller();
+  }
+
+  void SchedulePoller() override {
+    if (poller_manager_->Poller() != nullptr) {
+      grpc_core::MutexLock lock(&poll_cycle_mu_);
+      CHECK(!polling_cycle_.has_value());
+      polling_cycle_.emplace(poller_manager_);
+    }
+  }
+
+ private:
+  grpc_core::Mutex poll_cycle_mu_;
+  // Ensures there's ever only one of these.
+  std::optional<PollingCycle> polling_cycle_ ABSL_GUARDED_BY(&poll_cycle_mu_);
+
+  std::shared_ptr<ThreadPool> executor_;
+  std::shared_ptr<TimerManager> timer_manager_;
+  std::shared_ptr<PosixEnginePollerManager> poller_manager_;
+};
+
+PollingCycle::PollingCycle(
+    std::shared_ptr<PosixEnginePollerManager> poller_manager)
+    : poller_manager_(std::move(poller_manager)), is_scheduled_(1) {
+  poller_manager_->Executor()->Run([this]() { PollerWorkInternal(); });
+}
+
+PollingCycle::~PollingCycle() {
+  done_ = true;
+  auto poller = poller_manager_->Poller();
+  if (poller != nullptr) {
+    poller->Kick();
+  }
+  grpc_core::MutexLock lock(&mu_);
+  while (is_scheduled_ > 0) {
+    cond_.Wait(&mu_);
+  }
+}
+
+void PollingCycle::PollerWorkInternal() {
+  grpc_core::MutexLock lock(&mu_);
+  --is_scheduled_;
+  CHECK_EQ(is_scheduled_, 0);
+  bool again = false;
+  // TODO(vigneshbabu): The timeout specified here is arbitrary. For
+  // instance, this can be improved by setting the timeout to the next
+  // expiring timer.
+  PosixEventPoller* poller = poller_manager_->Poller();
+  auto result = poller->Work(24h, [&]() { again = true; });
+  if (result == Poller::WorkResult::kDeadlineExceeded) {
+    // The EventEngine is not shutting down but the next asynchronous
+    // PollerWorkInternal did not get scheduled. Schedule it now.
+    again = true;
+  } else if (result == Poller::WorkResult::kKicked &&
+             poller_manager_->IsShuttingDown()) {
+    // The Poller Got Kicked and poller_state_ is set to
+    // PollerState::kShuttingDown. This can currently happen only from the
+    // EventEngine destructor. Sample the use_count of poller_manager. If
+    // the sampled use_count is > 1, there is one more instance of Work(...)
+    // which hasn't returned yet. Send another Kick to be safe to ensure the
+    // pending instance of Work(..) also breaks out. Its possible that the
+    // other instance of Work(..) had already broken out before this Kick is
+    // sent. In that case, the Kick is spurious but it shouldn't cause any
+    // side effects.
+    if (poller_manager_.use_count() > 1) {
+      poller->Kick();
+    }
+  }
+  static std::unordered_map<Poller::WorkResult, absl::string_view> results(
+      {{Poller::WorkResult::kOk, "ok"},
+       {Poller::WorkResult::kKicked, "kicked"},
+       {Poller::WorkResult::kDeadlineExceeded, "deadline exceeded"}});
+  if (!done_ && again) {
+    poller_manager_->Executor()->Run([this]() { PollerWorkInternal(); });
+    ++is_scheduled_;
+  }
+  cond_.SignalAll();
 }
 
 }  // namespace
+
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -285,38 +417,6 @@ void AsyncConnect::OnWritable(absl::Status status)
   }
 }
 
-// A helper class to manager lifetime of the poller associated with the
-// posix EventEngine.
-class PosixEnginePollerManager
-    : public grpc_event_engine::experimental::Scheduler {
- public:
-  explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
-  explicit PosixEnginePollerManager(
-      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller,
-      std::shared_ptr<ThreadPool> executor);
-  grpc_event_engine::experimental::PosixEventPoller* Poller() {
-    return poller_.get();
-  }
-
-  ThreadPool* Executor() { return executor_.get(); }
-
-  void Run(experimental::EventEngine::Closure* closure) override;
-  void Run(absl::AnyInvocable<void()>) override;
-
-  bool IsShuttingDown() {
-    return poller_state_.load(std::memory_order_acquire) ==
-           PollerState::kShuttingDown;
-  }
-  void TriggerShutdown();
-
- private:
-  enum class PollerState { kExternal, kOk, kShuttingDown };
-  std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
-  std::atomic<PollerState> poller_state_{PollerState::kOk};
-  std::shared_ptr<ThreadPool> executor_;
-  bool trigger_shutdown_called_;
-};
-
 EventEngine::ConnectionHandle
 PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     const FileDescriptor& fd, EventEngine::OnConnectCallback on_connect,
@@ -393,64 +493,6 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
   }
 }
 
-PosixEventEngine::PollingCycle::PollingCycle(
-    std::shared_ptr<PosixEnginePollerManager> poller_manager)
-    : poller_manager_(std::move(poller_manager)), is_scheduled_(1) {
-  poller_manager_->Executor()->Run([this]() { PollerWorkInternal(); });
-}
-
-PosixEventEngine::PollingCycle::~PollingCycle() {
-  done_ = true;
-  auto poller = poller_manager_->Poller();
-  if (poller != nullptr) {
-    poller->Kick();
-  }
-  grpc_core::MutexLock lock(&mu_);
-  while (is_scheduled_ > 0) {
-    cond_.Wait(&mu_);
-  }
-}
-
-void PosixEventEngine::PollingCycle::PollerWorkInternal() {
-  grpc_core::MutexLock lock(&mu_);
-  --is_scheduled_;
-  CHECK_EQ(is_scheduled_, 0);
-  bool again = false;
-  // TODO(vigneshbabu): The timeout specified here is arbitrary. For
-  // instance, this can be improved by setting the timeout to the next
-  // expiring timer.
-  PosixEventPoller* poller = poller_manager_->Poller();
-  auto result = poller->Work(24h, [&]() { again = true; });
-  if (result == Poller::WorkResult::kDeadlineExceeded) {
-    // The EventEngine is not shutting down but the next asynchronous
-    // PollerWorkInternal did not get scheduled. Schedule it now.
-    again = true;
-  } else if (result == Poller::WorkResult::kKicked &&
-             poller_manager_->IsShuttingDown()) {
-    // The Poller Got Kicked and poller_state_ is set to
-    // PollerState::kShuttingDown. This can currently happen only from the
-    // EventEngine destructor. Sample the use_count of poller_manager. If
-    // the sampled use_count is > 1, there is one more instance of Work(...)
-    // which hasn't returned yet. Send another Kick to be safe to ensure the
-    // pending instance of Work(..) also breaks out. Its possible that the
-    // other instance of Work(..) had already broken out before this Kick is
-    // sent. In that case, the Kick is spurious but it shouldn't cause any
-    // side effects.
-    if (poller_manager_.use_count() > 1) {
-      poller->Kick();
-    }
-  }
-  static std::unordered_map<Poller::WorkResult, absl::string_view> results(
-      {{Poller::WorkResult::kOk, "ok"},
-       {Poller::WorkResult::kKicked, "kicked"},
-       {Poller::WorkResult::kDeadlineExceeded, "deadline exceeded"}});
-  if (!done_ && again) {
-    poller_manager_->Executor()->Run([this]() { PollerWorkInternal(); });
-    ++is_scheduled_;
-  }
-  cond_.SignalAll();
-}
-
 PosixEnginePollerManager::PosixEnginePollerManager(
     std::shared_ptr<ThreadPool> executor)
     : poller_(grpc_event_engine::experimental::MakeDefaultPoller(this)),
@@ -500,9 +542,12 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  RegisterEventEngineForFork(weak_from_this());
   poller_manager_ =
       std::make_shared<PosixEnginePollerManager>(poller, executor_);
+  fork_support_ = std::static_pointer_cast<ForkSupport>(
+      std::make_shared<PosixEngineForkSupport>(executor_, timer_manager_,
+                                               poller_manager_));
+  RegisterEventEngineForFork(fork_support_);
 #endif
 }
 
@@ -513,20 +558,13 @@ PosixEventEngine::PosixEventEngine()
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
 #ifdef GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  RegisterEventEngineForFork(weak_from_this());
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
-  SchedulePoller();
+  fork_support_ = std::static_pointer_cast<ForkSupport>(
+      std::make_shared<PosixEngineForkSupport>(executor_, timer_manager_,
+                                               poller_manager_));
+  RegisterEventEngineForFork(fork_support_);
+  fork_support_->SchedulePoller();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-}
-
-void PosixEventEngine::SchedulePoller() {
-#ifdef GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  if (poller_manager_->Poller() != nullptr) {
-    grpc_core::MutexLock lock(&poll_cycle_mu_);
-    CHECK(!polling_cycle_.has_value());
-    polling_cycle_.emplace(poller_manager_);
-  }
-#endif
 }
 
 #endif  // GRPC_POSIX_SOCKET_TCP
@@ -550,8 +588,11 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
 };
 
 PosixEventEngine::~PosixEventEngine() {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  DeregisterEventEngineForFork(fork_support_.get());
+  fork_support_.reset();
+#endif
   {
-    DeregisterEventEngineForFork(weak_from_this());
     grpc_core::MutexLock lock(&mu_);
     if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
       for (auto handle : known_handles_) {
@@ -564,10 +605,6 @@ PosixEventEngine::~PosixEventEngine() {
   }
   timer_manager_->Shutdown();
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  {
-    grpc_core::MutexLock lock(&poll_cycle_mu_);
-    polling_cycle_.reset();
-  }
   if (poller_manager_ != nullptr) {
     poller_manager_->TriggerShutdown();
   }
@@ -848,36 +885,5 @@ PosixEventEngine::CreatePosixListener(
       "EventEngine::CreateListener is not supported on this platform");
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
-
-#ifdef GRPC_POSIX_SOCKET
-
-void PosixEventEngine::BeforeFork() {
-  timer_manager_->PrepareFork();
-#ifdef GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  {
-    grpc_core::MutexLock lock(&poll_cycle_mu_);
-    polling_cycle_.reset();
-  }
-#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  executor_->PrepareFork();
-}
-
-void PosixEventEngine::AfterFork(bool advance_generation) {
-#ifdef GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  if (poller_manager_ != nullptr) {
-    if (advance_generation) {
-      poller_manager_->Poller()->AdvanceGeneration();
-    }
-    poller_manager_->Poller()->ResetKickState();
-  }
-#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  executor_->PostFork();
-  timer_manager_->PostFork();
-#ifdef GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  SchedulePoller();
-#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-}
-
-#endif  // GRPC_POSIX_SOCKET
 
 }  // namespace grpc_event_engine::experimental

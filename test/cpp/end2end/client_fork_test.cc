@@ -51,21 +51,21 @@ class EchoClientBidiReactor
     : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
   void OnDone(const grpc::Status& /*s*/) override {
-    LOG(INFO) << "Everything done";
+    VLOG(2) << "[" << getpid() << "] Everything done";
     grpc_core::MutexLock lock(&mu_);
     all_done_ = true;
     cond_.SignalAll();
   }
 
   void OnReadDone(bool ok) override {
-    LOG(INFO) << "Read done: " << ok;
+    VLOG(2) << "[" << getpid() << "] Read done: " << ok;
     grpc_core::MutexLock lock(&mu_);
     read_ = true;
     cond_.SignalAll();
   }
 
   void OnWriteDone(bool ok) override {
-    LOG(INFO) << "Write done: " << ok;
+    VLOG(2) << "[" << getpid() << "] Async client write done: " << ok;
     grpc_core::MutexLock lock(&mu_);
     write_ = true;
     cond_.SignalAll();
@@ -100,10 +100,10 @@ class ServiceImpl final : public EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      LOG(INFO) << "[" << getpid() << "] recv msg " << request.message();
+      VLOG(2) << "[" << getpid() << "] Server recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
-      LOG(INFO) << "[" << getpid() << "] wrote msg " << response.message();
+      VLOG(2) << "[" << getpid() << "] Server wrote msg " << response.message();
     }
     return Status::OK;
   }
@@ -123,7 +123,7 @@ std::pair<std::string, std::string> DoExchangeAsync(absl::string_view label,
   reactor.StartWrite(&request);
   reactor.StartRead(&response);
   reactor.StartCall();
-  LOG(INFO) << label << " Doing the call";
+  VLOG(2) << label << " Doing the call";
   reactor.WaitReadWriteDone();
   reactor.StartWritesDone();
   reactor.WaitAllDone();
@@ -158,14 +158,13 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
   grpc_core::Fork::Enable(true);
   int port = grpc_pick_unused_port_or_die();
   std::string addr = absl::StrCat("localhost:", port);
-  LOG(INFO) << "[" << getpid() << "] Before first fork";
   pid_t server_pid = fork();
   switch (server_pid) {
     case -1:  // fork failed
       GTEST_FAIL() << "failure forking";
     case 0:  // post-fork child
     {
-      LOG(INFO) << "[" << getpid() << "] After first fork in server 1";
+      VLOG(2) << "[" << getpid() << "] Starting server post first fork";
       ServiceImpl impl;
       grpc::ServerBuilder builder;
       builder.AddListeningPort(addr, grpc::InsecureServerCredentials());
@@ -177,7 +176,9 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
     default:  // post-fork parent
       break;
   }
-  LOG(INFO) << "[" << getpid() << "] After first fork in client";
+  VLOG(2) << "[" << getpid() << "] ###########  First fork ##########";
+  VLOG(2) << "[" << getpid() << "] ######  Client post fork 1  ######";
+  VLOG(2) << "[" << getpid() << "] ##################################";
   // Do a round trip before we fork.
   // NOTE: without this scope, test running with the epoll1 poller will fail.
   DoExchange(absl::StrCat("[", getpid(), "] In first-fork parent"), addr);
@@ -188,13 +189,15 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       GTEST_FAIL() << "fork failed";
     case 0:  // post-fork child
     {
-      VLOG(2) << "In post-fork child";
+      VLOG(2) << "[" << getpid() << "] In post-fork child";
       DoExchange(absl::StrCat("[", getpid(), "] In post-fork child"), addr);
       exit(0);
     }
     default:  // post-fork parent
     {
-      VLOG(2) << "[" << getpid() << "] In post-fork parent";
+      VLOG(2) << "[" << getpid() << "] ##########  Second fork  ##########";
+      VLOG(2) << "[" << getpid() << "] ######  In post-fork parent  ######";
+      VLOG(2) << "[" << getpid() << "] ###################################";
       DoExchange(absl::StrCat("[", getpid(), "] In post-fork parent"), addr);
       // Wait for the post-fork child to exit; ensure it exited cleanly.
       int child_status;
