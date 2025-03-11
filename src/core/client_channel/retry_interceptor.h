@@ -15,12 +15,12 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_INTERCEPTOR_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_INTERCEPTOR_H
 
+#include "src/core/call/interception_chain..h"
 #include "src/core/call/request_buffer.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"
 #include "src/core/filter/filter_args.h"
-#include "src/core/call/interception_chain..h"
 #include "src/core/util/backoff.h"
 
 namespace grpc_core {

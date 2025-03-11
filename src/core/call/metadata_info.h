@@ -17,9 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/call/metadata_batch.h"
 #include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {

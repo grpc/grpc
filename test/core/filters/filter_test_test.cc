@@ -24,6 +24,7 @@
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/activity.h"
@@ -33,7 +34,6 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 using ::testing::_;

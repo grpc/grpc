@@ -671,6 +671,12 @@ LIBGRPC_SRC = \
     src/core/call/call_spine.cc \
     src/core/call/call_state.cc \
     src/core/call/client_call.cc \
+    src/core/call/interception_chain..cc \
+    src/core/call/message.cc \
+    src/core/call/metadata.cc \
+    src/core/call/metadata_batch.cc \
+    src/core/call/metadata_info.cc \
+    src/core/call/parsed_metadata.cc \
     src/core/call/request_buffer.cc \
     src/core/call/security_context.cc \
     src/core/call/server_call.cc \
@@ -1324,12 +1330,6 @@ LIBGRPC_SRC = \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/call/interception_chain..cc \
-    src/core/call/message.cc \
-    src/core/call/metadata.cc \
-    src/core/call/metadata_batch.cc \
-    src/core/call/metadata_info.cc \
-    src/core/call/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \

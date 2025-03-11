@@ -192,9 +192,18 @@ libs:
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
   - src/core/call/client_call.h
+  - src/core/call/custom_metadata.h
+  - src/core/call/interception_chain..h
+  - src/core/call/message.h
+  - src/core/call/metadata.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/metadata_info.h
+  - src/core/call/parsed_metadata.h
   - src/core/call/request_buffer.h
   - src/core/call/security_context.h
   - src/core/call/server_call.h
+  - src/core/call/simple_slice_based_metadata.h
   - src/core/call/status_util.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
@@ -1043,17 +1052,8 @@ libs:
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
-  - src/core/call/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/call/interception_chain..h
-  - src/core/call/message.h
-  - src/core/call/metadata.h
-  - src/core/call/metadata_batch.h
-  - src/core/call/metadata_compression_traits.h
-  - src/core/call/metadata_info.h
-  - src/core/call/parsed_metadata.h
-  - src/core/call/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -1259,6 +1259,12 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/interception_chain..cc
+  - src/core/call/message.cc
+  - src/core/call/metadata.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/metadata_info.cc
+  - src/core/call/parsed_metadata.cc
   - src/core/call/request_buffer.cc
   - src/core/call/security_context.cc
   - src/core/call/server_call.cc
@@ -1908,12 +1914,6 @@ libs:
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/call/interception_chain..cc
-  - src/core/call/message.cc
-  - src/core/call/metadata.cc
-  - src/core/call/metadata_batch.cc
-  - src/core/call/metadata_info.cc
-  - src/core/call/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -2217,9 +2217,18 @@ libs:
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
   - src/core/call/client_call.h
+  - src/core/call/custom_metadata.h
+  - src/core/call/interception_chain..h
+  - src/core/call/message.h
+  - src/core/call/metadata.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/metadata_info.h
+  - src/core/call/parsed_metadata.h
   - src/core/call/request_buffer.h
   - src/core/call/security_context.h
   - src/core/call/server_call.h
+  - src/core/call/simple_slice_based_metadata.h
   - src/core/call/status_util.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
@@ -2577,17 +2586,8 @@ libs:
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
-  - src/core/call/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/call/interception_chain..h
-  - src/core/call/message.h
-  - src/core/call/metadata.h
-  - src/core/call/metadata_batch.h
-  - src/core/call/metadata_compression_traits.h
-  - src/core/call/metadata_info.h
-  - src/core/call/parsed_metadata.h
-  - src/core/call/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -2714,6 +2714,12 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/interception_chain..cc
+  - src/core/call/message.cc
+  - src/core/call/metadata.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/metadata_info.cc
+  - src/core/call/parsed_metadata.cc
   - src/core/call/request_buffer.cc
   - src/core/call/security_context.cc
   - src/core/call/server_call.cc
@@ -3017,12 +3023,6 @@ libs:
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/call/interception_chain..cc
-  - src/core/call/message.cc
-  - src/core/call/metadata.cc
-  - src/core/call/metadata_batch.cc
-  - src/core/call/metadata_info.cc
-  - src/core/call/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -4377,8 +4377,16 @@ libs:
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
   - src/core/call/client_call.h
+  - src/core/call/custom_metadata.h
+  - src/core/call/interception_chain..h
+  - src/core/call/message.h
+  - src/core/call/metadata.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/parsed_metadata.h
   - src/core/call/security_context.h
   - src/core/call/server_call.h
+  - src/core/call/simple_slice_based_metadata.h
   - src/core/call/status_util.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
@@ -4631,16 +4639,8 @@ libs:
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
-  - src/core/call/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/call/interception_chain..h
-  - src/core/call/message.h
-  - src/core/call/metadata.h
-  - src/core/call/metadata_batch.h
-  - src/core/call/metadata_compression_traits.h
-  - src/core/call/parsed_metadata.h
-  - src/core/call/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -4722,6 +4722,11 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/interception_chain..cc
+  - src/core/call/message.cc
+  - src/core/call/metadata.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/parsed_metadata.cc
   - src/core/call/security_context.cc
   - src/core/call/server_call.cc
   - src/core/call/status_util.cc
@@ -4939,11 +4944,6 @@ libs:
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/call/interception_chain..cc
-  - src/core/call/message.cc
-  - src/core/call/metadata.cc
-  - src/core/call/metadata_batch.cc
-  - src/core/call/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -6177,6 +6177,13 @@ targets:
   headers:
   - src/core/call/call_filters.h
   - src/core/call/call_state.h
+  - src/core/call/custom_metadata.h
+  - src/core/call/message.h
+  - src/core/call/metadata.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/parsed_metadata.h
+  - src/core/call/simple_slice_based_metadata.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6226,15 +6233,8 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/call/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/call/message.h
-  - src/core/call/metadata.h
-  - src/core/call/metadata_batch.h
-  - src/core/call/metadata_compression_traits.h
-  - src/core/call/parsed_metadata.h
-  - src/core/call/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
@@ -6267,6 +6267,10 @@ targets:
   src:
   - src/core/call/call_filters.cc
   - src/core/call/call_state.cc
+  - src/core/call/message.cc
+  - src/core/call/metadata.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/parsed_metadata.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/channel/channel_args.cc
@@ -6295,10 +6299,6 @@ targets:
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/call/message.cc
-  - src/core/call/metadata.cc
-  - src/core/call/metadata_batch.cc
-  - src/core/call/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/util/dump_args.cc
@@ -6407,7 +6407,15 @@ targets:
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
   - src/core/call/client_call.h
+  - src/core/call/custom_metadata.h
+  - src/core/call/interception_chain..h
+  - src/core/call/message.h
+  - src/core/call/metadata.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/parsed_metadata.h
   - src/core/call/server_call.h
+  - src/core/call/simple_slice_based_metadata.h
   - src/core/call/status_util.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
@@ -6632,16 +6640,8 @@ targets:
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
-  - src/core/call/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/call/interception_chain..h
-  - src/core/call/message.h
-  - src/core/call/metadata.h
-  - src/core/call/metadata_batch.h
-  - src/core/call/metadata_compression_traits.h
-  - src/core/call/parsed_metadata.h
-  - src/core/call/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -6717,6 +6717,11 @@ targets:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/interception_chain..cc
+  - src/core/call/message.cc
+  - src/core/call/metadata.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/parsed_metadata.cc
   - src/core/call/server_call.cc
   - src/core/call/status_util.cc
   - src/core/channelz/channel_trace.cc
@@ -6905,11 +6910,6 @@ targets:
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/call/interception_chain..cc
-  - src/core/call/message.cc
-  - src/core/call/metadata.cc
-  - src/core/call/metadata_batch.cc
-  - src/core/call/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -10547,8 +10547,16 @@ targets:
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
   - src/core/call/client_call.h
+  - src/core/call/custom_metadata.h
   - src/core/call/filter_fusion.h
+  - src/core/call/interception_chain..h
+  - src/core/call/message.h
+  - src/core/call/metadata.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/parsed_metadata.h
   - src/core/call/server_call.h
+  - src/core/call/simple_slice_based_metadata.h
   - src/core/call/status_util.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
@@ -10773,16 +10781,8 @@ targets:
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
-  - src/core/call/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/call/interception_chain..h
-  - src/core/call/message.h
-  - src/core/call/metadata.h
-  - src/core/call/metadata_batch.h
-  - src/core/call/metadata_compression_traits.h
-  - src/core/call/parsed_metadata.h
-  - src/core/call/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -10858,6 +10858,11 @@ targets:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/interception_chain..cc
+  - src/core/call/message.cc
+  - src/core/call/metadata.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/parsed_metadata.cc
   - src/core/call/server_call.cc
   - src/core/call/status_util.cc
   - src/core/channelz/channel_trace.cc
@@ -11046,11 +11051,6 @@ targets:
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/call/interception_chain..cc
-  - src/core/call/message.cc
-  - src/core/call/metadata.cc
-  - src/core/call/metadata_batch.cc
-  - src/core/call/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -12833,7 +12833,7 @@ targets:
   headers:
   - test/core/promise/poll_matcher.h
   src:
-  - test/core/transport/interception_chain_test.cc
+  - test/core/call/interception_chain_test.cc
   deps:
   - gtest
   - grpc
@@ -13616,6 +13616,7 @@ targets:
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
   src:
+  - test/core/call/metadata_map_test.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
@@ -13624,7 +13625,6 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
   - test/core/test_util/tracer_util.cc
-  - test/core/transport/metadata_map_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14109,7 +14109,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/transport/parsed_metadata_test.cc
+  - test/core/call/parsed_metadata_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15112,7 +15112,14 @@ targets:
   - src/core/call/call_filters.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/custom_metadata.h
+  - src/core/call/message.h
+  - src/core/call/metadata.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/parsed_metadata.h
   - src/core/call/request_buffer.h
+  - src/core/call/simple_slice_based_metadata.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -15167,15 +15174,8 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/call/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/call/message.h
-  - src/core/call/metadata.h
-  - src/core/call/metadata_batch.h
-  - src/core/call/metadata_compression_traits.h
-  - src/core/call/parsed_metadata.h
-  - src/core/call/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
@@ -15212,6 +15212,10 @@ targets:
   - src/core/call/call_filters.cc
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
+  - src/core/call/message.cc
+  - src/core/call/metadata.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/parsed_metadata.cc
   - src/core/call/request_buffer.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -15242,10 +15246,6 @@ targets:
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/call/message.cc
-  - src/core/call/metadata.cc
-  - src/core/call/metadata_batch.cc
-  - src/core/call/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/util/dump_args.cc

@@ -16,8 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 

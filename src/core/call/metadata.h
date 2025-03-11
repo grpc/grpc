@@ -17,8 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/lib/promise/try_seq.h"
 
 namespace grpc_core {
 

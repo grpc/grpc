@@ -2139,6 +2139,12 @@ add_library(grpc
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/interception_chain..cc
+  src/core/call/message.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/metadata_info.cc
+  src/core/call/parsed_metadata.cc
   src/core/call/request_buffer.cc
   src/core/call/security_context.cc
   src/core/call/server_call.cc
@@ -2788,12 +2794,6 @@ add_library(grpc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
-  src/core/call/interception_chain..cc
-  src/core/call/message.cc
-  src/core/call/metadata.cc
-  src/core/call/metadata_batch.cc
-  src/core/call/metadata_info.cc
-  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -3228,6 +3228,12 @@ add_library(grpc_unsecure
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/interception_chain..cc
+  src/core/call/message.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/metadata_info.cc
+  src/core/call/parsed_metadata.cc
   src/core/call/request_buffer.cc
   src/core/call/security_context.cc
   src/core/call/server_call.cc
@@ -3531,12 +3537,6 @@ add_library(grpc_unsecure
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
-  src/core/call/interception_chain..cc
-  src/core/call/message.cc
-  src/core/call/metadata.cc
-  src/core/call/metadata_batch.cc
-  src/core/call/metadata_info.cc
-  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -5503,6 +5503,11 @@ add_library(grpc_authorization_provider
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/interception_chain..cc
+  src/core/call/message.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/parsed_metadata.cc
   src/core/call/security_context.cc
   src/core/call/server_call.cc
   src/core/call/status_util.cc
@@ -5720,11 +5725,6 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
-  src/core/call/interception_chain..cc
-  src/core/call/message.cc
-  src/core/call/metadata.cc
-  src/core/call/metadata_batch.cc
-  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -9024,6 +9024,10 @@ if(gRPC_BUILD_TESTS)
 add_executable(call_filters_test
   src/core/call/call_filters.cc
   src/core/call/call_state.cc
+  src/core/call/message.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/parsed_metadata.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/channel/channel_args.cc
@@ -9052,10 +9056,6 @@ add_executable(call_filters_test
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/error_utils.cc
-  src/core/call/message.cc
-  src/core/call/metadata.cc
-  src/core/call/metadata_batch.cc
-  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/util/dump_args.cc
@@ -9262,6 +9262,11 @@ add_executable(call_utils_test
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/interception_chain..cc
+  src/core/call/message.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/parsed_metadata.cc
   src/core/call/server_call.cc
   src/core/call/status_util.cc
   src/core/channelz/channel_trace.cc
@@ -9450,11 +9455,6 @@ add_executable(call_utils_test
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
-  src/core/call/interception_chain..cc
-  src/core/call/message.cc
-  src/core/call/metadata.cc
-  src/core/call/metadata_batch.cc
-  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -15374,6 +15374,11 @@ add_executable(filter_fusion_test
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/interception_chain..cc
+  src/core/call/message.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/parsed_metadata.cc
   src/core/call/server_call.cc
   src/core/call/status_util.cc
   src/core/channelz/channel_trace.cc
@@ -15562,11 +15567,6 @@ add_executable(filter_fusion_test
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
-  src/core/call/interception_chain..cc
-  src/core/call/message.cc
-  src/core/call/metadata.cc
-  src/core/call/metadata_batch.cc
-  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -19458,7 +19458,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(interception_chain_test
-  test/core/transport/interception_chain_test.cc
+  test/core/call/interception_chain_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20993,6 +20993,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(metadata_map_test
+  test/core/call/metadata_map_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
@@ -21001,7 +21002,6 @@ add_executable(metadata_map_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
-  test/core/transport/metadata_map_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -22357,7 +22357,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(parsed_metadata_test
-  test/core/transport/parsed_metadata_test.cc
+  test/core/call/parsed_metadata_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -24901,6 +24901,10 @@ add_executable(request_buffer_test
   src/core/call/call_filters.cc
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
+  src/core/call/message.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/parsed_metadata.cc
   src/core/call/request_buffer.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -24931,10 +24935,6 @@ add_executable(request_buffer_test
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/error_utils.cc
-  src/core/call/message.cc
-  src/core/call/metadata.cc
-  src/core/call/metadata_batch.cc
-  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/util/dump_args.cc

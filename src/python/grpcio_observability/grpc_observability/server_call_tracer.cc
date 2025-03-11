@@ -33,13 +33,13 @@
 #include "constants.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/call/metadata_batch.h"
 #include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_observability {

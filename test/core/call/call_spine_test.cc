@@ -23,8 +23,8 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/call/metadata.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "test/core/call/yodel/yodel_test.h"
 
 namespace grpc_core {

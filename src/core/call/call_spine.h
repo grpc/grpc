@@ -20,6 +20,8 @@
 #include "absl/log/check.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_filters.h"
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -29,8 +31,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/call/message.h"
-#include "src/core/call/metadata.h"
 #include "src/core/util/dual_ref_counted.h"
 
 namespace grpc_core {

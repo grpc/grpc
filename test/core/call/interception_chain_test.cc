@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/call/interception_chain..h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -22,6 +20,7 @@
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/call/interception_chain..h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/promise/poll_matcher.h"
