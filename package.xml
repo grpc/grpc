@@ -1628,8 +1628,8 @@
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/interception_chain.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/interception_chain.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/interception_chain..cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/interception_chain..h" role="src" />
     <file baseinstalldir="/" name="src/core/call/message.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/message.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/metadata.cc" role="src" />

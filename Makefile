@@ -1324,7 +1324,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/interception_chain.cc \
+    src/core/call/interception_chain..cc \
     src/core/call/message.cc \
     src/core/call/metadata.cc \
     src/core/call/metadata_batch.cc \

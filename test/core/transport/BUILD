@@ -36,23 +36,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "interception_chain_test",
-    srcs = ["interception_chain_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:grpc",
-        "//src/core:interception_chain",
-        "//src/core:resource_quota",
-        "//test/core/promise:poll_matcher",
-    ],
-)
-
-grpc_cc_test(
     name = "connectivity_state_test",
     srcs = ["connectivity_state_test.cc"],
     external_deps = [

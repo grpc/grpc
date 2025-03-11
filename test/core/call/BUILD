@@ -260,3 +260,20 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "interception_chain_test",
+    srcs = ["interception_chain_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:interception_chain",
+        "//src/core:resource_quota",
+        "//test/core/promise:poll_matcher",
+    ],
+)

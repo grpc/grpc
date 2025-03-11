@@ -2422,8 +2422,8 @@ src/core/call/custom_metadata.h \
 src/core/lib/transport/error_utils.cc \
 src/core/lib/transport/error_utils.h \
 src/core/lib/transport/http2_errors.h \
-src/core/lib/transport/interception_chain.cc \
-src/core/lib/transport/interception_chain.h \
+src/core/call/interception_chain..cc \
+src/core/call/interception_chain..h \
 src/core/call/message.cc \
 src/core/call/message.h \
 src/core/call/metadata.cc \
