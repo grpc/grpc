@@ -168,6 +168,11 @@ struct Http2UnknownFrame {
   bool operator==(const Http2UnknownFrame&) const { return true; }
 };
 
+// Empty frame. This is only used as a dummy frame to trigger events.
+struct Http2EmptyFrame {
+  bool operator==(const Http2EmptyFrame&) const { return true; }
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // Frame variant
 //
@@ -177,7 +182,7 @@ using Http2Frame =
     std::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
                  Http2RstStreamFrame, Http2SettingsFrame, Http2PingFrame,
                  Http2GoawayFrame, Http2WindowUpdateFrame, Http2SecurityFrame,
-                 Http2UnknownFrame>;
+                 Http2UnknownFrame, Http2EmptyFrame>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Frame header

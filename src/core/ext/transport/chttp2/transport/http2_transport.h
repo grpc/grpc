@@ -63,19 +63,7 @@ enum class HttpStreamState {
   kClosed,
 };
 
-// Empty Frame. Can be used in the place of HTTP2 frame type to trigger certain events when needed.
-struct EmptyFrameForOperationTrigger {
-};
-
-using QueueableFrame =
-    std::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
-                 Http2RstStreamFrame, 
-                 Http2GoawayFrame, Http2SecurityFrame,
-                 EmptyFrameForOperationTrigger>;
-
-class TransportSendQeueue {
-
-};
+class TransportSendQeueue {};
 
 inline auto ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data

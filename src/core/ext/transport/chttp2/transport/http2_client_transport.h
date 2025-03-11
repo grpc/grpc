@@ -133,7 +133,7 @@ class Http2ClientTransport final : public ClientTransport {
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
 
-  MpscReceiver<QueueableFrame> outgoing_frames_;
+  MpscReceiver<Http2Frame> outgoing_frames_;
 
   Mutex transport_mutex_;
   // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this mapping
