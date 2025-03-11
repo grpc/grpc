@@ -8733,6 +8733,9 @@ grpc_cc_library(
     hdrs = [
         "util/check_class_size.h",
     ],
+    deps = [
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
