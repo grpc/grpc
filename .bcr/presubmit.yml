@@ -14,6 +14,9 @@ tasks:
   verify_targets:
     platform: ${{ platform }}
     bazel: ${{ bazel }}
+    build_flags:
+    - '--cxxopt=-std=c++17'
+    - '--host_cxxopt=-std=c++17'
     build_targets:
       - "@grpc//:grpc"
       - "@grpc//:grpc_unsecure"
@@ -32,6 +35,9 @@ tasks:
   verify_targets_on_windows:
     platform: "windows"
     bazel: ${{ bazel }}
+    build_flags:
+    - '--cxxopt=/std:c++17'
+    - '--host_cxxopt=/std:c++17'
     build_targets:
       - "@grpc//:grpc"
       - "@grpc//:grpc_unsecure"

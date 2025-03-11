@@ -28,6 +28,10 @@ grpc_cc_library(
     external_deps = [
         "gtest",
     ],
+    tags = [
+        # uses OSS specific libraries
+        "grpc:broken-internally",
+    ],
     deps = [
         "//:grpc++",
         "//src/core:logging_filter",

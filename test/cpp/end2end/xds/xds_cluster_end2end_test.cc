@@ -601,10 +601,10 @@ TEST_P(EdsTest, LocalityBecomesEmptyWithDeactivatedChildStateUpdate) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for RPCs to start failing.
   constexpr char kErrorMessage[] =
-      "no children in weighted_target policy: "
+      "no children in weighted_target policy \\("
       "EDS resource eds_service_name: contains empty localities: "
       "\\[\\{region=\"xds_default_locality_region\", "
-      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
+      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]\\)";
   SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Shut down backend.  This triggers a connectivity state update from the
   // deactivated child of the weighted_target policy.
@@ -637,8 +637,8 @@ TEST_P(EdsTest, NoLocalities) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      "no children in weighted_target policy: EDS resource eds_service_name: "
-      "contains no localities";
+      "no children in weighted_target policy "
+      "\\(EDS resource eds_service_name: contains no localities\\)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send EDS resource that has an endpoint.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -853,10 +853,10 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      "no children in weighted_target policy: "
+      "no children in weighted_target policy \\("
       "EDS resource eds_service_name: contains empty localities: "
       "\\[\\{region=\"xds_default_locality_region\", "
-      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
+      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]\\)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send EDS resource that has an endpoint.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});

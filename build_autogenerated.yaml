@@ -2121,7 +2121,7 @@ libs:
   - test/core/event_engine/test_init.cc
   - test/core/test_util/build.cc
   - test/core/test_util/port.cc
-  - test/core/test_util/port_isolated_runtime_environment.cc
+  - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
   - test/core/test_util/reconnect_server.cc
   - test/core/test_util/stack_tracer.cc
@@ -2151,7 +2151,7 @@ libs:
   - test/core/event_engine/test_init.cc
   - test/core/test_util/build.cc
   - test/core/test_util/port.cc
-  - test/core/test_util/port_isolated_runtime_environment.cc
+  - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
   - test/core/test_util/reconnect_server.cc
   - test/core/test_util/stack_tracer.cc
@@ -2613,6 +2613,7 @@ libs:
   - src/core/load_balancing/oob_backend_metric_internal.h
   - src/core/load_balancing/outlier_detection/outlier_detection.h
   - src/core/load_balancing/pick_first/pick_first.h
+  - src/core/load_balancing/ring_hash/ring_hash.h
   - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
@@ -2704,7 +2705,9 @@ libs:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/util/xxhash_inline.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/xxhash/xxhash.h
   src:
   - src/core/call/request_buffer.cc
   - src/core/call/security_context.cc
@@ -3040,6 +3043,7 @@ libs:
   - src/core/load_balancing/outlier_detection/outlier_detection.cc
   - src/core/load_balancing/pick_first/pick_first.cc
   - src/core/load_balancing/priority/priority.cc
+  - src/core/load_balancing/ring_hash/ring_hash.cc
   - src/core/load_balancing/rls/rls.cc
   - src/core/load_balancing/round_robin/round_robin.cc
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
@@ -3379,7 +3383,6 @@ libs:
   - third_party/upb/upb/message/compat.h
   - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/message/internal/array.h
-  - third_party/upb/upb/message/internal/compare_unknown.h
   - third_party/upb/upb/message/internal/extension.h
   - third_party/upb/upb/message/internal/map.h
   - third_party/upb/upb/message/internal/map_entry.h
@@ -3406,16 +3409,11 @@ libs:
   - third_party/upb/upb/mini_table/internal/sub.h
   - third_party/upb/upb/mini_table/message.h
   - third_party/upb/upb/mini_table/sub.h
-  - third_party/upb/upb/wire/eps_copy_input_stream.h
-  - third_party/upb/upb/wire/internal/reader.h
-  - third_party/upb/upb/wire/reader.h
-  - third_party/upb/upb/wire/types.h
   src:
   - third_party/upb/upb/hash/common.c
   - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/message/array.c
   - third_party/upb/upb/message/compat.c
-  - third_party/upb/upb/message/internal/compare_unknown.c
   - third_party/upb/upb/message/internal/extension.c
   - third_party/upb/upb/message/internal/message.c
   - third_party/upb/upb/message/map.c
@@ -3424,8 +3422,6 @@ libs:
   - third_party/upb/upb/mini_table/extension_registry.c
   - third_party/upb/upb/mini_table/internal/message.c
   - third_party/upb/upb/mini_table/message.c
-  - third_party/upb/upb/wire/eps_copy_input_stream.c
-  - third_party/upb/upb/wire/reader.c
   deps:
   - upb_base_lib
   - upb_mem_lib
@@ -3560,15 +3556,23 @@ libs:
   language: c
   public_headers: []
   headers:
+  - third_party/upb/upb/message/internal/iterator.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
+  - third_party/upb/upb/message/internal/iterator.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - utf8_range_lib
   - upb_message_lib
@@ -3578,6 +3582,8 @@ libs:
   public_headers: []
   headers:
   - third_party/utf8_range/utf8_range.h
+  - third_party/utf8_range/utf8_range_neon.inc
+  - third_party/utf8_range/utf8_range_sse.inc
   src:
   - third_party/utf8_range/utf8_range.c
   deps: []
@@ -12481,10 +12487,14 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
+  - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/grpc_profiler.h
@@ -12500,6 +12510,7 @@ targets:
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
+  - src/core/ext/transport/chttp2/transport/http2_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/cmdline.cc
@@ -12527,7 +12538,12 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chttp2/transport/http2_server_transport.h
+  - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/grpc_profiler.h
@@ -12537,10 +12553,14 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
+  - test/core/transport/util/transport_test.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
@@ -12553,7 +12573,12 @@ targets:
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
   uses_polling: false
 - name: http2_settings_test
   gtest: true

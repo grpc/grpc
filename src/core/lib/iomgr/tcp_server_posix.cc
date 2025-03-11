@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 
@@ -475,6 +476,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = sp->fd_index;
     acceptor->external_connection = false;
+    acceptor->pending_data = nullptr;
     sp->server->on_accept_cb(
         sp->server->on_accept_cb_arg,
         grpc_tcp_create(fdobj, sp->server->options, addr_uri.value()),
@@ -926,7 +928,13 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->fd_index = -1;
     acceptor->external_connection = true;
     acceptor->listener_fd = listener_fd;
-    acceptor->pending_data = buf;
+    if (buf != nullptr && buf->data.raw.slice_buffer.length > 0) {
+      acceptor->pending_data = grpc_raw_byte_buffer_create(nullptr, 0);
+      grpc_slice_buffer_swap(&acceptor->pending_data->data.raw.slice_buffer,
+                             &buf->data.raw.slice_buffer);
+    } else {
+      acceptor->pending_data = nullptr;
+    }
     s_->on_accept_cb(s_->on_accept_cb_arg,
                      grpc_tcp_create(fdobj, s_->options, addr_uri.value()),
                      read_notifier_pollset, acceptor);
