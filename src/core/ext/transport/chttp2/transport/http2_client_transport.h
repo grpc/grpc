@@ -88,6 +88,15 @@ class Http2ClientTransport final : public ClientTransport {
   void Orphan() override;
   void AbortWithError();
 
+  // TODO(akshitpatel) : [PH2][P2] : Probably remove this once StartCall is
+  // plugged in.
+  auto EnqueueOutgoingFrame(Http2Frame frame) {
+    return [sender = outgoing_frames_.MakeSender(),
+            frame = std::move(frame)]() mutable {
+      return sender.Send(std::move(frame));
+    };
+  }
+
  private:
   // Reading from the endpoint.
 

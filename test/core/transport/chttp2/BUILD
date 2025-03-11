@@ -515,6 +515,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:http2_client_transport",
+        "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/chttp2:http2_frame_test_helper",

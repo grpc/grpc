@@ -12494,6 +12494,7 @@ targets:
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/grpc_profiler.h
