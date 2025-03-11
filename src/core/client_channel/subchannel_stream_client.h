@@ -202,7 +202,7 @@ class SubchannelStreamClient final
   Mutex mu_;
   std::unique_ptr<CallEventHandler> event_handler_ ABSL_GUARDED_BY(mu_);
 
-  // The data associated with the current health check call.  It holds a ref
+  // The data associated with the current call.  It holds a ref
   // to this SubchannelStreamClient object.
   OrphanablePtr<CallState> call_state_ ABSL_GUARDED_BY(mu_);
 

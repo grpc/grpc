@@ -505,6 +505,7 @@ grpc_cc_test(
     name = "http2_client_transport_test",
     srcs = ["http2_client_transport_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/log:log",
         "gtest",
     ],
@@ -514,6 +515,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:http2_client_transport",
+        "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/chttp2:http2_frame_test_helper",
@@ -526,9 +528,11 @@ grpc_cc_test(
     name = "http2_server_transport_test",
     srcs = ["http2_server_transport_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/log:log",
         "gtest",
     ],
+    tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -536,7 +540,9 @@ grpc_cc_test(
         "//src/core:http2_server_transport",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/transport/chttp2:http2_frame_test_helper",
         "//test/core/transport/util:mock_promise_endpoint",
+        "//test/core/transport/util:transport_test",
     ],
 )
 

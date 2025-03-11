@@ -1483,7 +1483,6 @@ RetryFilter::LegacyCallData::LegacyCallData(RetryFilter* chand,
               .set_max_backoff(retry_policy_ == nullptr
                                    ? Duration::Zero()
                                    : retry_policy_->max_backoff())),
-      path_(CSliceRef(args.path)),
       deadline_(args.deadline),
       arena_(args.arena),
       owning_call_(args.call_stack),
@@ -1499,7 +1498,6 @@ RetryFilter::LegacyCallData::LegacyCallData(RetryFilter* chand,
 
 RetryFilter::LegacyCallData::~LegacyCallData() {
   FreeAllCachedSendOpData();
-  CSliceUnref(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     CHECK_EQ(pending_batches_[i].batch, nullptr);
@@ -1629,9 +1627,9 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
 OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
 RetryFilter::LegacyCallData::CreateLoadBalancedCall(
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
-  grpc_call_element_args args = {owning_call_,     nullptr,   path_,
-                                 /*start_time=*/0, deadline_, arena_,
-                                 call_combiner_};
+  grpc_call_element_args args = {owning_call_,     nullptr,
+                                 /*start_time=*/0, deadline_,
+                                 arena_,           call_combiner_};
   return chand_->client_channel()->CreateLoadBalancedCall(
       args, pollent_,
       // This callback holds a ref to the CallStackDestructionBarrier

@@ -15,7 +15,7 @@ settings:
   core_version: 46.0.0
   csharp_major_version: 2
   g_stands_for: gusto
-  protobuf_version: 3.29.0
+  protobuf_version: 4.30.0
   supported_python_versions:
   - '3.9'
   - '3.10'
