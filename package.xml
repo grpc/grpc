@@ -167,7 +167,6 @@
     <file baseinstalldir="/" name="src/core/config/core_configuration.h" role="src" />
     <file baseinstalldir="/" name="src/core/config/load_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/config/load_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/core/util/check_class_size.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/call_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/call_creds_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/call_creds_util.h" role="src" />
@@ -1841,6 +1840,7 @@
     <file baseinstalldir="/" name="src/core/util/backoff.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/backoff.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/bitset.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/check_class_size.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/chunked_vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/construct_destruct.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/cpp_impl_of.h" role="src" />

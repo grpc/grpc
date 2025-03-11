@@ -8731,7 +8731,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "check_class_size",
     hdrs = [
-        "core/util/check_class_size.h",
+        "util/check_class_size.h",
     ],
 )
 
