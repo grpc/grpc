@@ -56,7 +56,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/uri.h"

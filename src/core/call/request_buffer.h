@@ -19,7 +19,7 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/lib/transport/message.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/metadata.h"
 
 namespace grpc_core {
 

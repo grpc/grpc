@@ -56,7 +56,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
+#include "src/core/call/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/sync.h"

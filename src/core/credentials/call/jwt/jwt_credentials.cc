@@ -38,7 +38,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"

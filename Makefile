@@ -1326,10 +1326,10 @@ LIBGRPC_SRC = \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/interception_chain.cc \
     src/core/lib/transport/message.cc \
-    src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
-    src/core/lib/transport/metadata_info.cc \
-    src/core/lib/transport/parsed_metadata.cc \
+    src/core/call/metadata.cc \
+    src/core/call/metadata_batch.cc \
+    src/core/call/metadata_info.cc \
+    src/core/call/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \

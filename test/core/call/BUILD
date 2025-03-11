@@ -232,3 +232,31 @@ grpc_cc_test(
         "//test/core/promise:poll_matcher",
     ],
 )
+
+grpc_cc_test(
+    name = "metadata_map_test",
+    srcs = ["metadata_map_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
+    name = "parsed_metadata_test",
+    srcs = ["parsed_metadata_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

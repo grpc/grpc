@@ -41,7 +41,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"

@@ -62,7 +62,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/server/server.h"
 #include "src/core/server/server_config_selector.h"
 #include "src/core/server/server_config_selector_filter.h"

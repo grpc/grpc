@@ -30,7 +30,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/latent_see.h"
 

@@ -31,7 +31,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_create.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/metadata.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
 #include "src/core/util/crash.h"

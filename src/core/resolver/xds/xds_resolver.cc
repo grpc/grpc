@@ -62,7 +62,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
 #include "src/core/resolver/endpoint_addresses.h"

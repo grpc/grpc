@@ -35,7 +35,7 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/util/latent_see.h"
 #include "upb/base/string_view.h"

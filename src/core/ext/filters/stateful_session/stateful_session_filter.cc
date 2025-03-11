@@ -44,7 +44,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/service_config/service_config_call_data.h"

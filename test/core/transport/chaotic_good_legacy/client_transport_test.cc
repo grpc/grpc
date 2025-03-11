@@ -43,7 +43,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "test/core/transport/chaotic_good_legacy/transport_test.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
+#ifndef GRPC_SRC_CORE_CALL_METADATA_BATCH_H
+#define GRPC_SRC_CORE_CALL_METADATA_BATCH_H
 
 #include <grpc/impl/compression_types.h>
 #include <grpc/status.h>
@@ -40,10 +40,10 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/custom_metadata.h"
-#include "src/core/lib/transport/metadata_compression_traits.h"
-#include "src/core/lib/transport/parsed_metadata.h"
-#include "src/core/lib/transport/simple_slice_based_metadata.h"
+#include "src/core/call/custom_metadata.h"
+#include "src/core/call/metadata_compression_traits.h"
+#include "src/core/call/parsed_metadata.h"
+#include "src/core/call/simple_slice_based_metadata.h"
 #include "src/core/util/chunked_vector.h"
 #include "src/core/util/if_list.h"
 #include "src/core/util/packed_table.h"
@@ -1665,4 +1665,4 @@ struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;
 };
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
+#endif  // GRPC_SRC_CORE_CALL_METADATA_BATCH_H

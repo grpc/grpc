@@ -42,7 +42,7 @@
 #include "opentelemetry/nostd/shared_ptr.h"
 #include "opentelemetry/trace/tracer.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/telemetry/metrics.h"
 
 namespace grpc {

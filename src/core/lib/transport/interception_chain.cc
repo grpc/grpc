@@ -22,7 +22,7 @@
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/metadata.h"
 #include "src/core/util/match.h"
 
 namespace grpc_core {

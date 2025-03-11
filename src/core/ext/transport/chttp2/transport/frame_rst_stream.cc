@@ -35,7 +35,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/util/status_helper.h"
 
 grpc_slice grpc_chttp2_rst_stream_create(

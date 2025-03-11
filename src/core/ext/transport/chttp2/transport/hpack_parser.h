@@ -40,7 +40,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/random_early_detection.h"
 

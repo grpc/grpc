@@ -85,7 +85,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/lb_policy_registry.h"

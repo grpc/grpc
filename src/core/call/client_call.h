@@ -44,7 +44,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_utils.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/metadata.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"

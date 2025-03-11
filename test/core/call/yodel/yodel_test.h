@@ -30,7 +30,7 @@
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/metadata.h"
 #include "src/core/util/debug_location.h"
 #include "test/core/call/yodel/fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"

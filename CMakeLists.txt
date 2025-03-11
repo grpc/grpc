@@ -2790,10 +2790,10 @@ add_library(grpc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/metadata_info.cc
-  src/core/lib/transport/parsed_metadata.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/metadata_info.cc
+  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -3533,10 +3533,10 @@ add_library(grpc_unsecure
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/metadata_info.cc
-  src/core/lib/transport/parsed_metadata.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/metadata_info.cc
+  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -5722,9 +5722,9 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/parsed_metadata.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -9053,9 +9053,9 @@ add_executable(call_filters_test
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/message.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/parsed_metadata.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/util/dump_args.cc
@@ -9452,9 +9452,9 @@ add_executable(call_utils_test
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/parsed_metadata.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -15564,9 +15564,9 @@ add_executable(filter_fusion_test
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/parsed_metadata.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -24932,9 +24932,9 @@ add_executable(request_buffer_test
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/message.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/parsed_metadata.cc
+  src/core/call/metadata.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/util/dump_args.cc

@@ -23,7 +23,7 @@
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_spine.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/metadata.h"
 #include "src/core/util/ref_counted.h"
 
 namespace grpc_core {

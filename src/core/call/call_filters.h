@@ -35,7 +35,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/message.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/metadata.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"

@@ -61,7 +61,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"

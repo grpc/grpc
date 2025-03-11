@@ -26,7 +26,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/status_helper.h"

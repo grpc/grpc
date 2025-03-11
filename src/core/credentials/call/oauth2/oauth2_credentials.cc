@@ -52,7 +52,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"

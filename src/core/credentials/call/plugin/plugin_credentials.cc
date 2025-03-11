@@ -35,7 +35,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 
 grpc_plugin_credentials::~grpc_plugin_credentials() {
   if (plugin_.state != nullptr && plugin_.destroy != nullptr) {
