@@ -184,6 +184,15 @@ _py_proto_library = rule(
 )
 
 def py_proto_library(name, deps, use_protobuf = True, **kwargs):
+    """Use `py_proto_library` to generate Python libraries from `.proto` files.
+
+    Args:
+      name: The name of the target.
+      deps: A single proto_library target.
+      use_protobuf: Whether to use protobuf implementation of py_proto_library.
+      **kwargs: Additional arguments to be supplied to the invocation of
+        py_library.
+    """
     if use_protobuf:
         # Filter out 'imports' attribute.
         filtered_kwargs = {k: v for k, v in kwargs.items() if k != "imports"}
