@@ -66,8 +66,8 @@ class Epoll1Poller : public PosixEventPoller {
 
   void Close();
 
-  // Fork support
   void AdvanceGeneration() override { grpc_core::Crash("Not implemented"); }
+  void ResetKickState() override { grpc_core::Crash("Not implemented"); }
 
  private:
   // This initial vector size may need to be tuned

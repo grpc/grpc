@@ -735,22 +735,17 @@ void PollPoller::AdvanceGeneration() {
     handle->ShutdownHandle(absl::ResourceExhaustedError("Closed on fork"));
     handle = handle->PollerHandlesListPos().next;
   }
+}
+
+void PollPoller::ResetKickState() {
   wakeup_fd_ = *CreateWakeupFd(&GetFileDescriptors());
   // Sometimes there's "kick" signalled on the wakeup FD. We need to redo it on
   // new fd
   // TODO (eostroukhov): Need to consider merging kicked/kicked_ext
   // with the wakeup_fd so there's no duplicate state.
-  auto [kicked, kicked_ext] = [this]() {
-    grpc_core::MutexLock lock(&mu_);
-    bool kicked = was_kicked_;
-    bool kicked_ext = was_kicked_ext_;
-    was_kicked_ = false;
-    was_kicked_ext_ = false;
-    return std::pair{kicked, kicked_ext};
-  }();
-  if (kicked) {
-    KickExternal(kicked_ext);
-  }
+  grpc_core::MutexLock lock(&mu_);
+  was_kicked_ = false;
+  was_kicked_ext_ = false;
 }
 
 std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,

@@ -51,8 +51,8 @@ class PollPoller : public PosixEventPoller,
 
   void Close();
 
-  // Forkable
   void AdvanceGeneration() override;
+  void ResetKickState() override;
 
  private:
   void KickExternal(bool ext);

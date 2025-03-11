@@ -93,6 +93,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller {
   virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
   virtual void AdvanceGeneration() = 0;
+  virtual void ResetKickState() = 0;
   FileDescriptors& GetFileDescriptors() { return file_descriptors_; }
   ~PosixEventPoller() override = default;
 
