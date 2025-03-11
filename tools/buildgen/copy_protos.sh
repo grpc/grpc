@@ -14,7 +14,7 @@
 # limitations under the License.
 # Copy protos from proto directory to python ancillary packages directory.
 
-set -e
+set -euo pipefail
 
 GRPC_ROOT=$(realpath "$(dirname "$0")/../..")
 
@@ -23,15 +23,15 @@ SRC_BASE="$GRPC_ROOT/src/proto/grpc"
 DST_BASE="$GRPC_ROOT/src/python"
 
 copy_proto() {
-  local proto_name="$1"
-  local src_subdir="$2"
-  local dst_subdir="$3"
+  local PROTO_NAME="$1"
+  local SRC_SUBDIR="$2"
+  local DST_SUBDIR="$3"
 
-  local src_file="$SRC_BASE/$src_subdir/$proto_name.proto"
-  local dst_file="$DST_BASE/$dst_subdir/$proto_name.proto"
+  local SRC_FILE="$SRC_BASE/$SRC_SUBDIR/$PROTO_NAME.proto"
+  local DST_FILE="$DST_BASE/$DST_SUBDIR/$proto_name.proto"
 
-  cp "$src_file" "$dst_file"
-  echo "Copied: $src_file -> $dst_file"
+  cp "$SRC_FILE" "$DST_FILE"
+  echo "Copied: $SRC_FILE -> $DST_FILE"
 }
 
 copy_proto "channelz" "channelz" "grpcio_channelz/grpc_channelz/v1"
