@@ -178,13 +178,14 @@ auto Http2ClientTransport::OnReadLoopEnded() {
 
 auto Http2ClientTransport::WriteFromQueue() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Factory";
-  return TrySeq(
-      outgoing_frames_.Next(), [&endpoint = endpoint_](Http2Frame frame) {
-        SliceBuffer output_buf;
-        Serialize(absl::Span<Http2Frame>(&frame, 1), output_buf);
-        HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
-        return endpoint.Write(std::move(output_buf));
-      });
+  return TrySeq(outgoing_frames_.NextBatch(),
+                [&endpoint = endpoint_](std::vector<Http2Frame> frames) {
+                  SliceBuffer output_buf;
+                  Serialize(absl::Span<Http2Frame>(frames), output_buf);
+                  HTTP2_CLIENT_DLOG
+                      << "Http2ClientTransport WriteFromQueue Promise";
+                  return endpoint.Write(std::move(output_buf));
+                });
 }
 
 auto Http2ClientTransport::WriteLoop() {
