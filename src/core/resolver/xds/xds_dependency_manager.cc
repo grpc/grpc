@@ -608,7 +608,7 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
     std::vector<grpc_resolved_address> addresses;
     ChannelArgs address_args = result.addresses->front().args();
     for (const auto& address : *result.addresses) {
-      CHECK_EQ(address.addresses().size(), 1);
+      CHECK_EQ(address.addresses().size(), 1UL);
       addresses.emplace_back(address.addresses().front());
       CHECK_EQ(address_args, address.args());
     }
