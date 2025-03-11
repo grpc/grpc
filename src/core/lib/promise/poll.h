@@ -26,15 +26,6 @@
 #include "absl/strings/str_join.h"
 #include "src/core/util/construct_destruct.h"
 
-#if defined(GPR_LINUX) && !defined(NDEBUG) && !defined(GRPC_ASAN_ENABLED)
-// Since class size varies based on platform and compiler, we limit our
-// guardrail to only one platform.
-#define GRPC_CHECK_CLASS_SIZE(class_name, class_size) \
-  static_assert(sizeof(class_name) <= (class_size), "Class size too large");
-#else
-#define GRPC_CHECK_CLASS_SIZE(class_name, class_size)
-#endif
-
 namespace grpc_core {
 
 // A type that signals a Promise is still pending and not yet completed.
