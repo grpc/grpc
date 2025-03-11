@@ -194,7 +194,6 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   void BeforeFork();
   void AfterFork(bool advance_generation);
 
-
 #endif  // GRPC_POSIX_SOCKET_TCP
 
  private:
