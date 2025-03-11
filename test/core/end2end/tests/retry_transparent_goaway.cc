@@ -36,97 +36,10 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/test_util/fail_first_call_filter.h"
 
 namespace grpc_core {
 namespace {
-
-// A filter that, for the first call it sees, will fail all batches except
-// for cancellations, so that the call fails with an error whose
-// StreamNetworkState is kNotSeenByServer.
-// All subsequent calls are allowed through without failures.
-class FailFirstCallFilter {
- public:
-  static grpc_channel_filter kFilterVtable;
-
- private:
-  class CallData {
-   public:
-    static grpc_error_handle Init(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
-      new (elem->call_data) CallData(args);
-      return absl::OkStatus();
-    }
-
-    static void Destroy(grpc_call_element* elem,
-                        const grpc_call_final_info* /*final_info*/,
-                        grpc_closure* /*ignored*/) {
-      auto* calld = static_cast<CallData*>(elem->call_data);
-      calld->~CallData();
-    }
-
-    static void StartTransportStreamOpBatch(
-        grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-      auto* chand = static_cast<FailFirstCallFilter*>(elem->channel_data);
-      auto* calld = static_cast<CallData*>(elem->call_data);
-      if (!chand->seen_call_) {
-        calld->fail_ = true;
-        chand->seen_call_ = true;
-      }
-      if (calld->fail_) {
-        if (batch->recv_trailing_metadata) {
-          batch->payload->recv_trailing_metadata.recv_trailing_metadata->Set(
-              GrpcStreamNetworkState(),
-              GrpcStreamNetworkState::kNotSeenByServer);
-        }
-        if (!batch->cancel_stream) {
-          grpc_transport_stream_op_batch_finish_with_failure(
-              batch,
-              grpc_error_set_int(
-                  GRPC_ERROR_CREATE("FailFirstCallFilter failing batch"),
-                  StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
-              calld->call_combiner_);
-          return;
-        }
-      }
-      grpc_call_next_op(elem, batch);
-    }
-
-   private:
-    explicit CallData(const grpc_call_element_args* args)
-        : call_combiner_(args->call_combiner) {}
-
-    CallCombiner* call_combiner_;
-    bool fail_ = false;
-  };
-
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* /*args*/) {
-    new (elem->channel_data) FailFirstCallFilter();
-    return absl::OkStatus();
-  }
-
-  static void Destroy(grpc_channel_element* elem) {
-    auto* chand = static_cast<FailFirstCallFilter*>(elem->channel_data);
-    chand->~FailFirstCallFilter();
-  }
-
-  bool seen_call_ = false;
-};
-
-grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
-    CallData::StartTransportStreamOpBatch,
-    grpc_channel_next_op,
-    sizeof(CallData),
-    CallData::Init,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    CallData::Destroy,
-    sizeof(FailFirstCallFilter),
-    Init,
-    grpc_channel_stack_no_post_init,
-    Destroy,
-    grpc_channel_next_get_info,
-    GRPC_UNIQUE_TYPE_NAME_HERE("FailFirstCallFilter"),
-};
 
 // Tests transparent retries when the call was never sent out on the wire.
 CORE_END2END_TEST(RetryTests, TransparentGoaway) {
@@ -134,7 +47,7 @@ CORE_END2END_TEST(RetryTests, TransparentGoaway) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
         ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                         &FailFirstCallFilter::kFilterVtable)
+                         &testing::FailFirstCallFilter::kFilterVtable)
         // Skip on proxy (which explicitly disables retries).
         .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
   });

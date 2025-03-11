@@ -38,8 +38,8 @@ Pod::Spec.new do |s|
   # which was released in Cocoapods v1.2.0.
   s.cocoapods_version = '>= 1.2.0'
 
-  s.ios.deployment_target = '11.0'
-  s.osx.deployment_target = '10.14'
+  s.ios.deployment_target = '15.0'
+  s.osx.deployment_target = '11.0'
   s.tvos.deployment_target = '13.0'
   s.watchos.deployment_target = '6.0'
   s.visionos.deployment_target = '1.0'
@@ -2280,10 +2280,10 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/message/copy.h',
                       'third_party/upb/upb/message/internal/accessors.h',
                       'third_party/upb/upb/message/internal/array.h',
-                      'third_party/upb/upb/message/internal/compare_unknown.c',
-                      'third_party/upb/upb/message/internal/compare_unknown.h',
                       'third_party/upb/upb/message/internal/extension.c',
                       'third_party/upb/upb/message/internal/extension.h',
+                      'third_party/upb/upb/message/internal/iterator.c',
+                      'third_party/upb/upb/message/internal/iterator.h',
                       'third_party/upb/upb/message/internal/map.h',
                       'third_party/upb/upb/message/internal/map_entry.h',
                       'third_party/upb/upb/message/internal/map_sorter.h',
@@ -2409,6 +2409,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/wire/types.h',
                       'third_party/utf8_range/utf8_range.c',
                       'third_party/utf8_range/utf8_range.h',
+                      'third_party/utf8_range/utf8_range_neon.inc',
+                      'third_party/utf8_range/utf8_range_sse.inc',
                       'third_party/xxhash/xxhash.h',
                       'third_party/zlib/adler32.c',
                       'third_party/zlib/compress.c',
@@ -3572,8 +3574,8 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/message/copy.h',
                               'third_party/upb/upb/message/internal/accessors.h',
                               'third_party/upb/upb/message/internal/array.h',
-                              'third_party/upb/upb/message/internal/compare_unknown.h',
                               'third_party/upb/upb/message/internal/extension.h',
+                              'third_party/upb/upb/message/internal/iterator.h',
                               'third_party/upb/upb/message/internal/map.h',
                               'third_party/upb/upb/message/internal/map_entry.h',
                               'third_party/upb/upb/message/internal/map_sorter.h',
@@ -3661,6 +3663,8 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/wire/reader.h',
                               'third_party/upb/upb/wire/types.h',
                               'third_party/utf8_range/utf8_range.h',
+                              'third_party/utf8_range/utf8_range_neon.inc',
+                              'third_party/utf8_range/utf8_range_sse.inc',
                               'third_party/xxhash/xxhash.h',
                               'third_party/zlib/crc32.h',
                               'third_party/zlib/deflate.h',
@@ -3678,28 +3682,6 @@ Pod::Spec.new do |s|
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
   s.subspec 'CFStream-Implementation' do |ss|
     ss.dependency "#{s.name}/Implementation", version
-  end
-
-  s.subspec 'Cronet-Interface' do |ss|
-    ss.header_mappings_dir = 'include/grpc'
-    ss.source_files = 'include/grpc/grpc_cronet.h'
-  end
-
-  s.subspec 'Cronet-Implementation' do |ss|
-    ss.header_mappings_dir = '.'
-
-    ss.dependency "#{s.name}/Interface", version
-    ss.dependency "#{s.name}/Implementation", version
-    ss.dependency "#{s.name}/Privacy", version
-    ss.dependency "#{s.name}/Cronet-Interface", version
-
-    ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
-                      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.h',
-                      'src/core/ext/transport/cronet/transport/cronet_status.cc',
-                      'src/core/ext/transport/cronet/transport/cronet_status.h',
-                      'src/core/ext/transport/cronet/transport/cronet_transport.cc',
-                      'src/core/ext/transport/cronet/transport/cronet_transport.h',
-                      'third_party/objective_c/Cronet/bidirectional_stream_c.h'
   end
 
   # patch include of openssl to openssl_grpc

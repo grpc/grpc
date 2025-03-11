@@ -67,9 +67,7 @@
 
 // IWYU pragma: no_include <ratio>
 
-// TODO(eryu): remove this GRPC_CFSTREAM condition when the CFEngine is ready.
-// The posix poller currently crashes iOS.
-#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM) && \
+#if defined(GRPC_POSIX_SOCKET_TCP) && \
     !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
 #define GRPC_PLATFORM_SUPPORTS_POSIX_POLLING true
 #else

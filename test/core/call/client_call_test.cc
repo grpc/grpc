@@ -248,4 +248,13 @@ CLIENT_CALL_TEST(NegativeDeadline) {
   WaitForAllPendingWork();
 }
 
+TEST(ClientCallTest, NoOpRegression1) {
+  NoOp(ParseTestProto(
+      R"pb(event_engine_actions {
+             assign_ports: 4294967285
+             connections { write_size: 1 write_size: 0 write_size: 2147483647 }
+           }
+      )pb"));
+}
+
 }  // namespace grpc_core

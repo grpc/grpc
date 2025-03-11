@@ -32,10 +32,7 @@
                   Identifier = "PerfTestsCFStreamSSL">
                </Test>
                <Test
-                  Identifier = "PerfTestsCronet">
-               </Test>
-               <Test
-                  Identifier = "PerfTestsNoCFStreamCleartext">
+                  Identifier="PerfTestsNoCFStreamCleartext">
                </Test>
                <Test
                   Identifier = "PerfTestsNoCFStreamSSL/testPingPongRPCWithFlowControl">

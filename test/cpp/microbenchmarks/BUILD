@@ -313,6 +313,9 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_opencensus_plugin",
     srcs = ["bm_opencensus_plugin.cc"],
+    tags = [
+        "grpc:fails-internally",
+    ],
     deps = [
         ":helpers_secure",
         "//:grpc_opencensus_plugin",

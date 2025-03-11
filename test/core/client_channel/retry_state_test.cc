@@ -180,7 +180,7 @@ auto SomeServerThrottleData() {
   return fuzztest::Map(
       [](uintptr_t max_milli_tokens, uintptr_t milli_token_ratio) {
         return MakeRefCounted<internal::ServerRetryThrottleData>(
-            max_milli_tokens, milli_token_ratio, nullptr);
+            max_milli_tokens, milli_token_ratio, max_milli_tokens);
       },
       Arbitrary<uintptr_t>(), Arbitrary<uintptr_t>());
 }

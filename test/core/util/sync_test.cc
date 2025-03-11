@@ -248,7 +248,7 @@ static void test(const char* name, void (*body)(void* m),
   gpr_timespec deadline = gpr_time_add(
       start, gpr_time_from_micros(static_cast<int64_t>(timeout_s) * 1000000,
                                   GPR_TIMESPAN));
-  fprintf(stderr, "%s:", name);
+  fprintf(stderr, "%s-", name);
   fflush(stderr);
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
     fprintf(stderr, " %ld", static_cast<long>(iterations));
@@ -464,8 +464,8 @@ TEST(SyncTest, MainTest) {
   test("timedcv", &inc_with_1ms_delay, nullptr, 1, 1);
   test("queue", &many_producers, &consumer, 10, 1);
   test("stats_counter", &statsinc, nullptr, 1, 1);
-  test("refcount by 1", &refinc, &refcheck, 1, 1);
-  test("refcount by 3", &refinc, &refcheck, 1, 3);  // incr_step of 3 is an
+  test("refcount-by-1", &refinc, &refcheck, 1, 1);
+  test("refcount-by-3", &refinc, &refcheck, 1, 3);  // incr_step of 3 is an
                                                     // arbitrary choice. Any
                                                     // number > 1 is okay here
   test("timedevent", &inc_with_1ms_delay_event, nullptr, 1, 1);

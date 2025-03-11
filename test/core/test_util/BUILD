@@ -32,7 +32,7 @@ grpc_cc_library(
 
 TEST_UTILS_THAT_USE_GRPC_H_SOURCES = [
     "port.cc",
-    "port_isolated_runtime_environment.cc",
+    "port_ci.cc",
     "port_server_client.cc",
     "reconnect_server.cc",
     "test_config.cc",
@@ -550,6 +550,15 @@ grpc_cc_library(
     deps = [
         "//:grpc",
     ],
+)
+
+grpc_cc_library(
+    name = "fail_first_call_filter",
+    testonly = True,
+    srcs = ["fail_first_call_filter.cc"],
+    hdrs = ["fail_first_call_filter.h"],
+    external_deps = [],
+    deps = ["//:grpc"],
 )
 
 grpc_cc_library(

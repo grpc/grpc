@@ -772,8 +772,8 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
   balancer_->ads_service()->UnsetResource(kEdsTypeUrl, kDefaultEdsServiceName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "no children in weighted_target policy: EDS resource eds_service_name: "
-      "does not exist \\(node ID:xds_end2end_test\\)",
+      "no children in weighted_target policy \\(EDS resource eds_service_name: "
+      "does not exist \\(node ID:xds_end2end_test\\)\\)",
       RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(

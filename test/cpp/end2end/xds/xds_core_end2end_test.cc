@@ -518,8 +518,8 @@ TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "no children in weighted_target policy: EDS resource "
-      "eds_service_name: does not exist \\(node ID:xds_end2end_test\\)",
+      "no children in weighted_target policy \\(EDS resource "
+      "eds_service_name: does not exist \\(node ID:xds_end2end_test\\)\\)",
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -528,8 +528,8 @@ TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
   // by default.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "no children in weighted_target policy: EDS resource "
-      "eds_service_name: does not exist \\(node ID:xds_end2end_test\\)",
+      "no children in weighted_target policy \\(EDS resource "
+      "eds_service_name: does not exist \\(node ID:xds_end2end_test\\)\\)",
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -556,9 +556,9 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   // May need to wait a bit for the RDS change to propagate to the client.
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "no children in weighted_target policy: "
+      "no children in weighted_target policy \\("
       "EDS resource eds_service_name_does_not_exist: "
-      "does not exist \\(node ID:xds_end2end_test\\)",
+      "does not exist \\(node ID:xds_end2end_test\\)\\)",
       /*timeout_ms=*/30000,
       RpcOptions().set_rpc_method(METHOD_ECHO1).set_timeout_ms(4000));
 }
@@ -1011,10 +1011,10 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(
       status.error_message(),
-      "no children in weighted_target policy: EDS resource "
+      "no children in weighted_target policy (EDS resource "
       "xdstp://xds.unknown.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "edsservice_name: authority \"xds.unknown.com\" not "
-      "present in bootstrap config (node ID:xds_end2end_test)");
+      "present in bootstrap config (node ID:xds_end2end_test))");
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 

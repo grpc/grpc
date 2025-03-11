@@ -804,7 +804,6 @@ doc/workarounds.md \
 doc/xds-test-descriptions.md \
 src/objective-c/GRPCClient/GRPCCall+ChannelArg.h \
 src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h \
-src/objective-c/GRPCClient/GRPCCall+Cronet.h \
 src/objective-c/GRPCClient/GRPCCall+GID.h \
 src/objective-c/GRPCClient/GRPCCall+Interceptor.h \
 src/objective-c/GRPCClient/GRPCCall+OAuth2.h \
@@ -827,8 +826,6 @@ src/objective-c/GRPCClient/private/GRPCCore/GRPCChannelFactory.h \
 src/objective-c/GRPCClient/private/GRPCCore/GRPCChannelPool+Test.h \
 src/objective-c/GRPCClient/private/GRPCCore/GRPCChannelPool.h \
 src/objective-c/GRPCClient/private/GRPCCore/GRPCCompletionQueue.h \
-src/objective-c/GRPCClient/private/GRPCCore/GRPCCoreCronet/GRPCCoreCronetFactory.h \
-src/objective-c/GRPCClient/private/GRPCCore/GRPCCoreCronet/GRPCCronetChannelFactory.h \
 src/objective-c/GRPCClient/private/GRPCCore/GRPCCoreFactory.h \
 src/objective-c/GRPCClient/private/GRPCCore/GRPCHost.h \
 src/objective-c/GRPCClient/private/GRPCCore/GRPCInsecureChannelFactory.h \

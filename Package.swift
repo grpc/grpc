@@ -2164,8 +2164,6 @@ let package = Package(
         "third_party/upb/upb/message/copy.h",
         "third_party/upb/upb/message/internal/accessors.h",
         "third_party/upb/upb/message/internal/array.h",
-        "third_party/upb/upb/message/internal/compare_unknown.c",
-        "third_party/upb/upb/message/internal/compare_unknown.h",
         "third_party/upb/upb/message/internal/extension.c",
         "third_party/upb/upb/message/internal/extension.h",
         "third_party/upb/upb/message/internal/map.h",
@@ -2263,14 +2261,10 @@ let package = Package(
         "third_party/upb/upb/text/internal/encode.c",
         "third_party/upb/upb/text/internal/encode.h",
         "third_party/upb/upb/text/options.h",
-        "third_party/upb/upb/wire/eps_copy_input_stream.c",
-        "third_party/upb/upb/wire/eps_copy_input_stream.h",
-        "third_party/upb/upb/wire/internal/reader.h",
-        "third_party/upb/upb/wire/reader.c",
-        "third_party/upb/upb/wire/reader.h",
-        "third_party/upb/upb/wire/types.h",
         "third_party/utf8_range/utf8_range.c",
         "third_party/utf8_range/utf8_range.h",
+        "third_party/utf8_range/utf8_range_neon.inc",
+        "third_party/utf8_range/utf8_range_sse.inc",
         "third_party/xxhash/xxhash.h",
       ],
       resources: [
@@ -2303,7 +2297,6 @@ let package = Package(
       path: basePath,
       exclude: [
         "examples/",
-        "src/cpp/client/cronet_credentials.cc",
         "src/cpp/client/channel_test_peer.cc",
         "src/cpp/common/alts_util.cc",
         "src/cpp/common/alts_context.cc",
@@ -2343,5 +2336,5 @@ let package = Package(
     ),
   ],
   cLanguageStandard: .gnu11,
-  cxxLanguageStandard: .cxx14
+  cxxLanguageStandard: .cxx17
 )

@@ -56,7 +56,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["helloworld/HelloWorld/Info.plist"],
-    minimum_os_version = "11.0",
+    minimum_os_version = "15.0",
     tags = ["manual"],
     deps = [":HelloWorld-lib"],
 )
@@ -79,7 +79,7 @@ macos_application(
     bundle_id = "io.grpc.HelloWorld",
     entitlements = "helloworld_macos/HelloWorld/Helloworld.entitlements",
     infoplists = ["helloworld_macos/HelloWorld/Info.plist"],
-    minimum_os_version = "10.14",
+    minimum_os_version = "11.0",
     tags = ["manual"],
     deps = [":HelloWorldMacos-lib"],
 )
@@ -112,7 +112,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["route_guide/Misc/Info.plist"],
-    minimum_os_version = "11.0",
+    minimum_os_version = "15.0",
     tags = ["manual"],
     deps = [":RouteGuideClient-lib"],
 )

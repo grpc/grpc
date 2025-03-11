@@ -1238,6 +1238,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "inter_activity_mutex",
+    hdrs = [
+        "lib/promise/inter_activity_mutex.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log",
+    ],
+    deps = [
+        "activity",
+        "dump_args",
+        "poll",
+        "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "inter_activity_pipe",
     hdrs = [
         "lib/promise/inter_activity_pipe.h",
@@ -6910,6 +6927,9 @@ grpc_cc_library(
         "opencensus-stats",
         "opencensus-tags",
     ],
+    tags = [
+        "grpc:broken-internally",
+    ],
     deps = [
         "arena_promise",
         "call_finalization",
@@ -7501,14 +7521,37 @@ grpc_cc_library(
         "ext/transport/chttp2/transport/http2_client_transport.h",
     ],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/log",
         "absl/log:check",
+        "absl/status",
+        "absl/status:statusor",
     ],
     deps = [
+        "1999",
+        "arena",
+        "call_spine",
+        "channel_args",
         "grpc_promise_endpoint",
+        "http2_settings",
+        "http2_transport",
+        "loop",
+        "map",
+        "mpsc",
+        "sync",
+        ":match_promise",
+        ":poll",
+        ":slice",
+        ":slice_buffer",
+        ":try_seq",
+        "//:chttp2_frame",
+        "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_trace",
         "//:hpack_encoder",
         "//:hpack_parser",
+        "//:promise",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -7521,14 +7564,79 @@ grpc_cc_library(
         "ext/transport/chttp2/transport/http2_server_transport.h",
     ],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/log",
         "absl/log:check",
+        "absl/status",
+        "absl/status:statusor",
     ],
     deps = [
+        "1999",
+        "arena",
+        "call_destination",
+        "call_spine",
+        "channel_args",
         "grpc_promise_endpoint",
+        "http2_settings",
+        "loop",
+        "map",
+        "mpsc",
+        "ref_counted",
+        "sync",
+        ":match_promise",
+        ":poll",
+        ":slice",
+        ":slice_buffer",
+        ":try_seq",
+        "//:chttp2_frame",
+        "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_trace",
         "//:hpack_encoder",
         "//:hpack_parser",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_transport",
+    srcs = [
+        "ext/transport/chttp2/transport/http2_transport.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_transport.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "1999",
+        "arena",
+        "call_spine",
+        "channel_args",
+        "grpc_promise_endpoint",
+        "http2_settings",
+        "loop",
+        "map",
+        "mpsc",
+        "sync",
+        ":match_promise",
+        ":poll",
+        ":slice",
+        ":slice_buffer",
+        ":try_seq",
+        "//:chttp2_frame",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+        "//:promise",
+        "//:ref_counted_ptr",
     ],
 )
 

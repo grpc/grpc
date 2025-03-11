@@ -2121,7 +2121,7 @@ libs:
   - test/core/event_engine/test_init.cc
   - test/core/test_util/build.cc
   - test/core/test_util/port.cc
-  - test/core/test_util/port_isolated_runtime_environment.cc
+  - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
   - test/core/test_util/reconnect_server.cc
   - test/core/test_util/stack_tracer.cc
@@ -2151,7 +2151,7 @@ libs:
   - test/core/event_engine/test_init.cc
   - test/core/test_util/build.cc
   - test/core/test_util/port.cc
-  - test/core/test_util/port_isolated_runtime_environment.cc
+  - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
   - test/core/test_util/reconnect_server.cc
   - test/core/test_util/stack_tracer.cc
@@ -2613,6 +2613,7 @@ libs:
   - src/core/load_balancing/oob_backend_metric_internal.h
   - src/core/load_balancing/outlier_detection/outlier_detection.h
   - src/core/load_balancing/pick_first/pick_first.h
+  - src/core/load_balancing/ring_hash/ring_hash.h
   - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
@@ -2704,7 +2705,9 @@ libs:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/util/xxhash_inline.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/xxhash/xxhash.h
   src:
   - src/core/call/request_buffer.cc
   - src/core/call/security_context.cc
@@ -3040,6 +3043,7 @@ libs:
   - src/core/load_balancing/outlier_detection/outlier_detection.cc
   - src/core/load_balancing/pick_first/pick_first.cc
   - src/core/load_balancing/priority/priority.cc
+  - src/core/load_balancing/ring_hash/ring_hash.cc
   - src/core/load_balancing/rls/rls.cc
   - src/core/load_balancing/round_robin/round_robin.cc
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
@@ -3379,7 +3383,6 @@ libs:
   - third_party/upb/upb/message/compat.h
   - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/message/internal/array.h
-  - third_party/upb/upb/message/internal/compare_unknown.h
   - third_party/upb/upb/message/internal/extension.h
   - third_party/upb/upb/message/internal/map.h
   - third_party/upb/upb/message/internal/map_entry.h
@@ -3406,16 +3409,11 @@ libs:
   - third_party/upb/upb/mini_table/internal/sub.h
   - third_party/upb/upb/mini_table/message.h
   - third_party/upb/upb/mini_table/sub.h
-  - third_party/upb/upb/wire/eps_copy_input_stream.h
-  - third_party/upb/upb/wire/internal/reader.h
-  - third_party/upb/upb/wire/reader.h
-  - third_party/upb/upb/wire/types.h
   src:
   - third_party/upb/upb/hash/common.c
   - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/message/array.c
   - third_party/upb/upb/message/compat.c
-  - third_party/upb/upb/message/internal/compare_unknown.c
   - third_party/upb/upb/message/internal/extension.c
   - third_party/upb/upb/message/internal/message.c
   - third_party/upb/upb/message/map.c
@@ -3424,8 +3422,6 @@ libs:
   - third_party/upb/upb/mini_table/extension_registry.c
   - third_party/upb/upb/mini_table/internal/message.c
   - third_party/upb/upb/mini_table/message.c
-  - third_party/upb/upb/wire/eps_copy_input_stream.c
-  - third_party/upb/upb/wire/reader.c
   deps:
   - upb_base_lib
   - upb_mem_lib
@@ -3560,15 +3556,23 @@ libs:
   language: c
   public_headers: []
   headers:
+  - third_party/upb/upb/message/internal/iterator.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
+  - third_party/upb/upb/message/internal/iterator.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - utf8_range_lib
   - upb_message_lib
@@ -3578,6 +3582,8 @@ libs:
   public_headers: []
   headers:
   - third_party/utf8_range/utf8_range.h
+  - third_party/utf8_range/utf8_range_neon.inc
+  - third_party/utf8_range/utf8_range_sse.inc
   src:
   - third_party/utf8_range/utf8_range.c
   deps: []
@@ -5425,6 +5431,7 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/status_flag.h
   - src/core/util/bitset.h
   - src/core/util/glob.h
@@ -8600,6 +8607,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
@@ -8637,6 +8645,7 @@ targets:
   - test/core/end2end/tests/no_logging.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
@@ -8710,6 +8719,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
@@ -8835,6 +8845,7 @@ targets:
   - test/core/end2end/tests/write_buffering_at_end.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
@@ -8908,6 +8919,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
@@ -8945,6 +8957,7 @@ targets:
   - test/core/end2end/tests/no_logging.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
@@ -9014,6 +9027,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
@@ -9051,6 +9065,7 @@ targets:
   - test/core/end2end/tests/no_logging.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
@@ -9120,6 +9135,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
@@ -9245,6 +9261,7 @@ targets:
   - test/core/end2end/tests/write_buffering_at_end.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
@@ -9314,6 +9331,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
@@ -9439,6 +9457,7 @@ targets:
   - test/core/end2end/tests/write_buffering_at_end.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
@@ -9508,6 +9527,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
@@ -9545,6 +9565,7 @@ targets:
   - test/core/end2end/tests/no_logging.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
@@ -9614,6 +9635,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
@@ -9739,6 +9761,7 @@ targets:
   - test/core/end2end/tests/write_buffering_at_end.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
@@ -9808,6 +9831,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
@@ -9845,6 +9869,7 @@ targets:
   - test/core/end2end/tests/no_logging.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
@@ -9914,6 +9939,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
@@ -10039,6 +10065,7 @@ targets:
   - test/core/end2end/tests/write_buffering_at_end.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
@@ -11850,6 +11877,27 @@ targets:
   - src/compiler/ruby_plugin.cc
   deps:
   - grpc_plugin_support
+- name: grpc_text_map_carrier_test
+  gtest: true
+  build: plugin_test
+  language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
+  src:
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/cpp/ext/otel/grpc_text_map_carrier_test.cc
+  deps:
+  - gtest
+  - grpc++
+  - opentelemetry-cpp::api
+  - grpc_test_util
 - name: grpc_tls_certificate_distributor_test
   gtest: true
   build: test
@@ -12041,6 +12089,27 @@ targets:
   platforms:
   - linux
   - posix
+- name: grpc_trace_bin_text_map_propagator_test
+  gtest: true
+  build: plugin_test
+  language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
+  src:
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/cpp/ext/otel/grpc_trace_bin_text_map_propagator_test.cc
+  deps:
+  - gtest
+  - grpc++
+  - opentelemetry-cpp::api
+  - grpc_test_util
 - name: grpclb_api_test
   gtest: true
   build: test
@@ -12432,7 +12501,14 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
+  - src/core/ext/transport/chttp2/transport/http2_transport.h
+  - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/grpc_profiler.h
@@ -12444,9 +12520,13 @@ targets:
   - test/core/test_util/tracer_util.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
+  - test/core/transport/util/transport_test.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
+  - src/core/ext/transport/chttp2/transport/http2_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
@@ -12459,7 +12539,12 @@ targets:
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
   uses_polling: false
 - name: http2_server_transport_test
   gtest: true
@@ -12467,7 +12552,12 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chttp2/transport/http2_server_transport.h
+  - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/grpc_profiler.h
@@ -12477,10 +12567,14 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
+  - test/core/transport/util/transport_test.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
@@ -12493,7 +12587,12 @@ targets:
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
   uses_polling: false
 - name: http2_settings_test
   gtest: true
@@ -13880,6 +13979,7 @@ targets:
   - src/cpp/ext/otel/otel_client_call_tracer.h
   - src/cpp/ext/otel/otel_plugin.h
   - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
   - test/core/test_util/fake_stats_plugin.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/ext/otel/otel_test_library.h
@@ -13903,6 +14003,45 @@ targets:
   - gtest
   - opentelemetry-cpp::api
   - opentelemetry-cpp::metrics
+  - grpc++_test_util
+- name: otel_tracing_test
+  gtest: true
+  build: plugin_test
+  language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
+  - test/core/test_util/fail_first_call_filter.h
+  - test/core/test_util/fake_stats_plugin.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/ext/otel/otel_test_library.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/core/test_util/fail_first_call_filter.cc
+  - test/core/test_util/fake_stats_plugin.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/ext/otel/otel_test_library.cc
+  - test/cpp/ext/otel/otel_tracing_test.cc
+  deps:
+  - gtest
+  - opentelemetry-cpp::api
+  - opentelemetry-cpp::in_memory_span_exporter
+  - opentelemetry-cpp::metrics
+  - opentelemetry-cpp::trace
   - grpc++_test_util
 - name: out_of_bounds_bad_client_test
   gtest: true
@@ -15772,8 +15911,8 @@ targets:
   - test/cpp/server/server_request_call_test.cc
   deps:
   - gtest
-  - grpc++_unsecure
-  - grpc_test_util_unsecure
+  - grpc++
+  - grpc_test_util
   platforms:
   - linux
   - posix

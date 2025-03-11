@@ -121,5 +121,6 @@ def generate_resolver_component_tests():
                 "requires-net:ipv4",
                 "requires-net:loopback",
                 "resolver_component_tests_runner_invoker",
+                "grpc:broken-internally",
             ],
         )

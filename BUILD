@@ -596,7 +596,6 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_lb_policy_xds_cluster_manager",
     "//src/core:grpc_lb_policy_xds_override_host",
     "//src/core:grpc_lb_policy_xds_wrr_locality",
-    "//src/core:grpc_lb_policy_ring_hash",
     "//src/core:grpc_resolver_xds",
     "//src/core:grpc_resolver_c2p",
     "//src/core:grpc_xds_server_config_fetcher",
@@ -820,6 +819,7 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_outlier_detection",
         "//src/core:grpc_lb_policy_pick_first",
         "//src/core:grpc_lb_policy_priority",
+        "//src/core:grpc_lb_policy_ring_hash",
         "//src/core:grpc_lb_policy_round_robin",
         "//src/core:grpc_lb_policy_weighted_round_robin",
         "//src/core:grpc_lb_policy_weighted_target",
@@ -930,32 +930,6 @@ grpc_cc_library(
         "grpc++_base",
         "//src/core:gpr_atm",
         "//src/core:slice",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_cronet_hdrs",
-    hdrs = [
-        "include/grpc/grpc_cronet.h",
-    ],
-    deps = [
-        "gpr_public_hdrs",
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc++_cronet_credentials",
-    srcs = [
-        "src/cpp/client/cronet_credentials.cc",
-    ],
-    hdrs = [
-        "include/grpcpp/security/cronet_credentials.h",
-    ],
-    deps = [
-        "grpc++_base",
-        "grpc_cronet_hdrs",
-        "grpc_public_hdrs",
     ],
 )
 
@@ -1991,6 +1965,9 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h",
     ],
+    tags = [
+        "grpc:broken-internally",
+    ],
     deps = [
         "gpr_platform",
         "grpc++",
@@ -2010,7 +1987,11 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/server_load_reporting.h",
     ],
-    tags = ["nofixdeps"],
+    tags = [
+        "nofixdeps",
+        # uses OSS specific libraries
+        "grpc:broken-internally",
+    ],
     deps = [
         "channel_arg_names",
         "gpr",
@@ -2038,7 +2019,10 @@ grpc_cc_library(
         "absl/memory",
         "protobuf_headers",
     ],
-    tags = ["nofixdeps"],
+    tags = [
+        "grpc:broken-internally",
+        "nofixdeps",
+    ],
     deps = [
         ":gpr",
         ":grpc++",
@@ -2084,7 +2068,10 @@ grpc_cc_library(
         "opencensus-tags",
         "protobuf_headers",
     ],
-    tags = ["nofixdeps"],
+    tags = [
+        "grpc:broken-internally",
+        "nofixdeps",
+    ],
     deps = [
         "gpr",
         "lb_get_cpu_stats",
@@ -2767,7 +2754,12 @@ grpc_cc_library(
     hdrs = [
         "include/grpcpp/ext/gcp_observability.h",
     ],
-    tags = ["nofixdeps"],
+    tags = [
+        # This can be removed once we can add top-level BUILD file targets without them being
+        # included in Core Components.
+        "grpc:broken-internally",
+        "nofixdeps",
+    ],
     visibility = ["@grpc:grpcpp_gcp_observability"],
     deps = [
         "//src/cpp/ext/gcp:observability",
@@ -2780,7 +2772,12 @@ grpc_cc_library(
     hdrs = [
         "include/grpcpp/ext/csm_observability.h",
     ],
-    tags = ["nofixdeps"],
+    tags = [
+        # This can be removed once we can add top-level BUILD file targets without them being
+        # included in Core Components.
+        "grpc:broken-internally",
+        "nofixdeps",
+    ],
     deps = [
         ":grpcpp_otel_plugin",
         "//src/cpp/ext/csm:csm_observability",
@@ -2792,6 +2789,10 @@ grpc_cc_library(
     name = "grpcpp_otel_plugin",
     hdrs = [
         "include/grpcpp/ext/otel_plugin.h",
+    ],
+    tags = [
+        # uses OSS specific libraries
+        "grpc:broken-internally",
     ],
     deps = [
         ":grpc++",
