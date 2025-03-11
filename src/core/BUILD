@@ -691,6 +691,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "arena",
+        "check_class_size",
         "construct_destruct",
         "context",
         "event_engine_context",
@@ -7526,6 +7527,7 @@ grpc_cc_library(
         "arena",
         "call_spine",
         "channel_args",
+        "check_class_size",
         "grpc_promise_endpoint",
         "http2_settings",
         "http2_transport",
@@ -7564,6 +7566,7 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
+        "check_class_size",
         "grpc_promise_endpoint",
         "//:grpc_base",
         "//:hpack_encoder",
@@ -8700,6 +8703,13 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:uri",
+    ],
+)
+
+grpc_cc_library(
+    name = "check_class_size",
+    hdrs = [
+        "core/util/check_class_size.h",
     ],
 )
 

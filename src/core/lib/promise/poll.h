@@ -26,14 +26,14 @@
 #include "absl/strings/str_join.h"
 #include "src/core/util/construct_destruct.h"
 
-#ifdef GPR_LINUX
+#if defined(GPR_LINUX) && !defined(NDEBUG) && !defined(GRPC_ASAN_ENABLED)
 // Since class size varies based on platform and compiler, we limit our
 // guardrail to only one platform.
-#define GRPC_CLASS_SIZE_BLOAT_GUARDRAIL(class_name, class_size) \
+#define GRPC_CHECK_CLASS_SIZE(class_name, class_size) \
   static_assert(sizeof(class_name) <= (class_size), "Class size too large");
-#else /* GPR_LINUX */
-#define GRPC_CLASS_SIZE_BLOAT_GUARDRAIL(class_name, class_size)
-#endif /* GPR_LINUX */
+#else
+#define GRPC_CHECK_CLASS_SIZE(class_name, class_size)
+#endif
 
 namespace grpc_core {
 

@@ -638,7 +638,7 @@ class Party : public Activity, private Wakeable {
   RefCountedPtr<Arena> arena_;
 };
 
-GRPC_CLASS_SIZE_BLOAT_GUARDRAIL(Party, 180);
+GRPC_CHECK_CLASS_SIZE(Party, 180);
 
 template <>
 struct ContextSubclass<Party> {

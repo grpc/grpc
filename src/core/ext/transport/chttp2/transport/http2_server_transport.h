@@ -57,7 +57,7 @@ class Http2ServerTransport final : public ServerTransport {
   void AbortWithError();
 };
 
-GRPC_CLASS_SIZE_BLOAT_GUARDRAIL(Http2ServerTransport, 240);
+GRPC_CHECK_CLASS_SIZE(Http2ServerTransport, 240);
 
 }  // namespace http2
 }  // namespace grpc_core

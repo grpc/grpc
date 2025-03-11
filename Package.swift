@@ -179,6 +179,7 @@ let package = Package(
         "src/core/config/core_configuration.h",
         "src/core/config/load_config.cc",
         "src/core/config/load_config.h",
+        "src/core/core/util/check_class_size.h",
         "src/core/credentials/call/call_credentials.h",
         "src/core/credentials/call/call_creds_util.cc",
         "src/core/credentials/call/call_creds_util.h",

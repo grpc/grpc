@@ -215,6 +215,7 @@ libs:
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/config/core_configuration.h
+  - src/core/core/util/check_class_size.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_util.h
   - src/core/credentials/call/composite/composite_call_credentials.h
@@ -2240,6 +2241,7 @@ libs:
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/config/core_configuration.h
+  - src/core/core/util/check_class_size.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_util.h
   - src/core/credentials/call/composite/composite_call_credentials.h
@@ -4375,6 +4377,7 @@ libs:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/config/core_configuration.h
+  - src/core/core/util/check_class_size.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_util.h
   - src/core/credentials/call/composite/composite_call_credentials.h
@@ -6404,6 +6407,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/config/core_configuration.h
+  - src/core/core/util/check_class_size.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
@@ -10545,6 +10549,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/config/core_configuration.h
+  - src/core/core/util/check_class_size.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
@@ -15094,6 +15099,7 @@ targets:
   language: c++
   headers:
   - src/core/call/request_buffer.h
+  - src/core/core/util/check_class_size.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h

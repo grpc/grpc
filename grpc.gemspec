@@ -185,6 +185,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/config/core_configuration.h )
   s.files += %w( src/core/config/load_config.cc )
   s.files += %w( src/core/config/load_config.h )
+  s.files += %w( src/core/core/util/check_class_size.h )
   s.files += %w( src/core/credentials/call/call_credentials.h )
   s.files += %w( src/core/credentials/call/call_creds_util.cc )
   s.files += %w( src/core/credentials/call/call_creds_util.h )
