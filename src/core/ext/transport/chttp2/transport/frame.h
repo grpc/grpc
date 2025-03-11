@@ -131,16 +131,6 @@ struct Http2SettingsFrame {
   }
 };
 
-// PING frame
-struct Http2PingFrame {
-  bool ack = false;
-  uint64_t opaque = 0;
-
-  bool operator==(const Http2PingFrame& other) const {
-    return ack == other.ack && opaque == other.opaque;
-  }
-};
-
 // GOAWAY frame
 struct Http2GoawayFrame {
   uint32_t last_stream_id = 0;
