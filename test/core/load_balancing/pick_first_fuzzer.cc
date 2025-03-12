@@ -258,33 +258,51 @@ class Fuzzer {
       class WatcherWrapper : public AsyncConnectivityStateWatcherInterface {
        public:
         WatcherWrapper(
+            FakeSubchannel* subchannel,
             std::shared_ptr<WorkSerializer> work_serializer,
             std::unique_ptr<
                 SubchannelInterface::ConnectivityStateWatcherInterface>
                 watcher)
             : AsyncConnectivityStateWatcherInterface(
                   std::move(work_serializer)),
+              subchannel_(subchannel),
               watcher_(std::move(watcher)) {}
 
         WatcherWrapper(
+            FakeSubchannel* subchannel,
             std::shared_ptr<WorkSerializer> work_serializer,
             std::shared_ptr<
                 SubchannelInterface::ConnectivityStateWatcherInterface>
                 watcher)
             : AsyncConnectivityStateWatcherInterface(
                   std::move(work_serializer)),
+              subchannel_(subchannel),
               watcher_(std::move(watcher)) {}
+
+        ~WatcherWrapper() override {
+          if (current_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+            --subchannel_->state_->fuzzer_->num_subchannels_transient_failure_;
+          }
+        }
 
         void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                        const absl::Status& status) override {
           LOG(INFO) << "notifying watcher: state="
                     << ConnectivityStateName(new_state) << " status=" << status;
+          if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+            ++subchannel_->state_->fuzzer_->num_subchannels_transient_failure_;
+          } else if (current_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+            --subchannel_->state_->fuzzer_->num_subchannels_transient_failure_;
+          }
+          current_state_ = new_state;
           watcher_->OnConnectivityStateChange(new_state, status);
         }
 
        private:
+        FakeSubchannel* subchannel_;
         std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher_;
+        std::optional<grpc_connectivity_state> current_state_;
       };
 
       std::string address() const override { return state_->address_; }
@@ -295,7 +313,7 @@ class Fuzzer {
               watcher) override {
         auto* watcher_ptr = watcher.get();
         auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-            state_->work_serializer(), std::move(watcher));
+            this, state_->work_serializer(), std::move(watcher));
         watcher_map_[watcher_ptr] = watcher_wrapper.get();
         state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                           std::move(watcher_wrapper));
@@ -324,7 +342,7 @@ class Fuzzer {
           auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();
           auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-              state_->work_serializer(), std::move(connectivity_watcher));
+              this, state_->work_serializer(), std::move(connectivity_watcher));
           health_watcher_wrapper_ = watcher_wrapper.get();
           state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                             std::move(watcher_wrapper));
@@ -390,11 +408,6 @@ class Fuzzer {
       if (state_tracker_.state() == GRPC_CHANNEL_CONNECTING) {
         ConnectionAttemptComplete();
       }
-      if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        ++fuzzer_->num_subchannels_transient_failure_;
-      } else if (state_tracker_.state() == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        --fuzzer_->num_subchannels_transient_failure_;
-      }
       // Updating the state in the state tracker will enqueue
       // notifications to watchers on the WorkSerializer.
       ExecCtx exec_ctx;
@@ -416,9 +429,6 @@ class Fuzzer {
                                 "all subchannels destroyed");
         ConnectionAttemptComplete();
         --fuzzer_->num_subchannels_;
-        if (state_tracker_.state() == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-          --fuzzer_->num_subchannels_transient_failure_;
-        }
       }
     }
 
@@ -874,6 +884,40 @@ TEST(PickFirstFuzzer, AllSubchannelsInTransientFailure) {
       }
     }
     actions { tick { ms: 10 } }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, SubchannelGoesBackToIdleButNotificationPending) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy { } }
+    actions {
+      subchannel_connectivity_notification {
+        address {
+          uri: "ipv4:127.0.0.1:1024"
+        }
+        state: TRANSIENT_FAILURE
+      }
+    }
+    actions {
+      update {
+        endpoint_list {
+          endpoints {
+            addresses {
+              uri: "ipv4:127.0.0.1:1024"
+            }
+          }
+        }
+      }
+    }
+    actions { tick { ms: 10 } }
+    actions {
+      subchannel_connectivity_notification {
+        address {
+          uri: "ipv4:127.0.0.1:1024"
+        }
+        state: IDLE
+      }
+    }
   )pb"));
 }
 
