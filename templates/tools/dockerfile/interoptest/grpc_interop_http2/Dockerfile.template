@@ -17,6 +17,7 @@
   FROM golang:latest
   
   <%include file="../../go_path.include"/>
+  <%include file="../../git_avoid_dubious_ownership_error.include"/>
 
   # Dependencies to run http2_test_server.py
   RUN apt-get update && apt-get install -y python3-all-dev python3-pip
@@ -28,4 +29,3 @@
 
   # Define the default command.
   CMD ["bash"]
-  

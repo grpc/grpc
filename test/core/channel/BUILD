@@ -88,34 +88,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "status_util_test",
-    srcs = ["status_util_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:grpc",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "call_finalization_test",
-    srcs = ["call_finalization_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/promise:test_context",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "server_call_tracer_factory_test",
     srcs = ["server_call_tracer_factory_test.cc"],
     external_deps = [

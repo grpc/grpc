@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 
 #include <grpc/support/port_platform.h>
 #include <string.h>
