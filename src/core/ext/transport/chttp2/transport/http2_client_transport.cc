@@ -28,6 +28,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -40,7 +41,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -178,12 +178,14 @@ auto Http2ClientTransport::OnReadLoopEnded() {
 
 auto Http2ClientTransport::WriteFromQueue() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Factory";
-  return []() -> Poll<absl::Status> {
-    // TODO(tjagtap) : [PH2][P1] : Implement this.
-    // Read from the mpsc queue and write it to endpoint
-    HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
-    return Pending{};
-  };
+  return TrySeq(outgoing_frames_.NextBatch(),
+                [&endpoint = endpoint_](std::vector<Http2Frame> frames) {
+                  SliceBuffer output_buf;
+                  Serialize(absl::Span<Http2Frame>(frames), output_buf);
+                  HTTP2_CLIENT_DLOG
+                      << "Http2ClientTransport WriteFromQueue Promise";
+                  return endpoint.Write(std::move(output_buf));
+                });
 }
 
 auto Http2ClientTransport::WriteLoop() {

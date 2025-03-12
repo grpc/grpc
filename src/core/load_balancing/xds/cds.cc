@@ -542,16 +542,9 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
           cluster_resource.type);
   // Determine what xDS LB policy to use.
   Json xds_lb_policy;
-  if (is_logical_dns) {
-    xds_lb_policy = Json::FromArray({
-        Json::FromObject({
-            {"pick_first", Json::FromObject({})},
-        }),
-    });
-  }
-  // TODO(roth): Remove this "else if" block after the 1.63 release.
-  else if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
-           aggregate_cluster_resource != nullptr) {
+  // TODO(roth): Remove this "if" condition after the 1.63 release.
+  if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
+      aggregate_cluster_resource != nullptr) {
     xds_lb_policy =
         Json::FromArray(aggregate_cluster_resource->lb_policy_config);
   } else {
