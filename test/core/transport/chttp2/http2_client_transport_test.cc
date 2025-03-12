@@ -56,11 +56,6 @@ class Http2ClientTransportTest : public TransportTest {
 
  protected:
   Http2FrameTestHelper helper_;
-  ChannelArgs GetChannelArgs() {
-    return CoreConfiguration::Get()
-        .channel_args_preconditioning()
-        .PreconditionChannelArgs(nullptr);
-  }
 };
 
 TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
