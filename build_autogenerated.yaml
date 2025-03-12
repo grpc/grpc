@@ -1153,6 +1153,7 @@ libs:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/directory_reader.h
@@ -2656,6 +2657,7 @@ libs:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -4674,6 +4676,7 @@ libs:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -6671,6 +6674,7 @@ targets:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -10812,6 +10816,7 @@ targets:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -15181,6 +15186,7 @@ targets:
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h

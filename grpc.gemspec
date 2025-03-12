@@ -1858,6 +1858,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/backoff.cc )
   s.files += %w( src/core/util/backoff.h )
   s.files += %w( src/core/util/bitset.h )
+  s.files += %w( src/core/util/check_class_size.h )
   s.files += %w( src/core/util/chunked_vector.h )
   s.files += %w( src/core/util/construct_destruct.h )
   s.files += %w( src/core/util/cpp_impl_of.h )

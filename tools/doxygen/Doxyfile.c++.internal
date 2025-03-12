@@ -2825,6 +2825,7 @@ src/core/util/avl.h \
 src/core/util/backoff.cc \
 src/core/util/backoff.h \
 src/core/util/bitset.h \
+src/core/util/check_class_size.h \
 src/core/util/chunked_vector.h \
 src/core/util/construct_destruct.h \
 src/core/util/cpp_impl_of.h \
