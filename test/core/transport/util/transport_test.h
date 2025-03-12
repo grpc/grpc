@@ -17,10 +17,10 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/config/core_configuration.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_spine.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
