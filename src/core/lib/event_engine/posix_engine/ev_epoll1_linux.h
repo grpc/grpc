@@ -20,6 +20,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <unordered_set>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
@@ -111,6 +112,7 @@ class Epoll1Poller : public PosixEventPoller {
   EpollSet g_epoll_set_;
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
   std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
+  std::unordered_set<EventHandle*> fork_handles_set_ ABSL_GUARDED_BY(mu_);
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_;
 };

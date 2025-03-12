@@ -212,6 +212,7 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
   pending_error_.store(false, std::memory_order_release);
   {
     grpc_core::MutexLock lock(&poller_->mu_);
+    poller_->fork_handles_set_.erase(this);
     poller_->free_epoll1_handles_list_.push_back(this);
   }
   if (on_done != nullptr) {
@@ -291,6 +292,7 @@ EventHandle* Epoll1Poller::CreateHandle(FileDescriptor fd,
       free_epoll1_handles_list_.pop_front();
       new_handle->ReInit(fd);
     }
+    fork_handles_set_.emplace(new_handle);
   }
   // Use the least significant bit of ev.data.ptr to store track_err. We expect
   // the addresses to be word aligned. We need to store track_err to avoid
@@ -417,12 +419,9 @@ Poller::WorkResult Epoll1Poller::Work(
   Events pending_events;
   bool was_kicked_ext = false;
   if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
-    LOG(INFO) << "Work 1.0";
     if (DoEpollWait(timeout) == 0) {
-      LOG(INFO) << "Work 2";
       return Poller::WorkResult::kDeadlineExceeded;
     }
-    LOG(INFO) << "Work 1.1";
   }
   {
     grpc_core::MutexLock lock(&mu_);
@@ -434,19 +433,15 @@ Poller::WorkResult Epoll1Poller::Work(
       was_kicked_ext = true;
     }
     if (pending_events.empty()) {
-      LOG(INFO) << "Work 3";
       return Poller::WorkResult::kKicked;
     }
   }
-  LOG(INFO) << "Work 1.2";
   // Run the provided callback.
   schedule_poll_again();
   // Process all pending events inline.
-  LOG(INFO) << "Work 1.3";
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
   }
-  LOG(INFO) << "Work 4";
   return was_kicked_ext ? Poller::WorkResult::kKicked : Poller::WorkResult::kOk;
 }
 
@@ -461,6 +456,12 @@ void Epoll1Poller::Kick() {
 
 void Epoll1Poller::AdvanceGeneration() {
   GetFileDescriptors().AdvanceGeneration();
+  {
+    grpc_core::MutexLock lock(&mu_);
+    for (EventHandle* handle : fork_handles_set_) {
+      handle->ShutdownHandle(absl::ResourceExhaustedError("Closed on fork"));
+    }
+  }
   g_epoll_set_ = {};
   g_epoll_set_.epfd = *GetFileDescriptors().EpollCreateAndCloexec();
   CHECK(g_epoll_set_.epfd.ready());
