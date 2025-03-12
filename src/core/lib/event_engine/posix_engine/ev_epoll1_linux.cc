@@ -27,6 +27,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "file_descriptor_collection.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/time_util.h"
@@ -248,10 +249,10 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
   CHECK(g_epoll_set_.epfd.ready());
   GRPC_TRACE_LOG(event_engine_poller, INFO)
       << "grpc epoll fd: " << g_epoll_set_.epfd;
-  CHECK(GetFileDescriptors()
-            .EpollCtlAdd(g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(),
-                         wakeup_fd_.get())
-            .ok());
+  CHECK_OK(GetFileDescriptors()
+               .EpollCtlAdd(g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(),
+                            wakeup_fd_.get())
+               .status());
   g_epoll_set_.num_events = 0;
   g_epoll_set_.cursor = 0;
 }
@@ -416,9 +417,12 @@ Poller::WorkResult Epoll1Poller::Work(
   Events pending_events;
   bool was_kicked_ext = false;
   if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
+    LOG(INFO) << "Work 1.0";
     if (DoEpollWait(timeout) == 0) {
+      LOG(INFO) << "Work 2";
       return Poller::WorkResult::kDeadlineExceeded;
     }
+    LOG(INFO) << "Work 1.1";
   }
   {
     grpc_core::MutexLock lock(&mu_);
@@ -430,15 +434,19 @@ Poller::WorkResult Epoll1Poller::Work(
       was_kicked_ext = true;
     }
     if (pending_events.empty()) {
+      LOG(INFO) << "Work 3";
       return Poller::WorkResult::kKicked;
     }
   }
+  LOG(INFO) << "Work 1.2";
   // Run the provided callback.
   schedule_poll_again();
   // Process all pending events inline.
+  LOG(INFO) << "Work 1.3";
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
   }
+  LOG(INFO) << "Work 4";
   return was_kicked_ext ? Poller::WorkResult::kKicked : Poller::WorkResult::kOk;
 }
 
@@ -449,6 +457,30 @@ void Epoll1Poller::Kick() {
   }
   was_kicked_ = true;
   CHECK(wakeup_fd_->Wakeup().ok());
+}
+
+void Epoll1Poller::AdvanceGeneration() {
+  GetFileDescriptors().AdvanceGeneration();
+  g_epoll_set_ = {};
+  g_epoll_set_.epfd = *GetFileDescriptors().EpollCreateAndCloexec();
+  CHECK(g_epoll_set_.epfd.ready());
+  GRPC_TRACE_LOG(event_engine_poller, INFO)
+      << "Post-fork grpc epoll fd: " << g_epoll_set_.epfd;
+  g_epoll_set_.num_events = 0;
+  g_epoll_set_.cursor = 0;
+}
+
+void Epoll1Poller::ResetKickState() {
+  // Wakeup fd is always recreated to ensure FD state is reset
+  FileDescriptors* fds = &GetFileDescriptors();
+  // Ok to fail in the fork child
+  fds->EpollCtlDel(g_epoll_set_.epfd, wakeup_fd_->ReadFd());
+  wakeup_fd_ = *CreateWakeupFd(fds);
+  auto status = fds->EpollCtlAdd(g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(),
+                                 wakeup_fd_.get());
+  CHECK_OK(status.status());
+  grpc_core::MutexLock lock(&mu_);
+  was_kicked_ = false;
 }
 
 std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler) {
@@ -497,6 +529,10 @@ Poller::WorkResult Epoll1Poller::Work(
 }
 
 void Epoll1Poller::Kick() { grpc_core::Crash("unimplemented"); }
+
+void Epoll1Poller::AdvanceGeneration() { grpc_core::Crash("unimplemented"); }
+
+void Epoll1Poller::ResetKickState() { grpc_core::Crash("unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.

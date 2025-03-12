@@ -50,7 +50,6 @@
 #include "absl/strings/substitute.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/wait_for_single_owner.h"
@@ -81,11 +80,6 @@ MATCHER(IsOk, "is ok") { return arg.ok(); }
 MATCHER_P(StatusIs, status, "") {
   *result_listener << "where the status is " << status;
   return arg.code() == status;
-}
-
-bool IsPollPoller() {
-  auto poller = MakeDefaultPoller(nullptr);
-  return poller != nullptr && poller->Name() == "poll";
 }
 
 class StatusListener {
@@ -199,10 +193,6 @@ class RawPosixClient {
 class PollerForkTest : public ::testing::Test {
  public:
   void SetUp() override {
-    if (!IsPollPoller()) {
-      GTEST_SKIP() << "Only poll poller is supported";
-      return;
-    }
     ee_ = GetDefaultEventEngine();
     // absl::StrSplit(grpc_core::ConfigVars::Get().PollStrategy(), ',')
     // Setup listener and establish socket connection, confirm they work
@@ -224,10 +214,6 @@ class PollerForkTest : public ::testing::Test {
   }
 
   void TearDown() override {
-    if (!IsPollPoller()) {
-      GTEST_SKIP() << "Only poll poller is supported";
-      return;
-    }
     {
       grpc_core::MutexLock lock(&mu_);
       EXPECT_THAT(endpoints_, ::testing::IsEmpty());
