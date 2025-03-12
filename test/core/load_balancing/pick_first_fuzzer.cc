@@ -132,15 +132,16 @@ class Fuzzer {
       case pick_first_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;
     }
-    // In TF state, we should always be trying to connect to at least
-    // one subchannel, if there are any.  Note that we check this only
-    // if we've received a new picker since the last update we sent to
-    // the LB policy, since the check would fail in the case where the
-    // LB policy previously had an empty address list and was sent a
-    // non-empty list but had not yet had a chance to trigger a
-    // connection attempt on any subchannels.
+    // When the LB policy is reporting TF state, we should always be trying
+    // to connect to at least one subchannel, if there are any not in state
+    // TF.  Note that we check this only if we've received a new picker since
+    // the last update we sent to the LB policy, since the check would fail
+    // in the case where the LB policy previously had an empty address list
+    // and was sent a non-empty list but had not yet had a chance to trigger
+    // a connection attempt on any subchannels.
     if (got_picker_since_last_update_ &&
-        state_ == GRPC_CHANNEL_TRANSIENT_FAILURE && num_subchannels_ > 0) {
+        state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
+        num_subchannels_ - num_subchannels_transient_failure_ > 0) {
       ASSERT_GT(num_subchannels_connecting_, 0);
     }
   }
@@ -389,6 +390,11 @@ class Fuzzer {
       if (state_tracker_.state() == GRPC_CHANNEL_CONNECTING) {
         ConnectionAttemptComplete();
       }
+      if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        ++fuzzer_->num_subchannels_transient_failure_;
+      } else if (state_tracker_.state() == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        --fuzzer_->num_subchannels_transient_failure_;
+      }
       // Updating the state in the state tracker will enqueue
       // notifications to watchers on the WorkSerializer.
       ExecCtx exec_ctx;
@@ -410,6 +416,9 @@ class Fuzzer {
                                 "all subchannels destroyed");
         ConnectionAttemptComplete();
         --fuzzer_->num_subchannels_;
+        if (state_tracker_.state() == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+          --fuzzer_->num_subchannels_transient_failure_;
+        }
       }
     }
 
@@ -766,6 +775,7 @@ class Fuzzer {
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
   uint64_t num_subchannels_ = 0;
   uint64_t num_subchannels_connecting_ = 0;
+  uint64_t num_subchannels_transient_failure_ = 0;
   uint64_t last_update_num_endpoints_ = 0;
   bool got_picker_since_last_update_ = false;
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
@@ -838,6 +848,32 @@ TEST(PickFirstFuzzer, PassesInTfWhenNotYetStartedConnecting) {
     actions {
       update { endpoint_list { endpoints { addresses { localhost_port: 1 } } } }
     }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, AllSubchannelsInTransientFailure) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy { } }
+    actions {
+      subchannel_connectivity_notification {
+        address {
+          uri: "ipv4:127.0.0.1:1024"
+        }
+        state: TRANSIENT_FAILURE
+      }
+    }
+    actions {
+      update {
+        endpoint_list {
+          endpoints {
+            addresses {
+              uri: "ipv4:127.0.0.1:1024"
+            }
+          }
+        }
+      }
+    }
+    actions { tick { ms: 10 } }
   )pb"));
 }
 
