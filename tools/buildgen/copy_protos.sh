@@ -28,7 +28,7 @@ copy_proto() {
   local DST_SUBDIR="$3"
 
   local SRC_FILE="$SRC_BASE/$SRC_SUBDIR/$PROTO_NAME.proto"
-  local DST_FILE="$DST_BASE/$DST_SUBDIR/$proto_name.proto"
+  local DST_FILE="$DST_BASE/$DST_SUBDIR/$PROTO_NAME.proto"
 
   cp "$SRC_FILE" "$DST_FILE"
   echo "Copied: $SRC_FILE -> $DST_FILE"
