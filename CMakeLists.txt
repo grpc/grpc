@@ -1521,7 +1521,9 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx http2_client_transport_test)
   endif()
-  add_dependencies(buildtests_cxx http2_server_transport_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx http2_server_transport_test)
+  endif()
   add_dependencies(buildtests_cxx http2_settings_test)
   add_dependencies(buildtests_cxx http_proxy_mapper_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -2132,8 +2134,15 @@ endif()
 
 
 add_library(grpc
+  src/core/call/call_arena_allocator.cc
+  src/core/call/call_filters.cc
+  src/core/call/call_spine.cc
+  src/core/call/call_state.cc
+  src/core/call/client_call.cc
   src/core/call/request_buffer.cc
   src/core/call/security_context.cc
+  src/core/call/server_call.cc
+  src/core/call/status_util.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -2607,7 +2616,6 @@ add_library(grpc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -2764,7 +2772,6 @@ add_library(grpc
   src/core/lib/surface/channel_create.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/connection_context.cc
@@ -2775,15 +2782,10 @@ add_library(grpc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/bdp_estimator.cc
-  src/core/lib/transport/call_arena_allocator.cc
-  src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
-  src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
@@ -3221,8 +3223,15 @@ endif()
 endif()
 
 add_library(grpc_unsecure
+  src/core/call/call_arena_allocator.cc
+  src/core/call/call_filters.cc
+  src/core/call/call_spine.cc
+  src/core/call/call_state.cc
+  src/core/call/client_call.cc
   src/core/call/request_buffer.cc
   src/core/call/security_context.cc
+  src/core/call/server_call.cc
+  src/core/call/status_util.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -3355,7 +3364,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -3507,7 +3515,6 @@ add_library(grpc_unsecure
   src/core/lib/surface/channel_create.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/connection_context.cc
@@ -3518,15 +3525,10 @@ add_library(grpc_unsecure
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/bdp_estimator.cc
-  src/core/lib/transport/call_arena_allocator.cc
-  src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
-  src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
@@ -5496,7 +5498,14 @@ endif()
 
 
 add_library(grpc_authorization_provider
+  src/core/call/call_arena_allocator.cc
+  src/core/call/call_filters.cc
+  src/core/call/call_spine.cc
+  src/core/call/call_state.cc
+  src/core/call/client_call.cc
   src/core/call/security_context.cc
+  src/core/call/server_call.cc
+  src/core/call/status_util.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -5543,7 +5552,6 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -5699,7 +5707,6 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/connection_context.cc
@@ -5708,14 +5715,9 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/transport/call_arena_allocator.cc
-  src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
-  src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
@@ -8919,7 +8921,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(call_arena_allocator_test
-    test/core/transport/call_arena_allocator_test.cc
+    test/core/call/call_arena_allocator_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -9020,6 +9022,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_filters_test
+  src/core/call/call_filters.cc
+  src/core/call/call_state.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/channel/channel_args.cc
@@ -9046,9 +9050,7 @@ add_executable(call_filters_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
@@ -9063,7 +9065,7 @@ add_executable(call_filters_test
   src/core/util/ref_counted_string.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
-  test/core/transport/call_filters_test.cc
+  test/core/call/call_filters_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9115,7 +9117,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_finalization_test
-  test/core/channel/call_finalization_test.cc
+  test/core/call/call_finalization_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9157,15 +9159,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_state_test
+  src/core/call/call_state.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/transport/call_state.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
-  test/core/transport/call_state_test.cc
+  test/core/call/call_state_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9255,6 +9257,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_utils_test
+  src/core/call/call_arena_allocator.cc
+  src/core/call/call_filters.cc
+  src/core/call/call_spine.cc
+  src/core/call/call_state.cc
+  src/core/call/client_call.cc
+  src/core/call/server_call.cc
+  src/core/call/status_util.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -9284,7 +9293,6 @@ add_executable(call_utils_test
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -9430,7 +9438,6 @@ add_executable(call_utils_test
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
@@ -9438,14 +9445,9 @@ add_executable(call_utils_test
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/transport/call_arena_allocator.cc
-  src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
-  src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
@@ -15367,6 +15369,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(filter_fusion_test
+  src/core/call/call_arena_allocator.cc
+  src/core/call/call_filters.cc
+  src/core/call/call_spine.cc
+  src/core/call/call_state.cc
+  src/core/call/client_call.cc
+  src/core/call/server_call.cc
+  src/core/call/status_util.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -15396,7 +15405,6 @@ add_executable(filter_fusion_test
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -15542,7 +15550,6 @@ add_executable(filter_fusion_test
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
@@ -15550,14 +15557,9 @@ add_executable(filter_fusion_test
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/transport/call_arena_allocator.cc
-  src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
-  src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/interception_chain.cc
@@ -18759,57 +18761,65 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-add_executable(http2_server_transport_test
-  src/core/ext/transport/chttp2/transport/http2_server_transport.cc
-  src/core/lib/transport/promise_endpoint.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
-  test/core/transport/chttp2/http2_server_transport_test.cc
-  test/core/transport/util/mock_promise_endpoint.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(http2_server_transport_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
+  add_executable(http2_server_transport_test
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    src/core/ext/transport/chttp2/transport/http2_server_transport.cc
+    src/core/lib/transport/promise_endpoint.cc
+    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+    test/core/test_util/cmdline.cc
+    test/core/test_util/grpc_profiler.cc
+    test/core/test_util/histogram.cc
+    test/core/test_util/mock_endpoint.cc
+    test/core/test_util/parse_hexstring.cc
+    test/core/test_util/resolve_localhost_ip46.cc
+    test/core/test_util/slice_splitter.cc
+    test/core/test_util/tracer_util.cc
+    test/core/transport/chttp2/http2_server_transport_test.cc
+    test/core/transport/util/mock_promise_endpoint.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(http2_server_transport_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
   endif()
+  target_compile_features(http2_server_transport_test PUBLIC cxx_std_17)
+  target_include_directories(http2_server_transport_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(http2_server_transport_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    grpc_test_util
+  )
+
+
 endif()
-target_compile_features(http2_server_transport_test PUBLIC cxx_std_17)
-target_include_directories(http2_server_transport_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(http2_server_transport_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -24887,6 +24897,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(request_buffer_test
+  src/core/call/call_arena_allocator.cc
+  src/core/call/call_filters.cc
+  src/core/call/call_spine.cc
+  src/core/call/call_state.cc
   src/core/call/request_buffer.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -24915,11 +24929,7 @@ add_executable(request_buffer_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/transport/call_arena_allocator.cc
-  src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
-  src/core/lib/transport/call_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
@@ -27748,7 +27758,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(status_util_test
-  test/core/channel/status_util_test.cc
+  test/core/call/status_util_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

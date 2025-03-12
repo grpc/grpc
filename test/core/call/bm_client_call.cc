@@ -15,6 +15,8 @@
 #include <benchmark/benchmark.h>
 #include <grpc/grpc.h>
 
+#include "src/core/call/call_arena_allocator.h"
+#include "src/core/call/client_call.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/all_ok.h"
@@ -22,8 +24,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/client_call.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
 
 namespace grpc_core {
 namespace {
