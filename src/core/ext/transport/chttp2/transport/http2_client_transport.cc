@@ -119,10 +119,7 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
         // unknown types.
         return absl::OkStatus();
       },
-      [](GRPC_UNUSED Http2EmptyFrame frame) {
-        Crash("unreachable");
-        ;
-      }));
+      [](GRPC_UNUSED Http2EmptyFrame frame) { Crash("unreachable"); }));
 }
 
 auto Http2ClientTransport::ReadAndProcessOneFrame() {
