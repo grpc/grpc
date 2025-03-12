@@ -407,7 +407,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   if (!result.ok()) {
-    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: ", result.status();
+    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: " << result.status();
     connection_->Done();
     return;
   }
