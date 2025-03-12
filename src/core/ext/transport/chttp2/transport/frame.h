@@ -178,7 +178,7 @@ struct Http2UnknownFrame {
   bool operator==(const Http2UnknownFrame&) const { return true; }
 };
 
-// This is used as a dummy frame to trigger events in the HTTP2 transport.
+// This is used as a fake frame to trigger events in the HTTP2 transport.
 struct Http2EmptyFrame {
   bool operator==(const Http2EmptyFrame&) const { return true; }
 };
