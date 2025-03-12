@@ -120,9 +120,8 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
         return absl::OkStatus();
       },
       [](GRPC_UNUSED Http2EmptyFrame frame) {
-        // As per HTTP2 RFC, implementations MUST ignore and discard frames of
-        // unknown types.
-        return absl::OkStatus();
+        Crash("unreachable");
+        ;
       }));
 }
 
