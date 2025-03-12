@@ -8839,7 +8839,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_finalization",
     hdrs = [
-        "lib/channel/call_finalization.h",
+        "call/call_finalization.h",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
@@ -8853,10 +8853,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_state",
     srcs = [
-        "lib/transport/call_state.cc",
+        "call/call_state.cc",
     ],
     hdrs = [
-        "lib/transport/call_state.h",
+        "call/call_state.h",
     ],
     deps = [
         "activity",
@@ -8870,10 +8870,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_filters",
     srcs = [
-        "lib/transport/call_filters.cc",
+        "call/call_filters.cc",
     ],
     hdrs = [
-        "lib/transport/call_filters.h",
+        "call/call_filters.h",
     ],
     external_deps = [
         "absl/log",
@@ -8936,7 +8936,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_destination",
     hdrs = [
-        "lib/transport/call_destination.h",
+        "call/call_destination.h",
     ],
     deps = [
         "call_spine",
@@ -9001,10 +9001,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_spine",
     srcs = [
-        "lib/transport/call_spine.cc",
+        "call/call_spine.cc",
     ],
     hdrs = [
-        "lib/transport/call_spine.h",
+        "call/call_spine.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
@@ -9112,10 +9112,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_arena_allocator",
     srcs = [
-        "lib/transport/call_arena_allocator.cc",
+        "call/call_arena_allocator.cc",
     ],
     hdrs = [
-        "lib/transport/call_arena_allocator.h",
+        "call/call_arena_allocator.h",
     ],
     deps = [
         "arena",
