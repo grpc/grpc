@@ -863,24 +863,16 @@ TEST(PickFirstFuzzer, PassesInTfWhenNotYetStartedConnecting) {
 
 TEST(PickFirstFuzzer, AllSubchannelsInTransientFailure) {
   Fuzz(ParseTestProto(R"pb(
-    actions { create_lb_policy { } }
+    actions { create_lb_policy {} }
     actions {
       subchannel_connectivity_notification {
-        address {
-          uri: "ipv4:127.0.0.1:1024"
-        }
+        address { uri: "ipv4:127.0.0.1:1024" }
         state: TRANSIENT_FAILURE
       }
     }
     actions {
       update {
-        endpoint_list {
-          endpoints {
-            addresses {
-              uri: "ipv4:127.0.0.1:1024"
-            }
-          }
-        }
+        endpoint_list { endpoints { addresses { uri: "ipv4:127.0.0.1:1024" } } }
       }
     }
     actions { tick { ms: 10 } }
@@ -889,32 +881,22 @@ TEST(PickFirstFuzzer, AllSubchannelsInTransientFailure) {
 
 TEST(PickFirstFuzzer, SubchannelGoesBackToIdleButNotificationPending) {
   Fuzz(ParseTestProto(R"pb(
-    actions { create_lb_policy { } }
+    actions { create_lb_policy {} }
     actions {
       subchannel_connectivity_notification {
-        address {
-          uri: "ipv4:127.0.0.1:1024"
-        }
+        address { uri: "ipv4:127.0.0.1:1024" }
         state: TRANSIENT_FAILURE
       }
     }
     actions {
       update {
-        endpoint_list {
-          endpoints {
-            addresses {
-              uri: "ipv4:127.0.0.1:1024"
-            }
-          }
-        }
+        endpoint_list { endpoints { addresses { uri: "ipv4:127.0.0.1:1024" } } }
       }
     }
     actions { tick { ms: 10 } }
     actions {
       subchannel_connectivity_notification {
-        address {
-          uri: "ipv4:127.0.0.1:1024"
-        }
+        address { uri: "ipv4:127.0.0.1:1024" }
         state: IDLE
       }
     }
