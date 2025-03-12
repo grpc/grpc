@@ -790,7 +790,7 @@ std::shared_ptr<PollPoller> MakePollPoller(Scheduler* /*scheduler*/,
 }
 
 void PollPoller::AdvanceGeneration() { grpc_core::Crash("unimplemented"); }
-
+void PollPoller::ResetKickState() { grpc_core::Crash("unimplemented"); }
 void PollPoller::Close() { grpc_core::Crash("unimplemented"); }
 
 void PollPoller::KickExternal(bool /*ext*/) {
