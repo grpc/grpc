@@ -248,7 +248,11 @@ auto Http2ServerTransport::ProcessOneFrame(Http2Frame frame) {
         // unknown types.
         return absl::OkStatus();
       },
-      [](GRPC_UNUSED Http2EmptyFrame frame) { Crash("unreachable"); }));
+      [](GRPC_UNUSED Http2EmptyFrame frame) {
+        LOG(DFATAL)
+            << "ParseFramePayload should never return a Http2EmptyFrame";
+        return absl::OkStatus();
+      }));
 }
 
 auto Http2ServerTransport::ReadAndProcessOneFrame() {
