@@ -131,6 +131,16 @@ struct Http2SettingsFrame {
   }
 };
 
+// PING frame
+struct Http2PingFrame {
+  bool ack = false;
+  uint64_t opaque = 0;
+
+  bool operator==(const Http2PingFrame& other) const {
+    return ack == other.ack && opaque == other.opaque;
+  }
+};
+
 // GOAWAY frame
 struct Http2GoawayFrame {
   uint32_t last_stream_id = 0;
@@ -168,7 +178,7 @@ struct Http2UnknownFrame {
   bool operator==(const Http2UnknownFrame&) const { return true; }
 };
 
-// Empty frame. This is only used as a dummy frame to trigger events.
+// This is used as a dummy frame to trigger events in the HTTP2 transport.
 struct Http2EmptyFrame {
   bool operator==(const Http2EmptyFrame&) const { return true; }
 };
