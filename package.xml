@@ -1840,6 +1840,7 @@
     <file baseinstalldir="/" name="src/core/util/backoff.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/backoff.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/bitset.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/check_class_size.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/chunked_vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/construct_destruct.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/cpp_impl_of.h" role="src" />
