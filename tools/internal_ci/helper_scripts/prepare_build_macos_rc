@@ -31,6 +31,8 @@ df -h /tmpfs /
 launchctl limit maxfiles
 ulimit -a
 
+# Use temp variable to detect version
+# will be cleaned up after migration is complete
 os_version=$(sw_vers -productVersion)
 is_sonoma=false
 if [[ "$os_version" == "14."* ]]; then
@@ -61,7 +63,6 @@ fi
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.16.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
-#DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 echo $DIR
 pwd

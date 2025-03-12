@@ -798,8 +798,8 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   }
   // When an RPC fails, we know the channel has seen the update.
   constexpr char kErrorMessage[] =
-      "empty address list \\(DNS resolution failed for server.example.com:443: "
-      "UNAVAILABLE: injected error\\)";
+      "no children in weighted_target policy \\(DNS resolution failed for "
+      "server.example.com:443: UNAVAILABLE: injected error\\)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send an EDS update that moves locality1 to priority 0.
   args1 = EdsResourceArgs({

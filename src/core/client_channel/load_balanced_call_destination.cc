@@ -15,12 +15,12 @@
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
 #include "absl/log/log.h"
+#include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/lb_metadata.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/config/core_configuration.h"
-#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
 

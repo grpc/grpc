@@ -268,7 +268,7 @@ class MpscReceiver {
         std::move(buffer_it_, buffer_.end(), std::back_inserter(tmp_buffer));
         buffer_.clear();
         buffer_it_ = buffer_.end();
-        return tmp_buffer;
+        return ValueOrFailure<std::vector<T>>(std::move(tmp_buffer));
       }
 
       auto p = center_->PollReceiveBatch(buffer_);
@@ -277,7 +277,7 @@ class MpscReceiver {
         auto tmp_buffer(std::move(buffer_));
         buffer_.clear();
         buffer_it_ = buffer_.end();
-        return tmp_buffer;
+        return ValueOrFailure<std::vector<T>>(std::move(tmp_buffer));
       }
       return Pending{};
     };

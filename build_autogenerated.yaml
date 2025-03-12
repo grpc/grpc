@@ -185,8 +185,17 @@ libs:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/call/call_arena_allocator.h
+  - src/core/call/call_destination.h
+  - src/core/call/call_filters.h
+  - src/core/call/call_finalization.h
+  - src/core/call/call_spine.h
+  - src/core/call/call_state.h
+  - src/core/call/client_call.h
   - src/core/call/request_buffer.h
   - src/core/call/security_context.h
+  - src/core/call/server_call.h
+  - src/core/call/status_util.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -821,7 +830,6 @@ libs:
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h
@@ -830,7 +838,6 @@ libs:
   - src/core/lib/channel/channel_stack_builder_impl.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/promise_based_filter.h
-  - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/debug/trace.h
@@ -1023,7 +1030,6 @@ libs:
   - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/connection_context.h
@@ -1033,15 +1039,9 @@ libs:
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
-  - src/core/lib/surface/server_call.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_arena_allocator.h
-  - src/core/lib/transport/call_destination.h
-  - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
-  - src/core/lib/transport/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -1153,6 +1153,7 @@ libs:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/directory_reader.h
@@ -1254,8 +1255,15 @@ libs:
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
+  - src/core/call/call_arena_allocator.cc
+  - src/core/call/call_filters.cc
+  - src/core/call/call_spine.cc
+  - src/core/call/call_state.cc
+  - src/core/call/client_call.cc
   - src/core/call/request_buffer.cc
   - src/core/call/security_context.cc
+  - src/core/call/server_call.cc
+  - src/core/call/status_util.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -1729,7 +1737,6 @@ libs:
   - src/core/lib/channel/channel_stack_builder_impl.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
@@ -1886,7 +1893,6 @@ libs:
   - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/connection_context.cc
@@ -1897,15 +1903,10 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_arena_allocator.cc
-  - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
-  - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/interception_chain.cc
@@ -2210,8 +2211,17 @@ libs:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/call/call_arena_allocator.h
+  - src/core/call/call_destination.h
+  - src/core/call/call_filters.h
+  - src/core/call/call_finalization.h
+  - src/core/call/call_spine.h
+  - src/core/call/call_state.h
+  - src/core/call/client_call.h
   - src/core/call/request_buffer.h
   - src/core/call/security_context.h
+  - src/core/call/server_call.h
+  - src/core/call/status_util.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -2360,7 +2370,6 @@ libs:
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h
@@ -2369,7 +2378,6 @@ libs:
   - src/core/lib/channel/channel_stack_builder_impl.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/promise_based_filter.h
-  - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/debug/trace.h
@@ -2557,7 +2565,6 @@ libs:
   - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/connection_context.h
@@ -2567,15 +2574,9 @@ libs:
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
-  - src/core/lib/surface/server_call.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_arena_allocator.h
-  - src/core/lib/transport/call_destination.h
-  - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
-  - src/core/lib/transport/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -2656,6 +2657,7 @@ libs:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -2709,8 +2711,15 @@ libs:
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
+  - src/core/call/call_arena_allocator.cc
+  - src/core/call/call_filters.cc
+  - src/core/call/call_spine.cc
+  - src/core/call/call_state.cc
+  - src/core/call/client_call.cc
   - src/core/call/request_buffer.cc
   - src/core/call/security_context.cc
+  - src/core/call/server_call.cc
+  - src/core/call/status_util.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -2843,7 +2852,6 @@ libs:
   - src/core/lib/channel/channel_stack_builder_impl.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
@@ -2995,7 +3003,6 @@ libs:
   - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/connection_context.cc
@@ -3006,15 +3013,10 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_arena_allocator.cc
-  - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
-  - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/interception_chain.cc
@@ -4370,7 +4372,16 @@ libs:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/call/call_arena_allocator.h
+  - src/core/call/call_destination.h
+  - src/core/call/call_filters.h
+  - src/core/call/call_finalization.h
+  - src/core/call/call_spine.h
+  - src/core/call/call_state.h
+  - src/core/call/client_call.h
   - src/core/call/security_context.h
+  - src/core/call/server_call.h
+  - src/core/call/status_util.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -4414,7 +4425,6 @@ libs:
   - src/core/handshaker/security/security_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h
@@ -4423,7 +4433,6 @@ libs:
   - src/core/lib/channel/channel_stack_builder_impl.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/promise_based_filter.h
-  - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/debug/trace.h
@@ -4613,7 +4622,6 @@ libs:
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/connection_context.h
@@ -4622,14 +4630,8 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server_call.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/call_arena_allocator.h
-  - src/core/lib/transport/call_destination.h
-  - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
-  - src/core/lib/transport/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -4674,6 +4676,7 @@ libs:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -4717,7 +4720,14 @@ libs:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/call_arena_allocator.cc
+  - src/core/call/call_filters.cc
+  - src/core/call/call_spine.cc
+  - src/core/call/call_state.cc
+  - src/core/call/client_call.cc
   - src/core/call/security_context.cc
+  - src/core/call/server_call.cc
+  - src/core/call/status_util.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -4764,7 +4774,6 @@ libs:
   - src/core/lib/channel/channel_stack_builder_impl.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
@@ -4920,7 +4929,6 @@ libs:
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/connection_context.cc
@@ -4929,14 +4937,9 @@ libs:
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/call_arena_allocator.cc
-  - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
-  - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/interception_chain.cc
@@ -6126,7 +6129,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/transport/call_arena_allocator_test.cc
+  - test/core/call/call_arena_allocator_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -6175,6 +6178,8 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/call_filters.h
+  - src/core/call/call_state.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6223,9 +6228,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
@@ -6265,6 +6268,8 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/call_filters.cc
+  - src/core/call/call_state.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/channel/channel_args.cc
@@ -6291,9 +6296,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
@@ -6308,7 +6311,7 @@ targets:
   - src/core/util/ref_counted_string.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
-  - test/core/transport/call_filters_test.cc
+  - test/core/call/call_filters_test.cc
   deps:
   - gtest
   - upb_mini_descriptor_lib
@@ -6331,7 +6334,7 @@ targets:
   headers:
   - test/core/promise/test_context.h
   src:
-  - test/core/channel/call_finalization_test.cc
+  - test/core/call/call_finalization_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -6340,6 +6343,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/call_state.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -6350,7 +6354,6 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/transport/call_state.h
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
@@ -6363,15 +6366,15 @@ targets:
   - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
+  - src/core/call/call_state.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/transport/call_state.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
-  - test/core/transport/call_state_test.cc
+  - test/core/call/call_state_test.cc
   deps:
   - gtest
   - absl/base:config
@@ -6400,6 +6403,15 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/call_arena_allocator.h
+  - src/core/call/call_destination.h
+  - src/core/call/call_filters.h
+  - src/core/call/call_finalization.h
+  - src/core/call/call_spine.h
+  - src/core/call/call_state.h
+  - src/core/call/client_call.h
+  - src/core/call/server_call.h
+  - src/core/call/status_util.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -6427,7 +6439,6 @@ targets:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h
@@ -6436,7 +6447,6 @@ targets:
   - src/core/lib/channel/channel_stack_builder_impl.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/promise_based_filter.h
-  - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/debug/trace.h
@@ -6615,7 +6625,6 @@ targets:
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
@@ -6623,14 +6632,8 @@ targets:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server_call.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/call_arena_allocator.h
-  - src/core/lib/transport/call_destination.h
-  - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
-  - src/core/lib/transport/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -6671,6 +6674,7 @@ targets:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -6712,6 +6716,13 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/call_arena_allocator.cc
+  - src/core/call/call_filters.cc
+  - src/core/call/call_spine.cc
+  - src/core/call/call_state.cc
+  - src/core/call/client_call.cc
+  - src/core/call/server_call.cc
+  - src/core/call/status_util.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -6741,7 +6752,6 @@ targets:
   - src/core/lib/channel/channel_stack_builder_impl.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
@@ -6887,7 +6897,6 @@ targets:
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
@@ -6895,14 +6904,9 @@ targets:
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/call_arena_allocator.cc
-  - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
-  - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/interception_chain.cc
@@ -10540,7 +10544,16 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/call_arena_allocator.h
+  - src/core/call/call_destination.h
+  - src/core/call/call_filters.h
+  - src/core/call/call_finalization.h
+  - src/core/call/call_spine.h
+  - src/core/call/call_state.h
+  - src/core/call/client_call.h
   - src/core/call/filter_fusion.h
+  - src/core/call/server_call.h
+  - src/core/call/status_util.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -10568,7 +10581,6 @@ targets:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h
@@ -10577,7 +10589,6 @@ targets:
   - src/core/lib/channel/channel_stack_builder_impl.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/promise_based_filter.h
-  - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/debug/trace.h
@@ -10756,7 +10767,6 @@ targets:
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
@@ -10764,14 +10774,8 @@ targets:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server_call.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/call_arena_allocator.h
-  - src/core/lib/transport/call_destination.h
-  - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
-  - src/core/lib/transport/call_state.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -10812,6 +10816,7 @@ targets:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -10853,6 +10858,13 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/call_arena_allocator.cc
+  - src/core/call/call_filters.cc
+  - src/core/call/call_spine.cc
+  - src/core/call/call_state.cc
+  - src/core/call/client_call.cc
+  - src/core/call/server_call.cc
+  - src/core/call/status_util.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -10882,7 +10894,6 @@ targets:
   - src/core/lib/channel/channel_stack_builder_impl.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
@@ -11028,7 +11039,6 @@ targets:
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
@@ -11036,14 +11046,9 @@ targets:
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/call_arena_allocator.cc
-  - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
-  - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/interception_chain.cc
@@ -15108,6 +15113,10 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/call_arena_allocator.h
+  - src/core/call/call_filters.h
+  - src/core/call/call_spine.h
+  - src/core/call/call_state.h
   - src/core/call/request_buffer.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -15162,11 +15171,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/transport/call_arena_allocator.h
-  - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_spine.h
-  - src/core/lib/transport/call_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
@@ -15181,6 +15186,7 @@ targets:
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -15208,6 +15214,10 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/call_arena_allocator.cc
+  - src/core/call/call_filters.cc
+  - src/core/call/call_spine.cc
+  - src/core/call/call_state.cc
   - src/core/call/request_buffer.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -15236,11 +15246,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/transport/call_arena_allocator.cc
-  - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_spine.cc
-  - src/core/lib/transport/call_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
@@ -16280,7 +16286,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/channel/status_util_test.cc
+  - test/core/call/status_util_test.cc
   deps:
   - gtest
   - grpc_test_util

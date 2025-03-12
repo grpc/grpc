@@ -30,11 +30,11 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
+#include "src/core/call/call_filters.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/interception_chain.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/unique_type_name.h"
