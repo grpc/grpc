@@ -78,7 +78,7 @@ using namespace std::chrono_literals;
 
 namespace grpc_event_engine::experimental {
 
-#ifdef GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 namespace {
 
@@ -257,10 +257,6 @@ void PollingCycle::PollerWorkInternal() {
       poller->Kick();
     }
   }
-  static std::unordered_map<Poller::WorkResult, absl::string_view> results(
-      {{Poller::WorkResult::kOk, "ok"},
-       {Poller::WorkResult::kKicked, "kicked"},
-       {Poller::WorkResult::kDeadlineExceeded, "deadline exceeded"}});
   if (!done_ && again) {
     poller_manager_->Executor()->Run([this]() { PollerWorkInternal(); });
     ++is_scheduled_;
@@ -269,10 +265,6 @@ void PollingCycle::PollerWorkInternal() {
 }
 
 }  // namespace
-
-#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-
-#ifdef GRPC_POSIX_SOCKET_TCP
 
 void AsyncConnect::Start(EventEngine::Duration timeout) {
   on_writable_ = PosixEngineClosure::ToPermanentClosure(

@@ -212,11 +212,13 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+
   std::shared_ptr<ForkSupport> fork_support_for_tests() const {
     return fork_support_;
   }
 
-#ifdef GRPC_POSIX_SOCKET_TCP
   // The posix EventEngine returned by this method would have a shared ownership
   // of the poller and would not be in-charge of driving the poller by calling
   // its Work(..) method. Instead its upto the test to drive the poller. The
