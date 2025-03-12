@@ -88,7 +88,7 @@ class XdsResourceType {
   // Note: This won't actually work properly until upb adds support for
   // Any fields in textproto printing (internal b/178821188).
   virtual void InitUpbSymtab(XdsClient* xds_client,
-                             upb_DefPool* symtab) const = 0;
+                             upb_DefPool* symtab) const {}
 };
 
 }  // namespace grpc_core
