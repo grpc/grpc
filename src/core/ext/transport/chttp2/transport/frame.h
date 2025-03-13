@@ -233,4 +233,19 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 
 }  // namespace grpc_core
 
+///////////////////////////////////////////////////////////////////////////////
+// GRPC Header
+
+#define GRPC_HEADER_SIZE_IN_BYTES 5
+
+struct GrpcMessageHeader {
+  uint8_t flags;
+  uint32_t length;
+};
+
+GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload);
+
+void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
+                                   const uint32_t length);
+
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H

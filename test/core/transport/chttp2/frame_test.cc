@@ -404,6 +404,22 @@ TEST(Frame, ParseRejects) {
                        "stream_id=0, length=4}"));
 }
 
+TEST(Frame, GrpcHeaderTest) {
+  constexpr uint8_t kFlags = 15;
+  constexpr uint32_t kLength = 1111111;
+
+  SliceBuffer payload;
+  EXPECT_EQ(payload.Length(), 0);
+
+  AppendGrpcHeaderToSliceBuffer(payload, kFlags, kLength);
+  EXPECT_EQ(payload.Length(), GRPC_HEADER_SIZE_IN_BYTES);
+
+  GrpcMessageHeader header = ExtractGrpcHeader(payload);
+  EXPECT_EQ(payload.Length(), 0);
+  EXPECT_EQ(header.flags, kFlags);
+  EXPECT_EQ(header.length, kLength);
+}
+
 }  // namespace
 }  // namespace grpc_core
 
