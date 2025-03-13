@@ -348,8 +348,8 @@ if (result.service_config.IsError()) {
 
 if (service_config != null) {
   lb_config = channel.ChooseLbPolicy(service_config);
-  health_status =
-      channel.CreateOrUpdateLbPolicy(lb_config, result.endpoints);
+  health_status = channel.CreateOrUpdateLbPolicy(
+      lb_config, result.endpoints, result.resolution_note, result.attributes);
   if (service_config != channel.service_config) {
     channel.service_config = service_config;
     channel.ReprocessQueuedRpcs();  // Those waiting for a resolver result.
