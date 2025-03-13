@@ -182,6 +182,7 @@ grpc_cc_test(
     deps = [
         "//:chttp2_frame",
         "//src/core:http2_errors",
+        "//src/core:slice_buffer",
     ],
 )
 

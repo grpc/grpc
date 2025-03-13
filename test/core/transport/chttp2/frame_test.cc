@@ -21,6 +21,7 @@
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 namespace grpc_core {
@@ -412,7 +413,7 @@ TEST(Frame, GrpcHeaderTest) {
   EXPECT_EQ(payload.Length(), 0);
 
   AppendGrpcHeaderToSliceBuffer(payload, kFlags, kLength);
-  EXPECT_EQ(payload.Length(), GRPC_HEADER_SIZE_IN_BYTES);
+  EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
 
   GrpcMessageHeader header = ExtractGrpcHeader(payload);
   EXPECT_EQ(payload.Length(), 0);

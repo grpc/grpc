@@ -23,6 +23,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 
 namespace grpc_core {
@@ -523,8 +524,8 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
 }
 
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
-  uint8_t buffer[GRPC_HEADER_SIZE_IN_BYTES];
-  payload.MoveFirstNBytesIntoBuffer(GRPC_HEADER_SIZE_IN_BYTES, buffer);
+  uint8_t buffer[kGrpcHeaderSizeInBytes];
+  payload.MoveFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
   GrpcMessageHeader header;
   header.flags = buffer[0];
   header.length = Read4b(buffer + 1);
@@ -533,7 +534,7 @@ GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
 
 void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
                                    const uint32_t length) {
-  uint8_t* frame_hdr = payload.AddTiny(GRPC_HEADER_SIZE_IN_BYTES);
+  uint8_t* frame_hdr = payload.AddTiny(kGrpcHeaderSizeInBytes);
   frame_hdr[0] = flags;
   Write4b(length, frame_hdr + 1);
 }
