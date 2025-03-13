@@ -2552,6 +2552,7 @@ grpc_cc_library(
     hdrs = ["lib/event_engine/posix_engine/posix_engine.h"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/base:no_destructor",
         "absl/cleanup",
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",

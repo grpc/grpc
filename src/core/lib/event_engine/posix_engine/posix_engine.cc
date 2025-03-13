@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/no_destructor.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
@@ -83,20 +84,21 @@ namespace grpc_event_engine::experimental {
 namespace {
 
 // Fork support - mutex and global list of event engines
-grpc_core::Mutex fork_mu;
-std::unordered_map<ForkSupport*, std::weak_ptr<ForkSupport>> fork_supports_
-    ABSL_GUARDED_BY(&fork_mu);
+// Should never be destroyed to avoid race conditions on process shutdown
+absl::NoDestructor<grpc_core::Mutex> fork_mu;
+absl::NoDestructor<std::unordered_map<ForkSupport*, std::weak_ptr<ForkSupport>>>
+    fork_supports_ ABSL_GUARDED_BY(fork_mu.get());
 
 // "Locks" event engines and returns a collection so callbacks can be invoked
 // without holding a lock.
 std::vector<std::shared_ptr<ForkSupport>> LockEventEngines() {
-  grpc_core::MutexLock lock(&fork_mu);
+  grpc_core::MutexLock lock(fork_mu.get());
   std::vector<std::shared_ptr<ForkSupport>> engines;
   // Not all weak_ptrs might be locked. If an engine enters dtor, it will stop
   // on a mutex in DeregisterEventEngineForFork but the weak pointer will not
   // be lockable here.
-  engines.reserve(fork_supports_.size());
-  for (const auto& engine : fork_supports_) {
+  engines.reserve(fork_supports_->size());
+  for (const auto& engine : *fork_supports_) {
     auto ptr = engine.second.lock();
     if (ptr != nullptr) {
       engines.emplace_back(std::move(ptr));
@@ -124,8 +126,8 @@ void PostForkInChild() {
 }
 
 void RegisterEventEngineForFork(std::shared_ptr<ForkSupport> fork_support) {
-  grpc_core::MutexLock lock(&fork_mu);
-  fork_supports_[fork_support.get()] = fork_support;
+  grpc_core::MutexLock lock(fork_mu.get());
+  fork_supports_->emplace(fork_support.get(), fork_support);
   static bool handlers_installed = false;
   if (!handlers_installed) {
     pthread_atfork(PrepareFork, PostForkInParent, PostForkInChild);
@@ -134,8 +136,8 @@ void RegisterEventEngineForFork(std::shared_ptr<ForkSupport> fork_support) {
 }
 
 void DeregisterEventEngineForFork(ForkSupport* engine) {
-  grpc_core::MutexLock lock(&fork_mu);
-  fork_supports_.erase(engine);
+  grpc_core::MutexLock lock(fork_mu.get());
+  fork_supports_->erase(engine);
 }
 
 // RAII wrapper for a polling cycle. Starts a new one in ctor and stops
