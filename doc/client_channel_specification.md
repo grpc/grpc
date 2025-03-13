@@ -406,7 +406,7 @@ gRPC comes with resolver implementations for the following schemes.
 
 #### dns Resolver
 
-The DNS resolver accepts URIs of the form `dns:\[//authority/\]host\[:port\]`.
+The DNS resolver accepts URIs of the form `dns:[//authority/]host[:port]`.
 
 * `host` is the host to resolve via DNS.
 * `port` is the port to return for each address. If not specified, 443 is
@@ -427,7 +427,7 @@ minimum time between DNS re-resolutions.
 #### unix
 
 The unix resolver (Unix systems only) accepts URIs of the form
-`unix:path` or `unix:///absolute\_path`.
+`unix:path` or `unix:///absolute_path`.
 
 * `path` indicates the location of the desired socket.
 * In the first form, the path may be relative or absolute; in the
