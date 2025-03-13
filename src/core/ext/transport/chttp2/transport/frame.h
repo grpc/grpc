@@ -231,8 +231,6 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
 // move things out of frames)
 void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 
-}  // namespace grpc_core
-
 ///////////////////////////////////////////////////////////////////////////////
 // GRPC Header
 
@@ -247,5 +245,7 @@ GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload);
 
 void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
                                    const uint32_t length);
+
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
