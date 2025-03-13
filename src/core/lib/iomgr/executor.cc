@@ -175,7 +175,6 @@ void Executor::SetThreading(bool threading) {
             << curr_num_threads << " joined";
       }
 
-      gpr_atm_rel_store(&num_threads_, 0);
       for (size_t i = 0; i < max_threads_; i++) {
         gpr_mu_destroy(&thd_state_[i].mu);
         gpr_cv_destroy(&thd_state_[i].cv);
