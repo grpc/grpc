@@ -1,0 +1,26 @@
+FROM python:3.9-slim-bookworm
+
+RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
+
+WORKDIR /workdir
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN mkdir /artifacts
+
+COPY . .
+RUN tools/bazel build //examples/python/xds:xds_greeter_server
+RUN cp -rL /workdir/bazel-bin/examples/python/xds/xds_greeter_server* /artifacts/
+
+FROM python:3.9-slim-bookworm
+
+RUN apt-get update -y \
+    && apt-get install -y python3 \
+    && apt-get -y autoremove \
+    && apt-get install -y curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+COPY --from=0 /artifacts ./
+
+ENTRYPOINT ["/xds_greeter_server"]
