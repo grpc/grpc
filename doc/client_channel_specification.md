@@ -577,13 +577,17 @@ provides at least the following methods:
 
 The LB policy object itself provides the following methods:
 
-* **Update()**: Used to pass a resolver update to the LB policy.  The update
-  includes the parsed LB policy config returned by the factory's
-  `ParseLoadBalancingPolicyConfig()` method.  It also includes the list of
-  endpoint addresses, the resolution note, and any attributes returned
-  by the resolver.  The LB policy is expected to create any necessary
-  subchannels and then call the helper's `UpdateState()` method to report
-  its connectivity state and a new picker that can be used to route RPCs.
+* **Update()**: Used to pass a resolver update to the LB policy.  The LB
+  policy is expected to create any necessary subchannels and then call
+  the helper's `UpdateState()` method to report its connectivity state and
+  a new picker that can be used to route RPCs.  The resolver update will
+  include the following:
+  - The parsed LB policy config returned by the factory's
+    `ParseLoadBalancingPolicyConfig()` method.
+  - The list of endpoint addresses.
+  - The resolution note, which should be included in the error message
+    returned for any failed pick.
+  - Any attributes returned by the resolver.
 * **ExitIdle()**: Used to request that the LB policy exit IDLE state and
   start trying to connect.  For most policies, this is a no-op, but it is
   used by policies that connect lazily like [pick\_first](#pick_first).
