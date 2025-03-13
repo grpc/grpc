@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC Health Checking &#8212; gRPC Python 1.70.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=6625fa76" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=afed0ee8"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <title>gRPC Health Checking &#8212; gRPC Python 1.71.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=84b2ca11" />
+    <script src="_static/documentation_options.js?v=026573dc"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="gRPC Reflection" href="grpc_reflection.html" />
@@ -18,19 +18,20 @@
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
     
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="index.html">gRPC Python</a></h1>
 
 
 
-<p class="blurb">1.70.1</p>
+<p class="blurb">1.71.0</p>
 
 
 
@@ -74,7 +75,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -82,7 +83,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -101,23 +102,23 @@
           <div class="body" role="main">
             
   <section id="grpc-health-checking">
-<h1>gRPC Health Checking<a class="headerlink" href="#grpc-health-checking" title="Permalink to this heading">¶</a></h1>
+<h1>gRPC Health Checking<a class="headerlink" href="#grpc-health-checking" title="Link to this heading">¶</a></h1>
 <section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_health.v1.health.HealthServicer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_health.v1.health.</span></span><span class="sig-name descname"><span class="pre">HealthServicer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experimental_non_blocking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experimental_thread_pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_health.v1.health.</span></span><span class="sig-name descname"><span class="pre">HealthServicer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experimental_non_blocking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experimental_thread_pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer" title="Link to this definition">¶</a></dt>
 <dd><p>Servicer handling RPCs for service statuses.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_health.v1.health.HealthServicer.Check">
-<span class="sig-name descname"><span class="pre">Check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.Check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.Check" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">Check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.Check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.Check" title="Link to this definition">¶</a></dt>
 <dd><p>If the requested service is unknown, the call will fail with status
 NOT_FOUND.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_health.v1.health.HealthServicer.Watch">
-<span class="sig-name descname"><span class="pre">Watch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">send_response_callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.Watch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.Watch" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">Watch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">send_response_callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.Watch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.Watch" title="Link to this definition">¶</a></dt>
 <dd><p>Performs a watch for the serving status of the requested service.
 The server will immediately send back a message indicating the current
 serving status.  It will then subsequently send a new message whenever
@@ -135,7 +136,7 @@ clients should retry the call with appropriate exponential backoff.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_health.v1.health.HealthServicer.enter_graceful_shutdown">
-<span class="sig-name descname"><span class="pre">enter_graceful_shutdown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.enter_graceful_shutdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.enter_graceful_shutdown" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">enter_graceful_shutdown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.enter_graceful_shutdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.enter_graceful_shutdown" title="Link to this definition">¶</a></dt>
 <dd><p>Permanently sets the status of all services to NOT_SERVING.</p>
 <p>This should be invoked when the server is entering a graceful shutdown
 period. After this method is invoked, future attempts to set the status
@@ -145,7 +146,7 @@ of a service will be ignored.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_health.v1.health.HealthServicer.set">
-<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">status</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.set" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">status</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.set" title="Link to this definition">¶</a></dt>
 <dd><p>Sets the status of a service.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -171,7 +172,7 @@ the service</p></li>
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2020, The gRPC Authors.
+      &#169;2020, The gRPC Authors.
       
       |
       <a href="_sources/grpc_health_checking.rst.txt"
@@ -181,7 +182,7 @@ the service</p></li>
     
 
     
-    <script type="text/javascript">
+    <script>
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-60127042-1']);
@@ -190,8 +191,8 @@ the service</p></li>
       _gaq.push(['_trackPageview']);
 
       (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var ga = document.createElement('script'); ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'https://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
 

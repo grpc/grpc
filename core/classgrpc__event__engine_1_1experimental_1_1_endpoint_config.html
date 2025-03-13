@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">45.0.0</span>
+   &#160;<span id="projectnumber">46.0.0</span>
    </div>
   </td>
  </tr>
@@ -82,10 +82,10 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:af86d519833129ea7950b5449857c9c6e"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#af86d519833129ea7950b5449857c9c6e">~EndpointConfig</a> ()=default</td></tr>
 <tr class="separator:af86d519833129ea7950b5449857c9c6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a59a2cc323e22c30a23c943f14e37d2b5"><td class="memItemLeft" align="right" valign="top">virtual absl::optional&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a59a2cc323e22c30a23c943f14e37d2b5">GetInt</a> (absl::string_view key) const =0</td></tr>
-<tr class="separator:a59a2cc323e22c30a23c943f14e37d2b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3399e01fc2e973112451546b59ec1c97"><td class="memItemLeft" align="right" valign="top">virtual absl::optional&lt; absl::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a3399e01fc2e973112451546b59ec1c97">GetString</a> (absl::string_view key) const =0</td></tr>
-<tr class="separator:a3399e01fc2e973112451546b59ec1c97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aacce17a90999717571eaf7e898214ef4"><td class="memItemLeft" align="right" valign="top">virtual std::optional&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#aacce17a90999717571eaf7e898214ef4">GetInt</a> (absl::string_view key) const =0</td></tr>
+<tr class="separator:aacce17a90999717571eaf7e898214ef4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a688101855723eb0c4725465717f8935d"><td class="memItemLeft" align="right" valign="top">virtual std::optional&lt; absl::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a688101855723eb0c4725465717f8935d">GetString</a> (absl::string_view key) const =0</td></tr>
+<tr class="separator:a688101855723eb0c4725465717f8935d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a568da1db8412728292100849e4bc3ef9"><td class="memItemLeft" align="right" valign="top">virtual void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a568da1db8412728292100849e4bc3ef9">GetVoidPointer</a> (absl::string_view key) const =0</td></tr>
 <tr class="separator:a568da1db8412728292100849e4bc3ef9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -119,8 +119,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a59a2cc323e22c30a23c943f14e37d2b5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a59a2cc323e22c30a23c943f14e37d2b5">&#9670;&nbsp;</a></span>GetInt()</h2>
+<a id="aacce17a90999717571eaf7e898214ef4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aacce17a90999717571eaf7e898214ef4">&#9670;&nbsp;</a></span>GetInt()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -129,7 +129,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual absl::optional&lt;int&gt; grpc_event_engine::experimental::EndpointConfig::GetInt </td>
+          <td class="memname">virtual std::optional&lt;int&gt; grpc_event_engine::experimental::EndpointConfig::GetInt </td>
           <td>(</td>
           <td class="paramtype">absl::string_view&#160;</td>
           <td class="paramname"><em>key</em></td><td>)</td>
@@ -145,8 +145,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a3399e01fc2e973112451546b59ec1c97"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3399e01fc2e973112451546b59ec1c97">&#9670;&nbsp;</a></span>GetString()</h2>
+<a id="a688101855723eb0c4725465717f8935d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a688101855723eb0c4725465717f8935d">&#9670;&nbsp;</a></span>GetString()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -155,7 +155,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual absl::optional&lt;absl::string_view&gt; grpc_event_engine::experimental::EndpointConfig::GetString </td>
+          <td class="memname">virtual std::optional&lt;absl::string_view&gt; grpc_event_engine::experimental::EndpointConfig::GetString </td>
           <td>(</td>
           <td class="paramtype">absl::string_view&#160;</td>
           <td class="paramname"><em>key</em></td><td>)</td>
@@ -203,7 +203,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 31 2025 21:28:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 13 2025 18:13:54 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

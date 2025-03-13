@@ -29,14 +29,19 @@ const _highlight = (node, addItems, text, className) => {
       }
 
       span.appendChild(document.createTextNode(val.substr(pos, text.length)));
+      const rest = document.createTextNode(val.substr(pos + text.length));
       parent.insertBefore(
         span,
         parent.insertBefore(
-          document.createTextNode(val.substr(pos + text.length)),
+          rest,
           node.nextSibling
         )
       );
       node.nodeValue = val.substr(0, pos);
+      /* There may be more occurrences of search term in this node. So call this
+       * function recursively on the remaining fragment.
+       */
+      _highlight(rest, addItems, text, className);
 
       if (isInSVG) {
         const rect = document.createElementNS(
@@ -140,5 +145,10 @@ const SphinxHighlight = {
   },
 };
 
-_ready(SphinxHighlight.highlightSearchWords);
-_ready(SphinxHighlight.initEscapeListener);
+_ready(() => {
+  /* Do not call highlightSearchWords() when we are on the search page.
+   * It will highlight words from the *previous* search query.
+   */
+  if (typeof Search === "undefined") SphinxHighlight.highlightSearchWords();
+  SphinxHighlight.initEscapeListener();
+});

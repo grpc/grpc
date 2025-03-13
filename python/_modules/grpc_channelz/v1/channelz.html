@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_channelz.v1.channelz &#8212; gRPC Python 1.70.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=6625fa76" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=afed0ee8"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <title>grpc_channelz.v1.channelz &#8212; gRPC Python 1.71.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=84b2ca11" />
+    <script src="../../../_static/documentation_options.js?v=026573dc"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
     
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../../../index.html">gRPC Python</a></h1>
 
 
 
-<p class="blurb">1.70.1</p>
+<p class="blurb">1.71.0</p>
 
 
 
@@ -59,7 +60,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
@@ -67,7 +68,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -150,10 +151,13 @@
 
 <span class="k">else</span><span class="p">:</span>
 
-<div class="viewcode-block" id="add_channelz_servicer"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.add_channelz_servicer">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_channelz_servicer</span><span class="p">(</span><span class="n">server</span><span class="p">):</span>
+<div class="viewcode-block" id="add_channelz_servicer">
+<a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.add_channelz_servicer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_channelz_servicer</span><span class="p">(</span><span class="n">server</span><span class="p">):</span>
         <span class="n">_channelz_pb2_grpc</span><span class="o">.</span><span class="n">add_ChannelzServicer_to_server</span><span class="p">(</span>
             <span class="n">ChannelzServicer</span><span class="p">(),</span> <span class="n">server</span>
         <span class="p">)</span></div>
+
 
     <span class="n">add_channelz_servicer</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_add_channelz_servicer_doc</span>
 
@@ -170,14 +174,14 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2020, The gRPC Authors.
+      &#169;2020, The gRPC Authors.
       
     </div>
 
     
 
     
-    <script type="text/javascript">
+    <script>
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-60127042-1']);
@@ -186,8 +190,8 @@
       _gaq.push(['_trackPageview']);
 
       (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var ga = document.createElement('script'); ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'https://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
 

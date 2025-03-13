@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._call &#8212; gRPC Python 1.70.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=6625fa76" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=afed0ee8"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <title>grpc.aio._call &#8212; gRPC Python 1.71.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=84b2ca11" />
+    <script src="../../../_static/documentation_options.js?v=026573dc"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
     
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../../../index.html">gRPC Python</a></h1>
 
 
 
-<p class="blurb">1.70.1</p>
+<p class="blurb">1.71.0</p>
 
 
 
@@ -61,7 +62,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
@@ -69,7 +70,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -159,7 +160,9 @@
 <span class="n">_LOGGER</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="AioRpcError"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AioRpcError</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">RpcError</span><span class="p">):</span>
+<div class="viewcode-block" id="AioRpcError">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AioRpcError</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">RpcError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;An implementation of RpcError to be used by the asynchronous API.</span>
 
 <span class="sd">    Raised RpcError is a snapshot of the final status of the RPC, values are</span>
@@ -197,7 +200,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_trailing_metadata</span> <span class="o">=</span> <span class="n">trailing_metadata</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_debug_error_string</span> <span class="o">=</span> <span class="n">debug_error_string</span>
 
-<div class="viewcode-block" id="AioRpcError.code"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.code">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">:</span>
+<div class="viewcode-block" id="AioRpcError.code">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.code">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the status code sent by the server.</span>
 
 <span class="sd">        Returns:</span>
@@ -205,7 +210,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_code</span></div>
 
-<div class="viewcode-block" id="AioRpcError.details"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.details">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="AioRpcError.details">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.details">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the details sent by the server.</span>
 
 <span class="sd">        Returns:</span>
@@ -213,7 +221,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_details</span></div>
 
-<div class="viewcode-block" id="AioRpcError.initial_metadata"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.initial_metadata">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AioRpcError.initial_metadata">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.initial_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the initial metadata sent by the server.</span>
 
 <span class="sd">        Returns:</span>
@@ -221,7 +232,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_metadata</span></div>
 
-<div class="viewcode-block" id="AioRpcError.trailing_metadata"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.trailing_metadata">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AioRpcError.trailing_metadata">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.trailing_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the trailing metadata sent by the server.</span>
 
 <span class="sd">        Returns:</span>
@@ -229,13 +243,17 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trailing_metadata</span></div>
 
-<div class="viewcode-block" id="AioRpcError.debug_error_string"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.debug_error_string">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">debug_error_string</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AioRpcError.debug_error_string">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.debug_error_string">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">debug_error_string</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the debug error string sent by the server.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          The debug error string received.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_debug_error_string</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Assembles the error string for the RPC error.&quot;&quot;&quot;</span>
@@ -263,6 +281,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_debug_error_string</span><span class="p">,</span>
             <span class="p">),</span>
         <span class="p">)</span></div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_create_rpc_error</span><span class="p">(</span>
@@ -861,14 +880,14 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2020, The gRPC Authors.
+      &#169;2020, The gRPC Authors.
       
     </div>
 
     
 
     
-    <script type="text/javascript">
+    <script>
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-60127042-1']);
@@ -877,8 +896,8 @@
       _gaq.push(['_trackPageview']);
 
       (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var ga = document.createElement('script'); ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'https://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
 

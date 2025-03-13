@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">45.0.0</span>
+   &#160;<span id="projectnumber">46.0.0</span>
    </div>
   </td>
  </tr>
@@ -95,10 +95,10 @@ $(function() {
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;map&gt;</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;utility&gt;</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &quot;absl/strings/str_cat.h&quot;</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &quot;absl/types/variant.h&quot;</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;variant&gt;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &quot;absl/strings/str_cat.h&quot;</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc__core.html">grpc_core</a> {</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">namespace </span>experimental {</div>
@@ -219,46 +219,46 @@ $(function() {
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160; </div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;  <span class="comment">// Moveable.</span></div>
 <div class="line"><a name="l00149"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#a6197de29eeae57cdee964ddc695d5e7c">  149</a></span>&#160;  <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a6197de29eeae57cdee964ddc695d5e7c">Json</a>(<a class="code" href="classgrpc__core_1_1experimental_1_1_json.html">Json</a>&amp;&amp; other) noexcept : value_(std::move(other.value_)) {</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    other.value_ = absl::monostate();</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    other.value_ = std::monostate();</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  }</div>
 <div class="line"><a name="l00152"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#a817824753c6928615df3bdded901120b">  152</a></span>&#160;  <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html">Json</a>&amp; <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a817824753c6928615df3bdded901120b">operator=</a>(<a class="code" href="classgrpc__core_1_1experimental_1_1_json.html">Json</a>&amp;&amp; other) noexcept {</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    value_ = std::move(other.value_);</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    other.value_ = absl::monostate();</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    other.value_ = std::monostate();</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  }</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160; </div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;  <span class="comment">// Returns the JSON type.</span></div>
 <div class="line"><a name="l00159"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#aa5e36215996faebb941a884cbedc922d">  159</a></span>&#160;  <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a">Type</a> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#aa5e36215996faebb941a884cbedc922d">type</a>()<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <span class="keyword">struct </span>ValueFunctor {</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;      <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a">Json::Type</a> operator()(<span class="keyword">const</span> absl::monostate&amp;) { <span class="keywordflow">return</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919aaf2655c2dee87cb9b0646f678a630394b">Type::kNull</a>; }</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;      <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a">Json::Type</a> operator()(<span class="keyword">const</span> std::monostate&amp;) { <span class="keywordflow">return</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919aaf2655c2dee87cb9b0646f678a630394b">Type::kNull</a>; }</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;      <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a">Json::Type</a> operator()(<span class="keywordtype">bool</span>) { <span class="keywordflow">return</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919aa57f58630ea0106aa965e5bf61a49d02c">Type::kBoolean</a>; }</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;      <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a">Json::Type</a> operator()(<span class="keyword">const</span> NumberValue&amp;) { <span class="keywordflow">return</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919aa5a7ab0ccb8bc2cc772c1552d08cb7d2f">Type::kNumber</a>; }</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;      <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a">Json::Type</a> operator()(<span class="keyword">const</span> std::string&amp;) { <span class="keywordflow">return</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919aa302e56d566a2561033b27c13680ea4b2">Type::kString</a>; }</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;      <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a">Json::Type</a> operator()(<span class="keyword">const</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a9efd54db778719812dcab3a5768d7a36">Object</a>&amp;) { <span class="keywordflow">return</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919aa11de01cf6422a18af800cdc262cf2f31">Type::kObject</a>; }</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;      <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a">Json::Type</a> operator()(<span class="keyword">const</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#ac65bbcf82a383aeb823594d631a8cd4e">Array</a>&amp;) { <span class="keywordflow">return</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919aaafc9b058c0fa7b9d2556bbcdcc49a272">Type::kArray</a>; }</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    };</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    <span class="keywordflow">return</span> absl::visit(ValueFunctor(), value_);</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    <span class="keywordflow">return</span> std::visit(ValueFunctor(), value_);</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;  }</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;  <span class="comment">// Payload accessor for kBoolean.</span></div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;  <span class="comment">// Must not be called for other types.</span></div>
-<div class="line"><a name="l00173"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#adcf2045e71da9e6db3e7def74db67bc3">  173</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#adcf2045e71da9e6db3e7def74db67bc3">boolean</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> absl::get&lt;bool&gt;(value_); }</div>
+<div class="line"><a name="l00173"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#adcf2045e71da9e6db3e7def74db67bc3">  173</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#adcf2045e71da9e6db3e7def74db67bc3">boolean</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> std::get&lt;bool&gt;(value_); }</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160; </div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  <span class="comment">// Payload accessor for kNumber or kString.</span></div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;  <span class="comment">// Must not be called for other types.</span></div>
 <div class="line"><a name="l00177"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#a411f280e030186228c9ea18dce58219a">  177</a></span>&#160;  <span class="keyword">const</span> std::string&amp; <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a411f280e030186228c9ea18dce58219a">string</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    <span class="keyword">const</span> NumberValue* num = absl::get_if&lt;NumberValue&gt;(&amp;value_);</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    <span class="keyword">const</span> NumberValue* num = std::get_if&lt;NumberValue&gt;(&amp;value_);</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <span class="keywordflow">if</span> (num != <span class="keyword">nullptr</span>) <span class="keywordflow">return</span> num-&gt;value;</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    <span class="keywordflow">return</span> absl::get&lt;std::string&gt;(value_);</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    <span class="keywordflow">return</span> std::get&lt;std::string&gt;(value_);</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;  }</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160; </div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;  <span class="comment">// Payload accessor for kObject.</span></div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;  <span class="comment">// Must not be called for other types.</span></div>
-<div class="line"><a name="l00185"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#a6eae0802f8d5e601265c62233c789379">  185</a></span>&#160;  <span class="keyword">const</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a9efd54db778719812dcab3a5768d7a36">Object</a>&amp; <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a6eae0802f8d5e601265c62233c789379">object</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> absl::get&lt;Object&gt;(value_); }</div>
+<div class="line"><a name="l00185"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#a6eae0802f8d5e601265c62233c789379">  185</a></span>&#160;  <span class="keyword">const</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a9efd54db778719812dcab3a5768d7a36">Object</a>&amp; <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a6eae0802f8d5e601265c62233c789379">object</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> std::get&lt;Object&gt;(value_); }</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160; </div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;  <span class="comment">// Payload accessor for kArray.</span></div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;  <span class="comment">// Must not be called for other types.</span></div>
-<div class="line"><a name="l00189"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#a397803c046eecb1f29f253c8bc02535e">  189</a></span>&#160;  <span class="keyword">const</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#ac65bbcf82a383aeb823594d631a8cd4e">Array</a>&amp; <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a397803c046eecb1f29f253c8bc02535e">array</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> absl::get&lt;Array&gt;(value_); }</div>
+<div class="line"><a name="l00189"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#a397803c046eecb1f29f253c8bc02535e">  189</a></span>&#160;  <span class="keyword">const</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#ac65bbcf82a383aeb823594d631a8cd4e">Array</a>&amp; <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a397803c046eecb1f29f253c8bc02535e">array</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> std::get&lt;Array&gt;(value_); }</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160; </div>
 <div class="line"><a name="l00191"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#a6e404d62a3671c660f7638a6f4cb0634">  191</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a6e404d62a3671c660f7638a6f4cb0634">operator==</a>(<span class="keyword">const</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html">Json</a>&amp; other)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> value_ == other.value_; }</div>
 <div class="line"><a name="l00192"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_json.html#adf2fce3a125d1b0b92e5cb3f0746bc4a">  192</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#adf2fce3a125d1b0b92e5cb3f0746bc4a">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html">Json</a>&amp; other)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> !(*<span class="keyword">this</span> == other); }</div>
@@ -271,12 +271,12 @@ $(function() {
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;      <span class="keywordflow">return</span> value == other.value;</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    }</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;  };</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;  <span class="keyword">using</span> Value = absl::variant&lt;absl::monostate,  <span class="comment">// kNull</span></div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                              bool,             <span class="comment">// kBoolean</span></div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                              NumberValue,      <span class="comment">// kNumber</span></div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                              std::string,      <span class="comment">// kString</span></div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                              <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a9efd54db778719812dcab3a5768d7a36">Object</a>,           <span class="comment">// kObject</span></div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                              <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#ac65bbcf82a383aeb823594d631a8cd4e">Array</a>&gt;;           <span class="comment">// kArray</span></div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;  <span class="keyword">using</span> Value = std::variant&lt;std::monostate,  <span class="comment">// kNull</span></div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                             bool,            <span class="comment">// kBoolean</span></div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                             NumberValue,     <span class="comment">// kNumber</span></div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                             std::string,     <span class="comment">// kString</span></div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                             <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a9efd54db778719812dcab3a5768d7a36">Object</a>,          <span class="comment">// kObject</span></div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                             <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#ac65bbcf82a383aeb823594d631a8cd4e">Array</a>&gt;;          <span class="comment">// kArray</span></div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160; </div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;  <span class="keyword">explicit</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_json.html#a272596c10a499561b62e10ddf4fcef03">Json</a>(Value value) : value_(std::move(value)) {}</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160; </div>
@@ -329,7 +329,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 31 2025 21:28:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 13 2025 18:13:53 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

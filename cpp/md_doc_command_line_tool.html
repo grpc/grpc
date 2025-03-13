@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.70.1</span>
+   &#160;<span id="projectnumber">1.71.0</span>
    </div>
   </td>
  </tr>
@@ -100,7 +100,7 @@ Code location</h1>
 </div><!-- fragment --><p>Once the prerequisites are satisfied, you can build with cmake:</p>
 <div class="fragment"><div class="line">$ mkdir -p cmake/build</div>
 <div class="line">$ cd cmake/build</div>
-<div class="line">$ cmake -DgRPC_BUILD_TESTS=ON ../..</div>
+<div class="line">$ cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_CXX_STANDARD=17 ../..</div>
 <div class="line">$ make grpc_cli</div>
 </div><!-- fragment --><p>The main file can be found at <a href="https://github.com/grpc/grpc/blob/master/test/cpp/util/grpc_cli.cc">https://github.com/grpc/grpc/blob/master/test/cpp/util/grpc_cli.cc</a></p>
 <h1><a class="anchor" id="autotoc_md48"></a>
@@ -175,7 +175,7 @@ Call a remote method</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 31 2025 21:29:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 13 2025 18:13:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

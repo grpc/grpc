@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC Channelz &#8212; gRPC Python 1.70.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=6625fa76" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=afed0ee8"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <title>gRPC Channelz &#8212; gRPC Python 1.71.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=84b2ca11" />
+    <script src="_static/documentation_options.js?v=026573dc"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="gRPC CSDS" href="grpc_csds.html" />
@@ -18,19 +18,20 @@
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
     
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="index.html">gRPC Python</a></h1>
 
 
 
-<p class="blurb">1.70.1</p>
+<p class="blurb">1.71.0</p>
 
 
 
@@ -79,7 +80,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -87,7 +88,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -106,57 +107,57 @@
           <div class="body" role="main">
             
   <section id="grpc-channelz">
-<h1>gRPC Channelz<a class="headerlink" href="#grpc-channelz" title="Permalink to this heading">¶</a></h1>
+<h1>gRPC Channelz<a class="headerlink" href="#grpc-channelz" title="Link to this heading">¶</a></h1>
 <section id="what-is-grpc-channelz">
-<h2>What is gRPC Channelz?<a class="headerlink" href="#what-is-grpc-channelz" title="Permalink to this heading">¶</a></h2>
+<h2>What is gRPC Channelz?<a class="headerlink" href="#what-is-grpc-channelz" title="Link to this heading">¶</a></h2>
 <p>Design Document <a class="reference external" href="https://github.com/grpc/proposal/blob/master/A14-channelz.md">gRPC Channelz</a></p>
 </section>
 <section id="module-grpc_channelz.v1.channelz">
-<span id="module-contents"></span><h2>Module Contents<a class="headerlink" href="#module-grpc_channelz.v1.channelz" title="Permalink to this heading">¶</a></h2>
+<span id="module-contents"></span><h2>Module Contents<a class="headerlink" href="#module-grpc_channelz.v1.channelz" title="Link to this heading">¶</a></h2>
 <p>Channelz debug service implementation in gRPC Python.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_channelz.v1.channelz.ChannelzServicer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_channelz.v1.channelz.</span></span><span class="sig-name descname"><span class="pre">ChannelzServicer</span></span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_channelz.v1.channelz.</span></span><span class="sig-name descname"><span class="pre">ChannelzServicer</span></span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer" title="Link to this definition">¶</a></dt>
 <dd><p>Servicer handling RPCs for service statuses.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_channelz.v1.channelz.ChannelzServicer.GetChannel">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetChannel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetChannel" title="Link to this definition">¶</a></dt>
 <dd><p>Returns a single Channel, or else a NOT_FOUND code.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_channelz.v1.channelz.ChannelzServicer.GetServer">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetServer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetServer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetServer" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetServer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetServer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetServer" title="Link to this definition">¶</a></dt>
 <dd><p>Returns a single Server, or else a NOT_FOUND code.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_channelz.v1.channelz.ChannelzServicer.GetServerSockets">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetServerSockets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetServerSockets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetServerSockets" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetServerSockets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetServerSockets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetServerSockets" title="Link to this definition">¶</a></dt>
 <dd><p>Gets all server sockets that exist in the process.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_channelz.v1.channelz.ChannelzServicer.GetServers">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetServers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetServers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetServers" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetServers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetServers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetServers" title="Link to this definition">¶</a></dt>
 <dd><p>Gets all servers that exist in the process.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_channelz.v1.channelz.ChannelzServicer.GetSocket">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetSocket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetSocket"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetSocket" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetSocket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetSocket"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetSocket" title="Link to this definition">¶</a></dt>
 <dd><p>Returns a single Socket or else a NOT_FOUND code.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_channelz.v1.channelz.ChannelzServicer.GetSubchannel">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetSubchannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetSubchannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetSubchannel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetSubchannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetSubchannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetSubchannel" title="Link to this definition">¶</a></dt>
 <dd><p>Returns a single Subchannel, or else a NOT_FOUND code.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_channelz.v1.channelz.ChannelzServicer.GetTopChannels">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetTopChannels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetTopChannels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetTopChannels" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GetTopChannels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/_servicer.html#ChannelzServicer.GetTopChannels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer.GetTopChannels" title="Link to this definition">¶</a></dt>
 <dd><p>Gets all root channels (i.e. channels the application has directly
 created). This does not include subchannels nor non-top level channels.</p>
 </dd></dl>
@@ -165,7 +166,7 @@ created). This does not include subchannels nor non-top level channels.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="grpc_channelz.v1.channelz.add_channelz_servicer">
-<span class="sig-prename descclassname"><span class="pre">grpc_channelz.v1.channelz.</span></span><span class="sig-name descname"><span class="pre">add_channelz_servicer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">server</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/channelz.html#add_channelz_servicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.add_channelz_servicer" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">grpc_channelz.v1.channelz.</span></span><span class="sig-name descname"><span class="pre">add_channelz_servicer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">server</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/channelz.html#add_channelz_servicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.add_channelz_servicer" title="Link to this definition">¶</a></dt>
 <dd><p>Add Channelz servicer to a server.</p>
 <p>Channelz servicer is in charge of
 pulling information from C-Core for entire process. It will allow the
@@ -195,7 +196,7 @@ and you can add Channelz servicer to a Channelz-disabled server.</p>
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2020, The gRPC Authors.
+      &#169;2020, The gRPC Authors.
       
       |
       <a href="_sources/grpc_channelz.rst.txt"
@@ -205,7 +206,7 @@ and you can add Channelz servicer to a Channelz-disabled server.</p>
     
 
     
-    <script type="text/javascript">
+    <script>
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-60127042-1']);
@@ -214,8 +215,8 @@ and you can add Channelz servicer to a Channelz-disabled server.</p>
       _gaq.push(['_trackPageview']);
 
       (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var ga = document.createElement('script'); ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'https://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
 
