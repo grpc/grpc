@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.70.1</span>
+   &#160;<span id="projectnumber">1.71.0</span>
    </div>
   </td>
  </tr>
@@ -88,10 +88,10 @@ $(function() {
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &quot;absl/strings/string_view.h&quot;</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;absl/types/optional.h&quot;</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &lt;optional&gt;</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;absl/strings/string_view.h&quot;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="namespacegrpc__event__engine.html">   24</a></span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc__event__engine.html">grpc_event_engine</a> {</div>
 <div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="namespacegrpc__event__engine_1_1experimental.html">   25</a></span>&#160;<span class="keyword">namespace </span>experimental {</div>
@@ -100,11 +100,11 @@ $(function() {
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#af86d519833129ea7950b5449857c9c6e">~EndpointConfig</a>() = <span class="keywordflow">default</span>;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="comment">// If the key points to an integer config, an integer value gets returned.</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="comment">// Otherwise it returns an absl::nullopt_t</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keyword">virtual</span> absl::optional&lt;int&gt; <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a59a2cc323e22c30a23c943f14e37d2b5">GetInt</a>(absl::string_view key) <span class="keyword">const</span> = 0;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="comment">// Otherwise it returns an std::nullopt_t</span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keyword">virtual</span> std::optional&lt;int&gt; <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#aacce17a90999717571eaf7e898214ef4">GetInt</a>(absl::string_view key) <span class="keyword">const</span> = 0;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="comment">// If the key points to an string config, an string value gets returned.</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="comment">// Otherwise it returns an absl::nullopt_t</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keyword">virtual</span> absl::optional&lt;absl::string_view&gt; <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a3399e01fc2e973112451546b59ec1c97">GetString</a>(</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="comment">// Otherwise it returns an std::nullopt_t</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keyword">virtual</span> std::optional&lt;absl::string_view&gt; <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a688101855723eb0c4725465717f8935d">GetString</a>(</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;      absl::string_view key) <span class="keyword">const</span> = 0;</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="comment">// If the key points to an void* config, a void* pointer value gets returned.</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="comment">// Otherwise it returns nullptr</span></div>
@@ -116,16 +116,16 @@ $(function() {
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="preprocessor">#endif  // GRPC_EVENT_ENGINE_ENDPOINT_CONFIG_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_endpoint_config_html_a3399e01fc2e973112451546b59ec1c97"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a3399e01fc2e973112451546b59ec1c97">grpc_event_engine::experimental::EndpointConfig::GetString</a></div><div class="ttdeci">virtual absl::optional&lt; absl::string_view &gt; GetString(absl::string_view key) const =0</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_endpoint_config_html_a568da1db8412728292100849e4bc3ef9"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a568da1db8412728292100849e4bc3ef9">grpc_event_engine::experimental::EndpointConfig::GetVoidPointer</a></div><div class="ttdeci">virtual void * GetVoidPointer(absl::string_view key) const =0</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_endpoint_config_html"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html">grpc_event_engine::experimental::EndpointConfig</a></div><div class="ttdoc">Collection of parameters used to configure client and server endpoints.</div><div class="ttdef"><b>Definition:</b> endpoint_config.h:31</div></div>
+<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_endpoint_config_html_a688101855723eb0c4725465717f8935d"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a688101855723eb0c4725465717f8935d">grpc_event_engine::experimental::EndpointConfig::GetString</a></div><div class="ttdeci">virtual std::optional&lt; absl::string_view &gt; GetString(absl::string_view key) const =0</div></div>
 <div class="ttc" id="anamespacegrpc__event__engine_html"><div class="ttname"><a href="namespacegrpc__event__engine.html">grpc_event_engine</a></div><div class="ttdef"><b>Definition:</b> endpoint_config.h:24</div></div>
-<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_endpoint_config_html_a59a2cc323e22c30a23c943f14e37d2b5"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#a59a2cc323e22c30a23c943f14e37d2b5">grpc_event_engine::experimental::EndpointConfig::GetInt</a></div><div class="ttdeci">virtual absl::optional&lt; int &gt; GetInt(absl::string_view key) const =0</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_endpoint_config_html_af86d519833129ea7950b5449857c9c6e"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#af86d519833129ea7950b5449857c9c6e">grpc_event_engine::experimental::EndpointConfig::~EndpointConfig</a></div><div class="ttdeci">virtual ~EndpointConfig()=default</div></div>
+<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_endpoint_config_html_aacce17a90999717571eaf7e898214ef4"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#aacce17a90999717571eaf7e898214ef4">grpc_event_engine::experimental::EndpointConfig::GetInt</a></div><div class="ttdeci">virtual std::optional&lt; int &gt; GetInt(absl::string_view key) const =0</div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 31 2025 21:28:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 13 2025 18:13:55 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

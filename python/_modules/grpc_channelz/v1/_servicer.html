@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_channelz.v1._servicer &#8212; gRPC Python 1.70.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=6625fa76" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=afed0ee8"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <title>grpc_channelz.v1._servicer &#8212; gRPC Python 1.71.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=84b2ca11" />
+    <script src="../../../_static/documentation_options.js?v=026573dc"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
     
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../../../index.html">gRPC Python</a></h1>
 
 
 
-<p class="blurb">1.70.1</p>
+<p class="blurb">1.71.0</p>
 
 
 
@@ -59,7 +60,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
@@ -67,7 +68,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -108,10 +109,14 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">grpc_channelz.v1.channelz_pb2_grpc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_channelz_pb2_grpc</span>
 
 
-<div class="viewcode-block" id="ChannelzServicer"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ChannelzServicer</span><span class="p">(</span><span class="n">_channelz_pb2_grpc</span><span class="o">.</span><span class="n">ChannelzServicer</span><span class="p">):</span>
+<div class="viewcode-block" id="ChannelzServicer">
+<a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChannelzServicer</span><span class="p">(</span><span class="n">_channelz_pb2_grpc</span><span class="o">.</span><span class="n">ChannelzServicer</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Servicer handling RPCs for service statuses.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="ChannelzServicer.GetTopChannels"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetTopChannels">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="ChannelzServicer.GetTopChannels">
+<a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetTopChannels">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetTopChannels</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
@@ -122,7 +127,10 @@
             <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
             <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="ChannelzServicer.GetServers"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetServers">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="ChannelzServicer.GetServers">
+<a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetServers">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetServers</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
@@ -133,7 +141,10 @@
             <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
             <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="ChannelzServicer.GetServer"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetServer">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="ChannelzServicer.GetServer">
+<a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetServer">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetServer</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
@@ -147,7 +158,10 @@
             <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
             <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="ChannelzServicer.GetServerSockets"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetServerSockets">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="ChannelzServicer.GetServerSockets">
+<a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetServerSockets">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetServerSockets</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
@@ -165,7 +179,10 @@
             <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
             <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="ChannelzServicer.GetChannel"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetChannel">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="ChannelzServicer.GetChannel">
+<a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetChannel">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetChannel</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
@@ -179,7 +196,10 @@
             <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
             <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="ChannelzServicer.GetSubchannel"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetSubchannel">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="ChannelzServicer.GetSubchannel">
+<a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetSubchannel">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSubchannel</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
@@ -193,7 +213,10 @@
             <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
             <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="ChannelzServicer.GetSocket"><a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetSocket">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="ChannelzServicer.GetSocket">
+<a class="viewcode-back" href="../../../grpc_channelz.html#grpc_channelz.v1.channelz.ChannelzServicer.GetSocket">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">GetSocket</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json_format</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span>
@@ -205,7 +228,9 @@
             <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
         <span class="k">except</span> <span class="n">json_format</span><span class="o">.</span><span class="n">ParseError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
-            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div></div>
+            <span class="n">context</span><span class="o">.</span><span class="n">set_details</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
+</div>
+
 </pre></div>
 
           </div>
@@ -215,14 +240,14 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2020, The gRPC Authors.
+      &#169;2020, The gRPC Authors.
       
     </div>
 
     
 
     
-    <script type="text/javascript">
+    <script>
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-60127042-1']);
@@ -231,8 +256,8 @@
       _gaq.push(['_trackPageview']);
 
       (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var ga = document.createElement('script'); ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'https://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
 

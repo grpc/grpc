@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC Reflection &#8212; gRPC Python 1.70.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=6625fa76" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=afed0ee8"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <title>gRPC Reflection &#8212; gRPC Python 1.71.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=84b2ca11" />
+    <script src="_static/documentation_options.js?v=026573dc"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="gRPC Status" href="grpc_status.html" />
@@ -18,19 +18,20 @@
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
     
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="index.html">gRPC Python</a></h1>
 
 
 
-<p class="blurb">1.70.1</p>
+<p class="blurb">1.71.0</p>
 
 
 
@@ -88,7 +89,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -96,7 +97,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -115,27 +116,27 @@
           <div class="body" role="main">
             
   <section id="grpc-reflection">
-<h1>gRPC Reflection<a class="headerlink" href="#grpc-reflection" title="Permalink to this heading">¶</a></h1>
+<h1>gRPC Reflection<a class="headerlink" href="#grpc-reflection" title="Link to this heading">¶</a></h1>
 <section id="what-is-grpc-reflection">
-<h2>What is gRPC reflection?<a class="headerlink" href="#what-is-grpc-reflection" title="Permalink to this heading">¶</a></h2>
+<h2>What is gRPC reflection?<a class="headerlink" href="#what-is-grpc-reflection" title="Link to this heading">¶</a></h2>
 <p>Check this out <a class="reference external" href="https://github.com/grpc/grpc/blob/master/doc/python/server_reflection.md">gRPC Python Server Reflection</a></p>
 </section>
 <section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading">¶</a></h2>
+<h2>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h2>
 <p>Refer to the GitHub <a class="reference external" href="https://github.com/grpc/grpc/blob/master/examples/python/helloworld/greeter_server_with_reflection.py">reflection example</a></p>
 </section>
 <section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
 <section id="module-grpc_reflection.v1alpha.reflection">
-<span id="server-side"></span><h3>Server-side<a class="headerlink" href="#module-grpc_reflection.v1alpha.reflection" title="Permalink to this heading">¶</a></h3>
+<span id="server-side"></span><h3>Server-side<a class="headerlink" href="#module-grpc_reflection.v1alpha.reflection" title="Link to this heading">¶</a></h3>
 <p>Reference implementation for reflection in gRPC Python.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_reflection.v1alpha.reflection.ReflectionServicer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_reflection.v1alpha.reflection.</span></span><span class="sig-name descname"><span class="pre">ReflectionServicer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_reflection.v1alpha.reflection.</span></span><span class="sig-name descname"><span class="pre">ReflectionServicer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer" title="Link to this definition">¶</a></dt>
 <dd><p>Servicer handling RPCs for service statuses.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo">
-<span class="sig-name descname"><span class="pre">ServerReflectionInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_iterator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer.ServerReflectionInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">ServerReflectionInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_iterator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer.ServerReflectionInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo" title="Link to this definition">¶</a></dt>
 <dd><p>The reflection service is structured as a bidirectional stream, ensuring
 all related requests go to a single server.</p>
 </dd></dl>
@@ -144,7 +145,7 @@ all related requests go to a single server.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="grpc_reflection.v1alpha.reflection.enable_server_reflection">
-<span class="sig-prename descclassname"><span class="pre">grpc_reflection.v1alpha.reflection.</span></span><span class="sig-name descname"><span class="pre">enable_server_reflection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#enable_server_reflection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.enable_server_reflection" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">grpc_reflection.v1alpha.reflection.</span></span><span class="sig-name descname"><span class="pre">enable_server_reflection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#enable_server_reflection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.enable_server_reflection" title="Link to this definition">¶</a></dt>
 <dd><p>Enables server reflection on a server.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -159,13 +160,13 @@ all related requests go to a single server.</p>
 
 </section>
 <section id="module-grpc_reflection.v1alpha.proto_reflection_descriptor_database">
-<span id="client-side"></span><h3>Client-side<a class="headerlink" href="#module-grpc_reflection.v1alpha.proto_reflection_descriptor_database" title="Permalink to this heading">¶</a></h3>
+<span id="client-side"></span><h3>Client-side<a class="headerlink" href="#module-grpc_reflection.v1alpha.proto_reflection_descriptor_database" title="Link to this heading">¶</a></h3>
 <p>Reference implementation for reflection client in gRPC Python.</p>
 <p>For usage instructions, see the Python Reflection documentation at
 <code class="docutils literal notranslate"><span class="pre">doc/python/server_reflection.md</span></code>.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_reflection.v1alpha.proto_reflection_descriptor_database.</span></span><span class="sig-name descname"><span class="pre">ProtoReflectionDescriptorDatabase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_reflection.v1alpha.proto_reflection_descriptor_database.</span></span><span class="sig-name descname"><span class="pre">ProtoReflectionDescriptorDatabase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase" title="Link to this definition">¶</a></dt>
 <dd><p>A container and interface for receiving descriptors from a server’s
 Reflection service.</p>
 <p>ProtoReflectionDescriptorDatabase takes a channel to a server with
@@ -174,12 +175,12 @@ information. It implements the DescriptorDatabase interface.</p>
 <p>It is typically used to feed a DescriptorPool instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>channel</strong> (<a class="reference internal" href="grpc.html#grpc.Channel" title="grpc.Channel"><em>Channel</em></a>) – </p>
+<dd class="field-odd"><p><strong>channel</strong> (<a class="reference internal" href="grpc.html#grpc.Channel" title="grpc.Channel"><em>Channel</em></a>)</p>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.get_services">
-<span class="sig-name descname"><span class="pre">get_services</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.get_services"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.get_services" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_services</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.get_services"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.get_services" title="Link to this definition">¶</a></dt>
 <dd><p>Get list of full names of the registered services.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -193,7 +194,7 @@ information. It implements the DescriptorDatabase interface.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileByName">
-<span class="sig-name descname"><span class="pre">FindFileByName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.FindFileByName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileByName" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">FindFileByName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.FindFileByName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileByName" title="Link to this definition">¶</a></dt>
 <dd><p>Find a file descriptor by file name.</p>
 <p>This function implements a DescriptorDatabase interface, and is
 typically not called directly; prefer using a DescriptorPool instead.</p>
@@ -215,7 +216,7 @@ typically not called directly; prefer using a DescriptorPool instead.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileContainingSymbol">
-<span class="sig-name descname"><span class="pre">FindFileContainingSymbol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.FindFileContainingSymbol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileContainingSymbol" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">FindFileContainingSymbol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.FindFileContainingSymbol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileContainingSymbol" title="Link to this definition">¶</a></dt>
 <dd><p>Find the file containing the symbol, and return its file descriptor.</p>
 <p>The symbol should be a fully qualified name including the file
 descriptor’s package and any containing messages. Some examples:</p>
@@ -246,7 +247,7 @@ typically not called directly; prefer using a DescriptorPool instead.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindAllExtensionNumbers">
-<span class="sig-name descname"><span class="pre">FindAllExtensionNumbers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extendee_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.FindAllExtensionNumbers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindAllExtensionNumbers" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">FindAllExtensionNumbers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extendee_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.FindAllExtensionNumbers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindAllExtensionNumbers" title="Link to this definition">¶</a></dt>
 <dd><p>Find the field numbers used by all known extensions of <cite>extendee_name</cite>.</p>
 <p>This function implements a DescriptorDatabase interface, and is
 typically not called directly; prefer using a DescriptorPool instead.</p>
@@ -268,7 +269,7 @@ typically not called directly; prefer using a DescriptorPool instead.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileContainingExtension">
-<span class="sig-name descname"><span class="pre">FindFileContainingExtension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extendee_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extension_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.FindFileContainingExtension"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileContainingExtension" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">FindFileContainingExtension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extendee_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extension_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.FindFileContainingExtension"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileContainingExtension" title="Link to this definition">¶</a></dt>
 <dd><p>Find the file which defines an extension for the given message type
 and field number.</p>
 <p>This function implements a DescriptorDatabase interface, and is
@@ -306,7 +307,7 @@ typically not called directly; prefer using a DescriptorPool instead.</p>
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2020, The gRPC Authors.
+      &#169;2020, The gRPC Authors.
       
       |
       <a href="_sources/grpc_reflection.rst.txt"
@@ -316,7 +317,7 @@ typically not called directly; prefer using a DescriptorPool instead.</p>
     
 
     
-    <script type="text/javascript">
+    <script>
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-60127042-1']);
@@ -325,8 +326,8 @@ typically not called directly; prefer using a DescriptorPool instead.</p>
       _gaq.push(['_trackPageview']);
 
       (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var ga = document.createElement('script'); ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'https://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
 

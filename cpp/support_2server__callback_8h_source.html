@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.70.1</span>
+   &#160;<span id="projectnumber">1.71.0</span>
    </div>
   </td>
  </tr>
@@ -479,10 +479,10 @@ $(function() {
 <div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;  }</div>
 <div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160; </div>
 <div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_mutex.html">grpc::internal::Mutex</a> stream_mu_;</div>
-<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;  <span class="comment">// TODO(vjpai): Make stream_or_backlog_ into a std::variant or absl::variant</span></div>
-<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;  <span class="comment">//              once C++17 or ABSL is supported since stream and backlog are</span></div>
-<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;  <span class="comment">//              mutually exclusive in this class. Do likewise with the</span></div>
-<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;  <span class="comment">//              remaining reactor classes and their backlogs as well.</span></div>
+<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;  <span class="comment">// TODO(vjpai): Make stream_or_backlog_ into an std::variant once C++17 or</span></div>
+<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;  <span class="comment">// ABSL is supported since stream and backlog are mutually exclusive in this</span></div>
+<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;  <span class="comment">// class. Do likewise with the  remaining reactor classes and their backlogs</span></div>
+<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;  <span class="comment">// as well.</span></div>
 <div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;  std::atomic&lt;ServerCallbackReaderWriter&lt;Request, Response&gt;*&gt; stream_{<span class="keyword">nullptr</span>};</div>
 <div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;  <span class="keyword">struct </span>PreBindBacklog {</div>
 <div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;    <span class="keywordtype">bool</span> send_initial_metadata_wanted = <span class="keyword">false</span>;</div>
@@ -913,7 +913,7 @@ $(function() {
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_adedd4841521e4fe210676d8387190cf1"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#adedd4841521e4fe210676d8387190cf1">grpc::experimental::ServerBidiReactor</a></div><div class="ttdeci">::grpc::ServerBidiReactor&lt; Request, Response &gt; ServerBidiReactor</div><div class="ttdef"><b>Definition:</b> server_callback.h:800</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 31 2025 21:28:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 13 2025 18:13:55 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

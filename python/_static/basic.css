@@ -4,7 +4,7 @@
  *
  * Sphinx stylesheet -- basic theme.
  *
- * :copyright: Copyright 2007-2023 by the Sphinx team, see AUTHORS.
+ * :copyright: Copyright 2007-2024 by the Sphinx team, see AUTHORS.
  * :license: BSD, see LICENSE for details.
  *
  */
@@ -222,7 +222,7 @@ table.modindextable td {
 /* -- general body styles --------------------------------------------------- */
 
 div.body {
-    min-width: 360px;
+    min-width: inherit;
     max-width: 800px;
 }
 
@@ -235,6 +235,10 @@ div.body p, div.body dd, div.body li, div.body blockquote {
 
 a.headerlink {
     visibility: hidden;
+}
+
+a:visited {
+    color: #551A8B;
 }
 
 h1:hover > a.headerlink,

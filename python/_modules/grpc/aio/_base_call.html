@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._base_call &#8212; gRPC Python 1.70.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=6625fa76" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=afed0ee8"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <title>grpc.aio._base_call &#8212; gRPC Python 1.71.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=84b2ca11" />
+    <script src="../../../_static/documentation_options.js?v=026573dc"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
     
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../../../index.html">gRPC Python</a></h1>
 
 
 
-<p class="blurb">1.70.1</p>
+<p class="blurb">1.71.0</p>
 
 
 
@@ -61,7 +62,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
@@ -69,7 +70,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -123,10 +124,14 @@
 <span class="n">__all__</span> <span class="o">=</span> <span class="s2">&quot;RpcContext&quot;</span><span class="p">,</span> <span class="s2">&quot;Call&quot;</span><span class="p">,</span> <span class="s2">&quot;UnaryUnaryCall&quot;</span><span class="p">,</span> <span class="s2">&quot;UnaryStreamCall&quot;</span>
 
 
-<div class="viewcode-block" id="RpcContext"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RpcContext</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcContext">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RpcContext</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides RPC-related information and action.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="RpcContext.cancelled"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext.cancelled">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="RpcContext.cancelled">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext.cancelled">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the RPC is cancelled.</span>
 
@@ -136,7 +141,10 @@
 <span class="sd">          A bool indicates whether the RPC is cancelled or not.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="RpcContext.done"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext.done">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="RpcContext.done">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext.done">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the RPC is done.</span>
 
@@ -146,7 +154,10 @@
 <span class="sd">          A bool indicates if the RPC is done.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="RpcContext.time_remaining"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext.time_remaining">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="RpcContext.time_remaining">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext.time_remaining">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Describes the length of allowed time remaining for the RPC.</span>
 
@@ -156,7 +167,10 @@
 <span class="sd">          timed out, or None if no deadline was specified for the RPC.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="RpcContext.cancel"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext.cancel">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="RpcContext.cancel">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext.cancel">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Cancels the RPC.</span>
 
@@ -166,20 +180,29 @@
 <span class="sd">          A bool indicates if the cancellation is performed or not.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="RpcContext.add_done_callback"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext.add_done_callback">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="RpcContext.add_done_callback">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext.add_done_callback">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">:</span> <span class="n">DoneCallbackType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Registers a callback to be called on RPC termination.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">          callback: A callable object will be called with the call object as</span>
 <span class="sd">          its only argument.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="Call"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Call</span><span class="p">(</span><span class="n">RpcContext</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Call">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Call</span><span class="p">(</span><span class="n">RpcContext</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The abstract base class of an RPC on the client-side.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Call.initial_metadata"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call.initial_metadata">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="Call.initial_metadata">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call.initial_metadata">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the initial metadata sent by the server.</span>
 
@@ -187,7 +210,10 @@
 <span class="sd">          The initial :term:`metadata`.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Call.trailing_metadata"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call.trailing_metadata">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="Call.trailing_metadata">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call.trailing_metadata">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the trailing metadata sent by the server.</span>
 
@@ -195,7 +221,10 @@
 <span class="sd">          The trailing :term:`metadata`.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Call.code"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call.code">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="Call.code">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call.code">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the status code sent by the server.</span>
 
@@ -203,7 +232,10 @@
 <span class="sd">          The StatusCode value for the RPC.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Call.details"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call.details">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="Call.details">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call.details">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the details sent by the server.</span>
 
@@ -211,7 +243,10 @@
 <span class="sd">          The details string of the RPC.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Call.wait_for_connection"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call.wait_for_connection">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="Call.wait_for_connection">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Call.wait_for_connection">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">wait_for_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Waits until connected to peer and raises aio.AioRpcError if failed.</span>
 
@@ -222,27 +257,39 @@
 <span class="sd">        failure.</span>
 
 <span class="sd">        This method is recommended for building retry mechanisms.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="UnaryUnaryCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryCall">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">UnaryUnaryCall</span><span class="p">(</span>
+
+<div class="viewcode-block" id="UnaryUnaryCall">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryCall">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnaryUnaryCall</span><span class="p">(</span>
     <span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">Call</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The abstract base class of a unary-unary RPC on the client-side.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="UnaryUnaryCall.__await__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryCall.__await__">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryCall.__await__">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryCall.__await__">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__await__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Await the response message to be ready.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          The response message of the RPC.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="UnaryStreamCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamCall">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">UnaryStreamCall</span><span class="p">(</span>
+
+<div class="viewcode-block" id="UnaryStreamCall">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamCall">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnaryStreamCall</span><span class="p">(</span>
     <span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">Call</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span>
 <span class="p">):</span>
-<div class="viewcode-block" id="UnaryStreamCall.__aiter__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamCall.__aiter__">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="UnaryStreamCall.__aiter__">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamCall.__aiter__">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__aiter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the async iterator representation that yields messages.</span>
 
@@ -252,7 +299,10 @@
 <span class="sd">          An async iterator object that yields messages.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="UnaryStreamCall.read"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamCall.read">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="UnaryStreamCall.read">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamCall.read">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">EOFType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads one message from the stream.</span>
 
@@ -265,13 +315,19 @@
 <span class="sd">        Returns:</span>
 <span class="sd">          A response message, or an `grpc.aio.EOF` to indicate the end of the</span>
 <span class="sd">          stream.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="StreamUnaryCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">StreamUnaryCall</span><span class="p">(</span>
+
+<div class="viewcode-block" id="StreamUnaryCall">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StreamUnaryCall</span><span class="p">(</span>
     <span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">Call</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span>
 <span class="p">):</span>
-<div class="viewcode-block" id="StreamUnaryCall.write"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall.write">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryCall.write">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall.write">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes one message to the stream.</span>
 
@@ -282,7 +338,10 @@
 <span class="sd">          An RpcError exception if the write failed.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="StreamUnaryCall.done_writing"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall.done_writing">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="StreamUnaryCall.done_writing">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall.done_writing">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">done_writing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Notifies server that the client is done sending messages.</span>
 
@@ -290,19 +349,28 @@
 <span class="sd">        function will fail. This function is idempotent.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="StreamUnaryCall.__await__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall.__await__">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="StreamUnaryCall.__await__">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall.__await__">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__await__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Await the response message to be ready.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          The response message of the stream.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="StreamStreamCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">StreamStreamCall</span><span class="p">(</span>
+
+<div class="viewcode-block" id="StreamStreamCall">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StreamStreamCall</span><span class="p">(</span>
     <span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">Call</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span>
 <span class="p">):</span>
-<div class="viewcode-block" id="StreamStreamCall.__aiter__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall.__aiter__">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="StreamStreamCall.__aiter__">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall.__aiter__">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__aiter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the async iterator representation that yields messages.</span>
 
@@ -312,7 +380,10 @@
 <span class="sd">          An async iterator object that yields messages.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="StreamStreamCall.read"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall.read">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="StreamStreamCall.read">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall.read">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">EOFType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads one message from the stream.</span>
 
@@ -327,7 +398,10 @@
 <span class="sd">          stream.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="StreamStreamCall.write"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall.write">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="StreamStreamCall.write">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall.write">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes one message to the stream.</span>
 
@@ -338,13 +412,18 @@
 <span class="sd">          An RpcError exception if the write failed.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="StreamStreamCall.done_writing"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall.done_writing">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="StreamStreamCall.done_writing">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall.done_writing">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">done_writing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Notifies server that the client is done sending messages.</span>
 
 <span class="sd">        After done_writing is called, any additional invocation to the write</span>
 <span class="sd">        function will fail. This function is idempotent.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
+
 </pre></div>
 
           </div>
@@ -354,14 +433,14 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2020, The gRPC Authors.
+      &#169;2020, The gRPC Authors.
       
     </div>
 
     
 
     
-    <script type="text/javascript">
+    <script>
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-60127042-1']);
@@ -370,8 +449,8 @@
       _gaq.push(['_trackPageview']);
 
       (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var ga = document.createElement('script'); ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'https://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
 

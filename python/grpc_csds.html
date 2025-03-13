@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC CSDS &#8212; gRPC Python 1.70.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=6625fa76" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=afed0ee8"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <title>gRPC CSDS &#8212; gRPC Python 1.71.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=84b2ca11" />
+    <script src="_static/documentation_options.js?v=026573dc"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="gRPC Health Checking" href="grpc_health_checking.html" />
@@ -18,19 +18,20 @@
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
     
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="index.html">gRPC Python</a></h1>
 
 
 
-<p class="blurb">1.70.1</p>
+<p class="blurb">1.71.0</p>
 
 
 
@@ -70,7 +71,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -78,7 +79,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -97,24 +98,24 @@
           <div class="body" role="main">
             
   <section id="grpc-csds">
-<h1>gRPC CSDS<a class="headerlink" href="#grpc-csds" title="Permalink to this heading">¶</a></h1>
+<h1>gRPC CSDS<a class="headerlink" href="#grpc-csds" title="Link to this heading">¶</a></h1>
 <section id="what-is-grpc-csds">
-<h2>What is gRPC CSDS?<a class="headerlink" href="#what-is-grpc-csds" title="Permalink to this heading">¶</a></h2>
+<h2>What is gRPC CSDS?<a class="headerlink" href="#what-is-grpc-csds" title="Link to this heading">¶</a></h2>
 <p>In short, it’s a xDS configuration dump protocol.</p>
 <p>Design Document <a class="reference external" href="https://github.com/grpc/proposal/blob/master/A40-csds-support.md">gRPC CSDS</a></p>
 </section>
 <section id="module-grpc_csds">
-<span id="module-contents"></span><h2>Module Contents<a class="headerlink" href="#module-grpc_csds" title="Permalink to this heading">¶</a></h2>
+<span id="module-contents"></span><h2>Module Contents<a class="headerlink" href="#module-grpc_csds" title="Link to this heading">¶</a></h2>
 <p>Channelz debug service implementation in gRPC Python.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_csds.ClientStatusDiscoveryServiceServicer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_csds.</span></span><span class="sig-name descname"><span class="pre">ClientStatusDiscoveryServiceServicer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_csds.html#ClientStatusDiscoveryServiceServicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_csds.ClientStatusDiscoveryServiceServicer" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_csds.</span></span><span class="sig-name descname"><span class="pre">ClientStatusDiscoveryServiceServicer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_csds.html#ClientStatusDiscoveryServiceServicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_csds.ClientStatusDiscoveryServiceServicer" title="Link to this definition">¶</a></dt>
 <dd><p>CSDS Servicer works for both the sync API and asyncio API.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>args</strong> (<em>Any</em>) – </p></li>
-<li><p><strong>kwargs</strong> (<em>Any</em>) – </p></li>
+<li><p><strong>args</strong> (<em>Any</em>)</p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -125,7 +126,7 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="grpc_csds.add_csds_servicer">
-<span class="sig-prename descclassname"><span class="pre">grpc_csds.</span></span><span class="sig-name descname"><span class="pre">add_csds_servicer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">server</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_csds.html#add_csds_servicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_csds.add_csds_servicer" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">grpc_csds.</span></span><span class="sig-name descname"><span class="pre">add_csds_servicer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">server</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_csds.html#add_csds_servicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_csds.add_csds_servicer" title="Link to this definition">¶</a></dt>
 <dd><p>Register CSDS servicer to a server.</p>
 <p>CSDS is part of xDS protocol used to expose in-effective traffic
 configuration (or xDS resources). It focuses on simplify the debugging of
@@ -149,7 +150,7 @@ unhealthy backends or issues in the control or data plane.</p>
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2020, The gRPC Authors.
+      &#169;2020, The gRPC Authors.
       
       |
       <a href="_sources/grpc_csds.rst.txt"
@@ -159,7 +160,7 @@ unhealthy backends or issues in the control or data plane.</p>
     
 
     
-    <script type="text/javascript">
+    <script>
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-60127042-1']);
@@ -168,8 +169,8 @@ unhealthy backends or issues in the control or data plane.</p>
       _gaq.push(['_trackPageview']);
 
       (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var ga = document.createElement('script'); ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'https://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
 

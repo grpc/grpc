@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._interceptor &#8212; gRPC Python 1.70.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=6625fa76" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=afed0ee8"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <title>grpc.aio._interceptor &#8212; gRPC Python 1.71.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=84b2ca11" />
+    <script src="../../../_static/documentation_options.js?v=026573dc"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
     
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../../../index.html">gRPC Python</a></h1>
 
 
 
-<p class="blurb">1.70.1</p>
+<p class="blurb">1.71.0</p>
 
 
 
@@ -61,7 +62,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
@@ -69,7 +70,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -144,13 +145,17 @@
 <span class="n">_LOCAL_CANCELLATION_DETAILS</span> <span class="o">=</span> <span class="s2">&quot;Locally cancelled by application!&quot;</span>
 
 
-<div class="viewcode-block" id="ServerInterceptor"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ServerInterceptor">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ServerInterceptor</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<div class="viewcode-block" id="ServerInterceptor">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ServerInterceptor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ServerInterceptor</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords intercepting incoming RPCs on the service-side.</span>
 
 <span class="sd">    This is an EXPERIMENTAL API.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="ServerInterceptor.intercept_service"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ServerInterceptor.intercept_service">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="ServerInterceptor.intercept_service">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ServerInterceptor.intercept_service">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">intercept_service</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
@@ -178,10 +183,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            An RpcMethodHandler with which the RPC may be serviced if the</span>
 <span class="sd">            interceptor chooses to service this RPC, or None otherwise.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="ClientCallDetails"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ClientCallDetails">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ClientCallDetails</span><span class="p">(</span>
+
+<div class="viewcode-block" id="ClientCallDetails">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ClientCallDetails">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClientCallDetails</span><span class="p">(</span>
     <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
         <span class="s2">&quot;ClientCallDetails&quot;</span><span class="p">,</span>
         <span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="s2">&quot;timeout&quot;</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">,</span> <span class="s2">&quot;credentials&quot;</span><span class="p">,</span> <span class="s2">&quot;wait_for_ready&quot;</span><span class="p">),</span>
@@ -208,14 +217,22 @@
     <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="ClientInterceptor"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ClientInterceptor">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ClientInterceptor</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ClientInterceptor">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ClientInterceptor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClientInterceptor</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class used for all Aio Client Interceptor classes&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="UnaryUnaryClientInterceptor"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryClientInterceptor">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">UnaryUnaryClientInterceptor</span><span class="p">(</span><span class="n">ClientInterceptor</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+
+<div class="viewcode-block" id="UnaryUnaryClientInterceptor">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryClientInterceptor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnaryUnaryClientInterceptor</span><span class="p">(</span><span class="n">ClientInterceptor</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords intercepting unary-unary invocations.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="UnaryUnaryClientInterceptor.intercept_unary_unary"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryClientInterceptor.intercept_unary_unary">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryClientInterceptor.intercept_unary_unary">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryClientInterceptor.intercept_unary_unary">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">intercept_unary_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
@@ -245,13 +262,19 @@
 <span class="sd">        Raises:</span>
 <span class="sd">          AioRpcError: Indicating that the RPC terminated with non-OK status.</span>
 <span class="sd">          asyncio.CancelledError: Indicating that the RPC was canceled.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="UnaryStreamClientInterceptor"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamClientInterceptor">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">UnaryStreamClientInterceptor</span><span class="p">(</span><span class="n">ClientInterceptor</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+
+<div class="viewcode-block" id="UnaryStreamClientInterceptor">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamClientInterceptor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnaryStreamClientInterceptor</span><span class="p">(</span><span class="n">ClientInterceptor</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords intercepting unary-stream invocations.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="UnaryStreamClientInterceptor.intercept_unary_stream"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamClientInterceptor.intercept_unary_stream">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="UnaryStreamClientInterceptor.intercept_unary_stream">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamClientInterceptor.intercept_unary_stream">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">intercept_unary_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
@@ -285,13 +308,19 @@
 <span class="sd">        Raises:</span>
 <span class="sd">          AioRpcError: Indicating that the RPC terminated with non-OK status.</span>
 <span class="sd">          asyncio.CancelledError: Indicating that the RPC was canceled.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="StreamUnaryClientInterceptor"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryClientInterceptor">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">StreamUnaryClientInterceptor</span><span class="p">(</span><span class="n">ClientInterceptor</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StreamUnaryClientInterceptor">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryClientInterceptor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StreamUnaryClientInterceptor</span><span class="p">(</span><span class="n">ClientInterceptor</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords intercepting stream-unary invocations.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="StreamUnaryClientInterceptor.intercept_stream_unary"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryClientInterceptor.intercept_stream_unary">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryClientInterceptor.intercept_stream_unary">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryClientInterceptor.intercept_stream_unary">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">intercept_stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
@@ -327,13 +356,19 @@
 <span class="sd">        Raises:</span>
 <span class="sd">          AioRpcError: Indicating that the RPC terminated with non-OK status.</span>
 <span class="sd">          asyncio.CancelledError: Indicating that the RPC was canceled.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="StreamStreamClientInterceptor"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamClientInterceptor">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">StreamStreamClientInterceptor</span><span class="p">(</span><span class="n">ClientInterceptor</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StreamStreamClientInterceptor">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamClientInterceptor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StreamStreamClientInterceptor</span><span class="p">(</span><span class="n">ClientInterceptor</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords intercepting stream-stream invocations.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="StreamStreamClientInterceptor.intercept_stream_stream"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamClientInterceptor.intercept_stream_stream">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="StreamStreamClientInterceptor.intercept_stream_stream">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamClientInterceptor.intercept_stream_stream">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">intercept_stream_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
@@ -373,7 +408,9 @@
 <span class="sd">        Raises:</span>
 <span class="sd">          AioRpcError: Indicating that the RPC terminated with non-OK status.</span>
 <span class="sd">          asyncio.CancelledError: Indicating that the RPC was canceled.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
+
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">InterceptedCall</span><span class="p">:</span>
@@ -694,7 +731,9 @@
         <span class="p">)</span>
 
 
-<div class="viewcode-block" id="InterceptedUnaryUnaryCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.InterceptedUnaryUnaryCall">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">InterceptedUnaryUnaryCall</span><span class="p">(</span>
+<div class="viewcode-block" id="InterceptedUnaryUnaryCall">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.InterceptedUnaryUnaryCall">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">InterceptedUnaryUnaryCall</span><span class="p">(</span>
     <span class="n">_InterceptedUnaryResponseMixin</span><span class="p">,</span> <span class="n">InterceptedCall</span><span class="p">,</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryUnaryCall</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used for running a `UnaryUnaryCall` wrapped by interceptors.</span>
@@ -792,8 +831,12 @@
             <span class="nb">list</span><span class="p">(</span><span class="n">interceptors</span><span class="p">),</span> <span class="n">client_call_details</span><span class="p">,</span> <span class="n">request</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="InterceptedUnaryUnaryCall.time_remaining"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.InterceptedUnaryUnaryCall.time_remaining">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+<div class="viewcode-block" id="InterceptedUnaryUnaryCall.time_remaining">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.InterceptedUnaryUnaryCall.time_remaining">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+</div>
+
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">InterceptedUnaryStreamCall</span><span class="p">(</span>
@@ -1275,14 +1318,14 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2020, The gRPC Authors.
+      &#169;2020, The gRPC Authors.
       
     </div>
 
     
 
     
-    <script type="text/javascript">
+    <script>
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-60127042-1']);
@@ -1291,8 +1334,8 @@
       _gaq.push(['_trackPageview']);
 
       (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var ga = document.createElement('script'); ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'https://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
 

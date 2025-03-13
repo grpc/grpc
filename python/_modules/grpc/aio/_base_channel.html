@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._base_channel &#8212; gRPC Python 1.70.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=6625fa76" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=afed0ee8"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <title>grpc.aio._base_channel &#8212; gRPC Python 1.71.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=84b2ca11" />
+    <script src="../../../_static/documentation_options.js?v=026573dc"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
     
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../../../index.html">gRPC Python</a></h1>
 
 
 
-<p class="blurb">1.70.1</p>
+<p class="blurb">1.71.0</p>
 
 
 
@@ -61,7 +62,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
@@ -69,7 +70,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -117,10 +118,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">._typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">SerializingFunction</span>
 
 
-<div class="viewcode-block" id="UnaryUnaryMultiCallable"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryMultiCallable">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">UnaryUnaryMultiCallable</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryMultiCallable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnaryUnaryMultiCallable</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Enables asynchronous invocation of a unary-call RPC.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="UnaryUnaryMultiCallable.__call__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.__call__">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryMultiCallable.__call__">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
@@ -152,13 +157,19 @@
 <span class="sd">          RpcError: Indicates that the RPC terminated with non-OK status. The</span>
 <span class="sd">            raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
 <span class="sd">            metadata, status code, and details.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="UnaryStreamMultiCallable"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamMultiCallable">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">UnaryStreamMultiCallable</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+
+<div class="viewcode-block" id="UnaryStreamMultiCallable">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamMultiCallable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnaryStreamMultiCallable</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Enables asynchronous invocation of a server-streaming RPC.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="UnaryStreamMultiCallable.__call__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="UnaryStreamMultiCallable.__call__">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamMultiCallable.__call__">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
@@ -190,13 +201,19 @@
 <span class="sd">          RpcError: Indicates that the RPC terminated with non-OK status. The</span>
 <span class="sd">            raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
 <span class="sd">            metadata, status code, and details.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="StreamUnaryMultiCallable"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryMultiCallable">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">StreamUnaryMultiCallable</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StreamUnaryMultiCallable">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryMultiCallable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StreamUnaryMultiCallable</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Enables asynchronous invocation of a client-streaming RPC.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="StreamUnaryMultiCallable.__call__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryMultiCallable.__call__">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryMultiCallable.__call__">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -228,13 +245,19 @@
 <span class="sd">          RpcError: Indicates that the RPC terminated with non-OK status. The</span>
 <span class="sd">            raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
 <span class="sd">            metadata, status code, and details.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="StreamStreamMultiCallable"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamMultiCallable">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">StreamStreamMultiCallable</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StreamStreamMultiCallable">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamMultiCallable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StreamStreamMultiCallable</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Enables asynchronous invocation of a bidirectional-streaming RPC.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="StreamStreamMultiCallable.__call__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="StreamStreamMultiCallable.__call__">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamMultiCallable.__call__">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -266,10 +289,14 @@
 <span class="sd">          RpcError: Indicates that the RPC terminated with non-OK status. The</span>
 <span class="sd">            raised RpcError will also be a Call for the RPC affording the RPC&#39;s</span>
 <span class="sd">            metadata, status code, and details.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="Channel"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Channel</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Channel">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Channel</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Enables asynchronous RPC invocation as a client.</span>
 
 <span class="sd">    Channel objects implement the Asynchronous Context Manager (aka. async</span>
@@ -277,7 +304,9 @@
 <span class="sd">    multiple times.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Channel.__aenter__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.__aenter__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="Channel.__aenter__">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.__aenter__">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Starts an asynchronous context manager.</span>
 
@@ -285,14 +314,20 @@
 <span class="sd">          Channel the channel that was instantiated.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Channel.__aexit__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.__aexit__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="Channel.__aexit__">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.__aexit__">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Finishes the asynchronous context manager by closing the channel.</span>
 
 <span class="sd">        Still active RPCs will be cancelled.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Channel.close"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.close">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="Channel.close">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.close">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Closes this Channel and releases all resources held by it.</span>
 
@@ -308,7 +343,10 @@
 <span class="sd">        This method is idempotent.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Channel.get_state"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.get_state">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="Channel.get_state">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.get_state">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_state</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelConnectivity</span><span class="p">:</span>
@@ -327,7 +365,10 @@
 <span class="sd">        Returns: A ChannelConnectivity object.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Channel.wait_for_state_change"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.wait_for_state_change">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="Channel.wait_for_state_change">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.wait_for_state_change">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">wait_for_state_change</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">last_observed_state</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelConnectivity</span><span class="p">,</span>
@@ -353,11 +394,17 @@
 <span class="sd">            the last known state.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Channel.channel_ready"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.channel_ready">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="Channel.channel_ready">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.channel_ready">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">channel_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a coroutine that blocks until the Channel is READY.&quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Channel.unary_unary"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.unary_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="Channel.unary_unary">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.unary_unary">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">unary_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -381,7 +428,10 @@
 <span class="sd">          A UnaryUnaryMultiCallable value for the named unary-unary method.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Channel.unary_stream"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.unary_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="Channel.unary_stream">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.unary_stream">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">unary_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -405,7 +455,10 @@
 <span class="sd">          A UnaryStreamMultiCallable value for the named unary-stream method.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Channel.stream_unary"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="Channel.stream_unary">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.stream_unary">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -429,7 +482,10 @@
 <span class="sd">          A StreamUnaryMultiCallable value for the named stream-unary method.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Channel.stream_stream"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.stream_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="Channel.stream_stream">
+<a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Channel.stream_stream">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">stream_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -451,7 +507,9 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A StreamStreamMultiCallable value for the named stream-stream method.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
+
 </pre></div>
 
           </div>
@@ -461,14 +519,14 @@
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2020, The gRPC Authors.
+      &#169;2020, The gRPC Authors.
       
     </div>
 
     
 
     
-    <script type="text/javascript">
+    <script>
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-60127042-1']);
@@ -477,8 +535,8 @@
       _gaq.push(['_trackPageview']);
 
       (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var ga = document.createElement('script'); ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'https://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
 
