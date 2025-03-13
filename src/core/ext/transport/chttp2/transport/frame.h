@@ -234,7 +234,7 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 ///////////////////////////////////////////////////////////////////////////////
 // GRPC Header
 
-constexpr uint8_t kGrpcHeaderSizeInBytes = 9;
+constexpr uint8_t kGrpcHeaderSizeInBytes = 5;
 
 struct GrpcMessageHeader {
   uint8_t flags;
