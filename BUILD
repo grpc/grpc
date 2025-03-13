@@ -213,7 +213,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
     "include/grpc/support/metrics.h",
-    "include/grpc/support/port_platform.h",
     "include/grpc/support/string_util.h",
     "include/grpc/support/sync.h",
     "include/grpc/support/sync_abseil.h",
@@ -231,7 +230,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/fork.h",
     "include/grpc/impl/codegen/gpr_types.h",
     "include/grpc/impl/codegen/log.h",
-    "include/grpc/impl/codegen/port_platform.h",
     "include/grpc/impl/codegen/sync.h",
     "include/grpc/impl/codegen/sync_abseil.h",
     "include/grpc/impl/codegen/sync_custom.h",
@@ -736,6 +734,10 @@ grpc_cc_library(
         "//src/core:util/string.h",
         "//src/core:util/thd.h",
         "//src/core:util/tmpfile.h",
+        # TODO(ctiller): remove from gpr target entirely
+        # All usage should be via gpr_platform
+        "include/grpc/impl/codegen/port_platform.h",
+        "include/grpc/support/port_platform.h",
     ],
     external_deps = [
         "absl/base",
@@ -780,10 +782,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "gpr_public_hdrs",
-    hdrs = GPR_PUBLIC_HDRS,
+    hdrs = [
+        # TODO(ctiller): remove from gpr target entirely
+        # All usage should be via gpr_platform
+        "include/grpc/impl/codegen/port_platform.h",
+        "include/grpc/support/port_platform.h",
+    ],
     external_deps = [
         "absl/strings",
     ],
+    public_hdrs = GPR_PUBLIC_HDRS,
     tags = [
         "avoid_dep",
         "nofixdeps",
