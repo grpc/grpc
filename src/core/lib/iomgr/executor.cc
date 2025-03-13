@@ -167,6 +167,7 @@ void Executor::SetThreading(bool threading) {
     // multiple times, we ensure that `num_threads_` is still equal to the expected
     // number we read at the beginning of the function and atomically set it to 0. That way,
     // only one of the multiple invocations will join the threads and perform the cleanup.
+    curr_num_threads = gpr_atm_no_barrier_load(&num_threads_);
     if (gpr_atm_no_barrier_cas(&num_threads_, curr_num_threads, 0)) {
       for (gpr_atm i = 0; i < curr_num_threads; i++) {
         thd_state_[i].thd.Join();
