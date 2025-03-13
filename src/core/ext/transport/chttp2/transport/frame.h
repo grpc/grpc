@@ -61,7 +61,7 @@ namespace grpc_core {
 //   Frame Payload(..),
 // }
 // Reference : https://www.rfc-editor.org/rfc/rfc9113.html#name-frame-format
-inline constexpr uint8_t kFrameHeaderSize = 9;
+constexpr uint8_t kFrameHeaderSize = 9;
 
 // DATA frame
 struct Http2DataFrame {
@@ -236,7 +236,7 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 ///////////////////////////////////////////////////////////////////////////////
 // GRPC Header
 
-inline constexpr uint8_t kGrpcHeaderSizeInBytes = 9;
+constexpr uint8_t kGrpcHeaderSizeInBytes = 9;
 
 struct GrpcMessageHeader {
   uint8_t flags;
