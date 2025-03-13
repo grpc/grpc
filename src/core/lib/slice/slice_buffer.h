@@ -74,16 +74,20 @@ class SliceBuffer {
 
   /// Appends a new slice into the SliceBuffer and makes an attempt to merge
   /// this slice with the last slice in the SliceBuffer.
+  /// Fine - even for big ones
   void Append(Slice slice);
   /// Appends a SliceBuffer into the SliceBuffer and makes an attempt to merge
   /// this slice with the last slice in the SliceBuffer.
+  /// Fine - even for big ones
   void Append(const SliceBuffer& other);
+  /// Fine - even for big ones
   void TakeAndAppend(SliceBuffer& other) {
     grpc_slice_buffer_move_into(&other.slice_buffer_, &slice_buffer_);
   }
 
   /// Adds a new slice into the SliceBuffer at the next available index.
   /// Returns the index at which the new slice is added.
+  /// Fine - even for big ones .
   size_t AppendIndexed(Slice slice);
 
   /// Returns the number of slices held by the SliceBuffer.
@@ -108,6 +112,7 @@ class SliceBuffer {
 
   /// Move the first n bytes of the SliceBuffer into a memory pointed to by
   /// dst.
+  // I had to use - Fine . Just adjusts begin and end pointers
   void MoveFirstNBytesIntoBuffer(size_t n, void* dst) {
     grpc_slice_buffer_move_first_into_buffer(&slice_buffer_, n, dst);
   }
@@ -120,11 +125,13 @@ class SliceBuffer {
 
   /// Removes/deletes the last n bytes in the SliceBuffer and add it to the
   /// other SliceBuffer
+  // I had to use - Fine . Just adjusts begin and end pointers
   void MoveLastNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {
     grpc_slice_buffer_trim_end(&slice_buffer_, n, &other.slice_buffer_);
   }
 
   /// Move the first n bytes of the SliceBuffer into the other SliceBuffer
+  // I had to use - Fine . Just adjusts begin and end pointers
   void MoveFirstNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {
     grpc_slice_buffer_move_first(&slice_buffer_, n, &other.slice_buffer_);
   }
