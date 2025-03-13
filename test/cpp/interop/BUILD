@@ -294,6 +294,7 @@ grpc_cc_binary(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
+    tags = ["use_openssl"],
 )
 
 grpc_cc_library(
@@ -337,6 +338,7 @@ grpc_cc_binary(
         "//test/cpp/end2end:test_health_check_service_impl",
         "//test/cpp/util:test_config",
     ],
+    tags = ["use_openssl"],
 )
 
 grpc_cc_test(
@@ -367,6 +369,7 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
+    tags = ["use_openssl"],
 )
 
 grpc_cc_library(
@@ -461,7 +464,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
     ],
-    tags = ["nobuilder"],
+    tags = ["nobuilder","use_openssl"],
     deps = [
         ":interop_server_lib",
         "//:grpc++",
@@ -484,6 +487,7 @@ grpc_cc_library(
         "nobuilder",
         # TODO(stanleycheung): the following will only work if :grpcpp_gcp_observability works
         "grpc:broken-internally",
+        "use_openssl",
     ],
     deps = [
         ":client_helper_lib",
