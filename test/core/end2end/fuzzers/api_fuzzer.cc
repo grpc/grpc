@@ -408,7 +408,7 @@ namespace testing {
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
   ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine().get()));
-#if GRPC_ARES == 1  
+#if GRPC_ARES == 1
   grpc_dns_lookup_hostname_ares = my_dns_lookup_hostname_ares;
   grpc_dns_lookup_srv_ares = my_dns_lookup_srv_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
