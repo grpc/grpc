@@ -134,7 +134,7 @@ class RubyPackage:
         del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         return create_docker_jobspec(
             self.name,
-            "tools/dockerfile/grpc_artifact_centos6_x64",
+            "tools/dockerfile/grpc_artifact_manylinux2014_x64",
             "tools/run_tests/artifacts/build_package_ruby.sh",
         )
 
@@ -191,7 +191,7 @@ class PHPPackage:
         del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         return create_docker_jobspec(
             self.name,
-            "tools/dockerfile/grpc_artifact_centos6_x64",
+            "tools/dockerfile/grpc_artifact_manylinux2014_x64",
             "tools/run_tests/artifacts/build_package_php.sh",
         )
 

@@ -18,7 +18,7 @@
 ##################
 # Base
 
-FROM dockcross/manylinux2010-x64:20210210-84c47e5
+FROM dockcross/manylinux2014-x86
 
 # Install essential packages.
 RUN yum -y install strace && yum clean all
@@ -32,16 +32,19 @@ RUN curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
 # Use "--insecure" to avoid cert expiration error
 RUN curl -sSL --insecure https://get.rvm.io | bash -s stable
 
-# Install Ruby 2.6
-RUN /bin/bash -l -c "rvm install ruby-2.6"
-RUN /bin/bash -l -c "rvm use --default ruby-2.6"
+# Install Ruby 3.0
+RUN ulimit -n 1024 && /bin/bash -l -c "rvm install ruby-3.0.5 --32"
+RUN /bin/bash -l -c "rvm use --default ruby-3.0.5"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.6' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.0.5' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler"
 
 # Create default work directory.
 RUN mkdir /var/local/jenkins
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
 
 # Define the default command.
 CMD ["bash"]
