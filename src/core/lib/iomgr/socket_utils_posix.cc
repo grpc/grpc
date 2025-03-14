@@ -35,6 +35,8 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/util/strerror.h"
@@ -110,6 +112,12 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   if (value != nullptr) {
     options.socket_mutator =
         grpc_socket_mutator_ref(static_cast<grpc_socket_mutator*>(value));
+  }
+  value = config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE);
+  if (value != nullptr) {
+    options.event_engine =
+        reinterpret_cast<grpc_event_engine::experimental::EventEngine*>(value)
+            ->shared_from_this();
   }
   return options;
 }
