@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/transport/message.h"
+#include "src/core/call/message.h"
 
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>

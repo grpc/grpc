@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/transport/interception_chain.h"
+#include "src/core/call/interception_chain.h"
 
 #include <grpc/support/port_platform.h>
 
@@ -21,8 +21,8 @@
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_spine.h"
+#include "src/core/call/metadata.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/util/match.h"
 
 namespace grpc_core {

@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/metadata.h"
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
