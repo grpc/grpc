@@ -41,6 +41,7 @@ namespace {
 
 thread_local ThreadState* g_this_thread_state;
 
+gpr_mu executors_mu;
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
 
 void default_enqueue_short(grpc_closure* closure, grpc_error_handle error) {
@@ -358,9 +359,16 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
 // global mutex. So it is okay to assume that these functions are thread-safe
 void Executor::InitAll() {
   GRPC_TRACE_LOG(executor, INFO) << "Executor::InitAll() enter";
+  static bool first_init = true;
+  if (first_init) {
+    gpr_mu_init(&executors_mu);
+    first_init = false;
+  }
 
+  gpr_mu_lock(&executors_mu);
   // Return if Executor::InitAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] != nullptr) {
+    gpr_mu_unlock(&executors_mu);
     CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] != nullptr);
     return;
   }
@@ -372,6 +380,7 @@ void Executor::InitAll() {
 
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->Init();
   executors[static_cast<size_t>(ExecutorType::RESOLVER)]->Init();
+  gpr_mu_unlock(&executors_mu);
 
   GRPC_TRACE_LOG(executor, INFO) << "Executor::InitAll() done";
 }
@@ -384,10 +393,11 @@ void Executor::Run(grpc_closure* closure, grpc_error_handle error,
 
 void Executor::ShutdownAll() {
   GRPC_TRACE_LOG(executor, INFO) << "Executor::ShutdownAll() enter";
-
+  gpr_mu_lock(&executors_mu);
   // Return if Executor:SshutdownAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] == nullptr) {
     CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] == nullptr);
+    gpr_mu_unlock(&executors_mu);
     return;
   }
 
@@ -410,13 +420,19 @@ void Executor::ShutdownAll() {
   delete executors[static_cast<size_t>(ExecutorType::RESOLVER)];
   executors[static_cast<size_t>(ExecutorType::DEFAULT)] = nullptr;
   executors[static_cast<size_t>(ExecutorType::RESOLVER)] = nullptr;
+  gpr_mu_unlock(&executors_mu);
 
   GRPC_TRACE_LOG(executor, INFO) << "Executor::ShutdownAll() done";
 }
 
 bool Executor::IsThreaded(ExecutorType executor_type) {
   CHECK(executor_type < ExecutorType::NUM_EXECUTORS);
-  return executors[static_cast<size_t>(executor_type)]->IsThreaded();
+  bool threaded = false;
+  gpr_mu_lock(&executors_mu);
+  Executor* executor = executors[static_cast<size_t>(executor_type)];
+  threaded = executor != nullptr && executor->IsThreaded();
+  gpr_mu_unlock(&executors_mu);
+  return threaded;
 }
 
 bool Executor::IsThreadedDefault() {
@@ -426,16 +442,25 @@ bool Executor::IsThreadedDefault() {
 void Executor::SetThreadingAll(bool enable) {
   GRPC_TRACE_LOG(executor, INFO)
       << "EXECUTOR Executor::SetThreadingAll(" << enable << ") called";
+  gpr_mu_lock(&executors_mu);
   for (size_t i = 0; i < static_cast<size_t>(ExecutorType::NUM_EXECUTORS);
        i++) {
-    executors[i]->SetThreading(enable);
+    if (executors[i] != nullptr) {
+      executors[i]->SetThreading(enable);
+    }
   }
+  gpr_mu_unlock(&executors_mu);
 }
 
 void Executor::SetThreadingDefault(bool enable) {
   GRPC_TRACE_LOG(executor, INFO)
       << "EXECUTOR Executor::SetThreadingDefault(" << enable << ") called";
-  executors[static_cast<size_t>(ExecutorType::DEFAULT)]->SetThreading(enable);
+  gpr_mu_lock(&executors_mu);
+  Executor* def = executors[static_cast<size_t>(ExecutorType::DEFAULT)];
+  if (def != nullptr) {
+    def->SetThreading(enable);
+  }
+  gpr_mu_unlock(&executors_mu);
 }
 
 }  // namespace grpc_core
