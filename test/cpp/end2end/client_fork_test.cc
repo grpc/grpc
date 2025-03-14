@@ -176,9 +176,9 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
     default:  // post-fork parent
       break;
   }
-  VLOG(2) << "[" << getpid() << "] ###########  First fork ##########";
-  VLOG(2) << "[" << getpid() << "] ######  Client post fork 1  ######";
-  VLOG(2) << "[" << getpid() << "] ##################################";
+  VLOG(2) << "[" << getpid() << "] ###########  First fork  ##########";
+  VLOG(2) << "[" << getpid() << "] ######  Client post fork 1   ######";
+  VLOG(2) << "[" << getpid() << "] ###################################";
   // Do a round trip before we fork.
   // NOTE: without this scope, test running with the epoll1 poller will fail.
   DoExchange(absl::StrCat("[", getpid(), "] In first-fork parent"), addr);
