@@ -47,8 +47,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/env.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/uri.h"
@@ -67,6 +69,18 @@
 #define GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS 1000
 
 namespace grpc_core {
+
+namespace {
+
+bool XdsFallbackOnReachabilityOnlyEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_FALLBACK_ON_REACHABILITY_ONLY");
+  if (!value.has_value()) return true;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
+}  // namespace
 
 using ::grpc_event_engine::experimental::EventEngine;
 
@@ -488,13 +502,20 @@ void XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
 
 bool XdsClient::XdsChannel::MaybeFallbackLocked(
     const std::string& authority, AuthorityState& authority_state) {
-  if (!xds_client_->HasUncachedResources(authority_state)) {
-    return false;
-  }
   std::vector<const XdsBootstrap::XdsServer*> xds_servers;
+  bool fallback_on_reachability_only = false;
   if (authority != kOldStyleAuthority) {
-    xds_servers =
-        xds_client_->bootstrap().LookupAuthority(authority)->servers();
+    auto* bootstrap_authority =
+        xds_client_->bootstrap().LookupAuthority(authority);
+    xds_servers = bootstrap_authority->servers();
+    if (XdsFallbackOnReachabilityOnlyEnabled()) {
+      fallback_on_reachability_only =
+          bootstrap_authority->FallbackOnReachabilityOnly();
+    }
+  }
+  if (!fallback_on_reachability_only &&
+      !xds_client_->HasUncachedResources(authority_state)) {
+    return false;
   }
   if (xds_servers.empty()) xds_servers = xds_client_->bootstrap().servers();
   for (size_t i = authority_state.xds_channels.size(); i < xds_servers.size();

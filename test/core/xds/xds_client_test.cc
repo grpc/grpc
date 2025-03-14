@@ -182,8 +182,18 @@ class XdsClientTest : public ::testing::Test {
         server_ = std::move(server);
       }
 
+      bool FallbackOnReachabilityOnly() const override {
+        return fallback_on_reachability_only_;
+      }
+
+// FIXME: add tests
+      void SetFallbackOnReachabilityOnly() {
+        fallback_on_reachability_only_ = true;
+      }
+
      private:
       std::optional<FakeXdsServer> server_;
+      bool fallback_on_reachability_only_ = false;
     };
 
     class Builder {

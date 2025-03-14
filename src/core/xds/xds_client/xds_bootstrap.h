@@ -73,6 +73,8 @@ class XdsBootstrap {
     virtual ~Authority() = default;
 
     virtual std::vector<const XdsServer*> servers() const = 0;
+
+    virtual bool FallbackOnReachabilityOnly() const = 0;
   };
 
   virtual ~XdsBootstrap() = default;
