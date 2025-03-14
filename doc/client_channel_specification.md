@@ -71,7 +71,7 @@ form, as per the normal [protobuf-to-JSON conversion
 rules](https://developers.google.com/protocol-buffers/docs/proto3#json).
 
 The recommended way to distribute a service config to clients is to do
-so dynamically via the [resolver](#name-resolvers) plugin, so that target
+so dynamically via the [resolver](#name-resolvers) plugin, so that service
 owners can change the config without having to touch each individual
 client.  (As an example, the [DNS resolver](#dns-resolver) supports
 fetching the service config from a DNS TXT record, as described in [gRFC
