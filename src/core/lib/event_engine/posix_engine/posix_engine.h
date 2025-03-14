@@ -132,6 +132,7 @@ class ForkSupport {
   virtual void BeforeFork() = 0;
   virtual void AfterFork(bool advance_generation) = 0;
   virtual void SchedulePoller() = 0;
+  virtual void EventEngineShutdown() = 0;
 };
 
 #endif  // GRPC_POSIX_SOCKET_TCP

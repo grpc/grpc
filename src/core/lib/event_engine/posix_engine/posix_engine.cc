@@ -174,6 +174,9 @@ class PosixEngineForkSupport final : public ForkSupport {
   }
 
   void BeforeFork() override {
+    if (event_engine_gone_) {
+      return;
+    }
     timer_manager_->PrepareFork();
     {
       grpc_core::MutexLock lock(&poll_cycle_mu_);
@@ -183,6 +186,10 @@ class PosixEngineForkSupport final : public ForkSupport {
   }
 
   void AfterFork(bool advance_generation) override {
+    LOG(INFO) << "[" << getpid() << "] After fork enter";
+    if (event_engine_gone_) {
+      return;
+    }
     if (poller_manager_ != nullptr) {
       if (advance_generation) {
         poller_manager_->Poller()->AdvanceGeneration();
@@ -192,14 +199,20 @@ class PosixEngineForkSupport final : public ForkSupport {
     executor_->PostFork();
     timer_manager_->PostFork();
     SchedulePoller();
+    LOG(INFO) << "[" << getpid() << "] After fork exit";
   }
 
   void SchedulePoller() override {
-    if (poller_manager_->Poller() != nullptr) {
+    if (poller_manager_ != nullptr && poller_manager_->Poller() != nullptr) {
       grpc_core::MutexLock lock(&poll_cycle_mu_);
       CHECK(!polling_cycle_.has_value());
       polling_cycle_.emplace(poller_manager_);
     }
+  }
+
+  void EventEngineShutdown() override {
+    LOG(INFO) << "[" << getpid() << "] Event engine gone";
+    event_engine_gone_ = true;
   }
 
  private:
@@ -210,6 +223,7 @@ class PosixEngineForkSupport final : public ForkSupport {
   std::shared_ptr<ThreadPool> executor_;
   std::shared_ptr<TimerManager> timer_manager_;
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
+  std::atomic_bool event_engine_gone_{false};
 };
 
 PollingCycle::PollingCycle(
@@ -583,6 +597,7 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
 
 PosixEventEngine::~PosixEventEngine() {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  fork_support_->EventEngineShutdown();
   DeregisterEventEngineForFork(fork_support_.get());
   fork_support_.reset();
 #endif
