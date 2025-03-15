@@ -713,7 +713,7 @@ grpc_cc_library(
         "//src/core:util/posix/cpu.cc",
         "//src/core:util/posix/stat.cc",
         "//src/core:util/posix/string.cc",
-        "//src/core:util/posix/thd.cc",
+        "//src/core:util/posix/thd.github.cc",
         "//src/core:util/posix/tmpfile.cc",
         "//src/core:util/string.cc",
         "//src/core:util/windows/cpu.cc",
