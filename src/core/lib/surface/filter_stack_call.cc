@@ -42,6 +42,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -57,7 +58,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -169,9 +169,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
 
   // initial refcount dropped by grpc_call_unref
   grpc_call_element_args call_args = {
-      call->call_stack(),   args->server_transport_data, path,
-      call->start_time(),   call->send_deadline(),       call->arena(),
-      &call->call_combiner_};
+      call->call_stack(), args->server_transport_data,
+      call->start_time(), call->send_deadline(),
+      call->arena(),      &call->call_combiner_};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.

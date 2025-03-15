@@ -213,7 +213,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
     "include/grpc/support/metrics.h",
-    "include/grpc/support/port_platform.h",
     "include/grpc/support/string_util.h",
     "include/grpc/support/sync.h",
     "include/grpc/support/sync_abseil.h",
@@ -231,7 +230,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/fork.h",
     "include/grpc/impl/codegen/gpr_types.h",
     "include/grpc/impl/codegen/log.h",
-    "include/grpc/impl/codegen/port_platform.h",
     "include/grpc/impl/codegen/sync.h",
     "include/grpc/impl/codegen/sync_abseil.h",
     "include/grpc/impl/codegen/sync_custom.h",
@@ -596,7 +594,6 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_lb_policy_xds_cluster_manager",
     "//src/core:grpc_lb_policy_xds_override_host",
     "//src/core:grpc_lb_policy_xds_wrr_locality",
-    "//src/core:grpc_lb_policy_ring_hash",
     "//src/core:grpc_resolver_xds",
     "//src/core:grpc_resolver_c2p",
     "//src/core:grpc_xds_server_config_fetcher",
@@ -737,6 +734,10 @@ grpc_cc_library(
         "//src/core:util/string.h",
         "//src/core:util/thd.h",
         "//src/core:util/tmpfile.h",
+        # TODO(ctiller): remove from gpr target entirely
+        # All usage should be via gpr_platform
+        "include/grpc/impl/codegen/port_platform.h",
+        "include/grpc/support/port_platform.h",
     ],
     external_deps = [
         "absl/base",
@@ -781,10 +782,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "gpr_public_hdrs",
-    hdrs = GPR_PUBLIC_HDRS,
+    hdrs = [
+        # TODO(ctiller): remove from gpr target entirely
+        # All usage should be via gpr_platform
+        "include/grpc/impl/codegen/port_platform.h",
+        "include/grpc/support/port_platform.h",
+    ],
     external_deps = [
         "absl/strings",
     ],
+    public_hdrs = GPR_PUBLIC_HDRS,
     tags = [
         "avoid_dep",
         "nofixdeps",
@@ -820,6 +827,7 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_outlier_detection",
         "//src/core:grpc_lb_policy_pick_first",
         "//src/core:grpc_lb_policy_priority",
+        "//src/core:grpc_lb_policy_ring_hash",
         "//src/core:grpc_lb_policy_round_robin",
         "//src/core:grpc_lb_policy_weighted_round_robin",
         "//src/core:grpc_lb_policy_weighted_target",
@@ -930,32 +938,6 @@ grpc_cc_library(
         "grpc++_base",
         "//src/core:gpr_atm",
         "//src/core:slice",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_cronet_hdrs",
-    hdrs = [
-        "include/grpc/grpc_cronet.h",
-    ],
-    deps = [
-        "gpr_public_hdrs",
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc++_cronet_credentials",
-    srcs = [
-        "src/cpp/client/cronet_credentials.cc",
-    ],
-    hdrs = [
-        "include/grpcpp/security/cronet_credentials.h",
-    ],
-    deps = [
-        "grpc++_base",
-        "grpc_cronet_hdrs",
-        "grpc_public_hdrs",
     ],
 )
 
@@ -1366,6 +1348,9 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_epoll1_linux.cc",
         "//src/core:lib/iomgr/ev_poll_posix.cc",
         "//src/core:lib/iomgr/ev_posix.cc",
+        "//src/core:lib/iomgr/event_engine_shims/closure.cc",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
+        "//src/core:lib/iomgr/event_engine_shims/tcp_client.cc",
         "//src/core:lib/iomgr/fork_posix.cc",
         "//src/core:lib/iomgr/fork_windows.cc",
         "//src/core:lib/iomgr/iocp_windows.cc",
@@ -1409,14 +1394,6 @@ grpc_cc_library(
         "//src/core:util/gethostname_fallback.cc",
         "//src/core:util/gethostname_host_name_max.cc",
         "//src/core:util/gethostname_sysconf.cc",
-    ] +
-    # TODO(vigneshbabu): remove these
-    # These headers used to be vended by this target, but they have to be
-    # removed after landing EventEngine.
-    [
-        "//src/core:lib/iomgr/event_engine_shims/closure.cc",
-        "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
-        "//src/core:lib/iomgr/event_engine_shims/tcp_client.cc",
     ],
     hdrs = [
         "//src/core:lib/iomgr/block_annotate.h",
@@ -1545,6 +1522,7 @@ grpc_cc_library(
         "//src/core:slice_refcount",
         "//src/core:socket_mutator",
         "//src/core:stats_data",
+        "//src/core:status_helper",
         "//src/core:strerror",
         "//src/core:sync",
         "//src/core:time",
@@ -1797,47 +1775,47 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base",
     srcs = [
+        "//src/core:call/client_call.cc",
+        "//src/core:call/server_call.cc",
+        "//src/core:call/status_util.cc",
         "//src/core:lib/channel/channel_stack.cc",
         "//src/core:lib/channel/channel_stack_builder_impl.cc",
         "//src/core:lib/channel/connected_channel.cc",
         "//src/core:lib/channel/promise_based_filter.cc",
-        "//src/core:lib/channel/status_util.cc",
         "//src/core:lib/compression/message_compress.cc",
         "//src/core:lib/surface/call.cc",
         "//src/core:lib/surface/call_details.cc",
         "//src/core:lib/surface/call_log_batch.cc",
         "//src/core:lib/surface/call_utils.cc",
-        "//src/core:lib/surface/client_call.cc",
         "//src/core:lib/surface/completion_queue.cc",
         "//src/core:lib/surface/completion_queue_factory.cc",
         "//src/core:lib/surface/event_string.cc",
         "//src/core:lib/surface/filter_stack_call.cc",
         "//src/core:lib/surface/lame_client.cc",
         "//src/core:lib/surface/metadata_array.cc",
-        "//src/core:lib/surface/server_call.cc",
         "//src/core:lib/surface/validate_metadata.cc",
         "//src/core:lib/surface/version.cc",
         "//src/core:lib/transport/transport.cc",
         "//src/core:lib/transport/transport_op_string.cc",
     ],
     hdrs = [
+        "//src/core:call/client_call.h",
+        "//src/core:call/server_call.h",
+        "//src/core:call/status_util.h",
         "//src/core:lib/channel/channel_stack.h",
         "//src/core:lib/channel/channel_stack_builder_impl.h",
         "//src/core:lib/channel/connected_channel.h",
         "//src/core:lib/channel/promise_based_filter.h",
-        "//src/core:lib/channel/status_util.h",
         "//src/core:lib/compression/message_compress.h",
         "//src/core:lib/surface/call.h",
         "//src/core:lib/surface/call_test_only.h",
         "//src/core:lib/surface/call_utils.h",
-        "//src/core:lib/surface/client_call.h",
         "//src/core:lib/surface/completion_queue.h",
         "//src/core:lib/surface/completion_queue_factory.h",
         "//src/core:lib/surface/event_string.h",
         "//src/core:lib/surface/filter_stack_call.h",
         "//src/core:lib/surface/init.h",
         "//src/core:lib/surface/lame_client.h",
-        "//src/core:lib/surface/server_call.h",
         "//src/core:lib/surface/validate_metadata.h",
         "//src/core:lib/transport/transport.h",
     ],
@@ -1990,6 +1968,9 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h",
     ],
+    tags = [
+        "grpc:broken-internally",
+    ],
     deps = [
         "gpr_platform",
         "grpc++",
@@ -2009,7 +1990,11 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/server_load_reporting.h",
     ],
-    tags = ["nofixdeps"],
+    tags = [
+        "nofixdeps",
+        # uses OSS specific libraries
+        "grpc:broken-internally",
+    ],
     deps = [
         "channel_arg_names",
         "gpr",
@@ -2037,7 +2022,10 @@ grpc_cc_library(
         "absl/memory",
         "protobuf_headers",
     ],
-    tags = ["nofixdeps"],
+    tags = [
+        "grpc:broken-internally",
+        "nofixdeps",
+    ],
     deps = [
         ":gpr",
         ":grpc++",
@@ -2083,7 +2071,10 @@ grpc_cc_library(
         "opencensus-tags",
         "protobuf_headers",
     ],
-    tags = ["nofixdeps"],
+    tags = [
+        "grpc:broken-internally",
+        "nofixdeps",
+    ],
     deps = [
         "gpr",
         "lb_get_cpu_stats",
@@ -2096,27 +2087,32 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_security_base",
     srcs = [
+        "//src/core:call/security_context.cc",
+        "//src/core:credentials/call/call_creds_util.cc",
+        "//src/core:credentials/call/composite/composite_call_credentials.cc",
+        "//src/core:credentials/call/plugin/plugin_credentials.cc",
+        "//src/core:credentials/transport/composite/composite_channel_credentials.cc",
+        "//src/core:credentials/transport/security_connector.cc",
+        "//src/core:credentials/transport/transport_credentials.cc",
+        "//src/core:filter/auth/client_auth_filter.cc",
+        "//src/core:filter/auth/server_auth_filter.cc",
         "//src/core:handshaker/security/secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",
-        "//src/core:lib/security/context/security_context.cc",
-        "//src/core:lib/security/credentials/call_creds_util.cc",
-        "//src/core:lib/security/credentials/composite/composite_credentials.cc",
-        "//src/core:lib/security/credentials/credentials.cc",
-        "//src/core:lib/security/credentials/plugin/plugin_credentials.cc",
-        "//src/core:lib/security/security_connector/security_connector.cc",
-        "//src/core:lib/security/transport/client_auth_filter.cc",
-        "//src/core:lib/security/transport/server_auth_filter.cc",
+        "//src/core:transport/auth_context.cc",
     ],
     hdrs = [
+        "//src/core:call/security_context.h",
+        "//src/core:credentials/call/call_credentials.h",
+        "//src/core:credentials/call/call_creds_util.h",
+        "//src/core:credentials/call/composite/composite_call_credentials.h",
+        "//src/core:credentials/call/plugin/plugin_credentials.h",
+        "//src/core:credentials/transport/composite/composite_channel_credentials.h",
+        "//src/core:credentials/transport/security_connector.h",
+        "//src/core:credentials/transport/transport_credentials.h",
+        "//src/core:filter/auth/auth_filters.h",
         "//src/core:handshaker/security/secure_endpoint.h",
         "//src/core:handshaker/security/security_handshaker.h",
-        "//src/core:lib/security/context/security_context.h",
-        "//src/core:lib/security/credentials/call_creds_util.h",
-        "//src/core:lib/security/credentials/composite/composite_credentials.h",
-        "//src/core:lib/security/credentials/credentials.h",
-        "//src/core:lib/security/credentials/plugin/plugin_credentials.h",
-        "//src/core:lib/security/security_connector/security_connector.h",
-        "//src/core:lib/security/transport/auth_filters.h",
+        "//src/core:transport/auth_context.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2210,19 +2206,19 @@ grpc_cc_library(
 grpc_cc_library(
     name = "alts_util",
     srcs = [
-        "//src/core:lib/security/credentials/alts/check_gcp_environment.cc",
-        "//src/core:lib/security/credentials/alts/check_gcp_environment_linux.cc",
-        "//src/core:lib/security/credentials/alts/check_gcp_environment_no_op.cc",
-        "//src/core:lib/security/credentials/alts/check_gcp_environment_windows.cc",
-        "//src/core:lib/security/credentials/alts/grpc_alts_credentials_client_options.cc",
-        "//src/core:lib/security/credentials/alts/grpc_alts_credentials_options.cc",
-        "//src/core:lib/security/credentials/alts/grpc_alts_credentials_server_options.cc",
+        "//src/core:credentials/transport/alts/check_gcp_environment.cc",
+        "//src/core:credentials/transport/alts/check_gcp_environment_linux.cc",
+        "//src/core:credentials/transport/alts/check_gcp_environment_no_op.cc",
+        "//src/core:credentials/transport/alts/check_gcp_environment_windows.cc",
+        "//src/core:credentials/transport/alts/grpc_alts_credentials_client_options.cc",
+        "//src/core:credentials/transport/alts/grpc_alts_credentials_options.cc",
+        "//src/core:credentials/transport/alts/grpc_alts_credentials_server_options.cc",
         "//src/core:tsi/alts/handshaker/transport_security_common_api.cc",
     ],
     hdrs = [
         "include/grpc/grpc_security.h",
-        "//src/core:lib/security/credentials/alts/check_gcp_environment.h",
-        "//src/core:lib/security/credentials/alts/grpc_alts_credentials_options.h",
+        "//src/core:credentials/transport/alts/check_gcp_environment.h",
+        "//src/core:credentials/transport/alts/grpc_alts_credentials_options.h",
         "//src/core:tsi/alts/handshaker/transport_security_common_api.h",
     ],
     external_deps = [
@@ -2761,7 +2757,12 @@ grpc_cc_library(
     hdrs = [
         "include/grpcpp/ext/gcp_observability.h",
     ],
-    tags = ["nofixdeps"],
+    tags = [
+        # This can be removed once we can add top-level BUILD file targets without them being
+        # included in Core Components.
+        "grpc:broken-internally",
+        "nofixdeps",
+    ],
     visibility = ["@grpc:grpcpp_gcp_observability"],
     deps = [
         "//src/cpp/ext/gcp:observability",
@@ -2774,7 +2775,12 @@ grpc_cc_library(
     hdrs = [
         "include/grpcpp/ext/csm_observability.h",
     ],
-    tags = ["nofixdeps"],
+    tags = [
+        # This can be removed once we can add top-level BUILD file targets without them being
+        # included in Core Components.
+        "grpc:broken-internally",
+        "nofixdeps",
+    ],
     deps = [
         ":grpcpp_otel_plugin",
         "//src/cpp/ext/csm:csm_observability",
@@ -2786,6 +2792,10 @@ grpc_cc_library(
     name = "grpcpp_otel_plugin",
     hdrs = [
         "include/grpcpp/ext/otel_plugin.h",
+    ],
+    tags = [
+        # uses OSS specific libraries
+        "grpc:broken-internally",
     ],
     deps = [
         ":grpc++",
@@ -3825,12 +3835,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_alts_credentials",
     srcs = [
-        "//src/core:lib/security/credentials/alts/alts_credentials.cc",
-        "//src/core:lib/security/security_connector/alts/alts_security_connector.cc",
+        "//src/core:credentials/transport/alts/alts_credentials.cc",
+        "//src/core:credentials/transport/alts/alts_security_connector.cc",
     ],
     hdrs = [
-        "//src/core:lib/security/credentials/alts/alts_credentials.h",
-        "//src/core:lib/security/security_connector/alts/alts_security_connector.h",
+        "//src/core:credentials/transport/alts/alts_credentials.h",
+        "//src/core:credentials/transport/alts/alts_security_connector.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -3894,14 +3904,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_jwt_credentials",
     srcs = [
-        "//src/core:lib/security/credentials/jwt/json_token.cc",
-        "//src/core:lib/security/credentials/jwt/jwt_credentials.cc",
-        "//src/core:lib/security/credentials/jwt/jwt_verifier.cc",
+        "//src/core:credentials/call/jwt/json_token.cc",
+        "//src/core:credentials/call/jwt/jwt_credentials.cc",
+        "//src/core:credentials/call/jwt/jwt_verifier.cc",
     ],
     hdrs = [
-        "//src/core:lib/security/credentials/jwt/json_token.h",
-        "//src/core:lib/security/credentials/jwt/jwt_credentials.h",
-        "//src/core:lib/security/credentials/jwt/jwt_verifier.h",
+        "//src/core:credentials/call/jwt/json_token.h",
+        "//src/core:credentials/call/jwt/jwt_credentials.h",
+        "//src/core:credentials/call/jwt/jwt_verifier.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -3951,17 +3961,17 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_credentials_util",
     srcs = [
-        "//src/core:lib/security/credentials/tls/tls_utils.cc",
-        "//src/core:lib/security/security_connector/load_system_roots_fallback.cc",
-        "//src/core:lib/security/security_connector/load_system_roots_supported.cc",
-        "//src/core:lib/security/security_connector/load_system_roots_windows.cc",
-        "//src/core:lib/security/util/json_util.cc",
+        "//src/core:credentials/call/json_util.cc",
+        "//src/core:credentials/transport/tls/load_system_roots_fallback.cc",
+        "//src/core:credentials/transport/tls/load_system_roots_supported.cc",
+        "//src/core:credentials/transport/tls/load_system_roots_windows.cc",
+        "//src/core:credentials/transport/tls/tls_utils.cc",
     ],
     hdrs = [
-        "//src/core:lib/security/credentials/tls/tls_utils.h",
-        "//src/core:lib/security/security_connector/load_system_roots.h",
-        "//src/core:lib/security/security_connector/load_system_roots_supported.h",
-        "//src/core:lib/security/util/json_util.h",
+        "//src/core:credentials/call/json_util.h",
+        "//src/core:credentials/transport/tls/load_system_roots.h",
+        "//src/core:credentials/transport/tls/load_system_roots_supported.h",
+        "//src/core:credentials/transport/tls/tls_utils.h",
     ],
     external_deps = [
         "absl/log:log",
@@ -4105,13 +4115,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
-        "//src/core:lib/security/security_connector/ssl_utils.cc",
+        "//src/core:credentials/transport/tls/ssl_utils.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
         "//src/core:tsi/ssl_transport_security.cc",
         "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
-        "//src/core:lib/security/security_connector/ssl_utils.h",
+        "//src/core:credentials/transport/tls/ssl_utils.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
         "//src/core:tsi/ssl_transport_security_utils.h",

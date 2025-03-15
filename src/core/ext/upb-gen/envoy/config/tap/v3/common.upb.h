@@ -1091,13 +1091,13 @@ UPB_INLINE bool envoy_config_tap_v3_OutputConfig_has_max_buffered_tx_bytes(const
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_tap_v3_OutputConfig_clear_streaming(envoy_config_tap_v3_OutputConfig* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE bool envoy_config_tap_v3_OutputConfig_streaming(const envoy_config_tap_v3_OutputConfig* msg) {
   bool default_val = false;
   bool ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1162,7 +1162,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_tap_v3_OutputConfig_
   return sub;
 }
 UPB_INLINE void envoy_config_tap_v3_OutputConfig_set_streaming(envoy_config_tap_v3_OutputConfig *msg, bool value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 

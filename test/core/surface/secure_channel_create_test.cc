@@ -21,12 +21,12 @@
 
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/test_util/test_config.h"
 

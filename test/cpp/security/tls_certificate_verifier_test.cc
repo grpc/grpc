@@ -14,15 +14,15 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

@@ -26,6 +26,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -39,7 +40,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/metrics.h"
@@ -164,7 +164,10 @@ class FakeCallTracer : public ClientCallTracer {
         absl::Status /*status*/,
         grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) override {
-      if (IsCallTracerInTransportEnabled()) return;
+      if (IsCallTracerInTransportEnabled() ||
+          transport_stream_stats == nullptr /* cancelled call */) {
+        return;
+      }
       test_state_->ResetClientByteSizes(
           {transport_stream_stats->incoming.framing_bytes,
            transport_stream_stats->incoming.data_bytes,

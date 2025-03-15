@@ -73,7 +73,11 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    tags = ["no_windows"],
+    tags = [
+        # Invalid interface name: 'lo'.
+        "grpc:fails-internally",
+        "no_windows",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

@@ -18,10 +18,11 @@
 
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/test/client_context_test_peer.h>
-#include <gtest/gtest.h>
 
 #include <cstring>
 #include <vector>
+
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {

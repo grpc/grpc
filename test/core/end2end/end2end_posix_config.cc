@@ -50,7 +50,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/util/env.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/no_destruct.h"

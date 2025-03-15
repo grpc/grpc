@@ -34,13 +34,14 @@
 namespace grpc_core {
 namespace internal {
 
+class ServerRetryThrottleMap;
+
 /// Tracks retry throttling data for an individual server name.
 class ServerRetryThrottleData final
     : public RefCounted<ServerRetryThrottleData> {
  public:
   ServerRetryThrottleData(uintptr_t max_milli_tokens,
-                          uintptr_t milli_token_ratio,
-                          ServerRetryThrottleData* old_throttle_data);
+                          uintptr_t milli_token_ratio, uintptr_t milli_tokens);
   ~ServerRetryThrottleData() override;
 
   /// Records a failure.  Returns true if it's okay to send a retry.
@@ -51,8 +52,15 @@ class ServerRetryThrottleData final
 
   uintptr_t max_milli_tokens() const { return max_milli_tokens_; }
   uintptr_t milli_token_ratio() const { return milli_token_ratio_; }
+  intptr_t milli_tokens() const {
+    return milli_tokens_.load(std::memory_order_relaxed);
+  }
 
  private:
+  friend ServerRetryThrottleMap;
+
+  void SetReplacement(RefCountedPtr<ServerRetryThrottleData> replacement);
+
   void GetReplacementThrottleDataIfNeeded(
       ServerRetryThrottleData** throttle_data);
 

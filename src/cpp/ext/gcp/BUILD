@@ -49,6 +49,10 @@ grpc_cc_library(
         "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
     ],
+    tags = [
+        # uses OSS specific libraries
+        "grpc:broken-internally",
+    ],
     visibility = ["//:__subpackages__"],
     deps = [
         "environment_autodetect",
@@ -117,6 +121,10 @@ grpc_cc_library(
         "googleapis_logging_cc_proto",
         "googleapis_logging_grpc_service",
         "protobuf_headers",
+    ],
+    tags = [
+        # uses OSS specific libraries
+        "grpc:broken-internally",
     ],
     visibility = ["//test:__subpackages__"],
     deps = [

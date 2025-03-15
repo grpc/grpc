@@ -13,10 +13,8 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <string>
@@ -31,6 +29,8 @@
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
@@ -772,8 +772,8 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
   balancer_->ads_service()->UnsetResource(kEdsTypeUrl, kDefaultEdsServiceName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "no children in weighted_target policy: EDS resource eds_service_name: "
-      "does not exist \\(node ID:xds_end2end_test\\)",
+      "no children in weighted_target policy \\(EDS resource eds_service_name: "
+      "does not exist \\(node ID:xds_end2end_test\\)\\)",
       RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(

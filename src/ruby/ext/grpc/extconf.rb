@@ -29,7 +29,7 @@ grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
 grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
-ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.14'
+ENV['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
 
 def debug_symbols_output_dir
   d = ENV['GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR']

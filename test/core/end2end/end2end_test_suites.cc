@@ -43,6 +43,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -50,7 +51,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/util/env.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/no_destruct.h"
@@ -106,14 +106,18 @@ std::vector<CoreTestConfiguration> AllConfigs() {
   return configs;
 }
 
-const std::vector<CoreTestConfiguration>& StaticConfigs() {
+namespace {
+
+absl::Span<const CoreTestConfiguration> Configs() {
   static NoDestruct<std::vector<CoreTestConfiguration>> kConfigs(AllConfigs());
   return *kConfigs;
 }
 
+}  // namespace
+
 const CoreTestConfiguration* CoreTestConfigurationNamed(
     absl::string_view name) {
-  for (const CoreTestConfiguration& config : StaticConfigs()) {
+  for (const CoreTestConfiguration& config : Configs()) {
     if (config.name == name) return &config;
   }
   return nullptr;
@@ -161,7 +165,7 @@ class ConfigQuery {
 
   auto Run() const {
     std::vector<const CoreTestConfiguration*> out;
-    for (const CoreTestConfiguration& config : StaticConfigs()) {
+    for (const CoreTestConfiguration& config : Configs()) {
       if ((config.feature_mask & enforce_features_) == enforce_features_ &&
           (config.feature_mask & exclude_features_) == 0) {
         bool allowed = allowed_names_.empty();

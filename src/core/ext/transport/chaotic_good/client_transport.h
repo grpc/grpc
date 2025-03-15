@@ -37,6 +37,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
+#include "src/core/call/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -57,7 +58,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/sync.h"
@@ -93,7 +93,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
     MessageReassembly message_reassembly;
     Party::SpawnSerializer* frame_dispatch_serializer;
   };
-  using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
+  using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream> >;
 
   class StreamDispatch final : public FrameTransportSink {
    public:

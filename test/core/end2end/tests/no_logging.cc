@@ -102,7 +102,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
          {"chttp2_server.cc",
           std::regex(
               "Only [0-9]+ addresses added out of total [0-9]+ resolved")},
-         {"trace.cc", std::regex("Unknown tracer:.*")}});
+         {"trace.cc", std::regex("Unknown tracer:.*")},
+         {"config.cc", std::regex("gRPC experiments.*")},
+         // logs from fixtures are never a production issue
+         {"http_proxy_fixture.cc", std::regex(".*")}});
 
     if (IsVlogWithVerbosityMoreThan1(entry)) {
       return;

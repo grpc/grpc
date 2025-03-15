@@ -1150,6 +1150,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "call_credentials_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "call_filters_test",
     "platforms": [
       "linux",
@@ -2103,6 +2127,30 @@
     "gtest": true,
     "language": "c++",
     "name": "completion_queue_threading_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "composite_credentials_test",
     "platforms": [
       "linux",
       "mac",
@@ -4279,8 +4327,7 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -4292,8 +4339,7 @@
     "platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": false
   },
@@ -4303,8 +4349,7 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -4316,8 +4361,7 @@
     "platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": false
   },
@@ -4549,6 +4593,30 @@
     "gtest": true,
     "language": "c++",
     "name": "initial_settings_frame_bad_client_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "insecure_credentials_test",
     "platforms": [
       "linux",
       "mac",
@@ -8496,6 +8564,54 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "test_core_credentials_transport_ssl_ssl_credentials_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "test_core_credentials_transport_tls_tls_credentials_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "test_core_event_engine_posix_timer_heap_test",
     "platforms": [
       "linux",
@@ -8552,54 +8668,6 @@
       "windows"
     ],
     "uses_polling": false
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": true,
-    "language": "c++",
-    "name": "test_core_security_credentials_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "uses_polling": true
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": true,
-    "language": "c++",
-    "name": "test_core_security_ssl_credentials_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "uses_polling": true
   },
   {
     "args": [],
@@ -8713,6 +8781,30 @@
     "gtest": true,
     "language": "c++",
     "name": "test_cpp_end2end_ssl_credentials_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "test_cpp_end2end_tls_credentials_test",
     "platforms": [
       "linux",
       "mac",
@@ -9045,30 +9137,6 @@
     "gtest": true,
     "language": "c++",
     "name": "tls_certificate_verifier_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "uses_polling": true
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": true,
-    "language": "c++",
-    "name": "tls_credentials_test",
     "platforms": [
       "linux",
       "mac",

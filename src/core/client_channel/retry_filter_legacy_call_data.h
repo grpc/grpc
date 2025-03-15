@@ -27,6 +27,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/any_invocable.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/retry_service_config.h"
@@ -39,7 +40,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
@@ -373,7 +373,6 @@ class RetryFilter::LegacyCallData final {
   const internal::RetryMethodConfig* retry_policy_ = nullptr;
   BackOff retry_backoff_;
 
-  grpc_slice path_;  // Request path.
   Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;

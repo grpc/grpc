@@ -1,5 +1,5 @@
 source 'https://github.com/CocoaPods/Specs.git'
-platform :ios, '11.0'
+platform :ios, '15.0'
 
 install! 'cocoapods', :deterministic_uuids => false
 
@@ -43,12 +43,10 @@ post_install do |installer|
         config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
         # Abseil isn't free from the following warning
         config.build_settings['GCC_WARN_64_TO_32_BIT_CONVERSION'] = 'NO'
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1'
       end
     end
 
-    # Activate Cronet for the dedicated build configuration 'Cronet', which will be used solely by
-    # the test target 'InteropTestsRemoteWithCronet'
     # Activate GRPCCall+InternalTests functions for the dedicated build configuration 'Test', which will
     # be used by all test targets using it.
     if target.name == 'gRPC' || target.name.start_with?('gRPC.')

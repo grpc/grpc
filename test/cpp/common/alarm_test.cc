@@ -18,13 +18,13 @@
 
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
-#include <gtest/gtest.h>
 
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <thread>
 
+#include "gtest/gtest.h"
 #include "src/core/util/notification.h"
 #include "test/core/test_util/test_config.h"
 

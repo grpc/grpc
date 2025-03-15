@@ -21,7 +21,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "test/core/transport/call_spine_benchmarks.h"
+#include "test/core/call/call_spine_benchmarks.h"
 
 namespace grpc_core {
 namespace {

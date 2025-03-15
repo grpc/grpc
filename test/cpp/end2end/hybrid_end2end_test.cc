@@ -24,13 +24,13 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <thread>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"

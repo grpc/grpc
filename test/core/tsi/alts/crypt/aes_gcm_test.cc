@@ -17,11 +17,11 @@
 //
 
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 
 #include "absl/types/span.h"
+#include "gtest/gtest.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"

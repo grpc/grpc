@@ -28,7 +28,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
 #include <chrono>
 #include <sstream>
@@ -36,6 +35,7 @@
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
+#include "gtest/gtest.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.pb.h"

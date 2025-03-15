@@ -20,7 +20,6 @@
 
 #include <grpc/support/port_platform.h>
 #include <grpcpp/grpcpp.h>
-#include <gtest/gtest.h>
 
 #include <atomic>
 #include <chrono>
@@ -29,6 +28,7 @@
 #include <thread>
 
 #include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 

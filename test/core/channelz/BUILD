@@ -24,6 +24,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = [
+        # b/117517566.
+        "grpc:no-internal-poller",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -39,6 +43,10 @@ grpc_cc_test(
     srcs = ["channelz_test.cc"],
     external_deps = [
         "gtest",
+    ],
+    tags = [
+        # b/117517566.
+        "grpc:no-internal-poller",
     ],
     deps = [
         "//:gpr",
