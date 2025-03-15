@@ -79,6 +79,8 @@ foreach(_target
     absl::flags_parse
     opentelemetry-cpp::metrics
     opentelemetry-cpp::ostream_metrics_exporter
+    opentelemetry-cpp::ostream_span_exporter
+    opentelemetry-cpp::trace
     gRPC::grpcpp_otel_plugin
     util
     ${_PROTOBUF_LIBPROTOBUF})
