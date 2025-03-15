@@ -1290,6 +1290,8 @@ let package = Package(
         "src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc",
         "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h",
         "src/core/lib/event_engine/cf_engine/cftype_unique_ref.h",
+        "src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc",
+        "src/core/lib/event_engine/cf_engine/dispatch_thread_pool.h",
         "src/core/lib/event_engine/cf_engine/dns_service_resolver.cc",
         "src/core/lib/event_engine/cf_engine/dns_service_resolver.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.cc",

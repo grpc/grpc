@@ -2630,6 +2630,7 @@ add_library(grpc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
@@ -3378,6 +3379,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
@@ -5565,6 +5567,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
@@ -9306,6 +9309,7 @@ add_executable(call_utils_test
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
@@ -15418,6 +15422,7 @@ add_executable(filter_fusion_test
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
