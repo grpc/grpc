@@ -582,6 +582,18 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
   return ConnectionHandle{{task_handle.keys[0], task_handle.keys[1]}};
 }
 
+std::pair<std::unique_ptr<EventEngine::Endpoint>,
+          std::unique_ptr<EventEngine::Endpoint>>
+FuzzingEventEngine::CreateEndpointPair() {
+  grpc_core::MutexLock lock(&*mu_);
+  auto middle =
+      std::make_shared<EndpointMiddle>(g_fuzzing_event_engine->AllocatePort(),
+                                       g_fuzzing_event_engine->AllocatePort());
+  auto ep1 = std::make_unique<FuzzingEndpoint>(middle, 0);
+  auto ep2 = std::make_unique<FuzzingEndpoint>(middle, 1);
+  return {std::move(ep1), std::move(ep2)};
+}
+
 bool FuzzingEventEngine::CancelConnect(ConnectionHandle connection_handle) {
   return Cancel(
       TaskHandle{{connection_handle.keys[0], connection_handle.keys[1]}});

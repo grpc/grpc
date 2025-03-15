@@ -107,6 +107,7 @@ grpc_cc_library(
         "fuzzer_input_cc_proto",
         "//:chttp2_frame",
         "//src/core:chaotic_good_frame_header",
+        "//src/core:chaotic_good_tcp_frame_transport",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzzing_channel_args",
         "//test/core/test_util:grpc_test_util_base",
