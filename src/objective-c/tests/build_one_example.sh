@@ -47,13 +47,13 @@ XCODEBUILD_FILTER_OUTPUT_SCRIPT="${TEST_PATH}/xcodebuild_filter_output.sh"
 if [ "$SCHEME" == "gRPC-Package" ]; then
   time xcodebuild \
     build \
+    -verbose \
     -scheme $SCHEME \
     -destination generic/platform=iOS 
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
-    CODE_SIGNING_ALLOWED=NO \
-    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+    CODE_SIGNING_ALLOWED=NO
 elif [ "$SCHEME" == "tvOS-sample" ]; then
   time xcodebuild \
     build \
