@@ -141,7 +141,7 @@ class Fuzzer {
     // a connection attempt on any subchannels.
     if (got_picker_since_last_update_ &&
         state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
-        num_subchannels_ - num_subchannels_transient_failure_ > 0) {
+        num_subchannels_ > num_subchannels_transient_failure_) {
       ASSERT_GT(num_subchannels_connecting_, 0);
     }
   }
@@ -415,19 +415,19 @@ class Fuzzer {
 
     // To be invoked by FakeHelper.
     RefCountedPtr<SubchannelInterface> CreateSubchannel() {
-      if (num_subchannels_ == 0) ++fuzzer_->num_subchannels_;
+      ++fuzzer_->num_subchannels_;
       ++num_subchannels_;
       return MakeRefCounted<FakeSubchannel>(this);
     }
 
    private:
     void SubchannelDestroyed() {
+      --fuzzer_->num_subchannels_;
       --num_subchannels_;
       if (num_subchannels_ == 0) {
         state_tracker_.SetState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                                 "all subchannels destroyed");
         ConnectionAttemptComplete();
-        --fuzzer_->num_subchannels_;
       }
     }
 
@@ -929,6 +929,34 @@ TEST(PickFirstFuzzer,
         endpoint_list { endpoints { addresses { uri: "ipv4:127.0.0.2:1024" } } }
       }
     }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, TwoSubchannelsWithSameAddress) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      update {
+        endpoint_list {
+          endpoints { addresses { localhost_port: 1024 } }
+          endpoints { addresses { localhost_port: 1024 } }
+        }
+      }
+    }
+    actions { tick { ms: 1 } }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 1024 }
+        state: CONNECTING
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 1024 }
+        state: TRANSIENT_FAILURE
+      }
+    }
+    actions { tick { ms: 1 } }
   )pb"));
 }
 
