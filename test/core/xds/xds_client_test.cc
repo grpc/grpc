@@ -136,13 +136,14 @@ class XdsClientTest : public ::testing::Test {
     };
 
     class FakeXdsServerTarget : public XdsServerTarget {
-        public:
-         explicit FakeXdsServerTarget(std::string server_uri)
-             : server_uri_(std::move(server_uri)) {}
-         const std::string& server_uri() const override { return server_uri_; }
-         std::string Key() const override { return server_uri_; }
-        private:
-         std::string server_uri_;
+     public:
+      explicit FakeXdsServerTarget(std::string server_uri)
+          : server_uri_(std::move(server_uri)) {}
+      const std::string& server_uri() const override { return server_uri_; }
+      std::string Key() const override { return server_uri_; }
+
+     private:
+      std::string server_uri_;
     };
     class FakeXdsServer : public XdsServer {
      public:
@@ -154,7 +155,9 @@ class XdsClientTest : public ::testing::Test {
             fail_on_data_errors_(fail_on_data_errors),
             resource_timer_is_transient_failure_(
                 resource_timer_is_transient_failure) {}
-      const std::string& server_uri() const { return server_target_->server_uri(); }
+      const std::string& server_uri() const {
+        return server_target_->server_uri();
+      }
       bool IgnoreResourceDeletion() const override {
         return !fail_on_data_errors_;
       }
@@ -875,7 +878,8 @@ class XdsClientTest : public ::testing::Test {
 
   void TriggerConnectionFailure(const XdsBootstrap::XdsServer& xds_server,
                                 absl::Status status) {
-    transport_factory_->TriggerConnectionFailure(*xds_server.target(), std::move(status));
+    transport_factory_->TriggerConnectionFailure(*xds_server.target(),
+                                                 std::move(status));
   }
 
   // Gets the latest request sent to the fake xDS server.

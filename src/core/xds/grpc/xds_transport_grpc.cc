@@ -372,8 +372,8 @@ GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
 }
 
 RefCountedPtr<XdsTransportFactory::XdsTransport>
-GrpcXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServerTarget& server,
-                                      absl::Status* status) {
+GrpcXdsTransportFactory::GetTransport(
+    const XdsBootstrap::XdsServerTarget& server, absl::Status* status) {
   std::string key = server.Key();
   RefCountedPtr<GrpcXdsTransport> transport;
   MutexLock lock(&mu_);

@@ -82,9 +82,7 @@ std::string GrpcXdsServerTarget::Key() const { return JsonDump(ToJson()); }
 std::string GrpcXdsServer::Key() const { return JsonDump(ToJson()); }
 
 const JsonLoaderInterface* GrpcXdsServer::JsonLoader(const JsonArgs&) {
-  static const auto* loader =
-      JsonObjectLoader<GrpcXdsServer>()
-          .Finish();
+  static const auto* loader = JsonObjectLoader<GrpcXdsServer>().Finish();
   return loader;
 }
 
@@ -107,63 +105,63 @@ struct ChannelCreds {
 }  // namespace
 
 void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
-  ValidationErrors* errors) {
-RefCountedPtr<ChannelCredsConfig> channel_creds_config = nullptr;
-// Parse "server_features".
-{
-ValidationErrors::ScopedField field(errors, ".server_features");
-auto it = json.object().find("server_features");
-if (it != json.object().end()) {
-if (it->second.type() != Json::Type::kArray) {
-errors->AddError("is not an array");
-} else {
-const Json::Array& array = it->second.array();
-for (const Json& feature_json : array) {
-if (feature_json.type() == Json::Type::kString &&
-(feature_json.string() == kServerFeatureIgnoreResourceDeletion ||
-feature_json.string() == kServerFeatureFailOnDataErrors ||
-feature_json.string() ==
-kServerFeatureResourceTimerIsTransientFailure ||
-feature_json.string() == kServerFeatureTrustedXdsServer)) {
-server_features_.insert(feature_json.string());
-}
-}
-}
-}
-}
-{
-// Parse "channel_creds".
-auto channel_creds_list = LoadJsonObjectField<std::vector<ChannelCreds>>(
-json.object(), args, "channel_creds", errors);
-if (channel_creds_list.has_value()) {
-ValidationErrors::ScopedField field(errors, ".channel_creds");
-for (size_t i = 0; i < channel_creds_list->size(); ++i) {
-ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
-auto& creds = (*channel_creds_list)[i];
-// Select the first channel creds type that we support, but
-// validate all entries.
-if (CoreConfiguration::Get().channel_creds_registry().IsSupported(
-creds.type)) {
-ValidationErrors::ScopedField field(errors, ".config");
-auto config =
-CoreConfiguration::Get().channel_creds_registry().ParseConfig(
-creds.type, Json::FromObject(creds.config), args, errors);
-channel_creds_config = std::move(config);
-}
-}
-if (channel_creds_config == nullptr) {
-errors->AddError("no known creds type found");
-}
-}
-}
+                                 ValidationErrors* errors) {
+  RefCountedPtr<ChannelCredsConfig> channel_creds_config = nullptr;
+  // Parse "server_features".
+  {
+    ValidationErrors::ScopedField field(errors, ".server_features");
+    auto it = json.object().find("server_features");
+    if (it != json.object().end()) {
+      if (it->second.type() != Json::Type::kArray) {
+        errors->AddError("is not an array");
+      } else {
+        const Json::Array& array = it->second.array();
+        for (const Json& feature_json : array) {
+          if (feature_json.type() == Json::Type::kString &&
+              (feature_json.string() == kServerFeatureIgnoreResourceDeletion ||
+               feature_json.string() == kServerFeatureFailOnDataErrors ||
+               feature_json.string() ==
+                   kServerFeatureResourceTimerIsTransientFailure ||
+               feature_json.string() == kServerFeatureTrustedXdsServer)) {
+            server_features_.insert(feature_json.string());
+          }
+        }
+      }
+    }
+  }
+  {
+    // Parse "channel_creds".
+    auto channel_creds_list = LoadJsonObjectField<std::vector<ChannelCreds>>(
+        json.object(), args, "channel_creds", errors);
+    if (channel_creds_list.has_value()) {
+      ValidationErrors::ScopedField field(errors, ".channel_creds");
+      for (size_t i = 0; i < channel_creds_list->size(); ++i) {
+        ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
+        auto& creds = (*channel_creds_list)[i];
+        // Select the first channel creds type that we support, but
+        // validate all entries.
+        if (CoreConfiguration::Get().channel_creds_registry().IsSupported(
+                creds.type)) {
+          ValidationErrors::ScopedField field(errors, ".config");
+          auto config =
+              CoreConfiguration::Get().channel_creds_registry().ParseConfig(
+                  creds.type, Json::FromObject(creds.config), args, errors);
+          channel_creds_config = std::move(config);
+        }
+      }
+      if (channel_creds_config == nullptr) {
+        errors->AddError("no known creds type found");
+      }
+    }
+  }
 
-// Parse "server_uri".
-auto server_uri = LoadJsonObjectField<std::string>(
-json.object(), args, "server_uri", errors);
-if (server_uri.has_value()) {
-server_target_ = std::make_shared<GrpcXdsServerTarget>(
-server_uri.value(), channel_creds_config);
-}
+  // Parse "server_uri".
+  auto server_uri = LoadJsonObjectField<std::string>(json.object(), args,
+                                                     "server_uri", errors);
+  if (server_uri.has_value()) {
+    server_target_ = std::make_shared<GrpcXdsServerTarget>(
+        server_uri.value(), channel_creds_config);
+  }
 }
 
 Json GrpcXdsServerTarget::ToJson() const {

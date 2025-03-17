@@ -341,8 +341,8 @@ class LrsClient : public DualRefCounted<LrsClient> {
       const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   RefCountedPtr<LrsChannel> GetOrCreateLrsChannelLocked(
-      std::shared_ptr<const XdsBootstrap::XdsServerTarget> server, const char* reason)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+      std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
+      const char* reason) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   static bool LoadReportCountersAreZero(const ClusterLoadReportMap& snapshot);
 

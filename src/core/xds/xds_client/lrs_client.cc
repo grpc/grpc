@@ -791,7 +791,8 @@ void LrsClient::Orphaned() {
 }
 
 RefCountedPtr<LrsClient::LrsChannel> LrsClient::GetOrCreateLrsChannelLocked(
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server, const char* reason) {
+    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
+    const char* reason) {
   std::string key = server->Key();
   auto it = lrs_channel_map_.find(key);
   if (it != lrs_channel_map_.end()) {

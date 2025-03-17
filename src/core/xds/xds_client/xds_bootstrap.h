@@ -43,13 +43,13 @@ class XdsBootstrap {
   };
 
   class XdsServerTarget {
-    public:
-     virtual ~XdsServerTarget() = default;
-     virtual const std::string& server_uri() const = 0;
- 
-     // Returns a key to be used for uniquely identifying this XdsServer.
-     virtual std::string Key() const = 0;
-   };
+   public:
+    virtual ~XdsServerTarget() = default;
+    virtual const std::string& server_uri() const = 0;
+
+    // Returns a key to be used for uniquely identifying this XdsServer.
+    virtual std::string Key() const = 0;
+  };
 
   class XdsServer {
    public:

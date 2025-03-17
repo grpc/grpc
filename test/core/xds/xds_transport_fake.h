@@ -228,7 +228,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   // Returns an existing transport or creates a new one.
   RefCountedPtr<XdsTransport> GetTransport(
-      const XdsBootstrap::XdsServerTarget& server, absl::Status* /*status*/) override;
+      const XdsBootstrap::XdsServerTarget& server,
+      absl::Status* /*status*/) override;
 
   // Returns an existing transport, if any, or nullptr.
   RefCountedPtr<FakeXdsTransport> GetTransport(

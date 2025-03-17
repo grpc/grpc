@@ -51,7 +51,8 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
   void Orphaned() override {}
 
   RefCountedPtr<XdsTransport> GetTransport(
-      const XdsBootstrap::XdsServerTarget& server, absl::Status* status) override;
+      const XdsBootstrap::XdsServerTarget& server,
+      absl::Status* status) override;
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
@@ -70,7 +71,8 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   class GrpcStreamingCall;
 
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-                   const XdsBootstrap::XdsServerTarget& server, absl::Status* status);
+                   const XdsBootstrap::XdsServerTarget& server,
+                   absl::Status* status);
   ~GrpcXdsTransport() override;
 
   void Orphaned() override;
