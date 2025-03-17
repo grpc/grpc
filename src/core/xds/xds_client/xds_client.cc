@@ -407,7 +407,7 @@ XdsClient::XdsChannel::XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
       << "[xds_client " << xds_client_.get() << "] creating channel " << this
       << " for server " << server.server_uri();
   absl::Status status;
-  transport_ = xds_client_->transport_factory_->GetTransport(server, &status);
+  transport_ = xds_client_->transport_factory_->GetTransport(*server.target(), &status);
   CHECK(transport_ != nullptr);
   if (!status.ok()) {
     SetChannelStatusLocked(std::move(status));

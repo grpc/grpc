@@ -135,6 +135,15 @@ class XdsClientTest : public ::testing::Test {
       Json::Object metadata_;
     };
 
+    class FakeXdsServerTarget : public XdsServerTarget {
+        public:
+         explicit FakeXdsServerTarget(std::string server_uri)
+             : server_uri_(std::move(server_uri)) {}
+         const std::string& server_uri() const override { return server_uri_; }
+         std::string Key() const override { return server_uri_; }
+        private:
+         std::string server_uri_;
+    };
     class FakeXdsServer : public XdsServer {
      public:
       explicit FakeXdsServer(
@@ -145,7 +154,7 @@ class XdsClientTest : public ::testing::Test {
             fail_on_data_errors_(fail_on_data_errors),
             resource_timer_is_transient_failure_(
                 resource_timer_is_transient_failure) {}
-      const std::string& server_uri() const override { return server_uri_; }
+      const std::string& server_uri() const { return server_target_->server_uri(); }
       bool IgnoreResourceDeletion() const override {
         return !fail_on_data_errors_;
       }
@@ -155,15 +164,18 @@ class XdsClientTest : public ::testing::Test {
       }
       bool Equals(const XdsServer& other) const override {
         const auto& o = static_cast<const FakeXdsServer&>(other);
-        return server_uri_ == o.server_uri_ &&
+        return server_uri() == o.server_uri() &&
                fail_on_data_errors_ == o.fail_on_data_errors_;
       }
       std::string Key() const override {
-        return absl::StrCat(server_uri_, "#", fail_on_data_errors_);
+        return absl::StrCat(server_uri(), "#", fail_on_data_errors_);
+      }
+      std::shared_ptr<const XdsServerTarget> target() const override {
+        return server_target_;
       }
 
      private:
-      std::string server_uri_;
+      std::shared_ptr<FakeXdsServerTarget> server_target_;
       bool fail_on_data_errors_ = false;
       bool resource_timer_is_transient_failure_ = false;
     };
@@ -854,7 +866,7 @@ class XdsClientTest : public ::testing::Test {
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
       const XdsBootstrap::XdsServer& xds_server) {
     return transport_factory_->WaitForStream(
-        xds_server, FakeXdsTransportFactory::kAdsMethod);
+        *xds_server.target(), FakeXdsTransportFactory::kAdsMethod);
   }
 
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream() {
@@ -863,7 +875,7 @@ class XdsClientTest : public ::testing::Test {
 
   void TriggerConnectionFailure(const XdsBootstrap::XdsServer& xds_server,
                                 absl::Status status) {
-    transport_factory_->TriggerConnectionFailure(xds_server, std::move(status));
+    transport_factory_->TriggerConnectionFailure(*xds_server.target(), std::move(status));
   }
 
   // Gets the latest request sent to the fake xDS server.

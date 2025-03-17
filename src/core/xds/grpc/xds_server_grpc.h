@@ -31,9 +31,29 @@
 
 namespace grpc_core {
 
+class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
+  public:
+    explicit GrpcXdsServerTarget(
+        const std::string& server_uri,
+        RefCountedPtr<ChannelCredsConfig> channel_creds_config)
+        : server_uri_(server_uri), channel_creds_config_(channel_creds_config) {}
+  
+    const std::string& server_uri() const override { return server_uri_; }
+  
+    std::string Key() const override;
+    Json ToJson() const;
+  
+    RefCountedPtr<ChannelCredsConfig> channel_creds_config() const override {
+      return channel_creds_config_;
+    }
+  
+  private:
+    std::string server_uri_;
+    RefCountedPtr<ChannelCredsConfig> channel_creds_config_;
+  };
+
 class GrpcXdsServer final : public GrpcXdsServerInterface {
  public:
-  const std::string& server_uri() const override { return server_uri_; }
 
   bool IgnoreResourceDeletion() const override;
   bool FailOnDataErrors() const override;
@@ -45,10 +65,13 @@ class GrpcXdsServer final : public GrpcXdsServerInterface {
 
   std::string Key() const override;
 
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config() const override {
-    return channel_creds_config_;
+  RefCountedPtr<ChannelCredsConfig> channel_creds_config() const {
+    return server_target_->channel_creds_config();
   }
 
+  std::shared_ptr<const XdsBootstrap::XdsServerTarget> target() const override {
+    return server_target_;
+  }
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs& args,
                     ValidationErrors* errors);
@@ -56,8 +79,7 @@ class GrpcXdsServer final : public GrpcXdsServerInterface {
   Json ToJson() const;
 
  private:
-  std::string server_uri_;
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config_;
+ std::shared_ptr<GrpcXdsServerTarget> server_target_;
   std::set<std::string> server_features_;
 };
 

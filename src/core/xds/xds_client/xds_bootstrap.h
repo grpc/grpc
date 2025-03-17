@@ -42,11 +42,22 @@ class XdsBootstrap {
     virtual const Json::Object& metadata() const = 0;
   };
 
+  class XdsServerTarget {
+    public:
+     virtual ~XdsServerTarget() = default;
+     virtual const std::string& server_uri() const = 0;
+ 
+     // Returns a key to be used for uniquely identifying this XdsServer.
+     virtual std::string Key() const = 0;
+   };
+
   class XdsServer {
    public:
     virtual ~XdsServer() = default;
 
-    virtual const std::string& server_uri() const = 0;
+    virtual std::shared_ptr<const XdsServerTarget> target() const = 0;
+
+    const std::string& server_uri() const { return target()->server_uri(); }
 
     // TODO(roth): Remove this method once the data error handling
     // feature passes interop tests.

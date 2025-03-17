@@ -263,7 +263,7 @@ RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-    const XdsBootstrap::XdsServer& server, absl::Status* status)
+    const XdsBootstrap::XdsServerTarget& server, absl::Status* status)
     : XdsTransport(GRPC_TRACE_FLAG_ENABLED(xds_client_refcount)
                        ? "GrpcXdsTransport"
                        : nullptr),
@@ -372,7 +372,7 @@ GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
 }
 
 RefCountedPtr<XdsTransportFactory::XdsTransport>
-GrpcXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server,
+GrpcXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServerTarget& server,
                                       absl::Status* status) {
   std::string key = server.Key();
   RefCountedPtr<GrpcXdsTransport> transport;

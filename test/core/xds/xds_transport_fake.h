@@ -137,7 +137,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
         too_many_pending_reads_callback_(
             std::move(too_many_pending_reads_callback)) {}
 
-  void TriggerConnectionFailure(const XdsBootstrap::XdsServer& server,
+  void TriggerConnectionFailure(const XdsBootstrap::XdsServerTarget& server,
                                 absl::Status status);
 
   // By default, FakeStreamingCall will automatically invoke
@@ -162,7 +162,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   void SetAbortOnUndrainedMessages(bool value);
 
   RefCountedPtr<FakeStreamingCall> WaitForStream(
-      const XdsBootstrap::XdsServer& server, const char* method);
+      const XdsBootstrap::XdsServerTarget& server, const char* method);
 
   void Orphaned() override;
 
@@ -170,7 +170,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   class FakeXdsTransport : public XdsTransport {
    public:
     FakeXdsTransport(WeakRefCountedPtr<FakeXdsTransportFactory> factory,
-                     const XdsBootstrap::XdsServer& server,
+                     const XdsBootstrap::XdsServerTarget& server,
                      bool auto_complete_messages_from_client,
                      bool abort_on_undrained_messages)
         : factory_(std::move(factory)),
@@ -198,7 +198,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     FakeXdsTransportFactory* factory() const { return factory_.get(); }
 
-    const XdsBootstrap::XdsServer* server() const { return &server_; }
+    const XdsBootstrap::XdsServerTarget* server() const { return &server_; }
 
    private:
     void StartConnectivityFailureWatch(
@@ -213,7 +213,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void ResetBackoff() override {}
 
     WeakRefCountedPtr<FakeXdsTransportFactory> factory_;
-    const XdsBootstrap::XdsServer& server_;
+    const XdsBootstrap::XdsServerTarget& server_;
     const bool auto_complete_messages_from_client_;
     const bool abort_on_undrained_messages_;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
@@ -228,11 +228,11 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   // Returns an existing transport or creates a new one.
   RefCountedPtr<XdsTransport> GetTransport(
-      const XdsBootstrap::XdsServer& server, absl::Status* /*status*/) override;
+      const XdsBootstrap::XdsServerTarget& server, absl::Status* /*status*/) override;
 
   // Returns an existing transport, if any, or nullptr.
   RefCountedPtr<FakeXdsTransport> GetTransport(
-      const XdsBootstrap::XdsServer& server);
+      const XdsBootstrap::XdsServerTarget& server);
 
   RefCountedPtr<FakeXdsTransport> GetTransportLocked(const std::string& key)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
