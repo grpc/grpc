@@ -46,7 +46,6 @@ class XdsBootstrap {
    public:
     virtual ~XdsServerTarget() = default;
     virtual const std::string& server_uri() const = 0;
-
     // Returns a key to be used for uniquely identifying this XdsServer.
     virtual std::string Key() const = 0;
   };
@@ -55,9 +54,8 @@ class XdsBootstrap {
    public:
     virtual ~XdsServer() = default;
 
-    virtual std::shared_ptr<const XdsServerTarget> target() const = 0;
-
     const std::string& server_uri() const { return target()->server_uri(); }
+    virtual std::shared_ptr<const XdsServerTarget> target() const = 0;
 
     // TODO(roth): Remove this method once the data error handling
     // feature passes interop tests.

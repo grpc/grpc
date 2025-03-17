@@ -107,28 +107,6 @@ struct ChannelCreds {
 void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
                                  ValidationErrors* errors) {
   RefCountedPtr<ChannelCredsConfig> channel_creds_config = nullptr;
-  // Parse "server_features".
-  {
-    ValidationErrors::ScopedField field(errors, ".server_features");
-    auto it = json.object().find("server_features");
-    if (it != json.object().end()) {
-      if (it->second.type() != Json::Type::kArray) {
-        errors->AddError("is not an array");
-      } else {
-        const Json::Array& array = it->second.array();
-        for (const Json& feature_json : array) {
-          if (feature_json.type() == Json::Type::kString &&
-              (feature_json.string() == kServerFeatureIgnoreResourceDeletion ||
-               feature_json.string() == kServerFeatureFailOnDataErrors ||
-               feature_json.string() ==
-                   kServerFeatureResourceTimerIsTransientFailure ||
-               feature_json.string() == kServerFeatureTrustedXdsServer)) {
-            server_features_.insert(feature_json.string());
-          }
-        }
-      }
-    }
-  }
   {
     // Parse "channel_creds".
     auto channel_creds_list = LoadJsonObjectField<std::vector<ChannelCreds>>(
@@ -154,6 +132,28 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
       }
     }
   }
+  // Parse "server_features".
+  {
+    ValidationErrors::ScopedField field(errors, ".server_features");
+    auto it = json.object().find("server_features");
+    if (it != json.object().end()) {
+      if (it->second.type() != Json::Type::kArray) {
+        errors->AddError("is not an array");
+      } else {
+        const Json::Array& array = it->second.array();
+        for (const Json& feature_json : array) {
+          if (feature_json.type() == Json::Type::kString &&
+              (feature_json.string() == kServerFeatureIgnoreResourceDeletion ||
+               feature_json.string() == kServerFeatureFailOnDataErrors ||
+               feature_json.string() ==
+                   kServerFeatureResourceTimerIsTransientFailure ||
+               feature_json.string() == kServerFeatureTrustedXdsServer)) {
+            server_features_.insert(feature_json.string());
+          }
+        }
+      }
+    }
+  }
 
   // Parse "server_uri".
   auto server_uri = LoadJsonObjectField<std::string>(json.object(), args,
@@ -165,10 +165,10 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
 }
 
 Json GrpcXdsServerTarget::ToJson() const {
-  Json::Object channel_creds_json{
-      {"type", Json::FromString(std::string(channel_creds_config_->type()))},
-  };
+  Json::Object channel_creds_json;
   if (channel_creds_config() != nullptr) {
+    channel_creds_json["type"] =
+        Json::FromString(std::string(channel_creds_config_->type()));
     channel_creds_json["config"] = channel_creds_config_->ToJson();
   }
   Json::Object json{
@@ -180,10 +180,10 @@ Json GrpcXdsServerTarget::ToJson() const {
 }
 
 Json GrpcXdsServer::ToJson() const {
-  Json::Object channel_creds_json{
-      {"type", Json::FromString(std::string(channel_creds_config()->type()))},
-  };
+  Json::Object channel_creds_json;
   if (channel_creds_config() != nullptr) {
+    channel_creds_json["type"] =
+        Json::FromString(std::string(channel_creds_config_->type()));
     channel_creds_json["config"] = channel_creds_config()->ToJson();
   }
   Json::Object json{

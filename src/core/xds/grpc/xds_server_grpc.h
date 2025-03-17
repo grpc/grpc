@@ -38,11 +38,10 @@ class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
       RefCountedPtr<ChannelCredsConfig> channel_creds_config)
       : server_uri_(server_uri), channel_creds_config_(channel_creds_config) {}
 
-  const std::string& server_uri() const override { return server_uri_; }
-
   std::string Key() const override;
   Json ToJson() const;
 
+  const std::string& server_uri() const override { return server_uri_; }
   RefCountedPtr<ChannelCredsConfig> channel_creds_config() const override {
     return channel_creds_config_;
   }

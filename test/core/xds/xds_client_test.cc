@@ -153,7 +153,7 @@ class XdsClientTest : public ::testing::Test {
           bool fail_on_data_errors = false,
           bool resource_timer_is_transient_failure = false)
           : server_target_(
-            std::make_shared<FakeXdsServerTarget>(std::string(server_uri))),
+                std::make_shared<FakeXdsServerTarget>(std::string(server_uri))),
             fail_on_data_errors_(fail_on_data_errors),
             resource_timer_is_transient_failure_(
                 resource_timer_is_transient_failure) {}
