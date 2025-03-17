@@ -145,19 +145,19 @@ class XdsClientTest : public ::testing::Test {
      private:
       std::string server_uri_;
     };
+
     class FakeXdsServer : public XdsServer {
      public:
       explicit FakeXdsServer(
           absl::string_view server_uri = kDefaultXdsServerUrl,
           bool fail_on_data_errors = false,
           bool resource_timer_is_transient_failure = false)
-          : server_uri_(server_uri),
+          : server_target_(
+            std::make_shared<FakeXdsServerTarget>(std::string(server_uri))),
             fail_on_data_errors_(fail_on_data_errors),
             resource_timer_is_transient_failure_(
                 resource_timer_is_transient_failure) {}
-      const std::string& server_uri() const {
-        return server_target_->server_uri();
-      }
+
       bool IgnoreResourceDeletion() const override {
         return !fail_on_data_errors_;
       }
