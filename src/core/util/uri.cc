@@ -226,9 +226,16 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   remaining.remove_prefix(offset + 1);
   // parse authority
   std::string authority;
+  std::string user_info;
+  std::string host_port;
   if (absl::ConsumePrefix(&remaining, "//")) {
     offset = remaining.find_first_of("/?#");
-    authority = PercentDecode(remaining.substr(0, offset));
+    absl::string_view encoded_authority = (remaining.substr(0, offset));
+    // parse user_info and host_port
+    Authority auth = ParseAuthority(encoded_authority);
+    user_info = PercentDecode(auth.user_info);
+    host_port = PercentDecode(auth.host_port);
+    authority = PercentDecode(encoded_authority);
     if (offset == remaining.npos) {
       remaining = "";
     } else {
@@ -279,7 +286,9 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     }
     fragment = PercentDecode(remaining);
   }
-  return URI(std::move(scheme), std::move(authority), std::move(path),
+
+  return URI(std::move(scheme), std::move(authority), std::move(user_info),
+             std::move(host_port), std::move(path),
              std::move(query_param_pairs), std::move(fragment));
 }
 
@@ -291,14 +300,19 @@ absl::StatusOr<URI> URI::Create(std::string scheme, std::string authority,
     return absl::InvalidArgumentError(
         "if authority is present, path must start with a '/'");
   }
-  return URI(std::move(scheme), std::move(authority), std::move(path),
+  Authority auth = ParseAuthority(authority);
+  return URI(std::move(scheme), std::move(authority), std::move(auth.user_info),
+             std::move(auth.host_port), std::move(path),
              std::move(query_parameter_pairs), std::move(fragment));
 }
 
-URI::URI(std::string scheme, std::string authority, std::string path,
+URI::URI(std::string scheme, std::string authority, std::string user_info,
+         std::string host_port, std::string path,
          std::vector<QueryParam> query_parameter_pairs, std::string fragment)
     : scheme_(std::move(scheme)),
       authority_(std::move(authority)),
+      user_info_(std::move(user_info)),
+      host_port_(std::move(host_port)),
       path_(std::move(path)),
       query_parameter_pairs_(std::move(query_parameter_pairs)),
       fragment_(std::move(fragment)) {
@@ -310,6 +324,8 @@ URI::URI(std::string scheme, std::string authority, std::string path,
 URI::URI(const URI& other)
     : scheme_(other.scheme_),
       authority_(other.authority_),
+      user_info_(other.user_info_),
+      host_port_(other.host_port_),
       path_(other.path_),
       query_parameter_pairs_(other.query_parameter_pairs_),
       fragment_(other.fragment_) {
@@ -324,6 +340,8 @@ URI& URI::operator=(const URI& other) {
   }
   scheme_ = other.scheme_;
   authority_ = other.authority_;
+  user_info_ = other.user_info_;
+  host_port_ = other.host_port_;
   path_ = other.path_;
   query_parameter_pairs_ = other.query_parameter_pairs_;
   fragment_ = other.fragment_;
@@ -343,6 +361,23 @@ struct QueryParameterFormatter {
                      PercentEncode(query_param.value, IsQueryKeyOrValueChar)));
   }
 };
+
+struct Authority {
+  std::string user_info;
+  std::string host_port;
+};
+
+// Parse user_info and host_port from authority
+Authority ParseAuthority(absl::string_view authority) {
+  size_t at_pos = authority.rfind('@');
+
+  if (at_pos != absl::string_view::npos) {
+    return {std::string(authority.substr(0, at_pos)),
+            std::string(authority.substr(at_pos + 1))};
+  } else {
+    return {"", std::string(authority)};
+  }
+}
 
 }  // namespace
 
