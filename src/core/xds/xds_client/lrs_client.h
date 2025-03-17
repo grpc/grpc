@@ -270,7 +270,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
     class LrsCall;
 
     LrsChannel(WeakRefCountedPtr<LrsClient> lrs_client,
-               std::shared_ptr<const XdsBootstrap::Target> server);
+               std::shared_ptr<const XdsBootstrap::XdsServerTarget> server);
     ~LrsChannel() override;
 
     LrsClient* lrs_client() const { return lrs_client_.get(); }

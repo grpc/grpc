@@ -74,7 +74,7 @@ bool GrpcXdsServer::Equals(const XdsServer& other) const {
   return (server_uri() == o.server_uri() &&
           channel_creds_config()->type() == o.channel_creds_config()->type() &&
           channel_creds_config()->Equals(*o.channel_creds_config()) &&
-          server_features_ == o.server_features());
+          server_features_ == o.server_features_);
 }
 
 std::string GrpcXdsServerTarget::Key() const { return JsonDump(ToJson()); }

@@ -52,7 +52,7 @@ class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
     RefCountedPtr<ChannelCredsConfig> channel_creds_config_;
   };
 
-class GrpcXdsServer final : public GrpcXdsServerInterface {
+class GrpcXdsServer final : public XdsBootstrap::XdsServer {
  public:
 
   bool IgnoreResourceDeletion() const override;
