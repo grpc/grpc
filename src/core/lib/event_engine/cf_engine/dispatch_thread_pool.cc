@@ -22,24 +22,41 @@
 #include <AvailabilityMacros.h>
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
-#include <dispatch/dispatch.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/event_engine/cf_engine/dispatch_thread_pool.h"
 #include "src/core/lib/event_engine/common_closures.h"
 
 namespace grpc_event_engine::experimental {
+
+DispatchThreadPool::DispatchThreadPool(size_t /*unused*/)
+    : queue_(dispatch_queue_create("cf_engine_thread_pool",
+                                   DISPATCH_QUEUE_CONCURRENT)) {}
+
+DispatchThreadPool::~DispatchThreadPool() {
+  CHECK(quiesced_.load(std::memory_order_relaxed));
+  dispatch_release(queue_);
+}
+
+void DispatchThreadPool::Quiesce() {
+  shutdown_.store(true, std::memory_order_relaxed);
+  dispatch_barrier_sync_f(queue_, this, [](void* context) {
+    auto* self = static_cast<DispatchThreadPool*>(context);
+    self->quiesced_.store(true, std::memory_order_relaxed);
+  });
+}
 
 void DispatchThreadPool::Run(absl::AnyInvocable<void()> callback) {
   Run(SelfDeletingClosure::Create(std::move(callback)));
 }
 
 void DispatchThreadPool::Run(EventEngine::Closure* closure) {
-  dispatch_async_f(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), closure,
-                   [](void* context) {
-                     auto* closure =
-                         static_cast<EventEngine::Closure*>(context);
-                     closure->Run();
-                   });
+  // CHECK(!quiesced_.load(std::memory_order_relaxed));
+
+  dispatch_async_f(queue_, closure, [](void* context) {
+    auto* closure = static_cast<EventEngine::Closure*>(context);
+    closure->Run();
+  });
 }
 
 }  // namespace grpc_event_engine::experimental

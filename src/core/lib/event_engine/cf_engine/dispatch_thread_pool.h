@@ -25,6 +25,8 @@
 #include <AvailabilityMacros.h>
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
+#include <dispatch/dispatch.h>
+
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
 namespace grpc_event_engine::experimental {
@@ -32,11 +34,12 @@ namespace grpc_event_engine::experimental {
 // thread pool that uses Grand Central Dispatch (GCD) dispatch queues
 class DispatchThreadPool final : public ThreadPool {
  public:
+  DispatchThreadPool(size_t unused = -1);
   // Asserts Quiesce was called.
-  ~DispatchThreadPool() override {}
+  ~DispatchThreadPool() override;
   // Shut down the pool, and wait for all threads to exit.
   // This method is safe to call from within a ThreadPool thread.
-  void Quiesce() override {};
+  void Quiesce() override;
   // Run must not be called after Quiesce completes
   void Run(absl::AnyInvocable<void()> callback) override;
   void Run(EventEngine::Closure* closure) override;
@@ -46,6 +49,11 @@ class DispatchThreadPool final : public ThreadPool {
   void PrepareFork() override {}
   void PostforkParent() override {}
   void PostforkChild() override {}
+
+ private:
+  dispatch_queue_t queue_;
+  std::atomic<bool> quiesced_{false};
+  std::atomic<bool> shutdown_{false};
 };
 
 }  // namespace grpc_event_engine::experimental
