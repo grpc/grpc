@@ -182,6 +182,7 @@ grpc_cc_test(
     deps = [
         "//:chttp2_frame",
         "//src/core:http2_errors",
+        "//src/core:slice_buffer",
     ],
 )
 
@@ -515,6 +516,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:http2_client_transport",
+        "//src/core:message",
+        "//src/core:metadata",
         "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -538,6 +541,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:http2_server_transport",
+        "//src/core:message",
+        "//src/core:metadata",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/chttp2:http2_frame_test_helper",

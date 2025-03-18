@@ -381,9 +381,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "time_precise",
-    srcs = [
-        "util/time_precise.cc",
-    ],
+    srcs = ["util/time_precise.cc"],
     hdrs = [
         "util/time_precise.h",
     ],
@@ -2432,6 +2430,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "posix_event_engine_tcp_socket_utils",
     srcs = [
+        "lib/event_engine/posix_engine/set_socket_dualstack.cc",
         "lib/event_engine/posix_engine/tcp_socket_utils.cc",
     ],
     hdrs = [
@@ -7538,6 +7537,8 @@ grpc_cc_library(
         "http2_transport",
         "loop",
         "map",
+        "message",
+        "metadata",
         "mpsc",
         "sync",
         ":match_promise",
@@ -7582,6 +7583,8 @@ grpc_cc_library(
         "http2_settings",
         "loop",
         "map",
+        "message",
+        "metadata",
         "mpsc",
         "ref_counted",
         "sync",
