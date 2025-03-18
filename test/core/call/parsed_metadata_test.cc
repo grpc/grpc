@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/transport/parsed_metadata.h"
+#include "src/core/call/parsed_metadata.h"
 
 #include <memory>
 
@@ -22,7 +22,7 @@
 #include "absl/strings/numbers.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/call/metadata_batch.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

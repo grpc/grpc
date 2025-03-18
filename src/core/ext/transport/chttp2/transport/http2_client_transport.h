@@ -137,9 +137,9 @@ class Http2ClientTransport final : public ClientTransport {
     explicit Stream(CallHandler call) : call(std::move(call)) {}
     // Transport holds one CallHandler object for each Stream.
     CallHandler call;
+    HttpStreamState stream_state = HttpStreamState::kIdle;
+    TransportSendQeueue send_queue;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
-    // TODO(tjagtap) : [PH2][P2] : May be add state of Stream - Idle , Open etc
-    // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   };
 
   MpscReceiver<Http2Frame> outgoing_frames_;

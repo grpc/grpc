@@ -128,6 +128,7 @@ class SerializeExtraBytesRequired {
   size_t operator()(const Http2WindowUpdateFrame&) { return 4; }
   size_t operator()(const Http2SecurityFrame&) { return 0; }
   size_t operator()(const Http2UnknownFrame&) { Crash("unreachable"); }
+  size_t operator()(const Http2EmptyFrame&) { Crash("unreachable"); }
 };
 
 class SerializeHeaderAndPayload {
@@ -233,6 +234,8 @@ class SerializeHeaderAndPayload {
   }
 
   void operator()(Http2UnknownFrame&) { Crash("unreachable"); }
+
+  void operator()(Http2EmptyFrame&) {}
 
  private:
   SliceBuffer& out_;

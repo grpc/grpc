@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_H
+#ifndef GRPC_SRC_CORE_CALL_METADATA_H
+#define GRPC_SRC_CORE_CALL_METADATA_H
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
@@ -198,4 +198,4 @@ struct StatusCastImpl<
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_H
+#endif  // GRPC_SRC_CORE_CALL_METADATA_H

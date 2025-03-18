@@ -213,7 +213,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
     "include/grpc/support/metrics.h",
-    "include/grpc/support/port_platform.h",
     "include/grpc/support/string_util.h",
     "include/grpc/support/sync.h",
     "include/grpc/support/sync_abseil.h",
@@ -231,7 +230,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/fork.h",
     "include/grpc/impl/codegen/gpr_types.h",
     "include/grpc/impl/codegen/log.h",
-    "include/grpc/impl/codegen/port_platform.h",
     "include/grpc/impl/codegen/sync.h",
     "include/grpc/impl/codegen/sync_abseil.h",
     "include/grpc/impl/codegen/sync_custom.h",
@@ -736,6 +734,10 @@ grpc_cc_library(
         "//src/core:util/string.h",
         "//src/core:util/thd.h",
         "//src/core:util/tmpfile.h",
+        # TODO(ctiller): remove from gpr target entirely
+        # All usage should be via gpr_platform
+        "include/grpc/impl/codegen/port_platform.h",
+        "include/grpc/support/port_platform.h",
     ],
     external_deps = [
         "absl/base",
@@ -780,10 +782,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "gpr_public_hdrs",
-    hdrs = GPR_PUBLIC_HDRS,
+    hdrs = [
+        # TODO(ctiller): remove from gpr target entirely
+        # All usage should be via gpr_platform
+        "include/grpc/impl/codegen/port_platform.h",
+        "include/grpc/support/port_platform.h",
+    ],
     external_deps = [
         "absl/strings",
     ],
+    public_hdrs = GPR_PUBLIC_HDRS,
     tags = [
         "avoid_dep",
         "nofixdeps",
@@ -1340,6 +1348,9 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_epoll1_linux.cc",
         "//src/core:lib/iomgr/ev_poll_posix.cc",
         "//src/core:lib/iomgr/ev_posix.cc",
+        "//src/core:lib/iomgr/event_engine_shims/closure.cc",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
+        "//src/core:lib/iomgr/event_engine_shims/tcp_client.cc",
         "//src/core:lib/iomgr/fork_posix.cc",
         "//src/core:lib/iomgr/fork_windows.cc",
         "//src/core:lib/iomgr/iocp_windows.cc",
@@ -1383,14 +1394,6 @@ grpc_cc_library(
         "//src/core:util/gethostname_fallback.cc",
         "//src/core:util/gethostname_host_name_max.cc",
         "//src/core:util/gethostname_sysconf.cc",
-    ] +
-    # TODO(vigneshbabu): remove these
-    # These headers used to be vended by this target, but they have to be
-    # removed after landing EventEngine.
-    [
-        "//src/core:lib/iomgr/event_engine_shims/closure.cc",
-        "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
-        "//src/core:lib/iomgr/event_engine_shims/tcp_client.cc",
     ],
     hdrs = [
         "//src/core:lib/iomgr/block_annotate.h",

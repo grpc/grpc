@@ -291,6 +291,8 @@ grpc_cc_test(
     tags = [
         "requires-net:ipv4",
         "requires-net:loopback",
+        # relies on ares for dns resolution
+        "grpc:broken-internally",
     ],
     deps = [
         "cq_verifier",

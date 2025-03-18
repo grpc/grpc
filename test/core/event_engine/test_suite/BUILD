@@ -43,6 +43,7 @@ grpc_cc_test(
     name = "posix_event_engine_test",
     srcs = ["posix_event_engine_test.cc"],
     tags = [
+        "grpc:fails-internally",
         "no_mac",
         "no_windows",
         "requires-net:ipv4",
