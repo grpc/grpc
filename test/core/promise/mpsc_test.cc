@@ -240,7 +240,7 @@ TEST(MpscTest, BigBufferBulkReceive) {
   MpscSender<Payload> sender = receiver.MakeSender();
 
   for (int i = 0; i < 25; i++) {
-    EXPECT_THAT(sender.Send(MakePayload(i))(), IsReady(true));
+    EXPECT_THAT(sender.Send(MakePayload(i))(), IsReady(Success{}));
   }
   auto result = receiver.NextBatch()();
   std::vector<Payload> expected;
@@ -253,11 +253,11 @@ TEST(MpscTest, BigBufferBulkReceive) {
 TEST(MpscTest, BulkReceive) {
   MpscReceiver<Payload> receiver(1);
   MpscSender<Payload> sender = receiver.MakeSender();
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), true);
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), true);
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), true);
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), true);
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), Success{});
   auto promise = receiver.NextBatch();
   auto result = promise();
 
@@ -273,11 +273,11 @@ TEST(MpscTest, BulkReceive) {
 TEST(MpscTest, BulkAndSingleReceive) {
   MpscReceiver<Payload> receiver(1);
   MpscSender<Payload> sender = receiver.MakeSender();
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), true);
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), true);
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), true);
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), true);
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), Success{});
   auto promise = receiver.Next();
   auto result = promise();
   EXPECT_THAT(result, IsReady(MakePayload(1)));
