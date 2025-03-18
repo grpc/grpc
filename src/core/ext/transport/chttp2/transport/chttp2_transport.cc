@@ -1650,10 +1650,8 @@ static void perform_stream_op_locked(void* stream_op,
   // https://github.com/grpc/grpc/pull/38729 for more information.) On the
   // client, the call attempt tracer will be available for use when the
   // send_initial_metadata op arrives.
-  if (op->send_initial_metadata) {
-    if (s->t->is_client) {
-      s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
-    }
+  if (s->t->is_client && op->send_initial_metadata) {
+    s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
   }
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op
