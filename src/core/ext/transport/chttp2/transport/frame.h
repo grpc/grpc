@@ -246,6 +246,9 @@ struct GrpcMessageHeader {
   uint32_t length;
 };
 
+// If the payload SliceBuffer is too small to hold a gRPC header, this function
+// will crash. The calling function MUST ensure that the payload SliceBuffer
+// has length greater than or equal to the gRPC header.
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload);
 
 void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
