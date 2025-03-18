@@ -100,9 +100,12 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
       // But make sure the allocated slice is not inlined.
       size_t allocate_length =
           remain > static_cast<size_t>(block_size_) ? block_size_ : remain;
-      slice_ = grpc_slice_malloc(allocate_length > GRPC_SLICE_INLINED_SIZE
-                                     ? allocate_length
-                                     : GRPC_SLICE_INLINED_SIZE + 1);
+      if (allocate_length > GRPC_SLICE_INLINED_SIZE) {
+        slice_ = grpc_slice_malloc(allocate_length);
+      } else {
+        slice_ = grpc_slice_malloc(GRPC_SLICE_INLINED_SIZE + 1);
+        GRPC_SLICE_SET_LENGTH(slice_, allocate_length);
+      }
     }
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
