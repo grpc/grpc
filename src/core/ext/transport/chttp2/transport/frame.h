@@ -283,8 +283,8 @@ HTTPErrorCode HTTP2RfcValidator::ValidFrameForState(const StreamState state,
   //   case kIdle :
   //    // if(frame_type==RST_STREAM) return Error;
   //   // And similar cases
-}
-return HTTP2StatusOk();
+  //}
+  return HTTP2StatusOk();
 }
 
 }  // namespace grpc_core
