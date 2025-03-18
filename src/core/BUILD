@@ -381,9 +381,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "time_precise",
-    srcs = [
-        "util/time_precise.cc",
-    ],
+    srcs = ["util/time_precise.cc"],
     hdrs = [
         "util/time_precise.h",
     ],
