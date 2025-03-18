@@ -262,6 +262,7 @@ absl::Status StripPadding(SliceBuffer& payload) {
 absl::StatusOr<Http2DataFrame> ParseDataFrame(const Http2FrameHeader& hdr,
                                               SliceBuffer& payload) {
   if (hdr.stream_id == 0) {
+    // We MUST return the appropriate HTTP2 error code when such stuff happens.
     return absl::InternalError(
         absl::StrCat("invalid stream id: ", hdr.ToString()));
   }
@@ -277,6 +278,7 @@ absl::StatusOr<Http2DataFrame> ParseDataFrame(const Http2FrameHeader& hdr,
 
 absl::StatusOr<Http2HeaderFrame> ParseHeaderFrame(const Http2FrameHeader& hdr,
                                                   SliceBuffer& payload) {
+  // We MUST return the appropriate HTTP2 error code when such stuff happens.
   if (hdr.stream_id == 0) {
     return absl::InternalError(
         absl::StrCat("invalid stream id: ", hdr.ToString()));
