@@ -530,6 +530,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/event_engine/posix_engine/posix_engine.cc',
     'src/core/lib/event_engine/posix_engine/posix_engine_listener.cc',
     'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc',
+    'src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc',
     'src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc',
     'src/core/lib/event_engine/posix_engine/timer.cc',
     'src/core/lib/event_engine/posix_engine/timer_heap.cc',
