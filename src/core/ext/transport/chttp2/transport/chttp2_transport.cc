@@ -856,7 +856,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
       }()),
       arena(arena),
       flow_control(&t->flow_control),
-      call_tracer_wrapper(this) {
+      call_tracer_wrapper(this),
+      tcp_tracer(TcpTracerIfSampled(this)) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
@@ -1653,7 +1654,6 @@ static void perform_stream_op_locked(void* stream_op,
     if (s->t->is_client) {
       s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
     }
-    s->tcp_tracer = TcpTracerIfSampled(s);
   }
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op
