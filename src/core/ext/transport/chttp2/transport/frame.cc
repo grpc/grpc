@@ -527,7 +527,7 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
 }
 
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
-  CHECK_GT(payload.Length(), kGrpcHeaderSizeInBytes);
+  CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
   uint8_t buffer[kGrpcHeaderSizeInBytes];
   payload.MoveFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
   GrpcMessageHeader header;
