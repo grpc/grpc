@@ -254,6 +254,39 @@ GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload);
 void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
                                    const uint32_t length);
 
+///////////////////////////////////////////////////////////////////////////////
+// RFC Validators
+// Move into a new file
+
+class HTTP2RfcValidator {
+  // For all frames except header and connection
+  static HTTPErrorCode ValidateFrame(const HTTP2DataFrame& frame);
+
+  // We cannot validate Header and Continuation frames in isolation.
+  // A lot of their musts are tied together.
+  // Example : only the last Continuation should have END_HEADER flag set.
+  static HTTPErrorCode ValidateFrame(
+      const HTTP2HeaderFrame& frame,
+      const std::vector<const HTTP2ContinuationFrame*>& frames);
+
+  static HTTPErrorCode ValidFrameForState(const StreamState state,
+                                          const int frame_type);
+
+  // Move all the validation of received frames into this class.
+  // Also, we can use this test class to validate the frames that we create and
+  // write.
+};
+
+HTTPErrorCode HTTP2RfcValidator::ValidFrameForState(const StreamState state,
+                                                    const int frame_type) {
+  // switch(state){
+  //   case kIdle :
+  //    // if(frame_type==RST_STREAM) return Error;
+  //   // And similar cases
+}
+return HTTP2StatusOk();
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H

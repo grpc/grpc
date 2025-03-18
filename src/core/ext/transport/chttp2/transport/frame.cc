@@ -30,6 +30,10 @@ namespace grpc_core {
 
 namespace {
 
+// Craig - Can I make these enum class?
+// Reason - Need to do multiple validations to honour the RFC.
+// Want to use these in the transport classes.
+
 // HTTP2 Frame Types
 constexpr uint8_t kFrameTypeData = 0;
 constexpr uint8_t kFrameTypeHeader = 1;
