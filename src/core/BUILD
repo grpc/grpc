@@ -2425,6 +2425,8 @@ grpc_cc_library(
 grpc_cc_library(
     name = "posix_event_engine_tcp_socket_utils",
     srcs = [
+        "lib/event_engine/posix_engine/set_socket_dualstack.cc",
+        "lib/event_engine/posix_engine/set_socket_dualstack.google.cc",
         "lib/event_engine/posix_engine/tcp_socket_utils.cc",
     ],
     hdrs = [
