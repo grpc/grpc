@@ -17,6 +17,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/functional/any_invocable.h"
+#include "metadata.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -78,13 +79,25 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
 }
 
 CallInitiatorAndHandler MakeCallPair(
-    ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena) {
+    ClientMetadataHandle client_initial_metadata,
+    CallArenaSource arena_source) {
+  auto arena = arena_source.Take();
   DCHECK_NE(arena.get(), nullptr);
   DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
             nullptr);
   auto spine =
       CallSpine::Create(std::move(client_initial_metadata), std::move(arena));
   return {CallInitiator(spine), UnstartedCallHandler(spine)};
+}
+
+CallInitiatorAndHandler CallHandler::MakeChildCall(
+    ClientMetadataHandle client_initial_metadata,
+    CallArenaSource arena_source) {
+  auto result =
+      MakeCallPair(std::move(client_initial_metadata), std::move(arena_source));
+  result.handler.arena()->PropagateContextFrom(arena());
+  spine_->AddChildCall(result.handler.spine_);
+  return result;
 }
 
 }  // namespace grpc_core

@@ -35,6 +35,24 @@
 
 namespace grpc_core {
 
+class CallArenaSource {
+ public:
+  // NOLINTNEXTLINE: implicit construction desired
+  CallArenaSource(RefCountedPtr<Arena> arena) : arena_(std::move(arena)) {}
+  // NOLINTNEXTLINE: implicit construction desired
+  CallArenaSource(const RefCountedPtr<ArenaFactory>& factory)
+      : arena_(factory->MakeArena()) {}
+  // NOLINTNEXTLINE: implicit construction desired
+  CallArenaSource(const RefCountedPtr<CallArenaAllocator>& factory)
+      : arena_(factory->MakeArena()) {}
+  CallArenaSource() : CallArenaSource(SimpleArenaAllocator(0)) {}
+
+  RefCountedPtr<Arena> Take() { return std::move(arena_); }
+
+ private:
+  RefCountedPtr<Arena> arena_;
+};
+
 // The common middle part of a call - a reference is held by each of
 // CallInitiator and CallHandler - which provide interfaces that are appropriate
 // for each side of a call.
@@ -411,6 +429,8 @@ class CallInitiator {
   RefCountedPtr<CallSpine> spine_;
 };
 
+struct CallInitiatorAndHandler;
+
 class CallHandler {
  public:
   using NextMessage = ClientToServerNextMessage;
@@ -490,10 +510,9 @@ class CallHandler {
     return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
-  void AddChildCall(const CallInitiator& initiator) {
-    CHECK(initiator.spine_ != nullptr);
-    spine_->AddChildCall(initiator.spine_);
-  }
+  CallInitiatorAndHandler MakeChildCall(
+      ClientMetadataHandle client_initial_metadata,
+      CallArenaSource arena_source);
 
   Arena* arena() { return spine_->arena(); }
   Party* party() { return spine_.get(); }
@@ -504,6 +523,8 @@ class CallHandler {
 
 class UnstartedCallHandler {
  public:
+  friend class CallHandler;
+
   explicit UnstartedCallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
@@ -567,7 +588,8 @@ struct CallInitiatorAndHandler {
 };
 
 CallInitiatorAndHandler MakeCallPair(
-    ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena);
+    ClientMetadataHandle client_initial_metadata,
+    CallArenaSource arena_source = {});
 
 template <typename CallHalf>
 auto MessagesFrom(CallHalf h) {

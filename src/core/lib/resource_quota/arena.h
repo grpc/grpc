@@ -31,6 +31,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <iosfwd>
 #include <memory>
 #include <utility>
@@ -64,21 +65,37 @@ class BaseArenaContextTraits {
   // Call the registered destruction function for a context.
   static void Destroy(uint16_t id, void* ptr) {
     if (ptr == nullptr) return;
-    RegisteredTraits()[id](ptr);
+    RegisteredTraits()[id].destroy(ptr);
+  }
+
+  // Propagate a context to an arena closer to the server
+  static void* ForwardPropagateContext(uint16_t id, void* ptr) {
+    return RegisteredTraits()[id].forward_propagate(ptr);
+  }
+
+  static void* ReversePropagateContext(uint16_t id, void* parent_ptr,
+                                       void* child_ptr) {
+    return RegisteredTraits()[id].reverse_propagate(parent_ptr, child_ptr);
   }
 
  protected:
+  struct VTable {
+    void* (*forward_propagate)(void*);
+    void* (*reverse_propagate)(void*, void*);
+    void (*destroy)(void*);
+  };
+
   // Allocate a new context id and register the destruction function.
-  static uint16_t MakeId(void (*destroy)(void* ptr)) {
+  static uint16_t MakeId(VTable vtable) {
     auto& traits = RegisteredTraits();
     const uint16_t id = static_cast<uint16_t>(traits.size());
-    traits.push_back(destroy);
+    traits.push_back(vtable);
     return id;
   }
 
  private:
-  static std::vector<void (*)(void*)>& RegisteredTraits() {
-    static NoDestruct<std::vector<void (*)(void*)>> registered_traits;
+  static std::vector<VTable>& RegisteredTraits() {
+    static NoDestruct<std::vector<VTable>> registered_traits;
     return *registered_traits;
   }
 };
@@ -94,13 +111,29 @@ class ArenaContextTraits : public BaseArenaContextTraits {
 };
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
-  ArenaContextType<T>::Destroy(static_cast<T*>(p));
-}
+class ContextVTableImpls {
+ public:
+  static void DestroyArenaContext(void* p) {
+    ArenaContextType<T>::Destroy(static_cast<T*>(p));
+  }
+
+  static void* ForwardPropagateContext(void* p) {
+    T* r = ArenaContextType<T>::ForwardPropagate(static_cast<T*>(p));
+    return r;
+  }
+
+  static void* ReversePropagateContext(void* parent_ctx, void* child_ctx) {
+    T* r = ArenaContextType<T>::ReversePropagate(static_cast<T*>(parent_ctx),
+                                                 static_cast<T*>(child_ctx));
+    return r;
+  }
+};
 
 template <typename T>
-const uint16_t ArenaContextTraits<T>::id_ =
-    BaseArenaContextTraits::MakeId(DestroyArenaContext<T>);
+const uint16_t ArenaContextTraits<T>::id_ = BaseArenaContextTraits::MakeId(
+    {ContextVTableImpls<T>::ForwardPropagateContext,
+     ContextVTableImpls<T>::ReversePropagateContext,
+     ContextVTableImpls<T>::DestroyArenaContext});
 
 template <typename T, typename A, typename B>
 struct IfArray {
@@ -145,6 +178,19 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
   static RefCountedPtr<Arena> Create(size_t initial_size,
                                      RefCountedPtr<ArenaFactory> arena_factory);
+
+  // Called on the child arena: propagate context in the client->server
+  // direction of a call.
+  // Takes a reference to parent.
+  void ForwardPropagateContext(Arena* parent);
+  // Called on the child arena: propagate context in the server->client
+  // direction of a call.
+  // ForwardPropagateContext() must have previously been called on this context.
+  // Only one child context may be reverse propagated per parent.
+  void ReversePropagateContext();
+  // Drop a previously held parent context. Prevents future calling of
+  // ReversePropagateContext().
+  void DropParentContext();
 
   // Destroy all `ManagedNew` allocated objects.
   // Allows safe destruction of these objects even if they need context held by
@@ -369,6 +415,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   std::atomic<Zone*> last_zone_{nullptr};
   std::atomic<ManagedNewObject*> managed_new_head_{nullptr};
   RefCountedPtr<ArenaFactory> arena_factory_;
+  RefCountedPtr<Arena> parent_arena_;
 };
 
 // Arena backed single-producer-single-consumer queue

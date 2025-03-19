@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <cstddef>
 #include <new>
 
 #include "absl/log/log.h"
@@ -84,6 +85,32 @@ Arena::Arena(size_t initial_size, RefCountedPtr<ArenaFactory> arena_factory)
   }
   CHECK_GE(initial_size, arena_detail::BaseArenaContextTraits::ContextSize());
   arena_factory_->allocator().Reserve(initial_size);
+}
+
+void Arena::ForwardPropagateContext(Arena* parent) {
+  DCHECK(parent_arena_ == nullptr);
+  for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
+       ++i) {
+    contexts()[i] =
+        arena_detail::BaseArenaContextTraits::ForwardPropagateContext(
+            i, parent->contexts()[i]);
+  }
+  parent_arena_ = parent->Ref();
+}
+
+void Arena::ReversePropagateContext() {
+  DCHECK(parent_arena_ != nullptr);
+  for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
+       ++i) {
+    parent_arena_->contexts()[i] =
+        arena_detail::BaseArenaContextTraits::ReversePropagateContext(
+            i, parent_arena_->contexts()[i], contexts()[i]);
+  }
+}
+
+void Arena::DropParentContext() {
+  DCHECK(parent_arena_ != nullptr);
+  parent_arena_.reset();
 }
 
 void Arena::DestroyManagedNewObjects() {
