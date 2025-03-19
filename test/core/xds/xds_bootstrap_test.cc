@@ -60,21 +60,23 @@ MATCHER_P5(EqXdsServer, name, creds_config_type, ignore_resource_deletion,
                                      result_listener)) {
     return false;
   }
-  bool ok = ::testing::ExplainMatchResult(name, server->server_uri(),
+  bool ok = ::testing::ExplainMatchResult(name, server->target()->server_uri(),
                                           result_listener);
-  ok |=
+  ok &=
       ::testing::ExplainMatchResult(server->IgnoreResourceDeletion(),
                                     ignore_resource_deletion, result_listener);
-  ok |= ::testing::ExplainMatchResult(server->FailOnDataErrors(),
+  ok &= ::testing::ExplainMatchResult(server->FailOnDataErrors(),
                                       fail_on_data_errors, result_listener);
-  ok |= ::testing::ExplainMatchResult(server->TrustedXdsServer(),
+  ok &= ::testing::ExplainMatchResult(server->TrustedXdsServer(),
                                       trusted_xds_server, result_listener);
-  auto creds_config = server->channel_creds_config();
+  auto server_target =
+      std::dynamic_pointer_cast<const GrpcXdsServerTarget>(server->target());
+  auto creds_config = server_target->channel_creds_config();
   if (!::testing::ExplainMatchResult(::testing::Ne(nullptr), creds_config,
                                      result_listener)) {
     return false;
   }
-  ok |= ::testing::ExplainMatchResult(creds_config_type, creds_config->type(),
+  ok &= ::testing::ExplainMatchResult(creds_config_type, creds_config->type(),
                                       result_listener);
   return ok;
 }
@@ -699,33 +701,6 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
   ASSERT_EQ(config->value(), 0);
 }
 
-TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
-  const char* json_str =
-      "    {"
-      "      \"server_uri\": \"fake:///lb\","
-      "      \"channel_creds\": ["
-      "        {"
-      "          \"type\": \"fake\","
-      "          \"ignore\": 0"
-      "        }"
-      "      ],"
-      "      \"ignore\": 0,"
-      "      \"server_features\": ["
-      "        \"fail_on_data_errors\","
-      "        \"ignore_resource_deletion\","
-      "        \"trusted_xds_server\""
-      "      ]"
-      "    }";
-  auto json = JsonParse(json_str);
-  ASSERT_TRUE(json.ok()) << json.status();
-  auto xds_server = LoadFromJson<GrpcXdsServer>(*json);
-  ASSERT_TRUE(xds_server.ok()) << xds_server.status();
-  Json output = xds_server->ToJson();
-  auto output_xds_server = LoadFromJson<GrpcXdsServer>(output);
-  ASSERT_TRUE(output_xds_server.ok()) << output_xds_server.status();
-  EXPECT_EQ(*xds_server, *output_xds_server);
-}
-
 TEST(XdsBootstrapTest, MultipleXdsServers) {
   const char* json_str =
       "{"
@@ -770,7 +745,13 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
       "          \"server_uri\": \"fake:///xds_server2\","
       "          \"channel_creds\": ["
       "            {"
-      "              \"type\": \"fake\""
+      "              \"type\": \"google_default\""
+      "            },"
+      "            {"
+      "               \"type\": \"fake\""
+      "            },"
+      "            {"
+      "               \"type\": \"insecure\""
       "            }"
       "          ],"
       "          \"server_features\": [\"xds_v3\"]"
@@ -806,11 +787,15 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
   auto* authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example.com"));
   ASSERT_NE(authority, nullptr);
+  // ASSERT_EQ(authority->servers()[1]->target()->server_uri(),
+  // "fake:///xds_server");
   EXPECT_THAT(
       authority->servers(),
       ::testing::ElementsAre(
           EqXdsServer("fake:///xds_server", "fake", false, false, false),
-          EqXdsServer("fake:///xds_server2", "fake", false, false, false)));
+          // Assert that channel creds used are the first one in the list
+          EqXdsServer("fake:///xds_server2", "google_default", false, false,
+                      false)));
 }
 
 }  // namespace

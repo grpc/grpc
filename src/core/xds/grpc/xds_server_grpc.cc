@@ -71,15 +71,9 @@ bool GrpcXdsServer::TrustedXdsServer() const {
 
 bool GrpcXdsServer::Equals(const XdsServer& other) const {
   const auto& o = DownCast<const GrpcXdsServer&>(other);
-  return (server_uri() == o.server_uri() &&
-          channel_creds_config()->type() == o.channel_creds_config()->type() &&
-          channel_creds_config()->Equals(*o.channel_creds_config()) &&
+  return (server_target_->Equals(*o.server_target_) &&
           server_features_ == o.server_features_);
 }
-
-std::string GrpcXdsServerTarget::Key() const { return JsonDump(ToJson()); }
-
-std::string GrpcXdsServer::Key() const { return JsonDump(ToJson()); }
 
 const JsonLoaderInterface* GrpcXdsServer::JsonLoader(const JsonArgs&) {
   static const auto* loader = JsonObjectLoader<GrpcXdsServer>().Finish();
@@ -124,7 +118,9 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
           auto config =
               CoreConfiguration::Get().channel_creds_registry().ParseConfig(
                   creds.type, Json::FromObject(creds.config), args, errors);
-          channel_creds_config = std::move(config);
+          if (channel_creds_config == nullptr) {
+            channel_creds_config = std::move(config);
+          }
         }
       }
       if (channel_creds_config == nullptr) {
@@ -164,41 +160,33 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
   }
 }
 
-Json GrpcXdsServerTarget::ToJson() const {
-  Json::Object channel_creds_json;
-  if (channel_creds_config() != nullptr) {
-    channel_creds_json["type"] =
-        Json::FromString(std::string(channel_creds_config_->type()));
-    channel_creds_json["config"] = channel_creds_config_->ToJson();
+std::string GrpcXdsServer::Key() const {
+  std::vector<std::string> parts;
+  parts.push_back(absl::StrFormat("target=%s", server_target_->Key()));
+  if (!server_features_.empty()) {
+    parts.push_back(absl::StrFormat("server_features=%s",
+                                    absl::StrJoin(server_features_, " ")));
   }
-  Json::Object json{
-      {"server_uri", Json::FromString(server_uri_)},
-      {"channel_creds",
-       Json::FromArray({Json::FromObject(std::move(channel_creds_json))})},
-  };
-  return Json::FromObject(std::move(json));
+  return absl::StrJoin(parts, ",");
 }
 
-Json GrpcXdsServer::ToJson() const {
-  Json::Object channel_creds_json;
-  if (channel_creds_config() != nullptr) {
-    channel_creds_json["type"] =
-        Json::FromString(std::string(channel_creds_config_->type()));
-    channel_creds_json["config"] = channel_creds_config()->ToJson();
+std::string GrpcXdsServerTarget::Key() const {
+  std::vector<std::string> parts;
+  parts.push_back(absl::StrFormat("server_uri=%s", server_uri_));
+  if (channel_creds_config_ != nullptr) {
+    parts.push_back(absl::StrFormat("type=%s", channel_creds_config_->type()));
+    parts.push_back(
+        absl::StrFormat("config=%s", channel_creds_config_->ToString()));
   }
-  Json::Object json{
-      {"server_uri", Json::FromString(server_uri())},
-      {"channel_creds",
-       Json::FromArray({Json::FromObject(std::move(channel_creds_json))})},
-  };
-  if (!server_features_.empty()) {
-    Json::Array server_features_json;
-    for (auto& feature : server_features_) {
-      server_features_json.emplace_back(Json::FromString(feature));
-    }
-    json["server_features"] = Json::FromArray(std::move(server_features_json));
-  }
-  return Json::FromObject(std::move(json));
+
+  return absl::StrJoin(parts, ",");
+}
+
+bool GrpcXdsServerTarget::Equals(const XdsServerTarget& other) const {
+  const auto& o = DownCast<const GrpcXdsServerTarget&>(other);
+  return (server_uri_ == o.server_uri_ &&
+          channel_creds_config_->type() == o.channel_creds_config_->type() &&
+          channel_creds_config_->Equals(*o.channel_creds_config_));
 }
 
 }  // namespace grpc_core

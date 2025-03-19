@@ -619,7 +619,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
                  cluster_resource_->lrs_load_reporting_server,
                  new_cluster_config.cluster->lrs_load_reporting_server)) {
     drop_stats_ = xds_client_->lrs_client().AddClusterDropStats(
-        new_cluster_config.cluster->lrs_load_reporting_server->target(),
+        new_cluster_config.cluster->lrs_load_reporting_server,
         new_config->cluster_name(), new_eds_service_name);
     if (drop_stats_ == nullptr) {
       LOG(ERROR)
@@ -817,7 +817,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   if (parent()->cluster_resource_->lrs_load_reporting_server != nullptr) {
     locality_stats =
         parent()->xds_client_->lrs_client().AddClusterLocalityStats(
-            parent()->cluster_resource_->lrs_load_reporting_server->target(),
+            parent()->cluster_resource_->lrs_load_reporting_server,
             parent()->config_->cluster_name(),
             GetEdsResourceName(*parent()->cluster_resource_), locality_name,
             parent()->cluster_resource_->lrs_backend_metric_propagation);

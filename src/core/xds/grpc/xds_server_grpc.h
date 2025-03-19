@@ -34,12 +34,13 @@ namespace grpc_core {
 class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
  public:
   explicit GrpcXdsServerTarget(
-      const std::string& server_uri,
+      std::string server_uri,
       RefCountedPtr<ChannelCredsConfig> channel_creds_config)
-      : server_uri_(server_uri), channel_creds_config_(channel_creds_config) {}
+      : server_uri_(std::move(server_uri)),
+        channel_creds_config_(channel_creds_config) {}
 
+  bool Equals(const XdsServerTarget& other) const override;
   std::string Key() const override;
-  Json ToJson() const;
 
   const std::string& server_uri() const override { return server_uri_; }
   RefCountedPtr<ChannelCredsConfig> channel_creds_config() const override {
@@ -63,18 +64,12 @@ class GrpcXdsServer final : public XdsBootstrap::XdsServer {
 
   std::string Key() const override;
 
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config() const {
-    return server_target_->channel_creds_config();
-  }
-
   std::shared_ptr<const XdsBootstrap::XdsServerTarget> target() const override {
     return server_target_;
   }
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs& args,
                     ValidationErrors* errors);
-
-  Json ToJson() const;
 
  private:
   std::shared_ptr<GrpcXdsServerTarget> server_target_;

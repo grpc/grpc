@@ -48,13 +48,19 @@ class XdsBootstrap {
     virtual const std::string& server_uri() const = 0;
     // Returns a key to be used for uniquely identifying this XdsServer.
     virtual std::string Key() const = 0;
+    virtual bool Equals(const XdsServerTarget& other) const = 0;
+    friend bool operator==(const XdsServerTarget& a, const XdsServerTarget& b) {
+      return a.Equals(b);
+    }
+    friend bool operator!=(const XdsServerTarget& a, const XdsServerTarget& b) {
+      return !a.Equals(b);
+    }
   };
 
   class XdsServer {
    public:
     virtual ~XdsServer() = default;
 
-    const std::string& server_uri() const { return target()->server_uri(); }
     virtual std::shared_ptr<const XdsServerTarget> target() const = 0;
 
     // TODO(roth): Remove this method once the data error handling
