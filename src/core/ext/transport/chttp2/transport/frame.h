@@ -258,6 +258,9 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
 // RFC Validators
 // Move into a new file
 
+
+// Akshits idea : go/totw/155#dynamic-dispatch-via-visitation
+
 class HTTP2RfcValidator {
   // For all frames except header and connection
   static HTTPErrorCode ValidateFrame(const HTTP2DataFrame& frame);
