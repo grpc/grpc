@@ -74,7 +74,7 @@ namespace {
 
 bool XdsFallbackOnReachabilityOnlyEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_FALLBACK_ON_REACHABILITY_ONLY");
-  if (!value.has_value()) return true;
+  if (!value.has_value()) return false;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
