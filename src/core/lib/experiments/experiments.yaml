@@ -66,6 +66,12 @@
   expiry: 2025/06/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
+- name: error_flatten
+  description: Flatten errors to ordinary absl::Status form.
+  expiry: 2025/06/01
+  owner: roth@google.com
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  allow_in_fuzzing_config: false
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2025/05/01
