@@ -143,6 +143,15 @@
   expiry: 2025/09/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: pollset_alternative
+  description:
+    Code outside iomgr that relies directly on pollsets will use non-pollset alternatives when
+    enabled.
+  expiry: 2025/06/01
+  owner: hork@google.com
+  test_tags: ["core_end2end_test"]
+  requires: ["event_engine_client", "event_engine_listener"]
+  allow_in_fuzzing_config: false
 - name: posix_ee_skip_grpc_init
   description:
     Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on
