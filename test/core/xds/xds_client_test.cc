@@ -6252,20 +6252,19 @@ TEST_F(XdsClientTest, FallbackOnReachabilityOnly) {
   authority.SetFallbackOnReachabilityOnly();
   FakeXdsBootstrap::FakeXdsServer primary_server(kDefaultXdsServerUrl);
   FakeXdsBootstrap::FakeXdsServer fallback_server("fallback_xds_server");
-  InitXdsClient(
-      FakeXdsBootstrap::Builder()
-          .AddAuthority(kAuthority, authority)
-          .SetServers({primary_server, fallback_server}));
+  InitXdsClient(FakeXdsBootstrap::Builder()
+                    .AddAuthority(kAuthority, authority)
+                    .SetServers({primary_server, fallback_server}));
   // Start a watch.
   auto watcher = StartFooWatch(kXdstpResourceName);
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, true)));
-  EXPECT_THAT(GetResourceCounts(),
-              ::testing::ElementsAre(::testing::Pair(
-                  ResourceCountLabelsEq(kAuthority,
-                                        XdsFooResourceType::Get()->type_url(),
-                                        "requested"),
-                  1)));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(
+              kAuthority, XdsFooResourceType::Get()->type_url(), "requested"),
+          1)));
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::IsEmpty(), ::testing::_, ::testing::ElementsAre()));
   // CSDS should show that the resource has been requested.
@@ -6334,9 +6333,10 @@ TEST_F(XdsClientTest, FallbackOnReachabilityOnly) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{kXdstpResourceName});
   // Metrics should show primary channel failing and fallback channel working.
-  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(
-      ::testing::Pair(kDefaultXdsServerUrl, false),
-      ::testing::Pair(fallback_server.server_uri(), true)));
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, false),
+                  ::testing::Pair(fallback_server.server_uri(), true)));
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::_, ::testing::_,
       ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
@@ -6373,11 +6373,9 @@ TEST_F(XdsClientTest, FallbackOnReachabilityOnly) {
   // Check CSDS data.
   csds = DumpCsds();
   EXPECT_THAT(csds.generic_xds_configs(),
-              ::testing::UnorderedElementsAre(
-                  CsdsResourceAcked(XdsFooResourceType::Get()->type_url(),
-                                    kXdstpResourceName,
-                                    resource->AsJsonString(), "5",
-                                    TimestampProtoEq(kTime0))));
+              ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                  XdsFooResourceType::Get()->type_url(), kXdstpResourceName,
+                  resource->AsJsonString(), "5", TimestampProtoEq(kTime0))));
   // Client should send ACK to fallback server.
   request = WaitForRequest(fallback_stream.get());
   ASSERT_TRUE(request.has_value());
@@ -6399,20 +6397,19 @@ TEST_F(XdsClientTest, FallbackOnReachabilityOnlyNotEnabled) {
   authority.SetFallbackOnReachabilityOnly();
   FakeXdsBootstrap::FakeXdsServer primary_server(kDefaultXdsServerUrl);
   FakeXdsBootstrap::FakeXdsServer fallback_server("fallback_xds_server");
-  InitXdsClient(
-      FakeXdsBootstrap::Builder()
-          .AddAuthority(kAuthority, authority)
-          .SetServers({primary_server, fallback_server}));
+  InitXdsClient(FakeXdsBootstrap::Builder()
+                    .AddAuthority(kAuthority, authority)
+                    .SetServers({primary_server, fallback_server}));
   // Start a watch.
   auto watcher = StartFooWatch(kXdstpResourceName);
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, true)));
-  EXPECT_THAT(GetResourceCounts(),
-              ::testing::ElementsAre(::testing::Pair(
-                  ResourceCountLabelsEq(kAuthority,
-                                        XdsFooResourceType::Get()->type_url(),
-                                        "requested"),
-                  1)));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(
+              kAuthority, XdsFooResourceType::Get()->type_url(), "requested"),
+          1)));
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::IsEmpty(), ::testing::_, ::testing::ElementsAre()));
   // CSDS should show that the resource has been requested.
@@ -6482,8 +6479,8 @@ TEST_F(XdsClientTest, FallbackOnReachabilityOnlyNotEnabled) {
   auto fallback_stream = WaitForAdsStream(fallback_server);
   ASSERT_EQ(fallback_stream, nullptr);
   // Metrics should show primary channel failing, but no fallback channel.
-  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(
-      ::testing::Pair(kDefaultXdsServerUrl, false)));
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, false)));
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::_, ::testing::_,
       ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
