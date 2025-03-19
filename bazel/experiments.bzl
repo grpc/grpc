@@ -66,11 +66,7 @@ EXPERIMENTS = {
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
-                "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -94,7 +90,11 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
+                "posix_ee_skip_grpc_init",
                 "server_listener",
+            ],
+            "cpp_end2end_test": [
+                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -119,11 +119,7 @@ EXPERIMENTS = {
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
-                "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -142,7 +138,11 @@ EXPERIMENTS = {
         "on": {
             "core_end2end_test": [
                 "event_engine_for_all_other_endpoints",
+                "posix_ee_skip_grpc_init",
                 "server_listener",
+            ],
+            "cpp_end2end_test": [
+                "posix_ee_skip_grpc_init",
             ],
             "xds_end2end_test": [
                 "server_listener",
@@ -158,11 +158,7 @@ EXPERIMENTS = {
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
-                "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -186,7 +182,11 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
+                "posix_ee_skip_grpc_init",
                 "server_listener",
+            ],
+            "cpp_end2end_test": [
+                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
