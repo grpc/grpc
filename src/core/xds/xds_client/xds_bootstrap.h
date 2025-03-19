@@ -46,7 +46,7 @@ class XdsBootstrap {
    public:
     virtual ~XdsServerTarget() = default;
     virtual const std::string& server_uri() const = 0;
-    // Returns a key to be used for uniquely identifying this XdsServer.
+    // Returns a key to be used for uniquely identifying this XdsServerTarget.
     virtual std::string Key() const = 0;
     virtual bool Equals(const XdsServerTarget& other) const = 0;
     friend bool operator==(const XdsServerTarget& a, const XdsServerTarget& b) {
