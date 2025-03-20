@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <thread>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_FORK
@@ -105,6 +107,8 @@ void grpc_postfork_child() {
     grpc_timer_manager_set_threading(true);
     grpc_core::Executor::SetThreadingAll(true);
   }
+  std::thread th([]() { std::cout << "Boop"; });
+  th.join();
 }
 
 void grpc_fork_handlers_auto_register() {
