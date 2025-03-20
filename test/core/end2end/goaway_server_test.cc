@@ -196,12 +196,6 @@ class TestEventEngine : public EventEngine {
 }  // namespace
 
 int main(int argc, char** argv) {
-  // TODO(yijiem): rewrite this test with a custom EventEngine DNS Resolver
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    LOG(ERROR) << "Skipping iomgr-specific DNS test because EventEngine DNS is "
-                  "enabled";
-    return 0;
-  }
   grpc_completion_queue* cq;
   grpc_op ops[6];
   grpc_op* op;
