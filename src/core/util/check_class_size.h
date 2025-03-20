@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-// Define GRPC_MSAN_ENABLED as 1 or 0 depending on if we're building under
-// MSAN.
 #if defined(__has_feature)
 #if __has_feature(memory_sanitizer)
 #define GRPC_MSAN_ENABLED 1
