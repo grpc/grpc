@@ -128,26 +128,6 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
       << "]: add to " << stream_list_id_string(id);
 }
 
-static void stream_list_add_head(grpc_chttp2_transport* t,
-                                 grpc_chttp2_stream* s,
-                                 grpc_chttp2_stream_list_id id) {
-  grpc_chttp2_stream* old_head;
-  CHECK(!s->included.is_set(id));
-  old_head = t->lists[id].head;
-  s->links[id].next = old_head;
-  s->links[id].prev = nullptr;
-  if (old_head) {
-    old_head->links[id].prev = s;
-  } else {
-    t->lists[id].tail = s;
-  }
-  t->lists[id].head = s;
-  s->included.set(id);
-  GRPC_TRACE_LOG(http2_stream_state, INFO)
-      << t << "[" << s->id << "][" << (t->is_client ? "cli" : "svr")
-      << "]: add to " << stream_list_id_string(id);
-}
-
 static bool stream_list_add(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                             grpc_chttp2_stream_list_id id) {
   if (s->included.is_set(id)) {
@@ -157,24 +137,11 @@ static bool stream_list_add(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   return true;
 }
 
-static bool stream_list_prepend(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                                grpc_chttp2_stream_list_id id) {
-  if (s->included.is_set(id)) {
-    return false;
-  }
-  stream_list_add_head(t, s, id);
-  return true;
-}
-
 // wrappers for specializations
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s) {
   CHECK_NE(s->id, 0u);
-  if (grpc_core::IsPrioritizeFinishedRequestsEnabled() &&
-      s->send_trailing_metadata != nullptr) {
-    return stream_list_prepend(t, s, GRPC_CHTTP2_LIST_WRITABLE);
-  }
   return stream_list_add(t, s, GRPC_CHTTP2_LIST_WRITABLE);
 }
 
@@ -219,12 +186,7 @@ void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport* t,
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport* t,
                                                grpc_chttp2_stream* s) {
-  if (grpc_core::IsPrioritizeFinishedRequestsEnabled() &&
-      s->send_trailing_metadata != nullptr) {
-    stream_list_prepend(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
-  } else {
-    stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
-  }
+  stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
 }
 
 bool grpc_chttp2_list_pop_stalled_by_transport(grpc_chttp2_transport* t,

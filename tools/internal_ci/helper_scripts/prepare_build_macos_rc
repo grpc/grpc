@@ -31,6 +31,14 @@ df -h /tmpfs /
 launchctl limit maxfiles
 ulimit -a
 
+# Use temp variable to detect version
+# will be cleaned up after migration is complete
+os_version=$(sw_vers -productVersion)
+is_sonoma=false
+if [[ "$os_version" == "14."* ]]; then
+  is_sonoma=true
+fi
+
 # WARNING: TRY TO KEEP THIS FILE AS LEAN AS POSSIBLE
 # The rules:
 # - think twice before adding installer that takes long time (builds are already slow)
@@ -47,10 +55,17 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
 brew config
 
+if $is_sonoma; then
+  brew install cmake
+  brew install gnupg
+fi
+
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.16.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+echo $DIR
+pwd
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
@@ -124,16 +139,6 @@ then
   # python
   time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
-
-  # Force reinstall of python3.8 to upgrade its patch version.
-  # Kokoro mac workers come with python 3.8.2 and that version
-  # suffers from https://bugs.python.org/issue22490.
-  # See https://github.com/grpc/grpc/pull/28963.
-  time curl -O https://www.python.org/ftp/python/3.8.10/python-3.8.10-macosx10.9.pkg
-  echo "4c65bc7534d5f07edacbe0fbd609b5734dbf3ac02f5444f9bd97963d589d8afd  python-3.8.10-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
-  shasum -c /tmp/python_installer_checksum.sha256
-  time sudo installer -pkg ./python-3.8.10-macosx10.9.pkg -target /
-  python3.8 --version
 
   # Install Python 3.9 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.9" ]; then

@@ -55,6 +55,13 @@ message RequestParams {
   bool server_notify_client_when_started = 18;
   xds.data.orca.v3.OrcaLoadReport backend_metrics = 19;
   bool echo_host_from_authority_header = 20;
+
+  enum CompressionAlgorithm {
+    NONE = 0;
+    DEFLATE = 1;
+    GZIP = 2;
+  }
+  CompressionAlgorithm compression_algorithm = 21;
 }
 
 message EchoRequest {

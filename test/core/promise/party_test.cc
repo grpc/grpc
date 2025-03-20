@@ -110,6 +110,28 @@ TEST_F(PartyTest, SpawnAndRunOneParty) {
   VLOG(2) << "Execution order : " << execution_order;
 }
 
+TEST_F(PartyTest, SpawnAndFail) {
+  // Assert that on_complete function of the Spawn should be called
+  // even if the Spawned promise returns failing status.
+  std::string execution_order;
+  auto party = MakeParty();
+  Notification n;
+  party->Spawn(
+      "TestSpawn",
+      [&execution_order]() mutable -> absl::StatusOr<int> {
+        absl::StrAppend(&execution_order, "1");
+        return absl::CancelledError();
+      },
+      [&n, &execution_order](absl::StatusOr<int> x) {
+        absl::StrAppend(&execution_order, "2");
+        n.Notify();
+      });
+  n.WaitForNotification();
+  absl::StrAppend(&execution_order, "3");
+  EXPECT_STREQ(execution_order.c_str(), "123");
+  VLOG(2) << "Execution order : " << execution_order;
+}
+
 auto MakePromise(std::string& execution_order, int num) {
   return [i = num, &execution_order]() mutable -> Poll<int> {
     absl::StrAppend(&execution_order, "L");

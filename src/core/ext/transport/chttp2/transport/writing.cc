@@ -34,6 +34,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -61,7 +62,6 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
@@ -472,11 +472,11 @@ class StreamWriteContext {
     grpc_chttp2_complete_closure_step(t_, &s_->send_initial_metadata_finished,
                                       absl::OkStatus(),
                                       "send_initial_metadata_finished");
-    if (!grpc_core::IsCallTracerInTransportEnabled()) {
-      if (s_->call_tracer) {
+    if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+      if (s_->parent_call_tracer != nullptr) {
         grpc_core::HttpAnnotation::WriteStats write_stats;
         write_stats.target_write_size = write_context_->target_write_size();
-        s_->call_tracer->RecordAnnotation(
+        s_->parent_call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(
                 grpc_core::HttpAnnotation::Type::kHeadWritten,
                 gpr_now(GPR_CLOCK_REALTIME))
@@ -484,9 +484,8 @@ class StreamWriteContext {
                 .Add(s_->flow_control.stats())
                 .Add(write_stats));
       }
-    } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
-      auto* call_tracer =
-          s_->arena->GetContext<grpc_core::CallTracerInterface>();
+    } else {
+      auto* call_tracer = s_->CallTracer();
       if (call_tracer != nullptr && call_tracer->IsSampled()) {
         grpc_core::HttpAnnotation::WriteStats write_stats;
         write_stats.target_write_size = write_context_->target_write_size();
@@ -638,17 +637,16 @@ class StreamWriteContext {
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
-    if (!grpc_core::IsCallTracerInTransportEnabled()) {
-      if (s_->call_tracer) {
-        s_->call_tracer->RecordAnnotation(
+    if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+      if (s_->parent_call_tracer != nullptr) {
+        s_->parent_call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
                                       gpr_now(GPR_CLOCK_REALTIME))
                 .Add(s_->t->flow_control.stats())
                 .Add(s_->flow_control.stats()));
       }
-    } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
-      auto* call_tracer =
-          s_->arena->GetContext<grpc_core::CallTracerInterface>();
+    } else {
+      auto* call_tracer = s_->CallTracer();
       if (call_tracer != nullptr && call_tracer->IsSampled()) {
         call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,

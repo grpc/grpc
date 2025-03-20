@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/surface/client_call.h"
+#include "src/core/call/client_call.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
 #include "absl/status/status.h"
+#include "src/core/call/metadata.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/util/debug_location.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
@@ -246,6 +246,15 @@ CLIENT_CALL_TEST(NegativeDeadline) {
   EXPECT_LE(now - start, Duration::Milliseconds(100))
       << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
+}
+
+TEST(ClientCallTest, NoOpRegression1) {
+  NoOp(ParseTestProto(
+      R"pb(event_engine_actions {
+             assign_ports: 4294967285
+             connections { write_size: 1 write_size: 0 write_size: 2147483647 }
+           }
+      )pb"));
 }
 
 }  // namespace grpc_core

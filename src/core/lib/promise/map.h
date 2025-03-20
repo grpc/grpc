@@ -99,23 +99,51 @@ class FusedFns {
   GPR_NO_UNIQUE_ADDRESS WrappedFn<Fn1, InnerResult> fn1_;
 };
 
+}  // namespace promise_detail
+
 // Mapping combinator.
-// Takes a promise, and a synchronous function to mutate its result, and
-// returns a promise.
+//
+// Input:
+// 1. The first argument is a promise.
+// 2. The second argument is a synchronous function.
+// 3. The synchronous function MUST be callable with the result type of the
+// promise.
+// 4. If the promise returns void, the synchronous function MUST be callable
+// with Empty.
+//
+// Return:
+// Mapping combinator returns Poll<T> where T is the return type of the
+// synchronous function.
+// Note: If the synchronous function returns void, the result type of the
+// mapping combinator will be Poll<Empty>.
+//
+// Polling the mapping combinator works as follows:
+// 1. Poll the promise.
+// 2. If the promise is pending, return Pending{}.
+// 3. If the promise is ready, return the result of the synchronous function.
+// Note: If the first argument to the Map is a promise factory instead of a
+// promise, Map will pass the promise returned by the promise factory as a
+// parameter to the synchronous function.
+//
+// Example:
+// TEST(MapTest, Works) {
+//   Promise<int> x = Map([]() { return 42; }, [](int i) { return i / 2; });
+//   EXPECT_THAT(x(), IsReady(21));
+// }
 template <typename Promise, typename Fn>
-class MapPromise {
+class Map {
   using PromiseType = promise_detail::PromiseLike<Promise>;
 
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION MapPromise(Promise promise, Fn fn)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
 
-  MapPromise(const MapPromise&) = delete;
-  MapPromise& operator=(const MapPromise&) = delete;
+  Map(const Map&) = delete;
+  Map& operator=(const Map&) = delete;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  MapPromise(MapPromise&& other) = default;
+  Map(Map&& other) = default;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  MapPromise& operator=(MapPromise&& other) = default;
+  Map& operator=(Map&& other) = default;
 
   using PromiseResult = typename PromiseType::Result;
   using Result = typename promise_detail::WrappedFn<Fn, PromiseResult>::Result;
@@ -130,34 +158,33 @@ class MapPromise {
 
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
-  friend class MapPromise;
+  friend class Map;
 
   GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
   GPR_NO_UNIQUE_ADDRESS promise_detail::WrappedFn<Fn, PromiseResult> fn_;
 };
 
 template <typename Promise, typename Fn0, typename Fn1>
-class MapPromise<MapPromise<Promise, Fn0>, Fn1> {
-  using InnerMapFn = decltype(std::declval<MapPromise<Promise, Fn0>>().fn_);
+class Map<Map<Promise, Fn0>, Fn1> {
+  using InnerMapFn = decltype(std::declval<Map<Promise, Fn0>>().fn_);
   using FusedFn =
-      promise_detail::FusedFns<typename MapPromise<Promise, Fn0>::PromiseResult,
+      promise_detail::FusedFns<typename Map<Promise, Fn0>::PromiseResult,
                                InnerMapFn, Fn1>;
-  using PromiseType = typename MapPromise<Promise, Fn0>::PromiseType;
+  using PromiseType = typename Map<Promise, Fn0>::PromiseType;
 
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION MapPromise(MapPromise<Promise, Fn0> map,
-                                                  Fn1 fn1)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Map<Promise, Fn0> map, Fn1 fn1)
       : promise_(std::move(map.promise_)),
         fn_(FusedFn(std::move(map.fn_), std::move(fn1))) {}
 
-  MapPromise(const MapPromise&) = delete;
-  MapPromise& operator=(const MapPromise&) = delete;
+  Map(const Map&) = delete;
+  Map& operator=(const Map&) = delete;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  MapPromise(MapPromise&& other) = default;
+  Map(Map&& other) = default;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  MapPromise& operator=(MapPromise&& other) = default;
+  Map& operator=(Map&& other) = default;
 
-  using PromiseResult = typename MapPromise<Promise, Fn0>::PromiseResult;
+  using PromiseResult = typename Map<Promise, Fn0>::PromiseResult;
   using Result = typename FusedFn::Result;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
@@ -170,26 +197,14 @@ class MapPromise<MapPromise<Promise, Fn0>, Fn1> {
 
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
-  friend class MapPromise;
+  friend class Map;
 
   GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
   GPR_NO_UNIQUE_ADDRESS FusedFn fn_;
 };
 
-}  // namespace promise_detail
-
 template <typename Promise, typename Fn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Map(Promise promise, Fn fn) {
-  if constexpr (promise_detail::PromiseLike<Promise>::kInstantaneous) {
-    return [promise = promise_detail::PromiseLike<Promise>(std::move(promise)),
-            fn = std::move(fn)]() mutable {
-      return fn(promise.CallUnderlyingFn());
-    };
-  } else {
-    return promise_detail::MapPromise<Promise, Fn>(std::move(promise),
-                                                   std::move(fn));
-  }
-}
+Map(Promise, Fn) -> Map<Promise, Fn>;
 
 // Maps a promise to a new promise that returns a tuple of the original result
 // and a bool indicating whether there was ever a Pending{} value observed from
@@ -260,6 +275,43 @@ auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
         });
     return out;
   });
+}
+
+// Input : A promise that resolves to Type T
+// Returns : A Map promise which contains the input promise and then discards
+// the return value of the input promise. the main use case for DiscardResult is
+// when you need to pass a promise as a parameter, and it returns a status or
+// some value which cannot be discarded. If this value is not used, the compiler
+// gives an error. DiscardResult helps to discard the return value of the
+// promise.
+template <typename Promise>
+auto DiscardResult(Promise promise) {
+  return Map(std::move(promise), [](auto) {});
+}
+
+// Given a promise, and N values, return a tuple with the resolved promise
+// first, and then the N values stapled to it.
+template <typename Promise, typename... Values>
+auto Staple(Promise promise, Values&&... values) {
+  return Map(std::move(promise), [values = std::tuple(std::forward<Values>(
+                                      values)...)](auto first_value) mutable {
+    return std::tuple_cat(std::tuple(std::move(first_value)),
+                          std::move(values));
+  });
+}
+
+// Same as Staple, but assumes a StatusOr<X>, and returns X, Values.
+template <typename Promise, typename... Values>
+auto TryStaple(Promise promise, Values&&... values) {
+  return Map(
+      std::move(promise),
+      [values = std::tuple(std::forward<Values>(values)...)](
+          auto first_value) mutable
+          -> absl::StatusOr<std::tuple<decltype(*first_value), Values...>> {
+        if (!first_value.ok()) return first_value.status();
+        return std::tuple_cat(std::tuple(std::move(*first_value)),
+                              std::move(values));
+      });
 }
 
 }  // namespace grpc_core

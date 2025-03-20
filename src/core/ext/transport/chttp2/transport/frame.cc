@@ -23,21 +23,26 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 
 namespace grpc_core {
 
 namespace {
 
+// HTTP2 Frame Types
 constexpr uint8_t kFrameTypeData = 0;
 constexpr uint8_t kFrameTypeHeader = 1;
-constexpr uint8_t kFrameTypeContinuation = 9;
+// type 2 was Priority which has been deprecated.
 constexpr uint8_t kFrameTypeRstStream = 3;
 constexpr uint8_t kFrameTypeSettings = 4;
+constexpr uint8_t kFrameTypePushPromise = 5;
 constexpr uint8_t kFrameTypePing = 6;
 constexpr uint8_t kFrameTypeGoaway = 7;
 constexpr uint8_t kFrameTypeWindowUpdate = 8;
-constexpr uint8_t kFrameTypePushPromise = 5;
+constexpr uint8_t kFrameTypeContinuation = 9;
+
+// Custom Frame Type
 constexpr uint8_t kFrameTypeSecurity = 200;
 
 constexpr uint8_t kFlagEndStream = 1;
@@ -45,8 +50,6 @@ constexpr uint8_t kFlagAck = 1;
 constexpr uint8_t kFlagEndHeaders = 4;
 constexpr uint8_t kFlagPadded = 8;
 constexpr uint8_t kFlagPriority = 0x20;
-
-constexpr size_t kFrameHeaderSize = 9;
 
 void Write2b(uint16_t x, uint8_t* output) {
   output[0] = static_cast<uint8_t>(x >> 8);
@@ -125,6 +128,7 @@ class SerializeExtraBytesRequired {
   size_t operator()(const Http2WindowUpdateFrame&) { return 4; }
   size_t operator()(const Http2SecurityFrame&) { return 0; }
   size_t operator()(const Http2UnknownFrame&) { Crash("unreachable"); }
+  size_t operator()(const Http2EmptyFrame&) { Crash("unreachable"); }
 };
 
 class SerializeHeaderAndPayload {
@@ -230,6 +234,8 @@ class SerializeHeaderAndPayload {
   }
 
   void operator()(Http2UnknownFrame&) { Crash("unreachable"); }
+
+  void operator()(Http2EmptyFrame&) {}
 
  private:
   SliceBuffer& out_;
@@ -518,6 +524,23 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
     default:
       return Http2UnknownFrame{};
   }
+}
+
+GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
+  CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
+  uint8_t buffer[kGrpcHeaderSizeInBytes];
+  payload.MoveFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
+  GrpcMessageHeader header;
+  header.flags = buffer[0];
+  header.length = Read4b(buffer + 1);
+  return header;
+}
+
+void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
+                                   const uint32_t length) {
+  uint8_t* frame_hdr = payload.AddTiny(kGrpcHeaderSizeInBytes);
+  frame_hdr[0] = flags;
+  Write4b(length, frame_hdr + 1);
 }
 
 }  // namespace grpc_core

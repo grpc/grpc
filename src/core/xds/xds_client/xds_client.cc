@@ -476,6 +476,12 @@ void XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
       if (!call->HasSubscribedResources()) {
         ads_call_.reset();
       }
+    } else {
+      // If there is currently no ADS call because we're in retry backoff,
+      // then we immediately trigger deletion of unsubscribed cache entries.
+      // This may orphan the XdsChannel, which would stop the retry
+      // timer, since we would no longer need to restart the ADS call.
+      xds_client_->MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(this, type);
     }
   }
 }

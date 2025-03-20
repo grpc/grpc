@@ -13,9 +13,7 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <grpc/event_engine/endpoint_config.h>
-#include <gtest/gtest.h>
 
 #include <string>
 #include <vector>
@@ -26,6 +24,8 @@
 #include "absl/strings/str_format.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -972,90 +972,6 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
   hold->Resume();
   // Wait for channel to become connected without any pending RPC.
   EXPECT_TRUE(channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(5)));
-  // Make sure the backend did not get any requests.
-  EXPECT_EQ(0UL, backends_[0]->backend_service()->request_count());
-}
-
-// Tests that when we trigger internal connection attempts without
-// picks, we do so for only one subchannel at a time.
-TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
-  // Create EDS resource.
-  CreateAndStartBackends(1);
-  auto non_existent_endpoint0 = MakeNonExistentEndpoint();
-  auto non_existent_endpoint1 = MakeNonExistentEndpoint();
-  auto non_existent_endpoint2 = MakeNonExistentEndpoint();
-  EdsResourceArgs args({{"locality0",
-                         {non_existent_endpoint0, non_existent_endpoint1,
-                          non_existent_endpoint2, CreateEndpoint(0)}}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Change CDS resource to use RING_HASH.
-  auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::RING_HASH);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Add hash policy to RDS resource.
-  auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
-  hash_policy->mutable_header()->set_header_name("address_hash");
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   new_route_config);
-  // Start connection attempt injector.
-  ConnectionAttemptInjector injector;
-  auto hold_non_existent0 = injector.AddHold(non_existent_endpoint0.port);
-  auto hold_non_existent1 = injector.AddHold(non_existent_endpoint1.port);
-  auto hold_non_existent2 = injector.AddHold(non_existent_endpoint2.port);
-  auto hold_good = injector.AddHold(backends_[0]->port());
-  // A long-running RPC, just used to send the RPC in another thread.
-  LongRunningRpc rpc;
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash", CreateMetadataValueThatHashesToBackendPort(
-                           non_existent_endpoint0.port)}};
-  rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(0).set_metadata(
-                                std::move(metadata)));
-  // Wait for the RPC to trigger a connection attempt to the first address,
-  // then cancel the RPC.  No other connection attempts should be started yet.
-  hold_non_existent0->Wait();
-  rpc.CancelRpc();
-  EXPECT_FALSE(hold_non_existent1->IsStarted());
-  EXPECT_FALSE(hold_non_existent2->IsStarted());
-  EXPECT_FALSE(hold_good->IsStarted());
-  // Allow the connection attempt to the first address to resume and wait
-  // for the attempt for the second address.  No other connection
-  // attempts should be started yet.
-  auto hold_non_existent0_again = injector.AddHold(non_existent_endpoint0.port);
-  hold_non_existent0->Resume();
-  hold_non_existent1->Wait();
-  EXPECT_FALSE(hold_non_existent0_again->IsStarted());
-  EXPECT_FALSE(hold_non_existent2->IsStarted());
-  EXPECT_FALSE(hold_good->IsStarted());
-  // Allow the connection attempt to the second address to resume and wait
-  // for the attempt for the third address.  No other connection
-  // attempts should be started yet.
-  auto hold_non_existent1_again = injector.AddHold(non_existent_endpoint1.port);
-  hold_non_existent1->Resume();
-  hold_non_existent2->Wait();
-  EXPECT_FALSE(hold_non_existent0_again->IsStarted());
-  EXPECT_FALSE(hold_non_existent1_again->IsStarted());
-  EXPECT_FALSE(hold_good->IsStarted());
-  // Allow the connection attempt to the third address to resume and wait
-  // for the attempt for the final address.  No other connection
-  // attempts should be started yet.
-  auto hold_non_existent2_again = injector.AddHold(non_existent_endpoint2.port);
-  hold_non_existent2->Resume();
-  hold_good->Wait();
-  EXPECT_FALSE(hold_non_existent0_again->IsStarted());
-  EXPECT_FALSE(hold_non_existent1_again->IsStarted());
-  EXPECT_FALSE(hold_non_existent2_again->IsStarted());
-  // Allow the final attempt to resume.
-  hold_good->Resume();
-  // Wait for channel to become connected without any pending RPC.
-  EXPECT_TRUE(channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(10)));
-  // No other connection attempts should have been started.
-  EXPECT_FALSE(hold_non_existent0_again->IsStarted());
-  EXPECT_FALSE(hold_non_existent1_again->IsStarted());
-  EXPECT_FALSE(hold_non_existent2_again->IsStarted());
-  // RPC should have been cancelled.
-  EXPECT_EQ(StatusCode::CANCELLED, rpc.GetStatus().error_code());
   // Make sure the backend did not get any requests.
   EXPECT_EQ(0UL, backends_[0]->backend_service()->request_count());
 }

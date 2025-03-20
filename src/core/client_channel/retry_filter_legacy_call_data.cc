@@ -24,11 +24,12 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -39,7 +40,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/construct_destruct.h"
@@ -646,28 +646,30 @@ void RetryFilter::LegacyCallData::CallAttempt::OnPerAttemptRecvTimerLocked(
       << ", per_attempt_recv_timer_handle_.has_value()="
       << call_attempt->per_attempt_recv_timer_handle_.has_value();
   CallCombinerClosureList closures;
-  call_attempt->per_attempt_recv_timer_handle_.reset();
-  // Cancel this attempt.
-  // TODO(roth): When implementing hedging, we should not cancel the
-  // current attempt.
-  call_attempt->MaybeAddBatchForCancelOp(
-      grpc_error_set_int(
-          GRPC_ERROR_CREATE("retry perAttemptRecvTimeout exceeded"),
-          StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED),
-      &closures);
-  // Check whether we should retry.
-  if (call_attempt->ShouldRetry(/*status=*/std::nullopt,
-                                /*server_pushback_ms=*/std::nullopt)) {
-    // Mark current attempt as abandoned.
-    call_attempt->Abandon();
-    // We are retrying.  Start backoff timer.
-    calld->StartRetryTimer(/*server_pushback=*/std::nullopt);
-  } else {
-    // Not retrying, so commit the call.
-    calld->RetryCommit(call_attempt);
-    // If retry state is no longer needed, switch to fast path for
-    // subsequent batches.
-    call_attempt->MaybeSwitchToFastPath();
+  if (call_attempt->per_attempt_recv_timer_handle_.has_value()) {
+    call_attempt->per_attempt_recv_timer_handle_.reset();
+    // Cancel this attempt.
+    // TODO(roth): When implementing hedging, we should not cancel the
+    // current attempt.
+    call_attempt->MaybeAddBatchForCancelOp(
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE("retry perAttemptRecvTimeout exceeded"),
+            StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED),
+        &closures);
+    // Check whether we should retry.
+    if (call_attempt->ShouldRetry(/*status=*/std::nullopt,
+                                  /*server_pushback_ms=*/std::nullopt)) {
+      // Mark current attempt as abandoned.
+      call_attempt->Abandon();
+      // We are retrying.  Start backoff timer.
+      calld->StartRetryTimer(/*server_pushback=*/std::nullopt);
+    } else {
+      // Not retrying, so commit the call.
+      calld->RetryCommit(call_attempt);
+      // If retry state is no longer needed, switch to fast path for
+      // subsequent batches.
+      call_attempt->MaybeSwitchToFastPath();
+    }
   }
   closures.RunClosures(calld->call_combiner_);
   call_attempt->Unref(DEBUG_LOCATION, "OnPerAttemptRecvTimer");
@@ -1481,7 +1483,6 @@ RetryFilter::LegacyCallData::LegacyCallData(RetryFilter* chand,
               .set_max_backoff(retry_policy_ == nullptr
                                    ? Duration::Zero()
                                    : retry_policy_->max_backoff())),
-      path_(CSliceRef(args.path)),
       deadline_(args.deadline),
       arena_(args.arena),
       owning_call_(args.call_stack),
@@ -1497,7 +1498,6 @@ RetryFilter::LegacyCallData::LegacyCallData(RetryFilter* chand,
 
 RetryFilter::LegacyCallData::~LegacyCallData() {
   FreeAllCachedSendOpData();
-  CSliceUnref(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     CHECK_EQ(pending_batches_[i].batch, nullptr);
@@ -1627,9 +1627,9 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
 OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
 RetryFilter::LegacyCallData::CreateLoadBalancedCall(
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
-  grpc_call_element_args args = {owning_call_,     nullptr,   path_,
-                                 /*start_time=*/0, deadline_, arena_,
-                                 call_combiner_};
+  grpc_call_element_args args = {owning_call_,     nullptr,
+                                 /*start_time=*/0, deadline_,
+                                 arena_,           call_combiner_};
   return chand_->client_channel()->CreateLoadBalancedCall(
       args, pollent_,
       // This callback holds a ref to the CallStackDestructionBarrier

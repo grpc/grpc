@@ -38,6 +38,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "src/core/call/metadata_info.h"
+#include "src/core/call/parsed_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
@@ -46,8 +48,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata_info.h"
-#include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -1138,7 +1138,8 @@ grpc_error_handle HPackParser::ParseInput(
       HandleMetadataSoftSizeLimitExceeded(&input);
     }
     global_stats().IncrementHttp2MetadataSize(state_.frame_length);
-    if (call_tracer != nullptr && metadata_buffer_ != nullptr) {
+    if (call_tracer != nullptr && call_tracer->IsSampled() &&
+        metadata_buffer_ != nullptr) {
       MetadataSizesAnnotation metadata_sizes_annotation(
           metadata_buffer_, state_.metadata_early_detection.soft_limit(),
           state_.metadata_early_detection.hard_limit());

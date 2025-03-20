@@ -203,6 +203,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 
 }  // namespace
 
+#if GRPC_ARES == 1
 grpc_ares_request* my_dns_lookup_hostname_ares(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
@@ -238,6 +239,7 @@ grpc_ares_request* my_dns_lookup_srv_ares(
 static void my_cancel_ares_request(grpc_ares_request* request) {
   CHECK_NE(request, nullptr);
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // globals
@@ -406,9 +408,11 @@ namespace testing {
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
   ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine().get()));
+#if GRPC_ARES == 1
   grpc_dns_lookup_hostname_ares = my_dns_lookup_hostname_ares;
   grpc_dns_lookup_srv_ares = my_dns_lookup_srv_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
+#endif
 
   CHECK_EQ(channel_, nullptr);
   CHECK_EQ(server_, nullptr);

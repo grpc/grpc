@@ -257,10 +257,8 @@ WindowsEventEngineListener::SinglePortSocketListener::PrepareListenerSocket(
     SOCKET sock, const EventEngine::ResolvedAddress& addr) {
   auto fail = [&](absl::Status error) -> absl::Status {
     CHECK(!error.ok());
-    error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket", &error,
-                                      1),
-        grpc_core::StatusIntProperty::kFd, static_cast<intptr_t>(sock));
+    error = GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket",
+                                          &error, 1);
     if (sock != INVALID_SOCKET) closesocket(sock);
     return error;
   };

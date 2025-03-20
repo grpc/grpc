@@ -51,6 +51,7 @@
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
@@ -154,6 +155,7 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   }
 }
 
+// Deprecated. This is internal-only, no new uses permitted.
 static grpc_endpoint* grpc_tcp_client_create_from_fd(
     grpc_fd* fd, const grpc_core::PosixTcpOptions& options,
     absl::string_view addr_str) {
@@ -163,7 +165,7 @@ static grpc_endpoint* grpc_tcp_client_create_from_fd(
 grpc_endpoint* grpc_tcp_create_from_fd(
     grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
     absl::string_view addr_str) {
-  return grpc_tcp_create(fd, TcpOptionsFromEndpointConfig(config), addr_str);
+  return grpc_tcp_create(fd, config, addr_str);
 }
 
 static void on_writable(void* acp, grpc_error_handle error) {
@@ -265,14 +267,8 @@ finish:
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (!error.ok()) {
-    std::string str;
-    bool ret = grpc_error_get_str(
-        error, grpc_core::StatusStrProperty::kDescription, &str);
-    CHECK(ret);
-    std::string description =
-        absl::StrCat("Failed to connect to remote host: ", str);
-    error = grpc_error_set_str(
-        error, grpc_core::StatusStrProperty::kDescription, description);
+    error =
+        grpc_core::AddMessagePrefix("Failed to connect to remote host", error);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
@@ -320,7 +316,7 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
 
 int64_t grpc_tcp_client_create_from_prepared_fd(
     grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
-    const grpc_core::PosixTcpOptions& options,
+    const grpc_event_engine::experimental::EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline,
     grpc_endpoint** ep) {
   int err;
@@ -348,7 +344,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   if (err >= 0) {
     // Connection already succeeded. Return 0 to discourage any cancellation
     // attempts.
-    *ep = grpc_tcp_client_create_from_fd(fdobj, options, *addr_uri);
+    *ep = grpc_tcp_create_from_fd(fdobj, config, *addr_uri);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
     return 0;
   }
@@ -375,7 +371,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
                     grpc_schedule_on_exec_ctx);
-  ac->options = options;
+  ac->options = TcpOptionsFromEndpointConfig(config);
 
   GRPC_TRACE_LOG(tcp, INFO) << "CLIENT_CONNECT: " << ac->addr_str
                             << ": asynchronously connecting fd " << fdobj;
@@ -405,17 +401,17 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
         closure, ep, config, addr, deadline);
   }
   grpc_resolved_address mapped_addr;
-  grpc_core::PosixTcpOptions options(TcpOptionsFromEndpointConfig(config));
   int fd = -1;
   grpc_error_handle error;
   *ep = nullptr;
-  if ((error = grpc_tcp_client_prepare_fd(options, addr, &mapped_addr, &fd)) !=
+  if ((error = grpc_tcp_client_prepare_fd(TcpOptionsFromEndpointConfig(config),
+                                          addr, &mapped_addr, &fd)) !=
       absl::OkStatus()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
   }
   return grpc_tcp_client_create_from_prepared_fd(
-      interested_parties, closure, fd, options, &mapped_addr, deadline, ep);
+      interested_parties, closure, fd, config, &mapped_addr, deadline, ep);
 }
 
 static bool tcp_cancel_connect(int64_t connection_handle) {

@@ -459,7 +459,7 @@ def targets():
         PythonDistribTest("linux", "x64", "alpine"),
         PythonDistribTest("linux", "x64", "ubuntu2204"),
         PythonDistribTest(
-            "linux", "aarch64", "python38_buster", presubmit=True
+            "linux", "aarch64", "python39_buster", presubmit=True
         ),
         PythonDistribTest("linux", "aarch64", "alpine"),
         PythonDistribTest(

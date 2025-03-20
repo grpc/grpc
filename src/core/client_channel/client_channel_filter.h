@@ -34,6 +34,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/client_channel/client_channel_factory.h"
@@ -53,7 +54,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -374,8 +374,7 @@ class ClientChannelFilter::LoadBalancedCall
  protected:
   ClientChannelFilter* chand() const { return chand_; }
   ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
-    return DownCast<ClientCallTracer::CallAttemptTracer*>(
-        arena_->GetContext<CallTracerInterface>());
+    return call_attempt_tracer_;
   }
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
@@ -431,6 +430,11 @@ class ClientChannelFilter::LoadBalancedCall
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_) = 0;
 
   ClientChannelFilter* chand_;
+  // When we start a new attempt for a call, we might not have cleaned up the
+  // previous attempt yet leading to a situation where we have two active call
+  // attempt tracers, and so we cannot rely on the arena to give us the right
+  // tracer when performing cleanup.
+  ClientCallTracer::CallAttemptTracer* call_attempt_tracer_;
 
   absl::AnyInvocable<void()> on_commit_;
 

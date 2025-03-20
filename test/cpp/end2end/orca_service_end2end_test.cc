@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -28,7 +27,6 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <optional>
@@ -36,6 +34,8 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 #include "src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.h"

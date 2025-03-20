@@ -40,6 +40,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -66,7 +67,6 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
@@ -960,8 +960,8 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
     s->call_tracer_wrapper.RecordIncomingBytes(
         {0, 0, GRPC_SLICE_LENGTH(slice)});
     call_tracer =
-        grpc_core::IsCallTracerInTransportEnabled()
-            ? s->arena->GetContext<grpc_core::CallTracerInterface>()
+        grpc_core::IsCallTracerTransportFixEnabled()
+            ? s->CallTracer()
             : s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   }
   grpc_error_handle error = parser->Parse(

@@ -47,6 +47,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -60,11 +62,11 @@
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -79,13 +81,11 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
@@ -268,7 +268,6 @@ class ClientChannelFilter::FilterBasedCallData final
   static void RecvTrailingMetadataReadyForConfigSelectorCommitCallback(
       void* arg, grpc_error_handle error);
 
-  grpc_slice path_;  // Request path.
   gpr_cycle_counter call_start_time_;
   Timestamp deadline_;
 
@@ -398,7 +397,6 @@ class DynamicTerminationFilter::CallData final {
     auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
     ClientChannelFilter* client_channel = chand->chand_;
     grpc_call_element_args args = {calld->owning_call_, nullptr,
-                                   calld->path_,
                                    /*start_time=*/0,    calld->deadline_,
                                    calld->arena_,       calld->call_combiner_};
     auto* service_config_call_data = GetServiceConfigCallData(calld->arena_);
@@ -413,15 +411,11 @@ class DynamicTerminationFilter::CallData final {
 
  private:
   explicit CallData(const grpc_call_element_args& args)
-      : path_(CSliceRef(args.path)),
-        deadline_(args.deadline),
+      : deadline_(args.deadline),
         arena_(args.arena),
         owning_call_(args.call_stack),
         call_combiner_(args.call_combiner) {}
 
-  ~CallData() { CSliceUnref(path_); }
-
-  grpc_slice path_;  // Request path.
   Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
@@ -1928,8 +1922,7 @@ bool ClientChannelFilter::CallData::CheckResolutionLocked(
 
 ClientChannelFilter::FilterBasedCallData::FilterBasedCallData(
     grpc_call_element* elem, const grpc_call_element_args& args)
-    : path_(CSliceRef(args.path)),
-      call_start_time_(args.start_time),
+    : call_start_time_(args.start_time),
       deadline_(args.deadline),
       arena_(args.arena),
       elem_(elem),
@@ -1940,7 +1933,6 @@ ClientChannelFilter::FilterBasedCallData::FilterBasedCallData(
 }
 
 ClientChannelFilter::FilterBasedCallData::~FilterBasedCallData() {
-  CSliceUnref(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     CHECK_EQ(pending_batches_[i], nullptr);
@@ -2252,9 +2244,9 @@ void ClientChannelFilter::FilterBasedCallData::RetryCheckResolutionLocked() {
 }
 
 void ClientChannelFilter::FilterBasedCallData::CreateDynamicCall() {
-  DynamicFilters::Call::Args args = {dynamic_filters(), pollent_,  path_,
-                                     call_start_time_,  deadline_, arena(),
-                                     call_combiner()};
+  DynamicFilters::Call::Args args = {dynamic_filters(), pollent_,
+                                     call_start_time_,  deadline_,
+                                     arena(),           call_combiner()};
   grpc_error_handle error;
   DynamicFilters* channel_stack = args.channel_stack.get();
   GRPC_TRACE_LOG(client_channel_call, INFO)
@@ -2379,12 +2371,14 @@ class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
 
 namespace {
 
-void CreateCallAttemptTracer(Arena* arena, bool is_transparent_retry) {
+ClientCallTracer::CallAttemptTracer* CreateCallAttemptTracer(
+    Arena* arena, bool is_transparent_retry) {
   auto* call_tracer = DownCast<ClientCallTracer*>(
       arena->GetContext<CallTracerAnnotationInterface>());
-  if (call_tracer == nullptr) return;
+  if (call_tracer == nullptr) return nullptr;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
   arena->SetContext<CallTracerInterface>(tracer);
+  return tracer;
 }
 
 }  // namespace
@@ -2396,9 +2390,10 @@ ClientChannelFilter::LoadBalancedCall::LoadBalancedCall(
                                ? "LoadBalancedCall"
                                : nullptr),
       chand_(chand),
+      call_attempt_tracer_(
+          CreateCallAttemptTracer(arena, is_transparent_retry)),
       on_commit_(std::move(on_commit)),
       arena_(arena) {
-  CreateCallAttemptTracer(arena, is_transparent_retry);
   GRPC_TRACE_LOG(client_channel_lb_call, INFO)
       << "chand=" << chand_ << " lb_call=" << this << ": created";
 }
@@ -3039,10 +3034,8 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::RetryPickLocked() {
 }
 
 void ClientChannelFilter::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
-  Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
-  CHECK_NE(path, nullptr);
   SubchannelCall::Args call_args = {
-      connected_subchannel()->Ref(), pollent_, path->Ref(), /*start_time=*/0,
+      connected_subchannel()->Ref(), pollent_, /*start_time=*/0,
       arena()->GetContext<Call>()->deadline(),
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call arena for each subchannel call.

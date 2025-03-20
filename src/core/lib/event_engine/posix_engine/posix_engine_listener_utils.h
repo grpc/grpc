@@ -82,6 +82,10 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port);
 
+// Returns true if addr is link-local (i.e. within the range 169.254.0.0/16 or
+// fe80::/10).
+bool IsSockAddrLinkLocal(const EventEngine::ResolvedAddress* resolved_addr);
+
 }  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_LISTENER_UTILS_H

@@ -65,13 +65,13 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
@@ -684,12 +684,10 @@ class RlsLb final : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  // Returns a new picker to the channel to trigger reprocessing of
-  // pending picks.  Schedules the actual picker update on the ExecCtx
-  // to be run later, so it's safe to invoke this while holding the lock.
+  // Schedules a call to UpdatePickerLocked() on the WorkSerializer.
+  // The call will be run asynchronously, so it's safe to invoke this
+  // while holding the lock.
   void UpdatePickerAsync();
-  // Hops into work serializer and calls UpdatePickerLocked().
-  static void UpdatePickerCallback(void* arg, grpc_error_handle error);
   // Updates the picker in the work serializer.
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
@@ -2057,23 +2055,10 @@ void RlsLb::ShutdownLocked() {
 }
 
 void RlsLb::UpdatePickerAsync() {
-  // Run via the ExecCtx, since the caller may be holding the lock, and
-  // we don't want to be doing that when we hop into the WorkSerializer,
-  // in case the WorkSerializer callback happens to run inline.
-  ExecCtx::Run(
-      DEBUG_LOCATION,
-      GRPC_CLOSURE_CREATE(UpdatePickerCallback,
-                          Ref(DEBUG_LOCATION, "UpdatePickerCallback").release(),
-                          grpc_schedule_on_exec_ctx),
-      absl::OkStatus());
-}
-
-void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
-  auto* rls_lb = static_cast<RlsLb*>(arg);
-  rls_lb->work_serializer()->Run([rls_lb]() {
-    RefCountedPtr<RlsLb> lb_policy(rls_lb);
-    lb_policy->UpdatePickerLocked();
-    lb_policy.reset(DEBUG_LOCATION, "UpdatePickerCallback");
+  work_serializer()->Run([self = RefAsSubclass<RlsLb>(
+                              DEBUG_LOCATION, "UpdatePickerAsync")]() mutable {
+    self->UpdatePickerLocked();
+    self.reset(DEBUG_LOCATION, "UpdatePickerAsync");
   });
 }
 
@@ -2373,14 +2358,18 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
       errors->AddError("must be valid gRPC target URI");
     }
   }
-  // Clamp maxAge to the max allowed value.
-  if (max_age > kMaxMaxAge) max_age = kMaxMaxAge;
   // If staleAge is set, then maxAge must also be set.
-  if (json.object().find("staleAge") != json.object().end() &&
-      json.object().find("maxAge") == json.object().end()) {
+  const bool stale_age_set =
+      json.object().find("staleAge") != json.object().end();
+  const bool max_age_set = json.object().find("maxAge") != json.object().end();
+  if (stale_age_set && !max_age_set) {
     ValidationErrors::ScopedField field(errors, ".maxAge");
     errors->AddError("must be set if staleAge is set");
   }
+  // Clamp staleAge to the max allowed value.
+  if (stale_age > kMaxMaxAge) stale_age = kMaxMaxAge;
+  // If staleAge is not set, clamp maxAge to the max allowed value.
+  if (!stale_age_set && max_age > kMaxMaxAge) max_age = kMaxMaxAge;
   // Ignore staleAge if greater than or equal to maxAge.
   if (stale_age >= max_age) stale_age = max_age;
   // Validate cacheSizeBytes.

@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc {
 namespace experimental {

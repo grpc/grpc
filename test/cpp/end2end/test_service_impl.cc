@@ -21,13 +21,13 @@
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
 #include <string>
 #include <thread>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -228,6 +228,15 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         LOG(INFO) << "Server called TryCancel() to cancel the request";
         FinishWhenCancelledAsync();
         return;
+      }
+      if (req_->has_param() &&
+          req_->param().compression_algorithm() != RequestParams::NONE) {
+        if (req_->param().compression_algorithm() == RequestParams::DEFLATE) {
+          ctx_->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
+        } else if (req_->param().compression_algorithm() ==
+                   RequestParams::GZIP) {
+          ctx_->set_compression_algorithm(GRPC_COMPRESS_GZIP);
+        }
       }
       resp_->set_message(req_->message());
       internal::MaybeEchoDeadline(ctx_, req_, resp_);

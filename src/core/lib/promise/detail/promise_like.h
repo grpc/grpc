@@ -53,7 +53,6 @@ struct PollWrapper {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Wrap(T&& x) {
     return Poll<T>(std::forward<T>(x));
   }
-  static constexpr bool kInstantaneous = true;
 };
 
 template <typename T>
@@ -61,7 +60,6 @@ struct PollWrapper<Poll<T>> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Wrap(Poll<T>&& x) {
     return std::forward<Poll<T>>(x);
   }
-  static constexpr bool kInstantaneous = false;
 };
 
 template <typename T>
@@ -89,15 +87,12 @@ class PromiseLike<
   using WrappedResult = decltype(WrapInPoll(std::declval<OriginalResult>()));
 
  public:
-  static constexpr bool kInstantaneous =
-      PollWrapper<std::invoke_result_t<F>>::kInstantaneous;
   // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION PromiseLike(F&& f)
       : f_(std::forward<F>(f)) {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION WrappedResult operator()() {
     return WrapInPoll(f_());
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto CallUnderlyingFn() { return f_(); }
   PromiseLike(const PromiseLike&) = default;
   PromiseLike& operator=(const PromiseLike&) = default;
   PromiseLike(PromiseLike&&) = default;
@@ -112,15 +107,10 @@ class PromiseLike<
   GPR_NO_UNIQUE_ADDRESS RemoveCVRef<F> f_;
 
  public:
-  static constexpr bool kInstantaneous = true;
   // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION PromiseLike(F&& f)
       : f_(std::forward<F>(f)) {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Empty> operator()() {
-    f_();
-    return Empty{};
-  }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto CallUnderlyingFn() {
     f_();
     return Empty{};
   }

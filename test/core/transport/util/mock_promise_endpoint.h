@@ -23,7 +23,7 @@
 #include "src/core/lib/transport/promise_endpoint.h"
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace util {
 namespace testing {
 
 class MockEndpoint
@@ -78,6 +78,14 @@ struct MockPromiseEndpoint {
   void ExpectRead(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices_init,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+  void ExpectReadClose(
+      absl::Status status,
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+  // Returns a function that will complete an EventEngine::Endpoint::Read call
+  // with the given status.
+  absl::AnyInvocable<void()> ExpectDelayedReadClose(
+      absl::Status status,
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
   void ExpectWrite(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
@@ -87,7 +95,7 @@ struct MockPromiseEndpoint {
 };
 
 }  // namespace testing
-}  // namespace chaotic_good
+}  // namespace util
 }  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_UTIL_MOCK_PROMISE_ENDPOINT_H

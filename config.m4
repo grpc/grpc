@@ -39,9 +39,22 @@ if test "$PHP_GRPC" != "no"; then
   esac
 
   PHP_SUBST(GRPC_SHARED_LIBADD)
-
   PHP_NEW_EXTENSION(grpc,
+    src/core/call/call_arena_allocator.cc \
+    src/core/call/call_filters.cc \
+    src/core/call/call_spine.cc \
+    src/core/call/call_state.cc \
+    src/core/call/client_call.cc \
+    src/core/call/interception_chain.cc \
+    src/core/call/message.cc \
+    src/core/call/metadata.cc \
+    src/core/call/metadata_batch.cc \
+    src/core/call/metadata_info.cc \
+    src/core/call/parsed_metadata.cc \
     src/core/call/request_buffer.cc \
+    src/core/call/security_context.cc \
+    src/core/call/server_call.cc \
+    src/core/call/status_util.cc \
     src/core/channelz/channel_trace.cc \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
@@ -69,6 +82,60 @@ if test "$PHP_GRPC" != "no"; then
     src/core/config/config_vars_non_generated.cc \
     src/core/config/core_configuration.cc \
     src/core/config/load_config.cc \
+    src/core/credentials/call/call_creds_util.cc \
+    src/core/credentials/call/composite/composite_call_credentials.cc \
+    src/core/credentials/call/external/aws_external_account_credentials.cc \
+    src/core/credentials/call/external/aws_request_signer.cc \
+    src/core/credentials/call/external/external_account_credentials.cc \
+    src/core/credentials/call/external/file_external_account_credentials.cc \
+    src/core/credentials/call/external/url_external_account_credentials.cc \
+    src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
+    src/core/credentials/call/iam/iam_credentials.cc \
+    src/core/credentials/call/json_util.cc \
+    src/core/credentials/call/jwt/json_token.cc \
+    src/core/credentials/call/jwt/jwt_credentials.cc \
+    src/core/credentials/call/jwt/jwt_verifier.cc \
+    src/core/credentials/call/oauth2/oauth2_credentials.cc \
+    src/core/credentials/call/plugin/plugin_credentials.cc \
+    src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \
+    src/core/credentials/transport/alts/alts_credentials.cc \
+    src/core/credentials/transport/alts/alts_security_connector.cc \
+    src/core/credentials/transport/alts/check_gcp_environment.cc \
+    src/core/credentials/transport/alts/check_gcp_environment_linux.cc \
+    src/core/credentials/transport/alts/check_gcp_environment_no_op.cc \
+    src/core/credentials/transport/alts/check_gcp_environment_windows.cc \
+    src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc \
+    src/core/credentials/transport/alts/grpc_alts_credentials_options.cc \
+    src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc \
+    src/core/credentials/transport/channel_creds_registry_init.cc \
+    src/core/credentials/transport/composite/composite_channel_credentials.cc \
+    src/core/credentials/transport/fake/fake_credentials.cc \
+    src/core/credentials/transport/fake/fake_security_connector.cc \
+    src/core/credentials/transport/google_default/credentials_generic.cc \
+    src/core/credentials/transport/google_default/google_default_credentials.cc \
+    src/core/credentials/transport/insecure/insecure_credentials.cc \
+    src/core/credentials/transport/insecure/insecure_security_connector.cc \
+    src/core/credentials/transport/local/local_credentials.cc \
+    src/core/credentials/transport/local/local_security_connector.cc \
+    src/core/credentials/transport/security_connector.cc \
+    src/core/credentials/transport/ssl/ssl_credentials.cc \
+    src/core/credentials/transport/ssl/ssl_security_connector.cc \
+    src/core/credentials/transport/tls/certificate_provider_registry.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_match.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc \
+    src/core/credentials/transport/tls/grpc_tls_credentials_options.cc \
+    src/core/credentials/transport/tls/grpc_tls_crl_provider.cc \
+    src/core/credentials/transport/tls/load_system_roots_fallback.cc \
+    src/core/credentials/transport/tls/load_system_roots_supported.cc \
+    src/core/credentials/transport/tls/load_system_roots_windows.cc \
+    src/core/credentials/transport/tls/ssl_utils.cc \
+    src/core/credentials/transport/tls/tls_credentials.cc \
+    src/core/credentials/transport/tls/tls_security_connector.cc \
+    src/core/credentials/transport/tls/tls_utils.cc \
+    src/core/credentials/transport/transport_credentials.cc \
+    src/core/credentials/transport/xds/xds_credentials.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
@@ -442,6 +509,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
+    src/core/filter/auth/client_auth_filter.cc \
+    src/core/filter/auth/server_auth_filter.cc \
     src/core/filter/blackboard.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
@@ -462,7 +531,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack_builder_impl.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/promise_based_filter.cc \
-    src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
@@ -487,6 +555,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
+    src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc \
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
     src/core/lib/event_engine/posix_engine/timer_heap.cc \
@@ -606,62 +675,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/authorization/matchers.cc \
     src/core/lib/security/authorization/rbac_policy.cc \
     src/core/lib/security/authorization/stdout_logger.cc \
-    src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
-    src/core/lib/security/context/security_context.cc \
-    src/core/lib/security/credentials/alts/alts_credentials.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc \
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
-    src/core/lib/security/credentials/call_creds_util.cc \
-    src/core/lib/security/credentials/channel_creds_registry_init.cc \
-    src/core/lib/security/credentials/composite/composite_credentials.cc \
-    src/core/lib/security/credentials/credentials.cc \
-    src/core/lib/security/credentials/external/aws_external_account_credentials.cc \
-    src/core/lib/security/credentials/external/aws_request_signer.cc \
-    src/core/lib/security/credentials/external/external_account_credentials.cc \
-    src/core/lib/security/credentials/external/file_external_account_credentials.cc \
-    src/core/lib/security/credentials/external/url_external_account_credentials.cc \
-    src/core/lib/security/credentials/fake/fake_credentials.cc \
-    src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
-    src/core/lib/security/credentials/google_default/credentials_generic.cc \
-    src/core/lib/security/credentials/google_default/google_default_credentials.cc \
-    src/core/lib/security/credentials/iam/iam_credentials.cc \
-    src/core/lib/security/credentials/insecure/insecure_credentials.cc \
-    src/core/lib/security/credentials/jwt/json_token.cc \
-    src/core/lib/security/credentials/jwt/jwt_credentials.cc \
-    src/core/lib/security/credentials/jwt/jwt_verifier.cc \
-    src/core/lib/security/credentials/local/local_credentials.cc \
-    src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
-    src/core/lib/security/credentials/plugin/plugin_credentials.cc \
-    src/core/lib/security/credentials/ssl/ssl_credentials.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc \
-    src/core/lib/security/credentials/tls/tls_credentials.cc \
-    src/core/lib/security/credentials/tls/tls_utils.cc \
-    src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc \
-    src/core/lib/security/credentials/xds/xds_credentials.cc \
-    src/core/lib/security/security_connector/alts/alts_security_connector.cc \
-    src/core/lib/security/security_connector/fake/fake_security_connector.cc \
-    src/core/lib/security/security_connector/insecure/insecure_security_connector.cc \
-    src/core/lib/security/security_connector/load_system_roots_fallback.cc \
-    src/core/lib/security/security_connector/load_system_roots_supported.cc \
-    src/core/lib/security/security_connector/load_system_roots_windows.cc \
-    src/core/lib/security/security_connector/local/local_security_connector.cc \
-    src/core/lib/security/security_connector/security_connector.cc \
-    src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
-    src/core/lib/security/security_connector/ssl_utils.cc \
-    src/core/lib/security/security_connector/tls/tls_security_connector.cc \
-    src/core/lib/security/transport/client_auth_filter.cc \
-    src/core/lib/security/transport/server_auth_filter.cc \
-    src/core/lib/security/util/json_util.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_buffer.cc \
@@ -676,7 +689,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/channel_create.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_stack_type.cc \
-    src/core/lib/surface/client_call.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
     src/core/lib/surface/connection_context.cc \
@@ -687,23 +699,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
-    src/core/lib/surface/server_call.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/call_arena_allocator.cc \
-    src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
-    src/core/lib/transport/call_spine.cc \
-    src/core/lib/transport/call_state.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/interception_chain.cc \
-    src/core/lib/transport/message.cc \
-    src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
-    src/core/lib/transport/metadata_info.cc \
-    src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
@@ -770,6 +771,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/telemetry/metrics.cc \
     src/core/telemetry/stats.cc \
     src/core/telemetry/stats_data.cc \
+    src/core/transport/auth_context.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -1367,8 +1369,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/message/array.c \
     third_party/upb/upb/message/compat.c \
     third_party/upb/upb/message/copy.c \
-    third_party/upb/upb/message/internal/compare_unknown.c \
     third_party/upb/upb/message/internal/extension.c \
+    third_party/upb/upb/message/internal/iterator.c \
     third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
@@ -1412,12 +1414,30 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.71.0dev\""')
-
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.72.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/config)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/composite)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/external)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/gcp_service_account_identity)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/iam)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/jwt)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/oauth2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/plugin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/token_fetcher)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/alts)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/composite)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/google_default)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/insecure)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/local)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/tls)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
@@ -1540,6 +1560,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/matcher/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter/auth)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/endpoint_info)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/http_connect)
@@ -1562,34 +1583,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/certificate_provider)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/alts)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/composite)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/external)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/fake)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/gcp_service_account_identity)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/google_default)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/iam)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/insecure)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/jwt)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/local)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/oauth2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/plugin)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/tls)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/token_fetcher)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/xds)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/alts)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/fake)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/insecure)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/local)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/ssl)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/tls)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
@@ -1617,6 +1610,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/telemetry)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/crypt)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/frame_protector)

@@ -33,6 +33,7 @@
 #include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/seq.h"
@@ -41,12 +42,12 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/transport/chaotic_good/transport_test.h"
+#include "test/core/transport/chaotic_good/transport_test_helper.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
+#include "test/core/transport/util/transport_test.h"
 
 using testing::_;
 using testing::MockFunction;
@@ -55,6 +56,7 @@ using testing::StrictMock;
 using testing::WithArgs;
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
+using grpc_core::util::testing::TransportTest;
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -109,8 +111,8 @@ class MockServerConnectionFactory : public ServerConnectionFactory {
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
-  MockPromiseEndpoint control_endpoint(1);
-  MockPromiseEndpoint data_endpoint(2);
+  util::testing::MockPromiseEndpoint control_endpoint(1);
+  util::testing::MockPromiseEndpoint data_endpoint(2);
   auto server_connection_factory =
       MakeRefCounted<StrictMock<MockServerConnectionFactory>>();
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();

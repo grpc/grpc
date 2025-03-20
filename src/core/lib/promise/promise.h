@@ -83,20 +83,14 @@ struct ImmediateOkStatus {
 };
 
 // Typecheck that a promise returns the expected return type.
-// usage: auto promise = WithResult<int>([]() { return 3; });
+// usage: auto promise = AssertResultType<int>([]() { return 3; });
 // NOTE: there are tests in promise_test.cc that are commented out because they
 // should fail to compile. When modifying this code these should be uncommented
 // and their miscompilation verified.
 template <typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto WithResult(F f) ->
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto AssertResultType(F f) ->
     typename std::enable_if<std::is_same<decltype(f()), Poll<T>>::value,
                             F>::type {
-  return f;
-}
-
-template <typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto WithResult(F f) ->
-    typename std::enable_if<std::is_same<decltype(f()), T>::value, F>::type {
   return f;
 }
 

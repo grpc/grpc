@@ -15,9 +15,7 @@
 
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
-#include <gmock/gmock.h>
 #include <grpcpp/security/tls_certificate_provider.h>
-#include <gtest/gtest.h>
 
 #include <functional>
 #include <map>
@@ -36,6 +34,8 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"
@@ -864,7 +864,8 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "|Connection reset by peer"
       "|Socket closed"
       "|Broken pipe"
-      "|FD shutdown)"
+      "|FD shutdown"
+      "|Endpoint closing)"
       // errno value
       "( \\([0-9]+\\))?",
       // xDS node ID

@@ -76,24 +76,6 @@
   grpc_private_headers = collect_files_for_libs(grpc_full_deps, ("headers", ))
 
   grpc_abseil_specs = list_abseil_specs("grpc")
-
-  # TODO(jtattermusch): build.yaml is now generated from bazel build
-  # which doesn't have an explicit "grpc_cronet" target. Until it exists
-  # we construct the list of files by taking what's in the "grpc" target
-  # and adding a few files on top of that.
-  grpc_cronet_extra_public_headers = ['include/grpc/grpc_cronet.h']
-  grpc_cronet_extra_impl_files = [
-      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
-      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.h',
-      'src/core/ext/transport/cronet/transport/cronet_status.cc',
-      'src/core/ext/transport/cronet/transport/cronet_status.h',
-      'src/core/ext/transport/cronet/transport/cronet_transport.cc',
-      'src/core/ext/transport/cronet/transport/cronet_transport.h',
-      'third_party/objective_c/Cronet/bidirectional_stream_c.h'
-  ]
-
-  grpc_cronet_files = list(sorted(grpc_cronet_extra_impl_files))
-  grpc_cronet_public_headers = list(sorted(grpc_cronet_extra_public_headers))
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-Core'
@@ -114,8 +96,8 @@
     # which was released in Cocoapods v1.2.0.
     s.cocoapods_version = '>= 1.2.0'
 
-    s.ios.deployment_target = '11.0'
-    s.osx.deployment_target = '10.14'
+    s.ios.deployment_target = '15.0'
+    s.osx.deployment_target = '11.0'
     s.tvos.deployment_target = '13.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
@@ -213,22 +195,6 @@
     # CFStream is now default. Leaving this subspec only for compatibility purpose.
     s.subspec 'CFStream-Implementation' do |ss|
       ss.dependency "#{s.name}/Implementation", version
-    end
-
-    s.subspec 'Cronet-Interface' do |ss|
-      ss.header_mappings_dir = 'include/grpc'
-      ss.source_files = ${ruby_multiline_list(grpc_cronet_public_headers, 22)}
-    end
-
-    s.subspec 'Cronet-Implementation' do |ss|
-      ss.header_mappings_dir = '.'
-
-      ss.dependency "#{s.name}/Interface", version
-      ss.dependency "#{s.name}/Implementation", version
-      ss.dependency "#{s.name}/Privacy", version
-      ss.dependency "#{s.name}/Cronet-Interface", version
-
-      ss.source_files = ${ruby_multiline_list(grpc_cronet_files, 22)}
     end
 
     # patch include of openssl to openssl_grpc

@@ -108,7 +108,10 @@ grpc_cc_test(
     name = "fork_test",
     srcs = ["fork_test.cc"],
     external_deps = ["gtest"],
-    tags = ["no_windows"],
+    tags = [
+        "grpc:broken-internally",
+        "no_windows",
+    ],
     uses_event_engine = True,  # engines should behave appropriately on Fork
     uses_polling = False,
     deps = [

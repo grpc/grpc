@@ -28,10 +28,10 @@ TEST(PromiseTest, Works) {
 
 TEST(PromiseTest, Immediate) { EXPECT_EQ(Immediate(42)(), Poll<int>(42)); }
 
-TEST(PromiseTest, WithResult) {
-  EXPECT_EQ(WithResult<int>(Immediate(42))(), Poll<int>(42));
-  // Fails to compile: WithResult<int>(Immediate(std::string("hello")));
-  // Fails to compile: WithResult<int>(Immediate(42.9));
+TEST(PromiseTest, AssertResultType) {
+  EXPECT_EQ(AssertResultType<int>(Immediate(42))(), Poll<int>(42));
+  // Fails to compile: AssertResultType<int>(Immediate(std::string("hello")));
+  // Fails to compile: AssertResultType<int>(Immediate(42.9));
 }
 
 TEST(PromiseTest, NowOrNever) {

@@ -18,27 +18,113 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
 
-#include "gtest/gtest.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "test/core/transport/util/mock_promise_endpoint.h"
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/grpc.h>
 
-using grpc_core::chaotic_good::testing::MockPromiseEndpoint;
-using grpc_event_engine::experimental::EventEngine;
+#include <memory>
+#include <utility>
+
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/transport/http2_errors.h"
+#include "src/core/util/orphanable.h"
+#include "test/core/promise/poll_matcher.h"
+#include "test/core/transport/chttp2/http2_frame_test_helper.h"
+#include "test/core/transport/util/mock_promise_endpoint.h"
+#include "test/core/transport/util/transport_test.h"
 
 namespace grpc_core {
 namespace http2 {
 namespace testing {
 
-TEST(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
-  MockPromiseEndpoint endpoint(1);
-  std::shared_ptr<EventEngine> event_engine =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
+using EventEngineSlice = grpc_event_engine::experimental::Slice;
+using transport::testing::Http2FrameTestHelper;
+using util::testing::MockPromiseEndpoint;
+using util::testing::TransportTest;
 
-  Http2ClientTransport transport(std::move(endpoint.promise_endpoint),
-                                 CoreConfiguration::Get()
-                                     .channel_args_preconditioning()
-                                     .PreconditionChannelArgs(nullptr),
-                                 event_engine);
+class Http2ClientTransportTest : public TransportTest {
+ public:
+  Http2ClientTransportTest() {
+    grpc_tracer_set_enabled("http2_ph2_transport", true);
+  }
+
+ protected:
+  Http2FrameTestHelper helper_;
+};
+
+TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
+  // Event Engine      : FuzzingEventEngine
+  // This test asserts :
+  // 1. Tests Http2ClientTransport object creation and destruction. The object
+  // creation itself begins the ReadLoop and the WriteLoop.
+  // 2. Assert if the ReadLoop was invoked correctly or not.
+  // 3. Tests trivial functions GetTransportName() , server_transport() and
+  // client_transport().
+
+  LOG(INFO) << "TestHttp2ClientTransportObjectCreation Begin";
+  MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+
+  mock_endpoint.ExpectRead(
+      {helper_.EventEngineSliceFromHttp2DataFrame(
+           /*payload=*/"Hello!", /*stream_id=*/10, /*end_stream=*/false),
+       helper_.EventEngineSliceFromHttp2DataFrame(
+           /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)},
+      event_engine().get());
+
+  // Break the ReadLoop
+  mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
+                                event_engine().get());
+
+  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
+      event_engine());
+
+  EXPECT_EQ(client_transport->filter_stack_transport(), nullptr);
+  EXPECT_NE(client_transport->client_transport(), nullptr);
+  EXPECT_EQ(client_transport->server_transport(), nullptr);
+  EXPECT_EQ(client_transport->GetTransportName(), "http2");
+
+  // Wait for Http2ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+  LOG(INFO) << "TestHttp2ClientTransportObjectCreation End";
+}
+
+TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
+  MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+
+  auto read = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError("Connection closed"), event_engine().get());
+
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2DataFrame(
+              /*payload=*/"Hello!", /*stream_id=*/10, /*end_stream=*/false),
+      },
+      event_engine().get());
+
+  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
+      event_engine());
+
+  Http2Frame frame = Http2DataFrame{
+      .stream_id = 10,
+      .end_stream = false,
+      .payload = SliceBuffer(Slice::FromExternalString("Hello!"))};
+
+  auto promise = client_transport->EnqueueOutgoingFrame(std::move(frame))();
+  EXPECT_THAT(promise(), IsReady());
+  read();
+
+  // Wait for Http2ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
 }
 
 }  // namespace testing

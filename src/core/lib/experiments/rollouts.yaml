@@ -44,9 +44,9 @@
   default: true
 - name: call_tracer_in_transport
   default: true
+- name: call_tracer_transport_fix
+  default: true
 - name: call_v3
-  default: false
-- name: disable_buffer_hint_on_high_memory_pressure
   default: false
 - name: event_engine_callback_cq
   default: true
@@ -62,6 +62,8 @@
     ios: broken
     posix: true
     windows: true
+- name: event_engine_for_all_other_endpoints
+  default: true
 - name: event_engine_listener
   default:
     # not tested on iOS at all
@@ -78,16 +80,14 @@
   default: true
 - name: monitoring_experiment
   default: true
-- name: pick_first_new
-  default: true
 - name: posix_ee_skip_grpc_init
-  default: false
-- name: prioritize_finished_requests
-  default: false
+  default: true
 - name: promise_based_http2_client_transport
   default: false
 - name: promise_based_http2_server_transport
   default: false
+- name: rst_stream_fix
+  default: true
 - name: rstpit
   default: false
 - name: schedule_cancellation_over_write
@@ -100,7 +100,5 @@
   default: false
 - name: tcp_rcv_lowat
   default: false
-- name: trace_record_callops
-  default: true
 - name: unconstrained_max_quota_buffer_size
   default: false

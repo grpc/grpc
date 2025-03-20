@@ -31,9 +31,12 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
+#include "src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -59,8 +62,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
 #include "src/core/util/orphanable.h"
@@ -406,7 +407,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   if (!result.ok()) {
-    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: ", result.status();
+    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: " << result.status();
     connection_->Done();
     return;
   }
@@ -478,6 +479,9 @@ void ChaoticGoodServerListener::Orphan() {
 }  // namespace grpc_core
 
 int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
+  if (!grpc_core::IsChaoticGoodFramingLayerEnabled()) {
+    return grpc_server_add_chaotic_good_legacy_port(server, addr);
+  }
   using grpc_event_engine::experimental::EventEngine;
   grpc_core::ExecCtx exec_ctx;
   auto* const core_server = grpc_core::Server::FromC(server);

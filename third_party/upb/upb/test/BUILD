@@ -5,6 +5,7 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
+load("//bazel:proto_library.bzl", "proto_library")
 load(
     "//bazel:upb_minitable_proto_library.bzl",
     "upb_minitable_proto_library",
@@ -27,8 +28,8 @@ cc_library(
     hdrs = ["parse_text_proto.h"],
     visibility = ["//upb:__subpackages__"],
     deps = [
-        "//:protobuf",
-        "@com_google_googletest//:gtest",
+        "//src/google/protobuf",
+        "@googletest//:gtest",
     ],
 )
 
@@ -179,8 +180,8 @@ cc_test(
         ":proto3_test_upb_proto",
         ":proto3_test_upb_proto_reflection",
         "//upb:reflection",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -194,8 +195,8 @@ cc_test(
         "//upb:base",
         "//upb:mem",
         "//upb:reflection",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -213,8 +214,8 @@ cc_test(
         "//upb:mini_table",
         "//upb:wire",
         "//upb/mem:internal",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -231,8 +232,8 @@ cc_test(
         "//upb:json",
         "//upb:port",
         "//upb:reflection",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -250,8 +251,8 @@ cc_test(
         "//upb:mem",
         "//upb:message",
         "//upb:port",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -266,8 +267,8 @@ cc_test(
         ":test_messages_proto2_upb_minitable",
         ":test_upb_proto",
         "//upb:mini_table",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -319,8 +320,8 @@ cc_test(
     srcs = ["test_import_empty_srcs.cc"],
     deps = [
         ":test_import_empty_srcs_upb_minitable_proto",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 

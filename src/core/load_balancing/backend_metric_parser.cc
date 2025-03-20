@@ -31,23 +31,23 @@ namespace grpc_core {
 
 namespace {
 
-template <typename EntryType>
+// TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto v30.0.
 std::map<absl::string_view, double> ParseMap(
     xds_data_orca_v3_OrcaLoadReport* msg,
-    const EntryType* (*entry_func)(const xds_data_orca_v3_OrcaLoadReport*,
-                                   size_t*),
-    upb_StringView (*key_func)(const EntryType*),
-    double (*value_func)(const EntryType*),
+    const upb_Map* (*upb_map_func)(xds_data_orca_v3_OrcaLoadReport*),
     BackendMetricAllocatorInterface* allocator) {
+  const upb_Map* map = upb_map_func(msg);
   std::map<absl::string_view, double> result;
-  size_t i = kUpb_Map_Begin;
-  while (true) {
-    const auto* entry = entry_func(msg, &i);
-    if (entry == nullptr) break;
-    upb_StringView key_view = key_func(entry);
-    char* key = allocator->AllocateString(key_view.size);
-    memcpy(key, key_view.data, key_view.size);
-    result[absl::string_view(key, key_view.size)] = value_func(entry);
+  if (map) {
+    size_t i = kUpb_Map_Begin;
+    upb_MessageValue k, v;
+    while (upb_Map_Next(map, &k, &v, &i)) {
+      upb_StringView key_view = k.str_val;
+      double value = v.double_val;
+      char* key = allocator->AllocateString(key_view.size);
+      memcpy(key, key_view.data, key_view.size);
+      result[absl::string_view(key, key_view.size)] = value;
+    }
   }
   return result;
 }
@@ -73,21 +73,14 @@ const BackendMetricData* ParseBackendMetricData(
   backend_metric_data->qps =
       xds_data_orca_v3_OrcaLoadReport_rps_fractional(msg);
   backend_metric_data->eps = xds_data_orca_v3_OrcaLoadReport_eps(msg);
-  backend_metric_data->request_cost =
-      ParseMap<xds_data_orca_v3_OrcaLoadReport_RequestCostEntry>(
-          msg, xds_data_orca_v3_OrcaLoadReport_request_cost_next,
-          xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_key,
-          xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_value, allocator);
-  backend_metric_data->utilization =
-      ParseMap<xds_data_orca_v3_OrcaLoadReport_UtilizationEntry>(
-          msg, xds_data_orca_v3_OrcaLoadReport_utilization_next,
-          xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_key,
-          xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_value, allocator);
-  backend_metric_data->named_metrics =
-      ParseMap<xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry>(
-          msg, xds_data_orca_v3_OrcaLoadReport_named_metrics_next,
-          xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_key,
-          xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_value, allocator);
+  // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
+  // v30.0.
+  backend_metric_data->request_cost = ParseMap(
+      msg, _xds_data_orca_v3_OrcaLoadReport_request_cost_upb_map, allocator);
+  backend_metric_data->utilization = ParseMap(
+      msg, _xds_data_orca_v3_OrcaLoadReport_utilization_upb_map, allocator);
+  backend_metric_data->named_metrics = ParseMap(
+      msg, _xds_data_orca_v3_OrcaLoadReport_named_metrics_upb_map, allocator);
   return backend_metric_data;
 }
 

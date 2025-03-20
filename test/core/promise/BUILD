@@ -43,7 +43,10 @@ grpc_cc_library(
     name = "test_context",
     testonly = True,
     hdrs = ["test_context.h"],
-    visibility = ["//test/core:__subpackages__"],
+    visibility = [
+        "//test/core:__subpackages__",
+        "//test/cpp:__subpackages__",
+    ],
     deps = ["//src/core:context"],
 )
 
@@ -288,7 +291,10 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:all_ok"],
+    deps = [
+        "//:promise",
+        "//src/core:all_ok",
+    ],
 )
 
 grpc_cc_test(
@@ -302,31 +308,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "opt_seq_test",
-    srcs = ["opt_seq_test.cc"],
-    external_deps = ["gtest"],
-    tags = ["promise_test"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = ["//src/core:seq"],
-)
-
-grpc_cc_test(
     name = "try_seq_test",
     srcs = ["try_seq_test.cc"],
-    external_deps = ["gtest"],
-    tags = ["promise_test"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "poll_matcher",
-        "//src/core:try_seq",
-    ],
-)
-
-grpc_cc_test(
-    name = "opt_try_seq_test",
-    srcs = ["opt_try_seq_test.cc"],
     external_deps = ["gtest"],
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -745,6 +728,38 @@ grpc_cc_test(
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:sleep",
+        "//src/core:time",
+    ],
+)
+
+grpc_internal_proto_library(
+    name = "inter_activity_mutex_test_proto",
+    srcs = ["inter_activity_mutex_test.proto"],
+)
+
+grpc_cc_proto_library(
+    name = "inter_activity_mutex_test_cc_proto",
+    deps = ["inter_activity_mutex_test_proto"],
+)
+
+grpc_fuzz_test(
+    name = "inter_activity_mutex_test",
+    srcs = ["inter_activity_mutex_test.cc"],
+    external_deps = [
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    tags = ["promise_test"],
+    deps = [
+        "inter_activity_mutex_test_cc_proto",
+        "poll_matcher",
+        "//:grpc",
+        "//src/core:1999",
+        "//src/core:inter_activity_mutex",
+        "//src/core:notification",
+        "//src/core:resource_quota",
+        "//src/core:seq",
         "//src/core:time",
     ],
 )

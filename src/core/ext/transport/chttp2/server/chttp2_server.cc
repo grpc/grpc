@@ -48,6 +48,9 @@
 #include "absl/strings/strip.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/insecure/insecure_credentials.h"
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
@@ -75,9 +78,6 @@
 #include "src/core/lib/resource_quota/connection_quota.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
@@ -1282,7 +1282,7 @@ grpc_error_handle NewChttp2ServerListener::Create(
   if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     auto string_address =
-        grpc_event_engine::experimental::ResolvedAddressToString(addr);
+        grpc_event_engine::experimental::ResolvedAddressToURI(addr);
     if (!string_address.ok()) {
       return GRPC_ERROR_CREATE(string_address.status().ToString());
     }

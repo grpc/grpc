@@ -18,6 +18,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/util/notification.h"
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 using grpc_event_engine::experimental::EventEngine;
@@ -25,7 +26,7 @@ using grpc_event_engine::experimental::EventEngine;
 using testing::WithArgs;
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace util {
 namespace testing {
 
 void MockPromiseEndpoint::ExpectRead(
@@ -52,6 +53,55 @@ void MockPromiseEndpoint::ExpectRead(
               return true;
             }
           }));
+}
+
+void MockPromiseEndpoint::ExpectReadClose(
+    absl::Status status,
+    grpc_event_engine::experimental::EventEngine* schedule_on_event_engine) {
+  DCHECK_NE(status, absl::OkStatus());
+  DCHECK_NE(schedule_on_event_engine, nullptr);
+  EXPECT_CALL(*endpoint, Read)
+      .InSequence(read_sequence)
+      .WillOnce(WithArgs<0, 1>(
+          [status = std::move(status), schedule_on_event_engine](
+              absl::AnyInvocable<void(absl::Status)> on_read,
+              GRPC_UNUSED grpc_event_engine::experimental::SliceBuffer*
+                  buffer) {
+            schedule_on_event_engine->Run(
+                [on_read = std::move(on_read), status]() mutable {
+                  on_read(status);
+                });
+            return false;
+          }));
+}
+
+absl::AnyInvocable<void()> MockPromiseEndpoint::ExpectDelayedReadClose(
+    absl::Status status,
+    grpc_event_engine::experimental::EventEngine* schedule_on_event_engine) {
+  struct DelayedReadClose {
+    Notification ready;
+    absl::AnyInvocable<void(absl::Status)> on_read;
+  };
+  std::shared_ptr<DelayedReadClose> delayed_read_close =
+      std::make_shared<DelayedReadClose>();
+  DCHECK_NE(schedule_on_event_engine, nullptr);
+  EXPECT_CALL(*endpoint, Read)
+      .InSequence(read_sequence)
+      .WillOnce(WithArgs<0, 1>(
+          [delayed_read_close](
+              absl::AnyInvocable<void(absl::Status)> on_read,
+              GRPC_UNUSED grpc_event_engine::experimental::SliceBuffer*
+                  buffer) {
+            delayed_read_close->on_read = std::move(on_read);
+            delayed_read_close->ready.Notify();
+            return false;
+          }));
+  return [delayed_read_close, status, schedule_on_event_engine]() {
+    schedule_on_event_engine->Run([delayed_read_close, status]() mutable {
+      delayed_read_close->ready.WaitForNotification();
+      delayed_read_close->on_read(status);
+    });
+  };
 }
 
 void MockPromiseEndpoint::ExpectWrite(
@@ -109,5 +159,5 @@ void MockPromiseEndpoint::CaptureWrites(SliceBuffer& writes,
 }
 
 }  // namespace testing
-}  // namespace chaotic_good
+}  // namespace util
 }  // namespace grpc_core

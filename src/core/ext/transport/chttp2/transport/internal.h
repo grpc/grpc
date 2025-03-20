@@ -38,6 +38,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -69,7 +70,6 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -672,10 +672,10 @@ struct grpc_chttp2_stream {
 
   grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
 
-  /// Only set when enabled.
-  // TODO(roth): Remove this when the call_tracer_in_transport
-  // experiment finishes rolling out.
-  grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
+  // TODO(roth): Remove this when call v3 is supported.
+  grpc_core::CallTracerInterface* call_tracer = nullptr;
+  // TODO(yashykt): Remove this once call_tracer_transport_fix is rolled out
+  grpc_core::CallTracerAnnotationInterface* parent_call_tracer = nullptr;
 
   /// Only set when enabled.
   std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
@@ -700,6 +700,14 @@ struct grpc_chttp2_stream {
   // The last time a stream window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
+
+  // TODO(yashykt): Remove this when call v3 is supported.
+  grpc_core::CallTracerInterface* CallTracer() const {
+    if (t->is_client) {
+      return call_tracer;
+    }
+    return arena->GetContext<grpc_core::CallTracerInterface>();
+  }
 };
 
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"

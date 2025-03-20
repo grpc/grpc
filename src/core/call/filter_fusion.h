@@ -14,13 +14,17 @@
 
 #ifndef GRPC_SRC_CORE_CALL_FILTER_FUSION_H
 #define GRPC_SRC_CORE_CALL_FILTER_FUSION_H
+#include <grpc/impl/grpc_types.h>
 
 #include <type_traits>
 #include <utility>
 
-#include "src/core/lib/transport/call_filters.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/call_filters.h"
+#include "src/core/call/metadata.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/util/type_list.h"
+
+struct grpc_transport_op;
 
 namespace grpc_core {
 namespace filters_detail {
@@ -69,6 +73,7 @@ class AdaptMethod<T, const NoInterceptor*, method> {
   auto operator()(Hdl<T> x) {
     return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(x)));
   }
+  void operator()(T* /*x*/) {}
 };
 
 // Overrides for Filter methods with void Return types.
@@ -117,6 +122,73 @@ class AdaptMethod<T, void (Call::*)(A, Derived*), method,
   Derived* filter_;
 };
 
+// primary template handles types that have no nested ::Call member:
+template <class, class = void>
+constexpr const bool kHasCallMember = false;
+
+// specialization recognizes types that have a nested ::Call member:
+template <class T>
+constexpr const bool kHasCallMember<T, std::void_t<typename T::Call>> = true;
+
+// Override for filter method types that take a pointer to the filter along
+// with another arbitrary pointer type. Expected to be used to handle
+// OnFinalize methods.
+template <typename A, typename Call, typename Derived,
+          void (Call::*method)(const A*, Derived*)>
+class AdaptMethod<
+    A, void (Call::*)(const A*, Derived*), method,
+    std::enable_if_t<std::is_same<typename Derived::Call, Call>::value, void>> {
+ public:
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  void operator()(A* arg) { (call_->*method)(arg, filter_); }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
+// Same as above with the const qualifiers removed.
+template <typename A, typename Call, typename Derived,
+          void (Call::*method)(A*, Derived*)>
+class AdaptMethod<
+    A, void (Call::*)(A*, Derived*), method,
+    std::enable_if_t<std::is_same<typename Derived::Call, Call>::value, void>> {
+ public:
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  void operator()(A* arg) { (call_->*method)(arg, filter_); }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
+// Override for filter method types that another arbitrary pointer type.
+// Expected to be used to handle OnFinalize methods.
+template <typename A, typename Call, void (Call::*method)(const A*)>
+class AdaptMethod<A, void (Call::*)(const A*), method,
+                  std::enable_if_t<!kHasCallMember<A>, void>> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/) : call_(call) {}
+  void operator()(A* arg) { (call_->*method)(arg); }
+
+ private:
+  Call* call_;
+};
+
+// Same as above with the const qualifiers removed.
+template <typename A, typename Call, void (Call::*method)(A*)>
+class AdaptMethod<A, void (Call::*)(A*), method,
+                  std::enable_if_t<!kHasCallMember<A>, void>> {
+ public:
+  explicit AdaptMethod(Call* call, void* /*filter*/) : call_(call) {}
+  void operator()(A* arg) { (call_->*method)(arg); }
+
+ private:
+  Call* call_;
+};
+
 template <typename T, typename AnyType = void>
 struct TakeValueExists {
   static constexpr bool value = false;
@@ -155,9 +227,10 @@ struct HasStatusMethod<
   static constexpr bool value = true;
 };
 
-// For types T which are of the form StatusOr<U>. Type TakeValue on Type T must
-// return a value of type U. Further type T must have a method called status()
-// and must return a bool when IsStatusOk is called on an object of type T.
+// For types T which are of the form StatusOr<U>. Type TakeValue on Type T
+// must return a value of type U. Further type T must have a method called
+// status() and must return a bool when IsStatusOk is called on an object of
+// type T.
 template <typename T, typename U, typename AnyType = void>
 struct StatusOrType {
   static constexpr bool value = false;
@@ -536,6 +609,30 @@ auto ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
       typename FilterMethods::Methods(), typename FilterMethods::Idxs());
 }
 
+// Combine the result of a series of OnFinalize filter methods into a single
+// method.
+template <typename Call, typename Derived, typename T, typename... Filters,
+          auto... filter_methods, size_t... Is>
+void ExecuteCombinedOnFinalizeWithChannelAccess(Call* call, Derived* channel,
+                                                T* call_final_info,
+                                                Typelist<Filters...>,
+                                                Valuelist<filter_methods...>,
+                                                std::index_sequence<Is...>) {
+  (AdaptMethod<T, decltype(filter_methods), filter_methods>(
+       call->template fused_child<Is>(),
+       reinterpret_cast<Filters*>(channel))(call_final_info),
+   ...);
+}
+
+template <typename FilterMethods, typename FilterTypes, typename Call,
+          typename Derived, typename T>
+void ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
+                                      T* call_final_info) {
+  ExecuteCombinedOnFinalizeWithChannelAccess(
+      call, channel, call_final_info, typename FilterTypes::Types(),
+      typename FilterMethods::Methods(), typename FilterMethods::Idxs());
+}
+
 #define GRPC_FUSE_METHOD(name, type, forward)                                 \
   template <MethodVariant variant, typename Derived, typename... Filters>     \
   class FuseImpl##name;                                                       \
@@ -573,6 +670,9 @@ GRPC_FUSE_METHOD(OnClientInitialMetadata, ClientMetadataHandle, true);
 GRPC_FUSE_METHOD(OnServerInitialMetadata, ServerMetadataHandle, false);
 GRPC_FUSE_METHOD(OnClientToServerMessage, MessageHandle, true);
 GRPC_FUSE_METHOD(OnServerToClientMessage, MessageHandle, false);
+GRPC_FUSE_METHOD(OnServerTrailingMetadata, ServerMetadataHandle, false);
+GRPC_FUSE_METHOD(OnClientToServerHalfClose, ServerMetadataHandle, true);
+GRPC_FUSE_METHOD(OnFinalize, grpc_call_final_info*, true);
 
 #undef GRPC_FUSE_METHOD
 
@@ -582,11 +682,14 @@ class FusedFilter : public Filters... {
   class Call : public FuseOnClientInitialMetadata<FusedFilter, Filters...>,
                public FuseOnServerInitialMetadata<FusedFilter, Filters...>,
                public FuseOnClientToServerMessage<FusedFilter, Filters...>,
-               public FuseOnServerToClientMessage<FusedFilter, Filters...> {
+               public FuseOnServerToClientMessage<FusedFilter, Filters...>,
+               public FuseOnServerTrailingMetadata<FusedFilter, Filters...>,
+               public FuseOnClientToServerHalfClose<FusedFilter, Filters...>,
+               public FuseOnFinalize<FusedFilter, Filters...> {
    public:
     template <size_t I>
     auto* fused_child() {
-      return &std::get<I>(filters_);
+      return &std::get<I>(filter_calls_);
     }
 
     using FuseOnClientInitialMetadata<FusedFilter,
@@ -597,10 +700,38 @@ class FusedFilter : public Filters... {
                                       Filters...>::OnClientToServerMessage;
     using FuseOnServerToClientMessage<FusedFilter,
                                       Filters...>::OnServerToClientMessage;
+    using FuseOnServerTrailingMetadata<FusedFilter,
+                                       Filters...>::OnServerTrailingMetadata;
+    using FuseOnClientToServerHalfClose<FusedFilter,
+                                        Filters...>::OnClientToServerHalfClose;
+    using FuseOnFinalize<FusedFilter, Filters...>::OnFinalize;
 
    private:
-    std::tuple<typename Filters::Call...> filters_;
+    std::tuple<typename Filters::Call...> filter_calls_;
   };
+
+  bool StartTransportOp(grpc_transport_op* op) {
+    return StartTransportOpInternal(op, Typelist<Filters...>());
+  }
+
+  bool GetChannelInfo(const grpc_channel_info* info) {
+    return GetChannelInfoInternal(info, Typelist<Filters...>());
+  }
+
+ private:
+  template <typename... FilterTypes>
+  bool StartTransportOpInternal(grpc_transport_op* op,
+                                Typelist<FilterTypes...>) {
+    return (std::get<FilterTypes>(filters_).StartTransportOp(op) || ...);
+  }
+
+  template <typename... FilterTypes>
+  bool GetChannelInfoInternal(const grpc_channel_info* info,
+                              Typelist<FilterTypes...>) {
+    return (std::get<FilterTypes>(filters_).GetChannelInfo(info) || ...);
+  }
+
+  std::tuple<Filters...> filters_;
 };
 
 }  // namespace filters_detail

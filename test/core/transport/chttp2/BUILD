@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
-load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
@@ -182,6 +182,7 @@ grpc_cc_test(
     deps = [
         "//:chttp2_frame",
         "//src/core:http2_errors",
+        "//src/core:slice_buffer",
     ],
 )
 
@@ -232,6 +233,10 @@ grpc_cc_test(
     name = "ping_configuration_test",
     srcs = ["ping_configuration_test.cc"],
     external_deps = ["gtest"],
+    tags = [
+        # HTTP2 pings configuration is different internally.
+        "grpc:no-internal-poller",
+    ],
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -358,6 +363,10 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
+    tags = [
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "//:channel_stack_builder",
         "//:gpr",
@@ -399,6 +408,12 @@ grpc_cc_test(
     ],
     flaky = True,
     shard_count = 7,
+    tags = [
+        # TODO(yashkt): Re-enable after fixing b/167620746
+        "grpc:no-internal-poller",
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -490,30 +505,49 @@ grpc_cc_test(
 grpc_cc_test(
     name = "http2_client_transport_test",
     srcs = ["http2_client_transport_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//src/core:http2_client_transport",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/transport/chttp2:http2_frame_test_helper",
         "//test/core/transport/util:mock_promise_endpoint",
+        "//test/core/transport/util:transport_test",
     ],
 )
 
 grpc_cc_test(
     name = "http2_server_transport_test",
     srcs = ["http2_server_transport_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//src/core:http2_server_transport",
+        "//src/core:message",
+        "//src/core:metadata",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/transport/chttp2:http2_frame_test_helper",
         "//test/core/transport/util:mock_promise_endpoint",
+        "//test/core/transport/util:transport_test",
     ],
 )
 
@@ -566,5 +600,24 @@ grpc_fuzz_test(
         "//src/core:resource_quota",
         "//src/core:slice_buffer",
         "//src/core:time",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_frame_test_helper",
+    testonly = 1,
+    hdrs = ["http2_frame_test_helper.h"],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_promise_endpoint",
+        "//src/core:http2_errors",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
     ],
 )

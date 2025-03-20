@@ -27,11 +27,11 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
 #include "src/proto/grpc/reflection/v1/reflection.pb.h"
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"

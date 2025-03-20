@@ -44,6 +44,9 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
+    tags = [
+        "grpc:fails-internally",
+    ],
     deps = [
         "//:config_vars",
         "//:gpr",

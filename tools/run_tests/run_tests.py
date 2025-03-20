@@ -810,13 +810,6 @@ class PythonLanguage(object):
 
         # TODO: Supported version range should be defined by a single
         # source of truth.
-        python38_config = _python_config_generator(
-            name="py38",
-            major="3",
-            minor="8",
-            bits=bits,
-            config_vars=config_vars,
-        )
         python39_config = _python_config_generator(
             name="py39",
             major="3",
@@ -861,12 +854,12 @@ class PythonLanguage(object):
 
         if args.compiler == "default":
             if os.name == "nt":
-                return (python38_config,)
+                return (python39_config,)
             elif os.uname()[0] == "Darwin":
                 # NOTE(rbellevi): Testing takes significantly longer on
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
-                return (python38_config,)
+                return (python39_config,)
             elif platform.machine() == "aarch64":
                 # Currently the python_debian11_default_arm64 docker image
                 # only has python3.9 installed (and that seems sufficient
@@ -875,11 +868,9 @@ class PythonLanguage(object):
             else:
                 # Default set tested on master. Test oldest and newest.
                 return (
-                    python38_config,
+                    python39_config,
                     python313_config,
                 )
-        elif args.compiler == "python3.8":
-            return (python38_config,)
         elif args.compiler == "python3.9":
             return (python39_config,)
         elif args.compiler == "python3.10":
@@ -898,7 +889,6 @@ class PythonLanguage(object):
             return (python311_config,)
         elif args.compiler == "all_the_cpythons":
             return (
-                python38_config,
                 python39_config,
                 python310_config,
                 python311_config,
@@ -1188,6 +1178,18 @@ class ObjCLanguage(object):
                 environ={
                     "SCHEME": "SwiftUseFrameworks",
                     "EXAMPLE_PATH": "src/objective-c/examples/SwiftUseFrameworks",
+                },
+            )
+        )
+        out.append(
+            self.config.job_spec(
+                ["src/objective-c/tests/build_one_example.sh"],
+                timeout_seconds=120 * 60,
+                shortname="ios-buildtest-example-switft-package",
+                cpu_cost=1e6,
+                environ={
+                    "SCHEME": "gRPC-Package",
+                    "EXAMPLE_PATH": ".",
                 },
             )
         )
@@ -1720,7 +1722,6 @@ argp.add_argument(
         "clang7",
         "clang19",
         # TODO: Automatically populate from supported version
-        "python3.8",
         "python3.9",
         "python3.10",
         "python3.11",

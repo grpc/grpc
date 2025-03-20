@@ -605,11 +605,16 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
   locality.lb_weight = 1;
   if (result.addresses.ok()) {
+    std::vector<grpc_resolved_address> addresses;
+    ChannelArgs address_args = result.addresses->front().args();
     for (const auto& address : *result.addresses) {
-      locality.endpoints.emplace_back(
-          address.addresses(),
-          address.args().Set(GRPC_ARG_ADDRESS_NAME, dns_name));
+      CHECK_EQ(address.addresses().size(), 1UL);
+      addresses.emplace_back(address.addresses().front());
+      CHECK_EQ(address_args, address.args());
     }
+    locality.endpoints.emplace_back(
+        std::move(addresses),
+        address_args.Set(GRPC_ARG_ADDRESS_NAME, dns_name));
     dns_state->update.resolution_note = std::move(result.resolution_note);
   } else if (result.resolution_note.empty()) {
     dns_state->update.resolution_note =

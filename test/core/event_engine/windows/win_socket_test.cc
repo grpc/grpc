@@ -17,10 +17,10 @@
 #ifdef GPR_WINDOWS
 #include <grpc/grpc.h>
 #include <grpc/support/log_windows.h>
-#include <gtest/gtest.h>
 
 #include "absl/status/status.h"
 #include "absl/time/time.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"

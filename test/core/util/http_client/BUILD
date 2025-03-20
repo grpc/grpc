@@ -67,7 +67,11 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    tags = ["no_windows"],
+    tags = [
+        # TODO: cannot setup server with gpr_subprocess_create
+        "grpc:fails-internally",
+        "no_windows",
+    ],
     deps = [
         ":httpcli_test_util",
         "//:gpr",
@@ -96,7 +100,11 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    tags = ["no_windows"],
+    tags = [
+        # TODO: cannot setup server with gpr_subprocess_create
+        "grpc:fails-internally",
+        "no_windows",
+    ],
     deps = [
         ":httpcli_test_util",
         "//:gpr",
