@@ -36,6 +36,7 @@ class CFEventEngine : public EventEngine,
                       public grpc_core::KeepsGrpcInitialized {
  public:
   CFEventEngine();
+  CFEventEngine(std::shared_ptr<ThreadPool> thread_pool);
   ~CFEventEngine() override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
