@@ -265,7 +265,7 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
   const bool on_done_added =
       call_handler.OnDone([self = RefAsSubclass<Http2ClientTransport>(),
                            stream_id](bool cancelled) {
-        HTTP2_CLIENT_DLOG << "CHAOTIC_GOOD: Client call " << self.get()
+        HTTP2_CLIENT_DLOG << "PH2: Client call " << self.get()
                           << " id=" << stream_id
                           << " done: cancelled=" << cancelled;
         if (cancelled) {
@@ -283,8 +283,7 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
 auto Http2ClientTransport::CallOutboundLoop(
     CallHandler call_handler, uint32_t stream_id,
     std::tuple<InterActivityMutex<int>::Lock, ClientMetadataHandle>
-        lock_metadata
-    /* Locked stream_mutex */) {
+        lock_metadata /* Locked stream_mutex */) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop";
 
   // Enqueue a frame to the MPSC.
@@ -305,7 +304,8 @@ auto Http2ClientTransport::CallOutboundLoop(
     // This will eventually change as more logic is added.
     SliceBuffer frame_payload;
     size_t payload_size = message->payload()->Length();
-    AppendGrpcHeaderToSliceBuffer(frame_payload, /*flags*/ 0, payload_size);
+    AppendGrpcHeaderToSliceBuffer(frame_payload, message->flags(),
+                                  payload_size);
     frame_payload.TakeAndAppend(*message->payload());
     Http2DataFrame frame{.stream_id = stream_id,
                          .end_stream = false,
@@ -339,8 +339,7 @@ auto Http2ClientTransport::CallOutboundLoop(
             Http2DataFrame frame{.stream_id = stream_id,
                                  .end_stream = true,
                                  .payload = SliceBuffer()};
-            return Map(send_frame(std::move(frame)),
-                       [](absl::Status status) { return status; });
+            return send_frame(std::move(frame));
           },
           [call_handler]() mutable {
             return Map(call_handler.WasCancelled(), [](bool cancelled) {
