@@ -12499,6 +12499,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/inter_activity_mutex.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h

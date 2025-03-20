@@ -32,7 +32,9 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
@@ -57,14 +59,6 @@ using grpc_event_engine::experimental::EventEngine;
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
-
-void Http2ClientTransport::StartCall(GRPC_UNUSED CallHandler call_handler) {
-  HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall Begin";
-  // TODO(tjagtap) : [PH2][P1] : Implement this function.
-  // TODO(tjagtap) : [PH2][P1] : Add CallHandler to Stream. Add the stream to
-  // our stream_list_
-  HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall End";
-}
 
 void Http2ClientTransport::PerformOp(GRPC_UNUSED grpc_transport_op* op) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport PerformOp Begin";
@@ -260,6 +254,11 @@ RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
 uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   // TODO(tjagtap) : [PH2][P0] Validate implementation.
+
+  // TODO(akshitpatel) : [PH2][P1] : Probably do not need this lock. This
+  // function is always called under the stream_mutex_. The issue is the OnDone
+  // needs to be synchronous and hence InterActivityMutex might not be an option
+  // to protect the stream_list_.
   MutexLock lock(&transport_mutex_);
   const uint32_t stream_id = next_stream_id_;
   next_stream_id_ += 2;
@@ -279,6 +278,107 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
   stream_list_.emplace(stream_id,
                        MakeRefCounted<Stream>(std::move(call_handler)));
   return stream_id;
+}
+
+auto Http2ClientTransport::CallOutboundLoop(
+    CallHandler call_handler, uint32_t stream_id,
+    std::tuple<InterActivityMutex<int>::Lock, ClientMetadataHandle>
+        lock_metadata
+    /* Locked stream_mutex */) {
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop";
+
+  // Enqueue a frame to the MPSC.
+  auto send_frame =
+      [sender = outgoing_frames_.MakeSender()](Http2Frame frame) mutable {
+        HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop send_frame";
+        return AssertResultType<absl::Status>(
+            Map(sender.Send(std::move(frame)), [](bool ok) {
+              return (ok) ? absl::OkStatus()
+                          : absl::InternalError("Failed to enqueue frame");
+            }));
+      };
+
+  // Convert a message to a Http2DataFrame and send the frame out.
+  auto send_message = [sender = outgoing_frames_.MakeSender(), stream_id,
+                       send_frame](MessageHandle message) mutable {
+    // TODO(akshitpatel) : [PH2][P2] : Assuming one message per frame.
+    // This will eventually change as more logic is added.
+    SliceBuffer frame_payload;
+    size_t payload_size = message->payload()->Length();
+    AppendGrpcHeaderToSliceBuffer(frame_payload, /*flags*/ 0, payload_size);
+    frame_payload.TakeAndAppend(*message->payload());
+    Http2DataFrame frame{.stream_id = stream_id,
+                         .end_stream = false,
+                         .payload = std::move(frame_payload)};
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop send_message";
+    return send_frame(std::move(frame));
+  };
+
+  return GRPC_LATENT_SEE_PROMISE(
+      "Ph2CallOutboundLoop",
+      TrySeq(
+          [/* Locked stream_mutex */ lock_metadata = std::move(lock_metadata),
+           self = RefAsSubclass<Http2ClientTransport>(), stream_id]() {
+            auto& metadata = std::get<1>(lock_metadata);
+            SliceBuffer buf;
+            self->encoder_.EncodeRawHeaders(*metadata.get(), buf);
+            return Http2HeaderFrame{
+                .stream_id = stream_id,
+                .end_headers = true,
+                .payload = std::move(buf)}; /* Unlock the stream_mutex_ */
+          },
+          [send_frame](Http2Frame frame) mutable {
+            return send_frame(std::move(frame));
+          },
+          ForEach(MessagesFrom(call_handler), send_message),
+          // TODO(akshitpatel): [PH2][P2][RISK] : Need to check if it is okay to
+          // send half close when the call is cancelled.
+          [stream_id, send_frame]() mutable {
+            // TODO(akshitpatel): [PH2][P2] : Figure out a way to send the end
+            // of stream frame in the same frame as the last message.
+            Http2DataFrame frame{.stream_id = stream_id,
+                                 .end_stream = true,
+                                 .payload = SliceBuffer()};
+            return Map(send_frame(std::move(frame)),
+                       [](absl::Status status) { return status; });
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.WasCancelled(), [](bool cancelled) {
+              HTTP2_CLIENT_DLOG << "Http2ClientTransport PH2CallOutboundLoop"
+                                   " End with cancelled="
+                                << cancelled;
+              return (cancelled) ? absl::CancelledError() : absl::OkStatus();
+            });
+          }));
+}
+
+void Http2ClientTransport::StartCall(CallHandler call_handler) {
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall Begin";
+  call_handler.SpawnGuarded(
+      "OutboundLoop",
+      TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [self = RefAsSubclass<Http2ClientTransport>()](
+              ClientMetadataHandle metadata) {
+            // Lock the stream_mutex_
+            return Staple(self->stream_mutex_.Acquire(), std::move(metadata));
+          },
+          [self = RefAsSubclass<Http2ClientTransport>(),
+           call_handler](auto args /* Locked stream_mutex */) mutable {
+            // TODO (akshitpatel) : [PH2][P2] :
+            // Check for max concurrent streams.
+            uint32_t stream_id = self->MakeStream(call_handler);
+            return If(
+                stream_id != 0,
+                [self, call_handler, stream_id,
+                 args = std::move(args)]() mutable {
+                  return Map(self->CallOutboundLoop(call_handler, stream_id,
+                                                    std::move(args)),
+                             [](absl::Status status) { return status; });
+                },
+                []() { return absl::InternalError("Failed to make stream"); });
+          }));
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall End";
 }
 
 }  // namespace http2

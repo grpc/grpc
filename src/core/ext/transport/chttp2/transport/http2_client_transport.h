@@ -24,8 +24,10 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/lib/promise/inter_activity_mutex.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -123,6 +125,13 @@ class Http2ClientTransport final : public ClientTransport {
   // Returns a promise that will do the cleanup after the WriteLoop ends.
   auto OnWriteLoopEnded();
 
+  // Returns a promise to fetch data from the callhandler and pass it further
+  // down towards the endpoint.
+  auto CallOutboundLoop(
+      CallHandler call_handler, uint32_t stream_id,
+      std::tuple<InterActivityMutex<int>::Lock, ClientMetadataHandle>
+          lock_metadata);
+
   RefCountedPtr<Party> general_party_;
   RefCountedPtr<Party> write_party_;
 
@@ -152,11 +161,15 @@ class Http2ClientTransport final : public ClientTransport {
 
   uint32_t next_stream_id_ ABSL_GUARDED_BY(transport_mutex_) = 1;
 
+  // Mutex to preserve the order of headers being sent out for new streams.
+  InterActivityMutex<int> stream_mutex_;
+  HPackCompressor encoder_;
+
   uint32_t MakeStream(CallHandler call_handler);
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 };
 
-GRPC_CHECK_CLASS_SIZE(Http2ClientTransport, 240);
+GRPC_CHECK_CLASS_SIZE(Http2ClientTransport, 570);
 
 }  // namespace http2
 }  // namespace grpc_core
