@@ -62,6 +62,12 @@
     ios: broken
     posix: true
     windows: true
+- name: event_engine_dns_non_client_channel
+  default:
+    # not tested on iOS at all
+    ios: broken
+    posix: true
+    windows: false
 - name: event_engine_for_all_other_endpoints
   default: true
 - name: event_engine_listener
