@@ -288,8 +288,13 @@ int main(int argc, char** argv) {
 
   gpr_mu_init(&g_mu);
   grpc_init();
+#ifdef GPR_WINDOWS
+  auto test_event_engine = std::make_shared<TestEventEngine>(
+      std::make_unique<grpc_event_engine::experimental::WindowsEventEngine>());
+#else
   auto test_event_engine = std::make_shared<TestEventEngine>(
       grpc_event_engine::experimental::GetDefaultEventEngine());
+#endif
   grpc_event_engine::experimental::SetDefaultEventEngine(test_event_engine);
 
   int was_cancelled1;
