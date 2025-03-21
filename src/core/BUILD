@@ -674,7 +674,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "1999",
+    name = "promise_party",
     srcs = [
         "lib/promise/party.cc",
     ],
@@ -7525,7 +7525,6 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
-        "1999",
         "arena",
         "call_spine",
         "channel_args",
@@ -7538,6 +7537,7 @@ grpc_cc_library(
         "message",
         "metadata",
         "mpsc",
+        "promise_party",
         "sync",
         ":match_promise",
         ":poll",
@@ -7571,7 +7571,6 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
-        "1999",
         "arena",
         "call_destination",
         "call_spine",
@@ -7584,6 +7583,7 @@ grpc_cc_library(
         "message",
         "metadata",
         "mpsc",
+        "promise_party",
         "ref_counted",
         "sync",
         ":match_promise",
@@ -7617,7 +7617,6 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
-        "1999",
         "arena",
         "call_spine",
         "channel_args",
@@ -7626,6 +7625,7 @@ grpc_cc_library(
         "loop",
         "map",
         "mpsc",
+        "promise_party",
         "sync",
         ":match_promise",
         ":poll",
@@ -7944,11 +7944,11 @@ grpc_cc_library(
     ],
     external_deps = ["absl/cleanup"],
     deps = [
-        "1999",
         "event_engine_context",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
+        "promise_party",
         "sync",
         "try_seq",
     ],
@@ -7980,7 +7980,6 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "1999",
         "chaotic_good_pending_connection",
         "event_engine_context",
         "event_engine_extensions",
@@ -7988,6 +7987,7 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
+        "promise_party",
         "seq",
         "slice_buffer",
         "try_seq",
@@ -8097,7 +8097,6 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
-        "1999",
         "activity",
         "arena",
         "chaotic_good_config",
@@ -8121,6 +8120,7 @@ grpc_cc_library(
         "mpsc",
         "pipe",
         "poll",
+        "promise_party",
         "resource_quota",
         "seq",
         "slice",
@@ -8374,11 +8374,11 @@ grpc_cc_library(
     ],
     external_deps = ["absl/cleanup"],
     deps = [
-        "1999",
         "event_engine_context",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
+        "promise_party",
         "sync",
         "try_seq",
     ],
@@ -8410,7 +8410,6 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "1999",
         "chaotic_good_legacy_pending_connection",
         "event_engine_context",
         "event_engine_extensions",
@@ -8418,6 +8417,7 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
+        "promise_party",
         "seq",
         "slice_buffer",
         "try_seq",
@@ -8527,7 +8527,6 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
-        "1999",
         "activity",
         "arena",
         "chaotic_good_legacy_config",
@@ -8551,6 +8550,7 @@ grpc_cc_library(
         "mpsc",
         "pipe",
         "poll",
+        "promise_party",
         "resource_quota",
         "seq",
         "slice",
@@ -9031,7 +9031,6 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
-        "1999",
         "call_arena_allocator",
         "call_filters",
         "dual_ref_counted",
@@ -9043,6 +9042,7 @@ grpc_cc_library(
         "metadata",
         "pipe",
         "prioritized_race",
+        "promise_party",
         "promise_status",
         "status_flag",
         "try_seq",
