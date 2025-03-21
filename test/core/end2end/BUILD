@@ -19,6 +19,15 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/end2end")
 
+# grpc_core_end2end_test_suite() currently needs to consume the source for tests directly.
+exports_files(
+    glob(["tests/**"]),
+    visibility = [
+        "//:__subpackages__",
+        "//net/grpc:__subpackages__",
+    ],
+)
+
 grpc_cc_library(
     name = "cq_verifier",
     testonly = 1,
