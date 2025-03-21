@@ -245,8 +245,8 @@ TEST(URITest, PercentEncodePath) {
 }
 
 TEST(URITest, Basic) {
-  auto uri =
-      URI::Create("http", "server.example.com", "/path/to/file.html", {}, "");
+  auto uri = URI::Create("http", "", "server.example.com", "/path/to/file.html",
+                         {}, "");
   ASSERT_TRUE(uri.ok()) << uri.status().ToString();
   EXPECT_EQ(uri->scheme(), "http");
   EXPECT_EQ(uri->authority(), "server.example.com");
@@ -259,8 +259,33 @@ TEST(URITest, Basic) {
   EXPECT_EQ("http://server.example.com/path/to/file.html", uri->ToString());
 }
 
+TEST(URITest, UserInfo) {
+  auto uri = URI::Create("http", "username:password", "server.example.com",
+                         "/path/to/file.html", {}, "");
+  ASSERT_TRUE(uri.ok()) << uri.status().ToString();
+  EXPECT_EQ(uri->scheme(), "http");
+  EXPECT_EQ(uri->authority(), "username:password@server.example.com");
+  EXPECT_EQ(uri->user_info(), "username:password");
+  EXPECT_EQ(uri->host_port(), "server.example.com");
+  EXPECT_EQ(uri->path(), "/path/to/file.html");
+  EXPECT_THAT(uri->query_parameter_pairs(), testing::ElementsAre());
+  EXPECT_THAT(uri->query_parameter_map(), testing::ElementsAre());
+  EXPECT_EQ(uri->fragment(), "");
+  EXPECT_EQ("http://username:password@server.example.com/path/to/file.html",
+            uri->ToString());
+}
+
+TEST(URITest, UserInfoNoHostPort) {
+  auto uri = URI::Create("http", "username:password", "", "/path/to/file.html",
+                         {}, "");
+  ASSERT_FALSE(uri.ok());
+  EXPECT_EQ(uri.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(uri.status().message(),
+            "if user_info is present, host_port must exists");
+}
+
 TEST(URITest, NoAuthority) {
-  auto uri = URI::Create("http", "", "/path/to/file.html", {}, "");
+  auto uri = URI::Create("http", "", "", "/path/to/file.html", {}, "");
   ASSERT_TRUE(uri.ok()) << uri.status().ToString();
   EXPECT_EQ(uri->scheme(), "http");
   EXPECT_EQ(uri->authority(), "");
@@ -274,7 +299,7 @@ TEST(URITest, NoAuthority) {
 }
 
 TEST(URITest, NoAuthorityRelativePath) {
-  auto uri = URI::Create("http", "", "path/to/file.html", {}, "");
+  auto uri = URI::Create("http", "", "", "path/to/file.html", {}, "");
   ASSERT_TRUE(uri.ok()) << uri.status().ToString();
   EXPECT_EQ(uri->scheme(), "http");
   EXPECT_EQ(uri->authority(), "");
@@ -288,16 +313,16 @@ TEST(URITest, NoAuthorityRelativePath) {
 }
 
 TEST(URITest, AuthorityRelativePath) {
-  auto uri =
-      URI::Create("http", "server.example.com", "path/to/file.html", {}, "");
+  auto uri = URI::Create("http", "", "server.example.com", "path/to/file.html",
+                         {}, "");
   ASSERT_FALSE(uri.ok());
   EXPECT_EQ(uri.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(uri.status().message(),
-            "if authority is present, path must start with a '/'");
+            "if host_port is present, path must start with a '/'");
 }
 
 TEST(URITest, QueryParams) {
-  auto uri = URI::Create("http", "server.example.com", "/path/to/file.html",
+  auto uri = URI::Create("http", "", "server.example.com", "/path/to/file.html",
                          {{"key", "value"}, {"key2", "value2"}}, "");
   ASSERT_TRUE(uri.ok()) << uri.status().ToString();
   EXPECT_EQ(uri->scheme(), "http");
@@ -322,7 +347,7 @@ TEST(URITest, QueryParams) {
 
 TEST(URITest, DuplicateQueryParams) {
   auto uri = URI::Create(
-      "http", "server.example.com", "/path/to/file.html",
+      "http", "", "server.example.com", "/path/to/file.html",
       {{"key", "value"}, {"key2", "value2"}, {"key", "other_value"}}, "");
   ASSERT_TRUE(uri.ok()) << uri.status().ToString();
   EXPECT_EQ(uri->scheme(), "http");
@@ -351,8 +376,8 @@ TEST(URITest, DuplicateQueryParams) {
 }
 
 TEST(URITest, Fragment) {
-  auto uri = URI::Create("http", "server.example.com", "/path/to/file.html", {},
-                         "fragment");
+  auto uri = URI::Create("http", "", "server.example.com", "/path/to/file.html",
+                         {}, "fragment");
   ASSERT_TRUE(uri.ok()) << uri.status().ToString();
   EXPECT_EQ(uri->scheme(), "http");
   EXPECT_EQ(uri->authority(), "server.example.com");
@@ -367,7 +392,7 @@ TEST(URITest, Fragment) {
 }
 
 TEST(URITest, QueryParamsAndFragment) {
-  auto uri = URI::Create("http", "server.example.com", "/path/to/file.html",
+  auto uri = URI::Create("http", "", "server.example.com", "/path/to/file.html",
                          {{"key", "value"}, {"key2", "value2"}}, "fragment");
   ASSERT_TRUE(uri.ok()) << uri.status().ToString();
   EXPECT_EQ(uri->scheme(), "http");
@@ -398,11 +423,21 @@ TEST(URITest, ToStringPercentEncoding) {
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-."
       // Scheme escaped chars.
       "%:/?#[]@!$&'()*,;=",
-      // Authority allowed chars.
+      // User Info allowed chars.
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-      "-.+~!$&'()*+,;=:[]@"
-      // Authority escaped chars.
+      "-.+~!$&'()*+,:;="
+      // User Info escaped chars.
+      "%/?#@[]",
+      // Host-Port allowed chars.
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+      "-.+~!$&'()*+,;=:[]"
+      // Host-Port escaped chars.
       "%/?#",
+      // // Authority allowed chars.
+      // "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+      // "-.+~!$&'()*+,;=:[]@"
+      // // Authority escaped chars.
+      // "%/?#",
       // Path allowed chars.
       "/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
       "-._~!$&'()*+,;=:@"
@@ -429,12 +464,19 @@ TEST(URITest, ToStringPercentEncoding) {
             "%:/?#[]@!$&'()*,;=");
   EXPECT_EQ(uri->authority(),
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-            "-.+~!$&'()*+,;=:[]@"
+            "-.+~!$&'()*+,:;="
+            "%/?#@[]@"
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            "-.+~!$&'()*+,;=:[]"
             "%/?#");
   EXPECT_EQ(uri->user_info(),
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-            "-.+~!$&'()*+,;=:[]");
-  EXPECT_EQ(uri->host_port(), "%/?#");
+            "-.+~!$&'()*+,:;="
+            "%/?#@[]");
+  EXPECT_EQ(uri->host_port(),
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            "-.+~!$&'()*+,;=:[]"
+            "%/?#");
   EXPECT_EQ(uri->path(),
             "/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
             "-._~!$&'()*+,;=:@"
@@ -471,7 +513,10 @@ TEST(URITest, ToStringPercentEncoding) {
       "%25%3A%2F%3F%23%5B%5D%40%21%24%26%27%28%29%2A%2C%3B%3D"
       // Authority
       "://abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-      "-.+~!$&'()*+,;=:[]@"
+      "-.+~!$&'()*+,:;="
+      "%25%2F%3F%23%40%5B%5D"
+      "@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+      "-.+~!$&'()*+,;=:[]"
       "%25%2F%3F%23"
       // Path
       "/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

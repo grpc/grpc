@@ -133,7 +133,7 @@ std::optional<std::string> GetHttpProxyServer(
     return std::nullopt;
   }
   if (uri->host_port().empty()) {
-    LOG(ERROR) << "'" << uri->host_port() << "' host is not present";
+    LOG(ERROR) << "host is not present";
     return std::nullopt;
   }
   if (!uri->user_info().empty()) {

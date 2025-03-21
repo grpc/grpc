@@ -103,6 +103,29 @@ bool IsAuthorityChar(char c) {
   return false;
 }
 
+// Returns true for any character in user_info, as defined in:
+// https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.1
+bool IsUserInfoChar(char c) {
+  if (IsUnreservedChar(c)) return true;
+  if (IsSubDelimChar(c)) return true;
+  if (c == ':') return true;
+  return false;
+}
+
+// Returns true for any character in host_port, as defined in:
+// https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2
+bool IsHostPortChar(char c) {
+  if (IsUnreservedChar(c)) return true;
+  if (IsSubDelimChar(c)) return true;
+  switch (c) {
+    case ':':
+    case '[':
+    case ']':
+      return true;
+  }
+  return false;
+}
+
 // Returns true for any character in pchar, as defined in:
 // https://datatracker.ietf.org/doc/html/rfc3986#section-3.3
 bool IsPChar(char c) {
@@ -232,9 +255,17 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     offset = remaining.find_first_of("/?#");
     absl::string_view encoded_authority = (remaining.substr(0, offset));
     // parse user_info and host_port
-    Authority auth = ParseAuthority(encoded_authority);
-    user_info = PercentDecode(auth.user_info);
-    host_port = PercentDecode(auth.host_port);
+    absl::string_view encoded_user_info;
+    absl::string_view encoded_host_port;
+    size_t at_pos = encoded_authority.rfind('@');
+    if (at_pos == absl::string_view::npos) {
+      encoded_host_port = encoded_authority;
+    } else {
+      encoded_user_info = encoded_authority.substr(0, at_pos);
+      encoded_host_port = encoded_authority.substr(at_pos + 1);
+    }
+    user_info = PercentDecode(encoded_user_info);
+    host_port = PercentDecode(encoded_host_port);
     authority = PercentDecode(encoded_authority);
     if (offset == remaining.npos) {
       remaining = "";
@@ -287,30 +318,32 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     fragment = PercentDecode(remaining);
   }
 
-  return URI(std::move(scheme), std::move(authority), std::move(user_info),
-             std::move(host_port), std::move(path),
-             std::move(query_param_pairs), std::move(fragment));
+  return URI(std::move(scheme), std::move(user_info), std::move(host_port),
+             std::move(path), std::move(query_param_pairs),
+             std::move(fragment));
 }
 
-absl::StatusOr<URI> URI::Create(std::string scheme, std::string authority,
-                                std::string path,
+absl::StatusOr<URI> URI::Create(std::string scheme, std::string user_info,
+                                std::string host_port, std::string path,
                                 std::vector<QueryParam> query_parameter_pairs,
                                 std::string fragment) {
-  if (!authority.empty() && !path.empty() && path[0] != '/') {
+  if (!host_port.empty() && !path.empty() && path[0] != '/') {
     return absl::InvalidArgumentError(
-        "if authority is present, path must start with a '/'");
+        "if host_port is present, path must start with a '/'");
   }
-  Authority auth = ParseAuthority(authority);
-  return URI(std::move(scheme), std::move(authority), std::move(auth.user_info),
-             std::move(auth.host_port), std::move(path),
-             std::move(query_parameter_pairs), std::move(fragment));
+  if (!user_info.empty() && host_port.empty()) {
+    return absl::InvalidArgumentError(
+        "if user_info is present, host_port must exists");
+  }
+  return URI(std::move(scheme), std::move(user_info), std::move(host_port),
+             std::move(path), std::move(query_parameter_pairs),
+             std::move(fragment));
 }
 
-URI::URI(std::string scheme, std::string authority, std::string user_info,
-         std::string host_port, std::string path,
-         std::vector<QueryParam> query_parameter_pairs, std::string fragment)
+URI::URI(std::string scheme, std::string user_info, std::string host_port,
+         std::string path, std::vector<QueryParam> query_parameter_pairs,
+         std::string fragment)
     : scheme_(std::move(scheme)),
-      authority_(std::move(authority)),
       user_info_(std::move(user_info)),
       host_port_(std::move(host_port)),
       path_(std::move(path)),
@@ -323,7 +356,6 @@ URI::URI(std::string scheme, std::string authority, std::string user_info,
 
 URI::URI(const URI& other)
     : scheme_(other.scheme_),
-      authority_(other.authority_),
       user_info_(other.user_info_),
       host_port_(other.host_port_),
       path_(other.path_),
@@ -339,7 +371,6 @@ URI& URI::operator=(const URI& other) {
     return *this;
   }
   scheme_ = other.scheme_;
-  authority_ = other.authority_;
   user_info_ = other.user_info_;
   host_port_ = other.host_port_;
   path_ = other.path_;
@@ -362,32 +393,19 @@ struct QueryParameterFormatter {
   }
 };
 
-struct Authority {
-  std::string user_info;
-  std::string host_port;
-};
-
-// Parse user_info and host_port from authority
-Authority ParseAuthority(absl::string_view authority) {
-  size_t at_pos = authority.rfind('@');
-
-  if (at_pos != absl::string_view::npos) {
-    return {std::string(authority.substr(0, at_pos)),
-            std::string(authority.substr(at_pos + 1))};
-  } else {
-    return {"", std::string(authority)};
-  }
-}
-
 }  // namespace
 
 std::string URI::ToString() const {
   std::vector<std::string> parts = {PercentEncode(scheme_, IsSchemeChar), ":"};
   // If path starts with '//' we need to encode the authority to ensure that
   // we can round-trip the URI through a parse/encode/parse loop.
-  if (!authority_.empty() || absl::StartsWith(path_, "//")) {
+  if (!host_port_.empty() || absl::StartsWith(path_, "//")) {
     parts.emplace_back("//");
-    parts.emplace_back(PercentEncode(authority_, IsAuthorityChar));
+    if (!user_info_.empty()) {
+      parts.emplace_back(PercentEncode(user_info_, IsUserInfoChar));
+      parts.emplace_back("@");
+    }
+    parts.emplace_back(PercentEncode(host_port_, IsHostPortChar));
   }
   parts.emplace_back(EncodedPathAndQueryParams());
   if (!fragment_.empty()) {

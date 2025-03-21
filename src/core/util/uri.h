@@ -48,8 +48,9 @@ class URI {
   static absl::StatusOr<URI> Parse(absl::string_view uri_text);
   // Creates a URI from components. Returns an InvalidArgumentError on failure.
   static absl::StatusOr<URI> Create(
-      std::string scheme, std::string authority, std::string path,
-      std::vector<QueryParam> query_parameter_pairs, std::string fragment);
+      std::string scheme, std::string user_info, std::string host_port,
+      std::string path, std::vector<QueryParam> query_parameter_pairs,
+      std::string fragment);
 
   URI() = default;
 
@@ -66,10 +67,15 @@ class URI {
   static std::string PercentDecode(absl::string_view str);
 
   const std::string& scheme() const { return scheme_; }
-  const std::string& authority() const { return authority_; }
-  const std::string& path() const { return path_; }
+  const std::string& authority() const {
+    if (!user_info_.empty()) {
+      return user_info_ + "@" + host_port_;
+    }
+    return host_port_;
+  }
   const std::string& user_info() const { return user_info_; }
   const std::string& host_port() const { return host_port_; }
+  const std::string& path() const { return path_; }
   // Stores the *last* value appearing for each repeated key in the query
   // string. If you need to capture repeated query parameters, use
   // `query_parameter_pairs`.
@@ -92,19 +98,18 @@ class URI {
   std::string EncodedPathAndQueryParams() const;
 
   bool operator==(const URI& other) const {
-    return scheme_ == other.scheme_ && authority_ == other.authority_ &&
-           path_ == other.path_ &&
+    return scheme_ == other.scheme_ && user_info_ == other.user_info_ &&
+           host_port_ == other.host_port_ && path_ == other.path_ &&
            query_parameter_pairs_ == other.query_parameter_pairs_ &&
            fragment_ == other.fragment_;
   }
 
  private:
-  URI(std::string scheme, std::string authority, std::string user_info,
-      std::string host_port, std::string path,
-      std::vector<QueryParam> query_parameter_pairs, std::string fragment);
+  URI(std::string scheme, std::string user_info, std::string host_port,
+      std::string path, std::vector<QueryParam> query_parameter_pairs,
+      std::string fragment);
 
   std::string scheme_;
-  std::string authority_;
   std::string path_;
   std::string user_info_;
   std::string host_port_;
