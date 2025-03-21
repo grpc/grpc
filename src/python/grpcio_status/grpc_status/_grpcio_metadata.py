@@ -1,4 +1,4 @@
-# Copyright 2018 The gRPC Authors
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-try:
-    # pylint: disable=ungrouped-imports
-    from grpc_status._grpcio_metadata import __version__
-except ImportError:
-    __version__ = "dev0"
+
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_status/grpc_status/_grpcio_metadata.py.template`!!!
+
+__version__ = """1.72.0.dev0"""
