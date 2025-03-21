@@ -77,12 +77,4 @@ FileDescriptorResult FileDescriptorCollection::RegisterPosixResult(int result) {
   }
 }
 
-std::optional<int> FileDescriptorCollection::GetRawFileDescriptor(
-    const FileDescriptor& fd) const {
-  if (!IsCorrectGeneration(fd)) {
-    return std::nullopt;
-  }
-  return fd.fd();
-}
-
 }  // namespace grpc_event_engine::experimental

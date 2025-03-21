@@ -19,13 +19,12 @@
 #include <optional>
 #include <unordered_set>
 
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_event_engine::experimental {
-
+#if GRPC_ENABLE_FORK_SUPPORT
 class FileDescriptor {
  public:
   constexpr FileDescriptor() = default;
@@ -37,7 +36,6 @@ class FileDescriptor {
   // For logging/debug purposes - may consider including generation, do not
   // use for Posix calls!
   int debug_fd() const { return fd_; }
-  // For tests, logging and such.
   int generation() const { return generation_; }
 
   constexpr static FileDescriptor Invalid() { return FileDescriptor(-1, 0); }
@@ -50,13 +48,43 @@ class FileDescriptor {
 
  private:
   int fd() const { return fd_; }
-
   // Can get fd!
   friend class FileDescriptorCollection;
+  friend class FileDescriptors;
 
   int fd_ = 0;
   int generation_ = 0;
 };
+#else  // GRPC_ENABLE_FORK_SUPPORT
+class FileDescriptor {
+ public:
+  constexpr FileDescriptor() = default;
+  constexpr FileDescriptor(int fd, int /* generation */) : fd_(fd) {};
+  bool ready() const { return fd_ > 0; }
+  // Escape for iomgr and tests. Not to be used elsewhere
+  int iomgr_fd() const { return fd_; }
+  // For logging/debug purposes - may consider including generation, do not
+  // use for Posix calls!
+  int debug_fd() const { return fd_; }
+  int generation() const { return 0; }
+
+  constexpr static FileDescriptor Invalid() { return FileDescriptor(-1, 0); }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, FileDescriptor fd) {
+    sink.Append(absl::StrFormat("FD(%d)", fd.fd_));
+  }
+
+ private:
+  int fd() const { return fd_; }
+  // Can get fd!
+  friend class FileDescriptorCollection;
+  friend class FileDescriptors;
+
+  int fd_ = 0;
+};
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 enum class OperationResultKind {
   kSuccess,          // Operation does not return a file descriptor and
@@ -163,8 +191,6 @@ class FileDescriptorCollection {
   std::optional<int> Remove(const FileDescriptor& fd);
 
   FileDescriptorResult RegisterPosixResult(int result);
-
-  std::optional<int> GetRawFileDescriptor(const FileDescriptor& fd) const;
 
   int ToInteger(const FileDescriptor& fd) const;
   FileDescriptorResult FromInteger(int fd) const;

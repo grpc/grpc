@@ -19,6 +19,7 @@
 
 #include <cerrno>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string>
 #include <utility>
@@ -79,11 +80,21 @@ class FileDescriptors {
 
   // Represents fd as integer. Needed for APIs like ARES, that need to have
   // a single int as a handle.
-  int ToInteger(const FileDescriptor& fd) { return descriptors_.ToInteger(fd); }
+  int ToInteger(const FileDescriptor& fd) {
+#if GRPC_ENABLE_FORK_SUPPORT
+    return descriptors_.ToInteger(fd);
+#else   // GRPC_ENABLE_FORK_SUPPORT
+    return fd.fd();
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+  }
 
   // May return a wrong generation error
   FileDescriptorResult FromInteger(int fd) {
+#if GRPC_ENABLE_FORK_SUPPORT
     return descriptors_.FromInteger(fd);
+#else   // GRPC_ENABLE_FORK_SUPPORT
+    return FileDescriptorResult(FileDescriptor(fd, 0));
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   }
 
   // Creates a new socket for connecting to (or listening on) an address.
@@ -193,45 +204,51 @@ class FileDescriptors {
       const FileDescriptor& wrapped,
       const absl::AnyInvocable<int(int) const>& fn) const;
 
-  template <typename... Args>
-  Int64Result PosixResultWrap(const FileDescriptor& fd, int (*fn)(int, Args...),
-                              Args... args) {
-    auto raw_fd = descriptors_.GetRawFileDescriptor(fd);
-    if (raw_fd.has_value()) {
-      int64_t result = fn(*raw_fd, args...);
-      return result < 0
-                 ? Int64Result(OperationResultKind::kError, errno, result)
-                 : Int64Result(result);
-    } else {
-      return Int64Result::WrongGeneration();
-    }
-  }
-
-  template <typename Fn, typename... Args>
-  Int64Result Int64Wrap(const FileDescriptor& fd, Fn fn, Args... args) {
-    auto raw_fd = descriptors_.GetRawFileDescriptor(fd);
-    if (raw_fd.has_value()) {
-      int64_t result = fn(*raw_fd, args...);
-      return result < 0
-                 ? Int64Result(OperationResultKind::kError, errno, result)
-                 : Int64Result(result);
-    } else {
-      return Int64Result::WrongGeneration();
-    }
-  }
-
   // Need parameter R for portability, ssize_t is neither available everywhere
   // nor is the same cardinality
   template <typename R, typename Fn>
-  R RunIfCorrectGeneration(const FileDescriptor& fd, Fn fn, R&& r) {
-    auto raw = descriptors_.GetRawFileDescriptor(fd);
-    if (!raw.has_value()) {
+  R RunIfCorrectGeneration(const FileDescriptor& fd, const Fn& fn,
+                           R&& r) const {
+#if GRPC_ENABLE_FORK_SUPPORT
+    if (!descriptors_.IsCorrectGeneration(fd)) {
       return std::forward<R>(r);
     }
-    return fn(*raw);
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+    return std::invoke(fn, fd.fd());
   }
 
+  template <typename... Args>
+  Int64Result PosixResultWrap(const FileDescriptor& fd, int (*fn)(int, Args...),
+                              Args&&... args) const {
+    return RunIfCorrectGeneration(
+        fd,
+        [&](int raw) {
+          int64_t result = std::invoke(fn, raw, std::forward<Args>(args)...);
+          return result < 0
+                     ? Int64Result(OperationResultKind::kError, errno, result)
+                     : Int64Result(result);
+        },
+        Int64Result::WrongGeneration());
+  }
+
+  // Templated Fn to make it easier to compile on all platforms.
+  template <typename Fn, typename... Args>
+  Int64Result Int64Wrap(const FileDescriptor& fd, const Fn& fn,
+                        Args&&... args) const {
+    return RunIfCorrectGeneration(
+        fd,
+        [&](int raw) {
+          auto result = std::invoke(fn, raw, std::forward<Args>(args)...);
+          return result < 0
+                     ? Int64Result(OperationResultKind::kError, errno, result)
+                     : Int64Result(result);
+        },
+        Int64Result::WrongGeneration());
+  }
+
+#if GRPC_ENABLE_FORK_SUPPORT
   FileDescriptorCollection descriptors_;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
 }  // namespace grpc_event_engine::experimental

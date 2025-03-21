@@ -85,6 +85,8 @@ namespace grpc_event_engine::experimental {
 
 namespace {
 
+#if GRPC_ENABLE_FORK_SUPPORT
+
 // Fork support - mutex and global list of event engines
 // Should never be destroyed to avoid race conditions on process shutdown
 absl::NoDestructor<grpc_core::Mutex> fork_mu;
@@ -131,7 +133,6 @@ void PostForkInChild() {
 
 void RegisterEventEngineForFork(
     std::shared_ptr<PosixEventEngine::ForkSupport> fork_support) {
-#if GRPC_ENABLE_FORK_SUPPORT
   if (grpc_core::Fork::Enabled()) {
     grpc_core::MutexLock lock(fork_mu.get());
     fork_supports_->emplace(fork_support.get(), fork_support);
@@ -141,13 +142,21 @@ void RegisterEventEngineForFork(
       handlers_installed = true;
     }
   }
-#endif
 }
 
 void DeregisterEventEngineForFork(PosixEventEngine::ForkSupport* engine) {
   grpc_core::MutexLock lock(fork_mu.get());
   fork_supports_->erase(engine);
 }
+
+#else  // GRPC_ENABLE_FORK_SUPPORT
+
+void RegisterEventEngineForFork(
+    std::shared_ptr<PosixEventEngine::ForkSupport> /* fork_support */) {}
+void DeregisterEventEngineForFork(PosixEventEngine::ForkSupport* /* engine */) {
+}
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 // RAII wrapper for a polling cycle. Starts a new one in ctor and stops
 // in dtor.

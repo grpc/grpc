@@ -705,15 +705,15 @@ IF_POSIX_SOCKET(
     Int64Result FileDescriptors::SetSockOpt(const FileDescriptor& fd, int level,
                                             int optname, uint32_t optval),
     {
-      auto f = descriptors_.GetRawFileDescriptor(fd);
-      if (!f.has_value()) {
-        return Int64Result::WrongGeneration();
-      }
-      if (setsockopt(*f, level, optname, &optval, sizeof(optval)) < 0) {
-        return Int64Result(OperationResultKind::kError, errno, optval);
-      } else {
-        return Int64Result(optval);
-      }
+      return RunIfCorrectGeneration(
+          fd,
+          [&](int fd) {
+            if (setsockopt(fd, level, optname, &optval, sizeof(optval)) < 0) {
+              return Int64Result(OperationResultKind::kError, errno, optval);
+            }
+            return Int64Result(optval);
+          },
+          Int64Result::WrongGeneration());
     })
 
 IF_POSIX_SOCKET(Int64Result FileDescriptors::Read(const FileDescriptor& fd,
@@ -776,14 +776,13 @@ Int64Result FileDescriptors::WriteV(const FileDescriptor& fd,
 IF_EPOLL(PosixResult FileDescriptors::EpollCtlDel(const FileDescriptor& epfd,
                                                   const FileDescriptor& fd),
          {
-           auto epfdfd = descriptors_.GetRawFileDescriptor(epfd);
-           auto fdfd = descriptors_.GetRawFileDescriptor(fd);
-           if (!epfdfd.has_value() || !fdfd.has_value()) {
+           if (!descriptors_.IsCorrectGeneration(epfd) ||
+               !descriptors_.IsCorrectGeneration(fd)) {
              return PosixResultWrongGeneration();
            }
            epoll_event phony_event;
            return PosixResultSimpleWrap(
-               epoll_ctl(*epfdfd, EPOLL_CTL_DEL, *fdfd, &phony_event));
+               epoll_ctl(epfd.fd(), EPOLL_CTL_DEL, fd.fd(), &phony_event));
          })
 
 IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(const FileDescriptor& epfd,
@@ -797,13 +796,12 @@ IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(const FileDescriptor& epfd,
              event.events |= EPOLLOUT;
            }
            event.data.ptr = data;
-           auto epfdfd = descriptors_.GetRawFileDescriptor(epfd);
-           auto fdfd = descriptors_.GetRawFileDescriptor(fd);
-           if (!epfdfd.has_value() || !fdfd.has_value()) {
+           if (!descriptors_.IsCorrectGeneration(epfd) ||
+               !descriptors_.IsCorrectGeneration(fd)) {
              return PosixResult(OperationResultKind::kWrongGeneration, 0);
            }
            return PosixResultSimpleWrap(
-               epoll_ctl(*epfdfd, EPOLL_CTL_ADD, *fdfd, &event));
+               epoll_ctl(epfd.fd(), EPOLL_CTL_ADD, fd.fd(), &event));
          })
 
 absl::StatusOr<EventEngine::ResolvedAddress> FileDescriptors::LocalAddress(
@@ -924,9 +922,8 @@ FileDescriptors::CreateAndPrepareTcpClientSocket(
       mapped_target_addr = target_addr;
     }
   }
-  // It was just created above
-  int raw_fd = *descriptors_.GetRawFileDescriptor(*socket_fd);
-  auto error = PrepareTcpClientSocket(raw_fd, mapped_target_addr, options);
+  auto error =
+      PrepareTcpClientSocket(socket_fd->fd(), mapped_target_addr, options);
   if (!error.ok()) {
     return error;
   }
@@ -938,11 +935,10 @@ absl::Status FileDescriptors::SetSocketMutator(const FileDescriptor& fd,
                                                grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator) {
   CHECK(mutator);
-  auto raw_fd = descriptors_.GetRawFileDescriptor(fd);
-  if (!raw_fd.has_value()) {
+  if (!descriptors_.IsCorrectGeneration(fd)) {
     return absl::InternalError("SetSocketMutator: FD has a wrong generation");
   }
-  if (!grpc_socket_mutator_mutate_fd(mutator, *raw_fd, usage)) {
+  if (!grpc_socket_mutator_mutate_fd(mutator, fd.fd(), usage)) {
     return absl::Status(absl::StatusCode::kInternal,
                         "grpc_socket_mutator failed.");
   }
@@ -952,29 +948,30 @@ absl::Status FileDescriptors::SetSocketMutator(const FileDescriptor& fd,
 absl::Status FileDescriptors::ApplySocketMutatorInOptions(
     const FileDescriptor& fd, grpc_fd_usage usage,
     const PosixTcpOptions& options) {
-  auto raw_fd = descriptors_.GetRawFileDescriptor(fd);
-  if (!raw_fd.has_value()) {
+  if (!descriptors_.IsCorrectGeneration(fd)) {
     return absl::InternalError("ApplySocketMutatorInOptions: wrong generation");
   }
-  return InternalApplySocketMutatorInOptions(*raw_fd, usage, options);
+  return InternalApplySocketMutatorInOptions(fd.fd(), usage, options);
 }
 
 int FileDescriptors::ConfigureSocket(const FileDescriptor& fd, int type) {
-  // clang-format off
-#define RETURN_IF_ERROR(expr) if (!(expr).ok()) { return -1; }
-  auto f = descriptors_.GetRawFileDescriptor(fd);
-  if (!f.has_value()) {
-    errno = 0;
-    return -1;
+#define RETURN_IF_ERROR(expr) \
+  if (!(expr).ok()) {         \
+    return -1;                \
   }
-  // clang-format on
-  RETURN_IF_ERROR(SetSocketNonBlocking(*f, 1));
-  RETURN_IF_ERROR(SetSocketCloexec(*f, 1));
-  if (type == SOCK_STREAM) {
-    RETURN_IF_ERROR(
-        SetSocketOption(*f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
-  }
-  return 0;
+  return RunIfCorrectGeneration(
+      fd,
+      [&](int fd) {
+        // clang-format on
+        RETURN_IF_ERROR(SetSocketNonBlocking(fd, 1));
+        RETURN_IF_ERROR(SetSocketCloexec(fd, 1));
+        if (type == SOCK_STREAM) {
+          RETURN_IF_ERROR(
+              SetSocketOption(fd, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
+        }
+        return 0;
+      },
+      -1);
 }
 
 IF_POSIX_SOCKET(
@@ -983,62 +980,59 @@ IF_POSIX_SOCKET(
             const FileDescriptor& fd, const PosixTcpOptions& options,
             const EventEngine::ResolvedAddress& address),
     {
-      return RunIfCorrectGeneration<
-          absl::StatusOr<EventEngine::ResolvedAddress>>(
-          fd,
-          [&](int f) -> absl::StatusOr<EventEngine::ResolvedAddress> {
-            if (IsSocketReusePortSupported() && options.allow_reuse_port &&
-                address.address()->sa_family != AF_UNIX &&
-                !ResolvedAddressIsVSock(address)) {
-              GRPC_RETURN_IF_ERROR(SetSocketReusePort(f, 1));
-            }
+      if (!descriptors_.IsCorrectGeneration(fd)) {
+        return absl::InternalError("PrepareListenerSocket: wrong generation");
+      }
+      int f = fd.fd();
+      if (IsSocketReusePortSupported() && options.allow_reuse_port &&
+          address.address()->sa_family != AF_UNIX &&
+          !ResolvedAddressIsVSock(address)) {
+        GRPC_RETURN_IF_ERROR(SetSocketReusePort(f, 1));
+      }
 
-            GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
-            GRPC_RETURN_IF_ERROR(SetSocketCloexec(f, 1));
+      GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
+      GRPC_RETURN_IF_ERROR(SetSocketCloexec(f, 1));
 
-            if (address.address()->sa_family != AF_UNIX &&
-                !ResolvedAddressIsVSock(address)) {
-              GRPC_RETURN_IF_ERROR(SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY,
-                                                   1, "TCP_NODELAY"));
-              GRPC_RETURN_IF_ERROR(SetSocketOption(f, SOL_SOCKET, SO_REUSEADDR,
-                                                   1, "SO_REUSEADDR"));
-              GRPC_RETURN_IF_ERROR(SetSocketDscp(f, options.dscp));
-              TrySetSocketTcpUserTimeout(f, options, false);
-            }
-            GRPC_RETURN_IF_ERROR(InternalSetSocketNoSigpipeIfPossible(f));
-            GRPC_RETURN_IF_ERROR(InternalApplySocketMutatorInOptions(
-                f, GRPC_FD_SERVER_LISTENER_USAGE, options));
-            if (kLinuxErrqueue && !SetSocketZeroCopy(f).ok()) {
-              // it's not fatal, so just log it.
-              VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
-            }
-            if (bind(f, address.address(), address.size()) < 0) {
-              auto sockaddr_str = ResolvedAddressToString(address);
-              if (!sockaddr_str.ok()) {
-                LOG(ERROR) << "Could not convert sockaddr to string: "
-                           << sockaddr_str.status();
-                sockaddr_str = "<unparsable>";
-              }
-              sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
-              return absl::FailedPreconditionError(
-                  absl::StrCat("Error in bind for address '", *sockaddr_str,
-                               "': ", std::strerror(errno)));
-            }
-            if (listen(f, GetMaxAcceptQueueSize()) < 0) {
-              return absl::FailedPreconditionError(
-                  absl::StrCat("Error in listen: ", std::strerror(errno)));
-            }
-            socklen_t len =
-                static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-            EventEngine::ResolvedAddress sockname_temp;
-            if (getsockname(f, const_cast<sockaddr*>(sockname_temp.address()),
-                            &len) < 0) {
-              return absl::FailedPreconditionError(
-                  absl::StrCat("Error in getsockname: ", std::strerror(errno)));
-            }
-            return sockname_temp;
-          },
-          absl::InternalError("PrepareListenerSocket: wrong generation"));
+      if (address.address()->sa_family != AF_UNIX &&
+          !ResolvedAddressIsVSock(address)) {
+        GRPC_RETURN_IF_ERROR(
+            SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
+        GRPC_RETURN_IF_ERROR(
+            SetSocketOption(f, SOL_SOCKET, SO_REUSEADDR, 1, "SO_REUSEADDR"));
+        GRPC_RETURN_IF_ERROR(SetSocketDscp(f, options.dscp));
+        TrySetSocketTcpUserTimeout(f, options, false);
+      }
+      GRPC_RETURN_IF_ERROR(InternalSetSocketNoSigpipeIfPossible(f));
+      GRPC_RETURN_IF_ERROR(InternalApplySocketMutatorInOptions(
+          f, GRPC_FD_SERVER_LISTENER_USAGE, options));
+      if (kLinuxErrqueue && !SetSocketZeroCopy(f).ok()) {
+        // it's not fatal, so just log it.
+        VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
+      }
+      if (bind(f, address.address(), address.size()) < 0) {
+        auto sockaddr_str = ResolvedAddressToString(address);
+        if (!sockaddr_str.ok()) {
+          LOG(ERROR) << "Could not convert sockaddr to string: "
+                     << sockaddr_str.status();
+          sockaddr_str = "<unparsable>";
+        }
+        sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
+        return absl::FailedPreconditionError(
+            absl::StrCat("Error in bind for address '", *sockaddr_str,
+                         "': ", std::strerror(errno)));
+      }
+      if (listen(f, GetMaxAcceptQueueSize()) < 0) {
+        return absl::FailedPreconditionError(
+            absl::StrCat("Error in listen: ", std::strerror(errno)));
+      }
+      socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+      EventEngine::ResolvedAddress sockname_temp;
+      if (getsockname(f, const_cast<sockaddr*>(sockname_temp.address()), &len) <
+          0) {
+        return absl::FailedPreconditionError(
+            absl::StrCat("Error in getsockname: ", std::strerror(errno)));
+      }
+      return sockname_temp;
     })
 
 // Bind to "::" to get a port number not used by any address.
@@ -1088,11 +1082,9 @@ void FileDescriptors::ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
 PosixResult FileDescriptors::PosixResultWrap(
     const FileDescriptor& wrapped,
     const absl::AnyInvocable<int(int) const>& fn) const {
-  auto fd = descriptors_.GetRawFileDescriptor(wrapped);
-  if (!fd.has_value()) {
-    return PosixResultWrongGeneration();
-  }
-  return PosixResultSimpleWrap(fn(*fd));
+  return RunIfCorrectGeneration(
+      wrapped, [&](int fd) { return PosixResultSimpleWrap(fn(fd)); },
+      PosixResultWrongGeneration());
 }
 
 IF_POSIX_SOCKET(void FileDescriptors::AdvanceGeneration(), {
