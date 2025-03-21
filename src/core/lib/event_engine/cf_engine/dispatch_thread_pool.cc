@@ -40,23 +40,37 @@ DispatchThreadPool::~DispatchThreadPool() {
 
 void DispatchThreadPool::Quiesce() {
   shutdown_.store(true, std::memory_order_relaxed);
-  dispatch_barrier_sync_f(queue_, this, [](void* context) {
-    auto* self = static_cast<DispatchThreadPool*>(context);
-    self->quiesced_.store(true, std::memory_order_relaxed);
+  dispatch_sync_f(queue_, this, [](void* context) {
+    auto* that = static_cast<DispatchThreadPool*>(context);
+    if (that->ongoing_tasks_ > 0) {
+      grpc_core::MutexLock lock(&that->mu_);
+      that->cv_.Wait(&that->mu_);
+    }
+    that->quiesced_.store(true, std::memory_order_relaxed);
   });
 }
 
 void DispatchThreadPool::Run(absl::AnyInvocable<void()> callback) {
-  Run(SelfDeletingClosure::Create(std::move(callback)));
-}
+  ++ongoing_tasks_;
 
-void DispatchThreadPool::Run(EventEngine::Closure* closure) {
-  // CHECK(!quiesced_.load(std::memory_order_relaxed));
+  auto closure = SelfDeletingClosure::Create(
+      [that = this, callback = std::move(callback)]() mutable {
+        callback();
+        --that->ongoing_tasks_;
+        if (that->ongoing_tasks_ == 0 && that->shutdown_) {
+          grpc_core::MutexLock lock(&that->mu_);
+          that->cv_.Signal();
+        }
+      });
 
   dispatch_async_f(queue_, closure, [](void* context) {
     auto* closure = static_cast<EventEngine::Closure*>(context);
     closure->Run();
   });
+}
+
+void DispatchThreadPool::Run(EventEngine::Closure* closure) {
+  Run([closure]() { closure->Run(); });
 }
 
 }  // namespace grpc_event_engine::experimental

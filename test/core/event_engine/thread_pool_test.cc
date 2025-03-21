@@ -29,6 +29,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/event_engine/cf_engine/dispatch_thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/util/notification.h"
@@ -42,7 +43,13 @@ namespace experimental {
 template <typename T>
 class ThreadPoolTest : public testing::Test {};
 
+#ifdef GPR_APPLE
+using ThreadPoolTypes =
+    ::testing::Types<WorkStealingThreadPool, DispatchThreadPool>;
+#else
 using ThreadPoolTypes = ::testing::Types<WorkStealingThreadPool>;
+#endif  // GPR_APPLE
+
 TYPED_TEST_SUITE(ThreadPoolTest, ThreadPoolTypes);
 
 TYPED_TEST(ThreadPoolTest, CanRunAnyInvocable) {
@@ -54,6 +61,12 @@ TYPED_TEST(ThreadPoolTest, CanRunAnyInvocable) {
 }
 
 TYPED_TEST(ThreadPoolTest, CanDestroyInsideClosure) {
+#ifdef GPR_APPLE
+  if (std::is_same<TypeParam, DispatchThreadPool>::value) {
+    GTEST_SKIP() << "Not supported by DispatchThreadPool";
+  }
+#endif  // GPR_APPLE
+
   auto* p = new TypeParam(8);
   grpc_core::Notification n;
   p->Run([p, &n]() mutable {
@@ -260,6 +273,12 @@ TYPED_TEST(ThreadPoolTest, QuiesceRaceStressTest) {
 }
 
 TYPED_TEST(ThreadPoolTest, WorkerThreadLocalRunWorksWithOtherPools) {
+#ifdef GPR_APPLE
+  if (std::is_same<TypeParam, DispatchThreadPool>::value) {
+    GTEST_SKIP() << "Not supported by DispatchThreadPool";
+  }
+#endif  // GPR_APPLE
+
   // WorkStealingThreadPools may queue work onto a thread-local queue, and that
   // work may be stolen by other threads. This test tries to ensure that work
   // queued from a pool-A worker-thread, to pool-B, does not end up on a pool-A

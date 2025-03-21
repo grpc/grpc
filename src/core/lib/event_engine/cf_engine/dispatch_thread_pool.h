@@ -28,6 +28,7 @@
 #include <dispatch/dispatch.h>
 
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -51,6 +52,10 @@ class DispatchThreadPool final : public ThreadPool {
   void PostforkChild() override {}
 
  private:
+  std::atomic<int> ongoing_tasks_{0};
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cv_ ABSL_GUARDED_BY(mu_);
+
   dispatch_queue_t queue_;
   std::atomic<bool> quiesced_{false};
   std::atomic<bool> shutdown_{false};
