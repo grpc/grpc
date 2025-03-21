@@ -700,14 +700,6 @@ struct grpc_chttp2_stream {
   // The last time a stream window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
-
-  // TODO(yashykt): Remove this when call v3 is supported.
-  grpc_core::CallTracerInterface* CallTracer() const {
-    if (t->is_client) {
-      return call_tracer;
-    }
-    return arena->GetContext<grpc_core::CallTracerInterface>();
-  }
 };
 
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
