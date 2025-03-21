@@ -44,6 +44,9 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#ifdef GPR_WINDOWS
+#include "src/core/lib/event_engine/windows/windows_engine.h"
+#endif
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -131,6 +134,8 @@ class TestDNSResolver : public EventEngine::DNSResolver {
   absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> default_resolver_;
 };
 
+#ifndef GPR_WINDOWS
+
 class TestEventEngine : public EventEngine {
  public:
   explicit TestEventEngine(std::shared_ptr<EventEngine> default_event_engine)
@@ -194,6 +199,78 @@ class TestEventEngine : public EventEngine {
  private:
   std::shared_ptr<EventEngine> default_event_engine_;
 };
+
+#else  // GPR_WINDOWS
+
+class TestEventEngine : public WindowsEventEngine {
+ public:
+  explicit TestEventEngine(
+      std::shared_ptr<WindowsEventEngine> default_event_engine)
+      : default_event_engine_(std::move(default_event_engine)) {}
+  ~TestEventEngine() override = default;
+
+  absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
+      Listener::AcceptCallback on_accept,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
+      const EndpointConfig& config,
+      std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
+      override {
+    return default_event_engine_->CreateListener(
+        std::move(on_accept), std::move(on_shutdown), config,
+        std::move(memory_allocator_factory));
+  }
+
+  ConnectionHandle Connect(OnConnectCallback on_connect,
+                           const ResolvedAddress& addr,
+                           const EndpointConfig& args,
+                           MemoryAllocator memory_allocator,
+                           Duration timeout) override {
+    return default_event_engine_->Connect(std::move(on_connect), addr, args,
+                                          std::move(memory_allocator), timeout);
+  }
+
+  bool CancelConnect(ConnectionHandle handle) override {
+    return default_event_engine_->CancelConnect(handle);
+  }
+
+  bool IsWorkerThread() override {
+    return default_event_engine_->IsWorkerThread();
+  }
+
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
+      const DNSResolver::ResolverOptions& options) override {
+    return std::make_unique<TestDNSResolver>(default_event_engine_);
+  }
+
+  void Run(Closure* closure) override {
+    return default_event_engine_->Run(closure);
+  }
+
+  void Run(absl::AnyInvocable<void()> closure) override {
+    return default_event_engine_->Run(std::move(closure));
+  }
+
+  TaskHandle RunAfter(Duration when, Closure* closure) override {
+    return default_event_engine_->RunAfter(when, closure);
+  }
+
+  TaskHandle RunAfter(Duration when,
+                      absl::AnyInvocable<void()> closure) override {
+    return default_event_engine_->RunAfter(when, std::move(closure));
+  }
+
+  bool Cancel(TaskHandle handle) override {
+    return default_event_engine_->Cancel(handle);
+  }
+
+  ThreadPool* thread_pool() { return default_event_engine_->thread_pool(); }
+  IOCP* poller() { return default_event_engine_->poller(); }
+
+ private:
+  std::shared_ptr<WindowsEventEngine> default_event_engine_;
+};
+
+#endif  // GPR_WINDOWS
 
 }  // namespace
 
