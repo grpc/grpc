@@ -100,7 +100,7 @@ struct ChannelCreds {
 
 void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
                                  ValidationErrors* errors) {
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config = nullptr;
+  RefCountedPtr<ChannelCredsConfig> channel_creds_config;
   {
     // Parse "channel_creds".
     auto channel_creds_list = LoadJsonObjectField<std::vector<ChannelCreds>>(
@@ -150,35 +150,40 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
       }
     }
   }
-
   // Parse "server_uri".
-  auto server_uri = LoadJsonObjectField<std::string>(json.object(), args,
-                                                     "server_uri", errors);
-  if (server_uri.has_value()) {
-    server_target_ = std::make_shared<GrpcXdsServerTarget>(
-        server_uri.value(), channel_creds_config);
+  std::string server_uri_target;
+  {
+    auto server_uri = LoadJsonObjectField<std::string>(json.object(), args, "server_uri", errors);
+    if (server_uri.has_value()) {
+      server_uri_target = *server_uri;
+    }
   }
+  server_target_ = std::make_shared<GrpcXdsServerTarget>(
+        server_uri_target, channel_creds_config);
 }
 
 std::string GrpcXdsServer::Key() const {
   std::vector<std::string> parts;
-  parts.push_back(absl::StrFormat("target=%s", server_target_->Key()));
+  parts.push_back("{");
+  parts.push_back(absl::StrCat("target=", server_target_->Key()));
   if (!server_features_.empty()) {
-    parts.push_back(absl::StrFormat("server_features=%s",
-                                    absl::StrJoin(server_features_, " ")));
+    parts.push_back(absl::StrCat("server_features=[",
+                                    absl::StrJoin(server_features_, ","),"]"));
   }
+  parts.push_back("}");
   return absl::StrJoin(parts, ",");
 }
 
 std::string GrpcXdsServerTarget::Key() const {
   std::vector<std::string> parts;
-  parts.push_back(absl::StrFormat("server_uri=%s", server_uri_));
+  parts.push_back("{");
+  parts.push_back(absl::StrCat("server_uri=", server_uri_));
   if (channel_creds_config_ != nullptr) {
-    parts.push_back(absl::StrFormat("type=%s", channel_creds_config_->type()));
+    parts.push_back(absl::StrCat("creds_type=", channel_creds_config_->type()));
     parts.push_back(
-        absl::StrFormat("config=%s", channel_creds_config_->ToString()));
+        absl::StrCat("creds_config=", channel_creds_config_->ToString()));
   }
-
+  parts.push_back("}");
   return absl::StrJoin(parts, ",");
 }
 

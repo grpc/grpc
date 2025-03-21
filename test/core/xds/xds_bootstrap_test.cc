@@ -69,9 +69,9 @@ MATCHER_P5(EqXdsServer, name, creds_config_type, ignore_resource_deletion,
                                       fail_on_data_errors, result_listener);
   ok &= ::testing::ExplainMatchResult(server->TrustedXdsServer(),
                                       trusted_xds_server, result_listener);
-  auto server_target =
-      std::dynamic_pointer_cast<const GrpcXdsServerTarget>(server->target());
-  auto creds_config = server_target->channel_creds_config();
+  auto& server_target =
+      DownCast<const GrpcXdsServerTarget&>(*server->target());
+  auto creds_config = server_target.channel_creds_config();
   if (!::testing::ExplainMatchResult(::testing::Ne(nullptr), creds_config,
                                      result_listener)) {
     return false;
@@ -307,6 +307,24 @@ TEST(XdsBootstrapTest, NoKnownChannelCreds) {
             "error:no known creds type found]")
       << bootstrap.status();
 }
+
+TEST(XdsBootstrapTest, MultipleCreds) {
+    const char* json_str =
+        "{"
+        "  \"xds_servers\": ["
+        "    {"
+        "      \"server_uri\": \"fake:///lb\","
+        "      \"channel_creds\": [{\"type\": \"unknown\"}, {\"type\": \"fake\"}, {\"type\": \"insecure\"}]"
+        "    }"
+        "  ]"
+        "}";
+        auto bootstrap = GrpcXdsBootstrap::Create(json_str);
+        ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
+        EXPECT_THAT((*bootstrap)->servers(),
+                    ::testing::ElementsAre(EqXdsServer("fake:///lb", "fake",
+                                                       false, false, false)));
+        EXPECT_EQ((*bootstrap)->node(), nullptr);
+  }
 
 TEST(XdsBootstrapTest, MissingXdsServers) {
   auto bootstrap = GrpcXdsBootstrap::Create("{}");
@@ -745,13 +763,7 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
       "          \"server_uri\": \"fake:///xds_server2\","
       "          \"channel_creds\": ["
       "            {"
-      "              \"type\": \"google_default\""
-      "            },"
-      "            {"
-      "               \"type\": \"fake\""
-      "            },"
-      "            {"
-      "               \"type\": \"insecure\""
+      "              \"type\": \"fake\""
       "            }"
       "          ],"
       "          \"server_features\": [\"xds_v3\"]"
@@ -787,14 +799,12 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
   auto* authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example.com"));
   ASSERT_NE(authority, nullptr);
-  // ASSERT_EQ(authority->servers()[1]->target()->server_uri(),
-  // "fake:///xds_server");
   EXPECT_THAT(
       authority->servers(),
       ::testing::ElementsAre(
           EqXdsServer("fake:///xds_server", "fake", false, false, false),
           // Assert that channel creds used are the first one in the list
-          EqXdsServer("fake:///xds_server2", "google_default", false, false,
+          EqXdsServer("fake:///xds_server2", "fake", false, false,
                       false)));
 }
 

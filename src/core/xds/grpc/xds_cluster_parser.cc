@@ -509,9 +509,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       ValidationErrors::ScopedField field(&errors, ".lrs_server");
       errors.AddError("ConfigSource is not self");
     }
-    cds_update->lrs_load_reporting_server =
-        std::make_shared<GrpcXdsServerTarget>(
-            DownCast<const GrpcXdsServerTarget&>(*context.server.target()));
+    cds_update->lrs_load_reporting_server = std::static_pointer_cast<const GrpcXdsServerTarget>(context.server.target());
   }
   // Record LRS metric propagation.
   auto propagation = MakeRefCounted<BackendMetricPropagation>();

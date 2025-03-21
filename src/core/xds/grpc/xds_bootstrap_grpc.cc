@@ -179,7 +179,6 @@ std::string GrpcXdsBootstrap::ToString() const {
                         node_->locality_zone(), node_->locality_sub_zone(),
                         JsonDump(Json::FromObject(node_->metadata()))));
   }
-  parts.push_back(absl::StrFormat("servers=[\n%s\n],\n", servers_[0].Key()));
   if (!client_default_listener_resource_name_template_.empty()) {
     parts.push_back(absl::StrFormat(
         "client_default_listener_resource_name_template=\"%s\",\n",

@@ -142,7 +142,7 @@ class XdsClientTest : public ::testing::Test {
       const std::string& server_uri() const override { return server_uri_; }
       std::string Key() const override { return server_uri_; }
       bool Equals(const XdsServerTarget& other) const override {
-        const auto& o = static_cast<const FakeXdsServerTarget&>(other);
+        const auto& o = DownCast<const FakeXdsServerTarget&>(other);
         return server_uri_ == o.server_uri_;
       }
 
