@@ -201,6 +201,7 @@ class TestEventEngine : public EventEngine {
 };
 
 #else  // GPR_WINDOWS
+using grpc_event_engine::experimental::WindowsEventEngine;
 
 class TestEventEngine : public WindowsEventEngine {
  public:
