@@ -121,20 +121,18 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
       Json::Object obj;
       parts.push_back("{");
       if (!certificate_file_.empty()) {
-        parts.push_back(
-            absl::StrCat("certificate_file=", certificate_file_));
+        parts.push_back(absl::StrCat("certificate_file=", certificate_file_));
       }
       if (!private_key_file_.empty()) {
-        parts.push_back(
-            absl::StrCat("private_key_file=", private_key_file_));
+        parts.push_back(absl::StrCat("private_key_file=", private_key_file_));
       }
       if (!ca_certificate_file_.empty()) {
         parts.push_back(
             absl::StrCat("ca_certificate_file=", ca_certificate_file_));
       }
       if (refresh_interval_ != kDefaultRefreshInterval) {
-        parts.push_back(absl::StrCat("refresh_interval=",
-                                        refresh_interval_.ToString()));
+        parts.push_back(
+            absl::StrCat("refresh_interval=", refresh_interval_.ToString()));
       }
       parts.push_back("}");
       return absl::StrJoin(parts, ",");

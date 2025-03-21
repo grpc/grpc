@@ -41,7 +41,6 @@ class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
 
   bool Equals(const XdsServerTarget& other) const override;
   std::string Key() const override;
-
   const std::string& server_uri() const override { return server_uri_; }
   RefCountedPtr<ChannelCredsConfig> channel_creds_config() const override {
     return channel_creds_config_;
@@ -57,13 +56,9 @@ class GrpcXdsServer final : public XdsBootstrap::XdsServer {
   bool IgnoreResourceDeletion() const override;
   bool FailOnDataErrors() const override;
   bool ResourceTimerIsTransientFailure() const override;
-
   bool TrustedXdsServer() const;
-
   bool Equals(const XdsServer& other) const override;
-
   std::string Key() const override;
-
   std::shared_ptr<const XdsBootstrap::XdsServerTarget> target() const override {
     return server_target_;
   }
