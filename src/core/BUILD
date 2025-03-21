@@ -239,6 +239,9 @@ grpc_cc_library(
     name = "metadata_info",
     srcs = ["call/metadata_info.cc"],
     hdrs = ["call/metadata_info.h"],
+    external_deps = [
+        "absl/strings",
+    ],
     deps = [
         "channel_args",
         "hpack_constants",
