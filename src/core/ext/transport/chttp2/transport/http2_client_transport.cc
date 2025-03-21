@@ -307,9 +307,8 @@ auto Http2ClientTransport::CallOutboundLoop(
     AppendGrpcHeaderToSliceBuffer(frame_payload, message->flags(),
                                   payload_size);
     frame_payload.TakeAndAppend(*message->payload());
-    Http2DataFrame frame{.stream_id = stream_id,
-                         .end_stream = false,
-                         .payload = std::move(frame_payload)};
+    Http2DataFrame frame{stream_id, /*end_stream*/ false,
+                         std::move(frame_payload)};
     HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop send_message";
     return send_frame(std::move(frame));
   };
@@ -322,10 +321,9 @@ auto Http2ClientTransport::CallOutboundLoop(
             auto& metadata = std::get<1>(lock_metadata);
             SliceBuffer buf;
             self->encoder_.EncodeRawHeaders(*metadata.get(), buf);
-            return Http2HeaderFrame{
-                .stream_id = stream_id,
-                .end_headers = true,
-                .payload = std::move(buf)}; /* Unlock the stream_mutex_ */
+            // stream_mutex_ unlocked after this promise completes
+            return Http2HeaderFrame{stream_id, /*end_headers*/ true,
+                                    /*end_stream*/ false, std::move(buf)};
           },
           [send_frame](Http2Frame frame) mutable {
             return send_frame(std::move(frame));
@@ -336,9 +334,7 @@ auto Http2ClientTransport::CallOutboundLoop(
           [stream_id, send_frame]() mutable {
             // TODO(akshitpatel): [PH2][P2] : Figure out a way to send the end
             // of stream frame in the same frame as the last message.
-            Http2DataFrame frame{.stream_id = stream_id,
-                                 .end_stream = true,
-                                 .payload = SliceBuffer()};
+            Http2DataFrame frame{stream_id, /*end_stream*/ true, SliceBuffer()};
             return send_frame(std::move(frame));
           },
           [call_handler]() mutable {

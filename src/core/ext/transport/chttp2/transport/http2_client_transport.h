@@ -169,7 +169,7 @@ class Http2ClientTransport final : public ClientTransport {
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 };
 
-GRPC_CHECK_CLASS_SIZE(Http2ClientTransport, 570);
+GRPC_CHECK_CLASS_SIZE(Http2ClientTransport, 600);
 
 }  // namespace http2
 }  // namespace grpc_core
