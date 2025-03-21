@@ -264,12 +264,10 @@ class TestEventEngine : public WindowsEventEngine {
     return default_event_engine_->Cancel(handle);
   }
 
-  grpc_event_engine::experimental::ThreadPool* thread_pool() {
+  ThreadPool* thread_pool() override {
     return default_event_engine_->thread_pool();
   }
-  grpc_event_engine::experimental::IOCP* poller() {
-    return default_event_engine_->poller();
-  }
+  IOCP* poller() override { return default_event_engine_->poller(); }
 
  private:
   std::shared_ptr<WindowsEventEngine> default_event_engine_;
