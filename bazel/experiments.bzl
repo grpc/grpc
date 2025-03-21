@@ -25,6 +25,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
+    "event_engine_fork": "event_engine_fork",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
@@ -52,6 +53,7 @@ EXPERIMENT_POLLERS = [
     "event_engine_client",
     "event_engine_dns",
     "event_engine_dns_non_client_channel",
+    "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
 ]
@@ -65,12 +67,16 @@ EXPERIMENTS = {
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
+                "event_engine_fork",
                 "local_connector_secure",
                 "retry_in_callv3",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "event_engine_fork_test": [
+                "event_engine_fork",
             ],
             "flow_control_test": [
                 "multiping",
@@ -118,12 +124,16 @@ EXPERIMENTS = {
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
+                "event_engine_fork",
                 "local_connector_secure",
                 "retry_in_callv3",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "event_engine_fork_test": [
+                "event_engine_fork",
             ],
             "flow_control_test": [
                 "multiping",
@@ -157,12 +167,16 @@ EXPERIMENTS = {
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
                 "event_engine_dns_non_client_channel",
+                "event_engine_fork",
                 "local_connector_secure",
                 "retry_in_callv3",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "event_engine_fork_test": [
+                "event_engine_fork",
             ],
             "flow_control_test": [
                 "multiping",

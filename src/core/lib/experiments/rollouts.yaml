@@ -64,6 +64,8 @@
     windows: true
 - name: event_engine_for_all_other_endpoints
   default: true
+- name: event_engine_fork
+  default: false
 - name: event_engine_listener
   default:
     # not tested on iOS at all
