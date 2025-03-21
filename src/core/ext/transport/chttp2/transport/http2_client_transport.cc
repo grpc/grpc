@@ -217,29 +217,29 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Factory";
   return AssertResultType<absl::Status>(MatchPromise(
       std::move(frame),
-      [](Http2DataFrame frame) {
+      [this](Http2DataFrame frame) {
         return ProcessHttp2DataFrame(std::move(frame));
       },
-      [](Http2HeaderFrame frame) {
+      [this](Http2HeaderFrame frame) {
         return ProcessHttp2HeaderFrame(std::move(frame));
       },
-      [](Http2RstStreamFrame frame) {
+      [this](Http2RstStreamFrame frame) {
         return ProcessHttp2RstStreamFrame(frame);
       },
-      [](Http2SettingsFrame frame) {
+      [this](Http2SettingsFrame frame) {
         return ProcessHttp2SettingsFrame(std::move(frame));
       },
-      [](Http2PingFrame frame) { return ProcessHttp2PingFrame(frame); },
-      [](Http2GoawayFrame frame) {
+      [this](Http2PingFrame frame) { return ProcessHttp2PingFrame(frame); },
+      [this](Http2GoawayFrame frame) {
         return ProcessHttp2GoawayFrame(std::move(frame));
       },
-      [](Http2WindowUpdateFrame frame) {
+      [this](Http2WindowUpdateFrame frame) {
         return ProcessHttp2WindowUpdateFrame(frame);
       },
-      [](Http2ContinuationFrame frame) {
+      [this](Http2ContinuationFrame frame) {
         return ProcessHttp2ContinuationFrame(std::move(frame));
       },
-      [](Http2SecurityFrame frame) {
+      [this](Http2SecurityFrame frame) {
         return ProcessHttp2SecurityFrame(std::move(frame));
       },
       [](GRPC_UNUSED Http2UnknownFrame frame) {
