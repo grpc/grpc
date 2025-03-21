@@ -569,7 +569,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns_non_client_channel",
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     false, false},
+     true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
