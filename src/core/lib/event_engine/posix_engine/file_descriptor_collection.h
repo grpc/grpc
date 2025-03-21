@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_FILE_DESCRIPTOR_COLLECTION_H
 
 #include <atomic>
-#include <optional>
 #include <unordered_set>
 
 #include "absl/status/status.h"
@@ -24,67 +23,52 @@
 #include "src/core/util/sync.h"
 
 namespace grpc_event_engine::experimental {
-#if GRPC_ENABLE_FORK_SUPPORT
+
 class FileDescriptor {
  public:
   constexpr FileDescriptor() = default;
+#if GRPC_ENABLE_FORK_SUPPORT
   constexpr FileDescriptor(int fd, int generation)
       : fd_(fd), generation_(generation) {};
+#else   // GRPC_ENABLE_FORK_SUPPORT
+  constexpr FileDescriptor(int fd, int /* generation */) : fd_(fd) {};
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+
   bool ready() const { return fd_ > 0; }
   // Escape for iomgr and tests. Not to be used elsewhere
   int iomgr_fd() const { return fd_; }
-  // For logging/debug purposes - may consider including generation, do not
-  // use for Posix calls!
+  // For logging/debug purposes - may include generation in the future, do not
+  // rely on it for Posix calls!
   int debug_fd() const { return fd_; }
-  int generation() const { return generation_; }
 
   constexpr static FileDescriptor Invalid() { return FileDescriptor(-1, 0); }
 
+#if GRPC_ENABLE_FORK_SUPPORT
+  int generation() const { return generation_; }
   template <typename Sink>
   friend void AbslStringify(Sink& sink, FileDescriptor fd) {
     sink.Append(
         absl::StrFormat("FD(%d), generation: %d", fd.fd_, fd.generation_));
   }
-
- private:
-  int fd() const { return fd_; }
-  // Can get fd!
-  friend class FileDescriptorCollection;
-  friend class FileDescriptors;
-
-  int fd_ = 0;
-  int generation_ = 0;
-};
-#else  // GRPC_ENABLE_FORK_SUPPORT
-class FileDescriptor {
- public:
-  constexpr FileDescriptor() = default;
-  constexpr FileDescriptor(int fd, int /* generation */) : fd_(fd) {};
-  bool ready() const { return fd_ > 0; }
-  // Escape for iomgr and tests. Not to be used elsewhere
-  int iomgr_fd() const { return fd_; }
-  // For logging/debug purposes - may consider including generation, do not
-  // use for Posix calls!
-  int debug_fd() const { return fd_; }
+#else   // GRPC_ENABLE_FORK_SUPPORT
   int generation() const { return 0; }
-
-  constexpr static FileDescriptor Invalid() { return FileDescriptor(-1, 0); }
-
   template <typename Sink>
   friend void AbslStringify(Sink& sink, FileDescriptor fd) {
     sink.Append(absl::StrFormat("FD(%d)", fd.fd_));
   }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
  private:
   int fd() const { return fd_; }
-  // Can get fd!
+  // Can get raw fd!
   friend class FileDescriptorCollection;
   friend class FileDescriptors;
 
   int fd_ = 0;
-};
-
+#if GRPC_ENABLE_FORK_SUPPORT
+  int generation_ = 0;
 #endif  // GRPC_ENABLE_FORK_SUPPORT
+};
 
 enum class OperationResultKind {
   kSuccess,          // Operation does not return a file descriptor and
@@ -188,7 +172,7 @@ class FileDescriptorCollection {
   static constexpr int kGenerationMask = 0x7;  // 3 bits
 
   FileDescriptor Add(int fd);
-  std::optional<int> Remove(const FileDescriptor& fd);
+  bool Remove(const FileDescriptor& fd);
 
   FileDescriptorResult RegisterPosixResult(int result);
 
@@ -197,11 +181,6 @@ class FileDescriptorCollection {
 
   // Advances the generation, clears the list of fds and returns them
   std::unordered_set<int> AdvanceGeneration();
-
-  bool IsCorrectGeneration(const FileDescriptor& fd) const {
-    return fd.generation() ==
-           current_generation_.load(std::memory_order_relaxed);
-  }
 
   int generation() const {
     return current_generation_.load(std::memory_order_relaxed);

@@ -82,7 +82,13 @@ class FileDescriptors {
   // a single int as a handle.
   int ToInteger(const FileDescriptor& fd) {
 #if GRPC_ENABLE_FORK_SUPPORT
-    return descriptors_.ToInteger(fd);
+    static const auto kToInteger =
+        grpc_core::IsEventEngineForkEnabled()
+            ? [](const FileDescriptorCollection& collection,
+                 const FileDescriptor& fd) { return collection.ToInteger(fd); }
+            : [](const FileDescriptorCollection& collection,
+                 const FileDescriptor& fd) { return fd.fd(); };
+    return kToInteger(descriptors_, fd);
 #else   // GRPC_ENABLE_FORK_SUPPORT
     return fd.fd();
 #endif  // GRPC_ENABLE_FORK_SUPPORT
@@ -91,7 +97,14 @@ class FileDescriptors {
   // May return a wrong generation error
   FileDescriptorResult FromInteger(int fd) {
 #if GRPC_ENABLE_FORK_SUPPORT
-    return descriptors_.FromInteger(fd);
+    static const auto kFromInteger =
+        grpc_core::IsEventEngineForkEnabled()
+            ? [](const FileDescriptorCollection& collection,
+                 int fd) { return collection.FromInteger(fd); }
+            : [](const FileDescriptorCollection& collection, int fd) {
+                return FileDescriptorResult(FileDescriptor(fd, 0));
+              };
+    return kFromInteger(descriptors_, fd);
 #else   // GRPC_ENABLE_FORK_SUPPORT
     return FileDescriptorResult(FileDescriptor(fd, 0));
 #endif  // GRPC_ENABLE_FORK_SUPPORT
@@ -210,7 +223,7 @@ class FileDescriptors {
   R RunIfCorrectGeneration(const FileDescriptor& fd, const Fn& fn,
                            R&& r) const {
 #if GRPC_ENABLE_FORK_SUPPORT
-    if (!descriptors_.IsCorrectGeneration(fd)) {
+    if (!IsCorrectGeneration(fd)) {
       return std::forward<R>(r);
     }
 #endif  // GRPC_ENABLE_FORK_SUPPORT
@@ -244,6 +257,29 @@ class FileDescriptors {
                      : Int64Result(result);
         },
         Int64Result::WrongGeneration());
+  }
+
+  bool IsCorrectGeneration(const FileDescriptor& fd) const {
+#if GRPC_ENABLE_FORK_SUPPORT
+    static const auto kIsGeneration =
+        grpc_core::IsEventEngineForkEnabled()
+            ? [](const FileDescriptorCollection& collection,
+                 const FileDescriptor&
+                     fd) { return collection.generation() == fd.generation(); }
+            : [](const FileDescriptorCollection& collection,
+                 const FileDescriptor& fd) { return true; };
+    return kIsGeneration(descriptors_, fd);
+#else   // GRPC_ENABLE_FORK_SUPPORT
+    return true;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+  }
+
+  FileDescriptorResult RegisterPosixResult(int result) {
+    if (result > 0) {
+      return FileDescriptorResult(Adopt(result));
+    } else {
+      return FileDescriptorResult(OperationResultKind::kError, errno);
+    }
   }
 
 #if GRPC_ENABLE_FORK_SUPPORT

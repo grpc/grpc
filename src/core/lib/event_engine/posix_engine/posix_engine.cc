@@ -133,6 +133,9 @@ void PostForkInChild() {
 
 void RegisterEventEngineForFork(
     std::shared_ptr<PosixEventEngine::ForkSupport> fork_support) {
+  if (!grpc_core::IsEventEngineForkEnabled()) {
+    return;
+  }
   if (grpc_core::Fork::Enabled()) {
     grpc_core::MutexLock lock(fork_mu.get());
     fork_supports_->emplace(fork_support.get(), fork_support);

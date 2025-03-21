@@ -15,7 +15,6 @@
 #include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 
 #include <atomic>
-#include <optional>
 #include <unordered_set>
 
 namespace grpc_event_engine::experimental {
@@ -29,15 +28,14 @@ FileDescriptor FileDescriptorCollection::Add(int fd) {
                         current_generation_.load(std::memory_order_relaxed));
 }
 
-std::optional<int> FileDescriptorCollection::Remove(const FileDescriptor& fd) {
+bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
   if (fd.generation() == current_generation_.load(std::memory_order_relaxed)) {
     grpc_core::MutexLock lock(&mu_);
-    int raw = fd.fd();
     if (file_descriptors_.erase(fd.fd()) == 1) {
-      return raw;
+      return true;
     }
   }
-  return std::nullopt;
+  return false;
 }
 
 std::unordered_set<int> FileDescriptorCollection::AdvanceGeneration() {

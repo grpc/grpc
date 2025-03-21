@@ -501,7 +501,14 @@ bool IsSocketReusePortSupported() {
   return kSupportSoReusePort;
 }
 
-FileDescriptor FileDescriptors::Adopt(int fd) { return descriptors_.Add(fd); }
+FileDescriptor FileDescriptors::Adopt(int fd) {
+#if GRPC_ENABLE_FORK_SUPPORT
+  if (grpc_core::IsEventEngineForkEnabled()) {
+    return descriptors_.Add(fd);
+  }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+  return FileDescriptor(fd, 0);
+}
 
 std::optional<int> FileDescriptors::GetFdForPolling(const FileDescriptor& fd) {
   return RunIfCorrectGeneration<std::optional<int>>(
@@ -509,27 +516,28 @@ std::optional<int> FileDescriptors::GetFdForPolling(const FileDescriptor& fd) {
 }
 
 IF_POSIX_SOCKET(void FileDescriptors::Close(const FileDescriptor& fd), {
-  auto raw = descriptors_.Remove(fd);
-  if (raw.has_value()) {
-    close(*raw);
+#if GRPC_ENABLE_FORK_SUPPORT
+  if (grpc_core::IsEventEngineForkEnabled() && !descriptors_.Remove(fd)) {
+    return;
   }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+  close(fd.fd());
 })
 
 //
 // Factories
 //
-IF_POSIX_SOCKET(
-    FileDescriptorResult FileDescriptors::Accept(const FileDescriptor& sockfd,
-                                                 struct sockaddr* addr,
-                                                 socklen_t* addrlen),
-    {
-      return RunIfCorrectGeneration<FileDescriptorResult>(
-          sockfd,
-          [&](int fd) {
-            return descriptors_.RegisterPosixResult(accept(fd, addr, addrlen));
-          },
-          FileDescriptorResult::WrongGeneration());
-    })
+IF_POSIX_SOCKET(FileDescriptorResult FileDescriptors::Accept(
+                    const FileDescriptor& sockfd, struct sockaddr* addr,
+                    socklen_t* addrlen),
+                {
+                  return RunIfCorrectGeneration<FileDescriptorResult>(
+                      sockfd,
+                      [&](int fd) {
+                        return RegisterPosixResult(accept(fd, addr, addrlen));
+                      },
+                      FileDescriptorResult::WrongGeneration());
+                })
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 
@@ -547,7 +555,7 @@ IF_POSIX_SOCKET(
         return fd;
       }
       int flags;
-      auto raw_fd = descriptors_.GetRawFileDescriptor(*fd);
+      auto raw_fd = fd.fd();
       // We just created it!
       CHECK(raw_fd.has_value());
       if (nonblock) {
@@ -588,7 +596,7 @@ IF_POSIX_SOCKET(
             flags |= cloexec ? SOCK_CLOEXEC : 0;
             EventEngine::ResolvedAddress peer_addr;
             socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-            FileDescriptorResult ret = descriptors_.RegisterPosixResult(accept4(
+            FileDescriptorResult ret = RegisterPosixResult(accept4(
                 fd, const_cast<sockaddr*>(peer_addr.address()), &len, flags));
             if (ret.ok()) {
               addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
@@ -609,16 +617,13 @@ absl::StatusOr<FileDescriptor> FileDescriptors::CreateDualStackSocket(
   if (!fd.ok()) {
     return std::move(fd).status();
   }
-  return descriptors_.Add(*fd);
+  return Adopt(*fd);
 }
 
 IF_POSIX_SOCKET(FileDescriptorResult FileDescriptors::Socket(int domain,
                                                              int type,
                                                              int protocol),
-                {
-                  return descriptors_.RegisterPosixResult(
-                      socket(domain, type, protocol));
-                })
+                { return RegisterPosixResult(socket(domain, type, protocol)); })
 
 IF_POSIX_SOCKET(absl::StatusOr<PipeEnds> FileDescriptors::Pipe(), {
   int pipefd[2];
@@ -641,7 +646,7 @@ IF_POSIX_SOCKET(absl::StatusOr<PipeEnds> FileDescriptors::Pipe(), {
 
 FileDescriptorResult FileDescriptors::EventFd(int initval, int flags) {
 #ifdef GRPC_LINUX_EVENTFD
-  return descriptors_.RegisterPosixResult(eventfd(initval, flags));
+  return RegisterPosixResult(eventfd(initval, flags));
 #else
   grpc_core::Crash("EventFD not supported");
 #endif
@@ -650,13 +655,13 @@ FileDescriptorResult FileDescriptors::EventFd(int initval, int flags) {
 FileDescriptorResult FileDescriptors::EpollCreateAndCloexec() {
 #ifdef GRPC_LINUX_EPOLL
 #ifdef GRPC_LINUX_EPOLL_CREATE1
-  auto fd = descriptors_.RegisterPosixResult(epoll_create1(EPOLL_CLOEXEC));
+  auto fd = RegisterPosixResult(epoll_create1(EPOLL_CLOEXEC));
   if (!fd.ok()) {
     LOG(ERROR) << "epoll_create1 unavailable";
   }
   return fd;
 #else   // GRPC_LINUX_EPOLL_CREATE1
-  auto fd = descriptors_.RegisterPosixResult(epoll_create(MAX_EPOLL_EVENTS));
+  auto fd = RegisterPosixResult(epoll_create(MAX_EPOLL_EVENTS));
   if (!fd.ok()) {
     LOG(ERROR) << "epoll_create unavailable";
     return fd;
@@ -776,8 +781,7 @@ Int64Result FileDescriptors::WriteV(const FileDescriptor& fd,
 IF_EPOLL(PosixResult FileDescriptors::EpollCtlDel(const FileDescriptor& epfd,
                                                   const FileDescriptor& fd),
          {
-           if (!descriptors_.IsCorrectGeneration(epfd) ||
-               !descriptors_.IsCorrectGeneration(fd)) {
+           if (!IsCorrectGeneration(epfd) || !IsCorrectGeneration(fd)) {
              return PosixResultWrongGeneration();
            }
            epoll_event phony_event;
@@ -796,8 +800,7 @@ IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(const FileDescriptor& epfd,
              event.events |= EPOLLOUT;
            }
            event.data.ptr = data;
-           if (!descriptors_.IsCorrectGeneration(epfd) ||
-               !descriptors_.IsCorrectGeneration(fd)) {
+           if (!IsCorrectGeneration(epfd) || !IsCorrectGeneration(fd)) {
              return PosixResult(OperationResultKind::kWrongGeneration, 0);
            }
            return PosixResultSimpleWrap(
@@ -935,7 +938,7 @@ absl::Status FileDescriptors::SetSocketMutator(const FileDescriptor& fd,
                                                grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator) {
   CHECK(mutator);
-  if (!descriptors_.IsCorrectGeneration(fd)) {
+  if (!IsCorrectGeneration(fd)) {
     return absl::InternalError("SetSocketMutator: FD has a wrong generation");
   }
   if (!grpc_socket_mutator_mutate_fd(mutator, fd.fd(), usage)) {
@@ -948,7 +951,7 @@ absl::Status FileDescriptors::SetSocketMutator(const FileDescriptor& fd,
 absl::Status FileDescriptors::ApplySocketMutatorInOptions(
     const FileDescriptor& fd, grpc_fd_usage usage,
     const PosixTcpOptions& options) {
-  if (!descriptors_.IsCorrectGeneration(fd)) {
+  if (!IsCorrectGeneration(fd)) {
     return absl::InternalError("ApplySocketMutatorInOptions: wrong generation");
   }
   return InternalApplySocketMutatorInOptions(fd.fd(), usage, options);
@@ -980,7 +983,7 @@ IF_POSIX_SOCKET(
             const FileDescriptor& fd, const PosixTcpOptions& options,
             const EventEngine::ResolvedAddress& address),
     {
-      if (!descriptors_.IsCorrectGeneration(fd)) {
+      if (!IsCorrectGeneration(fd)) {
         return absl::InternalError("PrepareListenerSocket: wrong generation");
       }
       int f = fd.fd();
@@ -1088,11 +1091,17 @@ PosixResult FileDescriptors::PosixResultWrap(
 }
 
 IF_POSIX_SOCKET(void FileDescriptors::AdvanceGeneration(), {
+#if GRPC_ENABLE_FORK_SUPPORT
+  if (!grpc_core::IsEventEngineForkEnabled()) {
+    grpc_core::Crash(
+        "Fork support is disabled but AdvanceGeneration was called");
+  }
   for (int fd : descriptors_.AdvanceGeneration()) {
     if (fd > 0) {
       close(fd);
     }
   }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 })
 
 }  // namespace grpc_event_engine::experimental
