@@ -17,5 +17,8 @@ FROM debian:12
 # needed by get-dotnet.sh script
 RUN apt-get update && apt-get install -y curl git jq libicu-dev && apt-get clean
 
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
 # Define the default command.
 CMD ["bash"]
