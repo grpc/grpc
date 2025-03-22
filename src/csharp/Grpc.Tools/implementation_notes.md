@@ -44,7 +44,7 @@ Native binary executables for the protobuf compiler (_protoc_) and C# gRPC plugi
 included in the NuGet package. Included are binaries for various OSes (Windows, Linux, macOS) and
 CPU architectures (x86, x64, arm64).
 
-The build determines which executables to use for the particular machine that the it is being run on.
+The build determines which executables to use for the particular machine that it is being run on.
 These can be overridden by specifying MSBuild properties or environment variables to give the paths to custom executables:
 
 * `Protobuf_ProtocFullPath` property or `PROTOBUF_PROTOC` environment variable \
