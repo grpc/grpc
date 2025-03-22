@@ -169,7 +169,7 @@ def add_files_to_image(image, with_files, label=None):
 def build_image_jobspec(runtime, env, gcr_tag, stack_base):
     """Build interop docker image for a language with runtime.
 
-    runtime: a <lang><version> string, for example go1.8.
+    runtime: a <lang><version> string, for example go1.11.
     env:     dictionary of env to passed to the build script.
     gcr_tag: the tag for the docker image (i.e. v1.3.0).
     stack_base: the local gRPC repo path.

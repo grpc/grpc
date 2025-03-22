@@ -50,10 +50,10 @@ For more details on each step, refer to sections below.
 
 ## Instructions for running test cases against an AR image manually
 
-- Download a docker image from AR.  For example: `docker pull us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_go1.8:v1.16.0`.
+- Download a docker image from AR.  For example: `docker pull us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_go1.11:v1.16.0`.
 - Run test cases by specifying `docker_image` variable inline with the test case script created above.
 For example:
-  - `docker_image=us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_go1.8:v1.16.0 ./testcases/go__master` will run go__master test cases against `go1.8` with gRPC release `v1.16.0` docker image in AR.
+  - `docker_image=us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_go1.11:v1.16.0 ./testcases/go__master` will run go__master test cases against `go1.11` with gRPC release `v1.16.0` docker image in AR.
 
 Note:
 - File path starting with `tools/` or `template/` are relative to the grpc repo root dir.  File path starting with `./` are relative to current directory (`tools/interop_matrix`).

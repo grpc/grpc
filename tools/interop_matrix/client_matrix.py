@@ -146,67 +146,67 @@ LANG_RELEASE_MATRIX = {
         [
             (
                 "v1.0.5",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.2.1",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.3.0",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.4.2",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.5.2",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.6.0",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.7.4",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.8.2",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.9.2",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.10.1",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.11.3",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.12.2",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.13.0",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.14.0",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.15.0",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.16.0",
-                ReleaseInfo(runtimes=["go1.8"], testcases_file="go__v1.0.5"),
+                ReleaseInfo(runtimes=["go1.11"], testcases_file="go__v1.0.5"),
             ),
             (
                 "v1.17.0",
