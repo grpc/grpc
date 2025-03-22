@@ -1386,7 +1386,7 @@ TEST_F(LrsTest, Valid) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
 }
 
 TEST_F(LrsTest, NotSelfConfigSource) {
@@ -1430,7 +1430,7 @@ TEST_F(LrsTest, IgnoresPropagationWithoutEnvVar) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
   ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
   EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(), "{}");
 }
@@ -1461,7 +1461,7 @@ TEST_F(LrsTest, Propagation) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
   ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
   EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(),
             "{cpu_utilization,mem_utilization,application_utilization,"
@@ -1490,7 +1490,7 @@ TEST_F(LrsTest, PropagationNamedMetricsAll) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
   ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
   EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(),
             "{cpu_utilization,named_metrics.*}");

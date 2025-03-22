@@ -41,7 +41,7 @@ class ChannelCredsConfig : public RefCounted<ChannelCredsConfig> {
 
   virtual bool Equals(const ChannelCredsConfig& other) const = 0;
 
-  virtual Json ToJson() const = 0;
+  virtual std::string ToString() const = 0;
 };
 
 template <typename T = grpc_channel_credentials>
