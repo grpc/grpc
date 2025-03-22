@@ -1096,6 +1096,11 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_base_lib",
     },
+    "@com_google_protobuf//upb/hash:hash": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_hash_lib",
+    },
     "@com_google_protobuf//upb:mem": {
         "language": "c",
         "build": "all",
@@ -1115,6 +1120,16 @@ _BUILD_EXTRA_METADATA = {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mini_descriptor_lib",
+    },
+    "@com_google_protobuf//upb/mini_table:mini_table": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_mini_table_lib",
+    },
+    "@com_google_protobuf//upb/reflection:reflection": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_reflection_lib",
     },
     "@com_google_protobuf//upb/text:text": {
         "language": "c",
