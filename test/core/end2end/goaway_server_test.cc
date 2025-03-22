@@ -44,6 +44,9 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#ifdef GPR_WINDOWS
+#include "src/core/lib/event_engine/windows/windows_engine.h"
+#endif
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -65,14 +68,6 @@
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
 
-static grpc_ares_request* (*iomgr_dns_lookup_ares)(
-    const char* dns_server, const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
-    int query_timeout_ms);
-
-static void (*iomgr_cancel_ares_request)(grpc_ares_request* request);
-
 static void set_resolve_port(int port) {
   gpr_mu_lock(&g_mu);
   g_resolve_port = port;
@@ -81,137 +76,210 @@ static void set_resolve_port(int port) {
 
 namespace {
 
-class TestDNSResolver : public grpc_core::DNSResolver {
+using grpc_event_engine::experimental::EndpointConfig;
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::MemoryAllocator;
+using grpc_event_engine::experimental::MemoryAllocatorFactory;
+
+class TestDNSResolver : public EventEngine::DNSResolver {
  public:
-  explicit TestDNSResolver(
-      std::shared_ptr<grpc_core::DNSResolver> default_resolver)
-      : default_resolver_(std::move(default_resolver)),
-        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
-  TaskHandle LookupHostname(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_resolved,
-      absl::string_view name, absl::string_view default_port,
-      grpc_core::Duration timeout, grpc_pollset_set* interested_parties,
-      absl::string_view name_server) override {
+  explicit TestDNSResolver(std::shared_ptr<EventEngine> engine)
+      : engine_(std::move(engine)),
+        default_resolver_(engine_->GetDNSResolver(
+            EventEngine::DNSResolver::ResolverOptions())) {}
+
+  void LookupHostname(LookupHostnameCallback on_resolve, absl::string_view name,
+                      absl::string_view default_port) override {
+    CHECK(default_resolver_.ok());
     if (name != "test") {
-      return default_resolver_->LookupHostname(std::move(on_resolved), name,
-                                               default_port, timeout,
-                                               interested_parties, name_server);
+      LOG(INFO) << "1 name: " << name;
+      return (*default_resolver_)
+          ->LookupHostname(std::move(on_resolve), name, default_port);
     }
-    MakeDNSRequest(std::move(on_resolved));
-    return kNullHandle;
-  }
-
-  absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
-      absl::string_view name, absl::string_view default_port) override {
-    return default_resolver_->LookupHostnameBlocking(name, default_port);
-  }
-
-  TaskHandle LookupSRV(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_resolved,
-      absl::string_view /* name */, grpc_core::Duration /* timeout */,
-      grpc_pollset_set* /* interested_parties */,
-      absl::string_view /* name_server */) override {
-    engine_->Run([on_resolved] {
-      grpc_core::ExecCtx exec_ctx;
-      on_resolved(absl::UnimplementedError(
-          "The Testing DNS resolver does not support looking up SRV records"));
-    });
-    return {-1, -1};
-  };
-
-  TaskHandle LookupTXT(
-      std::function<void(absl::StatusOr<std::string>)> on_resolved,
-      absl::string_view /* name */, grpc_core::Duration /* timeout */,
-      grpc_pollset_set* /* interested_parties */,
-      absl::string_view /* name_server */) override {
-    // Not supported
-    engine_->Run([on_resolved] {
-      grpc_core::ExecCtx exec_ctx;
-      on_resolved(absl::UnimplementedError(
-          "The Testing DNS resolver does not support looking up TXT records"));
-    });
-    return {-1, -1};
-  };
-
-  bool Cancel(TaskHandle /*handle*/) override { return false; }
-
- private:
-  void MakeDNSRequest(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) {
     gpr_mu_lock(&g_mu);
     if (g_resolve_port < 0) {
       gpr_mu_unlock(&g_mu);
-      new grpc_core::DNSCallbackExecCtxScheduler(
-          std::move(on_done), absl::UnknownError("Forced Failure"));
+      engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
+        on_resolve(absl::UnknownError("Forced Failure"));
+      });
     } else {
-      std::vector<grpc_resolved_address> addrs;
-      grpc_resolved_address addr;
-      grpc_sockaddr_in* sa = reinterpret_cast<grpc_sockaddr_in*>(&addr);
-      sa->sin_family = GRPC_AF_INET;
-      sa->sin_addr.s_addr = 0x100007f;
-      sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-      addr.len = static_cast<socklen_t>(sizeof(*sa));
-      addrs.push_back(addr);
+      LOG(INFO) << "2 name: " << name;
+      std::vector<EventEngine::ResolvedAddress> addrs;
+      struct sockaddr_in in;
+      in.sin_family = GRPC_AF_INET;
+      in.sin_addr.s_addr = 0x100007f;
+      in.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
+      addrs.push_back(EventEngine::ResolvedAddress(
+          reinterpret_cast<const sockaddr*>(&in), sizeof(struct sockaddr_in)));
       gpr_mu_unlock(&g_mu);
-      new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done),
-                                                 std::move(addrs));
+      engine_->Run([on_resolve = std::move(on_resolve),
+                    addrs = std::move(addrs)]() mutable {
+        on_resolve(std::move(addrs));
+      });
     }
   }
-  std::shared_ptr<grpc_core::DNSResolver> default_resolver_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
+  void LookupSRV(LookupSRVCallback on_resolve,
+                 absl::string_view name) override {
+    CHECK(default_resolver_.ok());
+    return (*default_resolver_)->LookupSRV(std::move(on_resolve), name);
+  }
+  void LookupTXT(LookupTXTCallback on_resolve,
+                 absl::string_view name) override {
+    CHECK(default_resolver_.ok());
+    return (*default_resolver_)->LookupTXT(std::move(on_resolve), name);
+  }
+
+ private:
+  std::shared_ptr<EventEngine> engine_;
+  absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> default_resolver_;
 };
+
+#ifndef GPR_WINDOWS
+
+class TestEventEngine : public EventEngine {
+ public:
+  explicit TestEventEngine(std::shared_ptr<EventEngine> default_event_engine)
+      : default_event_engine_(std::move(default_event_engine)) {}
+  ~TestEventEngine() override = default;
+
+  absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
+      Listener::AcceptCallback on_accept,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
+      const EndpointConfig& config,
+      std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
+      override {
+    return default_event_engine_->CreateListener(
+        std::move(on_accept), std::move(on_shutdown), config,
+        std::move(memory_allocator_factory));
+  }
+
+  ConnectionHandle Connect(OnConnectCallback on_connect,
+                           const ResolvedAddress& addr,
+                           const EndpointConfig& args,
+                           MemoryAllocator memory_allocator,
+                           Duration timeout) override {
+    return default_event_engine_->Connect(std::move(on_connect), addr, args,
+                                          std::move(memory_allocator), timeout);
+  }
+
+  bool CancelConnect(ConnectionHandle handle) override {
+    return default_event_engine_->CancelConnect(handle);
+  }
+
+  bool IsWorkerThread() override {
+    return default_event_engine_->IsWorkerThread();
+  }
+
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
+      const DNSResolver::ResolverOptions& options) override {
+    return std::make_unique<TestDNSResolver>(default_event_engine_);
+  }
+
+  void Run(Closure* closure) override {
+    return default_event_engine_->Run(closure);
+  }
+
+  void Run(absl::AnyInvocable<void()> closure) override {
+    return default_event_engine_->Run(std::move(closure));
+  }
+
+  TaskHandle RunAfter(Duration when, Closure* closure) override {
+    return default_event_engine_->RunAfter(when, closure);
+  }
+
+  TaskHandle RunAfter(Duration when,
+                      absl::AnyInvocable<void()> closure) override {
+    return default_event_engine_->RunAfter(when, std::move(closure));
+  }
+
+  bool Cancel(TaskHandle handle) override {
+    return default_event_engine_->Cancel(handle);
+  }
+
+ private:
+  std::shared_ptr<EventEngine> default_event_engine_;
+};
+
+#else  // GPR_WINDOWS
+using grpc_event_engine::experimental::IOCP;
+using grpc_event_engine::experimental::ThreadPool;
+using grpc_event_engine::experimental::WindowsEventEngine;
+
+class TestEventEngine : public WindowsEventEngine {
+ public:
+  explicit TestEventEngine(
+      std::shared_ptr<WindowsEventEngine> default_event_engine)
+      : default_event_engine_(std::move(default_event_engine)) {}
+  ~TestEventEngine() override = default;
+
+  absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
+      Listener::AcceptCallback on_accept,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
+      const EndpointConfig& config,
+      std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
+      override {
+    return default_event_engine_->CreateListener(
+        std::move(on_accept), std::move(on_shutdown), config,
+        std::move(memory_allocator_factory));
+  }
+
+  ConnectionHandle Connect(OnConnectCallback on_connect,
+                           const ResolvedAddress& addr,
+                           const EndpointConfig& args,
+                           MemoryAllocator memory_allocator,
+                           Duration timeout) override {
+    return default_event_engine_->Connect(std::move(on_connect), addr, args,
+                                          std::move(memory_allocator), timeout);
+  }
+
+  bool CancelConnect(ConnectionHandle handle) override {
+    return default_event_engine_->CancelConnect(handle);
+  }
+
+  bool IsWorkerThread() override {
+    return default_event_engine_->IsWorkerThread();
+  }
+
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
+      const DNSResolver::ResolverOptions& options) override {
+    return std::make_unique<TestDNSResolver>(default_event_engine_);
+  }
+
+  void Run(Closure* closure) override {
+    return default_event_engine_->Run(closure);
+  }
+
+  void Run(absl::AnyInvocable<void()> closure) override {
+    return default_event_engine_->Run(std::move(closure));
+  }
+
+  TaskHandle RunAfter(Duration when, Closure* closure) override {
+    return default_event_engine_->RunAfter(when, closure);
+  }
+
+  TaskHandle RunAfter(Duration when,
+                      absl::AnyInvocable<void()> closure) override {
+    return default_event_engine_->RunAfter(when, std::move(closure));
+  }
+
+  bool Cancel(TaskHandle handle) override {
+    return default_event_engine_->Cancel(handle);
+  }
+
+  ThreadPool* thread_pool() override {
+    return default_event_engine_->thread_pool();
+  }
+  IOCP* poller() override { return default_event_engine_->poller(); }
+
+ private:
+  std::shared_ptr<WindowsEventEngine> default_event_engine_;
+};
+
+#endif  // GPR_WINDOWS
 
 }  // namespace
 
-static grpc_ares_request* my_dns_lookup_ares(
-    const char* dns_server, const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
-    int query_timeout_ms) {
-  if (0 != strcmp(addr, "test")) {
-    // A records should suffice
-    return iomgr_dns_lookup_ares(dns_server, addr, default_port,
-                                 interested_parties, on_done, addresses,
-                                 query_timeout_ms);
-  }
-
-  grpc_error_handle error;
-  gpr_mu_lock(&g_mu);
-  if (g_resolve_port < 0) {
-    gpr_mu_unlock(&g_mu);
-    error = GRPC_ERROR_CREATE("Forced Failure");
-  } else {
-    *addresses = std::make_unique<grpc_core::EndpointAddressesList>();
-    grpc_resolved_address address;
-    memset(&address, 0, sizeof(address));
-    auto* sa = reinterpret_cast<grpc_sockaddr_in*>(&address.addr);
-    sa->sin_family = GRPC_AF_INET;
-    sa->sin_addr.s_addr = 0x100007f;
-    sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-    address.len = sizeof(grpc_sockaddr_in);
-    (*addresses)->emplace_back(address, grpc_core::ChannelArgs());
-    gpr_mu_unlock(&g_mu);
-  }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
-  return nullptr;
-}
-
-static void my_cancel_ares_request(grpc_ares_request* request) {
-  if (request != nullptr) {
-    iomgr_cancel_ares_request(request);
-  }
-}
-
 int main(int argc, char** argv) {
-  // TODO(yijiem): rewrite this test with a custom EventEngine DNS Resolver
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    LOG(ERROR) << "Skipping iomgr-specific DNS test because EventEngine DNS is "
-                  "enabled";
-    return 0;
-  }
   grpc_completion_queue* cq;
   grpc_op ops[6];
   grpc_op* op;
@@ -220,12 +288,14 @@ int main(int argc, char** argv) {
 
   gpr_mu_init(&g_mu);
   grpc_init();
-  grpc_core::ResetDNSResolver(
-      std::make_unique<TestDNSResolver>(grpc_core::GetDNSResolver()));
-  iomgr_dns_lookup_ares = grpc_dns_lookup_hostname_ares;
-  iomgr_cancel_ares_request = grpc_cancel_ares_request;
-  grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
-  grpc_cancel_ares_request = my_cancel_ares_request;
+#ifdef GPR_WINDOWS
+  auto test_event_engine = std::make_shared<TestEventEngine>(
+      std::make_unique<grpc_event_engine::experimental::WindowsEventEngine>());
+#else
+  auto test_event_engine = std::make_shared<TestEventEngine>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
+#endif
+  grpc_event_engine::experimental::SetDefaultEventEngine(test_event_engine);
 
   int was_cancelled1;
   int was_cancelled2;
