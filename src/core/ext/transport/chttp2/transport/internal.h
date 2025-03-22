@@ -672,7 +672,16 @@ struct grpc_chttp2_stream {
 
   grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
 
-  // TODO(roth): Remove this when call v3 is supported.
+  // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
+  // https://github.com/grpc/grpc/pull/38729 for more information.)
+  // In the transport, we use tracers for two things, recording byte stats and
+  // recording annotations. Recording byte stats is safe as long as call_tracer
+  // is non null. Recording annotations on the other hand is only safe after
+  // send_initial_metadata. On the client, this is not an issue since that is
+  // the first operation. On the server, we would ideally be able to record
+  // annotations as soon as we have parsed initial metadata, but in our legacy
+  // stack, we create the stream before parsing headers. In the new v3 stack,
+  // that won't be an issue.
   grpc_core::CallTracerInterface* call_tracer = nullptr;
   // TODO(yashykt): Remove this once call_tracer_transport_fix is rolled out
   grpc_core::CallTracerAnnotationInterface* parent_call_tracer = nullptr;

@@ -856,7 +856,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
       }()),
       arena(arena),
       flow_control(&t->flow_control),
-      call_tracer_wrapper(this) {
+      call_tracer_wrapper(this),
+      call_tracer(arena->GetContext<grpc_core::CallTracerInterface>()) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
@@ -1644,15 +1645,11 @@ static void perform_stream_op_locked(void* stream_op,
   if (!grpc_core::IsCallTracerTransportFixEnabled()) {
     s->parent_call_tracer = ParentCallTracerIfSampled(s);
   }
-  // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
-  // https://github.com/grpc/grpc/pull/38729 for more information.) On the
-  // client, the call attempt tracer will be available for use when the
-  // send_initial_metadata op arrives. On the server, we have it available once
-  // the filters/tracers have had a chance to parse the headers. In the legacy
-  // stack, we parse the headers after creating the stream, and hence we wait
-  // for send_initial_metadata to get the tracer on the server as well. This
-  // will go away with v3 calls.
-  if (op->send_initial_metadata) {
+  // Some server filters populate CallTracerInterface in the context only after
+  // reading initial metadata. (Client-side population is done by
+  // client_channel filter.)
+  if (!t->is_client && !grpc_core::IsCallTracerInTransportEnabled() &&
+      op->send_initial_metadata) {
     s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
   }
   s->tcp_tracer = TcpTracerIfSampled(s);
