@@ -118,7 +118,7 @@ absl::Status StatusFromProto(google_rpc_Status* msg);
 /// Returns ptr that is allocated in the heap memory and the given status is
 /// copied into. This ptr can be used to get Status later and should be
 /// freed by StatusFreeHeapPtr. This can be 0 in case of OkStatus.
-uintptr_t StatusAllocHeapPtr(absl::Status s);
+uintptr_t StatusAllocHeapPtr(const absl::Status& s);
 
 /// Frees the allocated status at heap ptr.
 void StatusFreeHeapPtr(uintptr_t ptr);

@@ -339,7 +339,7 @@ absl::Status StatusFromProto(google_rpc_Status* msg) {
   return status;
 }
 
-uintptr_t StatusAllocHeapPtr(absl::Status s) {
+uintptr_t StatusAllocHeapPtr(const absl::Status& s) {
   if (s.ok()) return 0;
   absl::Status* ptr = new absl::Status(s);
   return reinterpret_cast<uintptr_t>(ptr);
