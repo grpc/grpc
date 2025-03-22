@@ -1877,7 +1877,7 @@ std::string XdsClient::ConstructFullXdsResourceName(
     absl::string_view authority, absl::string_view resource_type,
     const XdsResourceKey& key) {
   if (authority != kOldStyleAuthority) {
-    auto uri = URI::Create("xdstp", std::string(authority),
+    auto uri = URI::Create("xdstp", /*user_info*/ "", std::string(authority),
                            absl::StrCat("/", resource_type, "/", key.id),
                            key.query_params, /*fragment=*/"");
     CHECK(uri.ok());
