@@ -202,8 +202,6 @@
  * grpc_resource_quota*). (use grpc_resource_quota_arg_vtable() to fetch an
  * appropriate pointer arg vtable) */
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
-/** If non-zero, expand wildcard addresses to a list of local addresses. */
-#define GRPC_ARG_EXPAND_WILDCARD_ADDRS "grpc.expand_wildcard_addrs"
 /** Service config data in JSON form.
     This value will be ignored if the name resolver returns a service config. */
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"

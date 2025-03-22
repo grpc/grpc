@@ -85,9 +85,6 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
       AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_KEEPALIVE_TIME_MS));
   options.keep_alive_timeout_ms =
       AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS));
-  options.expand_wildcard_addrs =
-      (AdjustValue(0, 1, INT_MAX,
-                   config.GetInt(GRPC_ARG_EXPAND_WILDCARD_ADDRS)) != 0);
   options.allow_reuse_port =
       (AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_ALLOW_REUSEPORT)) !=
        0);
