@@ -32,4 +32,7 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer* buffer);
 /* Converts a grpc_slice to a ruby string */
 VALUE grpc_rb_slice_to_ruby_string(grpc_slice slice);
 
+/* Converts a grpc_slice to a UTF-8 ruby string */
+VALUE grpc_rb_slice_to_utf8_ruby_string(grpc_slice slice);
+
 #endif /* GRPC_RB_BYTE_BUFFER_H_ */
