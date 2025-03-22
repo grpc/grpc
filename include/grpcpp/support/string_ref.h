@@ -20,6 +20,7 @@
 #define GRPCPP_SUPPORT_STRING_REF_H
 
 #include <grpcpp/support/config.h>
+#include "absl/strings/string_view.h"
 #include <string.h>
 
 #include <algorithm>
@@ -29,6 +30,9 @@
 
 namespace grpc {
 
+#if 1
+using string_ref = absl::string_view;
+#else
 /// This class is a non owning reference to a string.
 ///
 /// It should be a strict subset of the upcoming std::string_ref.
@@ -142,6 +146,8 @@ inline bool operator>=(string_ref x, string_ref y) { return x.compare(y) >= 0; }
 inline std::ostream& operator<<(std::ostream& out, const string_ref& string) {
   return out << std::string(string.begin(), string.end());
 }
+
+#endif
 
 }  // namespace grpc
 
