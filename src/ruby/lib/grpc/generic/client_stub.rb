@@ -28,7 +28,7 @@ module GRPC
     # Default timeout is infinity.
     DEFAULT_TIMEOUT = INFINITE_FUTURE
 
-    # setup_channel is used by #initialize to constuct a channel from its
+    # setup_channel is used by #initialize to construct a channel from its
     # arguments.
     def self.setup_channel(alt_chan, host, creds, channel_args = {})
       unless alt_chan.nil?
@@ -382,7 +382,7 @@ module GRPC
     #
     # * the execution block parameters are two objects for sending and
     #   receiving responses, each of which blocks waiting for flow control.
-    #   E.g, calles to bidi_call#remote_send will wait until flow control
+    #   E.g, calls to bidi_call#remote_send will wait until flow control
     #   allows another write before returning; and obviously calls to
     #   responses#next block until the next response is available.
     #
