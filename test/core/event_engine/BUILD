@@ -74,17 +74,19 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
     external_deps = [
         "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    uses_polling = False,
     deps = [
         "//:gpr_platform",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
+        "//test/core/test_util:fuzzing_channel_args",
     ],
 )
 
