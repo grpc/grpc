@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+#include "src/core/lib/promise/wait_set.h"
 
-package frame_fuzzer;
+#include "absl/strings/str_join.h"
 
-message Test {
-    bytes header = 1;
-    bytes payload = 2;
+namespace grpc_core {
+
+std::string WaitSet::ToString() {
+  return absl::StrJoin(pending_, ", ",
+                       [](std::string* out, const Waker& waker) {
+                         absl::StrAppend(out, waker.DebugString());
+                       });
 }
+
+}  // namespace grpc_core
