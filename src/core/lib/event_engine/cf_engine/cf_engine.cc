@@ -57,6 +57,10 @@ CFEventEngine::CFEventEngine()
           MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
       timer_manager_(thread_pool_) {}
 
+CFEventEngine::CFEventEngine(std::shared_ptr<ThreadPool> thread_pool):
+  thread_pool_(thread_pool),
+  timer_manager_(thread_pool) {}
+
 CFEventEngine::~CFEventEngine() {
   {
     grpc_core::MutexLock lock(&task_mu_);
