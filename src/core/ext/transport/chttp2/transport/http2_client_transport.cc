@@ -87,7 +87,7 @@ void Http2ClientTransport::AbortWithError() {
 
 auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Factory";
-  return AssertResultType<absl::Status>(MatchPromise(
+  return AssertResultType<Http2Error>(MatchPromise(
       std::move(frame),
       [](Http2DataFrame frame) {
         return ProcessHttp2DataFrame(std::move(frame));
@@ -117,12 +117,12 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
       [](GRPC_UNUSED Http2UnknownFrame frame) {
         // As per HTTP2 RFC, implementations MUST ignore and discard frames of
         // unknown types.
-        return absl::OkStatus();
+        return Http2Error::Ok();
       },
       [](GRPC_UNUSED Http2EmptyFrame frame) {
         LOG(DFATAL)
             << "ParseFramePayload should never return a Http2EmptyFrame";
-        return absl::OkStatus();
+        return Http2Error::Ok();
       }));
 }
 

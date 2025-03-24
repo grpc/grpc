@@ -58,23 +58,23 @@ inline constexpr absl::string_view kStreamIdShouldBeOdd =
     "HTTP2 Error : Streams initiated by a client MUST use odd-numbered stream "
     "identifiers.";
 
-class HttpError {
+class Http2Error {
  public:
-  static HttpError Ok() {
-    return HttpError(Http2ErrorCode::kNoError, Http2ErrorType::kOk, kNoError);
+  static Http2Error Ok() {
+    return Http2Error(Http2ErrorCode::kNoError, Http2ErrorType::kOk, kNoError);
   }
-  static HttpError ConnectionError(const Http2ErrorCode error_code,
-                                   absl::string_view error_message) {
-    return HttpError(error_code, Http2ErrorType::kConnectionError,
-                     error_message);
+  static Http2Error ConnectionError(const Http2ErrorCode error_code,
+                                    absl::string_view error_message) {
+    return Http2Error(error_code, Http2ErrorType::kConnectionError,
+                      error_message);
   }
-  static HttpError StreamError(const Http2ErrorCode error_code,
-                               absl::string_view error_message) {
-    return HttpError(error_code, Http2ErrorType::kStreamError, error_message);
+  static Http2Error StreamError(const Http2ErrorCode error_code,
+                                absl::string_view error_message) {
+    return Http2Error(error_code, Http2ErrorType::kStreamError, error_message);
   }
-  static HttpError GrpcError(const Http2ErrorCode error_code,
-                             absl::string_view error_message) {
-    return HttpError(error_code, Http2ErrorType::kGrpcError, error_message);
+  static Http2Error GrpcError(const Http2ErrorCode error_code,
+                              absl::string_view error_message) {
+    return Http2Error(error_code, Http2ErrorType::kGrpcError, error_message);
   }
 
   bool is_ok() const { return (code_ == Http2ErrorCode::kNoError); }
@@ -100,8 +100,8 @@ class HttpError {
     kConnectionError = 0x2,
     kGrpcError = 0x3,
   };
-  HttpError(const Http2ErrorCode code, Http2ErrorType error_type,
-            absl::string_view error_message)
+  Http2Error(const Http2ErrorCode code, Http2ErrorType error_type,
+             absl::string_view error_message)
       : error_message_(error_message), code_(code), error_type_(error_type) {
     DCHECK(
         (code == Http2ErrorCode::kNoError &&
