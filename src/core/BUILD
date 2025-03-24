@@ -7510,6 +7510,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "http2_error",
+    hdrs = [
+        "ext/transport/chttp2/transport/error.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status",
+        "absl/strings",
+    ],
+)
+
+grpc_cc_library(
     name = "http2_client_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_client_transport.cc",
@@ -7531,6 +7544,7 @@ grpc_cc_library(
         "channel_args",
         "check_class_size",
         "grpc_promise_endpoint",
+        "http2_error",
         "http2_settings",
         "http2_transport",
         "loop",
@@ -7578,6 +7592,7 @@ grpc_cc_library(
         "channel_args",
         "check_class_size",
         "grpc_promise_endpoint",
+        "http2_error",
         "http2_settings",
         "loop",
         "map",

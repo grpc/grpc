@@ -12496,6 +12496,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/error.h
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/lib/promise/detail/promise_variant.h
@@ -12547,6 +12548,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/error.h
   - src/core/ext/transport/chttp2/transport/http2_server_transport.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/match_promise.h
