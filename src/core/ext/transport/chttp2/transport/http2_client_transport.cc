@@ -90,7 +90,7 @@ auto Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
             << "Http2Transport ProcessHttp2DataFrame Promise { stream_id="
             << frame1.stream_id << ", end_stream=" << frame1.end_stream
             << ", payload=" << frame1.payload.JoinIntoString() << "}";
-        return absl::OkStatus();
+        return Http2Error::Ok();
       };
 }
 
@@ -105,7 +105,7 @@ auto Http2ClientTransport::ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
             << frame1.stream_id << ", end_headers=" << frame1.end_headers
             << ", end_stream=" << frame1.end_stream
             << ", payload=" << frame1.payload.JoinIntoString() << " }";
-        return absl::OkStatus();
+        return Http2Error::Ok();
       };
 }
 
@@ -119,7 +119,7 @@ auto Http2ClientTransport::ProcessHttp2RstStreamFrame(
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2RstStreamFrame Promise{ stream_id="
             << frame1.stream_id << ", error_code=" << frame1.error_code << " }";
-        return absl::OkStatus();
+        return Http2Error::Ok();
       };
 }
 
@@ -135,7 +135,7 @@ auto Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
             << "Http2Transport ProcessHttp2SettingsFrame Promise { ack="
             << frame1.ack << ", settings length=" << frame1.settings.size()
             << "}";
-        return absl::OkStatus();
+        return Http2Error::Ok();
       };
 }
 
@@ -148,7 +148,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2PingFrame Promise { ack="
             << frame1.ack << ", opaque=" << frame1.opaque << " }";
-        return absl::OkStatus();
+        return Http2Error::Ok();
       };
 }
 
@@ -163,7 +163,7 @@ auto Http2ClientTransport::ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
                "last_stream_id="
             << frame1.last_stream_id << ", error_code=" << frame1.error_code
             << ", debug_data=" << frame1.debug_data.as_string_view() << "}";
-        return absl::OkStatus();
+        return Http2Error::Ok();
       };
 }
 
@@ -179,7 +179,7 @@ auto Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
             << "Http2Transport ProcessHttp2WindowUpdateFrame Promise { "
                " stream_id="
             << frame1.stream_id << ", increment=" << frame1.increment << "}";
-        return absl::OkStatus();
+        return Http2Error::Ok();
       };
 }
 
@@ -196,7 +196,7 @@ auto Http2ClientTransport::ProcessHttp2ContinuationFrame(
                "stream_id="
             << frame1.stream_id << ", end_headers=" << frame1.end_headers
             << ", payload=" << frame1.payload.JoinIntoString() << " }";
-        return absl::OkStatus();
+        return Http2Error::Ok();
       };
 }
 
@@ -209,7 +209,7 @@ auto Http2ClientTransport::ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2SecurityFrame Promise { payload="
             << frame1.payload.JoinIntoString() << " }";
-        return absl::OkStatus();
+        return Http2Error::Ok();
       };
 }
 
@@ -285,11 +285,20 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             << payload.JoinIntoString();
         return ParseFramePayload(current_frame_header_, std::move(payload));
       },
-      [this](GRPC_UNUSED Http2Frame frame) {
+      [this](Http2Frame frame) {
         HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame ProcessOneFrame";
-        return AssertResultType<absl::Status>(
-            ProcessOneFrame(std::move(frame)));
+        return AssertResultType<Http2Error>(ProcessOneFrame(std::move(frame)));
+      },
+      [this](Http2Error error) {
+        if (!error.is_ok()) {
+          HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Error : "
+                            << error.error_code();
+          // TODO(tjagtap) : [PH2][P1] : Either close the stream or close the
+          // connection.
+          return error.absl_status();
+        }
+        return absl::OkStatus();
       }));
 }
 
