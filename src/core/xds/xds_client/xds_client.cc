@@ -512,9 +512,8 @@ bool XdsClient::XdsChannel::MaybeFallbackLocked(
     }
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[xds_client " << xds_client_.get() << "] authority " << authority
-        << ": added fallback server " << server_uri()
-        << " (" << authority_state.xds_channels.back()->status().ToString()
-        << ")";
+        << ": added fallback server " << server_uri() << " ("
+        << authority_state.xds_channels.back()->status().ToString() << ")";
     if (authority_state.xds_channels.back()->status().ok()) return true;
   }
   GRPC_TRACE_LOG(xds_client, INFO)
@@ -559,10 +558,9 @@ void XdsClient::XdsChannel::OnConnectivityFailure(absl::Status status) {
 
 void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
   if (shutting_down_) return;
-  status =
-      absl::Status(status.code(), absl::StrCat("xDS channel for server ",
-                                               server_uri(),
-                                               ": ", status.message()));
+  status = absl::Status(
+      status.code(), absl::StrCat("xDS channel for server ", server_uri(), ": ",
+                                  status.message()));
   LOG(INFO) << "[xds_client " << xds_client() << "] " << status;
   // If status was previously OK, report that the channel has gone unhealthy.
   if (status_.ok() && xds_client_->metrics_reporter_ != nullptr) {
@@ -646,8 +644,8 @@ void XdsClient::XdsChannel::RetryableCall<T>::StartNewCallLocked() {
   CHECK(call_ == nullptr);
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << xds_channel()->xds_client() << "] xds server "
-      << xds_channel()->server_uri()
-      << ": start new call from retryable call " << this;
+      << xds_channel()->server_uri() << ": start new call from retryable call "
+      << this;
   call_ = MakeOrphanable<T>(
       this->Ref(DEBUG_LOCATION, "RetryableCall+start_new_call"));
 }
