@@ -71,6 +71,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler)
     : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
+  ExecCtx exec_ctx;
   // Create call.
   call_ = channel->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
@@ -151,6 +152,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Orphan() {
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
     std::string payload) {
+  ExecCtx exec_ctx;
   // Create payload.
   grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
   send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
@@ -168,6 +170,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     StartRecvMessage() {
+  ExecCtx exec_ctx;
   Ref(DEBUG_LOCATION, "StartRecvMessage").release();
   grpc_op op;
   memset(&op, 0, sizeof(op));
