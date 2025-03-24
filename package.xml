@@ -118,12 +118,27 @@
     <file baseinstalldir="/" name="src/core/call/call_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/client_call.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/client_call.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/custom_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/interception_chain.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/interception_chain.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/message.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/message.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/metadata.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/metadata_batch.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/metadata_batch.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/metadata_compression_traits.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/metadata_info.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/metadata_info.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/parsed_metadata.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/parsed_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/request_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/request_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/security_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/server_call.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/server_call.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/simple_slice_based_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channel_trace.cc" role="src" />
@@ -1276,6 +1291,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/can_track_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/chaotic_good_extension.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/iomgr_compatible.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/tcp_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.cc" role="src" />
@@ -1309,6 +1325,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/tcp_socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer.cc" role="src" />
@@ -1624,24 +1641,9 @@
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/custom_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/interception_chain.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/interception_chain.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/message.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/message.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata_compression_traits.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata_info.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata_info.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/simple_slice_based_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />

@@ -23,6 +23,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 
 namespace grpc_core {
@@ -127,6 +128,7 @@ class SerializeExtraBytesRequired {
   size_t operator()(const Http2WindowUpdateFrame&) { return 4; }
   size_t operator()(const Http2SecurityFrame&) { return 0; }
   size_t operator()(const Http2UnknownFrame&) { Crash("unreachable"); }
+  size_t operator()(const Http2EmptyFrame&) { Crash("unreachable"); }
 };
 
 class SerializeHeaderAndPayload {
@@ -232,6 +234,8 @@ class SerializeHeaderAndPayload {
   }
 
   void operator()(Http2UnknownFrame&) { Crash("unreachable"); }
+
+  void operator()(Http2EmptyFrame&) {}
 
  private:
   SliceBuffer& out_;
@@ -520,6 +524,23 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
     default:
       return Http2UnknownFrame{};
   }
+}
+
+GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
+  CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
+  uint8_t buffer[kGrpcHeaderSizeInBytes];
+  payload.MoveFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
+  GrpcMessageHeader header;
+  header.flags = buffer[0];
+  header.length = Read4b(buffer + 1);
+  return header;
+}
+
+void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
+                                   const uint32_t length) {
+  uint8_t* frame_hdr = payload.AddTiny(kGrpcHeaderSizeInBytes);
+  frame_hdr[0] = flags;
+  Write4b(length, frame_hdr + 1);
 }
 
 }  // namespace grpc_core

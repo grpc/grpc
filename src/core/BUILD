@@ -79,6 +79,7 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/extensions/can_track_errors.h",
         "lib/event_engine/extensions/chaotic_good_extension.h",
+        "lib/event_engine/extensions/iomgr_compatible.h",
         "lib/event_engine/extensions/supports_fd.h",
         "lib/event_engine/extensions/tcp_trace.h",
     ],
@@ -230,15 +231,18 @@ grpc_cc_library(
 grpc_cc_library(
     name = "metadata_compression_traits",
     hdrs = [
-        "lib/transport/metadata_compression_traits.h",
+        "call/metadata_compression_traits.h",
     ],
     deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
     name = "metadata_info",
-    srcs = ["lib/transport/metadata_info.cc"],
-    hdrs = ["lib/transport/metadata_info.h"],
+    srcs = ["call/metadata_info.cc"],
+    hdrs = ["call/metadata_info.h"],
+    external_deps = [
+        "absl/strings",
+    ],
     deps = [
         "channel_args",
         "hpack_constants",
@@ -381,9 +385,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "time_precise",
-    srcs = [
-        "util/time_precise.cc",
-    ],
+    srcs = ["util/time_precise.cc"],
     hdrs = [
         "util/time_precise.h",
     ],
@@ -2432,6 +2434,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "posix_event_engine_tcp_socket_utils",
     srcs = [
+        "lib/event_engine/posix_engine/set_socket_dualstack.cc",
         "lib/event_engine/posix_engine/tcp_socket_utils.cc",
     ],
     hdrs = [
@@ -2705,6 +2708,8 @@ grpc_cc_library(
     deps = [
         "common_event_engine_closures",
         "error",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "iomgr_port",
@@ -7539,6 +7544,8 @@ grpc_cc_library(
         "http2_transport",
         "loop",
         "map",
+        "message",
+        "metadata",
         "mpsc",
         "sync",
         ":match_promise",
@@ -7583,6 +7590,8 @@ grpc_cc_library(
         "http2_settings",
         "loop",
         "map",
+        "message",
+        "metadata",
         "mpsc",
         "ref_counted",
         "sync",
@@ -8935,10 +8944,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "interception_chain",
     srcs = [
-        "lib/transport/interception_chain.cc",
+        "call/interception_chain.cc",
     ],
     hdrs = [
-        "lib/transport/interception_chain.h",
+        "call/interception_chain.h",
     ],
     deps = [
         "call_destination",
@@ -8967,10 +8976,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "parsed_metadata",
     srcs = [
-        "lib/transport/parsed_metadata.cc",
+        "call/parsed_metadata.cc",
     ],
     hdrs = [
-        "lib/transport/parsed_metadata.h",
+        "call/parsed_metadata.h",
     ],
     external_deps = [
         "absl/functional:function_ref",
@@ -8987,10 +8996,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "metadata",
     srcs = [
-        "lib/transport/metadata.cc",
+        "call/metadata.cc",
     ],
     hdrs = [
-        "lib/transport/metadata.h",
+        "call/metadata.h",
     ],
     deps = [
         "error_utils",
@@ -9003,10 +9012,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "message",
     srcs = [
-        "lib/transport/message.cc",
+        "call/message.cc",
     ],
     hdrs = [
-        "lib/transport/message.h",
+        "call/message.h",
     ],
     external_deps = ["absl/strings"],
     deps = [
@@ -9073,12 +9082,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "metadata_batch",
     srcs = [
-        "lib/transport/metadata_batch.cc",
+        "call/metadata_batch.cc",
     ],
     hdrs = [
-        "lib/transport/custom_metadata.h",
-        "lib/transport/metadata_batch.h",
-        "lib/transport/simple_slice_based_metadata.h",
+        "call/custom_metadata.h",
+        "call/metadata_batch.h",
+        "call/simple_slice_based_metadata.h",
     ],
     external_deps = [
         "absl/base:no_destructor",

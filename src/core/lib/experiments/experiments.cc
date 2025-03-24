@@ -52,6 +52,10 @@ const char* const description_event_engine_dns_non_client_channel =
     "channel.";
 const char* const additional_constraints_event_engine_dns_non_client_channel =
     "{}";
+const char* const description_event_engine_fork =
+    "Enables event engine fork handling, including onfork events and file "
+    "descriptor generations";
+const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -169,6 +173,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      false, false},
+    {"event_engine_fork", description_event_engine_fork,
+     additional_constraints_event_engine_fork, nullptr, 0, false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, false, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -192,7 +198,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
+     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -260,6 +266,10 @@ const char* const description_event_engine_dns_non_client_channel =
     "channel.";
 const char* const additional_constraints_event_engine_dns_non_client_channel =
     "{}";
+const char* const description_event_engine_fork =
+    "Enables event engine fork handling, including onfork events and file "
+    "descriptor generations";
+const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -377,6 +387,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      false, false},
+    {"event_engine_fork", description_event_engine_fork,
+     additional_constraints_event_engine_fork, nullptr, 0, false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -400,7 +412,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
+     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -468,6 +480,10 @@ const char* const description_event_engine_dns_non_client_channel =
     "channel.";
 const char* const additional_constraints_event_engine_dns_non_client_channel =
     "{}";
+const char* const description_event_engine_fork =
+    "Enables event engine fork handling, including onfork events and file "
+    "descriptor generations";
+const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -585,6 +601,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      false, false},
+    {"event_engine_fork", description_event_engine_fork,
+     additional_constraints_event_engine_fork, nullptr, 0, false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -608,7 +626,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
+     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,

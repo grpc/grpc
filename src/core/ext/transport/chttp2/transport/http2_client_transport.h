@@ -98,6 +98,17 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
  private:
+  // Promise factory for processing each type of frame
+  auto ProcessHttp2DataFrame(Http2DataFrame frame);
+  auto ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
+  auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
+  auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
+  auto ProcessHttp2PingFrame(Http2PingFrame frame);
+  auto ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
+  auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
+  auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
+  auto ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
+
   // Reading from the endpoint.
 
   // Returns a promise to keep reading in a Loop till a fail/close is received.
@@ -137,9 +148,9 @@ class Http2ClientTransport final : public ClientTransport {
     explicit Stream(CallHandler call) : call(std::move(call)) {}
     // Transport holds one CallHandler object for each Stream.
     CallHandler call;
+    HttpStreamState stream_state = HttpStreamState::kIdle;
+    TransportSendQeueue send_queue;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
-    // TODO(tjagtap) : [PH2][P2] : May be add state of Stream - Idle , Open etc
-    // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   };
 
   MpscReceiver<Http2Frame> outgoing_frames_;

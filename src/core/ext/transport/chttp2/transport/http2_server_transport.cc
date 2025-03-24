@@ -247,6 +247,11 @@ auto Http2ServerTransport::ProcessOneFrame(Http2Frame frame) {
         // As per HTTP2 RFC, implementations MUST ignore and discard frames of
         // unknown types.
         return absl::OkStatus();
+      },
+      [](GRPC_UNUSED Http2EmptyFrame frame) {
+        LOG(DFATAL)
+            << "ParseFramePayload should never return a Http2EmptyFrame";
+        return absl::OkStatus();
       }));
 }
 
