@@ -68,6 +68,7 @@ inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
+inline bool IsEventEngineForkEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
@@ -111,6 +112,7 @@ inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
+inline bool IsEventEngineForkEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
@@ -155,6 +157,7 @@ inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
+inline bool IsEventEngineForkEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
@@ -196,6 +199,7 @@ enum ExperimentIds {
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineDnsNonClientChannel,
+  kExperimentIdEventEngineFork,
   kExperimentIdEventEngineListener,
   kExperimentIdEventEngineCallbackCq,
   kExperimentIdEventEngineForAllOtherEndpoints,
@@ -250,6 +254,10 @@ inline bool IsEventEngineDnsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
 inline bool IsEventEngineDnsNonClientChannelEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineDnsNonClientChannel>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FORK
+inline bool IsEventEngineForkEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEngineFork>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() {
