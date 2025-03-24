@@ -296,9 +296,8 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
                             << error.error_code();
           // TODO(tjagtap) : [PH2][P1] : Either close the stream or close the
           // connection.
-          return error.absl_status();
         }
-        return absl::OkStatus();
+        return error.absl_status();
       }));
 }
 
