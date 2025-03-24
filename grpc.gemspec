@@ -1309,6 +1309,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/event_engine_context.h )
   s.files += %w( src/core/lib/event_engine/extensions/can_track_errors.h )
   s.files += %w( src/core/lib/event_engine/extensions/chaotic_good_extension.h )
+  s.files += %w( src/core/lib/event_engine/extensions/iomgr_compatible.h )
   s.files += %w( src/core/lib/event_engine/extensions/supports_fd.h )
   s.files += %w( src/core/lib/event_engine/extensions/tcp_trace.h )
   s.files += %w( src/core/lib/event_engine/forkable.cc )
