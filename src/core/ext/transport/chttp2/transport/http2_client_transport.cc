@@ -428,6 +428,9 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
   return stream_id;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Call Spine related operations
+
 auto Http2ClientTransport::CallOutboundLoop(
     CallHandler call_handler, const uint32_t stream_id,
     std::tuple<InterActivityMutex<int>::Lock, ClientMetadataHandle>
@@ -510,6 +513,8 @@ void Http2ClientTransport::StartCall(CallHandler call_handler) {
                 },
                 []() { return absl::InternalError("Failed to make stream"); });
           }));
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall End";
 }
+
 }  // namespace http2
 }  // namespace grpc_core
