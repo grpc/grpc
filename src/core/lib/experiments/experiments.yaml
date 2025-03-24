@@ -102,6 +102,13 @@
   allow_in_fuzzing_config: false
   uses_polling: true
   requires: ["event_engine_client", "event_engine_listener", "event_engine_dns", "event_engine_dns_non_client_channel"]
+- name: event_engine_fork
+  description: Enables event engine fork handling, including onfork events and file descriptor generations
+  expiry: 2025/08/01
+  owner: eostroukhov@google.com
+  test_tags: ["core_end2end_test", "event_engine_fork_test"]
+  uses_polling: true
+  allow_in_fuzzing_config: false
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
   expiry: 2025/05/01

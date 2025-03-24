@@ -699,10 +699,9 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             grpc_core::GrpcHttp2GetCopyContextFn();
         if (copy_context_fn != nullptr &&
             grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
-          t->context_list->emplace_back(copy_context_fn(s->arena),
-                                        outbuf_relative_start_pos,
-                                        num_stream_bytes, s->byte_counter,
-                                        s->write_counter - 1, s->tcp_tracer);
+          t->context_list->emplace_back(
+              copy_context_fn(s->arena), outbuf_relative_start_pos,
+              num_stream_bytes, s->byte_counter, s->write_counter - 1, nullptr);
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;
