@@ -97,8 +97,8 @@ class WindowsEventEngine : public EventEngine,
   // This is public because most classes that know the concrete
   // WindowsEventEngine type are effectively friends.
   // Not intended for external use.
-  virtual ThreadPool* thread_pool() { return thread_pool_.get(); }
-  virtual IOCP* poller() { return &iocp_; }
+  ThreadPool* thread_pool() { return thread_pool_.get(); }
+  IOCP* poller() { return &iocp_; }
 
  private:
   // The state of an active connection.
