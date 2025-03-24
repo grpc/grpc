@@ -1,4 +1,4 @@
-// Copyright 2021 The gRPC Authors
+// Copyright 2025 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_FACTORY_H
-#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_FACTORY_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_IOMGR_COMPATIBLE_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_IOMGR_COMPATIBLE_H
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include <memory>
+#include "absl/functional/any_invocable.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
 
-/// Create an EventEngine using the default factory provided at link time.
-std::shared_ptr<EventEngine> DefaultEventEngineFactory();
+class IomgrCompatibleListener {
+ public:
+  virtual ~IomgrCompatibleListener() = default;
+  static absl::string_view EndpointExtensionName() {
+    return "io.grpc.event_engine.extension.iomgr_compatible_listener";
+  }
+  /// Supports shutdown before destruction.
+  virtual void Shutdown() = 0;
+};
 
 }  // namespace grpc_event_engine::experimental
 
-#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_FACTORY_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_IOMGR_COMPATIBLE_H
