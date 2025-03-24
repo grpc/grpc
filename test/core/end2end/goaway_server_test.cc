@@ -92,7 +92,6 @@ class TestDNSResolver : public EventEngine::DNSResolver {
                       absl::string_view default_port) override {
     CHECK(default_resolver_.ok());
     if (name != "test") {
-      LOG(INFO) << "1 name: " << name;
       return (*default_resolver_)
           ->LookupHostname(std::move(on_resolve), name, default_port);
     }
@@ -103,14 +102,13 @@ class TestDNSResolver : public EventEngine::DNSResolver {
         on_resolve(absl::UnknownError("Forced Failure"));
       });
     } else {
-      LOG(INFO) << "2 name: " << name;
       std::vector<EventEngine::ResolvedAddress> addrs;
       struct sockaddr_in in;
       in.sin_family = GRPC_AF_INET;
       in.sin_addr.s_addr = 0x100007f;
       in.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-      addrs.push_back(EventEngine::ResolvedAddress(
-          reinterpret_cast<const sockaddr*>(&in), sizeof(struct sockaddr_in)));
+      addrs.emplace_back(reinterpret_cast<const sockaddr*>(&in),
+                         sizeof(struct sockaddr_in));
       gpr_mu_unlock(&g_mu);
       engine_->Run([on_resolve = std::move(on_resolve),
                     addrs = std::move(addrs)]() mutable {
