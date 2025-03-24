@@ -48,19 +48,25 @@ namespace grpc_core {
 enum class StatusIntProperty {
   /// stream identifier: for errors that are associated with an individual
   /// wire stream
+  // TODO(tjagtap): Remove this when the PH2 migration is done.
   kStreamId,
   /// grpc status code representing this error
-  // TODO(veblush): Remove this after grpc_error is replaced with absl::Status
+  // TODO(roth): Remove this after error_flatten experiment is removed.
   kRpcStatus,
   /// http2 error code associated with the error (see the HTTP2 RFC)
+  // TODO(tjagtap): Remove this as part of creating a new HTTP/2 error type.
   kHttp2Error,
   /// channel connectivity state associated with the error
+  // TODO(roth): Remove this when the promise migration is done.
   ChannelConnectivityState,
   /// LB policy drop
+  // TODO(roth): Replace this with something else, possibly a call
+  // context element.
   kLbPolicyDrop,
 };
 
 /// This enum should have the same value of grpc_error_strs
+// TODO(roth): Remove this after error_flatten experiment is removed.
 enum class StatusStrProperty {
   /// peer that we were trying to communicate when this error occurred
   kGrpcMessage,
