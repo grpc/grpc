@@ -15,9 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_IOMGR_COMPATIBLE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_IOMGR_COMPATIBLE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"

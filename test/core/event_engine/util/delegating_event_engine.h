@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_TEST_CORE_EVENT_ENGINE_UTIL_DELEGATING_EVENT_ENGINE_H
+#define GRPC_TEST_CORE_EVENT_ENGINE_UTIL_DELEGATING_EVENT_ENGINE_H
+
 #include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine::experimental {
@@ -88,3 +91,5 @@ class DelegatingEventEngine : public EventEngine {
 };
 
 }  // namespace grpc_event_engine::experimental
+
+#endif  // GRPC_TEST_CORE_EVENT_ENGINE_UTIL_DELEGATING_EVENT_ENGINE_H
