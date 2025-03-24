@@ -58,10 +58,7 @@ static void set_resolve_port(int port) {
 
 namespace {
 
-using grpc_event_engine::experimental::EndpointConfig;
 using grpc_event_engine::experimental::EventEngine;
-using grpc_event_engine::experimental::MemoryAllocator;
-using grpc_event_engine::experimental::MemoryAllocatorFactory;
 
 class TestDNSResolver : public EventEngine::DNSResolver {
  public:
