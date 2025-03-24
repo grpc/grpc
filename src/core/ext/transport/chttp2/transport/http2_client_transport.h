@@ -64,6 +64,16 @@ class Http2ClientTransport final : public ClientTransport {
   // TODO(tjagtap) : [PH2][P3] Move the definitions to the header for better
   // inlining. For now definitions are in the cc file to
   // reduce cognitive load in the header.
+  auto EnqueueOutgoingFrame(Http2Frame frame) {
+    return AssertResultType<absl::Status>(
+        Map(outgoing_frames_.MakeSender().Send(std::move(frame)), [](bool ok) {
+          HTTP2_CLIENT_DLOG << "Http2ClientTransport::EnqueueOutgoingFrame ok="
+                            << ok;
+          return (ok) ? absl::OkStatus()
+                      : absl::InternalError("Failed to enqueue frame");
+        }));
+  }
+
  public:
   Http2ClientTransport(
       PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
@@ -90,14 +100,8 @@ class Http2ClientTransport final : public ClientTransport {
   void Orphan() override;
   void AbortWithError();
 
-  auto EnqueueOutgoingFrame(Http2Frame frame) {
-    return AssertResultType<absl::Status>(
-        Map(outgoing_frames_.MakeSender().Send(std::move(frame)), [](bool ok) {
-          HTTP2_CLIENT_DLOG << "Http2ClientTransport::EnqueueOutgoingFrame ok="
-                            << ok;
-          return (ok) ? absl::OkStatus()
-                      : absl::InternalError("Failed to enqueue frame");
-        }));
+  auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
+    return EnqueueOutgoingFrame(std::move(frame));
   }
 
  private:

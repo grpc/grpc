@@ -132,7 +132,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
       .end_stream = false,
       .payload = SliceBuffer(Slice::FromExternalString("Hello!"))};
 
-  auto promise = client_transport->EnqueueOutgoingFrame(std::move(frame));
+  auto promise =
+      client_transport->TestOnlyEnqueueOutgoingFrame(std::move(frame));
   EXPECT_THAT(promise(), IsReady());
   read();
 

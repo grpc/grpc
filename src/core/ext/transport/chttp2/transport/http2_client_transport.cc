@@ -311,9 +311,9 @@ auto Http2ClientTransport::CallOutboundLoop(
             auto& metadata = std::get<1>(lock_metadata);
             SliceBuffer buf;
             self->encoder_.EncodeRawHeaders(*metadata.get(), buf);
-            Http2Frame frame = Http2HeaderFrame{.stream_id = stream_id,
-                                                .end_headers = true,
-                                                .payload = std::move(buf)};
+            Http2Frame frame =
+                Http2HeaderFrame{stream_id, /*end_headers*/ true,
+                                 /*end_stream*/ false, std::move(buf)};
             return self->EnqueueOutgoingFrame(std::move(frame));
             /* Unlock the stream_mutex_ */
           },
