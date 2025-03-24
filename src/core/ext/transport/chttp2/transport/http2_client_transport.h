@@ -90,19 +90,21 @@ class Http2ClientTransport final : public ClientTransport {
   void Orphan() override;
   void AbortWithError();
 
-  // TODO(akshitpatel) : [PH2][P2] : Probably remove this once StartCall is
-  // plugged in.
   auto EnqueueOutgoingFrame(Http2Frame frame) {
-    return [sender = outgoing_frames_.MakeSender(),
-            frame = std::move(frame)]() mutable {
-      return sender.Send(std::move(frame));
-    };
+    return AssertResultType<absl::Status>(
+        Map(outgoing_frames_.MakeSender().Send(std::move(frame)), [](bool ok) {
+          HTTP2_CLIENT_DLOG << "Http2ClientTransport::EnqueueOutgoingFrame ok="
+                            << ok;
+          return (ok) ? absl::OkStatus()
+                      : absl::InternalError("Failed to enqueue frame");
+        }));
   }
 
  private:
   // Reading from the endpoint.
 
-  // Returns a promise to keep reading in a Loop till a fail/close is received.
+  // Returns a promise to keep reading in a Loop till a fail/close is
+  // received.
   auto ReadLoop();
 
   // Returns a promise that will read and process one HTTP2 frame.
@@ -119,7 +121,8 @@ class Http2ClientTransport final : public ClientTransport {
   // Read from the MPSC queue and write it.
   auto WriteFromQueue();
 
-  // Returns a promise to keep writing in a Loop till a fail/close is received.
+  // Returns a promise to keep writing in a Loop till a fail/close is
+  // received.
   auto WriteLoop();
 
   // Returns a promise that will do the cleanup after the WriteLoop ends.
@@ -128,7 +131,7 @@ class Http2ClientTransport final : public ClientTransport {
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
   auto CallOutboundLoop(
-      CallHandler call_handler, uint32_t stream_id,
+      CallHandler call_handler, const uint32_t stream_id,
       std::tuple<InterActivityMutex<int>::Lock, ClientMetadataHandle>
           lock_metadata);
 
@@ -154,8 +157,8 @@ class Http2ClientTransport final : public ClientTransport {
   MpscReceiver<Http2Frame> outgoing_frames_;
 
   Mutex transport_mutex_;
-  // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this mapping
-  // up in the on_done of the CallInitiator or CallHandler
+  // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this
+  // mapping up in the on_done of the CallInitiator or CallHandler
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
@@ -169,6 +172,10 @@ class Http2ClientTransport final : public ClientTransport {
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 };
 
+// Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
+// remain within that range. When this check fails, please update it to size
+// (current size + 32) to make sure that it does not fail each time we add a
+// small variable to the class.
 GRPC_CHECK_CLASS_SIZE(Http2ClientTransport, 600);
 
 }  // namespace http2

@@ -281,25 +281,14 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
 }
 
 auto Http2ClientTransport::CallOutboundLoop(
-    CallHandler call_handler, uint32_t stream_id,
+    CallHandler call_handler, const uint32_t stream_id,
     std::tuple<InterActivityMutex<int>::Lock, ClientMetadataHandle>
         lock_metadata /* Locked stream_mutex */) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop";
 
-  // Enqueue a frame to the MPSC.
-  auto send_frame =
-      [sender = outgoing_frames_.MakeSender()](Http2Frame frame) mutable {
-        HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop send_frame";
-        return AssertResultType<absl::Status>(
-            Map(sender.Send(std::move(frame)), [](bool ok) {
-              return (ok) ? absl::OkStatus()
-                          : absl::InternalError("Failed to enqueue frame");
-            }));
-      };
-
   // Convert a message to a Http2DataFrame and send the frame out.
-  auto send_message = [sender = outgoing_frames_.MakeSender(), stream_id,
-                       send_frame](MessageHandle message) mutable {
+  auto send_message = [self = RefAsSubclass<Http2ClientTransport>(),
+                       stream_id](MessageHandle message) mutable {
     // TODO(akshitpatel) : [PH2][P2] : Assuming one message per frame.
     // This will eventually change as more logic is added.
     SliceBuffer frame_payload;
@@ -310,32 +299,32 @@ auto Http2ClientTransport::CallOutboundLoop(
     Http2DataFrame frame{stream_id, /*end_stream*/ false,
                          std::move(frame_payload)};
     HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop send_message";
-    return send_frame(std::move(frame));
+    return self->EnqueueOutgoingFrame(std::move(frame));
   };
 
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
       TrySeq(
+          []() { return absl::OkStatus(); },
           [/* Locked stream_mutex */ lock_metadata = std::move(lock_metadata),
            self = RefAsSubclass<Http2ClientTransport>(), stream_id]() {
             auto& metadata = std::get<1>(lock_metadata);
             SliceBuffer buf;
             self->encoder_.EncodeRawHeaders(*metadata.get(), buf);
-            // stream_mutex_ unlocked after this promise completes
-            return Http2HeaderFrame{stream_id, /*end_headers*/ true,
-                                    /*end_stream*/ false, std::move(buf)};
-          },
-          [send_frame](Http2Frame frame) mutable {
-            return send_frame(std::move(frame));
+            Http2Frame frame = Http2HeaderFrame{.stream_id = stream_id,
+                                                .end_headers = true,
+                                                .payload = std::move(buf)};
+            return self->EnqueueOutgoingFrame(std::move(frame));
+            /* Unlock the stream_mutex_ */
           },
           ForEach(MessagesFrom(call_handler), send_message),
           // TODO(akshitpatel): [PH2][P2][RISK] : Need to check if it is okay to
           // send half close when the call is cancelled.
-          [stream_id, send_frame]() mutable {
+          [self = RefAsSubclass<Http2ClientTransport>(), stream_id]() mutable {
             // TODO(akshitpatel): [PH2][P2] : Figure out a way to send the end
             // of stream frame in the same frame as the last message.
             Http2DataFrame frame{stream_id, /*end_stream*/ true, SliceBuffer()};
-            return send_frame(std::move(frame));
+            return self->EnqueueOutgoingFrame(std::move(frame));
           },
           [call_handler]() mutable {
             return Map(call_handler.WasCancelled(), [](bool cancelled) {
@@ -362,7 +351,7 @@ void Http2ClientTransport::StartCall(CallHandler call_handler) {
            call_handler](auto args /* Locked stream_mutex */) mutable {
             // TODO (akshitpatel) : [PH2][P2] :
             // Check for max concurrent streams.
-            uint32_t stream_id = self->MakeStream(call_handler);
+            const uint32_t stream_id = self->MakeStream(call_handler);
             return If(
                 stream_id != 0,
                 [self, call_handler, stream_id,
