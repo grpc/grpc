@@ -104,6 +104,7 @@ class TestDNSResolver : public EventEngine::DNSResolver {
     } else {
       std::vector<EventEngine::ResolvedAddress> addrs;
       struct sockaddr_in in;
+      memset(&in, 0, sizeof(struct sockaddr_in));
       in.sin_family = GRPC_AF_INET;
       in.sin_addr.s_addr = 0x100007f;
       in.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
