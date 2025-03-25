@@ -113,12 +113,12 @@ def grpc_deps():
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            sha256 = "11f344710a80fd73db0fc686b4fe40867dc34d914d9cdfd7a4b416a65d1e692f",
-            strip_prefix = "benchmark-12235e24652fc7f809373e7c11a5f73c5763fc4c",
+            sha256 = "067e7e1bbcb8ede6314c664f6792d04fbd22d5e76dc57c77eecd8a1c8e70b28a",
+            strip_prefix = "benchmark-afa23b7699c17f1e26c88cbf95257b20d78d6247",
             urls = [
-                # v1.9.0
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/12235e24652fc7f809373e7c11a5f73c5763fc4c.tar.gz",
-                "https://github.com/google/benchmark/archive/12235e24652fc7f809373e7c11a5f73c5763fc4c.tar.gz",
+                # v1.9.2
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/afa23b7699c17f1e26c88cbf95257b20d78d6247.tar.gz",
+                "https://github.com/google/benchmark/archive/afa23b7699c17f1e26c88cbf95257b20d78d6247.tar.gz",
             ],
         )
 
