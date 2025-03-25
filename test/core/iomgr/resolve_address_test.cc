@@ -409,6 +409,14 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
     GTEST_SKIP() << "the native resolver doesn't support cancellation, so we "
                     "can only test this with c-ares";
   }
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+    GTEST_SKIP() << "The event_engine_for_all_other_endpoints experiment is "
+                    "enabled, which replaces iomgr grpc_fds with minimal "
+                    "implementations. The legacy ares resolver uses the "
+                    "grpc_fd APIs directly, so it will not work. Skipping this "
+                    "test, since the legacy ares resolver is not used under "
+                    "this experiment."
+  }
   // Inject an unresponsive DNS server into the resolver's DNS server config
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
