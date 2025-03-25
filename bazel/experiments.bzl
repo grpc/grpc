@@ -22,6 +22,7 @@ EXPERIMENT_ENABLES = {
     "call_tracer_transport_fix": "call_tracer_transport_fix",
     "callv3_client_auth_filter": "callv3_client_auth_filter",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
+    "error_flatten": "error_flatten",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
@@ -66,10 +67,14 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
+                "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
                 "retry_in_callv3",
+            ],
+            "cpp_end2end_test": [
+                "error_flatten",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -86,6 +91,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "error_flatten",
             ],
         },
         "on": {
@@ -123,10 +131,14 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
+                "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
                 "retry_in_callv3",
+            ],
+            "cpp_end2end_test": [
+                "error_flatten",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -143,6 +155,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "error_flatten",
             ],
         },
         "on": {
@@ -166,10 +181,14 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
+                "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
                 "retry_in_callv3",
+            ],
+            "cpp_end2end_test": [
+                "error_flatten",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -186,6 +205,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "error_flatten",
             ],
         },
         "on": {
