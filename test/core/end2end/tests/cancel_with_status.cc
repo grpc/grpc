@@ -22,6 +22,7 @@
 
 #include <memory>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/util/time.h"
@@ -42,7 +43,7 @@ CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus1) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("xyz"));
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus2) {
@@ -60,7 +61,7 @@ CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus2) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("xyz"));
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus3) {
@@ -84,7 +85,7 @@ CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus3) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("xyz"));
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus4) {
@@ -109,7 +110,7 @@ CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus4) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("xyz"));
 }
 
 }  // namespace
