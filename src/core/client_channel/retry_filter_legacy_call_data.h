@@ -256,7 +256,7 @@ class RetryFilter::LegacyCallData final {
     bool lb_call_committed_ = false;
 
     grpc_closure on_per_attempt_recv_timer_;
-    std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+    grpc_event_engine::experimental::EventEngine::TaskHandle
         per_attempt_recv_timer_handle_;
 
     // BatchData.batch.payload points to this.

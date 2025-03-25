@@ -31,6 +31,7 @@
 #include "src/core/client_channel/retry_throttle.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -52,6 +53,9 @@
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
+
+using grpc_event_engine::experimental::IsInvalidHandle;
+using TaskHandle = grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 //
 // RetryFilter::LegacyCallData::CallStackDestructionBarrier
@@ -115,6 +119,7 @@ RetryFilter::LegacyCallData::CallAttempt::CallAttempt(
     RetryFilter::LegacyCallData* calld, bool is_transparent_retry)
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(retry) ? "CallAttempt" : nullptr),
       calld_(calld),
+      per_attempt_recv_timer_handle_(TaskHandle::kInvalid),
       started_send_initial_metadata_(false),
       completed_send_initial_metadata_(false),
       started_send_trailing_metadata_(false),
@@ -220,7 +225,9 @@ void RetryFilter::LegacyCallData::CallAttempt::MaybeSwitchToFastPath() {
   // If we've already switched to fast path, there's nothing to do here.
   if (calld_->committed_call_ != nullptr) return;
   // If the perAttemptRecvTimeout timer is pending, we can't switch yet.
-  if (per_attempt_recv_timer_handle_.has_value()) return;
+  if (!IsInvalidHandle(per_attempt_recv_timer_handle_)) {
+    return;
+  }
   // If there are still send ops to replay, we can't switch yet.
   if (HaveSendOpsToReplay()) return;
   // If we started an internal batch for recv_trailing_metadata but have not
@@ -643,11 +650,11 @@ void RetryFilter::LegacyCallData::CallAttempt::OnPerAttemptRecvTimerLocked(
       << "chand=" << calld->chand_ << " calld=" << calld
       << " attempt=" << call_attempt
       << ": perAttemptRecvTimeout timer fired: error=" << StatusToString(error)
-      << ", per_attempt_recv_timer_handle_.has_value()="
-      << call_attempt->per_attempt_recv_timer_handle_.has_value();
+      << ", per_attempt_recv_timer_handle_ is valid ="
+      << !IsInvalidHandle(call_attempt->per_attempt_recv_timer_handle_);
   CallCombinerClosureList closures;
-  if (call_attempt->per_attempt_recv_timer_handle_.has_value()) {
-    call_attempt->per_attempt_recv_timer_handle_.reset();
+  if (!IsInvalidHandle(call_attempt->per_attempt_recv_timer_handle_)) {
+    call_attempt->per_attempt_recv_timer_handle_ = TaskHandle::kInvalid;
     // Cancel this attempt.
     // TODO(roth): When implementing hedging, we should not cancel the
     // current attempt.
@@ -678,16 +685,16 @@ void RetryFilter::LegacyCallData::CallAttempt::OnPerAttemptRecvTimerLocked(
 
 void RetryFilter::LegacyCallData::CallAttempt::
     MaybeCancelPerAttemptRecvTimer() {
-  if (per_attempt_recv_timer_handle_.has_value()) {
+  if (!IsInvalidHandle(per_attempt_recv_timer_handle_)) {
     GRPC_TRACE_LOG(retry, INFO)
         << "chand=" << calld_->chand_ << " calld=" << calld_
         << " attempt=" << this << ": cancelling perAttemptRecvTimeout timer";
     if (calld_->chand_->event_engine()->Cancel(
-            *per_attempt_recv_timer_handle_)) {
+            per_attempt_recv_timer_handle_)) {
       Unref(DEBUG_LOCATION, "OnPerAttemptRecvTimer");
       GRPC_CALL_STACK_UNREF(calld_->owning_call_, "OnPerAttemptRecvTimer");
     }
-    per_attempt_recv_timer_handle_.reset();
+    per_attempt_recv_timer_handle_ = TaskHandle::kInvalid;
   }
 }
 
