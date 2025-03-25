@@ -511,7 +511,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 }
 
 TEST(FdPosixTest, MainTest) {
-  if (IsEventEngineForAllOtherEndpointsEnabled()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
     GTEST_SKIP() << "The event_engine_for_all_other_endpoints experiment is "
                     "enabled, which replaces iomgr grpc_fds with minimal "
                     "implementations. The full iomgr API is not supported, so "
