@@ -151,16 +151,11 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
     }
   }
   // Parse "server_uri".
-  std::string server_uri_target;
-  {
-    auto server_uri = LoadJsonObjectField<std::string>(json.object(), args,
-                                                       "server_uri", errors);
-    if (server_uri.has_value()) {
-      server_uri_target = *server_uri;
-    }
-  }
-  server_target_ = std::make_shared<GrpcXdsServerTarget>(server_uri_target,
-                                                         channel_creds_config);
+  std::string server_uri_target = LoadJsonObjectField<std::string>(
+                                      json.object(), args, "server_uri", errors)
+                                      .value_or("");
+  server_target_ = std::make_shared<GrpcXdsServerTarget>(
+      std::move(server_uri_target), std::move(channel_creds_config));
 }
 
 std::string GrpcXdsServer::Key() const {

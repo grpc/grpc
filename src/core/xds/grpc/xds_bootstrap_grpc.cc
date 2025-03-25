@@ -179,6 +179,12 @@ std::string GrpcXdsBootstrap::ToString() const {
                         node_->locality_zone(), node_->locality_sub_zone(),
                         JsonDump(Json::FromObject(node_->metadata()))));
   }
+  std::vector<std::string> server_strings;
+  for (auto& server : servers_) {
+    server_strings.emplace_back(server.Key());
+  }
+  parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
+                                  absl::StrJoin(server_strings, ",\n")));
   if (!client_default_listener_resource_name_template_.empty()) {
     parts.push_back(absl::StrFormat(
         "client_default_listener_resource_name_template=\"%s\",\n",

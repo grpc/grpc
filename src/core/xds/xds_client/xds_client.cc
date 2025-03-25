@@ -512,8 +512,9 @@ bool XdsClient::XdsChannel::MaybeFallbackLocked(
     }
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[xds_client " << xds_client_.get() << "] authority " << authority
-        << ": added fallback server " << server_uri() << " ("
-        << authority_state.xds_channels.back()->status().ToString() << ")";
+        << ": added fallback server " << xds_servers[i]->target()->server_uri()
+        << " (" << authority_state.xds_channels.back()->status().ToString()
+        << ")";
     if (authority_state.xds_channels.back()->status().ok()) return true;
   }
   GRPC_TRACE_LOG(xds_client, INFO)
