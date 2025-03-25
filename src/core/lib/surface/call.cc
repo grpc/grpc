@@ -215,14 +215,16 @@ void Call::MaybeUnpublishFromParent() {
 }
 
 void Call::CancelWithStatus(grpc_status_code status, const char* description) {
-  // copying 'description' is needed to ensure the grpc_call_cancel_with_status
-  // guarantee that can be short-lived.
-  // TODO(ctiller): change to
-  // absl::Status(static_cast<absl::StatusCode>(status), description)
-  // (ie remove the set_int).
-  CancelWithError(grpc_error_set_int(
-      absl::Status(static_cast<absl::StatusCode>(status), description),
-      StatusIntProperty::kRpcStatus, status));
+  if (!IsErrorFlattenEnabled()) {
+    CancelWithError(grpc_error_set_int(
+        grpc_error_set_str(
+            absl::Status(static_cast<absl::StatusCode>(status), description),
+            StatusStrProperty::kGrpcMessage, description),
+        StatusIntProperty::kRpcStatus, status));
+    return;
+  }
+  CancelWithError(
+      absl::Status(static_cast<absl::StatusCode>(status), description));
 }
 
 void Call::PropagateCancellationToChildren() {
