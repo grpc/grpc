@@ -46,6 +46,9 @@
 #endif
 #endif  // ifdef GRPC_LINUX_ERRQUEUE
 
+/** If non-zero, expand wildcard addresses to a list of local addresses. */
+#define GRPC_ARG_EXPAND_WILDCARD_ADDRS "grpc.expand_wildcard_addrs"
+
 namespace grpc_event_engine::experimental {
 
 struct PosixTcpOptions {
