@@ -11590,6 +11590,7 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/event_engine/util/delegating_event_engine.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/goaway_server_test.cc
