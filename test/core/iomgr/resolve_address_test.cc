@@ -415,7 +415,7 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
                     "implementations. The legacy ares resolver uses the "
                     "grpc_fd APIs directly, so it will not work. Skipping this "
                     "test, since the legacy ares resolver is not used under "
-                    "this experiment."
+                    "this experiment.";
   }
   // Inject an unresponsive DNS server into the resolver's DNS server config
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
