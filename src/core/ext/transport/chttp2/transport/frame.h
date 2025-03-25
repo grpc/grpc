@@ -25,6 +25,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "src/core/ext/transport/chttp2/transport/errors.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -219,6 +220,9 @@ struct Http2FrameHeader {
   }
 };
 
+using grpc_core::http2::Http2Error;
+using Http2StatusOr = std::variant<Http2Frame, Http2Error>;
+
 ///////////////////////////////////////////////////////////////////////////////
 // Parsing & serialization
 
@@ -229,8 +233,8 @@ struct Http2FrameHeader {
 // If a frame should simply be ignored, this function returns a
 // Http2UnknownFrame.
 // It is expected that hdr.length == payload.Length().
-absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
-                                             SliceBuffer payload);
+Http2StatusOr ParseFramePayload(const Http2FrameHeader& hdr,
+                                SliceBuffer payload);
 
 // Serialize frame and append to out, leaves frames in an unknown state (may
 // move things out of frames)

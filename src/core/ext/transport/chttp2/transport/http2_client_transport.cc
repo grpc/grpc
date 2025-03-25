@@ -29,6 +29,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/call/call_spine.h"
+#include "src/core/ext/transport/chttp2/transport/errors.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -49,6 +50,7 @@
 namespace grpc_core {
 namespace http2 {
 
+using grpc_core::http2::Http2Error;
 using grpc_event_engine::experimental::EventEngine;
 
 // Experimental : This is just the initial skeleton of class
@@ -84,7 +86,7 @@ auto Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame Factory";
   return
-      [frame1 = std::move(frame)]() -> absl::Status {
+      [frame1 = std::move(frame)]() -> Http2Error {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2DataFrame Promise { stream_id="
@@ -98,7 +100,7 @@ auto Http2ClientTransport::ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2HeaderFrame Factory";
   return
-      [frame1 = std::move(frame)]() -> absl::Status {
+      [frame1 = std::move(frame)]() -> Http2Error {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
@@ -114,7 +116,7 @@ auto Http2ClientTransport::ProcessHttp2RstStreamFrame(
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2RstStreamFrame Factory";
   return
-      [frame1 = frame]() -> absl::Status {
+      [frame1 = frame]() -> Http2Error {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2RstStreamFrame Promise{ stream_id="
@@ -127,7 +129,7 @@ auto Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
   return
-      [frame1 = std::move(frame)]() -> absl::Status {
+      [frame1 = std::move(frame)]() -> Http2Error {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         // Load into this.settings_
         // Take necessary actions as per settings that have changed.
@@ -143,7 +145,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2PingFrame Factory";
   return
-      [frame1 = frame]() -> absl::Status {
+      [frame1 = frame]() -> Http2Error {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2PingFrame Promise { ack="
@@ -156,7 +158,7 @@ auto Http2ClientTransport::ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Factory";
   return
-      [frame1 = std::move(frame)]() -> absl::Status {
+      [frame1 = std::move(frame)]() -> Http2Error {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2GoawayFrame Promise { "
@@ -173,7 +175,7 @@ auto Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2WindowUpdateFrame Factory";
   return
-      [frame1 = frame]() -> absl::Status {
+      [frame1 = frame]() -> Http2Error {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2WindowUpdateFrame Promise { "
@@ -189,7 +191,7 @@ auto Http2ClientTransport::ProcessHttp2ContinuationFrame(
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2ContinuationFrame Factory";
   return
-      [frame1 = std::move(frame)]() -> absl::Status {
+      [frame1 = std::move(frame)]() -> Http2Error {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2ContinuationFrame Promise { "
@@ -204,7 +206,7 @@ auto Http2ClientTransport::ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
   // TODO(tjagtap) : [PH2][P2] : This is not in the RFC. Understand usage.
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SecurityFrame Factory";
   return
-      [frame1 = std::move(frame)]() -> absl::Status {
+      [frame1 = std::move(frame)]() -> Http2Error {
         // TODO(tjagtap) : [PH2][P2] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2SecurityFrame Promise { payload="
@@ -283,7 +285,18 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame ParseFramePayload "
             << payload.JoinIntoString();
-        return ParseFramePayload(current_frame_header_, std::move(payload));
+        Http2StatusOr value =
+            ParseFramePayload(current_frame_header_, std::move(payload));
+        if (std::holds_alternative<Http2Error>(value)) {
+          Http2Error error = std::get<Http2Error>(value);
+          // TODO(tjagtap) : [PH2][P1] : Either close the stream or close the
+          // connection.
+          HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport ReadAndProcessOneFrame ERROR";
+          return error.absl_status();
+        }
+        Http2Frame frame = std::get<Http2Frame>(std::move(value));
+        return std::move(frame);
       },
       [this](Http2Frame frame) {
         HTTP2_CLIENT_DLOG
@@ -291,9 +304,8 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         return AssertResultType<Http2Error>(ProcessOneFrame(std::move(frame)));
       },
       [this](Http2Error error) {
-        if (!error.is_ok()) {
-          HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Error : "
-                            << error.error_code();
+        if (!error.ok()) {
+          HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Error";
           // TODO(tjagtap) : [PH2][P1] : Either close the stream or close the
           // connection.
         }

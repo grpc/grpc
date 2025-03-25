@@ -33,6 +33,9 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
+namespace grpc_core {
+namespace http2 {
+
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-error-codes
 // The RFC tells us to use 32 bit, but since this is our internal
 // representation, we can use a smaller value.
@@ -54,9 +57,6 @@ enum class Http2ErrorCode : uint8_t {
 };
 
 inline constexpr absl::string_view kNoError = "Ok";
-inline constexpr absl::string_view kStreamIdShouldBeOdd =
-    "HTTP2 Error : Streams initiated by a client MUST use odd-numbered stream "
-    "identifiers.";
 
 class Http2Error {
  public:
@@ -64,20 +64,27 @@ class Http2Error {
     return Http2Error(Http2ErrorCode::kNoError, Http2ErrorType::kOk, kNoError);
   }
   static Http2Error ConnectionError(const Http2ErrorCode error_code,
-                                    absl::string_view error_message) {
-    return Http2Error(error_code, Http2ErrorType::kConnectionError,
-                      error_message);
+                                    absl::string_view message) {
+    return Http2Error(error_code, Http2ErrorType::kConnectionError, message);
+  }
+  static Http2Error FrameSizeConnectionError(absl::string_view message) {
+    return Http2Error(Http2ErrorCode::kFrameSizeError,
+                      Http2ErrorType::kConnectionError, message);
+  }
+  static Http2Error ProtocolConnectionError(absl::string_view message) {
+    return Http2Error(Http2ErrorCode::kProtocolError,
+                      Http2ErrorType::kConnectionError, message);
   }
   static Http2Error StreamError(const Http2ErrorCode error_code,
-                                absl::string_view error_message) {
-    return Http2Error(error_code, Http2ErrorType::kStreamError, error_message);
+                                absl::string_view message) {
+    return Http2Error(error_code, Http2ErrorType::kStreamError, message);
   }
   static Http2Error GrpcError(const Http2ErrorCode error_code,
-                              absl::string_view error_message) {
-    return Http2Error(error_code, Http2ErrorType::kGrpcError, error_message);
+                              absl::string_view message) {
+    return Http2Error(error_code, Http2ErrorType::kGrpcError, message);
   }
 
-  bool is_ok() const { return (code_ == Http2ErrorCode::kNoError); }
+  bool ok() const { return (code_ == Http2ErrorCode::kNoError); }
   bool is_connection_error() const {
     return (error_type_ == Http2ErrorType::kConnectionError);
   }
@@ -87,10 +94,10 @@ class Http2Error {
   Http2ErrorCode error_code() const { return code_; };
 
   absl::Status absl_status() const {
-    if (is_ok()) {
+    if (ok()) {
       return absl::OkStatus();
     }
-    return absl::Status(ErrorCodeToStatusCode(), error_message_);
+    return absl::Status(ErrorCodeToStatusCode(), message_);
   }
 
  private:
@@ -101,8 +108,8 @@ class Http2Error {
     kGrpcError = 0x3,
   };
   Http2Error(const Http2ErrorCode code, Http2ErrorType error_type,
-             absl::string_view error_message)
-      : error_message_(error_message), code_(code), error_type_(error_type) {
+             absl::string_view message)
+      : message_(message), code_(code), error_type_(error_type) {
     DCHECK(
         (code == Http2ErrorCode::kNoError &&
          error_type == Http2ErrorType::kOk) ||
@@ -144,9 +151,12 @@ class Http2Error {
         return absl::StatusCode::kUnknown;
     }
   }
-  absl::string_view error_message_;
+  absl::string_view message_;
   Http2ErrorCode code_;
   Http2ErrorType error_type_;
 };
+
+}  // namespace http2
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_ERRORS_H

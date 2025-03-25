@@ -7512,7 +7512,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "http2_error",
     hdrs = [
-        "ext/transport/chttp2/transport/error.h",
+        "ext/transport/chttp2/transport/errors.h",
     ],
     external_deps = [
         "absl/log",
