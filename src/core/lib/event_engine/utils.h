@@ -42,11 +42,6 @@ absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
 LookupHostnameBlocking(EventEngine::DNSResolver* dns_resolver,
                        absl::string_view name, absl::string_view default_port);
 
-template <typename T>
-bool IsInvalidHandle(const T& handle) {
-  return handle == T::kInvalid;
-}
-
 }  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_UTILS_H
