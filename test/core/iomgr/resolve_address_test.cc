@@ -164,6 +164,19 @@ class ResolveAddressTest : public ::testing::Test {
 
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
+ protected:
+  void SetUp() override {
+    if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+      GTEST_SKIP()
+          << "Skipping all legacy ResolveAddress tests. The "
+             "event_engine_for_all_other_endpoints experiment is enabled, so "
+             "the grpc_core::GetDNSResolver() API is not in use. Further, the "
+             "experiment replaces iomgr grpc_fds with minimal implementations. "
+             "The legacy resolvers use the grpc_fd APIs directly, so these "
+             "tests would fail.";
+    }
+  }
+
  private:
   static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
@@ -408,14 +421,6 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
   if (std::string(g_resolver_type) != "ares") {
     GTEST_SKIP() << "the native resolver doesn't support cancellation, so we "
                     "can only test this with c-ares";
-  }
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
-    GTEST_SKIP() << "The event_engine_for_all_other_endpoints experiment is "
-                    "enabled, which replaces iomgr grpc_fds with minimal "
-                    "implementations. The legacy ares resolver uses the "
-                    "grpc_fd APIs directly, so it will not work. Skipping this "
-                    "test, since the legacy ares resolver is not used under "
-                    "this experiment.";
   }
   // Inject an unresponsive DNS server into the resolver's DNS server config
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
