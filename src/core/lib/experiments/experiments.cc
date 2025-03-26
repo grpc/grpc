@@ -98,6 +98,13 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_pollset_alternative =
+    "Code outside iomgr that relies directly on pollsets will use non-pollset "
+    "alternatives when enabled.";
+const char* const additional_constraints_pollset_alternative = "{}";
+const uint8_t required_experiments_pollset_alternative[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -197,6 +204,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"pollset_alternative", description_pollset_alternative,
+     additional_constraints_pollset_alternative,
+     required_experiments_pollset_alternative, 2, false, false},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
@@ -312,6 +322,13 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_pollset_alternative =
+    "Code outside iomgr that relies directly on pollsets will use non-pollset "
+    "alternatives when enabled.";
+const char* const additional_constraints_pollset_alternative = "{}";
+const uint8_t required_experiments_pollset_alternative[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -411,6 +428,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"pollset_alternative", description_pollset_alternative,
+     additional_constraints_pollset_alternative,
+     required_experiments_pollset_alternative, 2, false, false},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
@@ -526,6 +546,13 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_pollset_alternative =
+    "Code outside iomgr that relies directly on pollsets will use non-pollset "
+    "alternatives when enabled.";
+const char* const additional_constraints_pollset_alternative = "{}";
+const uint8_t required_experiments_pollset_alternative[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -625,6 +652,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"pollset_alternative", description_pollset_alternative,
+     additional_constraints_pollset_alternative,
+     required_experiments_pollset_alternative, 2, false, false},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
