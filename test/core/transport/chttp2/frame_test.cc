@@ -76,9 +76,9 @@ Http2Frame ParseFrame(I... i) {
   auto frame_hdr = Http2FrameHeader::Parse(hdr);
   EXPECT_EQ(frame_hdr.length, buffer.Length())
       << "frame_hdr=" << frame_hdr.ToString();
-  auto r = ParseFramePayload(frame_hdr, std::move(buffer));
-  EXPECT_TRUE(r.ok()) << r.status();
-  return std::move(r.value());
+  auto value = ParseFramePayload(frame_hdr, std::move(buffer));
+  EXPECT_TRUE(std::holds_alternative<Http2Frame>(value));
+  return std::get<Http2Frame>(std::move(value));
 }
 
 template <typename... I>
