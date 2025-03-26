@@ -248,12 +248,29 @@ inline constexpr absl::string_view kStreamIdMustBeOdd =
     "identifiers";
 
 // 6.
-inline constexpr absl::string_view kStreamIdMustBeNonZero =
-    "RFC9113 : DATA/HEADERS/RST_STREAM/CONTINUATION frames frames MUST be "
+inline constexpr absl::string_view kDataStreamIdMustBeNonZero =
+    "RFC9113 : DATA frames MUST be "
     "associated with a stream";
-inline constexpr absl::string_view kStreamIdMustBeZero =
-    "RFC9113 : The stream identifier for a PING/GOAWAY/SETTINGS frame MUST be "
+inline constexpr absl::string_view kHeaderStreamIdMustBeNonZero =
+    "RFC9113 : HEADER frames MUST be "
+    "associated with a stream";
+inline constexpr absl::string_view kContinuationStreamIdMustBeNonZero =
+    "RFC9113 : CONTINUATION frames MUST be "
+    "associated with a stream";
+inline constexpr absl::string_view kRstStreamStreamIdMustBeNonZero =
+    "RFC9113 : RST_STREAM frames frames MUST be "
+    "associated with a stream";
+
+inline constexpr absl::string_view kPingStreamIdMustBeZero =
+    "RFC9113 : The stream identifier for a PING frame MUST be "
     "zero";
+inline constexpr absl::string_view kGoAwayStreamIdMustBeZero =
+    "RFC9113 : The stream identifier for a GOAWAY frame MUST be "
+    "zero";
+inline constexpr absl::string_view kSettingsStreamIdMustBeZero =
+    "RFC9113 : The stream identifier for a SETTINGS frame MUST be "
+    "zero";
+
 inline constexpr absl::string_view kRstStreamLength4 =
     "RFC9113 : A RST_STREAM frame with a length other than 4 octets MUST be "
     "treated as a connection error";
@@ -269,7 +286,7 @@ inline constexpr absl::string_view kPingLength8 =
 inline constexpr absl::string_view kNoPushPromise =
     "PUSH_PROMISE MUST NOT be sent if the SETTINGS_ENABLE_PUSH setting of the "
     "peer endpoint is set to 0";
-inline constexpr absl::string_view kWindowUpdateLength8 =
+inline constexpr absl::string_view kWindowUpdateLength4 =
     "A WINDOW_UPDATE frame with a length other than 4 octets MUST be "
     "treated as a connection error";
 
@@ -297,7 +314,7 @@ Http2Error StripPadding(SliceBuffer& payload) {
 Http2StatusOr ParseDataFrame(const Http2FrameHeader& hdr,
                              SliceBuffer& payload) {
   if (hdr.stream_id == 0) {
-    return Http2Error::ProtocolConnectionError(kStreamIdMustBeNonZero);
+    return Http2Error::ProtocolConnectionError(kDataStreamIdMustBeNonZero);
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Error::ProtocolConnectionError(kStreamIdMustBeOdd);
   }
@@ -314,7 +331,7 @@ Http2StatusOr ParseDataFrame(const Http2FrameHeader& hdr,
 Http2StatusOr ParseHeaderFrame(const Http2FrameHeader& hdr,
                                SliceBuffer& payload) {
   if (hdr.stream_id == 0) {
-    return Http2Error::ProtocolConnectionError(kStreamIdMustBeNonZero);
+    return Http2Error::ProtocolConnectionError(kHeaderStreamIdMustBeNonZero);
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Error::ProtocolConnectionError(kStreamIdMustBeOdd);
   }
@@ -340,7 +357,8 @@ Http2StatusOr ParseHeaderFrame(const Http2FrameHeader& hdr,
 Http2StatusOr ParseContinuationFrame(const Http2FrameHeader& hdr,
                                      SliceBuffer& payload) {
   if (hdr.stream_id == 0) {
-    return Http2Error::ProtocolConnectionError(kStreamIdMustBeNonZero);
+    return Http2Error::ProtocolConnectionError(
+        kContinuationStreamIdMustBeNonZero);
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Error::ProtocolConnectionError(kStreamIdMustBeOdd);
   }
@@ -357,7 +375,7 @@ Http2StatusOr ParseRstStreamFrame(const Http2FrameHeader& hdr,
   }
 
   if (hdr.stream_id == 0) {
-    return Http2Error::ProtocolConnectionError(kStreamIdMustBeNonZero);
+    return Http2Error::ProtocolConnectionError(kRstStreamStreamIdMustBeNonZero);
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Error::ProtocolConnectionError(kStreamIdMustBeOdd);
   }
@@ -371,7 +389,7 @@ Http2StatusOr ParseRstStreamFrame(const Http2FrameHeader& hdr,
 Http2StatusOr ParseSettingsFrame(const Http2FrameHeader& hdr,
                                  SliceBuffer& payload) {
   if (hdr.stream_id != 0) {
-    return Http2Error::ProtocolConnectionError(kStreamIdMustBeZero);
+    return Http2Error::ProtocolConnectionError(kSettingsStreamIdMustBeZero);
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Error::ProtocolConnectionError(kStreamIdMustBeOdd);
   }
@@ -406,7 +424,7 @@ Http2StatusOr ParsePingFrame(const Http2FrameHeader& hdr,
   }
 
   if (hdr.stream_id != 0) {
-    return Http2Error::ProtocolConnectionError(kStreamIdMustBeZero);
+    return Http2Error::ProtocolConnectionError(kPingStreamIdMustBeZero);
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Error::ProtocolConnectionError(kStreamIdMustBeOdd);
   }
@@ -428,7 +446,7 @@ Http2StatusOr ParseGoawayFrame(const Http2FrameHeader& hdr,
   }
 
   if (hdr.stream_id != 0) {
-    return Http2Error::ProtocolConnectionError(kStreamIdMustBeZero);
+    return Http2Error::ProtocolConnectionError(kGoAwayStreamIdMustBeZero);
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Error::ProtocolConnectionError(kStreamIdMustBeOdd);
   }
@@ -442,7 +460,7 @@ Http2StatusOr ParseGoawayFrame(const Http2FrameHeader& hdr,
 Http2StatusOr ParseWindowUpdateFrame(const Http2FrameHeader& hdr,
                                      SliceBuffer& payload) {
   if (payload.Length() != 4) {
-    return Http2Error::FrameSizeConnectionError(kWindowUpdateLength8);
+    return Http2Error::FrameSizeConnectionError(kWindowUpdateLength4);
   }
 
   uint8_t buffer[4];

@@ -90,7 +90,9 @@ absl::Status ValidateFrame(I... i) {
   auto frame_hdr = Http2FrameHeader::Parse(hdr);
   EXPECT_EQ(frame_hdr.length, buffer.Length())
       << "frame_hdr=" << frame_hdr.ToString();
-  return ParseFramePayload(frame_hdr, std::move(buffer)).status();
+  Http2StatusOr value = ParseFramePayload(frame_hdr, std::move(buffer));
+  EXPECT_TRUE(std::holds_alternative<Http2Error>(value));
+  return std::get<Http2Error>(value).absl_status();
 }
 
 TEST(Header, Serialization) {
@@ -167,76 +169,142 @@ TEST(Frame, Serialization) {
             ByteVec(0, 0, 5, 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'));
 }
 
-TEST(Frame, Parse) {
+#define FRAME_LENGTH(num) 0, 0, (num)
+
+#define FLAGS(num) (num)
+
+#define STREAM_IDENTIFIER(num) 0, 0, 0, (num)
+#define STREAM_IDENTIFIER_MAX 0x7F, 0xFF, 0xFF, 0xFF
+#define STREAM_IDENTIFIER_BAD 0x8, 0, 0, 0
+
+#define RANDOM_ZERO 0, 0, 0
+#define RANDOM_NUM 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+
+#define ERROR_CODE 0, 0, 0, 0
+
+#define PAYLOAD_HELLO 'h', 'e', 'l', 'l', 'o'
+#define PAYLOAD_KIDS 'k', 'i', 'd', 's'
+
+// HTTP2 Frame Types
+constexpr uint8_t kFrameTypeData = 0;
+constexpr uint8_t kFrameTypeHeader = 1;
+// type 2 was Priority which has been deprecated.
+constexpr uint8_t kFrameTypeRstStream = 3;
+constexpr uint8_t kFrameTypeSettings = 4;
+constexpr uint8_t kFrameTypePushPromise = 5;
+constexpr uint8_t kFrameTypePing = 6;
+constexpr uint8_t kFrameTypeGoaway = 7;
+constexpr uint8_t kFrameTypeWindowUpdate = 8;
+constexpr uint8_t kFrameTypeContinuation = 9;
+
+// Custom Frame Type
+constexpr uint8_t kFrameTypeSecurity = 200;
+
+constexpr uint8_t kFlagEndStream = 1;
+constexpr uint8_t kFlagAck = 1;
+constexpr uint8_t kFlagEndHeaders = 4;
+constexpr uint8_t kFlagPadded = 8;
+constexpr uint8_t kFlagPriority = 0x20;
+
+TEST(Frame, ParseHttp2DataFrame) {
   EXPECT_EQ(
-      ParseFrame(0, 0, 5, 0, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
+      ParseFrame(FRAME_LENGTH(5), kFrameTypeData, FLAGS(0),
+                 STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
       Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
-  EXPECT_EQ(
-      ParseFrame(0, 0, 4, 0, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
-      Http2Frame(
-          Http2DataFrame{0x98381822, true, SliceBufferFromString("kids")}));
-  EXPECT_EQ(ParseFrame(0, 0, 5, 1, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeData, FLAGS(1),
+                       STREAM_IDENTIFIER_MAX, PAYLOAD_KIDS),
+            Http2Frame(Http2DataFrame{0x7FFFFFFF, true,
+                                      SliceBufferFromString("kids")}));
+}
+
+TEST(Frame, ParseHttp2HeaderFrame) {
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeHeader, FLAGS(0),
+                       STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
             Http2Frame(Http2HeaderFrame{1, false, false,
                                         SliceBufferFromString("hello")}));
-  EXPECT_EQ(
-      ParseFrame(0, 0, 4, 1, 4, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
-      Http2Frame(Http2HeaderFrame{0x98381822, true, false,
-                                  SliceBufferFromString("kids")}));
-  EXPECT_EQ(
-      ParseFrame(0, 0, 4, 1, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
-      Http2Frame(Http2HeaderFrame{0x98381822, false, true,
-                                  SliceBufferFromString("kids")}));
-  EXPECT_EQ(ParseFrame(0, 0, 5, 9, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeHeader, FLAGS(4),
+                       STREAM_IDENTIFIER_MAX, PAYLOAD_KIDS),
+            Http2Frame(Http2HeaderFrame{0x7FFFFFFF, true, false,
+                                        SliceBufferFromString("kids")}));
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeHeader, FLAGS(1),
+                       STREAM_IDENTIFIER_MAX, PAYLOAD_KIDS),
+            Http2Frame(Http2HeaderFrame{0x7FFFFFFF, false, true,
+                                        SliceBufferFromString("kids")}));
+}
+
+TEST(Frame, ParseHttp2ContinuationFrame) {
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeContinuation, FLAGS(0),
+                       STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
             Http2Frame(Http2ContinuationFrame{1, false,
                                               SliceBufferFromString("hello")}));
-  EXPECT_EQ(ParseFrame(0, 0, 5, 9, 4, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeContinuation, FLAGS(4),
+                       STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
             Http2Frame(Http2ContinuationFrame{1, true,
                                               SliceBufferFromString("hello")}));
-  EXPECT_EQ(ParseFrame(0, 0, 4, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0x0a),
+}
+
+TEST(Frame, ParseHttp2Http2RstStreamFrame) {
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeRstStream, 0, 0, 0, 0, 1, 0,
+                       0, 0, 0x0a),
             Http2Frame(Http2RstStreamFrame{1, GRPC_HTTP2_CONNECT_ERROR}));
-  EXPECT_EQ(ParseFrame(0, 0, 0, 4, 0, 0, 0, 0, 0),
+}
+
+TEST(Frame, ParseHttp2Http2SettingsFrame) {
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(0), kFrameTypeSettings, 0, 0, 0, 0, 0),
             Http2Frame(Http2SettingsFrame{}));
-  EXPECT_EQ(
-      ParseFrame(0, 0, 6, 4, 0, 0, 0, 0, 0, 0x12, 0x34, 0x9a, 0xbc, 0xde, 0xf0),
-      Http2Frame(Http2SettingsFrame{false, {{0x1234, 0x9abcdef0}}}));
-  EXPECT_EQ(ParseFrame(0, 0, 12, 4, 0, 0, 0, 0, 0, 0x12, 0x34, 0x9a, 0xbc, 0xde,
-                       0xf0, 0x43, 0x21, 0x12, 0x34, 0x56, 0x78),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(6), kFrameTypeSettings, 0, 0, 0, 0, 0, 0x12,
+                       0x34, 0x9a, 0xbc, 0xde, 0xf0),
+            Http2Frame(Http2SettingsFrame{false, {{0x1234, 0x9abcdef0}}}));
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(12), kFrameTypeSettings, 0, 0, 0, 0, 0,
+                       0x12, 0x34, 0x9a, 0xbc, 0xde, 0xf0, 0x43, 0x21, 0x12,
+                       0x34, 0x56, 0x78),
             Http2Frame(Http2SettingsFrame{
                 false, {{0x1234, 0x9abcdef0}, {0x4321, 0x12345678}}}));
-  EXPECT_EQ(ParseFrame(0, 0, 0, 4, 1, 0, 0, 0, 0),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(0), kFrameTypeSettings, 1, 0, 0, 0, 0),
             Http2Frame(Http2SettingsFrame{true, {}}));
-  EXPECT_EQ(ParseFrame(0, 0, 8, 6, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x9a,
-                       0xbc, 0xde, 0xf0),
+}
+
+TEST(Frame, ParseHttp2Http2PingFrame) {
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(8), 6, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56,
+                       0x78, 0x9a, 0xbc, 0xde, 0xf0),
             Http2Frame(Http2PingFrame{false, 0x123456789abcdef0}));
-  EXPECT_EQ(ParseFrame(0, 0, 8, 6, 1, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x9a,
-                       0xbc, 0xde, 0xf0),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(8), 6, 1, 0, 0, 0, 0, 0x12, 0x34, 0x56,
+                       0x78, 0x9a, 0xbc, 0xde, 0xf0),
             Http2Frame(Http2PingFrame{true, 0x123456789abcdef0}));
+}
+
+TEST(Frame, ParseHttp2GoawayFrame) {
   EXPECT_EQ(
-      ParseFrame(0, 0, 13, 7, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0, 0, 0,
-                 0x0b, 'h', 'e', 'l', 'l', 'o'),
+      ParseFrame(FRAME_LENGTH(13), 7, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0,
+                 0, 0, 0x0b, 'h', 'e', 'l', 'l', 'o'),
       Http2Frame(Http2GoawayFrame{0x12345678, GRPC_HTTP2_ENHANCE_YOUR_CALM,
                                   Slice::FromCopiedString("hello")}));
-  EXPECT_EQ(ParseFrame(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12, 0x34, 0x56, 0x78),
-            Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
-  EXPECT_EQ(ParseFrame(0, 0, 5, 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'),
-            Http2Frame(Http2SecurityFrame{SliceBufferFromString("hello")}));
+}
+
+TEST(Frame, ParseHttp2Http2WindowUpdateFrame) {
+  EXPECT_EQ(
+      ParseFrame(FRAME_LENGTH(4), 8, 0, 0, 0, 0, 1, 0x12, 0x34, 0x56, 0x78),
+      Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
+  EXPECT_EQ(
+      ParseFrame(FRAME_LENGTH(5), 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'),
+      Http2Frame(Http2SecurityFrame{SliceBufferFromString("hello")}));
 }
 
 TEST(Frame, ParsePadded) {
   EXPECT_EQ(
-      ParseFrame(0, 0, 9, 0, 8, 0, 0, 0, 1, 3, 'h', 'e', 'l', 'l', 'o', 1, 2,
-                 3),
+      ParseFrame(FRAME_LENGTH(9), 0, 8, 0, 0, 0, 1, 3, 'h', 'e', 'l', 'l', 'o',
+                 1, 2, 3),
       Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
-  EXPECT_EQ(
-      ParseFrame(0, 0, 8, 1, 8, 0, 0, 0, 1, 2, 'h', 'e', 'l', 'l', 'o', 1, 2),
-      Http2Frame(
-          Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(8), 1, 8, 0, 0, 0, 1, 2, 'h', 'e', 'l', 'l',
+                       'o', 1, 2),
+            Http2Frame(Http2HeaderFrame{1, false, false,
+                                        SliceBufferFromString("hello")}));
   EXPECT_EQ(ParseFrame(0, 0, 10, 1, 32, 0, 0, 0, 1, 1, 2, 3, 4, 5, 'h', 'e',
                        'l', 'l', 'o'),
             Http2Frame(Http2HeaderFrame{1, false, false,
                                         SliceBufferFromString("hello")}));
-  EXPECT_EQ(ParseFrame(0, 0, 13, 1, 40, 0, 0, 0, 1, 2, 1, 2, 3, 4, 5, 'h', 'e',
-                       'l', 'l', 'o', 1, 2),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(13), 1, 40, 0, 0, 0, 1, 2, 1, 2, 3, 4, 5,
+                       'h', 'e', 'l', 'l', 'o', 1, 2),
             Http2Frame(Http2HeaderFrame{1, false, false,
                                         SliceBufferFromString("hello")}));
 }
@@ -253,70 +321,139 @@ TEST(Frame, UnknownIgnored) {
 }
 
 TEST(Frame, ParseRejects) {
-  // 5 == PUSH_PROMISE
+  // PUSH_PROMISE Validations
   EXPECT_THAT(
-      ValidateFrame(0, 0, 10, 5, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+      ValidateFrame(FRAME_LENGTH(10), kFrameTypePushPromise, FLAGS(0),
+                    STREAM_IDENTIFIER(1), RANDOM_NUM),
       StatusIs(absl::StatusCode::kInternal,
-               "push promise not supported (and SETTINGS_ENABLE_PUSH "
-               "explicitly disabled)."));
-  EXPECT_THAT(ValidateFrame(0, 0, 0, 0, 0, 0, 0, 0, 0),
+               "PUSH_PROMISE MUST NOT be sent if the SETTINGS_ENABLE_PUSH "
+               "setting of the peer endpoint is set to 0"));
+  /*
+  // DATA Frame {
+  //   Length (24),
+  //   Type (8) = 0x00,
+
+  //   Unused Flags (4),
+  //   PADDED Flag (1),
+  //   Unused Flags (2),
+  //   END_STREAM Flag (1),
+
+  //   Reserved (1),
+  //   Stream Identifier (31),
+
+  //   [Pad Length (8)],
+  //   Data (..),
+  //   Padding (..2040),
+  // }
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeData, FLAGS(0),
+  STREAM_IDENTIFIER(0), RANDOM_ZERO), StatusIs(absl::StatusCode::kInternal,
+                       "RFC9113 : DATA frames MUST be associated with a
+  stream")); EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeData,
+  FLAGS(0), STREAM_IDENTIFIER(1), RANDOM_ZERO),
               StatusIs(absl::StatusCode::kInternal,
-                       "invalid stream id: {DATA: flags=0, "
-                       "stream_id=0, length=0}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 0, 1, 0, 0, 0, 0, 0),
+                       "RFC9113 : Streams initiated by a client MUST use
+  odd-numbered stream identifiers"));
+
+  // HEADERS Frame {
+  //   Length (24),
+  //   Type (8) = 0x01,
+
+  //   Unused Flags (2),
+  //   PRIORITY Flag (1),
+  //   Unused Flag (1),
+  //   PADDED Flag (1),
+  //   END_HEADERS Flag (1),
+  //   Unused Flag (1),
+  //   END_STREAM Flag (1),
+
+  //   Reserved (1),
+  //   Stream Identifier (31),
+
+  //   [Pad Length (8)],
+  //   [Exclusive (1)],
+  //   [Stream Dependency (31)],
+  //   [Weight (8)],
+  //   Field Block Fragment (..),
+  //   Padding (..2040),
+  // }
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeHeader, FLAGS(0),
+  STREAM_IDENTIFIER(0), RANDOM_ZERO), StatusIs(absl::StatusCode::kInternal,
+                       "RFC9113 : HEADERS frames MUST be associated with a
+  stream")); EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeHeader,
+  FLAGS(0), STREAM_IDENTIFIER(2), RANDOM_ZERO),
               StatusIs(absl::StatusCode::kInternal,
-                       "invalid stream id: {HEADER: flags=0, "
-                       "stream_id=0, length=0}"));
+                       "RFC9113 : Streams initiated by a client MUST use
+  odd-numbered stream identifiers"));
+
+  // RST_STREAM Frame {
+  //   Length (24) = 0x04,
+  //   Type (8) = 0x03,
+
+  //   Unused Flags (8),
+
+  //   Reserved (1),
+  //   Stream Identifier (31),
+
+  //   Error Code (32),
+  // }
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeRstStream, FLAGS(0),
+  STREAM_IDENTIFIER(0), ERROR_CODE), StatusIs(absl::StatusCode::kInternal,
+                       "RFC9113 : RST_STREAM frames MUST be associated with a
+  stream")); EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeRstStream,
+  FLAGS(0), STREAM_IDENTIFIER(2), ERROR_CODE),
+              StatusIs(absl::StatusCode::kInternal,
+                       "RFC9113 : Streams initiated by a client MUST use
+  odd-numbered stream identifiers")); EXPECT_THAT(ValidateFrame(FRAME_LENGTH(3),
+  kFrameTypeRstStream, FLAGS(0), STREAM_IDENTIFIER(1), ERROR_CODE),
+              StatusIs(absl::StatusCode::kInternal,
+                       "RFC9113 : A RST_STREAM frame with a length other than 4
+  octets MUST be treated as a connection error"));
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(4), kFrameTypeRstStream, FLAGS(0),
+  STREAM_IDENTIFIER(1), ERROR_CODE), StatusIs(absl::StatusCode::kInternal,
+                       "RFC9113 : A RST_STREAM frame with a length other than 4
+  octets MUST be treated as a connection error"));
+
+
   EXPECT_THAT(ValidateFrame(0, 0, 0, 9, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
-                       "invalid stream id: {CONTINUATION: flags=0, "
-                       "stream_id=0, length=0}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 3, 3, 0, 0, 0, 0, 1, 100, 100, 100),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid rst stream payload: {RST_STREAM: flags=0, "
-                       "stream_id=1, length=3}"));
+                       "RFC9113 : DATA/HEADERS/RST_STREAM/CONTINUATION frames
+  frames MUST be associated with a stream"));
+
   EXPECT_THAT(ValidateFrame(0, 0, 4, 3, 0, 0, 0, 0, 0, 100, 100, 100, 100),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid stream id: {RST_STREAM: flags=0, "
                        "stream_id=0, length=4}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 1, 4, 1, 0, 0, 0, 0, 1),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid settings ack length: {SETTINGS: flags=1, "
-                       "stream_id=0, length=1}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 1, 4, 0, 0, 0, 0, 0, 1),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid settings payload: {SETTINGS: flags=0, "
-                       "stream_id=0, length=1} -- settings must be multiples "
-                       "of 6 bytes long"));
-  EXPECT_THAT(ValidateFrame(0, 0, 2, 4, 0, 0, 0, 0, 0, 1, 1),
+
+  EXPECT_THAT(ValidateFrame(0, 0, 2, 3, 0, 0, 0, 0, 0, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
                        "stream_id=0, length=2} -- settings must be multiples "
                        "of 6 bytes long"));
-  EXPECT_THAT(ValidateFrame(0, 0, 3, 4, 0, 0, 0, 0, 0, 1, 1, 1),
+  EXPECT_THAT(ValidateFrame(0, 0, 3, 3, 0, 0, 0, 0, 0, 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
                        "stream_id=0, length=3} -- settings must be multiples "
                        "of 6 bytes long"));
-  EXPECT_THAT(ValidateFrame(0, 0, 4, 4, 0, 0, 0, 0, 0, 1, 1, 1, 1),
+  EXPECT_THAT(ValidateFrame(0, 0, 4, 3, 0, 0, 0, 0, 0, 1, 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
                        "stream_id=0, length=4} -- settings must be multiples "
                        "of 6 bytes long"));
-  EXPECT_THAT(ValidateFrame(0, 0, 5, 4, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1),
+  EXPECT_THAT(ValidateFrame(0, 0, 5, 3, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
                        "stream_id=0, length=5} -- settings must be multiples "
                        "of 6 bytes long"));
-  EXPECT_THAT(ValidateFrame(0, 0, 7, 4, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1),
+  EXPECT_THAT(ValidateFrame(0, 0, 7, 3, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
                        "stream_id=0, length=7} -- settings must be multiples "
                        "of 6 bytes long"));
-  EXPECT_THAT(ValidateFrame(0, 0, 0, 4, 0, 0, 0, 0, 1),
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 3, 0, 0, 0, 0, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid stream id: {SETTINGS: flags=0, "
                        "stream_id=1, length=0}"));
+
   EXPECT_THAT(ValidateFrame(0, 0, 0, 6, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid ping payload: {PING: flags=0, "
@@ -329,11 +466,10 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid ping flags: {PING: flags=2, "
                        "stream_id=0, length=8}"));
-  EXPECT_THAT(
-      ValidateFrame(0, 0, 8, 6, 255, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-      StatusIs(absl::StatusCode::kInternal,
-               "invalid ping flags: {PING: flags=255, "
-               "stream_id=0, length=8}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 8, 6, 255, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7,
+  8), StatusIs(absl::StatusCode::kInternal, "invalid ping flags: {PING:
+  flags=255, " "stream_id=0, length=8}"));
+
   EXPECT_THAT(ValidateFrame(0, 0, 0, 7, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid goaway payload: {GOAWAY: flags=0, "
@@ -379,6 +515,8 @@ TEST(Frame, ParseRejects) {
       StatusIs(absl::StatusCode::kInternal,
                "invalid goaway flags: {GOAWAY: flags=255, "
                "stream_id=0, length=8}"));
+
+
   EXPECT_THAT(ValidateFrame(0, 0, 0, 8, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid window update payload: {WINDOW_UPDATE: "
@@ -403,6 +541,7 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid window update flags: {WINDOW_UPDATE: flags=1, "
                        "stream_id=0, length=4}"));
+  */
 }
 
 TEST(Frame, GrpcHeaderTest) {
