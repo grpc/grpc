@@ -596,6 +596,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
         // Prefixes added for context
         "(Failed to connect to remote host: )?"
         "(Timeout occurred: )?"
+        // Parenthetical wrappers
+        "((Secure read failed|"
+        "Handshake read failed|"
+        "Delayed close due to in-progress write) \\()?"
         // Syscall
         "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
         // strerror() output or other message
@@ -605,7 +609,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
         "|FD shutdown"
         "|Endpoint closing)"
         // errno value
-        "( \\([0-9]+\\))?");
+        "( \\([0-9]+\\))?"
+        // close paren from "(Secure|Handshake) read failed \\(" above
+        "\\)?");
   }
 
   std::vector<std::unique_ptr<ServerData>> servers_;

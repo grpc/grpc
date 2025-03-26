@@ -35,6 +35,7 @@
 #endif
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/useful.h"
@@ -109,7 +110,7 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_core::StatusIntProperty which,
                                      intptr_t value) {
-  if (src.ok()) {
+  if (!grpc_core::IsErrorFlattenEnabled() && src.ok()) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
@@ -126,7 +127,8 @@ bool grpc_error_get_int(grpc_error_handle error,
     return true;
   } else {
     // TODO(veblush): Remove this once absl::Status migration is done
-    if (which == grpc_core::StatusIntProperty::kRpcStatus) {
+    if (!grpc_core::IsErrorFlattenEnabled() &&
+        which == grpc_core::StatusIntProperty::kRpcStatus) {
       switch (error.code()) {
         case absl::StatusCode::kOk:
           *p = GRPC_STATUS_OK;
@@ -148,7 +150,7 @@ bool grpc_error_get_int(grpc_error_handle error,
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_core::StatusStrProperty which,
                                      absl::string_view str) {
-  if (src.ok()) {
+  if (!grpc_core::IsErrorFlattenEnabled() && src.ok()) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
@@ -165,7 +167,8 @@ bool grpc_error_get_str(grpc_error_handle error,
     return true;
   } else {
     // TODO(veblush): Remove this once absl::Status migration is done
-    if (which == grpc_core::StatusStrProperty::kGrpcMessage) {
+    if (!grpc_core::IsErrorFlattenEnabled() &&
+        which == grpc_core::StatusStrProperty::kGrpcMessage) {
       switch (error.code()) {
         case absl::StatusCode::kOk:
           *s = "";
@@ -183,6 +186,10 @@ bool grpc_error_get_str(grpc_error_handle error,
 
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
+  if (grpc_core::IsErrorFlattenEnabled()) {
+    grpc_core::StatusAddChild(&src, child);
+    return src;
+  }
   if (src.ok()) {
     return child;
   } else {

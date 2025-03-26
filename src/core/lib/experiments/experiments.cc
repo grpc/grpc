@@ -38,6 +38,9 @@ const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_error_flatten =
+    "Flatten errors to ordinary absl::Status form.";
+const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -160,6 +163,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
      true},
+    {"error_flatten", description_error_flatten,
+     additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, false, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -247,6 +252,9 @@ const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_error_flatten =
+    "Flatten errors to ordinary absl::Status form.";
+const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -369,6 +377,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
      true},
+    {"error_flatten", description_error_flatten,
+     additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -456,6 +466,9 @@ const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_error_flatten =
+    "Flatten errors to ordinary absl::Status form.";
+const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -578,6 +591,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
      true},
+    {"error_flatten", description_error_flatten,
+     additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
