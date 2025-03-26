@@ -390,8 +390,6 @@ Http2StatusOr ParseSettingsFrame(const Http2FrameHeader& hdr,
                                  SliceBuffer& payload) {
   if (hdr.stream_id != 0) {
     return Http2Error::ProtocolConnectionError(kSettingsStreamIdMustBeZero);
-  } else if ((hdr.stream_id % 2) == 0) {
-    return Http2Error::ProtocolConnectionError(kStreamIdMustBeOdd);
   }
 
   if (hdr.flags == kFlagAck) {
@@ -425,8 +423,6 @@ Http2StatusOr ParsePingFrame(const Http2FrameHeader& hdr,
 
   if (hdr.stream_id != 0) {
     return Http2Error::ProtocolConnectionError(kPingStreamIdMustBeZero);
-  } else if ((hdr.stream_id % 2) == 0) {
-    return Http2Error::ProtocolConnectionError(kStreamIdMustBeOdd);
   }
 
   // Unused flags MUST be ignored on receipt and MUST be left unset (0x00) when
@@ -447,8 +443,6 @@ Http2StatusOr ParseGoawayFrame(const Http2FrameHeader& hdr,
 
   if (hdr.stream_id != 0) {
     return Http2Error::ProtocolConnectionError(kGoAwayStreamIdMustBeZero);
-  } else if ((hdr.stream_id % 2) == 0) {
-    return Http2Error::ProtocolConnectionError(kStreamIdMustBeOdd);
   }
 
   uint8_t buffer[8];
