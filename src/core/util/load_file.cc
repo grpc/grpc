@@ -35,10 +35,9 @@ namespace grpc_core {
 absl::StatusOr<Slice> LoadFile(const std::string& filename,
                                bool add_null_terminator) {
   unsigned char* contents = nullptr;
-  size_t contents_size = 0;
+  long contents_size = 0;
   FILE* file;
   size_t bytes_read = 0;
-  absl::Status error = absl::OkStatus();
   auto sock_cleanup = absl::MakeCleanup([&file]() -> void {
     if (file != nullptr) {
       fclose(file);
@@ -47,29 +46,43 @@ absl::StatusOr<Slice> LoadFile(const std::string& filename,
 
   file = fopen(filename.c_str(), "rb");
   if (file == nullptr) {
-    error = absl::InternalError(
+    return absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,
                      " due to error(fdopen): ", strerror(errno)));
-    return error;
   }
-  fseek(file, 0, SEEK_END);
+  if (fseek(file, 0, SEEK_END) < 0) {
+    return absl::InternalError(
+        absl::StrCat("Failed to load file: ", filename,
+                     " due to error(fseek): ", strerror(errno)));
+  }
+
   // Converting to size_t on the assumption that it will not fail.
-  contents_size = static_cast<size_t>(ftell(file));
-  fseek(file, 0, SEEK_SET);
+  if ((contents_size = static_cast<size_t>(ftell(file))) < 0) {
+    return absl::InternalError(
+        absl::StrCat("Failed to load file: ", filename,
+                     " due to error(ftell): ", strerror(errno)));
+  }
+  if (fseek(file, 0, SEEK_SET) < 0) {
+    return absl::InternalError(
+        absl::StrCat("Failed to load file: ", filename,
+                     " due to error(fseek): ", strerror(errno)));
+  }
   contents = static_cast<unsigned char*>(
       gpr_malloc(contents_size + (add_null_terminator ? 1 : 0)));
   bytes_read = fread(contents, 1, contents_size, file);
   if (bytes_read < contents_size) {
     gpr_free(contents);
-    error = absl::InternalError(
+    return absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,
                      " due to error(fread): ", strerror(errno)));
-    return error;
   }
   if (add_null_terminator) {
     contents[contents_size++] = 0;
   }
-  return Slice(grpc_slice_new(contents, contents_size, gpr_free));
+  static_assert(LONG_MAX <= SIZE_MAX,
+                "size_t max should be more than long max");
+  return Slice(
+      grpc_slice_new(contents, static_cast<size_t>(contents_size), gpr_free));
 }
 
 }  // namespace grpc_core
