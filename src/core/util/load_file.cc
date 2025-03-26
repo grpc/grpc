@@ -69,7 +69,9 @@ absl::StatusOr<Slice> LoadFile(const std::string& filename,
   contents = static_cast<unsigned char*>(
       gpr_malloc(contents_size + (add_null_terminator ? 1 : 0)));
   bytes_read = fread(contents, 1, contents_size, file);
-  if (bytes_read < contents_size) {
+  static_assert(LONG_MAX <= SIZE_MAX,
+                "size_t max should be more than long max");
+  if (bytes_read < static_cast<size_t>(contents_size)) {
     gpr_free(contents);
     return absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,
@@ -78,8 +80,6 @@ absl::StatusOr<Slice> LoadFile(const std::string& filename,
   if (add_null_terminator) {
     contents[contents_size++] = 0;
   }
-  static_assert(LONG_MAX <= SIZE_MAX,
-                "size_t max should be more than long max");
   return Slice(
       grpc_slice_new(contents, static_cast<size_t>(contents_size), gpr_free));
 }
