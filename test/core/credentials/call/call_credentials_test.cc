@@ -528,9 +528,10 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
       std::string actual_message;
       grpc_error_get_status(error, Timestamp::InfFuture(), &actual_code,
                             &actual_message, nullptr, nullptr);
-      EXPECT_EQ(absl::Status(static_cast<absl::StatusCode>(actual_code),
-                             actual_message),
-                expected_error_);
+      EXPECT_EQ(static_cast<absl::StatusCode>(actual_code),
+                expected_error_.code());
+      EXPECT_THAT(actual_message,
+                  ::testing::StartsWith(expected_error_.message()));
     }
     md_.Remove(HttpAuthorityMetadata());
     md_.Remove(HttpPathMetadata());

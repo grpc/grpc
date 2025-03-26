@@ -65,7 +65,8 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
-inline bool IsErrorFlattenEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
+inline bool IsErrorFlattenEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
@@ -108,7 +109,8 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
-inline bool IsErrorFlattenEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
+inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -154,7 +156,8 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
-inline bool IsErrorFlattenEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
+inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
