@@ -86,9 +86,9 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
+    tags = ["error_tests"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["error_tests"],
     deps = [
         ":endpoint_tests",
         "//:gpr",
