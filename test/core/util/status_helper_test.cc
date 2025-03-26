@@ -139,10 +139,9 @@ TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
   absl::Status s = absl::CancelledError("Message");
   StatusSetStr(&s, StatusStrProperty::kGrpcMessage, "Hey");
   std::string t = StatusToString(s);
-  EXPECT_EQ(t,
-            IsErrorFlattenEnabled()
-                ? "CANCELLED:Hey (Message)"
-                : "CANCELLED:Message {grpc_message:\"Hey\"}");
+  EXPECT_EQ(t, IsErrorFlattenEnabled()
+                   ? "CANCELLED:Hey (Message)"
+                   : "CANCELLED:Message {grpc_message:\"Hey\"}");
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {

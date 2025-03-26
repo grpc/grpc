@@ -64,10 +64,9 @@ TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
                         nullptr);
   ASSERT_EQ(code, GRPC_STATUS_RESOURCE_EXHAUSTED);
-  ASSERT_EQ(message,
-            grpc_core::IsErrorFlattenEnabled()
-                ? "Parent (Child1) (Child2)"
-                : "Child2");
+  ASSERT_EQ(message, grpc_core::IsErrorFlattenEnabled()
+                         ? "Parent (Child1) (Child2)"
+                         : "Child2");
 }
 
 // ---- Ok Status ----
