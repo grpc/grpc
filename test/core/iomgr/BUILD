@@ -88,6 +88,7 @@ grpc_cc_test(
     ],
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["error_tests"],
     deps = [
         ":endpoint_tests",
         "//:gpr",

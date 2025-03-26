@@ -105,6 +105,9 @@ EXPERIMENTS = {
                 "error_flatten",
                 "posix_ee_skip_grpc_init",
             ],
+            "error_tests": [
+                "error_flatten",
+            ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
@@ -160,6 +163,9 @@ EXPERIMENTS = {
                 "error_flatten",
                 "posix_ee_skip_grpc_init",
             ],
+            "error_tests": [
+                "error_flatten",
+            ],
             "xds_end2end_test": [
                 "error_flatten",
                 "server_listener",
@@ -210,6 +216,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "error_flatten",
                 "posix_ee_skip_grpc_init",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
