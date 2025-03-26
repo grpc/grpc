@@ -63,6 +63,21 @@ namespace grpc_core {
 // Reference : https://www.rfc-editor.org/rfc/rfc9113.html#name-frame-format
 constexpr uint8_t kFrameHeaderSize = 9;
 
+// HTTP2 Frame Types
+enum class FrameType : uint8_t {
+  kData = 0,
+  kHeader = 1,
+  // type 2 was Priority which has been deprecated.
+  kRstStream = 3,
+  kSettings = 4,
+  kPushPromise = 5,
+  kPing = 6,
+  kGoaway = 7,
+  kWindowUpdate = 8,
+  kContinuation = 9,
+  kCustomSecurity = 200,  // Custom Frame Type
+};
+
 // DATA frame
 struct Http2DataFrame {
   uint32_t stream_id = 0;
