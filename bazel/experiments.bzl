@@ -164,13 +164,27 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "cancel_ares_query_test": [
+                "event_engine_dns",
+            ],
             "core_end2end_test": [
+                "event_engine_client",
                 "event_engine_for_all_other_endpoints",
+                "event_engine_listener",
                 "posix_ee_skip_grpc_init",
                 "server_listener",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
+            ],
+            "event_engine_listener_test": [
+                "event_engine_listener",
+            ],
+            "resolver_component_tests_runner_invoker": [
+                "event_engine_dns",
             ],
             "xds_end2end_test": [
                 "server_listener",
