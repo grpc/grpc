@@ -33,7 +33,7 @@
 #include "src/core/util/crash.h"
 
 #ifndef GRPC_CFSTREAM_MAX_THREADPOOL_SIZE
-#define GRPC_CFSTREAM_MAX_THREADPOOL_SIZE 2u
+#define GRPC_CFSTREAM_MAX_THREADPOOL_SIZE 16u
 #endif  // GRPC_CFSTREAM_MAX_THREADPOOL_SIZE
 
 namespace grpc_event_engine::experimental {
