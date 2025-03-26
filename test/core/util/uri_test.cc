@@ -278,10 +278,9 @@ TEST(URITest, UserInfo) {
 TEST(URITest, UserInfoNoHostPort) {
   auto uri = URI::Create("http", "username:password", "", "/path/to/file.html",
                          {}, "");
-  ASSERT_FALSE(uri.ok());
-  EXPECT_EQ(uri.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(uri.status().message(),
-            "if user_info is present, host_port must exists");
+  EXPECT_EQ(uri.status(),
+            absl::InvalidArgumentError(
+                "if user_info is present, host_port must exists"));
 }
 
 TEST(URITest, NoAuthority) {
@@ -433,7 +432,6 @@ TEST(URITest, ToStringPercentEncoding) {
       "-.+~!$&'()*+,;=:[]"
       // Host-Port escaped chars.
       "%/?#",
-      // // Authority allowed chars.
       // "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
       // "-.+~!$&'()*+,;=:[]@"
       // // Authority escaped chars.

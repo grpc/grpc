@@ -248,7 +248,6 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   }
   remaining.remove_prefix(offset + 1);
   // parse authority
-  std::string authority;
   std::string user_info;
   std::string host_port;
   if (absl::ConsumePrefix(&remaining, "//")) {
@@ -266,7 +265,6 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     }
     user_info = PercentDecode(encoded_user_info);
     host_port = PercentDecode(encoded_host_port);
-    authority = PercentDecode(encoded_authority);
     if (offset == remaining.npos) {
       remaining = "";
     } else {
@@ -317,7 +315,6 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     }
     fragment = PercentDecode(remaining);
   }
-
   return URI(std::move(scheme), std::move(user_info), std::move(host_port),
              std::move(path), std::move(query_param_pairs),
              std::move(fragment));
@@ -333,7 +330,7 @@ absl::StatusOr<URI> URI::Create(std::string scheme, std::string user_info,
   }
   if (!user_info.empty() && host_port.empty()) {
     return absl::InvalidArgumentError(
-        "if user_info is present, host_port must exists");
+        "if user_info is present, host_port must be present");
   }
   return URI(std::move(scheme), std::move(user_info), std::move(host_port),
              std::move(path), std::move(query_parameter_pairs),

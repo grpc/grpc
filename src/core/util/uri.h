@@ -67,9 +67,9 @@ class URI {
   static std::string PercentDecode(absl::string_view str);
 
   const std::string& scheme() const { return scheme_; }
-  const std::string& authority() const {
+  std::string authority() const {
     if (!user_info_.empty()) {
-      return user_info_ + "@" + host_port_;
+      return absl::StrCat(user_info_, "@", host_port_);
     }
     return host_port_;
   }
@@ -110,9 +110,9 @@ class URI {
       std::string fragment);
 
   std::string scheme_;
-  std::string path_;
   std::string user_info_;
   std::string host_port_;
+  std::string path_;
   std::map<absl::string_view, absl::string_view> query_parameter_map_;
   std::vector<QueryParam> query_parameter_pairs_;
   std::string fragment_;
