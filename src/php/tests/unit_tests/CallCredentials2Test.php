@@ -99,7 +99,7 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
             Grpc\OP_SEND_INITIAL_METADATA => [],
             Grpc\OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => Grpc\STATUS_INVALID_ARGUMENT,
                 'details' => $status_text,
             ],
             Grpc\OP_RECV_CLOSE_ON_SERVER => true,
@@ -117,7 +117,7 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
         $this->assertSame([], $event->metadata);
         $status = $event->status;
         $this->assertSame([], $status->metadata);
-        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame(Grpc\STATUS_INVALID_ARGUMENT, $status->code);
         $this->assertSame($status_text, $status->details);
 
         unset($call);
