@@ -21,10 +21,13 @@ if(gRPC_ZLIB_PROVIDER STREQUAL "module")
     set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
   endif()
   if(EXISTS "${ZLIB_ROOT_DIR}/CMakeLists.txt")
+    # TODO(jtattermusch): workaround for https://github.com/madler/zlib/issues/218
+    include_directories("${ZLIB_ROOT_DIR}")
     add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
 
     if(TARGET zlibstatic)
       set(_gRPC_ZLIB_LIBRARIES zlibstatic)
+      set(_gRPC_ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib")
       if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
         install(TARGETS zlibstatic EXPORT gRPCTargets
           RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
