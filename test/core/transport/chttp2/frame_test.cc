@@ -322,12 +322,15 @@ TEST(Frame, ParseHttp2Http2SecurityFrame) {
             Http2Frame(Http2SecurityFrame{SliceBufferFromString("hello")}));
 }
 
-TEST(Frame, DISABLED_ParsePadded) {
+TEST(Frame, ParseHttp2DataFramePadded) {
   // RFC9113 : Padding octets MUST be set to zero when sending.
   EXPECT_EQ(
       ParseFrame(FRAME_LENGTH(9), kFrameTypeData, FLAGS(9),
                  STREAM_IDENTIFIER(1), PAD_LENGTH(3), PAYLOAD_HELLO, 0, 0, 0),
       Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
+}
+
+TEST(Frame, ParseHttp2HeaderFramePadded) {
   EXPECT_EQ(
       ParseFrame(FRAME_LENGTH(8), kFrameTypeHeader, FLAGS(kFlagPadded),
                  STREAM_IDENTIFIER(1), PAD_LENGTH(2), PAYLOAD_HELLO, 0, 0),
@@ -352,15 +355,16 @@ TEST(Frame, UnknownIgnored) {
             Http2Frame(Http2UnknownFrame{}));
 }
 
-TEST(Frame, ParseRejects) {
-  // PUSH_PROMISE Validations
+TEST(Frame, ParseRejectsPushPromise) {
   EXPECT_THAT(
       ValidateFrame(FRAME_LENGTH(10), kFrameTypePushPromise, FLAGS(0),
                     STREAM_IDENTIFIER(1), RANDOM_NUM),
       StatusIs(absl::StatusCode::kInternal,
                "PUSH_PROMISE MUST NOT be sent if the SETTINGS_ENABLE_PUSH "
                "setting of the peer endpoint is set to 0"));
-  /*
+}
+
+TEST(Frame, ParseRejectsDataFrame) {
   // DATA Frame {
   //   Length (24),
   //   Type (8) = 0x00,
@@ -380,12 +384,16 @@ TEST(Frame, ParseRejects) {
   EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeData, FLAGS(0),
   STREAM_IDENTIFIER(0), RANDOM_ZERO), StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : DATA frames MUST be associated with a
-  stream")); EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeData,
+  stream"));
+
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeData,
   FLAGS(0), STREAM_IDENTIFIER(1), RANDOM_ZERO),
               StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : Streams initiated by a client MUST use
   odd-numbered stream identifiers"));
+}
 
+TEST(Frame, ParseRejectsHeaderFrame) {
   // HEADERS Frame {
   //   Length (24),
   //   Type (8) = 0x01,
@@ -411,12 +419,28 @@ TEST(Frame, ParseRejects) {
   EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeHeader, FLAGS(0),
   STREAM_IDENTIFIER(0), RANDOM_ZERO), StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : HEADERS frames MUST be associated with a
-  stream")); EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeHeader,
+  stream"));
+
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeHeader,
   FLAGS(0), STREAM_IDENTIFIER(2), RANDOM_ZERO),
               StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : Streams initiated by a client MUST use
   odd-numbered stream identifiers"));
+}
 
+TEST(Frame, ParseRejectsContinuationFrame) {
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 0, 9, 0, 0, 0, 0, 0),
+      StatusIs(
+          absl::StatusCode::kInternal,
+          "RFC9113 : CONTINUATION frames MUST be associated with a stream"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 9, 0, 0, 0, 0, 0), // Fix
+              StatusIs(absl::StatusCode::kInternal,
+                       "RFC9113 : Streams initiated by a client MUST use
+  odd-numbered stream identifiers"));
+}
+
+TEST(Frame, ParseRejectsRstStreamFrame) {
   // RST_STREAM Frame {
   //   Length (24) = 0x04,
   //   Type (8) = 0x03,
@@ -431,31 +455,33 @@ TEST(Frame, ParseRejects) {
   EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeRstStream, FLAGS(0),
   STREAM_IDENTIFIER(0), ERROR_CODE(0)), StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : RST_STREAM frames MUST be associated with a
-  stream")); EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeRstStream,
+  stream"));
+
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeRstStream,
   FLAGS(0), STREAM_IDENTIFIER(2), ERROR_CODE(0)),
               StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : Streams initiated by a client MUST use
-  odd-numbered stream identifiers")); EXPECT_THAT(ValidateFrame(FRAME_LENGTH(3),
+  odd-numbered stream identifiers"));
+
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(3),
   kFrameTypeRstStream, FLAGS(0), STREAM_IDENTIFIER(1), ERROR_CODE(0)),
               StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : A RST_STREAM frame with a length other than 4
   octets MUST be treated as a connection error"));
+
   EXPECT_THAT(ValidateFrame(FRAME_LENGTH(4), kFrameTypeRstStream, FLAGS(0),
   STREAM_IDENTIFIER(1), ERROR_CODE(0)), StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : A RST_STREAM frame with a length other than 4
   octets MUST be treated as a connection error"));
 
 
-  EXPECT_THAT(ValidateFrame(0, 0, 0, 9, 0, 0, 0, 0, 0),
-              StatusIs(absl::StatusCode::kInternal,
-                       "RFC9113 : DATA/HEADERS/RST_STREAM/CONTINUATION frames
-  frames MUST be associated with a stream"));
-
   EXPECT_THAT(ValidateFrame(0, 0, 4, 3, 0, 0, 0, 0, 0, 100, 100, 100, 100),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid stream id: {RST_STREAM: flags=0, "
                        "stream_id=0, length=4}"));
+}
 
+TEST(Frame, ParseRejectsSettingsFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 2, 3, 0, 0, 0, 0, 0, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
@@ -485,7 +511,9 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid stream id: {SETTINGS: flags=0, "
                        "stream_id=1, length=0}"));
+}
 
+TEST(Frame, ParseRejectsPingFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 0, 6, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid ping payload: {PING: flags=0, "
@@ -494,14 +522,9 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid ping stream id: {PING: flags=0, "
                        "stream_id=1, length=8}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 8, 6, 2, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid ping flags: {PING: flags=2, "
-                       "stream_id=0, length=8}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 8, 6, 255, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7,
-  8), StatusIs(absl::StatusCode::kInternal, "invalid ping flags: {PING:
-  flags=255, " "stream_id=0, length=8}"));
+}
 
+TEST(Frame, ParseRejectsGoawayFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 0, 7, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid goaway payload: {GOAWAY: flags=0, "
@@ -538,17 +561,9 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid goaway stream id: {GOAWAY: flags=0, "
                        "stream_id=1, length=8}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 8, 7, 1, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid goaway flags: {GOAWAY: flags=1, "
-                       "stream_id=0, length=8}"));
-  EXPECT_THAT(
-      ValidateFrame(0, 0, 8, 7, 255, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-      StatusIs(absl::StatusCode::kInternal,
-               "invalid goaway flags: {GOAWAY: flags=255, "
-               "stream_id=0, length=8}"));
+}
 
-
+TEST(Frame, ParseRejectsWindowUpdateFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 0, 8, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid window update payload: {WINDOW_UPDATE: "
@@ -573,7 +588,6 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid window update flags: {WINDOW_UPDATE: flags=1, "
                        "stream_id=0, length=4}"));
-  */
 }
 
 TEST(Frame, GrpcHeaderTest) {

@@ -425,9 +425,9 @@ Http2StatusOr ParsePingFrame(const Http2FrameHeader& hdr,
     return Http2Error::ProtocolConnectionError(kPingStreamIdMustBeZero);
   }
 
-  // Unused flags MUST be ignored on receipt and MUST be left unset (0x00) when
-  // sending.
-  bool ack = ((hdr.flags & kFlagAck) > 0);
+  // RFC9113 : Unused flags MUST be ignored on receipt and MUST be left unset
+  // (0x00) when sending.
+  bool ack = ((hdr.flags & kFlagAck) == kFlagAck);
 
   uint8_t buffer[8];
   payload.CopyToBuffer(buffer);
