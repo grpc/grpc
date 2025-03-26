@@ -203,8 +203,7 @@ std::string GrpcXdsBootstrap::ToString() const {
                         authority.client_listener_resource_name_template()));
     std::vector<std::string> server_strings;
     for (const XdsServer* server : authority.servers()) {
-      server_strings.emplace_back(
-          DownCast<const GrpcXdsServer*>(server)->Key());
+      server_strings.emplace_back(server->Key());
     }
     if (!server_strings.empty()) {
       parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
