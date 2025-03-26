@@ -67,7 +67,8 @@ inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
 inline bool IsErrorFlattenEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
-inline bool IsEventEngineDnsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
+inline bool IsEventEngineDnsEnabled() { return true; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 inline bool IsEventEngineForkEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }

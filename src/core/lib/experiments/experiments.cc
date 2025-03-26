@@ -175,7 +175,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, false, false},
     {"event_engine_dns", description_event_engine_dns,
-     additional_constraints_event_engine_dns, nullptr, 0, false, false},
+     additional_constraints_event_engine_dns, nullptr, 0, true, false},
     {"event_engine_dns_non_client_channel",
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,

@@ -164,6 +164,9 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "cancel_ares_query_test": [
+                "event_engine_dns",
+            ],
             "core_end2end_test": [
                 "event_engine_for_all_other_endpoints",
                 "posix_ee_skip_grpc_init",
@@ -171,6 +174,9 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
+            ],
+            "resolver_component_tests_runner_invoker": [
+                "event_engine_dns",
             ],
             "xds_end2end_test": [
                 "server_listener",
