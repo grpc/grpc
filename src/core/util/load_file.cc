@@ -24,6 +24,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_core {
 
@@ -48,24 +49,22 @@ absl::StatusOr<Slice> LoadFile(const std::string& filename,
   if (file == nullptr) {
     return absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,
-                     " due to error(fdopen): ", strerror(errno)));
+                     " due to error(fdopen): ", StrError(errno)));
   }
   if (fseek(file, 0, SEEK_END) < 0) {
     return absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,
-                     " due to error(fseek): ", strerror(errno)));
+                     " due to error(fseek): ", StrError(errno)));
   }
-
-  // Converting to size_t on the assumption that it will not fail.
   if ((contents_size = static_cast<size_t>(ftell(file))) < 0) {
     return absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,
-                     " due to error(ftell): ", strerror(errno)));
+                     " due to error(ftell): ", StrError(errno)));
   }
   if (fseek(file, 0, SEEK_SET) < 0) {
     return absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,
-                     " due to error(fseek): ", strerror(errno)));
+                     " due to error(fseek): ", StrError(errno)));
   }
   contents = static_cast<unsigned char*>(
       gpr_malloc(contents_size + (add_null_terminator ? 1 : 0)));
@@ -74,7 +73,7 @@ absl::StatusOr<Slice> LoadFile(const std::string& filename,
     gpr_free(contents);
     return absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,
-                     " due to error(fread): ", strerror(errno)));
+                     " due to error(fread): ", StrError(errno)));
   }
   if (add_null_terminator) {
     contents[contents_size++] = 0;

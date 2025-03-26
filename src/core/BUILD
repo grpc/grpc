@@ -3146,6 +3146,7 @@ grpc_cc_library(
     ],
     deps = [
         "slice",
+        "strerror",
         "//:gpr",
     ],
 )
