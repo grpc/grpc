@@ -679,7 +679,7 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
       std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
           resource_quota->memory_quota()));
   GRPC_RETURN_IF_ERROR(listener.status());
-  CHECK_NE(*listener, nullptr);
+  CHECK_NE(listener->get(), nullptr);
   GRPC_TRACE_LOG(event_engine, INFO)
       << "EventEngine::" << engine << ": created Listener::" << listener->get();
   s->ee_listener = std::move(*listener);
