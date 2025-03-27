@@ -864,7 +864,9 @@ libs:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -2405,7 +2407,9 @@ libs:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -4460,7 +4464,9 @@ libs:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -6476,7 +6482,9 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -7035,6 +7043,8 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
@@ -7074,6 +7084,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -7822,6 +7833,8 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/chunked_vector.h
@@ -7862,6 +7875,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -10398,6 +10412,8 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
@@ -10431,6 +10447,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -10637,7 +10654,9 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -11222,6 +11241,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
@@ -11265,6 +11285,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -11337,6 +11358,8 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
@@ -11377,6 +11400,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -11604,6 +11628,7 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/event_engine/util/delegating_event_engine.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/goaway_server_test.cc
@@ -12916,6 +12941,8 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
@@ -12956,6 +12983,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -13429,6 +13457,8 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
@@ -13469,6 +13499,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -14247,6 +14278,8 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/bitset.h
   - src/core/util/glob.h
   - src/core/util/latent_see.h
@@ -14274,6 +14307,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc

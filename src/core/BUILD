@@ -79,7 +79,9 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/extensions/can_track_errors.h",
         "lib/event_engine/extensions/chaotic_good_extension.h",
+        "lib/event_engine/extensions/iomgr_compatible.h",
         "lib/event_engine/extensions/supports_fd.h",
+        "lib/event_engine/extensions/supports_win_sockets.h",
         "lib/event_engine/extensions/tcp_trace.h",
     ],
     external_deps = [
@@ -239,6 +241,9 @@ grpc_cc_library(
     name = "metadata_info",
     srcs = ["call/metadata_info.cc"],
     hdrs = ["call/metadata_info.h"],
+    external_deps = [
+        "absl/strings",
+    ],
     deps = [
         "channel_args",
         "hpack_constants",
@@ -515,11 +520,15 @@ grpc_cc_library(
         "absl/time",
     ],
     deps = [
+        "experiments",
         "percent_encoding",
         "slice",
+        "status_conversion",
+        "time",
         "//:debug_location",
         "//:google_rpc_status_upb",
         "//:gpr",
+        "//:grpc_public_hdrs",
         "//:protobuf_any_upb",
     ],
 )
@@ -1764,6 +1773,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "experiments",
         "gpr_spinlock",
         "slice",
         "slice_refcount",
@@ -2591,6 +2601,8 @@ grpc_cc_library(
         "dump_args",
         "error",
         "event_engine_common",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_utils",
@@ -2704,6 +2716,8 @@ grpc_cc_library(
     deps = [
         "common_event_engine_closures",
         "error",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "iomgr_port",
@@ -4298,6 +4312,7 @@ grpc_cc_library(
         "env",
         "error",
         "error_utils",
+        "event_engine_shim",
         "grpc_external_account_credentials",
         "grpc_lb_xds_channel_args",
         "grpc_oauth2_credentials",
@@ -4306,6 +4321,7 @@ grpc_cc_library(
         "json",
         "json_reader",
         "load_file",
+        "notification",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -6494,6 +6510,7 @@ grpc_cc_library(
     external_deps = ["absl/status"],
     deps = [
         "error",
+        "experiments",
         "http2_errors",
         "status_conversion",
         "status_helper",

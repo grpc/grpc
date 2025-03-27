@@ -67,8 +67,7 @@ bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent) {
 void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
                                             grpc_pollset_set* pss_dst) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
-    // CFStream does not use file destriptors. When CFStream is used, the fd
-    // pollset is possible to be null.
+    // CFStream and EventEngine-based cqs do not use file descriptors.
     if (pollent->pollent.pollset != nullptr) {
       grpc_pollset_set_add_pollset(pss_dst, pollent->pollent.pollset);
     }
@@ -86,14 +85,10 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
 void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
                                               grpc_pollset_set* pss_dst) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
-#ifdef GRPC_CFSTREAM
+    // CFStream and EventEngine-based cqs do not use file descriptors.
     if (pollent->pollent.pollset != nullptr) {
       grpc_pollset_set_del_pollset(pss_dst, pollent->pollent.pollset);
     }
-#else
-    CHECK_NE(pollent->pollent.pollset, nullptr);
-    grpc_pollset_set_del_pollset(pss_dst, pollent->pollent.pollset);
-#endif
   } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     CHECK_NE(pollent->pollent.pollset_set, nullptr);
     grpc_pollset_set_del_pollset_set(pss_dst, pollent->pollent.pollset_set);

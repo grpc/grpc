@@ -24,6 +24,7 @@
 
 #include <vector>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/status_helper.h"
 
@@ -42,11 +43,59 @@ static grpc_error_handle recursively_find_error_with_field(
   return absl::OkStatus();
 }
 
+namespace {
+
+std::optional<grpc_http2_error_code> GetHttp2Error(const absl::Status& status) {
+  auto http_error_code = grpc_core::StatusGetInt(
+      status, grpc_core::StatusIntProperty::kHttp2Error);
+  if (http_error_code.has_value()) {
+    return static_cast<grpc_http2_error_code>(*http_error_code);
+  }
+  return std::nullopt;
+}
+
+}  // namespace
+
 void grpc_error_get_status(grpc_error_handle error,
                            grpc_core::Timestamp deadline,
                            grpc_status_code* code, std::string* message,
                            grpc_http2_error_code* http_error,
                            const char** error_string) {
+  if (grpc_core::IsErrorFlattenEnabled()) {
+    auto http_error_code = GetHttp2Error(error);
+    if (code != nullptr) {
+      // If the top-level status code is UNKNOWN and there is an HTTP2 error
+      // code attribute set, convert from that.  Otherwise, use the top-level
+      // status code.
+      if (error.code() == absl::StatusCode::kUnknown &&
+          http_error_code.has_value()) {
+        *code = grpc_http2_error_to_grpc_status(*http_error_code, deadline);
+      } else {
+        *code = static_cast<grpc_status_code>(error.code());
+      }
+    }
+    if (message != nullptr) *message = std::string(error.message());
+    if (error_string != nullptr && !error.ok()) {
+      *error_string = gpr_strdup(grpc_core::StatusToString(error).c_str());
+    }
+    if (http_error != nullptr) {
+      // If the HTTP2 error code attribute is present, use it.  Otherwise,
+      // if the status code is something other than UNKNOWN, convert from
+      // that.  Otherwise, set a default based on whether the status
+      // code is OK.
+      if (http_error_code.has_value()) {
+        *http_error = *http_error_code;
+      } else if (error.code() != absl::StatusCode::kUnknown) {
+        *http_error = grpc_status_to_http2_error(
+            static_cast<grpc_status_code>(error.code()));
+      } else {
+        *http_error =
+            error.ok() ? GRPC_HTTP2_NO_ERROR : GRPC_HTTP2_INTERNAL_ERROR;
+      }
+    }
+    return;
+  }
+
   // Fast path: We expect no error.
   if (GPR_LIKELY(error.ok())) {
     if (code != nullptr) *code = GRPC_STATUS_OK;
@@ -129,6 +178,7 @@ void grpc_error_get_status(grpc_error_handle error,
 }
 
 absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
+  if (grpc_core::IsErrorFlattenEnabled()) return error;
   grpc_status_code status;
   // TODO(yashykt): This should be updated once we decide on how to use the
   // absl::Status payload to capture all the contents of grpc_error.
@@ -140,6 +190,7 @@ absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
 }
 
 grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
+  if (grpc_core::IsErrorFlattenEnabled()) return status;
   // Special error checks
   if (status.ok()) {
     return absl::OkStatus();
@@ -150,6 +201,9 @@ grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
 }
 
 bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {
+  if (grpc_core::IsErrorFlattenEnabled()) {
+    return error.code() != absl::StatusCode::kUnknown;
+  }
   intptr_t unused;
   if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
                          &unused)) {

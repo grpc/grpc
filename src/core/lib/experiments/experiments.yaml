@@ -66,6 +66,12 @@
   expiry: 2025/06/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
+- name: error_flatten
+  description: Flatten errors to ordinary absl::Status form.
+  expiry: 2025/06/01
+  owner: roth@google.com
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  allow_in_fuzzing_config: false
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2025/05/01
@@ -102,6 +108,13 @@
   allow_in_fuzzing_config: false
   uses_polling: true
   requires: ["event_engine_client", "event_engine_listener", "event_engine_dns", "event_engine_dns_non_client_channel"]
+- name: event_engine_fork
+  description: Enables event engine fork handling, including onfork events and file descriptor generations
+  expiry: 2025/08/01
+  owner: eostroukhov@google.com
+  test_tags: ["core_end2end_test", "event_engine_fork_test"]
+  uses_polling: true
+  allow_in_fuzzing_config: false
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
   expiry: 2025/05/01
@@ -143,6 +156,15 @@
   expiry: 2025/09/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: pollset_alternative
+  description:
+    Code outside iomgr that relies directly on pollsets will use non-pollset alternatives when
+    enabled.
+  expiry: 2025/06/01
+  owner: hork@google.com
+  test_tags: ["core_end2end_test"]
+  requires: ["event_engine_client", "event_engine_listener"]
+  allow_in_fuzzing_config: false
 - name: posix_ee_skip_grpc_init
   description:
     Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on

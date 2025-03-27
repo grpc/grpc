@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM centos:7
+FROM fedora:40
 
-RUN yum install -y python
-RUN yum install -y epel-release
-RUN yum install -y python-pip
-RUN yum install -y python3
+RUN yum clean all && yum update -y && yum install -y python3 python3-pip
 RUN python3 -m pip install virtualenv
+
+RUN yum install -y findutils

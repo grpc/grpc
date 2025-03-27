@@ -66,6 +66,12 @@ ALL_DOCKERFILE_DIRS=(
   third_party/rake-compiler-dock/*
 )
 
+# These Docker directories contain obsolete images that cannot be built.
+# They are excluded from build processes, but the Dockerfiles are retained for archival purposes.
+EXCLUDE_DIRS=(
+  tools/dockerfile/interoptest/grpc_interop_go1.8
+)
+
 # a list of docker directories that are based on ARM64 base images
 ARM_DOCKERFILE_DIRS=(
   tools/dockerfile/distribtest/python_alpine_aarch64
@@ -109,6 +115,18 @@ do
     continue
   else
     DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+  fi
+
+  # Skip if DOCKERFILE_DIR is in EXCLUDE_DIRS
+  exclude=false
+  for exclude_dir in "${EXCLUDE_DIRS[@]}"; do
+    if [[ "$DOCKERFILE_DIR" == "$exclude_dir" ]]; then
+      exclude=true
+      break
+    fi
+  done
+  if $exclude; then
+    continue
   fi
 
   echo "* Visiting ${DOCKERFILE_DIR}"

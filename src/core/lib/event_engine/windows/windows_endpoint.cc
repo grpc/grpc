@@ -26,6 +26,7 @@
 #include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
+#include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/debug_location.h"
@@ -57,16 +58,10 @@ WindowsEndpoint::WindowsEndpoint(
       allocator_(std::move(allocator)),
       io_state_(std::make_shared<AsyncIOState>(
           this, std::move(socket), std::move(engine), thread_pool)) {
-  char addr[EventEngine::ResolvedAddress::MAX_SIZE_BYTES];
-  int addr_len = sizeof(addr);
-  if (getsockname(io_state_->socket->raw_socket(),
-                  reinterpret_cast<sockaddr*>(addr), &addr_len) < 0) {
-    grpc_core::Crash(absl::StrFormat(
-        "Unrecoverable error: Failed to get local socket name. %s",
-        GRPC_WSA_ERROR(WSAGetLastError(), "getsockname").ToString().c_str()));
-  }
-  local_address_ =
-      EventEngine::ResolvedAddress(reinterpret_cast<sockaddr*>(addr), addr_len);
+  auto local_address = SocketToAddress(io_state_->socket->raw_socket());
+  CHECK(local_address.ok())
+      << "Failed to get local socket address: " << local_address.status();
+  local_address_ = std::move(*local_address);
   local_address_string_ = *ResolvedAddressToURI(local_address_);
   peer_address_string_ = *ResolvedAddressToURI(peer_address_);
 }
