@@ -18,7 +18,7 @@
 #include <utility>
 
 #include "absl/strings/str_cat.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 
@@ -79,13 +79,13 @@ PipeWakeupFd::~PipeWakeupFd() {
 }
 
 bool PipeWakeupFd::IsSupported() {
-  FileDescriptors fds;
+  EventEnginePosixInterface fds;
   PipeWakeupFd pipe_wakeup_fd(&fds);
   return pipe_wakeup_fd.Init().ok();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd(
-    FileDescriptors* fds) {
+    EventEnginePosixInterface* fds) {
   static bool kIsPipeWakeupFdSupported = PipeWakeupFd::IsSupported();
   if (kIsPipeWakeupFdSupported) {
     auto pipe_wakeup_fd = std::make_unique<PipeWakeupFd>(fds);
@@ -111,7 +111,7 @@ absl::Status PipeWakeupFd::Wakeup() { grpc_core::Crash("unimplemented"); }
 bool PipeWakeupFd::IsSupported() { return false; }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd(
-    FileDescriptors* fds) {
+    EventEnginePosixInterface* fds) {
   return absl::NotFoundError("Pipe wakeup fd is not supported");
 }
 

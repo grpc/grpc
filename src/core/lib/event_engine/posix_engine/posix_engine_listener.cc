@@ -39,9 +39,9 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -80,7 +80,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
   UnlinkIfUnixDomainSocket(addr);
 
-  FileDescriptors& fds = poller_->GetFileDescriptors();
+  EventEnginePosixInterface& fds = poller_->GetFileDescriptors();
 
   /// Check if this is a wildcard port, and if so, try to keep the port the same
   /// as some previously created listener socket.

@@ -20,24 +20,25 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 
 namespace grpc_event_engine::experimental {
 
 class PipeWakeupFd : public WakeupFd {
  public:
-  explicit PipeWakeupFd(FileDescriptors* fds) : WakeupFd(), fds_(fds) {}
+  explicit PipeWakeupFd(EventEnginePosixInterface* fds)
+      : WakeupFd(), fds_(fds) {}
   ~PipeWakeupFd() override;
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
   static absl::StatusOr<std::unique_ptr<WakeupFd>> CreatePipeWakeupFd(
-      FileDescriptors* fds);
+      EventEnginePosixInterface* fds);
   static bool IsSupported();
 
  private:
   absl::Status Init();
-  FileDescriptors* fds_;
+  EventEnginePosixInterface* fds_;
 };
 
 }  // namespace grpc_event_engine::experimental

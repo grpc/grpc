@@ -41,9 +41,9 @@
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
@@ -807,7 +807,7 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
   auto* poller = fork_support_->Poller();
   CHECK_NE(poller, nullptr);
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
-  absl::StatusOr<FileDescriptors::PosixSocketCreateResult> socket =
+  absl::StatusOr<EventEnginePosixInterface::PosixSocketCreateResult> socket =
       poller->GetFileDescriptors().CreateAndPrepareTcpClientSocket(options,
                                                                    addr);
   if (!socket.ok()) {

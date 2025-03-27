@@ -17,7 +17,7 @@
 #include <utility>
 
 #include "absl/strings/str_cat.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 
@@ -80,13 +80,13 @@ EventFdWakeupFd::~EventFdWakeupFd() {
 }
 
 bool EventFdWakeupFd::IsSupported() {
-  FileDescriptors fds;
+  EventEnginePosixInterface fds;
   EventFdWakeupFd event_fd_wakeup_fd(&fds);
   return event_fd_wakeup_fd.Init().ok();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreateEventFdWakeupFd(FileDescriptors* fds) {
+EventFdWakeupFd::CreateEventFdWakeupFd(EventEnginePosixInterface* fds) {
   static bool kIsEventFdWakeupFdSupported = EventFdWakeupFd::IsSupported();
   if (kIsEventFdWakeupFdSupported) {
     auto event_fd_wakeup_fd = std::make_unique<EventFdWakeupFd>(fds);
@@ -114,7 +114,7 @@ absl::Status EventFdWakeupFd::Wakeup() { grpc_core::Crash("unimplemented"); }
 bool EventFdWakeupFd::IsSupported() { return false; }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreateEventFdWakeupFd(FileDescriptors* fds) {
+EventFdWakeupFd::CreateEventFdWakeupFd(EventEnginePosixInterface* fds) {
   return absl::NotFoundError("Eventfd wakeup fd is not supported");
 }
 

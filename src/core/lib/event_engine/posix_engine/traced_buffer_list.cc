@@ -25,7 +25,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
 
@@ -201,7 +201,8 @@ bool TracedBufferList::TracedBuffer::Finished(gpr_timespec ts) {
          kGrpcMaxPendingAckTimeMillis;
 }
 
-void TracedBufferList::AddNewEntry(int32_t seq_no, FileDescriptors* fds,
+void TracedBufferList::AddNewEntry(int32_t seq_no,
+                                   EventEnginePosixInterface* fds,
                                    const FileDescriptor& fd, void* arg) {
   TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
   // Store the current time as the sendmsg time.

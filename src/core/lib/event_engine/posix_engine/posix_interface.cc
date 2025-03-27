@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
@@ -44,7 +44,7 @@
 #else
 #include <netinet/in.h>  // IWYU pragma: keep
 #include <netinet/tcp.h>
-#endif
+#endif  // GRPC_LINUX_TCP_H
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -106,7 +106,7 @@ using PipeEnds = std::pair<FileDescriptor, FileDescriptor>;
 #ifdef GRPC_LINUX_ERRQUEUE
 constexpr bool kLinuxErrqueue = true;
 #else   // GRPC_LINUX_ERRQUEUE
-constexpr bool kLinuxErrqueue = true;
+constexpr bool kLinuxErrqueue = false;
 #endif  // GRPC_LINUX_ERRQUEUE
 
 // The default values for TCP_USER_TIMEOUT are currently configured to be in
@@ -482,7 +482,7 @@ absl::Status InternalApplySocketMutatorInOptions(
 
 bool IsSocketReusePortSupported() {
   static bool kSupportSoReusePort = []() -> bool {
-    FileDescriptors fds;
+    EventEnginePosixInterface fds;
     auto s = fds.Socket(AF_INET, SOCK_STREAM, 0);
     if (!s.ok()) {
       // This might be an ipv6-only environment in which case
@@ -501,7 +501,7 @@ bool IsSocketReusePortSupported() {
   return kSupportSoReusePort;
 }
 
-FileDescriptor FileDescriptors::Adopt(int fd) {
+FileDescriptor EventEnginePosixInterface::Adopt(int fd) {
 #if GRPC_ENABLE_FORK_SUPPORT
   if (grpc_core::IsEventEngineForkEnabled()) {
     return descriptors_.Add(fd);
@@ -510,12 +510,13 @@ FileDescriptor FileDescriptors::Adopt(int fd) {
   return FileDescriptor(fd, 0);
 }
 
-std::optional<int> FileDescriptors::GetFdForPolling(const FileDescriptor& fd) {
+std::optional<int> EventEnginePosixInterface::GetFdForPolling(
+    const FileDescriptor& fd) {
   return RunIfCorrectGeneration<std::optional<int>>(
       fd, [](int fd) -> std::optional<int> { return fd; }, std::nullopt);
 }
 
-void FileDescriptors::Close(const FileDescriptor& fd) {
+void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
 #ifdef GRPC_POSIX_SOCKET
 #ifdef GRPC_ENABLE_FORK_SUPPORT
   if (grpc_core::IsEventEngineForkEnabled() && !descriptors_.Remove(fd)) {
@@ -529,7 +530,7 @@ void FileDescriptors::Close(const FileDescriptor& fd) {
 //
 // Factories
 //
-IF_POSIX_SOCKET(FileDescriptorResult FileDescriptors::Accept(
+IF_POSIX_SOCKET(FileDescriptorResult EventEnginePosixInterface::Accept(
                     const FileDescriptor& sockfd, struct sockaddr* addr,
                     socklen_t* addrlen),
                 {
@@ -544,7 +545,7 @@ IF_POSIX_SOCKET(FileDescriptorResult FileDescriptors::Accept(
 #ifdef GRPC_POSIX_SOCKETUTILS
 
 IF_POSIX_SOCKET(
-    FileDescriptorResult FileDescriptors::Accept4(
+    FileDescriptorResult EventEnginePosixInterface::Accept4(
         const FileDescriptor& sockfd,
         grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
         int nonblock, int cloexec),
@@ -583,7 +584,7 @@ IF_POSIX_SOCKET(
 #else  // GRPC_POSIX_SOCKETUTILS
 
 IF_POSIX_SOCKET(
-    FileDescriptorResult FileDescriptors::Accept4(
+    FileDescriptorResult EventEnginePosixInterface::Accept4(
         const FileDescriptor& sockfd,
         grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
         int nonblock, int cloexec),
@@ -608,7 +609,7 @@ IF_POSIX_SOCKET(
 
 #endif  // GRPC_POSIX_SOCKETUTILS
 
-absl::StatusOr<FileDescriptor> FileDescriptors::CreateDualStackSocket(
+absl::StatusOr<FileDescriptor> EventEnginePosixInterface::CreateDualStackSocket(
     std::function<int(int, int, int)> socket_factory,
     const experimental::EventEngine::ResolvedAddress& addr, int type,
     int protocol, DSMode& dsmode) {
@@ -620,12 +621,11 @@ absl::StatusOr<FileDescriptor> FileDescriptors::CreateDualStackSocket(
   return Adopt(*fd);
 }
 
-IF_POSIX_SOCKET(FileDescriptorResult FileDescriptors::Socket(int domain,
-                                                             int type,
-                                                             int protocol),
+IF_POSIX_SOCKET(FileDescriptorResult EventEnginePosixInterface::Socket(
+                    int domain, int type, int protocol),
                 { return RegisterPosixResult(socket(domain, type, protocol)); })
 
-IF_POSIX_SOCKET(absl::StatusOr<PipeEnds> FileDescriptors::Pipe(), {
+IF_POSIX_SOCKET(absl::StatusOr<PipeEnds> EventEnginePosixInterface::Pipe(), {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
@@ -644,7 +644,8 @@ IF_POSIX_SOCKET(absl::StatusOr<PipeEnds> FileDescriptors::Pipe(), {
   return status;
 })
 
-FileDescriptorResult FileDescriptors::EventFd(int initval, int flags) {
+FileDescriptorResult EventEnginePosixInterface::EventFd(int initval,
+                                                        int flags) {
 #ifdef GRPC_LINUX_EVENTFD
   return RegisterPosixResult(eventfd(initval, flags));
 #else
@@ -652,7 +653,7 @@ FileDescriptorResult FileDescriptors::EventFd(int initval, int flags) {
 #endif
 }
 
-FileDescriptorResult FileDescriptors::EpollCreateAndCloexec() {
+FileDescriptorResult EventEnginePosixInterface::EpollCreateAndCloexec() {
 #ifdef GRPC_LINUX_EPOLL
 #ifdef GRPC_LINUX_EPOLL_CREATE1
   auto fd = RegisterPosixResult(epoll_create1(EPOLL_CLOEXEC));
@@ -676,7 +677,7 @@ FileDescriptorResult FileDescriptors::EpollCreateAndCloexec() {
 #endif  // GRPC_LINUX_EPOLL
 }
 
-IF_POSIX_SOCKET(PosixResult FileDescriptors::Connect(
+IF_POSIX_SOCKET(PosixResult EventEnginePosixInterface::Connect(
                     const FileDescriptor& sockfd, const struct sockaddr* addr,
                     socklen_t addrlen),
                 {
@@ -685,18 +686,19 @@ IF_POSIX_SOCKET(PosixResult FileDescriptors::Connect(
                   });
                 })
 
-IF_POSIX_SOCKET(PosixResult FileDescriptors::Ioctl(const FileDescriptor& fd,
-                                                   int op, void* arg),
+IF_POSIX_SOCKET(PosixResult EventEnginePosixInterface::Ioctl(
+                    const FileDescriptor& fd, int op, void* arg),
                 {
                   return PosixResultWrap(
                       fd, [&](int fd) { return ioctl(fd, op, arg); });
                 });
 
 IF_POSIX_SOCKET(
-    PosixResult FileDescriptors::Shutdown(const FileDescriptor& fd, int how),
+    PosixResult EventEnginePosixInterface::Shutdown(const FileDescriptor& fd,
+                                                    int how),
     { return PosixResultWrap(fd, [&](int fd) { return shutdown(fd, how); }); })
 
-IF_POSIX_SOCKET(PosixResult FileDescriptors::GetSockOpt(
+IF_POSIX_SOCKET(PosixResult EventEnginePosixInterface::GetSockOpt(
                     const FileDescriptor& fd, int level, int optname,
                     void* optval, void* optlen),
                 {
@@ -707,8 +709,9 @@ IF_POSIX_SOCKET(PosixResult FileDescriptors::GetSockOpt(
                 })
 
 IF_POSIX_SOCKET(
-    Int64Result FileDescriptors::SetSockOpt(const FileDescriptor& fd, int level,
-                                            int optname, uint32_t optval),
+    Int64Result EventEnginePosixInterface::SetSockOpt(const FileDescriptor& fd,
+                                                      int level, int optname,
+                                                      uint32_t optval),
     {
       return RunIfCorrectGeneration(
           fd,
@@ -721,15 +724,15 @@ IF_POSIX_SOCKET(
           Int64Result::WrongGeneration());
     })
 
-IF_POSIX_SOCKET(Int64Result FileDescriptors::Read(const FileDescriptor& fd,
-                                                  absl::Span<char> buf),
+IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::Read(
+                    const FileDescriptor& fd, absl::Span<char> buf),
                 { return Int64Wrap(fd, read, buf.data(), buf.size()); })
 
-IF_POSIX_SOCKET(Int64Result FileDescriptors::Write(const FileDescriptor& fd,
-                                                   absl::Span<char> buf),
+IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::Write(
+                    const FileDescriptor& fd, absl::Span<char> buf),
                 { return Int64Wrap(fd, write, buf.data(), buf.size()); })
 
-PosixResult FileDescriptors::EventFdRead(const FileDescriptor& fd) {
+PosixResult EventEnginePosixInterface::EventFdRead(const FileDescriptor& fd) {
 #ifdef GRPC_LINUX_EVENTFD
   return PosixResultWrap(fd, [](int fd) {
     eventfd_t value;
@@ -740,7 +743,7 @@ PosixResult FileDescriptors::EventFdRead(const FileDescriptor& fd) {
 #endif  // GRPC_LINUX_EVENTFD
 }
 
-PosixResult FileDescriptors::EventFdWrite(const FileDescriptor& fd) {
+PosixResult EventEnginePosixInterface::EventFdWrite(const FileDescriptor& fd) {
 #ifdef GRPC_LINUX_EVENTFD
   return PosixResultWrap(fd, [](int fd) { return eventfd_write(fd, 1); });
 #else   // GRPC_LINUX_EVENTFD
@@ -748,25 +751,27 @@ PosixResult FileDescriptors::EventFdWrite(const FileDescriptor& fd) {
 #endif  // GRPC_LINUX_EVENTFD
 }
 
-IF_POSIX_SOCKET(
-    Int64Result FileDescriptors::RecvFrom(const FileDescriptor& fd, void* buf,
-                                          size_t len, int flags,
-                                          struct sockaddr* src_addr,
-                                          socklen_t* addrlen),
-    { return Int64Wrap(fd, recvfrom, buf, len, flags, src_addr, addrlen); })
+IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::RecvFrom(
+                    const FileDescriptor& fd, void* buf, size_t len, int flags,
+                    struct sockaddr* src_addr, socklen_t* addrlen),
+                {
+                  return Int64Wrap(fd, recvfrom, buf, len, flags, src_addr,
+                                   addrlen);
+                })
 
-IF_POSIX_SOCKET(Int64Result FileDescriptors::RecvMsg(const FileDescriptor& fd,
-                                                     struct msghdr* message,
-                                                     int flags),
+IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::RecvMsg(
+                    const FileDescriptor& fd, struct msghdr* message,
+                    int flags),
                 { return Int64Wrap(fd, recvmsg, message, flags); })
 
-IF_POSIX_SOCKET(Int64Result FileDescriptors::SendMsg(
+IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::SendMsg(
                     const FileDescriptor& fd, const struct msghdr* message,
                     int flags),
                 { return Int64Wrap(fd, sendmsg, message, flags); })
 
-Int64Result FileDescriptors::WriteV(const FileDescriptor& fd,
-                                    const struct iovec* iov, int iovcnt) {
+Int64Result EventEnginePosixInterface::WriteV(const FileDescriptor& fd,
+                                              const struct iovec* iov,
+                                              int iovcnt) {
 #if defined(GRPC_POSIX_SOCKET) && GRPC_ARES == 1 && \
     defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   return Int64Wrap(fd, writev, iov, iovcnt);
@@ -778,8 +783,8 @@ Int64Result FileDescriptors::WriteV(const FileDescriptor& fd,
 //
 // Epoll
 //
-IF_EPOLL(PosixResult FileDescriptors::EpollCtlDel(const FileDescriptor& epfd,
-                                                  const FileDescriptor& fd),
+IF_EPOLL(PosixResult EventEnginePosixInterface::EpollCtlDel(
+             const FileDescriptor& epfd, const FileDescriptor& fd),
          {
            if (!IsCorrectGeneration(epfd) || !IsCorrectGeneration(fd)) {
              return PosixResultWrongGeneration();
@@ -789,10 +794,9 @@ IF_EPOLL(PosixResult FileDescriptors::EpollCtlDel(const FileDescriptor& epfd,
                epoll_ctl(epfd.fd(), EPOLL_CTL_DEL, fd.fd(), &phony_event));
          })
 
-IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(const FileDescriptor& epfd,
-                                                  bool writable,
-                                                  const FileDescriptor& fd,
-                                                  void* data),
+IF_EPOLL(PosixResult EventEnginePosixInterface::EpollCtlAdd(
+             const FileDescriptor& epfd, bool writable,
+             const FileDescriptor& fd, void* data),
          {
            epoll_event event;
            event.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
@@ -807,8 +811,8 @@ IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(const FileDescriptor& epfd,
                epoll_ctl(epfd.fd(), EPOLL_CTL_ADD, fd.fd(), &event));
          })
 
-absl::StatusOr<EventEngine::ResolvedAddress> FileDescriptors::LocalAddress(
-    const FileDescriptor& fd) {
+absl::StatusOr<EventEngine::ResolvedAddress>
+EventEnginePosixInterface::LocalAddress(const FileDescriptor& fd) {
   return RunIfCorrectGeneration<absl::StatusOr<EventEngine::ResolvedAddress>>(
       fd,
       [](int fd) -> absl::StatusOr<EventEngine::ResolvedAddress> {
@@ -824,7 +828,7 @@ absl::StatusOr<EventEngine::ResolvedAddress> FileDescriptors::LocalAddress(
           "getsockname: file descriptor from wrong generation"));
 }
 
-absl::StatusOr<std::string> FileDescriptors::LocalAddressString(
+absl::StatusOr<std::string> EventEnginePosixInterface::LocalAddressString(
     const FileDescriptor& fd) {
   auto status = LocalAddress(fd);
   if (!status.ok()) {
@@ -833,8 +837,8 @@ absl::StatusOr<std::string> FileDescriptors::LocalAddressString(
   return ResolvedAddressToNormalizedString((*status));
 }
 
-absl::StatusOr<EventEngine::ResolvedAddress> FileDescriptors::PeerAddress(
-    const FileDescriptor& fd) {
+absl::StatusOr<EventEngine::ResolvedAddress>
+EventEnginePosixInterface::PeerAddress(const FileDescriptor& fd) {
   return RunIfCorrectGeneration<absl::StatusOr<EventEngine::ResolvedAddress>>(
       fd,
       [](int fd) -> absl::StatusOr<EventEngine::ResolvedAddress> {
@@ -849,7 +853,7 @@ absl::StatusOr<EventEngine::ResolvedAddress> FileDescriptors::PeerAddress(
       absl::InternalError("getpeername: wrong file descriptor generation"));
 }
 
-absl::StatusOr<std::string> FileDescriptors::PeerAddressString(
+absl::StatusOr<std::string> EventEnginePosixInterface::PeerAddressString(
     const FileDescriptor& fd) {
   auto status = PeerAddress(fd);
   if (!status.ok()) {
@@ -858,14 +862,14 @@ absl::StatusOr<std::string> FileDescriptors::PeerAddressString(
   return ResolvedAddressToNormalizedString((*status));
 }
 
-absl::Status FileDescriptors::SetSocketNoSigpipeIfPossible(
+absl::Status EventEnginePosixInterface::SetSocketNoSigpipeIfPossible(
     const FileDescriptor& fd) {
   return RunIfCorrectGeneration(fd, InternalSetSocketNoSigpipeIfPossible,
                                 absl::OkStatus());
 }
 
 IF_POSIX_SOCKET(
-    absl::Status FileDescriptors::PrepareTcpClientSocket(
+    absl::Status EventEnginePosixInterface::PrepareTcpClientSocket(
         int fd, const EventEngine::ResolvedAddress& addr,
         const PosixTcpOptions& options),
     {
@@ -900,8 +904,8 @@ IF_POSIX_SOCKET(
       return absl::OkStatus();
     })
 
-absl::StatusOr<FileDescriptors::PosixSocketCreateResult>
-FileDescriptors::CreateAndPrepareTcpClientSocket(
+absl::StatusOr<EventEnginePosixInterface::PosixSocketCreateResult>
+EventEnginePosixInterface::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& target_addr) {
   DSMode dsmode;
@@ -934,9 +938,9 @@ FileDescriptors::CreateAndPrepareTcpClientSocket(
 }
 
 // Set a socket using a grpc_socket_mutator
-absl::Status FileDescriptors::SetSocketMutator(const FileDescriptor& fd,
-                                               grpc_fd_usage usage,
-                                               grpc_socket_mutator* mutator) {
+absl::Status EventEnginePosixInterface::SetSocketMutator(
+    const FileDescriptor& fd, grpc_fd_usage usage,
+    grpc_socket_mutator* mutator) {
   CHECK(mutator);
   if (!IsCorrectGeneration(fd)) {
     return absl::InternalError("SetSocketMutator: FD has a wrong generation");
@@ -948,7 +952,7 @@ absl::Status FileDescriptors::SetSocketMutator(const FileDescriptor& fd,
   return absl::OkStatus();
 }
 
-absl::Status FileDescriptors::ApplySocketMutatorInOptions(
+absl::Status EventEnginePosixInterface::ApplySocketMutatorInOptions(
     const FileDescriptor& fd, grpc_fd_usage usage,
     const PosixTcpOptions& options) {
   if (!IsCorrectGeneration(fd)) {
@@ -957,7 +961,8 @@ absl::Status FileDescriptors::ApplySocketMutatorInOptions(
   return InternalApplySocketMutatorInOptions(fd.fd(), usage, options);
 }
 
-int FileDescriptors::ConfigureSocket(const FileDescriptor& fd, int type) {
+int EventEnginePosixInterface::ConfigureSocket(const FileDescriptor& fd,
+                                               int type) {
 #define RETURN_IF_ERROR(expr) \
   if (!(expr).ok()) {         \
     return -1;                \
@@ -979,7 +984,7 @@ int FileDescriptors::ConfigureSocket(const FileDescriptor& fd, int type) {
 
 IF_POSIX_SOCKET(
     absl::StatusOr<EventEngine::ResolvedAddress>
-        FileDescriptors::PrepareListenerSocket(
+        EventEnginePosixInterface::PrepareListenerSocket(
             const FileDescriptor& fd, const PosixTcpOptions& options,
             const EventEngine::ResolvedAddress& address),
     {
@@ -1039,36 +1044,38 @@ IF_POSIX_SOCKET(
     })
 
 // Bind to "::" to get a port number not used by any address.
-IF_POSIX_SOCKET(absl::StatusOr<int> FileDescriptors::GetUnusedPort(), {
-  EventEngine::ResolvedAddress wild = ResolvedAddressMakeWild6(0);
-  DSMode dsmode;
-  auto fd =
-      InternalCreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
-  GRPC_RETURN_IF_ERROR(fd.status());
-  if (dsmode == DSMode::DSMODE_IPV4) {
-    wild = ResolvedAddressMakeWild4(0);
-  }
-  if (bind(*fd, wild.address(), wild.size()) != 0) {
-    close(*fd);
-    return absl::FailedPreconditionError(
-        absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
-  }
-  socklen_t len = wild.size();
-  if (getsockname(*fd, const_cast<sockaddr*>(wild.address()), &len) != 0) {
-    close(*fd);
-    return absl::FailedPreconditionError(
-        absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
-  }
-  close(*fd);
-  int port = ResolvedAddressGetPort(wild);
-  if (port <= 0) {
-    return absl::FailedPreconditionError("Bad port");
-  }
-  return port;
-})
+IF_POSIX_SOCKET(
+    absl::StatusOr<int> EventEnginePosixInterface::GetUnusedPort(), {
+      EventEngine::ResolvedAddress wild = ResolvedAddressMakeWild6(0);
+      DSMode dsmode;
+      auto fd =
+          InternalCreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
+      GRPC_RETURN_IF_ERROR(fd.status());
+      if (dsmode == DSMode::DSMODE_IPV4) {
+        wild = ResolvedAddressMakeWild4(0);
+      }
+      if (bind(*fd, wild.address(), wild.size()) != 0) {
+        close(*fd);
+        return absl::FailedPreconditionError(
+            absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
+      }
+      socklen_t len = wild.size();
+      if (getsockname(*fd, const_cast<sockaddr*>(wild.address()), &len) != 0) {
+        close(*fd);
+        return absl::FailedPreconditionError(
+            absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
+      }
+      close(*fd);
+      int port = ResolvedAddressGetPort(wild);
+      if (port <= 0) {
+        return absl::FailedPreconditionError("Bad port");
+      }
+      return port;
+    })
 
-void FileDescriptors::ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
-                                                     bool is_client) {
+void EventEnginePosixInterface::ConfigureDefaultTcpUserTimeout(bool enable,
+                                                               int timeout,
+                                                               bool is_client) {
   if (is_client) {
     kDefaultClientUserTimeoutEnabled = enable;
     if (timeout > 0) {
@@ -1082,7 +1089,7 @@ void FileDescriptors::ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
   }
 }
 
-PosixResult FileDescriptors::PosixResultWrap(
+PosixResult EventEnginePosixInterface::PosixResultWrap(
     const FileDescriptor& wrapped,
     const absl::AnyInvocable<int(int) const>& fn) const {
   return RunIfCorrectGeneration(
@@ -1090,7 +1097,7 @@ PosixResult FileDescriptors::PosixResultWrap(
       PosixResultWrongGeneration());
 }
 
-void FileDescriptors::AdvanceGeneration() {
+void EventEnginePosixInterface::AdvanceGeneration() {
 #ifdef GRPC_POSIX_SOCKET
 #ifdef GRPC_ENABLE_FORK_SUPPORT
   if (!grpc_core::IsEventEngineForkEnabled()) {

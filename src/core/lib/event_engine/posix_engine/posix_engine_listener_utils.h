@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
 namespace grpc_event_engine::experimental {
@@ -58,7 +58,7 @@ class ListenerSocketsContainer {
 // socket fd and its dsmode. If unsuccessful, it returns a Not-OK status.
 absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
 CreateAndPrepareListenerSocket(
-    FileDescriptors* fds, const PosixTcpOptions& options,
+    EventEnginePosixInterface* fds, const PosixTcpOptions& options,
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr);
 
 // Instead of creating and adding a socket bound to specific address, this
@@ -68,7 +68,7 @@ CreateAndPrepareListenerSocket(
 // returns the port at which the created socket listens for incoming
 // connections.
 absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
-    FileDescriptors* fds, ListenerSocketsContainer& listener_sockets,
+    EventEnginePosixInterface* fds, ListenerSocketsContainer& listener_sockets,
     const PosixTcpOptions& options, int requested_port);
 
 // Get all addresses assigned to network interfaces on the machine and create
@@ -78,7 +78,7 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
 // every socket. If set to 0, a random port will be used for every socket.
 // The function returns the chosen port number for all created sockets.
 absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
-    FileDescriptors* fds, ListenerSocketsContainer& listener_sockets,
+    EventEnginePosixInterface* fds, ListenerSocketsContainer& listener_sockets,
     const PosixTcpOptions& options, int requested_port);
 
 // Returns true if addr is link-local (i.e. within the range 169.254.0.0/16 or

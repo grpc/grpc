@@ -34,8 +34,8 @@
 #include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 

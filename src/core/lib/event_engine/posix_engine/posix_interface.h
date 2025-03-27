@@ -51,15 +51,16 @@ class Int64Result final : public PosixResult {
   int64_t result_ = 0;
 };
 
-class FileDescriptors {
+class EventEnginePosixInterface {
  public:
   struct PosixSocketCreateResult {
     FileDescriptor sock;
     EventEngine::ResolvedAddress mapped_target_addr;
   };
 
-  FileDescriptors() = default;
-  FileDescriptors(const FileDescriptors&& other) = delete;
+  EventEnginePosixInterface() = default;
+  EventEnginePosixInterface(const EventEnginePosixInterface& other) = delete;
+  EventEnginePosixInterface(EventEnginePosixInterface&& other) = delete;
 
   void AdvanceGeneration();
 

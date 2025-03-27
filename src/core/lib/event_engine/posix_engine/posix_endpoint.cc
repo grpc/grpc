@@ -39,8 +39,8 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -96,7 +96,7 @@ namespace {
 
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
-Int64Result TcpSend(FileDescriptors* fds, const FileDescriptor& fd,
+Int64Result TcpSend(EventEnginePosixInterface* fds, const FileDescriptor& fd,
                     const struct msghdr* msg, int* saved_errno,
                     int additional_flags = 0) {
   GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
@@ -337,7 +337,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     grpc_core::global_stats().IncrementTcpReadOfferIovSize(
         incoming_buffer_->Count());
     Int64Result res;
-    FileDescriptors& fds = poller_->GetFileDescriptors();
+    EventEnginePosixInterface& fds = poller_->GetFileDescriptors();
     do {
       grpc_core::global_stats().IncrementSyscallRead();
       res = fds.RecvMsg(fd_, &msg, 0);
@@ -732,7 +732,7 @@ bool PosixEndpointImpl::ProcessErrors() {
   } aligned_buf;
   msg.msg_control = aligned_buf.rbuf;
   Int64Result r;
-  FileDescriptors& fds = poller_->GetFileDescriptors();
+  EventEnginePosixInterface& fds = poller_->GetFileDescriptors();
   while (true) {
     msg.msg_controllen = sizeof(aligned_buf.rbuf);
     do {

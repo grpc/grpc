@@ -23,8 +23,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -94,11 +94,11 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller {
   virtual std::string Name() = 0;
   virtual void AdvanceGeneration() = 0;
   virtual void ResetKickState() = 0;
-  FileDescriptors& GetFileDescriptors() { return file_descriptors_; }
+  EventEnginePosixInterface& GetFileDescriptors() { return file_descriptors_; }
   ~PosixEventPoller() override = default;
 
  protected:
-  FileDescriptors file_descriptors_;
+  EventEnginePosixInterface file_descriptors_;
 };
 
 }  // namespace grpc_event_engine::experimental

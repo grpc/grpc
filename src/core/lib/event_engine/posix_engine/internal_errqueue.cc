@@ -17,6 +17,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/log/log.h"
+#include "posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -34,7 +35,7 @@
 namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_LINUX_ERRQUEUE
-PosixResult GetSocketTcpInfo(tcp_info* info, FileDescriptors* fds,
+PosixResult GetSocketTcpInfo(tcp_info* info, EventEnginePosixInterface* fds,
                              const FileDescriptor& fd) {
   memset(info, 0, sizeof(*info));
   info->length = offsetof(tcp_info, length);

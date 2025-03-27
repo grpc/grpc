@@ -45,7 +45,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/status.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 
 namespace grpc_event_engine::experimental {
 

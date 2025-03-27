@@ -283,7 +283,7 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
-        "//src/core:posix_event_engine_file_descriptors",
+        "//src/core:posix_event_engine_posix_interface",
         "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -62,7 +62,7 @@ class FileDescriptor {
   int fd() const { return fd_; }
   // Can get raw fd!
   friend class FileDescriptorCollection;
-  friend class FileDescriptors;
+  friend class EventEnginePosixInterface;
 
   int fd_ = 0;
 #if GRPC_ENABLE_FORK_SUPPORT
@@ -166,6 +166,18 @@ class FileDescriptorResult final : public PosixResult {
 
 class FileDescriptorCollection {
  public:
+  // Encodes a file descriptor (fd) and its generation into a single integer,
+  // required by some libraries (e.g., Ares).
+  // Formula: `fd + ((generation & kGenerationMask) << kIntFdBits)`.
+  //
+  // Use ToInteger/FromInteger for conversion.
+  //
+  // LIMITATIONS:
+  // 1. Fails (with an assertion) if fd > 28 bits. However, POSIX assigns
+  //    the lowest available fd, making 2^28 (~268M) open fds highly impractical
+  //    due to kernel resource usage.
+  // 2. Only uses the lower 3 bits of generation, risking collisions (e.g., gen
+  //    9 accepts gen 1).
   static constexpr int kIntFdBits = 28;
   static constexpr int kGenerationMask = 0x7;  // 3 bits
 

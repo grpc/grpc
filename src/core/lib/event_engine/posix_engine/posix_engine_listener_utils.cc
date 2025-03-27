@@ -28,7 +28,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
@@ -64,7 +64,8 @@ bool SystemHasIfAddrs() { return false; }
 #endif  // GRPC_HAVE_IFADDRS
 
 // Prepare a recently-created socket for listening.
-absl::Status PrepareSocket(FileDescriptors* fds, const PosixTcpOptions& options,
+absl::Status PrepareSocket(EventEnginePosixInterface* fds,
+                           const PosixTcpOptions& options,
                            ListenerSocket& socket) {
   FileDescriptor fd = socket.sock;
   CHECK(fd.ready());
@@ -91,7 +92,7 @@ absl::Status PrepareSocket(FileDescriptors* fds, const PosixTcpOptions& options,
 }  // namespace
 
 absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
-    FileDescriptors* fds, const PosixTcpOptions& options,
+    EventEnginePosixInterface* fds, const PosixTcpOptions& options,
     const ResolvedAddress& addr) {
   ResolvedAddress addr4_copy;
   ListenerSocket socket;
@@ -134,7 +135,7 @@ bool IsSockAddrLinkLocal(const EventEngine::ResolvedAddress* resolved_addr) {
 }
 
 absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
-    FileDescriptors* fds, ListenerSocketsContainer& listener_sockets,
+    EventEnginePosixInterface* fds, ListenerSocketsContainer& listener_sockets,
     const PosixTcpOptions& options, int requested_port) {
 #ifdef GRPC_HAVE_IFADDRS
   absl::Status op_status = absl::OkStatus();
@@ -220,7 +221,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
 }
 
 absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
-    FileDescriptors* fds, ListenerSocketsContainer& listener_sockets,
+    EventEnginePosixInterface* fds, ListenerSocketsContainer& listener_sockets,
     const PosixTcpOptions& options, int requested_port) {
   ResolvedAddress wild4 = ResolvedAddressMakeWild4(requested_port);
   ResolvedAddress wild6 = ResolvedAddressMakeWild6(requested_port);
