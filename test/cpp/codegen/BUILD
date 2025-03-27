@@ -53,6 +53,10 @@ grpc_cc_test(
         "gtest",
         "protobuf",
     ],
+    tags = [
+        # TODO: some include error (may already be fixed)
+        "grpc:fails-internally",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -68,6 +72,10 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "gtest",
+    ],
+    tags = [
+        # TODO: Refers to a package that doesn't exist internally.
+        "grpc:fails-internally",
     ],
     deps = [
         "//:grpc++",

@@ -20,10 +20,10 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
 
 #include <thread>
 
+#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/thd.h"

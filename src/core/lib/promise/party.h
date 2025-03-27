@@ -35,6 +35,7 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/check_class_size.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted.h"
@@ -305,7 +306,8 @@ class Party : public Activity, private Wakeable {
   // The party can poll the promise until it is resolved, or until the party is
   // shut down.
   // The on_complete callback will be called with the result of the
-  // promise if it completes.
+  // promise if it completes. Even if the promise returns a failed status,
+  // on_complete will be called.
   // promise_factory called to create the promise with the party lock taken;
   // after the promise is created the factory is destroyed. This means that
   // pointers or references to factory members will be invalidated after the
@@ -636,6 +638,8 @@ class Party : public Activity, private Wakeable {
   std::atomic<Participant*> participants_[party_detail::kMaxParticipants] = {};
   RefCountedPtr<Arena> arena_;
 };
+
+GRPC_CHECK_CLASS_SIZE(Party, 180);
 
 template <>
 struct ContextSubclass<Party> {

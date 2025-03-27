@@ -116,9 +116,6 @@ cq_refcount:
   debug_only: true
   default: false
   description: Completion queue refcounting.
-cronet:
-  default: false
-  description: Cronet transport engine.
 dns_resolver:
   default: false
   description: The active DNS resolver.
@@ -229,7 +226,7 @@ pending_tags:
   debug_only: true
   default: false
   description: Still-in-progress tags on completion queues. The `api` tracer must be enabled for this flag to have any effect.
-ph2:
+http2_ph2_transport:
   debug_only: true
   default: false
   description: Promise Based HTTP2 transport.

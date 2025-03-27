@@ -251,19 +251,19 @@ test_suite(
 grpc_build_artifact_task(
     name = "artifact_protoc_linux_x64",
     build_script = "build_artifact_protoc_linux.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_centos6_x64.current_version",
+    docker_image_version = "tools/dockerfile/grpc_artifact_manylinux2014_x64.current_version",
 )
 
 grpc_build_artifact_task(
     name = "artifact_protoc_linux_x86",
     build_script = "build_artifact_protoc_linux.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_centos6_x86.current_version",
+    docker_image_version = "tools/dockerfile/grpc_artifact_manylinux2014_x86.current_version",
 )
 
 grpc_build_artifact_task(
     name = "artifact_protoc_linux_aarch64",
     build_script = "build_artifact_protoc_linux_aarch64.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_protoc_aarch64.current_version",
+    docker_image_version = "tools/dockerfile/grpc_artifact_manylinux2014_aarch64.current_version",
 )
 
 # PHP artifact build tasks

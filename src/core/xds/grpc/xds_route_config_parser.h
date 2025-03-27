@@ -31,7 +31,7 @@
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "re2/re2.h"
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"

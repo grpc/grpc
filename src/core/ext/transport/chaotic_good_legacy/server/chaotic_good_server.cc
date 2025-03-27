@@ -31,6 +31,8 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
 #include "src/core/ext/transport/chaotic_good_legacy/server_transport.h"
@@ -59,8 +61,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
 #include "src/core/util/orphanable.h"
@@ -406,7 +406,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   if (!result.ok()) {
-    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: ", result.status();
+    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: " << result.status();
     connection_->Done();
     return;
   }

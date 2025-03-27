@@ -16,7 +16,6 @@
 #ifndef GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
 #define GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
 
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
@@ -24,7 +23,6 @@
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/xds_server_builder.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <optional>
@@ -41,9 +39,11 @@
 #include "envoy/config/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"

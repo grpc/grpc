@@ -60,7 +60,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
+#include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"

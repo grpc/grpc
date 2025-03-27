@@ -29,7 +29,6 @@ processing requests via debug logs. Available tracers include:
   - client_idle_filter - Client idleness filter.
   - compression - Compression operations.
   - connectivity_state - Connectivity state changes to channels.
-  - cronet - Cronet transport engine.
   - dns_resolver - The active DNS resolver.
   - environment_autodetect - GCP environment auto-detection.
   - event_engine - High-level EventEngine operations.
@@ -102,7 +101,7 @@ accomplished by invoking `bazel build --config=dbg <target>`
   - lb_policy_refcount - LB policy refcounting.
   - party_state - Coordination of activities related to a call.
   - pending_tags - Still-in-progress tags on completion queues. The `api` tracer must be enabled for this flag to have any effect.
-  - ph2 - Promise Based HTTP2 transport.
+  - http2_ph2_transport - Promise Based HTTP2 transport.
   - polling - The active polling engine.
   - polling_api - API calls to polling engine.
   - promise_primitives - Low-level primitives in the promise library.

@@ -14,14 +14,14 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
-#include <gtest/gtest.h>
 
 #include <thread>
 
 #include "absl/strings/str_format.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

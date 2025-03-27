@@ -38,6 +38,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -377,6 +378,11 @@ static void unref_by(grpc_fd* fd, int n) {
 }
 
 static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+    grpc_fd* new_fd = static_cast<grpc_fd*>(gpr_malloc(sizeof(grpc_fd)));
+    new_fd->fd = fd;
+    return new_fd;
+  }
   // Avoid unused-parameter warning for debug-only parameter
   (void)track_err;
   DCHECK(track_err == false);
@@ -467,6 +473,13 @@ static int fd_wrapped_fd(grpc_fd* fd) {
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                       const char* reason) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+    CHECK_NE(release_fd, nullptr);
+    CHECK_EQ(on_done, nullptr);
+    *release_fd = fd->fd;
+    gpr_free(fd);
+    return;
+  }
   fd->on_done_closure = on_done;
   fd->released = release_fd != nullptr;
   if (release_fd != nullptr) {

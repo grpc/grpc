@@ -13,10 +13,8 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpcpp/ext/server_metric_recorder.h>
-#include <gtest/gtest.h>
 
 #include <string>
 #include <vector>
@@ -26,6 +24,8 @@
 #include "absl/strings/str_format.h"
 #include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.pb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "test/core/test_util/fake_stats_plugin.h"

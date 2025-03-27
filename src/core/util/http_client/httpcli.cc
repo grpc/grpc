@@ -32,6 +32,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
@@ -44,8 +46,6 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/http_client/format_request.h"
@@ -282,7 +282,7 @@ void HttpRequest::AppendError(grpc_error_handle error) {
     overall_error_ = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
   }
   auto addr_text = ResolvedAddressToURI(addresses_[next_address_ - 1]);
-  if (addr_text.ok()) error = AddMessagePrefix(*addr_text, std::move(error));
+  if (addr_text.ok()) error = AddMessagePrefix(*addr_text, error);
   overall_error_ = grpc_error_add_child(overall_error_, std::move(error));
 }
 

@@ -27,9 +27,9 @@
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/test_util/test_call_creds.h"
 
 namespace grpc_core {
 namespace {
@@ -102,7 +102,7 @@ void TestRequestResponseWithPayloadAndCallCreds(CoreEnd2endTest& test,
   test.Expect(1, true);
   test.Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), "hello world");
@@ -167,7 +167,7 @@ void TestRequestResponseWithPayloadAndOverriddenCallCreds(
   test.Expect(1, true);
   test.Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), "hello world");
@@ -226,7 +226,7 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
   test.Expect(1, true);
   test.Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), "hello world");

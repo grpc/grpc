@@ -27,13 +27,13 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/server_posix.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <vector>
 
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"

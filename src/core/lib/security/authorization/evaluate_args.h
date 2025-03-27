@@ -23,9 +23,9 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 

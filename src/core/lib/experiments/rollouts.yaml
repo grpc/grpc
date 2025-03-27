@@ -48,6 +48,8 @@
   default: true
 - name: call_v3
   default: false
+- name: error_flatten
+  default: false
 - name: event_engine_callback_cq
   default: true
 - name: event_engine_client
@@ -62,6 +64,10 @@
     ios: broken
     posix: true
     windows: true
+- name: event_engine_for_all_other_endpoints
+  default: true
+- name: event_engine_fork
+  default: false
 - name: event_engine_listener
   default:
     # not tested on iOS at all
@@ -78,14 +84,16 @@
   default: true
 - name: monitoring_experiment
   default: true
-- name: pick_first_new
-  default: true
-- name: posix_ee_skip_grpc_init
+- name: pollset_alternative
   default: false
+- name: posix_ee_skip_grpc_init
+  default: true
 - name: promise_based_http2_client_transport
   default: false
 - name: promise_based_http2_server_transport
   default: false
+- name: rst_stream_fix
+  default: true
 - name: rstpit
   default: false
 - name: schedule_cancellation_over_write

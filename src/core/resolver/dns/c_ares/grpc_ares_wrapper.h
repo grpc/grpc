@@ -34,6 +34,8 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/sync.h"
 
+#if GRPC_ARES == 1
+
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
@@ -121,5 +123,7 @@ extern void (*grpc_ares_test_only_inject_config)(ares_channel* channel);
 
 // Exposed in this header for C-core tests only
 extern bool g_grpc_ares_test_only_force_tcp;
+
+#endif
 
 #endif  // GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H

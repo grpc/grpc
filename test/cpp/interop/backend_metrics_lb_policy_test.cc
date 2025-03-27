@@ -18,17 +18,17 @@
 
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <thread>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/messages.pb.h"

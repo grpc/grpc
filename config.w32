@@ -6,7 +6,21 @@ ARG_WITH("grpc", "grpc support", "no");
 if (PHP_GRPC != "no") {
 
   EXTENSION("grpc",
+    "src\\core\\call\\call_arena_allocator.cc " +
+    "src\\core\\call\\call_filters.cc " +
+    "src\\core\\call\\call_spine.cc " +
+    "src\\core\\call\\call_state.cc " +
+    "src\\core\\call\\client_call.cc " +
+    "src\\core\\call\\interception_chain.cc " +
+    "src\\core\\call\\message.cc " +
+    "src\\core\\call\\metadata.cc " +
+    "src\\core\\call\\metadata_batch.cc " +
+    "src\\core\\call\\metadata_info.cc " +
+    "src\\core\\call\\parsed_metadata.cc " +
     "src\\core\\call\\request_buffer.cc " +
+    "src\\core\\call\\security_context.cc " +
+    "src\\core\\call\\server_call.cc " +
+    "src\\core\\call\\status_util.cc " +
     "src\\core\\channelz\\channel_trace.cc " +
     "src\\core\\channelz\\channelz.cc " +
     "src\\core\\channelz\\channelz_registry.cc " +
@@ -34,6 +48,60 @@ if (PHP_GRPC != "no") {
     "src\\core\\config\\config_vars_non_generated.cc " +
     "src\\core\\config\\core_configuration.cc " +
     "src\\core\\config\\load_config.cc " +
+    "src\\core\\credentials\\call\\call_creds_util.cc " +
+    "src\\core\\credentials\\call\\composite\\composite_call_credentials.cc " +
+    "src\\core\\credentials\\call\\external\\aws_external_account_credentials.cc " +
+    "src\\core\\credentials\\call\\external\\aws_request_signer.cc " +
+    "src\\core\\credentials\\call\\external\\external_account_credentials.cc " +
+    "src\\core\\credentials\\call\\external\\file_external_account_credentials.cc " +
+    "src\\core\\credentials\\call\\external\\url_external_account_credentials.cc " +
+    "src\\core\\credentials\\call\\gcp_service_account_identity\\gcp_service_account_identity_credentials.cc " +
+    "src\\core\\credentials\\call\\iam\\iam_credentials.cc " +
+    "src\\core\\credentials\\call\\json_util.cc " +
+    "src\\core\\credentials\\call\\jwt\\json_token.cc " +
+    "src\\core\\credentials\\call\\jwt\\jwt_credentials.cc " +
+    "src\\core\\credentials\\call\\jwt\\jwt_verifier.cc " +
+    "src\\core\\credentials\\call\\oauth2\\oauth2_credentials.cc " +
+    "src\\core\\credentials\\call\\plugin\\plugin_credentials.cc " +
+    "src\\core\\credentials\\call\\token_fetcher\\token_fetcher_credentials.cc " +
+    "src\\core\\credentials\\transport\\alts\\alts_credentials.cc " +
+    "src\\core\\credentials\\transport\\alts\\alts_security_connector.cc " +
+    "src\\core\\credentials\\transport\\alts\\check_gcp_environment.cc " +
+    "src\\core\\credentials\\transport\\alts\\check_gcp_environment_linux.cc " +
+    "src\\core\\credentials\\transport\\alts\\check_gcp_environment_no_op.cc " +
+    "src\\core\\credentials\\transport\\alts\\check_gcp_environment_windows.cc " +
+    "src\\core\\credentials\\transport\\alts\\grpc_alts_credentials_client_options.cc " +
+    "src\\core\\credentials\\transport\\alts\\grpc_alts_credentials_options.cc " +
+    "src\\core\\credentials\\transport\\alts\\grpc_alts_credentials_server_options.cc " +
+    "src\\core\\credentials\\transport\\channel_creds_registry_init.cc " +
+    "src\\core\\credentials\\transport\\composite\\composite_channel_credentials.cc " +
+    "src\\core\\credentials\\transport\\fake\\fake_credentials.cc " +
+    "src\\core\\credentials\\transport\\fake\\fake_security_connector.cc " +
+    "src\\core\\credentials\\transport\\google_default\\credentials_generic.cc " +
+    "src\\core\\credentials\\transport\\google_default\\google_default_credentials.cc " +
+    "src\\core\\credentials\\transport\\insecure\\insecure_credentials.cc " +
+    "src\\core\\credentials\\transport\\insecure\\insecure_security_connector.cc " +
+    "src\\core\\credentials\\transport\\local\\local_credentials.cc " +
+    "src\\core\\credentials\\transport\\local\\local_security_connector.cc " +
+    "src\\core\\credentials\\transport\\security_connector.cc " +
+    "src\\core\\credentials\\transport\\ssl\\ssl_credentials.cc " +
+    "src\\core\\credentials\\transport\\ssl\\ssl_security_connector.cc " +
+    "src\\core\\credentials\\transport\\tls\\certificate_provider_registry.cc " +
+    "src\\core\\credentials\\transport\\tls\\grpc_tls_certificate_distributor.cc " +
+    "src\\core\\credentials\\transport\\tls\\grpc_tls_certificate_match.cc " +
+    "src\\core\\credentials\\transport\\tls\\grpc_tls_certificate_provider.cc " +
+    "src\\core\\credentials\\transport\\tls\\grpc_tls_certificate_verifier.cc " +
+    "src\\core\\credentials\\transport\\tls\\grpc_tls_credentials_options.cc " +
+    "src\\core\\credentials\\transport\\tls\\grpc_tls_crl_provider.cc " +
+    "src\\core\\credentials\\transport\\tls\\load_system_roots_fallback.cc " +
+    "src\\core\\credentials\\transport\\tls\\load_system_roots_supported.cc " +
+    "src\\core\\credentials\\transport\\tls\\load_system_roots_windows.cc " +
+    "src\\core\\credentials\\transport\\tls\\ssl_utils.cc " +
+    "src\\core\\credentials\\transport\\tls\\tls_credentials.cc " +
+    "src\\core\\credentials\\transport\\tls\\tls_security_connector.cc " +
+    "src\\core\\credentials\\transport\\tls\\tls_utils.cc " +
+    "src\\core\\credentials\\transport\\transport_credentials.cc " +
+    "src\\core\\credentials\\transport\\xds\\xds_credentials.cc " +
     "src\\core\\ext\\filters\\backend_metrics\\backend_metric_filter.cc " +
     "src\\core\\ext\\filters\\census\\grpc_context.cc " +
     "src\\core\\ext\\filters\\channel_idle\\idle_filter_state.cc " +
@@ -407,6 +475,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-gen\\xds\\type\\v3\\cel.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\xds\\type\\v3\\range.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\xds\\type\\v3\\typed_struct.upbdefs.c " +
+    "src\\core\\filter\\auth\\client_auth_filter.cc " +
+    "src\\core\\filter\\auth\\server_auth_filter.cc " +
     "src\\core\\filter\\blackboard.cc " +
     "src\\core\\handshaker\\endpoint_info\\endpoint_info_handshaker.cc " +
     "src\\core\\handshaker\\handshaker.cc " +
@@ -427,7 +497,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\channel\\channel_stack_builder_impl.cc " +
     "src\\core\\lib\\channel\\connected_channel.cc " +
     "src\\core\\lib\\channel\\promise_based_filter.cc " +
-    "src\\core\\lib\\channel\\status_util.cc " +
     "src\\core\\lib\\compression\\compression.cc " +
     "src\\core\\lib\\compression\\compression_internal.cc " +
     "src\\core\\lib\\compression\\message_compress.cc " +
@@ -452,6 +521,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\event_engine\\posix_engine\\posix_engine.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\posix_engine_listener.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\posix_engine_listener_utils.cc " +
+    "src\\core\\lib\\event_engine\\posix_engine\\set_socket_dualstack.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\tcp_socket_utils.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\timer.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\timer_heap.cc " +
@@ -571,62 +641,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\authorization\\matchers.cc " +
     "src\\core\\lib\\security\\authorization\\rbac_policy.cc " +
     "src\\core\\lib\\security\\authorization\\stdout_logger.cc " +
-    "src\\core\\lib\\security\\certificate_provider\\certificate_provider_registry.cc " +
-    "src\\core\\lib\\security\\context\\security_context.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\alts_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_linux.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_no_op.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_windows.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_client_options.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_options.cc " +
-    "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_server_options.cc " +
-    "src\\core\\lib\\security\\credentials\\call_creds_util.cc " +
-    "src\\core\\lib\\security\\credentials\\channel_creds_registry_init.cc " +
-    "src\\core\\lib\\security\\credentials\\composite\\composite_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\external\\aws_external_account_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\external\\aws_request_signer.cc " +
-    "src\\core\\lib\\security\\credentials\\external\\external_account_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\external\\file_external_account_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\external\\url_external_account_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\fake\\fake_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\gcp_service_account_identity\\gcp_service_account_identity_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\google_default\\credentials_generic.cc " +
-    "src\\core\\lib\\security\\credentials\\google_default\\google_default_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\iam\\iam_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\insecure\\insecure_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\jwt\\json_token.cc " +
-    "src\\core\\lib\\security\\credentials\\jwt\\jwt_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\jwt\\jwt_verifier.cc " +
-    "src\\core\\lib\\security\\credentials\\local\\local_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\oauth2\\oauth2_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\plugin\\plugin_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\ssl\\ssl_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\tls\\grpc_tls_certificate_distributor.cc " +
-    "src\\core\\lib\\security\\credentials\\tls\\grpc_tls_certificate_match.cc " +
-    "src\\core\\lib\\security\\credentials\\tls\\grpc_tls_certificate_provider.cc " +
-    "src\\core\\lib\\security\\credentials\\tls\\grpc_tls_certificate_verifier.cc " +
-    "src\\core\\lib\\security\\credentials\\tls\\grpc_tls_credentials_options.cc " +
-    "src\\core\\lib\\security\\credentials\\tls\\grpc_tls_crl_provider.cc " +
-    "src\\core\\lib\\security\\credentials\\tls\\tls_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\tls\\tls_utils.cc " +
-    "src\\core\\lib\\security\\credentials\\token_fetcher\\token_fetcher_credentials.cc " +
-    "src\\core\\lib\\security\\credentials\\xds\\xds_credentials.cc " +
-    "src\\core\\lib\\security\\security_connector\\alts\\alts_security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\fake\\fake_security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\insecure\\insecure_security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\load_system_roots_fallback.cc " +
-    "src\\core\\lib\\security\\security_connector\\load_system_roots_supported.cc " +
-    "src\\core\\lib\\security\\security_connector\\load_system_roots_windows.cc " +
-    "src\\core\\lib\\security\\security_connector\\local\\local_security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\ssl\\ssl_security_connector.cc " +
-    "src\\core\\lib\\security\\security_connector\\ssl_utils.cc " +
-    "src\\core\\lib\\security\\security_connector\\tls\\tls_security_connector.cc " +
-    "src\\core\\lib\\security\\transport\\client_auth_filter.cc " +
-    "src\\core\\lib\\security\\transport\\server_auth_filter.cc " +
-    "src\\core\\lib\\security\\util\\json_util.cc " +
     "src\\core\\lib\\slice\\percent_encoding.cc " +
     "src\\core\\lib\\slice\\slice.cc " +
     "src\\core\\lib\\slice\\slice_buffer.cc " +
@@ -641,7 +655,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\surface\\channel_create.cc " +
     "src\\core\\lib\\surface\\channel_init.cc " +
     "src\\core\\lib\\surface\\channel_stack_type.cc " +
-    "src\\core\\lib\\surface\\client_call.cc " +
     "src\\core\\lib\\surface\\completion_queue.cc " +
     "src\\core\\lib\\surface\\completion_queue_factory.cc " +
     "src\\core\\lib\\surface\\connection_context.cc " +
@@ -652,23 +665,12 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\surface\\lame_client.cc " +
     "src\\core\\lib\\surface\\legacy_channel.cc " +
     "src\\core\\lib\\surface\\metadata_array.cc " +
-    "src\\core\\lib\\surface\\server_call.cc " +
     "src\\core\\lib\\surface\\validate_metadata.cc " +
     "src\\core\\lib\\surface\\version.cc " +
     "src\\core\\lib\\transport\\bdp_estimator.cc " +
-    "src\\core\\lib\\transport\\call_arena_allocator.cc " +
-    "src\\core\\lib\\transport\\call_filters.cc " +
     "src\\core\\lib\\transport\\call_final_info.cc " +
-    "src\\core\\lib\\transport\\call_spine.cc " +
-    "src\\core\\lib\\transport\\call_state.cc " +
     "src\\core\\lib\\transport\\connectivity_state.cc " +
     "src\\core\\lib\\transport\\error_utils.cc " +
-    "src\\core\\lib\\transport\\interception_chain.cc " +
-    "src\\core\\lib\\transport\\message.cc " +
-    "src\\core\\lib\\transport\\metadata.cc " +
-    "src\\core\\lib\\transport\\metadata_batch.cc " +
-    "src\\core\\lib\\transport\\metadata_info.cc " +
-    "src\\core\\lib\\transport\\parsed_metadata.cc " +
     "src\\core\\lib\\transport\\status_conversion.cc " +
     "src\\core\\lib\\transport\\timeout_encoding.cc " +
     "src\\core\\lib\\transport\\transport.cc " +
@@ -735,6 +737,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\telemetry\\metrics.cc " +
     "src\\core\\telemetry\\stats.cc " +
     "src\\core\\telemetry\\stats_data.cc " +
+    "src\\core\\transport\\auth_context.cc " +
     "src\\core\\tsi\\alts\\crypt\\aes_gcm.cc " +
     "src\\core\\tsi\\alts\\crypt\\gsec.cc " +
     "src\\core\\tsi\\alts\\frame_protector\\alts_counter.cc " +
@@ -1332,8 +1335,8 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\upb\\message\\array.c " +
     "third_party\\upb\\upb\\message\\compat.c " +
     "third_party\\upb\\upb\\message\\copy.c " +
-    "third_party\\upb\\upb\\message\\internal\\compare_unknown.c " +
     "third_party\\upb\\upb\\message\\internal\\extension.c " +
+    "third_party\\upb\\upb\\message\\internal\\iterator.c " +
     "third_party\\upb\\upb\\message\\internal\\message.c " +
     "third_party\\upb\\upb\\message\\map.c " +
     "third_party\\upb\\upb\\message\\map_sorter.c " +
@@ -1410,6 +1413,26 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\channelz");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\client_channel");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\config");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\composite");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\external");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\gcp_service_account_identity");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\iam");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\jwt");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\oauth2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\plugin");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\token_fetcher");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\alts");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\composite");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\fake");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\google_default");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\insecure");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\local");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\ssl");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\tls");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\backend_metrics");
@@ -1674,6 +1697,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\xds\\type\\matcher\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\xds\\type\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\filter");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\filter\\auth");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\handshaker");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\handshaker\\endpoint_info");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\handshaker\\http_connect");
@@ -1698,34 +1722,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resource_quota");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\authorization");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\certificate_provider");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\context");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\alts");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\composite");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\external");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\fake");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\gcp_service_account_identity");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\google_default");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\iam");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\insecure");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\jwt");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\local");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\oauth2");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\plugin");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\ssl");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\tls");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\token_fetcher");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\xds");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\alts");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\fake");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\insecure");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\local");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\ssl");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\tls");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\transport");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\util");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\slice");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\surface");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\transport");
@@ -1753,6 +1749,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\server");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\service_config");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\telemetry");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts\\crypt");

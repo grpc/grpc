@@ -16,8 +16,6 @@
 
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
@@ -33,6 +31,8 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"

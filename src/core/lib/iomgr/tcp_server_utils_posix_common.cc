@@ -273,10 +273,7 @@ error:
   if (fd >= 0) {
     close(fd);
   }
-  grpc_error_handle ret = grpc_error_set_int(
-      GRPC_ERROR_CREATE_REFERENCING("Unable to configure socket", &err, 1),
-      grpc_core::StatusIntProperty::kFd, fd);
-  return ret;
+  return GRPC_ERROR_CREATE_REFERENCING("Unable to configure socket", &err, 1);
 }
 
 #endif  // GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON

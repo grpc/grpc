@@ -35,6 +35,7 @@
 #endif
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/useful.h"
@@ -109,7 +110,7 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_core::StatusIntProperty which,
                                      intptr_t value) {
-  if (src.ok()) {
+  if (!grpc_core::IsErrorFlattenEnabled() && src.ok()) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
@@ -126,7 +127,8 @@ bool grpc_error_get_int(grpc_error_handle error,
     return true;
   } else {
     // TODO(veblush): Remove this once absl::Status migration is done
-    if (which == grpc_core::StatusIntProperty::kRpcStatus) {
+    if (!grpc_core::IsErrorFlattenEnabled() &&
+        which == grpc_core::StatusIntProperty::kRpcStatus) {
       switch (error.code()) {
         case absl::StatusCode::kOk:
           *p = GRPC_STATUS_OK;
@@ -148,64 +150,46 @@ bool grpc_error_get_int(grpc_error_handle error,
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_core::StatusStrProperty which,
                                      absl::string_view str) {
-  if (src.ok()) {
+  if (!grpc_core::IsErrorFlattenEnabled() && src.ok()) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
   }
-  if (which == grpc_core::StatusStrProperty::kDescription) {
-    // To change the message of absl::Status, a new instance should be created
-    // with a code and payload because it doesn't have a setter for it.
-    absl::Status s = absl::Status(src.code(), str);
-    src.ForEachPayload(
-        [&](absl::string_view type_url, const absl::Cord& payload) {
-          s.SetPayload(type_url, payload);
-        });
-    return s;
-  } else {
-    grpc_core::StatusSetStr(&src, which, str);
-  }
+  grpc_core::StatusSetStr(&src, which, str);
   return src;
 }
 
 bool grpc_error_get_str(grpc_error_handle error,
                         grpc_core::StatusStrProperty which, std::string* s) {
-  if (which == grpc_core::StatusStrProperty::kDescription) {
-    // absl::Status uses the message field for
-    // grpc_core::StatusStrProperty::kDescription instead of using payload.
-    absl::string_view msg = error.message();
-    if (msg.empty()) {
-      return false;
-    } else {
-      *s = std::string(msg);
-      return true;
-    }
+  std::optional<std::string> value = grpc_core::StatusGetStr(error, which);
+  if (value.has_value()) {
+    *s = std::move(*value);
+    return true;
   } else {
-    std::optional<std::string> value = grpc_core::StatusGetStr(error, which);
-    if (value.has_value()) {
-      *s = std::move(*value);
-      return true;
-    } else {
-      // TODO(veblush): Remove this once absl::Status migration is done
-      if (which == grpc_core::StatusStrProperty::kGrpcMessage) {
-        switch (error.code()) {
-          case absl::StatusCode::kOk:
-            *s = "";
-            return true;
-          case absl::StatusCode::kCancelled:
-            *s = "CANCELLED";
-            return true;
-          default:
-            break;
-        }
+    // TODO(veblush): Remove this once absl::Status migration is done
+    if (!grpc_core::IsErrorFlattenEnabled() &&
+        which == grpc_core::StatusStrProperty::kGrpcMessage) {
+      switch (error.code()) {
+        case absl::StatusCode::kOk:
+          *s = "";
+          return true;
+        case absl::StatusCode::kCancelled:
+          *s = "CANCELLED";
+          return true;
+        default:
+          break;
       }
-      return false;
     }
+    return false;
   }
 }
 
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
+  if (grpc_core::IsErrorFlattenEnabled()) {
+    grpc_core::StatusAddChild(&src, child);
+    return src;
+  }
   if (src.ok()) {
     return child;
   } else {

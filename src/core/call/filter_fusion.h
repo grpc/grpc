@@ -19,9 +19,9 @@
 #include <type_traits>
 #include <utility>
 
-#include "src/core/lib/transport/call_filters.h"
+#include "src/core/call/call_filters.h"
+#include "src/core/call/metadata.h"
 #include "src/core/lib/transport/call_final_info.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/util/type_list.h"
 
 struct grpc_transport_op;

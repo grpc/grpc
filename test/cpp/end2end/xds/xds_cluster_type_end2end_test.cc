@@ -13,9 +13,7 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <grpc/event_engine/endpoint_config.h>
-#include <gtest/gtest.h>
 
 #include <vector>
 
@@ -24,6 +22,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -166,8 +166,8 @@ TEST_P(LogicalDNSClusterTest, FailedBackendConnectionCausesReresolution) {
     if (!result.status.ok()) {
       EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
       EXPECT_THAT(result.status.error_message(),
-                  MakeConnectionFailureRegex(
-                      "connections to all backends failing; last error: "));
+                  ::testing::MatchesRegex(MakeConnectionFailureRegex(
+                      "connections to all backends failing; last error: ")));
     }
   });
 }
@@ -798,8 +798,8 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   }
   // When an RPC fails, we know the channel has seen the update.
   constexpr char kErrorMessage[] =
-      "empty address list \\(DNS resolution failed for server.example.com:443: "
-      "UNAVAILABLE: injected error\\)";
+      "no children in weighted_target policy \\(DNS resolution failed for "
+      "server.example.com:443: UNAVAILABLE: injected error\\)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send an EDS update that moves locality1 to priority 0.
   args1 = EdsResourceArgs({

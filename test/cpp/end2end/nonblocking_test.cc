@@ -36,7 +36,7 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif  // GRPC_POSIX_SOCKET
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #ifdef GRPC_POSIX_SOCKET
 // Thread-local variable to so that only polls from this test assert

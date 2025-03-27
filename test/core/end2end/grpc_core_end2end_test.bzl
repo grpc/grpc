@@ -68,20 +68,116 @@ _DEPS = [
     "//src/core:stats_data",
     "//src/core:status_helper",
     "//src/core:time",
+    "//test/core/test_util:fail_first_call_filter",
     "//test/core/test_util:fake_stats_plugin",
     "//test/core/test_util:grpc_test_util",
     "//test/core/test_util:test_lb_policies",
 ]
 
-def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = [], flaky = False):
+_TESTS = [
+    "bad_ping",
+    "binary_metadata",
+    "call_creds",
+    "call_host_override",
+    "cancel_after_accept",
+    "cancel_after_client_done",
+    "cancel_after_invoke",
+    "cancel_after_round_trip",
+    "cancel_before_invoke",
+    "cancel_in_a_vacuum",
+    "cancel_with_status",
+    "channelz",
+    "client_streaming",
+    "compressed_payload",
+    "connectivity",
+    "default_host",
+    "disappearing_server",
+    "empty_batch",
+    "filter_causes_close",
+    "filter_init_fails",
+    "filtered_metadata",
+    "graceful_server_shutdown",
+    "grpc_authz",
+    "high_initial_seqno",
+    "hpack_size",
+    "http2_stats",
+    "invoke_large_request",
+    "keepalive_timeout",
+    "large_metadata",
+    "max_concurrent_streams",
+    "max_connection_age",
+    "max_connection_idle",
+    "max_message_length",
+    "negative_deadline",
+    "no_op",
+    "payload",
+    "ping",
+    "ping_pong_streaming",
+    "proxy_auth",
+    "registered_call",
+    "request_with_flags",
+    "request_with_payload",
+    "resource_quota_server",
+    "retry",
+    "retry_cancel_after_first_attempt_starts",
+    "retry_cancel_during_delay",
+    "retry_cancel_with_multiple_send_batches",
+    "retry_cancellation",
+    "retry_disabled",
+    "retry_exceeds_buffer_size_in_delay",
+    "retry_exceeds_buffer_size_in_initial_batch",
+    "retry_exceeds_buffer_size_in_subsequent_batch",
+    "retry_lb_drop",
+    "retry_lb_fail",
+    "retry_non_retriable_status",
+    "retry_non_retriable_status_before_trailers",
+    "retry_per_attempt_recv_timeout",
+    "retry_per_attempt_recv_timeout_on_last_attempt",
+    "retry_recv_initial_metadata",
+    "retry_recv_message",
+    "retry_recv_message_replay",
+    "retry_recv_trailing_metadata_error",
+    "retry_send_initial_metadata_refs",
+    "retry_send_op_fails",
+    "retry_send_recv_batch",
+    "retry_server_pushback_delay",
+    "retry_server_pushback_disabled",
+    "retry_streaming",
+    "retry_streaming_after_commit",
+    "retry_streaming_succeeds_before_replay_finished",
+    "retry_throttled",
+    "retry_too_many_attempts",
+    "retry_transparent_goaway",
+    "retry_transparent_max_concurrent_streams",
+    "retry_transparent_not_sent_on_wire",
+    "retry_unref_before_finish",
+    "retry_unref_before_recv",
+    "server_finishes_request",
+    "server_streaming",
+    "shutdown_finishes_calls",
+    "shutdown_finishes_tags",
+    "simple_delayed_request",
+    "simple_metadata",
+    "simple_request",
+    "streaming_error_response",
+    "timeout_before_request_call",
+    "trailing_metadata",
+    "write_buffering",
+    "write_buffering_at_end",
+]
+
+def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, enable_fuzzing = True, tags = [], flaky = False, with_no_logging_test = True):
     """Generate one core end2end test
 
     Args:
         name: name of the test, must correspond to a "test/name.cc" file
+        config_src: filename of a C++ file that implements the End2endTestConfigs() function
+        deps: any additional dependencies needed by config_src provided configurations
         shard_count: per bazel
         tags: per bazel
         flaky: per bazel
         enable_fuzzing: also create a fuzzer
+        with_no_logging_test: also create variants with the no_logging test
     """
 
     if len(name) > 60:
@@ -89,15 +185,16 @@ def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = 
 
     grpc_cc_test(
         name = name + "_test",
-        srcs = [
-            "tests/%s.cc" % name,
+        srcs = [config_src] + [
+            "tests/%s.cc" % t
+            for t in _TESTS
         ],
         external_deps = [
             "absl/log:log",
             "gtest",
             "gtest_main",
         ],
-        deps = _DEPS + ["end2end_test_lib_no_fuzztest_gtest"],
+        deps = _DEPS + deps + ["end2end_test_lib_no_fuzztest_gtest"],
         data = _DATA,
         shard_count = shard_count,
         tags = tags + ["core_end2end_test"],
@@ -107,8 +204,9 @@ def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = 
     if enable_fuzzing:
         grpc_fuzz_test(
             name = name + "_fuzzer",
-            srcs = [
-                "tests/%s.cc" % name,
+            srcs = [config_src] + [
+                "tests/%s.cc" % t
+                for t in _TESTS
             ],
             external_deps = [
                 "absl/log:log",
@@ -116,6 +214,38 @@ def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = 
                 "fuzztest",
                 "fuzztest_main",
             ],
-            deps = _DEPS + ["end2end_test_lib_fuzztest_no_gtest"],
+            shard_count = shard_count,
+            deps = _DEPS + deps + ["end2end_test_lib_fuzztest_no_gtest"],
+            data = _DATA,
+        )
+
+    if with_no_logging_test:
+        grpc_cc_test(
+            name = name + "_no_logging_test",
+            srcs = [config_src, "tests/no_logging.cc"],
+            external_deps = [
+                "absl/log:log",
+                "gtest",
+                "gtest_main",
+            ],
+            deps = _DEPS + deps + ["end2end_test_lib_no_fuzztest_gtest"],
+            data = _DATA,
+            shard_count = shard_count,
+            tags = tags + ["core_end2end_test", "grpc:fails-internally", "grpc:no-internal-poller"],
+            flaky = flaky,
+        )
+
+    if enable_fuzzing and with_no_logging_test:
+        grpc_fuzz_test(
+            name = name + "_no_logging_fuzzer",
+            srcs = [config_src, "tests/no_logging.cc"],
+            external_deps = [
+                "absl/log:log",
+                "gtest",
+                "fuzztest",
+                "fuzztest_main",
+            ],
+            shard_count = shard_count,
+            deps = _DEPS + deps + ["end2end_test_lib_fuzztest_no_gtest"],
             data = _DATA,
         )

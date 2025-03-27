@@ -13,9 +13,6 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <string>
 #include <vector>
 
@@ -23,6 +20,8 @@
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "test/core/test_util/test_config.h"

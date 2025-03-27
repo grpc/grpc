@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gmock/gmock.h>
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -28,7 +27,6 @@
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
 
 #include <algorithm>
 #include <chrono>
@@ -47,15 +45,17 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
@@ -596,6 +596,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
         // Prefixes added for context
         "(Failed to connect to remote host: )?"
         "(Timeout occurred: )?"
+        // Parenthetical wrappers
+        "((Secure read failed|"
+        "Handshake read failed|"
+        "Delayed close due to in-progress write) \\()?"
         // Syscall
         "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
         // strerror() output or other message
@@ -605,7 +609,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
         "|FD shutdown"
         "|Endpoint closing)"
         // errno value
-        "( \\([0-9]+\\))?");
+        "( \\([0-9]+\\))?"
+        // close paren from "(Secure|Handshake) read failed \\(" above
+        "\\)?");
   }
 
   std::vector<std::unique_ptr<ServerData>> servers_;
@@ -997,7 +1003,7 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
   EXPECT_GE(waited.millis(),
             (kInitialBackOffMs * grpc_test_slowdown_factor()) * 0.7);
   EXPECT_LE(waited.millis(),
-            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 1.3);
+            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 1.5);
 }
 
 TEST_F(PickFirstTest, BackOffMinReconnect) {

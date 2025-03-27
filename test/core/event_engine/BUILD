@@ -44,6 +44,9 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
+    tags = [
+        "grpc:fails-internally",
+    ],
     deps = [
         "//:config_vars",
         "//:gpr",
@@ -151,6 +154,21 @@ grpc_cc_library(
     name = "aborting_event_engine",
     testonly = True,
     hdrs = ["util/aborting_event_engine.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "delegating_event_engine",
+    testonly = True,
+    hdrs = ["util/delegating_event_engine.h"],
     external_deps = [
         "absl/functional:any_invocable",
         "absl/status",

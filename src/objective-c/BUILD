@@ -64,7 +64,6 @@ grpc_objc_library(
     hdrs = [
         "GRPCClient/GRPCCall+ChannelArg.h",
         "GRPCClient/GRPCCall+ChannelCredentials.h",
-        "GRPCClient/GRPCCall+Cronet.h",
         "GRPCClient/GRPCCall+OAuth2.h",
         "GRPCClient/GRPCCall+Tests.h",
         "GRPCClient/GRPCCallLegacy.h",
@@ -119,7 +118,6 @@ grpc_objc_library(
     srcs = [
         "GRPCClient/GRPCCall+ChannelArg.mm",
         "GRPCClient/GRPCCall+ChannelCredentials.mm",
-        "GRPCClient/GRPCCall+Cronet.mm",
         "GRPCClient/GRPCCall+OAuth2.mm",
         "GRPCClient/GRPCCall+Tests.mm",
         "GRPCClient/GRPCCallLegacy.mm",
@@ -127,7 +125,6 @@ grpc_objc_library(
     hdrs = [
         "GRPCClient/GRPCCall+ChannelArg.h",
         "GRPCClient/GRPCCall+ChannelCredentials.h",
-        "GRPCClient/GRPCCall+Cronet.h",
         "GRPCClient/GRPCCall+OAuth2.h",
         "GRPCClient/GRPCCall+Tests.h",
     ],
@@ -211,7 +208,6 @@ grpc_objc_library(
     srcs = [
         "GRPCClient/GRPCCall+ChannelArg.mm",
         "GRPCClient/GRPCCall+ChannelCredentials.mm",
-        "GRPCClient/GRPCCall+Cronet.mm",
         "GRPCClient/GRPCCall+OAuth2.mm",
         "GRPCClient/GRPCCall+Tests.mm",
         "GRPCClient/GRPCCallLegacy.mm",
@@ -220,7 +216,6 @@ grpc_objc_library(
     hdrs = [
         "GRPCClient/GRPCCall+ChannelArg.h",
         "GRPCClient/GRPCCall+ChannelCredentials.h",
-        "GRPCClient/GRPCCall+Cronet.h",
         "GRPCClient/GRPCCall+OAuth2.h",
         "GRPCClient/GRPCCall+Tests.h",
         "GRPCClient/internal_testing/GRPCCall+InternalTests.h",
@@ -238,19 +233,6 @@ grpc_objc_library(
         "//:grpc_objc",
     ],
 )
-
-# TODO: Enable this again once @CronetFramework is working
-#grpc_objc_library(
-#    name = "grpc_objc_client_core_cronet_testing",
-#    srcs = glob(["GRPCClient/private/GRPCCore/GRPCCoreCronet/*.mm"]),
-#    hdrs = glob(["GRPCClient/private/GRPCCore/GRPCCoreCronet/*.h"]),
-#    deps = [
-#        ":grpc_objc_client_core_internal_testing",
-#        "//:grpc_cronet_hdrs",
-#        "//src/core/ext/transport/cronet:grpc_transport_cronet_client_secure",
-#        "@CronetFramework",
-#    ],
-#)
 
 grpc_objc_library(
     name = "proto_objc_rpc_internal_testing",

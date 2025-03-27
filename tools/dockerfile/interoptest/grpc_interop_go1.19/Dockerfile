@@ -17,6 +17,14 @@ FROM golang:1.19
 # Using login shell removes Go from path, so we add it.
 RUN ln -s /usr/local/go/bin/go /usr/local/bin
 
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
 #====================
 # run_tests.py python dependencies
 
@@ -31,7 +39,10 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
-RUN python3 -m pip install --upgrade pip==19.3.1
+# Some newer distros that have already implemented PEP 668. Use of
+# --break-system-packages is to workaround that. We should look into using
+# virtualenv in Dockerfile though.
+RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.

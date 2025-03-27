@@ -39,6 +39,16 @@ cc_library(
     deps = ["//upb:port"],
 )
 
+cc_test(
+    name = "string_view_test",
+    srcs = ["string_view_test.cc"],
+    deps = [
+        ":base",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 filegroup(
     name = "source_files",
     srcs = glob(

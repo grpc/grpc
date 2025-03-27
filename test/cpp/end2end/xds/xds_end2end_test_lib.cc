@@ -15,9 +15,7 @@
 
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
-#include <gmock/gmock.h>
 #include <grpcpp/security/tls_certificate_provider.h>
-#include <gtest/gtest.h>
 
 #include <functional>
 #include <map>
@@ -36,6 +34,8 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"
@@ -857,6 +857,10 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       // Prefixes added for context
       "(Failed to connect to remote host: )?"
       "(Timeout occurred: )?"
+      // Parenthetical wrappers
+      "((Secure read failed|"
+      "Handshake read failed|"
+      "Delayed close due to in-progress write) \\()?"
       // Syscall
       "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
       // strerror() output or other message
@@ -867,7 +871,9 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "|FD shutdown"
       "|Endpoint closing)"
       // errno value
-      "( \\([0-9]+\\))?",
+      "( \\([0-9]+\\))?"
+      // close paren from wrappers above
+      "\\)?",
       // xDS node ID
       has_resolution_note ? " \\(xDS node ID:xds_end2end_test\\)" : "");
 }

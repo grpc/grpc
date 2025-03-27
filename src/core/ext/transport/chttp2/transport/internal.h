@@ -38,6 +38,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -69,11 +70,9 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
-#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted.h"
@@ -676,9 +675,6 @@ struct grpc_chttp2_stream {
   grpc_core::CallTracerInterface* call_tracer = nullptr;
   // TODO(yashykt): Remove this once call_tracer_transport_fix is rolled out
   grpc_core::CallTracerAnnotationInterface* parent_call_tracer = nullptr;
-
-  /// Only set when enabled.
-  std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
 
   // time this stream was created
   gpr_timespec creation_time = gpr_now(GPR_CLOCK_MONOTONIC);

@@ -197,8 +197,8 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
   benchmark::Initialize(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();

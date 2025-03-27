@@ -15,6 +15,7 @@
 #ifndef GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 #define GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 
+#include <google/protobuf/text_format.h>
 #include <grpc/event_engine/event_engine.h>
 
 #include "absl/functional/any_invocable.h"
@@ -23,13 +24,13 @@
 #include "absl/strings/string_view.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
+#include "src/core/call/call_arena_allocator.h"
+#include "src/core/call/call_spine.h"
+#include "src/core/call/metadata.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
-#include "src/core/lib/transport/call_spine.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/util/debug_location.h"
 #include "test/core/call/yodel/fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -354,6 +355,12 @@ class YodelTest {
   size_t max_random_message_size_ = 1024 * 1024;
 };
 
+inline yodel::Msg ParseTestProto(const std::string& proto) {
+  yodel::Msg msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  return msg;
+}
+
 }  // namespace grpc_core
 
 #define YODEL_TEST(test_type, name)                                          \
@@ -365,6 +372,7 @@ class YodelTest {
     void TestImpl() override;                                                \
   };                                                                         \
   void name(const yodel::Msg& msg) {                                         \
+    if (!grpc_core::IsEventEngineClientEnabled()) return;                    \
     grpc_core::ApplyFuzzConfigVars(msg.config_vars());                       \
     grpc_core::ProtoBitGen bitgen(msg.rng());                                \
     YodelTest_##test_type##_##name test(msg.event_engine_actions(), bitgen); \
