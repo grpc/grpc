@@ -107,12 +107,14 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
         event_engine_supports_win_sockets->CreateEndpointFromWinSocket(
             sv[1], grpc_event_engine::experimental::ChannelArgsEndpointConfig(
                        new_args));
-    CHECK_NE(client_endpoint, nullptr) << "Failed to create client endpoint";
+    CHECK_NE(client_endpoint.get(), nullptr)
+        << "Failed to create client endpoint";
     auto server_endpoint =
         event_engine_supports_win_sockets->CreateEndpointFromWinSocket(
             sv[0], grpc_event_engine::experimental::ChannelArgsEndpointConfig(
                        new_args));
-    CHECK_NE(server_endpoint, nullptr) << "Failed to create server endpoint";
+    CHECK_NE(server_endpoint.get(), nullptr)
+        << "Failed to create server endpoint";
     p.client = grpc_event_engine_endpoint_create(std::move(client_endpoint));
     p.server = grpc_event_engine_endpoint_create(std::move(server_endpoint));
   } else {
