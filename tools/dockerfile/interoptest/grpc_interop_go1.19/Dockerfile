@@ -39,10 +39,7 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
-# Some newer distros that have already implemented PEP 668. Use of
-# --break-system-packages is to workaround that. We should look into using
-# virtualenv in Dockerfile though.
-RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
+RUN python3 -m pip install --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
