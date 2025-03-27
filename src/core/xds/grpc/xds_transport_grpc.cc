@@ -348,20 +348,13 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
 // GrpcXdsTransportFactory
 //
 
-namespace {
-
-ChannelArgs ModifyChannelArgs(const ChannelArgs& args) {
-  return args.Set(GRPC_ARG_KEEPALIVE_TIME_MS, Duration::Minutes(5).millis());
-}
-
-}  // namespace
-
-GrpcXdsTransportFactory::GrpcXdsTransportFactory(const ChannelArgs& args)
-    : args_(ModifyChannelArgs(args)),
-      interested_parties_(grpc_pollset_set_create()) {
+GrpcXdsTransportFactory::GrpcXdsTransportFactory(const ChannelArgs& args) {
   // Calling grpc_init to ensure gRPC does not shut down until the XdsClient is
-  // destroyed.
+  // destroyed.  Also needed for cases where GrpcXdsTransportFactory is
+  // used outside of gRPC.
   InitInternally();
+  args_ = args.Set(GRPC_ARG_KEEPALIVE_TIME_MS, Duration::Minutes(5).millis());
+  interested_parties_ = grpc_pollset_set_create();
 }
 
 GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
