@@ -133,7 +133,6 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   gpr_event_init(&done_ev2);
   std::thread client_thread_1(RunClient, "1", &done_ev1);
   std::thread client_thread_2(RunClient, "2", &done_ev2);
-  LOG(INFO) << "[" << getpid() << "] Before subprocess";
   // Run the channelz sampler
   grpc::SubProcess* test_driver = new grpc::SubProcess(
       {g_root + "/channelz_sampler", "--server_address=" + server_address,
@@ -141,7 +140,6 @@ TEST(ChannelzSamplerTest, SimpleTest) {
        "--sampling_times=" + sampling_times,
        "--sampling_interval_seconds=" + sampling_interval_seconds,
        "--output_json=" + output_json});
-  LOG(INFO) << "[" << getpid() << "] After subprocess";
   int status = test_driver->Join();
   if (WIFEXITED(status)) {
     ASSERT_EQ(WEXITSTATUS(status), 0)
