@@ -26,7 +26,10 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["mock_promise_endpoint.cc"],
     hdrs = ["mock_promise_endpoint.h"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     deps = [
         "//:grpc",
         "//src/core:grpc_promise_endpoint",
@@ -37,7 +40,10 @@ grpc_cc_library(
     name = "transport_test",
     testonly = 1,
     hdrs = ["transport_test.h"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     deps = [
         "//:iomgr_timer",
         "//src/core:memory_quota",

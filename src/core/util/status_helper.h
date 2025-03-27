@@ -46,40 +46,30 @@ namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints
 enum class StatusIntProperty {
-  /// __LINE__ from the call site creating the error
-  kFileLine,
   /// stream identifier: for errors that are associated with an individual
   /// wire stream
+  // TODO(tjagtap): Remove this when the PH2 migration is done.
   kStreamId,
   /// grpc status code representing this error
-  // TODO(veblush): Remove this after grpc_error is replaced with absl::Status
+  // TODO(roth): Remove this after error_flatten experiment is removed.
   kRpcStatus,
   /// http2 error code associated with the error (see the HTTP2 RFC)
+  // TODO(tjagtap): Remove this as part of creating a new HTTP/2 error type.
   kHttp2Error,
-  /// File descriptor associated with this error
-  kFd,
-  /// chttp2: did the error occur while a write was in progress
-  kOccurredDuringWrite,
   /// channel connectivity state associated with the error
+  // TODO(roth): Remove this when the promise migration is done.
   ChannelConnectivityState,
   /// LB policy drop
+  // TODO(roth): Replace this with something else, possibly a call
+  // context element.
   kLbPolicyDrop,
 };
 
 /// This enum should have the same value of grpc_error_strs
+// TODO(roth): Remove this after error_flatten experiment is removed.
 enum class StatusStrProperty {
-  /// top-level textual description of this error
-  kDescription,
-  /// source file in which this error occurred
-  kFile,
   /// peer that we were trying to communicate when this error occurred
   kGrpcMessage,
-};
-
-/// This enum should have the same value of grpc_error_times
-enum class StatusTimeProperty {
-  /// timestamp of error creation
-  kCreated,
 };
 
 /// Creates a status with given additional information
@@ -103,14 +93,6 @@ void StatusSetStr(absl::Status* status, StatusStrProperty key,
 GRPC_MUST_USE_RESULT std::optional<std::string> StatusGetStr(
     const absl::Status& status, StatusStrProperty key);
 
-/// Sets the time property to the status
-void StatusSetTime(absl::Status* status, StatusTimeProperty key,
-                   absl::Time time);
-
-/// Gets the time property from the status
-GRPC_MUST_USE_RESULT std::optional<absl::Time> StatusGetTime(
-    const absl::Status& status, StatusTimeProperty key);
-
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
 
@@ -126,7 +108,8 @@ GRPC_MUST_USE_RESULT std::vector<absl::Status> StatusGetChildren(
 GRPC_MUST_USE_RESULT std::string StatusToString(const absl::Status& status);
 
 /// Adds prefix to the message of status.
-absl::Status AddMessagePrefix(absl::string_view prefix, absl::Status status);
+absl::Status AddMessagePrefix(absl::string_view prefix,
+                              const absl::Status& status);
 
 namespace internal {
 

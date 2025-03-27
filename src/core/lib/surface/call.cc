@@ -55,10 +55,12 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/call_finalization.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
 #include "src/core/channelz/channelz.h"
-#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -86,8 +88,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -191,7 +191,7 @@ void Call::PublishToParent(Call* parent) {
         cc->sibling_prev->child_->sibling_next = this;
   }
   if (parent->Completed()) {
-    CancelWithError(absl::CancelledError());
+    CancelWithError(absl::CancelledError("CANCELLED"));
   }
 }
 
@@ -215,16 +215,16 @@ void Call::MaybeUnpublishFromParent() {
 }
 
 void Call::CancelWithStatus(grpc_status_code status, const char* description) {
-  // copying 'description' is needed to ensure the grpc_call_cancel_with_status
-  // guarantee that can be short-lived.
-  // TODO(ctiller): change to
-  // absl::Status(static_cast<absl::StatusCode>(status), description)
-  // (ie remove the set_int, set_str).
-  CancelWithError(grpc_error_set_int(
-      grpc_error_set_str(
-          absl::Status(static_cast<absl::StatusCode>(status), description),
-          StatusStrProperty::kGrpcMessage, description),
-      StatusIntProperty::kRpcStatus, status));
+  if (!IsErrorFlattenEnabled()) {
+    CancelWithError(grpc_error_set_int(
+        grpc_error_set_str(
+            absl::Status(static_cast<absl::StatusCode>(status), description),
+            StatusStrProperty::kGrpcMessage, description),
+        StatusIntProperty::kRpcStatus, status));
+    return;
+  }
+  CancelWithError(
+      absl::Status(static_cast<absl::StatusCode>(status), description));
 }
 
 void Call::PropagateCancellationToChildren() {
@@ -238,7 +238,7 @@ void Call::PropagateCancellationToChildren() {
         Call* next_child_call = child->child_->sibling_next;
         if (child->cancellation_is_inherited_) {
           child->InternalRef("propagate_cancel");
-          child->CancelWithError(absl::CancelledError());
+          child->CancelWithError(absl::CancelledError("CANCELLED"));
           child->InternalUnref("propagate_cancel");
         }
         child = next_child_call;
@@ -414,7 +414,8 @@ grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
     return GRPC_CALL_ERROR;
   }
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::Call::FromC(call)->CancelWithError(absl::CancelledError());
+  grpc_core::Call::FromC(call)->CancelWithError(
+      absl::CancelledError("CANCELLED"));
   return GRPC_CALL_OK;
 }
 
@@ -435,7 +436,8 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
 }
 
 void grpc_call_cancel_internal(grpc_call* call) {
-  grpc_core::Call::FromC(call)->CancelWithError(absl::CancelledError());
+  grpc_core::Call::FromC(call)->CancelWithError(
+      absl::CancelledError("CANCELLED"));
 }
 
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(

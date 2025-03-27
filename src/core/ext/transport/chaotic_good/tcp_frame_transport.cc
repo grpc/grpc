@@ -209,7 +209,9 @@ auto TcpFrameTransport::ReadFrameBytes() {
                           .Await(),
                       [padding](absl::StatusOr<SliceBuffer> payload)
                           -> absl::StatusOr<SliceBuffer> {
-                        if (payload.ok()) payload->RemoveLastNBytes(padding);
+                        if (payload.ok()) {
+                          payload->RemoveLastNBytesNoInline(padding);
+                        }
                         return payload;
                       }));
             });

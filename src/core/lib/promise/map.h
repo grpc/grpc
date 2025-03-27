@@ -102,8 +102,34 @@ class FusedFns {
 }  // namespace promise_detail
 
 // Mapping combinator.
-// Takes a promise, and a synchronous function to mutate its result, and
-// returns a promise.
+//
+// Input:
+// 1. The first argument is a promise.
+// 2. The second argument is a synchronous function.
+// 3. The synchronous function MUST be callable with the result type of the
+// promise.
+// 4. If the promise returns void, the synchronous function MUST be callable
+// with Empty.
+//
+// Return:
+// Mapping combinator returns Poll<T> where T is the return type of the
+// synchronous function.
+// Note: If the synchronous function returns void, the result type of the
+// mapping combinator will be Poll<Empty>.
+//
+// Polling the mapping combinator works as follows:
+// 1. Poll the promise.
+// 2. If the promise is pending, return Pending{}.
+// 3. If the promise is ready, return the result of the synchronous function.
+// Note: If the first argument to the Map is a promise factory instead of a
+// promise, Map will pass the promise returned by the promise factory as a
+// parameter to the synchronous function.
+//
+// Example:
+// TEST(MapTest, Works) {
+//   Promise<int> x = Map([]() { return 42; }, [](int i) { return i / 2; });
+//   EXPECT_THAT(x(), IsReady(21));
+// }
 template <typename Promise, typename Fn>
 class Map {
   using PromiseType = promise_detail::PromiseLike<Promise>;
@@ -251,8 +277,13 @@ auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
   });
 }
 
-// Takes a promise that resolves to T, and returns a promise that resolves to
-// Empty (discarding the result)
+// Input : A promise that resolves to Type T
+// Returns : A Map promise which contains the input promise and then discards
+// the return value of the input promise. the main use case for DiscardResult is
+// when you need to pass a promise as a parameter, and it returns a status or
+// some value which cannot be discarded. If this value is not used, the compiler
+// gives an error. DiscardResult helps to discard the return value of the
+// promise.
 template <typename Promise>
 auto DiscardResult(Promise promise) {
   return Map(std::move(promise), [](auto) {});

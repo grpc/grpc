@@ -347,22 +347,22 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     return TSI_FAILED_PRECONDITION;
   }
   if (grpc_gcp_Identity_attributes_size(identity) != 0) {
-    size_t iter = kUpb_Map_Begin;
-    grpc_gcp_Identity_AttributesEntry* peer_attributes_entry =
-        grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
-    while (peer_attributes_entry != nullptr) {
-      upb_StringView key = grpc_gcp_Identity_AttributesEntry_key(
-          const_cast<grpc_gcp_Identity_AttributesEntry*>(
-              peer_attributes_entry));
-      upb_StringView val = grpc_gcp_Identity_AttributesEntry_value(
-          const_cast<grpc_gcp_Identity_AttributesEntry*>(
-              peer_attributes_entry));
-      grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
-                                               context_arena.ptr());
-      peer_attributes_entry =
-          grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
+    // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
+    // v30.0.
+    const upb_Map* upb_map =
+        _grpc_gcp_Identity_attributes_upb_map(peer_identity);
+    if (upb_map) {
+      size_t iter = kUpb_Map_Begin;
+      upb_MessageValue k, v;
+      while (upb_Map_Next(upb_map, &k, &v, &iter)) {
+        upb_StringView key = k.str_val;
+        upb_StringView val = v.str_val;
+        grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
+                                                 context_arena.ptr());
+      }
     }
   }
+
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);

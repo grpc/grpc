@@ -262,8 +262,8 @@ OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
   absl::Status expected_status;
   if (!options.use_meter_provider) {
-    expected_status =
-        absl::InvalidArgumentError("Need to configure a valid meter provider.");
+    expected_status = absl::InvalidArgumentError(
+        "Need to configure a valid meter provider or tracer provider.");
   }
   auto reader = ConfigureOTBuilder(std::move(options), &ot_builder);
   EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), expected_status);

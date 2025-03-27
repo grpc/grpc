@@ -55,6 +55,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/metadata_info.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -96,15 +98,12 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/metadata_info.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
-#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -235,16 +234,6 @@ grpc_core::CallTracerAnnotationInterface* ParentCallTracerIfSampled(
     return nullptr;
   }
   return parent_call_tracer;
-}
-
-std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
-    grpc_chttp2_stream* s) {
-  auto* call_attempt_tracer =
-      s->arena->GetContext<grpc_core::CallTracerInterface>();
-  if (call_attempt_tracer == nullptr || !call_attempt_tracer->IsSampled()) {
-    return nullptr;
-  }
-  return call_attempt_tracer->StartNewTcpTrace();
 }
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
@@ -724,11 +713,7 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
   grpc_core::RefCountedPtr<grpc_chttp2_transport> t(
       static_cast<grpc_chttp2_transport*>(tp));
   t->destroying = 1;
-  close_transport_locked(
-      t.get(),
-      grpc_error_set_int(GRPC_ERROR_CREATE("Transport destroyed"),
-                         grpc_core::StatusIntProperty::kOccurredDuringWrite,
-                         t->write_state));
+  close_transport_locked(t.get(), GRPC_ERROR_CREATE("Transport destroyed"));
   t->memory_owner.Reset();
 }
 
@@ -1656,7 +1641,6 @@ static void perform_stream_op_locked(void* stream_op,
   if (s->t->is_client && op->send_initial_metadata) {
     s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
   }
-  s->tcp_tracer = TcpTracerIfSampled(s);
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op
               << "]: " << grpc_transport_stream_op_batch_string(op, false)
@@ -2311,9 +2295,20 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                             &http_error, nullptr);
       grpc_core::MaybeTarpit(
           t, tarpit,
-          [id = s->id, http_error,
+          // Capture the individual fields of the stream by value, since the
+          // stream state might have been deleted by the time we run the lambda.
+          [id = s->id, sent_initial_metadata = s->sent_initial_metadata,
+           http_error,
            remove_stream_handle = grpc_chttp2_mark_stream_closed(
                t, s, 1, 1, due_to_error)](grpc_chttp2_transport* t) {
+            // Do not send RST_STREAM from the client for a stream that hasn't
+            // sent headers yet (still in "idle" state). Note that since we have
+            // marked the stream closed above, we won't be writing to it
+            // anymore.
+            if (grpc_core::IsRstStreamFixEnabled() && t->is_client &&
+                !sent_initial_metadata) {
+              return;
+            }
             grpc_chttp2_add_rst_stream_to_next_write(
                 t, id, static_cast<uint32_t>(http_error), nullptr);
             grpc_chttp2_initiate_write(t,
@@ -2857,9 +2852,7 @@ static void read_action_locked(
   }
   grpc_error_handle err = error;
   if (!err.ok()) {
-    err = grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1),
-        grpc_core::StatusIntProperty::kOccurredDuringWrite, t->write_state);
+    err = GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1);
   }
   std::swap(err, error);
   read_action_parse_loop_locked(std::move(t), std::move(err));

@@ -20,7 +20,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
 #include <openssl/crypto.h>
 #include <string.h>
 
@@ -28,6 +27,7 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
+#include "gtest/gtest.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/crash.h"

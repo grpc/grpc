@@ -30,7 +30,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(ProxyAuthTests, InvokeProxyAuth) {
+CORE_END2END_TEST_INCOMPATIBLE_WITH_FUZZING(ProxyAuthTests, InvokeProxyAuth) {
   // Indicate that the proxy requires user auth
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_HTTP_PROXY_AUTH_CREDS,

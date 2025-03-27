@@ -37,6 +37,7 @@ class Preprocess(setuptools.Command):
         pass
 
     def run(self):
+        # TODO: Can skip copy proto part.
         if os.path.isfile(HEALTH_PROTO):
             shutil.copyfile(
                 HEALTH_PROTO,

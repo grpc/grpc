@@ -20,7 +20,7 @@
 #include <set>
 #include <string>
 
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"

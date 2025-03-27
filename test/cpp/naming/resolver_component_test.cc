@@ -18,7 +18,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/alloc.h>
@@ -37,6 +36,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "gmock/gmock.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"

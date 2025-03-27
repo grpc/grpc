@@ -113,7 +113,7 @@ grpc_cc_library(
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
-        "//test/core/security:oauth2_utils",
+        "//test/core/credentials/call/oauth2:oauth2_utils",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -480,7 +480,11 @@ grpc_cc_library(
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
     ],
-    tags = ["nobuilder"],
+    tags = [
+        "nobuilder",
+        # TODO(stanleycheung): the following will only work if :grpcpp_gcp_observability works
+        "grpc:broken-internally",
+    ],
     deps = [
         ":client_helper_lib",
         "//:grpcpp_gcp_observability",

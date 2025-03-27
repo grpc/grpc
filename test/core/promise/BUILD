@@ -43,7 +43,10 @@ grpc_cc_library(
     name = "test_context",
     testonly = True,
     hdrs = ["test_context.h"],
-    visibility = ["//test/core:__subpackages__"],
+    visibility = [
+        "//test/core:__subpackages__",
+        "//test/cpp:__subpackages__",
+    ],
     deps = ["//src/core:context"],
 )
 
@@ -288,7 +291,10 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:all_ok"],
+    deps = [
+        "//:promise",
+        "//src/core:all_ok",
+    ],
 )
 
 grpc_cc_test(

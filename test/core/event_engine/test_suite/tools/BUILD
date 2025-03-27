@@ -27,6 +27,7 @@ grpc_cc_binary(
     external_deps = ["absl/log:check"],
     tags = [
         "bazel_only",
+        "grpc:event_engine_impl",
         "no_linux",
         "no_mac",
     ],
@@ -44,6 +45,7 @@ grpc_cc_binary(
     external_deps = ["absl/log:check"],
     tags = [
         "bazel_only",
+        "grpc:event_engine_impl",
         "no_windows",
     ],
     deps = [

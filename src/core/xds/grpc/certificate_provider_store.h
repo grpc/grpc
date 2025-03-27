@@ -28,9 +28,9 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/credentials/transport/tls/certificate_provider_factory.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"

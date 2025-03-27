@@ -105,7 +105,9 @@ class GreeterClient {
                 << ": " << status.error_message() << "\n";
       return;
     }
-    std::cout << message << ": " << response.DebugString();
+    std::cout << message << ": status: "
+              << HealthCheckResponse::ServingStatus_Name(response.status())
+              << "\n";
   }
 
  private:

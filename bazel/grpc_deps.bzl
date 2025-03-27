@@ -35,11 +35,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "cea4c77cd69279585ea53efa2bb2ae6eb5f31fb39c214213c5b7cdf3c44d7b52",
-            strip_prefix = "boringssl-c64b8fefbba9a9dadda73138062fc449bdf11e2a",
+            sha256 = "20df38dedca03705d6d2ff208f6c31548ddff26cf12a3c2899dd8bfa700bd20f",
+            strip_prefix = "boringssl-c57adcf6947912fe17bc5bfaf0876225d1fe742d",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/c64b8fefbba9a9dadda73138062fc449bdf11e2a.tar.gz",
-                "https://github.com/google/boringssl/archive/c64b8fefbba9a9dadda73138062fc449bdf11e2a.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/c57adcf6947912fe17bc5bfaf0876225d1fe742d.tar.gz",
+                "https://github.com/google/boringssl/archive/c57adcf6947912fe17bc5bfaf0876225d1fe742d.tar.gz",
             ],
         )
 
@@ -58,17 +58,21 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "cf2db029202bb8eb1471b9bae387cc475d15d9e99c547e6906155033f81249a5",
-            strip_prefix = "protobuf-2d4414f384dc499af113b5991ce3eaa9df6dd931",
+            sha256 = "000afdf8dd0af9f294726138eb4ea4dea28a84831e07f5edf6fff0fdf6d026f9",
+            strip_prefix = "protobuf-d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v29.0
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/2d4414f384dc499af113b5991ce3eaa9df6dd931.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/2d4414f384dc499af113b5991ce3eaa9df6dd931.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v30.0
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
             ],
             patch_args = ["-p1"],
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+                "@googletest": "@com_google_googletest",
+            },
         )
 
     if "com_google_googletest" not in native.existing_rules():
@@ -328,9 +332,12 @@ def grpc_deps():
     if "com_envoyproxy_protoc_gen_validate" not in native.existing_rules():
         http_archive(
             name = "com_envoyproxy_protoc_gen_validate",
-            sha256 = "9372f9ecde8fbadf83c8c7de3dbb49b11067aa26fb608c501106d0b4bf06c28f",
-            strip_prefix = "protoc-gen-validate-1.0.4",
-            urls = ["https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.0.4.zip"],
+            sha256 = "ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45",
+            strip_prefix = "protoc-gen-validate-1.2.1",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip",
+                "https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip",
+            ],
         )
 
     if "com_github_cncf_xds" not in native.existing_rules():

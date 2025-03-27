@@ -19,12 +19,12 @@
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 
 #include <grpc/grpc.h>
-#include <gtest/gtest.h>
 
 #include <string>
 #include <unordered_set>
 
 #include "absl/log/check.h"
+#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 

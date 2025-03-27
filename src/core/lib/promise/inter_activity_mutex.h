@@ -56,6 +56,15 @@ class InterActivityMutex {
     const T& operator*() const { return mutex_->value_; }
     const T* operator->() const { return &mutex_->value_; }
 
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const Lock& lock) {
+      if (lock.mutex_ == nullptr) {
+        sink.Append("<unlocked>");
+      } else {
+        absl::Format(&sink, "%v", lock.mutex_->value_);
+      }
+    }
+
    private:
     friend class InterActivityMutex;
     explicit Lock(InterActivityMutex* mutex) : mutex_(mutex) {

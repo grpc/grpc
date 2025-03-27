@@ -14,12 +14,12 @@
 
 #include "src/core/config/core_configuration.h"
 
-#include <gtest/gtest.h>
-
 #include <chrono>
 #include <functional>
 #include <thread>
 #include <vector>
+
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

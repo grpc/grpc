@@ -36,6 +36,7 @@
 #include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -44,14 +45,16 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/transport/chaotic_good/mock_frame_transport.h"
+#include "test/core/transport/chaotic_good/transport_test_helper.h"
+#include "test/core/transport/util/mock_promise_endpoint.h"
 #include "test/core/transport/util/transport_test.h"
 
 using testing::MockFunction;
 using testing::StrictMock;
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
+using grpc_core::util::testing::TransportTest;
 
 namespace grpc_core {
 namespace chaotic_good {

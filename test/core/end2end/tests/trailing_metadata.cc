@@ -58,7 +58,7 @@ CORE_END2END_TEST(CoreEnd2endTests, TrailingMetadata) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(client_message.payload(), "hello world");
   EXPECT_EQ(server_message.payload(), "hello you");
   EXPECT_EQ(s.GetInitialMetadata("key1"), "val1");

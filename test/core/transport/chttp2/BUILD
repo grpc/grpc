@@ -182,6 +182,7 @@ grpc_cc_test(
     deps = [
         "//:chttp2_frame",
         "//src/core:http2_errors",
+        "//src/core:slice_buffer",
     ],
 )
 
@@ -232,6 +233,10 @@ grpc_cc_test(
     name = "ping_configuration_test",
     srcs = ["ping_configuration_test.cc"],
     external_deps = ["gtest"],
+    tags = [
+        # HTTP2 pings configuration is different internally.
+        "grpc:no-internal-poller",
+    ],
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -358,6 +363,10 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
+    tags = [
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "//:channel_stack_builder",
         "//:gpr",
@@ -399,6 +408,12 @@ grpc_cc_test(
     ],
     flaky = True,
     shard_count = 7,
+    tags = [
+        # TODO(yashkt): Re-enable after fixing b/167620746
+        "grpc:no-internal-poller",
+        "requires-net:ipv4",
+        "requires-net:loopback",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -490,31 +505,49 @@ grpc_cc_test(
 grpc_cc_test(
     name = "http2_client_transport_test",
     srcs = ["http2_client_transport_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//src/core:http2_client_transport",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/chttp2:http2_frame_test_helper",
         "//test/core/transport/util:mock_promise_endpoint",
+        "//test/core/transport/util:transport_test",
     ],
 )
 
 grpc_cc_test(
     name = "http2_server_transport_test",
     srcs = ["http2_server_transport_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//src/core:http2_server_transport",
+        "//src/core:message",
+        "//src/core:metadata",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/transport/chttp2:http2_frame_test_helper",
         "//test/core/transport/util:mock_promise_endpoint",
+        "//test/core/transport/util:transport_test",
     ],
 )
 
@@ -575,6 +608,7 @@ grpc_cc_library(
     testonly = 1,
     hdrs = ["http2_frame_test_helper.h"],
     external_deps = [
+        "absl/log:log",
         "absl/strings",
         "absl/types:span",
     ],

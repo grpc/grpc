@@ -35,6 +35,7 @@
 #include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/interception_chain.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -57,7 +58,6 @@
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -244,13 +244,12 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
       deadline_(args.deadline) {
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
   const grpc_call_element_args call_args = {
-      callstk,              // call_stack
-      nullptr,              // server_transport_data
-      args.path.c_slice(),  // path
-      args.start_time,      // start_time
-      args.deadline,        // deadline
-      args.arena,           // arena
-      args.call_combiner    // call_combiner
+      callstk,            // call_stack
+      nullptr,            // server_transport_data
+      args.start_time,    // start_time
+      args.deadline,      // deadline
+      args.arena,         // arena
+      args.call_combiner  // call_combiner
   };
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);

@@ -41,6 +41,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -67,7 +68,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -104,7 +104,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     Party::SpawnSerializer* spawn_serializer =
         call.party()->MakeSpawnSerializer();
   };
-  using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
+  using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream> >;
 
   class StreamDispatch : public FrameTransportSink {
    public:

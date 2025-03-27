@@ -55,7 +55,7 @@ std::vector<chaotic_good_legacy::PendingConnection> Endpoints(Args... args) {
 }
 
 DATA_ENDPOINTS_TEST(CanWrite) {
-  chaotic_good::testing::MockPromiseEndpoint ep(1234);
+  util::testing::MockPromiseEndpoint ep(1234);
   chaotic_good_legacy::DataEndpoints data_endpoints(
       Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false);
   ep.ExpectWrite(
@@ -69,8 +69,8 @@ DATA_ENDPOINTS_TEST(CanWrite) {
 }
 
 DATA_ENDPOINTS_TEST(CanMultiWrite) {
-  chaotic_good::testing::MockPromiseEndpoint ep1(1234);
-  chaotic_good::testing::MockPromiseEndpoint ep2(1235);
+  util::testing::MockPromiseEndpoint ep1(1234);
+  util::testing::MockPromiseEndpoint ep2(1235);
   chaotic_good_legacy::DataEndpoints data_endpoints(
       Endpoints(std::move(ep1.promise_endpoint),
                 std::move(ep2.promise_endpoint)),
@@ -100,7 +100,7 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
 }
 
 DATA_ENDPOINTS_TEST(CanRead) {
-  chaotic_good::testing::MockPromiseEndpoint ep(1234);
+  util::testing::MockPromiseEndpoint ep(1234);
   chaotic_good_legacy::DataEndpoints data_endpoints(
       Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false);
   ep.ExpectRead(
@@ -113,14 +113,6 @@ DATA_ENDPOINTS_TEST(CanRead) {
                              });
   WaitForAllPendingWork();
 }
-
-namespace {
-yodel::Msg ParseTestProto(const std::string& text) {
-  yodel::Msg msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(text, &msg));
-  return msg;
-}
-}  // namespace
 
 TEST(DataEndpointsTest, CanMultiWriteRegression) {
   CanMultiWrite(ParseTestProto(

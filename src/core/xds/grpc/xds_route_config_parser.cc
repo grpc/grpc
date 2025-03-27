@@ -52,8 +52,8 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "re2/re2.h"
+#include "src/core/call/status_util.h"
 #include "src/core/config/core_configuration.h"
-#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/down_cast.h"
@@ -386,62 +386,65 @@ void RouteRuntimeFractionParse(const envoy_config_route_v3_RouteMatch* match,
   }
 }
 
-template <typename ParentType, typename EntryType>
+template <typename ParentType>
 XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     const XdsResourceType::DecodeContext& context, const ParentType* parent,
-    const EntryType* (*entry_func)(const ParentType*, size_t*),
-    upb_StringView (*key_func)(const EntryType*),
-    const google_protobuf_Any* (*value_func)(const EntryType*),
-    ValidationErrors* errors) {
+    const upb_Map* (*upb_map_func)(ParentType*), ValidationErrors* errors) {
   XdsRouteConfigResource::TypedPerFilterConfig typed_per_filter_config;
-  size_t filter_it = kUpb_Map_Begin;
-  while (true) {
-    const auto* filter_entry = entry_func(parent, &filter_it);
-    if (filter_entry == nullptr) break;
-    absl::string_view key = UpbStringToAbsl(key_func(filter_entry));
-    ValidationErrors::ScopedField field(errors, absl::StrCat("[", key, "]"));
-    if (key.empty()) errors->AddError("filter name must be non-empty");
-    const google_protobuf_Any* any = value_func(filter_entry);
-    auto extension = ExtractXdsExtension(context, any, errors);
-    if (!extension.has_value()) continue;
-    auto* extension_to_use = &*extension;
-    std::optional<XdsExtension> nested_extension;
-    bool is_optional = false;
-    if (extension->type == "envoy.config.route.v3.FilterConfig") {
-      absl::string_view* serialized_config =
-          std::get_if<absl::string_view>(&extension->value);
-      if (serialized_config == nullptr) {
-        errors->AddError("could not parse FilterConfig");
+  // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
+  // v30.0.
+  const upb_Map* parent_upb_map = upb_map_func((ParentType*)parent);
+  if (parent_upb_map) {
+    size_t filter_it = kUpb_Map_Begin;
+    upb_MessageValue k, v;
+    while (upb_Map_Next(parent_upb_map, &k, &v, &filter_it)) {
+      upb_StringView key_view = k.str_val;
+      const google_protobuf_Any* any = (google_protobuf_Any*)v.msg_val;
+      absl::string_view key = UpbStringToAbsl(key_view);
+      ValidationErrors::ScopedField field(errors, absl::StrCat("[", key, "]"));
+      if (key.empty()) errors->AddError("filter name must be non-empty");
+      auto extension = ExtractXdsExtension(context, any, errors);
+      if (!extension.has_value()) continue;
+      auto* extension_to_use = &*extension;
+      std::optional<XdsExtension> nested_extension;
+      bool is_optional = false;
+      if (extension->type == "envoy.config.route.v3.FilterConfig") {
+        absl::string_view* serialized_config =
+            std::get_if<absl::string_view>(&extension->value);
+        if (serialized_config == nullptr) {
+          errors->AddError("could not parse FilterConfig");
+          continue;
+        }
+        const auto* filter_config = envoy_config_route_v3_FilterConfig_parse(
+            serialized_config->data(), serialized_config->size(),
+            context.arena);
+        if (filter_config == nullptr) {
+          errors->AddError("could not parse FilterConfig");
+          continue;
+        }
+        is_optional =
+            envoy_config_route_v3_FilterConfig_is_optional(filter_config);
+        any = envoy_config_route_v3_FilterConfig_config(filter_config);
+        extension->validation_fields.emplace_back(errors, ".config");
+        nested_extension = ExtractXdsExtension(context, any, errors);
+        if (!nested_extension.has_value()) continue;
+        extension_to_use = &*nested_extension;
+      }
+      const auto& http_filter_registry =
+          DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+              .http_filter_registry();
+      const XdsHttpFilterImpl* filter_impl =
+          http_filter_registry.GetFilterForType(extension_to_use->type);
+      if (filter_impl == nullptr) {
+        if (!is_optional) errors->AddError("unsupported filter type");
         continue;
       }
-      const auto* filter_config = envoy_config_route_v3_FilterConfig_parse(
-          serialized_config->data(), serialized_config->size(), context.arena);
-      if (filter_config == nullptr) {
-        errors->AddError("could not parse FilterConfig");
-        continue;
+      std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
+          filter_impl->GenerateFilterConfigOverride(
+              key, context, std::move(*extension_to_use), errors);
+      if (filter_config.has_value()) {
+        typed_per_filter_config[std::string(key)] = std::move(*filter_config);
       }
-      is_optional =
-          envoy_config_route_v3_FilterConfig_is_optional(filter_config);
-      any = envoy_config_route_v3_FilterConfig_config(filter_config);
-      extension->validation_fields.emplace_back(errors, ".config");
-      nested_extension = ExtractXdsExtension(context, any, errors);
-      if (!nested_extension.has_value()) continue;
-      extension_to_use = &*nested_extension;
-    }
-    const auto& http_filter_registry =
-        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-            .http_filter_registry();
-    const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(extension_to_use->type);
-    if (filter_impl == nullptr) {
-      if (!is_optional) errors->AddError("unsupported filter type");
-      continue;
-    }
-    std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfigOverride(
-            key, context, std::move(*extension_to_use), errors);
-    if (filter_config.has_value()) {
-      typed_per_filter_config[std::string(key)] = std::move(*filter_config);
     }
   }
   return typed_per_filter_config;
@@ -665,13 +668,12 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       // typed_per_filter_config
       {
         ValidationErrors::ScopedField field(errors, ".typed_per_filter_config");
+        // TODO(b/397931390): Clean up the code after gRPC OSS migrates to
+        // proto v30.0.
         cluster.typed_per_filter_config = ParseTypedPerFilterConfig<
-            envoy_config_route_v3_WeightedCluster_ClusterWeight,
-            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
+            envoy_config_route_v3_WeightedCluster_ClusterWeight>(
             context, cluster_proto,
-            envoy_config_route_v3_WeightedCluster_ClusterWeight_typed_per_filter_config_next,
-            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_key,
-            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value,
+            _envoy_config_route_v3_WeightedCluster_ClusterWeight_typed_per_filter_config_upb_map,
             errors);
       }
       // name
@@ -795,13 +797,13 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
   // Parse typed_per_filter_config.
   {
     ValidationErrors::ScopedField field(errors, ".typed_per_filter_config");
-    route.typed_per_filter_config = ParseTypedPerFilterConfig<
-        envoy_config_route_v3_Route,
-        envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
-        context, route_proto,
-        envoy_config_route_v3_Route_typed_per_filter_config_next,
-        envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
-        envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value, errors);
+    // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
+    // v30.0.
+    route.typed_per_filter_config =
+        ParseTypedPerFilterConfig<envoy_config_route_v3_Route>(
+            context, route_proto,
+            _envoy_config_route_v3_Route_typed_per_filter_config_upb_map,
+            errors);
   }
   return route;
 }
@@ -856,13 +858,12 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
     // Parse typed_per_filter_config.
     {
       ValidationErrors::ScopedField field(errors, ".typed_per_filter_config");
+      // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
+      // v30.0.
       vhost.typed_per_filter_config = ParseTypedPerFilterConfig<
-          envoy_config_route_v3_VirtualHost,
-          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
+          envoy_config_route_v3_VirtualHost>(
           context, virtual_hosts[i],
-          envoy_config_route_v3_VirtualHost_typed_per_filter_config_next,
-          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
-          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value,
+          _envoy_config_route_v3_VirtualHost_typed_per_filter_config_upb_map,
           errors);
     }
     // Parse retry policy.

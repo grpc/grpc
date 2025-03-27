@@ -15,21 +15,21 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_UTIL_TRANSPORT_TEST_H
 #define GRPC_TEST_CORE_TRANSPORT_UTIL_TRANSPORT_TEST_H
 
-#include <google/protobuf/text_format.h>
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/call/call_arena_allocator.h"
+#include "src/core/call/call_spine.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
-#include "src/core/lib/transport/call_spine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace util {
 namespace testing {
 
 class TransportTest : public ::testing::Test {
@@ -37,6 +37,12 @@ class TransportTest : public ::testing::Test {
   const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>&
   event_engine() {
     return event_engine_;
+  }
+
+  ChannelArgs GetChannelArgs() {
+    return CoreConfiguration::Get()
+        .channel_args_preconditioning()
+        .PreconditionChannelArgs(nullptr);
   }
 
   RefCountedPtr<Arena> MakeArena() {
@@ -74,7 +80,7 @@ class TransportTest : public ::testing::Test {
 };
 
 }  // namespace testing
-}  // namespace chaotic_good
+}  // namespace util
 }  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_UTIL_TRANSPORT_TEST_H

@@ -17,6 +17,7 @@
   FROM golang:1.11
 
   <%include file="../../go_path.include"/>
+  <%include file="../../git_avoid_dubious_ownership_error.include"/>
   <%include file="../../run_tests_python_deps.include"/>
   # Define the default command.
   CMD ["bash"]
