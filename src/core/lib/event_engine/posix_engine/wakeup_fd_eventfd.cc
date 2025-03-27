@@ -43,7 +43,7 @@ absl::Status EventFdWakeupFd::Init() {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("eventfd: ", grpc_core::StrError(errno)));
   }
-  SetWakeupFds(*read_fd, FileDescriptor::Invalid());
+  SetWakeupFds(read_fd.fd(), FileDescriptor::Invalid());
   return absl::OkStatus();
 }
 

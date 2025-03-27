@@ -105,8 +105,6 @@ class PosixResult {
       case OperationResultKind::kWrongGeneration:
         return absl::InternalError(
             "File descriptor is from the wrong generation");
-      default:
-        return absl::InvalidArgumentError("Unexpected kind_");
     }
   }
 
@@ -140,14 +138,14 @@ class FileDescriptorResult final : public PosixResult {
   FileDescriptorResult(OperationResultKind kind, int errno_value)
       : PosixResult(kind, errno_value) {}
 
-  FileDescriptor operator*() const {
-    CHECK_OK(status());
-    return fd_;
-  }
-
   const FileDescriptor* operator->() const {
     CHECK_OK(status());
     return &fd_;
+  }
+
+  FileDescriptor fd() const {
+    CHECK_OK(status());
+    return fd_;
   }
 
   bool ok() const override { return PosixResult::ok() && fd_.ready(); }

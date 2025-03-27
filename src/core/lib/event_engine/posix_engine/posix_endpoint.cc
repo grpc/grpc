@@ -1205,21 +1205,21 @@ bool PosixEndpointImpl::Write(
 
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "Endpoint[" << this << "]: Write " << data->Length() << " bytes";
-  if (handle_->IsHandleShutdown()) {
-    status = TcpAnnotateError(absl::InternalError("EOF"));
-    engine_->Run(
-        [on_writable = std::move(on_writable), status, this]() mutable {
-          GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-              << "Endpoint[" << this << "]: Write failed: " << status;
-          on_writable(status);
-        });
-    return false;
-  }
 
   if (data->Length() == 0) {
     TcpShutdownTracedBufferList();
     GRPC_TRACE_LOG(event_engine_endpoint, INFO)
         << "Endpoint[" << this << "]: Write skipped";
+    if (handle_->IsHandleShutdown()) {
+      status = TcpAnnotateError(absl::InternalError("EOF"));
+      engine_->Run(
+          [on_writable = std::move(on_writable), status, this]() mutable {
+            GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+                << "Endpoint[" << this << "]: Write failed: " << status;
+            on_writable(status);
+          });
+      return false;
+    }
     return true;
   }
 

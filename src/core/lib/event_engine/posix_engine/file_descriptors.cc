@@ -492,7 +492,7 @@ bool IsSocketReusePortSupported() {
     }
     if (s.ok()) {
       bool result = SetSocketReusePort(s->iomgr_fd(), 1).ok();
-      fds.Close(*s);
+      fds.Close(s.fd());
       return result;
     } else {
       return false;

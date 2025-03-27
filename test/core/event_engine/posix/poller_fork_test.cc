@@ -393,18 +393,15 @@ TEST_F(PollerForkTest, ListenerInChild) {
   LOG(INFO) << "After fork in child";
   EXPECT_THAT(read_status.AwaitStatus(),
               StatusIs(absl::StatusCode::kResourceExhausted));
-  LOG(INFO) << "Before write done";
   EXPECT_THAT(write_status.AwaitStatus(),
               StatusIs(absl::StatusCode::kResourceExhausted));
-  LOG(INFO) << "After write done";
   // Starting read and write post-fork will fail asynchronously and return the
   // status.
   ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, nullptr));
   ASSERT_FALSE(endpoint->Write(write_status.Setter(), &write_buffer, nullptr));
   EXPECT_THAT(read_status.AwaitStatus(), StatusIs(absl::StatusCode::kInternal));
-  EXPECT_THAT(write_status.AwaitStatus(),
-              StatusIs(absl::StatusCode::kInternal));
-}
+  EXPECT_THAT(write_status.AwaitStatus(), StatusIs(absl::StatusCode::kUnknown));
+  }
 
 class TestScheduler {
  public:

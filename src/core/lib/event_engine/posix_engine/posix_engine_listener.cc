@@ -193,7 +193,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     // For UNIX sockets, the accept call might not fill up the member
     // sun_path of sockaddr_un, so explicitly call getpeername to get it.
     if (addr.address()->sa_family == AF_UNIX) {
-      auto peer_address = fds.PeerAddress(*fd);
+      auto peer_address = fds.PeerAddress(fd.fd());
       if (!peer_address.ok()) {
         auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
         LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
@@ -202,16 +202,16 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
                    << (listener_addr_uri.ok() ? *listener_addr_uri
                                               : "<unknown>")
                    << ":" << socket_.port;
-        fds.Close(*fd);
+        fds.Close(fd.fd());
         handle_->NotifyOnRead(notify_on_accept_);
         return;
       }
       addr = std::move(peer_address).value();
     }
 
-    (void)fds.SetSocketNoSigpipeIfPossible(*fd);
+    (void)fds.SetSocketNoSigpipeIfPossible(fd.fd());
     auto result = fds.ApplySocketMutatorInOptions(
-        *fd, GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
+        fd.fd(), GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
     if (!result.ok()) {
       LOG(ERROR) << "Closing acceptor. Failed to apply socket mutator: "
                  << result;
@@ -232,7 +232,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
     auto endpoint = CreatePosixEndpoint(
         /*handle=*/listener_->poller_->CreateHandle(
-            *fd, *peer_name, listener_->poller_->CanTrackErrors()),
+            fd.fd(), *peer_name, listener_->poller_->CanTrackErrors()),
         /*on_shutdown=*/nullptr, /*engine=*/listener_->engine_,
         // allocator=
         listener_->memory_allocator_factory_->CreateMemoryAllocator(

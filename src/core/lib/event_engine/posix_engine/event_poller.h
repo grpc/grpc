@@ -97,7 +97,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller {
   FileDescriptors& GetFileDescriptors() { return file_descriptors_; }
   ~PosixEventPoller() override = default;
 
- private:
+ protected:
   FileDescriptors file_descriptors_;
 };
 
