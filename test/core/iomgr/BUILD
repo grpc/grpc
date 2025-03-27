@@ -196,8 +196,8 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
-        # TODO(b/168022461): Remove this tag once the bug is fixed.
-        "grpc:fails-internally",
+        # Requires ares
+        "grpc:broken-internally",
     ],
     deps = [
         "//:gpr",
@@ -217,6 +217,10 @@ grpc_cc_test(
         "absl/log:log",
         "absl/strings",
         "gtest",
+    ],
+    tags = [
+        # Requires ares
+        "grpc:broken-internally",
     ],
     deps = [
         "//:gpr",

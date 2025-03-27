@@ -39,6 +39,8 @@
 
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
@@ -47,8 +49,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/latent_see.h"

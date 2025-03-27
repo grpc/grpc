@@ -105,7 +105,9 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
          {"trace.cc", std::regex("Unknown tracer:.*")},
          {"config.cc", std::regex("gRPC experiments.*")},
          // logs from fixtures are never a production issue
-         {"http_proxy_fixture.cc", std::regex(".*")}});
+         {"http_proxy_fixture.cc", std::regex(".*")},
+         {"http_connect_handshaker.cc",
+          std::regex("HTTP proxy handshake with .* failed:.*")}});
 
     if (IsVlogWithVerbosityMoreThan1(entry)) {
       return;

@@ -21,6 +21,7 @@
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 namespace grpc_core {
@@ -402,6 +403,22 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid window update flags: {WINDOW_UPDATE: flags=1, "
                        "stream_id=0, length=4}"));
+}
+
+TEST(Frame, GrpcHeaderTest) {
+  constexpr uint8_t kFlags = 15;
+  constexpr uint32_t kLength = 1111111;
+
+  SliceBuffer payload;
+  EXPECT_EQ(payload.Length(), 0);
+
+  AppendGrpcHeaderToSliceBuffer(payload, kFlags, kLength);
+  EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
+
+  GrpcMessageHeader header = ExtractGrpcHeader(payload);
+  EXPECT_EQ(payload.Length(), 0);
+  EXPECT_EQ(header.flags, kFlags);
+  EXPECT_EQ(header.length, kLength);
 }
 
 }  // namespace

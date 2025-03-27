@@ -36,12 +36,12 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/time.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
-#include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/codegen/time.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/sync.h>
+#include <grpcpp/support/status.h>
 
 #include <list>
 

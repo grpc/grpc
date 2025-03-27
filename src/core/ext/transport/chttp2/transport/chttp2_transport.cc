@@ -55,6 +55,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/metadata_info.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -96,15 +98,12 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/metadata_info.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
-#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -235,16 +234,6 @@ grpc_core::CallTracerAnnotationInterface* ParentCallTracerIfSampled(
     return nullptr;
   }
   return parent_call_tracer;
-}
-
-std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
-    grpc_chttp2_stream* s) {
-  auto* call_attempt_tracer =
-      s->arena->GetContext<grpc_core::CallTracerInterface>();
-  if (call_attempt_tracer == nullptr || !call_attempt_tracer->IsSampled()) {
-    return nullptr;
-  }
-  return call_attempt_tracer->StartNewTcpTrace();
 }
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
@@ -1652,7 +1641,6 @@ static void perform_stream_op_locked(void* stream_op,
   if (s->t->is_client && op->send_initial_metadata) {
     s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
   }
-  s->tcp_tracer = TcpTracerIfSampled(s);
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op
               << "]: " << grpc_transport_stream_op_batch_string(op, false)
