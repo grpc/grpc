@@ -72,6 +72,14 @@ T* QueryExtension(EventEngine::Listener* listener) {
 }
 
 /// A helper method which returns a valid pointer if the extension is
+/// supported by the DNSResolver.
+template <typename T>
+T* QueryExtension(EventEngine::DNSResolver* resolver) {
+  if (resolver == nullptr) return nullptr;
+  return static_cast<T*>(resolver->QueryExtension(T::EndpointExtensionName()));
+}
+
+/// A helper method which returns a valid pointer if the extension is
 /// supported by the EventEngine.
 template <typename T>
 T* QueryExtension(EventEngine* engine) {
