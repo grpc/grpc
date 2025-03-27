@@ -25,6 +25,7 @@
 #include "absl/base/thread_annotations.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/manual_constructor.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
@@ -54,6 +55,14 @@ class InterActivityPipe {
  private:
   class Center : public RefCounted<Center, NonPolymorphicRefCount> {
    public:
+    ~Center() {
+      while (count_ > 0) {
+        queue_[first_].Destroy();
+        first_ = (first_ + 1) % kQueueSize;
+        --count_;
+      }
+    }
+
     Poll<bool> Push(T& value) {
       ReleasableMutexLock lock(&mu_);
       if (closed_) return false;
@@ -61,7 +70,7 @@ class InterActivityPipe {
         on_available_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }
-      queue_[(first_ + count_) % kQueueSize] = std::move(value);
+      queue_[(first_ + count_) % kQueueSize].Init(std::move(value));
       ++count_;
       if (count_ == 1) {
         auto on_occupied = std::move(on_occupied_);
@@ -78,7 +87,8 @@ class InterActivityPipe {
         on_occupied_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }
-      auto value = std::move(queue_[first_]);
+      auto value = std::move(*queue_[first_]);
+      queue_[first_].Destroy();
       first_ = (first_ + 1) % kQueueSize;
       --count_;
       if (count_ == kQueueSize - 1) {
@@ -106,7 +116,7 @@ class InterActivityPipe {
 
    private:
     Mutex mu_;
-    std::array<T, kQueueSize> queue_ ABSL_GUARDED_BY(mu_);
+    std::array<ManualConstructor<T>, kQueueSize> queue_ ABSL_GUARDED_BY(mu_);
     bool closed_ ABSL_GUARDED_BY(mu_) = false;
     uint8_t first_ ABSL_GUARDED_BY(mu_) = 0;
     uint8_t count_ ABSL_GUARDED_BY(mu_) = 0;
@@ -120,6 +130,7 @@ class InterActivityPipe {
    public:
     explicit Sender(RefCountedPtr<Center> center)
         : center_(std::move(center)) {}
+    Sender() = default;
     Sender(const Sender&) = delete;
     Sender& operator=(const Sender&) = delete;
     Sender(Sender&&) noexcept = default;
@@ -149,6 +160,7 @@ class InterActivityPipe {
    public:
     explicit Receiver(RefCountedPtr<Center> center)
         : center_(std::move(center)) {}
+    Receiver() = default;
     Receiver(const Receiver&) = delete;
     Receiver& operator=(const Receiver&) = delete;
     Receiver(Receiver&&) noexcept = default;

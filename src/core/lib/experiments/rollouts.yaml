@@ -48,6 +48,8 @@
   default: true
 - name: call_v3
   default: false
+- name: chaotic_good_framing_layer
+  default: true
 - name: error_flatten
   default: false
 - name: event_engine_callback_cq

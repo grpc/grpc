@@ -127,6 +127,9 @@ class FuzzingEventEngine : public EventEngine {
     return max_delay_[static_cast<int>(RunType::kWrite)];
   }
 
+  std::pair<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>
+  CreateEndpointPair();
+
  private:
   class IoToken {
    public:
