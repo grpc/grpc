@@ -20,11 +20,12 @@
 #include <memory>
 #include <vector>
 
-#include "call_arena_allocator.h"
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
@@ -143,8 +144,7 @@ class Interceptor : public UnstartedCallDestination {
 
   RefCountedPtr<UnstartedCallDestination> wrapped_destination_;
   RefCountedPtr<CallFilters::Stack> filter_stack_;
-  RefCountedPtr<CallArenaAllocator> arena_allocator_ =
-      MakeRefCounted<CallArenaAllocator>();
+  RefCountedPtr<CallArenaAllocator> arena_allocator_;
 };
 
 class InterceptionChainBuilder final {
@@ -173,6 +173,7 @@ class InterceptionChainBuilder final {
                                     const Blackboard* old_blackboard = nullptr,
                                     Blackboard* new_blackboard = nullptr)
       : args_(std::move(args)),
+        memory_quota_(args.GetObject<ResourceQuota>()->memory_quota()),
         old_blackboard_(old_blackboard),
         new_blackboard_(new_blackboard) {}
 
@@ -278,6 +279,7 @@ class InterceptionChainBuilder final {
   std::vector<absl::AnyInvocable<void(InterceptionChainBuilder*)>>
       on_new_interception_tail_;
   absl::Status status_;
+  MemoryQuotaRefPtr memory_quota_;
   std::map<size_t, size_t> filter_type_counts_;
   static std::atomic<size_t> next_filter_id_;
   const Blackboard* old_blackboard_ = nullptr;

@@ -24,16 +24,9 @@ namespace grpc_core {
 
 template <>
 struct ArenaContextType<grpc_event_engine::experimental::EventEngine> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
   static void Destroy(grpc_event_engine::experimental::EventEngine*) {}
-  static grpc_event_engine::experimental::EventEngine* ForwardPropagate(
-      grpc_event_engine::experimental::EventEngine* parent_value) {
-    return parent_value;
-  }
-  static grpc_event_engine::experimental::EventEngine* ReversePropagate(
-      grpc_event_engine::experimental::EventEngine* parent_value,
-      grpc_event_engine::experimental::EventEngine* /* child_value */) {
-    return parent_value;
-  }
 };
 
 }  // namespace grpc_core

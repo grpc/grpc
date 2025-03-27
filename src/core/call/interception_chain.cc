@@ -109,6 +109,8 @@ void InterceptionChainBuilder::AddInterceptor(
     return;
   }
   (*interceptor)->filter_stack_ = MakeFilterStack();
+  (*interceptor)->arena_allocator_ = MakeRefCounted<CallArenaAllocator>(
+      memory_quota_->CreateMemoryAllocator("interceptor"), 256);
   if (top_interceptor_ == nullptr) {
     top_interceptor_ = std::move(*interceptor);
   } else {

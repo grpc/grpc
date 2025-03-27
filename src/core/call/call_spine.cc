@@ -95,7 +95,7 @@ CallInitiatorAndHandler CallHandler::MakeChildCall(
     CallArenaSource arena_source) {
   auto result =
       MakeCallPair(std::move(client_initial_metadata), std::move(arena_source));
-  result.handler.arena()->PropagateContextFrom(arena());
+  result.handler.arena()->ForwardPropagateContextFrom(arena());
   spine_->AddChildCall(result.handler.spine_);
   return result;
 }

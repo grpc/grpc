@@ -102,6 +102,8 @@ class ServiceConfigCallData {
 
 template <>
 struct ArenaContextType<ServiceConfigCallData> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
   static void Destroy(ServiceConfigCallData* ptr) {
     ptr->~ServiceConfigCallData();
   }

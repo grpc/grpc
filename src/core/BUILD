@@ -1598,6 +1598,7 @@ grpc_cc_library(
         "event_engine_memory_allocator",
         "memory_quota",
         "resource_quota",
+        "bitset",
         "//:gpr",
     ],
 )
@@ -8947,6 +8948,8 @@ grpc_cc_library(
         "match",
         "metadata",
         "ref_counted",
+        "resource_quota",
+        "call_arena_allocator",
         "//:gpr_platform",
         "//:grpc_trace",
     ],

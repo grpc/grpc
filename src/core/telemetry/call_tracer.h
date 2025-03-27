@@ -236,11 +236,15 @@ void AddServerCallTracerToContext(Arena* arena, ServerCallTracer* tracer);
 
 template <>
 struct ArenaContextType<CallTracerInterface> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
   static void Destroy(CallTracerAnnotationInterface*) {}
 };
 
 template <>
 struct ArenaContextType<CallTracerAnnotationInterface> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
   static void Destroy(CallTracerAnnotationInterface*) {}
 };
 

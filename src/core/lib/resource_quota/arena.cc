@@ -51,6 +51,7 @@ void* ArenaStorage(size_t& initial_size) {
 Arena::~Arena() {
   for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
        ++i) {
+    if (!owned_contexts_.is_set(i)) continue;
     arena_detail::BaseArenaContextTraits::Destroy(i, contexts()[i]);
   }
   DestroyManagedNewObjects();
@@ -87,32 +88,6 @@ Arena::Arena(size_t initial_size, RefCountedPtr<ArenaFactory> arena_factory)
   arena_factory_->allocator().Reserve(initial_size);
 }
 
-void Arena::ForwardPropagateContext(Arena* parent) {
-  DCHECK(parent_arena_ == nullptr);
-  for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
-       ++i) {
-    contexts()[i] =
-        arena_detail::BaseArenaContextTraits::ForwardPropagateContext(
-            i, parent->contexts()[i]);
-  }
-  parent_arena_ = parent->Ref();
-}
-
-void Arena::ReversePropagateContext() {
-  DCHECK(parent_arena_ != nullptr);
-  for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
-       ++i) {
-    parent_arena_->contexts()[i] =
-        arena_detail::BaseArenaContextTraits::ReversePropagateContext(
-            i, parent_arena_->contexts()[i], contexts()[i]);
-  }
-}
-
-void Arena::DropParentContext() {
-  DCHECK(parent_arena_ != nullptr);
-  parent_arena_.reset();
-}
-
 void Arena::DestroyManagedNewObjects() {
   ManagedNewObject* p;
   // Outer loop: clear the managed new object list.
@@ -129,6 +104,28 @@ void Arena::DestroyManagedNewObjects() {
 void Arena::Destroy() const {
   this->~Arena();
   gpr_free_aligned(const_cast<Arena*>(this));
+}
+
+void Arena::ForwardPropagateContextFrom(Arena* parent) {
+  for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
+       ++i) {
+    DCHECK(!owned_contexts_.is_set(i));
+    contexts()[i] = parent->contexts()[i];
+  }
+}
+
+void Arena::ReversePropagateContextFrom(Arena* child) {
+  auto reverse_propagation_contexts =
+      arena_detail::BaseArenaContextTraits::reverse_propagation_contexts();
+  for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
+       ++i) {
+    if (!reverse_propagation_contexts.is_set(i)) continue;
+    if (owned_contexts_.is_set(i)) {
+      arena_detail::BaseArenaContextTraits::Destroy(i, contexts()[i]);
+      owned_contexts_.clear(i);
+    }
+    contexts()[i] = child->contexts()[i];
+  }
 }
 
 void* Arena::AllocZone(size_t size) {
