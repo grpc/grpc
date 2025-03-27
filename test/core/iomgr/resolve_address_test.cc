@@ -547,6 +547,11 @@ TEST_F(ResolveAddressTest, NativeResolverCannotLookupTXTRecords) {
 }
 
 int main(int argc, char** argv) {
+  if (grpc_core::IsPollsetAlternativeEnabled()) {
+    LOG(WARNING) << "iomgr resolver tests are disabled since the pollset "
+                    "alternative experiment breaks some iomgr APIs";
+    return 0;
+  }
   // Configure the DNS resolver (c-ares vs. native) based on the
   // name of the binary. TODO(apolcyn): is there a way to pass command
   // line flags to a gtest that it works in all of our test environments?

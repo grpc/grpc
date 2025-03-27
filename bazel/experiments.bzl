@@ -36,6 +36,7 @@ EXPERIMENT_ENABLES = {
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
+    "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
     "posix_ee_skip_grpc_init": "posix_ee_skip_grpc_init",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
@@ -70,6 +71,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
+                "pollset_alternative",
                 "retry_in_callv3",
             ],
             "cpp_end2end_test": [
@@ -134,6 +136,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
+                "pollset_alternative",
                 "retry_in_callv3",
             ],
             "cpp_end2end_test": [
@@ -184,6 +187,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
+                "pollset_alternative",
                 "retry_in_callv3",
             ],
             "cpp_end2end_test": [
