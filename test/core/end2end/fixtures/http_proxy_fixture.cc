@@ -583,7 +583,9 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
       return;
     }
   }
+  // Resolve address.
   grpc_resolved_address first_address;
+  VLOG(2) << "proxy connecting to backend: " << conn->http_request.path;
   if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
     auto resolver = conn->proxy->combiner->event_engine->GetDNSResolver(
         grpc_event_engine::experimental::EventEngine::DNSResolver::
@@ -602,8 +604,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
     }
     CHECK(!ee_addresses->empty());
     first_address = CreateGRPCResolvedAddress(ee_addresses->at(0));
-  } else {  // Resolve address.
-    VLOG(2) << "proxy connecting to backend: " << conn->http_request.path;
+  } else {
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
         grpc_core::GetDNSResolver()->LookupHostnameBlocking(
             conn->http_request.path, "80");
