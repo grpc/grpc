@@ -68,15 +68,11 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
-                "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
-            ],
-            "cpp_end2end_test": [
-                "error_flatten",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -94,15 +90,13 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "error_flatten",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "error_flatten",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
@@ -110,7 +104,11 @@ EXPERIMENTS = {
                 "server_listener",
             ],
             "cpp_end2end_test": [
+                "error_flatten",
                 "posix_ee_skip_grpc_init",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -122,6 +120,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "error_flatten",
                 "server_listener",
             ],
         },
@@ -133,15 +132,11 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
-                "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
-            ],
-            "cpp_end2end_test": [
-                "error_flatten",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -159,20 +154,23 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "error_flatten",
-            ],
         },
         "on": {
             "core_end2end_test": [
+                "error_flatten",
                 "event_engine_for_all_other_endpoints",
                 "posix_ee_skip_grpc_init",
                 "server_listener",
             ],
             "cpp_end2end_test": [
+                "error_flatten",
                 "posix_ee_skip_grpc_init",
             ],
+            "error_tests": [
+                "error_flatten",
+            ],
             "xds_end2end_test": [
+                "error_flatten",
                 "server_listener",
             ],
         },
@@ -184,15 +182,11 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "chaotic_good_framing_layer",
-                "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
-            ],
-            "cpp_end2end_test": [
-                "error_flatten",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -210,15 +204,13 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "error_flatten",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "error_flatten",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
@@ -226,7 +218,11 @@ EXPERIMENTS = {
                 "server_listener",
             ],
             "cpp_end2end_test": [
+                "error_flatten",
                 "posix_ee_skip_grpc_init",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -238,6 +234,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "error_flatten",
                 "server_listener",
             ],
         },

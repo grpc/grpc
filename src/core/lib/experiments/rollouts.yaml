@@ -49,7 +49,7 @@
 - name: call_v3
   default: false
 - name: error_flatten
-  default: false
+  default: true
 - name: event_engine_callback_cq
   default: true
 - name: event_engine_client
