@@ -219,6 +219,12 @@
   expiry: 2025/06/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: server_global_callbacks_ownership
+  description:
+    If set, server global callbacks ownership is fixed to not be owned by gRPC.
+  expiry: 2025/06/30
+  owner: yashkt@google.com
+  test_tags: []
 - name: server_listener
   description: If set, the new server listener classes are used.
   expiry: 2025/03/31
