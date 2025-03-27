@@ -67,6 +67,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:cf_event_engine",
         "//src/core:event_engine_thread_count",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",

@@ -856,6 +856,7 @@ libs:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dispatch_thread_pool.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
@@ -1753,6 +1754,7 @@ libs:
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
@@ -2399,6 +2401,7 @@ libs:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dispatch_thread_pool.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
@@ -2871,6 +2874,7 @@ libs:
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
@@ -4456,6 +4460,7 @@ libs:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dispatch_thread_pool.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
@@ -4795,6 +4800,7 @@ libs:
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
@@ -6474,6 +6480,7 @@ targets:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dispatch_thread_pool.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
@@ -6777,6 +6784,7 @@ targets:
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
@@ -10661,6 +10669,7 @@ targets:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dispatch_thread_pool.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
@@ -10964,6 +10973,7 @@ targets:
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dispatch_thread_pool.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
