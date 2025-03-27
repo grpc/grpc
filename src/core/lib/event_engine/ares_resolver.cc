@@ -53,7 +53,6 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
@@ -67,7 +66,6 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/orphanable.h"
@@ -411,7 +409,10 @@ void AresResolver::LookupTXT(
 
 void AresResolver::CheckSocketsLocked() {
   FdNodeList new_list;
+  // Check if there are any FDs we need to react to.
+  // We don't care if there are any if we are shutting down.
   if (!shutting_down_) {
+    bool successfully_handled_required_fd = false;
     ares_socket_t socks[ARES_GETSOCK_MAXNUM] = {};
     int socks_bitmask = ares_getsock(channel_, socks, ARES_GETSOCK_MAXNUM);
     for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
@@ -426,6 +427,7 @@ void AresResolver::CheckSocketsLocked() {
             GRPC_TRACE_LOG(cares_resolver, ERROR)
                 << "(EventEngine c-ares resolver) resolver:" << this
                 << " can not use fd " << socks[i] << " (wrong generation)";
+            continue;
           } else {
             GRPC_TRACE_LOG(cares_resolver, INFO)
                 << "(EventEngine c-ares resolver) resolver:" << this
@@ -437,6 +439,7 @@ void AresResolver::CheckSocketsLocked() {
           new_list.splice(new_list.end(), fd_node_list_, iter);
         }
         FdNode* fd_node = new_list.back().get();
+        successfully_handled_required_fd = true;
         if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
             !fd_node->readable_registered) {
           fd_node->readable_registered = true;
@@ -485,6 +488,9 @@ void AresResolver::CheckSocketsLocked() {
         }
       }
     }
+    if (socks_bitmask != 0 && !successfully_handled_required_fd) {
+      HandleNoMonitorableSocketsLocked();
+    }
   }
   // Any remaining fds in fd_node_list_ were not returned by ares_getsock()
   // and are therefore no longer in use, so they can be shut down and removed
@@ -512,6 +518,31 @@ void AresResolver::CheckSocketsLocked() {
     }
   }
   fd_node_list_ = std::move(new_list);
+}
+
+void AresResolver::HandleNoMonitorableSocketsLocked() {
+  LOG(ERROR) << "(EventEngine c-ares resolver) resolver:" << this
+             << " CRITICAL: c-ares requires socket monitoring, but no usable "
+                "sockets found. Failing pending requests.";
+  // Fail all pending requests
+  while (!callback_map_.empty()) {
+    auto node = callback_map_.extract(callback_map_.begin());
+    event_engine_->Run([callback_variant = std::move(node.mapped())]() mutable {
+      absl::Status error = absl::InternalError(
+          "DNS resolver internal error: No valid sockets to monitor");
+      std::visit([&error](auto&& callback) { callback(std::move(error)); },
+                 std::move(callback_variant));
+    });
+  }
+  // Enter shutdown state
+  shutting_down_ = true;
+  // Cancel backup timer
+  if (ares_backup_poll_alarm_handle_.has_value()) {
+    event_engine_->Cancel(*ares_backup_poll_alarm_handle_);
+    ares_backup_poll_alarm_handle_.reset();
+  }
+  // Cancel c-ares operations
+  ares_cancel(channel_);
 }
 
 void AresResolver::MaybeStartTimerLocked() {

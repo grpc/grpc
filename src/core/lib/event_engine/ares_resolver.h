@@ -98,6 +98,10 @@ class AresResolver : public RefCountedDNSResolverInterface {
       ABSL_LOCKS_EXCLUDED(mutex_);
   void OnAresBackupPollAlarm() ABSL_LOCKS_EXCLUDED(mutex_);
 
+  // Handles the critical failure when c-ares requires sockets but none
+  // can be monitored by the event engine.
+  void HandleNoMonitorableSocketsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+
   // These callbacks are invoked from the c-ares library, so disable thread
   // safety analysis. We are guaranteed to be holding mutex_.
   static void OnHostbynameDoneLocked(void* arg, int status, int /*timeouts*/,
