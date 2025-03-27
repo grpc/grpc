@@ -45,13 +45,11 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/transport/chaotic_good/transport_test_helper.h"
-#include "test/core/transport/util/mock_promise_endpoint.h"
+#include "test/core/transport/chaotic_good/mock_frame_transport.h"
 #include "test/core/transport/util/transport_test.h"
 
 using testing::_;
 using testing::MockFunction;
-using testing::Return;
 using testing::StrictMock;
 using testing::WithArgs;
 
@@ -98,6 +96,7 @@ Config MakeConfig(const ChannelArgs& channel_args,
 
 class MockCallDestination : public UnstartedCallDestination {
  public:
+  MockCallDestination() : UnstartedCallDestination("MockCallDestination") {}
   ~MockCallDestination() override = default;
   MOCK_METHOD(void, Orphaned, (), (override));
   MOCK_METHOD(void, StartCall, (UnstartedCallHandler unstarted_call_handler),
@@ -111,45 +110,15 @@ class MockServerConnectionFactory : public ServerConnectionFactory {
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
-  util::testing::MockPromiseEndpoint control_endpoint(1);
-  util::testing::MockPromiseEndpoint data_endpoint(2);
-  auto server_connection_factory =
-      MakeRefCounted<StrictMock<MockServerConnectionFactory>>();
+  auto owned_frame_transport = MakeOrphanable<MockFrameTransport>();
+  auto* frame_transport = owned_frame_transport.get();
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
   EXPECT_CALL(*call_destination, Orphaned()).Times(1);
   auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
-      channel_args, std::move(control_endpoint.promise_endpoint),
-      MakeConfig(channel_args, std::move(data_endpoint.promise_endpoint)),
-      server_connection_factory);
-  const auto server_initial_metadata =
-      EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
-  const auto server_trailing_metadata =
-      EncodeProto<chaotic_good_frame::ServerMetadata>("status: 0");
-  const auto client_initial_metadata =
-      EncodeProto<chaotic_good_frame::ClientMetadata>(
-          "path: '/demo.Service/Step'");
-  // Once we set the acceptor, expect to read some frames.
-  // We'll return a new request with a payload of "12345678".
-  control_endpoint.ExpectRead(
-      {SerializedFrameHeader(FrameType::kClientInitialMetadata, 0, 1,
-                             client_initial_metadata.length()),
-       client_initial_metadata.Copy(),
-       SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
-       EventEngineSlice::FromCopiedString("12345678"),
-       SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0)},
-      event_engine().get());
-  // Once that's read we'll create a new call
+      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1),
+      FlowControlConfig{false});
   StrictMock<MockFunction<void()>> on_done;
-  auto control_address =
-      grpc_event_engine::experimental::URIToResolvedAddress("ipv4:1.2.3.4:5678")
-          .value();
-  EXPECT_CALL(*control_endpoint.endpoint, GetPeerAddress)
-      .WillRepeatedly(
-          [&control_address]() -> const grpc_event_engine::experimental::
-                                   EventEngine::ResolvedAddress& {
-                                     return control_address;
-                                   });
   EXPECT_CALL(*call_destination, StartCall(_))
       .WillOnce(WithArgs<0>([&on_done](
                                 UnstartedCallHandler unstarted_call_handler) {
@@ -192,25 +161,21 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
               });
         });
       }));
-  transport->SetCallDestination(call_destination);
+  transport->SetCallDestination(std::move(call_destination));
+  frame_transport->ExpectWrite(
+      MakeProtoFrame<ServerInitialMetadataFrame>(1, "message: \"hello\""));
+  frame_transport->ExpectWrite(MakeMessageFrame(1, "87654321"));
+  frame_transport->ExpectWrite(
+      MakeProtoFrame<ServerTrailingMetadataFrame>(1, "status: 0"));
   EXPECT_CALL(on_done, Call());
-  EXPECT_CALL(*control_endpoint.endpoint, Read)
-      .InSequence(control_endpoint.read_sequence)
-      .WillOnce(Return(false));
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kServerInitialMetadata, 0, 1,
-                             server_initial_metadata.length()),
-       server_initial_metadata.Copy(),
-       SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
-       EventEngineSlice::FromCopiedString("87654321"),
-       SerializedFrameHeader(FrameType::kServerTrailingMetadata, 0, 1,
-                             server_trailing_metadata.length()),
-       server_trailing_metadata.Copy()},
-      nullptr);
+  frame_transport->Read(MakeProtoFrame<ClientInitialMetadataFrame>(
+      1, "path: '/demo.Service/Step'"));
+  frame_transport->Read(MakeMessageFrame(1, "12345678"));
+  frame_transport->Read(ClientEndOfStream(1));
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
-  ::testing::Mock::VerifyAndClearExpectations(control_endpoint.endpoint);
-  ::testing::Mock::VerifyAndClearExpectations(data_endpoint.endpoint);
+  transport.reset();
+  event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
 
