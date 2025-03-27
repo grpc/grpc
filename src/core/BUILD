@@ -5981,7 +5981,6 @@ grpc_cc_library(
         "default_event_engine",
         "down_cast",
         "error",
-        "init_internally",
         "iomgr_fwd",
         "metadata_batch",
         "pollset_set",
