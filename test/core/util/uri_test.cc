@@ -280,7 +280,7 @@ TEST(URITest, UserInfoNoHostPort) {
                          {}, "");
   EXPECT_EQ(uri.status(),
             absl::InvalidArgumentError(
-                "if user_info is present, host_port must exists"));
+                "if user_info is present, host_port must be present"));
 }
 
 TEST(URITest, NoAuthority) {
@@ -432,10 +432,6 @@ TEST(URITest, ToStringPercentEncoding) {
       "-.+~!$&'()*+,;=:[]"
       // Host-Port escaped chars.
       "%/?#",
-      // "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-      // "-.+~!$&'()*+,;=:[]@"
-      // // Authority escaped chars.
-      // "%/?#",
       // Path allowed chars.
       "/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
       "-._~!$&'()*+,;=:@"
