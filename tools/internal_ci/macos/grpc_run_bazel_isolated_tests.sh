@@ -21,6 +21,7 @@ source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
+source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 ./tools/run_tests/start_port_server.py
 
 # BUILD ONLY TEST!
