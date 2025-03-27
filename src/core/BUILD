@@ -3094,12 +3094,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "stats_data",
-    srcs = [
-        "telemetry/stats_data.cc",
-    ],
-    hdrs = [
-        "telemetry/stats_data.h",
-    ],
+    srcs = ["telemetry/stats_data.cc"],
+    hdrs = ["telemetry/stats_data.h"],
     external_deps = ["absl/strings"],
     deps = [
         "histogram_view",
