@@ -22,7 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/str_cat.h"
-#include "src/core/util/crash.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
 
 namespace grpc_core {
@@ -40,7 +40,14 @@ void ResetDNSResolver(std::shared_ptr<DNSResolver> resolver) {
   *g_dns_resolver = std::move(resolver);
 }
 
-std::shared_ptr<DNSResolver> GetDNSResolver() { return *g_dns_resolver; }
+std::shared_ptr<DNSResolver> GetDNSResolver() {
+  if (IsEventEngineDnsEnabled() && IsEventEngineDnsNonClientChannelEnabled()) {
+    LOG(ERROR) << "The legacy iomgr DNS resolver is disabled. Please use "
+                  "EventEngine's DNSResolver instead.";
+    return nullptr;
+  }
+  return *g_dns_resolver;
+}
 
 bool operator==(const DNSResolver::LookupTaskHandle& lhs,
                 const DNSResolver::LookupTaskHandle& rhs) {
