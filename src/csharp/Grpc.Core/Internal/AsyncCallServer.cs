@@ -60,12 +60,6 @@ namespace Grpc.Core.Internal
             InitializeInternal(call);
         }
 
-        protected override void OnAfterReleaseResourcesUnlocked()
-        {
-            cancellationTokenSource.Dispose();
-            base.OnAfterReleaseResourcesUnlocked();
-        }
-
         /// <summary>
         /// Starts a server side call.
         /// </summary>
@@ -237,6 +231,7 @@ namespace Grpc.Core.Internal
             if (cancelled)
             {
                 cancellationTokenSource.Cancel();
+                cancellationTokenSource.Dispose();
             }
 
             finishedServersideTcs.SetResult(null);
