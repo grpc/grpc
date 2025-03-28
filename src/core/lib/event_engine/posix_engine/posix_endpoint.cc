@@ -96,16 +96,17 @@ namespace {
 
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
-Int64Result TcpSend(EventEnginePosixInterface* posix_interface,
-                    const FileDescriptor& fd, const struct msghdr* msg,
-                    int* saved_errno, int additional_flags = 0) {
+PosixErrorOr<int64_t> TcpSend(EventEnginePosixInterface* posix_interface,
+                              const FileDescriptor& fd,
+                              const struct msghdr* msg, int* saved_errno,
+                              int additional_flags = 0) {
   GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
-  Int64Result send_result;
+  PosixErrorOr<int64_t> send_result;
   do {
     grpc_core::global_stats().IncrementSyscallWrite();
     send_result =
         posix_interface->SendMsg(fd, msg, SENDMSG_FLAGS | additional_flags);
-    *saved_errno = send_result.errno_value();
+    *saved_errno = send_result.IsPosixError() ? send_result.code() : 0;
   } while (send_result.IsPosixError(EINTR));
   return send_result;
 }
@@ -212,12 +213,11 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 }
 #endif  // GRPC_LINUX_ERRQUEUE
 
-absl::Status PosixOSError(const Int64Result& error_no,
+absl::Status PosixOSError(const PosixErrorOr<int64_t>& error_no,
                           absl::string_view call_name) {
-  if (error_no.kind() == OperationResultKind::kError) {
-    return absl::UnknownError(absl::StrCat(
-        call_name, ": ", grpc_core::StrError(error_no.errno_value()), " (",
-        error_no.errno_value(), ")"));
+  if (error_no.IsPosixError()) {
+    return absl::UnknownError(absl::StrCat(call_name, ": ", error_no.StrError(),
+                                           " (", error_no.code(), ")"));
   } else {
     return absl::UnknownError(
         absl::StrCat(call_name, ": Wrong file descriptor generation"));
@@ -337,7 +337,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     grpc_core::global_stats().IncrementTcpReadOffer(incoming_buffer_->Length());
     grpc_core::global_stats().IncrementTcpReadOfferIovSize(
         incoming_buffer_->Count());
-    Int64Result res;
+    PosixErrorOr<int64_t> res;
     EventEnginePosixInterface& posix_interface = poller_->posix_interface();
     do {
       grpc_core::global_stats().IncrementSyscallRead();
@@ -364,7 +364,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     if (read_bytes <= 0) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
-      if (res.kind() == OperationResultKind::kWrongGeneration) {
+      if (res.IsWrongGenerationError()) {
         status = TcpAnnotateError(
             absl::InternalError("Descriptor was opened before fork"));
       } else if (read_bytes == 0) {
@@ -528,7 +528,7 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   if (result.ok()) {
     set_rcvlowat_ = *result;
   } else {
-    LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result.status();
+    LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result.StrError();
   }
 }
 
@@ -732,7 +732,7 @@ bool PosixEndpointImpl::ProcessErrors() {
     struct cmsghdr align;
   } aligned_buf;
   msg.msg_control = aligned_buf.rbuf;
-  Int64Result r;
+  PosixErrorOr<int64_t> r;
   EventEnginePosixInterface& posix_interface = poller_->posix_interface();
   while (true) {
     msg.msg_controllen = sizeof(aligned_buf.rbuf);
@@ -869,7 +869,7 @@ void PosixEndpointImpl::HandleError(absl::Status status) {
 
 bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
                                             size_t sending_length,
-                                            Int64Result* sent_length,
+                                            PosixErrorOr<int64_t>* sent_length,
                                             int* saved_errno,
                                             int additional_flags) {
   auto& posix_interface = poller_->posix_interface();
@@ -898,7 +898,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
 
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
   grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
-  Int64Result length =
+  PosixErrorOr<int64_t> length =
       TcpSend(&posix_interface, fd_, msg, saved_errno, additional_flags);
   if (!length.ok()) {
     return false;
@@ -926,11 +926,10 @@ void PosixEndpointImpl::HandleError(absl::Status /*status*/) {
 
 void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {}
 
-bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* /*msg*/,
-                                            size_t /*sending_length*/,
-                                            Int64Result* /*sent_length*/,
-                                            int* /*saved_errno*/,
-                                            int /*additional_flags*/) {
+bool PosixEndpointImpl::WriteWithTimestamps(
+    struct msghdr* /*msg*/, size_t /*sending_length*/,
+    PosixErrorOr<int64_t>* /*sent_length*/, int* /*saved_errno*/,
+    int /*additional_flags*/) {
   grpc_core::Crash("Write with timestamps not supported for this platform");
 }
 #endif  // GRPC_LINUX_ERRQUEUE
@@ -969,7 +968,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
   // being populated in most cases.
   iovec iov[MAX_WRITE_IOVEC];
   while (true) {
-    Int64Result send_status;
+    PosixErrorOr<int64_t> send_status;
     sending_length = 0;
     iov_size = record->PopulateIovs(&unwind_slice_idx, &unwind_byte_idx,
                                     &sending_length, iov);
@@ -1081,7 +1080,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
   size_t outgoing_slice_idx = 0;
 
   while (true) {
-    Int64Result send_result;
+    PosixErrorOr<int64_t> send_result;
     sending_length = 0;
     unwind_slice_idx = outgoing_slice_idx;
     unwind_byte_idx = outgoing_byte_idx_;
@@ -1365,7 +1364,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   if (result.ok()) {
     inq_capable_ = true;
   } else {
-    VLOG(2) << "cannot set inq fd=" << fd_ << " error=" << result.status();
+    VLOG(2) << "cannot set inq fd=" << fd_ << " error=" << result.StrError();
     inq_capable_ = false;
   }
 #else

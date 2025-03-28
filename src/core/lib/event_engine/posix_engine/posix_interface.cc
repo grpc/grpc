@@ -708,27 +708,27 @@ IF_POSIX_SOCKET(PosixResult EventEnginePosixInterface::GetSockOpt(
                   });
                 })
 
-IF_POSIX_SOCKET(
-    Int64Result EventEnginePosixInterface::SetSockOpt(const FileDescriptor& fd,
-                                                      int level, int optname,
-                                                      uint32_t optval),
-    {
-      return RunIfCorrectGeneration(
-          fd,
-          [&](int fd) {
-            if (setsockopt(fd, level, optname, &optval, sizeof(optval)) < 0) {
-              return Int64Result(OperationResultKind::kError, errno, optval);
-            }
-            return Int64Result(optval);
-          },
-          Int64Result::WrongGeneration());
-    })
+IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::SetSockOpt(
+                    const FileDescriptor& fd, int level, int optname,
+                    uint32_t optval),
+                {
+                  return RunIfCorrectGeneration(
+                      fd,
+                      [&](int fd) {
+                        if (setsockopt(fd, level, optname, &optval,
+                                       sizeof(optval)) < 0) {
+                          return PosixErrorOr<int64_t>::Error(errno);
+                        }
+                        return PosixErrorOr<int64_t>(optval);
+                      },
+                      PosixErrorOr<int64_t>::WrongGeneration());
+                })
 
-IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::Read(
+IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::Read(
                     const FileDescriptor& fd, absl::Span<char> buf),
                 { return Int64Wrap(fd, read, buf.data(), buf.size()); })
 
-IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::Write(
+IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::Write(
                     const FileDescriptor& fd, absl::Span<char> buf),
                 { return Int64Wrap(fd, write, buf.data(), buf.size()); })
 
@@ -751,7 +751,7 @@ PosixResult EventEnginePosixInterface::EventFdWrite(const FileDescriptor& fd) {
 #endif  // GRPC_LINUX_EVENTFD
 }
 
-IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::RecvFrom(
+IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::RecvFrom(
                     const FileDescriptor& fd, void* buf, size_t len, int flags,
                     struct sockaddr* src_addr, socklen_t* addrlen),
                 {
@@ -759,19 +759,18 @@ IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::RecvFrom(
                                    addrlen);
                 })
 
-IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::RecvMsg(
+IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::RecvMsg(
                     const FileDescriptor& fd, struct msghdr* message,
                     int flags),
                 { return Int64Wrap(fd, recvmsg, message, flags); })
 
-IF_POSIX_SOCKET(Int64Result EventEnginePosixInterface::SendMsg(
+IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::SendMsg(
                     const FileDescriptor& fd, const struct msghdr* message,
                     int flags),
                 { return Int64Wrap(fd, sendmsg, message, flags); })
 
-Int64Result EventEnginePosixInterface::WriteV(const FileDescriptor& fd,
-                                              const struct iovec* iov,
-                                              int iovcnt) {
+PosixErrorOr<int64_t> EventEnginePosixInterface::WriteV(
+    const FileDescriptor& fd, const struct iovec* iov, int iovcnt) {
 #if defined(GRPC_POSIX_SOCKET) && GRPC_ARES == 1 && \
     defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   return Int64Wrap(fd, writev, iov, iovcnt);

@@ -23,32 +23,77 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine::experimental {
 
-// Result of the call that returns error or ssize_t. Smaller integer types
-// will also be packed here.
-class Int64Result final : public PosixResult {
+template <typename T>
+class PosixErrorOr {
  public:
-  static Int64Result WrongGeneration() {
-    return Int64Result(OperationResultKind::kWrongGeneration, 0, -1);
+  PosixErrorOr() = default;
+  PosixErrorOr(const PosixErrorOr& other) = default;
+  PosixErrorOr(PosixErrorOr&& other) = default;
+  PosixErrorOr& operator=(const PosixErrorOr& other) = default;
+  PosixErrorOr& operator=(PosixErrorOr&& other) = default;
+
+  static PosixErrorOr Error(int code) { return PosixErrorOr({code}); }
+
+  static PosixErrorOr WrongGeneration() {
+    return PosixErrorOr(WrongGenerationError());
   }
 
-  Int64Result() = default;
-  explicit Int64Result(int64_t result)
-      : PosixResult(OperationResultKind::kSuccess, 0), result_(result) {}
-  Int64Result(OperationResultKind kind, int errno_value, int64_t result)
-      : PosixResult(kind, errno_value), result_(result) {}
+  explicit PosixErrorOr(T value) : value_(std::move(value)) {}
 
-  int64_t operator*() const { return result_; }
+  bool ok() const { return std::holds_alternative<T>(value_); }
+
+  int code() const {
+    const PosixError* error = std::get_if<PosixError>(&value_);
+    CHECK_NE(error, nullptr);
+    return error->code;
+  }
+
+  bool IsPosixError() const {
+    return std::holds_alternative<PosixError>(value_);
+  }
+
+  bool IsPosixError(int code) const {
+    const PosixError* error = std::get_if<PosixError>(&value_);
+    return error != nullptr && code == error->code;
+  }
+
+  bool IsWrongGenerationError() const {
+    return std::holds_alternative<WrongGenerationError>(value_);
+  }
+
+  T* operator->() { return &std::get<T>(value_); }
+  T& operator*() { return std::get<T>(value_); }
+
+  std::string StrError() const {
+    if (ok()) {
+      return "ok";
+    } else if (IsWrongGenerationError()) {
+      return "wrong generation";
+    } else {
+      return grpc_core::StrError(code());
+    }
+  }
 
  private:
-  int64_t result_ = 0;
+  struct PosixError {
+    int code;
+  };
+  struct WrongGenerationError {};
+
+  explicit PosixErrorOr(std::variant<PosixError, WrongGenerationError, T> error)
+      : value_(std::move(error)) {}
+
+  std::variant<PosixError, WrongGenerationError, T> value_;
 };
 
 class EventEnginePosixInterface {
@@ -139,20 +184,21 @@ class EventEnginePosixInterface {
   PosixResult GetSockOpt(const FileDescriptor& fd, int level, int optname,
                          void* optval, void* optlen);
   PosixResult Ioctl(const FileDescriptor& fd, int op, void* arg);
-  Int64Result RecvFrom(const FileDescriptor& fd, void* buf, size_t len,
-                       int flags, struct sockaddr* src_addr,
-                       socklen_t* addrlen);
-  Int64Result Read(const FileDescriptor& fd, absl::Span<char> buffer);
-  Int64Result RecvMsg(const FileDescriptor& fd, struct msghdr* message,
-                      int flags);
-  Int64Result SetSockOpt(const FileDescriptor& fd, int level, int optname,
-                         uint32_t optval);
-  Int64Result SendMsg(const FileDescriptor& fd, const struct msghdr* message,
-                      int flags);
+  PosixErrorOr<int64_t> RecvFrom(const FileDescriptor& fd, void* buf,
+                                 size_t len, int flags,
+                                 struct sockaddr* src_addr, socklen_t* addrlen);
+  PosixErrorOr<int64_t> Read(const FileDescriptor& fd, absl::Span<char> buffer);
+  PosixErrorOr<int64_t> RecvMsg(const FileDescriptor& fd,
+                                struct msghdr* message, int flags);
+  PosixErrorOr<int64_t> SetSockOpt(const FileDescriptor& fd, int level,
+                                   int optname, uint32_t optval);
+  PosixErrorOr<int64_t> SendMsg(const FileDescriptor& fd,
+                                const struct msghdr* message, int flags);
   PosixResult Shutdown(const FileDescriptor& fd, int how);
-  Int64Result Write(const FileDescriptor& fd, absl::Span<char> buffer);
-  Int64Result WriteV(const FileDescriptor& fd, const struct iovec* iov,
-                     int iovcnt);
+  PosixErrorOr<int64_t> Write(const FileDescriptor& fd,
+                              absl::Span<char> buffer);
+  PosixErrorOr<int64_t> WriteV(const FileDescriptor& fd,
+                               const struct iovec* iov, int iovcnt);
 
   // Epoll
   PosixResult EpollCtlAdd(const FileDescriptor& epfd, bool writable,
@@ -234,32 +280,31 @@ class EventEnginePosixInterface {
   }
 
   template <typename... Args>
-  Int64Result PosixResultWrap(const FileDescriptor& fd, int (*fn)(int, Args...),
-                              Args&&... args) const {
+  PosixErrorOr<int64_t> PosixResultWrap(const FileDescriptor& fd,
+                                        int (*fn)(int, Args...),
+                                        Args&&... args) const {
     return RunIfCorrectGeneration(
         fd,
         [&](int raw) {
           int64_t result = std::invoke(fn, raw, std::forward<Args>(args)...);
-          return result < 0
-                     ? Int64Result(OperationResultKind::kError, errno, result)
-                     : Int64Result(result);
+          return result < 0 ? PosixErrorOr<int64_t>::Error(errno)
+                            : PosixErrorOr<int64_t>(result);
         },
-        Int64Result::WrongGeneration());
+        PosixErrorOr<int64_t>::WrongGeneration());
   }
 
   // Templated Fn to make it easier to compile on all platforms.
   template <typename Fn, typename... Args>
-  Int64Result Int64Wrap(const FileDescriptor& fd, const Fn& fn,
-                        Args&&... args) const {
+  PosixErrorOr<int64_t> Int64Wrap(const FileDescriptor& fd, const Fn& fn,
+                                  Args&&... args) const {
     return RunIfCorrectGeneration(
         fd,
         [&](int raw) {
           auto result = std::invoke(fn, raw, std::forward<Args>(args)...);
-          return result < 0
-                     ? Int64Result(OperationResultKind::kError, errno, result)
-                     : Int64Result(result);
+          return result < 0 ? PosixErrorOr<int64_t>::Error(errno)
+                            : PosixErrorOr<int64_t>(result);
         },
-        Int64Result::WrongGeneration());
+        PosixErrorOr<int64_t>::WrongGeneration());
   }
 
   bool IsCorrectGeneration(const FileDescriptor& fd) const {

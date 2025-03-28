@@ -48,16 +48,23 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
   std::array<char, 128> buf;
   for (;;) {
     auto r = fds_->Read(ReadFd(), absl::Span<char>(buf));
-    if (*r > 0) continue;
-    if (*r == 0) return absl::OkStatus();
-    switch (r.errno_value()) {
-      case EAGAIN:
-        return absl::OkStatus();
-      case EINTR:
-        continue;
-      default:
-        return absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("read: ", grpc_core::StrError(errno)));
+    if (r.ok()) {
+      if (*r > 0) continue;
+      if (*r == 0) return absl::OkStatus();
+    } else if (r.IsWrongGenerationError()) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrCat("read: wrong fd generation"));
+    } else {
+      switch (r.code()) {
+        case EAGAIN:
+          return absl::OkStatus();
+        case EINTR:
+          continue;
+        default:
+          return absl::Status(
+              absl::StatusCode::kInternal,
+              absl::StrCat("read: ", grpc_core::StrError(errno)));
+      }
     }
   }
 }
