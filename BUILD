@@ -2797,7 +2797,8 @@ grpc_cc_library(
         "include/grpcpp/ext/otel_plugin.h",
     ],
     tags = [
-        # uses OSS specific libraries
+        # This can be removed once we can add top-level BUILD file targets without them being
+        # included in Core Components.
         "grpc:broken-internally",
     ],
     deps = [
