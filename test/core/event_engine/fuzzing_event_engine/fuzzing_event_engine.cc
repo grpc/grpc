@@ -620,7 +620,7 @@ class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
   }
 
   void LookupSRV(LookupSRVCallback on_resolve,
-                 absl::string_view name) override {
+                 absl::string_view /* name */) override {
     engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
       on_resolve(absl::UnimplementedError(
           "The Fuzzing DNS resolver does not support looking up SRV records"));
@@ -628,7 +628,7 @@ class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
   };
 
   void LookupTXT(LookupTXTCallback on_resolve,
-                 absl::string_view name) override {
+                 absl::string_view /* name */) override {
     // Not supported
     engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
       on_resolve(absl::UnimplementedError(
@@ -639,19 +639,19 @@ class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
   // Blocking resolution
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
   LookupHostnameBlocking(absl::string_view name,
-                         absl::string_view default_port) override {
+                         absl::string_view /* default_port */) override {
     absl::SleepFor(absl::Seconds(1));
     return GetHostnameResponse(name);
   }
 
   absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-  LookupSRVBlocking(absl::string_view name) override {
+  LookupSRVBlocking(absl::string_view /* name */) override {
     return absl::UnimplementedError(
         "The Fuzing DNS resolver does not support looking up TXT records");
   }
 
   absl::StatusOr<std::vector<std::string>> LookupTXTBlocking(
-      absl::string_view name) override {
+      absl::string_view /* name */) override {
     return absl::UnimplementedError(
         "The Fuzing DNS resolver does not support looking up TXT records");
   }
