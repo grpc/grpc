@@ -621,7 +621,7 @@ class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
 
   void LookupSRV(LookupSRVCallback on_resolve,
                  absl::string_view name) override {
-    engine_->Run([on_resolve = std::move(on_resolve)] mutable {
+    engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
       on_resolve(absl::UnimplementedError(
           "The Fuzzing DNS resolver does not support looking up SRV records"));
     });
@@ -630,7 +630,7 @@ class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
   void LookupTXT(LookupTXTCallback on_resolve,
                  absl::string_view name) override {
     // Not supported
-    engine_->Run([on_resolve = std::move(on_resolve)] mutable {
+    engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
       on_resolve(absl::UnimplementedError(
           "The Fuzing DNS resolver does not support looking up TXT records"));
     });
