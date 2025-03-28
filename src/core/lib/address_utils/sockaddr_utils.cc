@@ -73,7 +73,7 @@ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
     path = unix_addr->sun_path;
   }
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
-      std::move(scheme), /*authority=*/"", std::move(path),
+      std::move(scheme), /*user_info=*/"", /*host_port=*/"", std::move(path),
       /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
@@ -318,9 +318,9 @@ absl::StatusOr<std::string> grpc_sockaddr_to_uri(
 
   auto path = grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
   if (!path.ok()) return path;
-  absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Create(scheme, /*authority=*/"", std::move(path.value()),
-                             /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
+      scheme, /*user_info=*/"", /*host_port=*/"", std::move(path.value()),
+      /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
 }
