@@ -68,6 +68,7 @@ namespace Grpc.Core
             this.options = CreateOptionsDictionary(options);
             EnsureUserAgentChannelOption(this.options);
             this.environment = GrpcEnvironment.AddRef();
+            this.ShutdownToken = this.shutdownTokenSource.Token;
 
             try
             {
@@ -189,13 +190,7 @@ namespace Grpc.Core
         /// <summary>
         /// Returns a token that gets cancelled once <c>ShutdownAsync</c> is invoked.
         /// </summary>
-        public CancellationToken ShutdownToken
-        {
-            get
-            {
-                return this.shutdownTokenSource.Token;
-            }
-        }
+        public CancellationToken ShutdownToken { get; private set; }
 
         /// <summary>
         /// Allows explicitly requesting channel to connect without starting an RPC.
@@ -230,6 +225,7 @@ namespace Grpc.Core
             GrpcEnvironment.UnregisterChannel(this);
 
             shutdownTokenSource.Cancel();
+            shutdownTokenSource.Dispose();
 
             var activeCallCount = activeCallCounter.Count;
             if (activeCallCount > 0)
