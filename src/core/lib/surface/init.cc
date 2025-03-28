@@ -128,6 +128,10 @@ void grpc_init(void) {
       auto status = AresInit();
       if (!status.ok()) {
         VLOG(2) << "AresInit failed: " << status.message();
+      } else if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+        GRPC_TRACE_LOG(event_engine, INFO)
+            << "iomgr DNS Ares resolver is not being initialized since the "
+               "event_engine_dns_non_client_channel experiment is enabled.";
       } else {
         // TODO(yijiem): remove this once we remove the iomgr dns system.
         grpc_resolver_dns_ares_reset_dns_resolver();
