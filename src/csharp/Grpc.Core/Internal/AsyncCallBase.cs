@@ -192,9 +192,9 @@ namespace Grpc.Core.Internal
                 bool noMoreSendCompletions = streamingWriteTcs == null && (halfcloseRequested || cancelRequested || finished);
 
                 // Have reads completed (normally or with error)?
-                // Not sure if the check for "streamingReadTcs == null" is necessary (indicating no pending reads) if an error status
-                // has already been received since I don't think a new read would be started.
-                bool readingFinished = readingDone || (IsFinishedWithNonOkStatusClientOnly && streamingReadTcs == null);
+                // We must not check for "streamingReadTcs == null" as in some error cases (like circuit breakers)
+                // as they might lead to early-exit in ReadMessageInternalAsync which is using streamingReadTcs.
+                bool readingFinished = readingDone || IsFinishedWithNonOkStatusClientOnly;
 
                 if (noMoreSendCompletions && readingFinished && finished && !receiveResponseHeadersPending)
                 {
@@ -365,7 +365,7 @@ namespace Grpc.Core.Internal
         protected void HandleReadFinished(bool success, IBufferReader receivedMessageReader)
         {
             // if success == false, the message reader will report null payload. It that case we will
-            // treat this completion as the last read an rely on C core to handle the failed
+            // treat this completion as the last read and rely on C core to handle the failed
             // read (e.g. deliver approriate statusCode on the clientside).
 
             TRead msg = default(TRead);

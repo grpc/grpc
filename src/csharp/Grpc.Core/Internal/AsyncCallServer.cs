@@ -40,6 +40,7 @@ namespace Grpc.Core.Internal
         public AsyncCallServer(Action<TResponse, SerializationContext> serializer, Func<DeserializationContext, TRequest> deserializer, Server server) : base(serializer, deserializer)
         {
             this.server = GrpcPreconditions.CheckNotNull(server);
+            this.CancellationToken = cancellationTokenSource.Token;
         }
 
         public void Initialize(CallSafeHandle call, CompletionQueueSafeHandle completionQueue)
@@ -161,13 +162,7 @@ namespace Grpc.Core.Internal
         /// Gets cancellation token that gets cancelled once close completion
         /// is received and the cancelled flag is set.
         /// </summary>
-        public CancellationToken CancellationToken
-        {
-            get
-            {
-                return cancellationTokenSource.Token;
-            }
-        }
+        public CancellationToken CancellationToken { get; private set; }
 
         public string Peer
         {
@@ -236,6 +231,7 @@ namespace Grpc.Core.Internal
             if (cancelled)
             {
                 cancellationTokenSource.Cancel();
+                cancellationTokenSource.Dispose();
             }
 
             finishedServersideTcs.SetResult(null);
