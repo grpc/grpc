@@ -401,7 +401,7 @@ TEST_F(PollerForkTest, ListenerInChild) {
   ASSERT_FALSE(endpoint->Write(write_status.Setter(), &write_buffer, nullptr));
   EXPECT_THAT(read_status.AwaitStatus(), StatusIs(absl::StatusCode::kInternal));
   EXPECT_THAT(write_status.AwaitStatus(), StatusIs(absl::StatusCode::kUnknown));
-  }
+}
 
 class TestScheduler {
  public:

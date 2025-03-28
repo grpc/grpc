@@ -17,7 +17,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/log/log.h"
-#include "posix_interface.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
