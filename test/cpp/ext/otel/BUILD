@@ -36,6 +36,8 @@ grpc_cc_library(
         "otel/sdk/src/metrics",
     ],
     tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     deps = [
         "//:grpc++",
