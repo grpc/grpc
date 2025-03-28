@@ -196,6 +196,30 @@ class HistogramCollector_1800000_40 {
  private:
   std::atomic<uint64_t> buckets_[40]{};
 };
+class HistogramCollector_16777216_50;
+class Histogram_16777216_50 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 50; }
+  friend Histogram_16777216_50 operator-(const Histogram_16777216_50& left,
+                                         const Histogram_16777216_50& right);
+
+ private:
+  friend class HistogramCollector_16777216_50;
+  uint64_t buckets_[50]{};
+};
+class HistogramCollector_16777216_50 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_16777216_50::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void Collect(Histogram_16777216_50* result) const;
+
+ private:
+  std::atomic<uint64_t> buckets_[50]{};
+};
 struct GlobalStats {
   enum class Counter {
     kClientCallsCreated,
@@ -341,18 +365,18 @@ struct GlobalStats {
   Histogram_65536_26 http2_metadata_size;
   Histogram_1800000_40 http2_hpack_entry_lifetime;
   Histogram_16777216_20 http2_header_table_size;
-  Histogram_16777216_20 http2_initial_window_size;
+  Histogram_16777216_50 http2_initial_window_size;
   Histogram_16777216_20 http2_max_concurrent_streams;
-  Histogram_16777216_20 http2_max_frame_size;
+  Histogram_16777216_50 http2_max_frame_size;
   Histogram_16777216_20 http2_max_header_list_size;
   Histogram_16777216_20 http2_preferred_receive_crypto_message_size;
   Histogram_16777216_20 http2_stream_remote_window_update;
   Histogram_16777216_20 http2_transport_remote_window_update;
   Histogram_100000_20 http2_transport_window_update_period;
   Histogram_100000_20 http2_stream_window_update_period;
-  Histogram_16777216_20 http2_write_target_size;
-  Histogram_16777216_20 http2_write_data_frame_size;
-  Histogram_16777216_20 http2_read_data_frame_size;
+  Histogram_16777216_50 http2_write_target_size;
+  Histogram_16777216_50 http2_write_data_frame_size;
+  Histogram_16777216_50 http2_read_data_frame_size;
   Histogram_10000_20 wrr_subchannel_list_size;
   Histogram_10000_20 wrr_subchannel_ready_size;
   Histogram_100000_20 work_serializer_run_time_ms;
@@ -683,18 +707,18 @@ class GlobalStatsCollector {
     HistogramCollector_65536_26 http2_metadata_size;
     HistogramCollector_1800000_40 http2_hpack_entry_lifetime;
     HistogramCollector_16777216_20 http2_header_table_size;
-    HistogramCollector_16777216_20 http2_initial_window_size;
+    HistogramCollector_16777216_50 http2_initial_window_size;
     HistogramCollector_16777216_20 http2_max_concurrent_streams;
-    HistogramCollector_16777216_20 http2_max_frame_size;
+    HistogramCollector_16777216_50 http2_max_frame_size;
     HistogramCollector_16777216_20 http2_max_header_list_size;
     HistogramCollector_16777216_20 http2_preferred_receive_crypto_message_size;
     HistogramCollector_16777216_20 http2_stream_remote_window_update;
     HistogramCollector_16777216_20 http2_transport_remote_window_update;
     HistogramCollector_100000_20 http2_transport_window_update_period;
     HistogramCollector_100000_20 http2_stream_window_update_period;
-    HistogramCollector_16777216_20 http2_write_target_size;
-    HistogramCollector_16777216_20 http2_write_data_frame_size;
-    HistogramCollector_16777216_20 http2_read_data_frame_size;
+    HistogramCollector_16777216_50 http2_write_target_size;
+    HistogramCollector_16777216_50 http2_write_data_frame_size;
+    HistogramCollector_16777216_50 http2_read_data_frame_size;
     HistogramCollector_10000_20 wrr_subchannel_list_size;
     HistogramCollector_10000_20 wrr_subchannel_ready_size;
     HistogramCollector_100000_20 work_serializer_run_time_ms;
