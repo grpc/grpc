@@ -115,8 +115,8 @@ std::list<Connection> CreateConnectedEndpoints(
   for (int i = 0; i < num_connections; ++i) {
     int client_fd = ConnectToServerOrDie(*resolved_addr);
     EventHandle* handle =
-        poller.CreateHandle(poller.GetFileDescriptors().Adopt(client_fd),
-                            "test", poller.CanTrackErrors());
+        poller.CreateHandle(poller.posix_interface().Adopt(client_fd), "test",
+                            poller.CanTrackErrors());
     EXPECT_NE(handle, nullptr);
     server_signal->WaitForNotification();
     EXPECT_NE(server_endpoint, nullptr);

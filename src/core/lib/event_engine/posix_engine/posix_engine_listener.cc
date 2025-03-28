@@ -80,13 +80,13 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
   UnlinkIfUnixDomainSocket(addr);
 
-  EventEnginePosixInterface& fds = poller_->GetFileDescriptors();
+  EventEnginePosixInterface& posix_interface = poller_->posix_interface();
 
   /// Check if this is a wildcard port, and if so, try to keep the port the same
   /// as some previously created listener socket.
   for (auto it = acceptors_.begin();
        requested_port == 0 && it != acceptors_.end(); it++) {
-    auto sockname_temp = fds.LocalAddress((*it)->Fd());
+    auto sockname_temp = posix_interface.LocalAddress((*it)->Fd());
     if (sockname_temp.ok()) {
       int used_port = ResolvedAddressGetPort(*sockname_temp);
       if (used_port > 0) {
@@ -102,14 +102,15 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   acceptors_.UpdateOnAppendCallback(std::move(on_bind_new_fd));
   if (used_port.has_value()) {
     requested_port = *used_port;
-    return ListenerContainerAddWildcardAddresses(&fds, acceptors_, options_,
-                                                 requested_port);
+    return ListenerContainerAddWildcardAddresses(&posix_interface, acceptors_,
+                                                 options_, requested_port);
   }
   if (ResolvedAddressToV4Mapped(res_addr, &addr6_v4mapped)) {
     res_addr = addr6_v4mapped;
   }
 
-  auto result = CreateAndPrepareListenerSocket(&fds, options_, res_addr);
+  auto result =
+      CreateAndPrepareListenerSocket(&posix_interface, options_, res_addr);
   GRPC_RETURN_IF_ERROR(result.status());
   acceptors_.Append(*result);
   return result->port;
@@ -134,10 +135,11 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
   for (;;) {
     EventEngine::ResolvedAddress addr;
     memset(const_cast<sockaddr*>(addr.address()), 0, addr.size());
-    auto& fds = handle_->Poller()->GetFileDescriptors();
+    auto& posix_interface = handle_->Poller()->posix_interface();
     // Note: If we ever decide to return this address to the user, remember to
     // strip off the ::ffff:0.0.0.0/96 prefix first.
-    FileDescriptorResult fd = fds.Accept4(handle_->WrappedFd(), addr, 1, 1);
+    FileDescriptorResult fd =
+        posix_interface.Accept4(handle_->WrappedFd(), addr, 1, 1);
     if (fd.kind() == OperationResultKind::kWrongGeneration) {
       LOG(ERROR) << "Closing acceptor. accept4 was called with fd from a wrong "
                     "generation";
@@ -151,14 +153,14 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
         case EINTR:
           continue;
         case EMFILE:
-          // When the process runs out of fds, accept4() returns EMFILE. When
-          // this happens, the connection is left in the accept queue until
-          // either a read event triggers the on_read callback, or time has
-          // passed and the accept should be re-tried regardless. This callback
-          // is not cancelled, so a spurious wakeup may occur even when there's
-          // nothing to accept. This is not a performant code path, but if an fd
-          // limit has been reached, the system is likely in an unhappy state
-          // regardless.
+          // When the process runs out of posix_interface, accept4() returns
+          // EMFILE. When this happens, the connection is left in the accept
+          // queue until either a read event triggers the on_read callback, or
+          // time has passed and the accept should be re-tried regardless. This
+          // callback is not cancelled, so a spurious wakeup may occur even when
+          // there's nothing to accept. This is not a performant code path, but
+          // if an fd limit has been reached, the system is likely in an unhappy
+          // state regardless.
           LOG_EVERY_N_SEC(ERROR, 1)
               << "File descriptor limit reached. Retrying.";
           handle_->NotifyOnRead(notify_on_accept_);
@@ -193,7 +195,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     // For UNIX sockets, the accept call might not fill up the member
     // sun_path of sockaddr_un, so explicitly call getpeername to get it.
     if (addr.address()->sa_family == AF_UNIX) {
-      auto peer_address = fds.PeerAddress(fd.fd());
+      auto peer_address = posix_interface.PeerAddress(fd.fd());
       if (!peer_address.ok()) {
         auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
         LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
@@ -202,15 +204,15 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
                    << (listener_addr_uri.ok() ? *listener_addr_uri
                                               : "<unknown>")
                    << ":" << socket_.port;
-        fds.Close(fd.fd());
+        posix_interface.Close(fd.fd());
         handle_->NotifyOnRead(notify_on_accept_);
         return;
       }
       addr = std::move(peer_address).value();
     }
 
-    (void)fds.SetSocketNoSigpipeIfPossible(fd.fd());
-    auto result = fds.ApplySocketMutatorInOptions(
+    (void)posix_interface.SetSocketNoSigpipeIfPossible(fd.fd());
+    auto result = posix_interface.ApplySocketMutatorInOptions(
         fd.fd(), GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
     if (!result.ok()) {
       LOG(ERROR) << "Closing acceptor. Failed to apply socket mutator: "
@@ -266,10 +268,10 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: Invalid peer socket: ", fd));
   }
-  auto& fds = poller_->GetFileDescriptors();
-  FileDescriptor wrapped = fds.Adopt(fd);
-  (void)fds.SetSocketNoSigpipeIfPossible(wrapped);
-  auto peer_name = poller_->GetFileDescriptors().PeerAddressString(wrapped);
+  auto& posix_interface = poller_->posix_interface();
+  FileDescriptor wrapped = posix_interface.Adopt(fd);
+  (void)posix_interface.SetSocketNoSigpipeIfPossible(wrapped);
+  auto peer_name = posix_interface.PeerAddressString(wrapped);
   if (!peer_name.ok()) {
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: peer not connected: ",

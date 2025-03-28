@@ -94,11 +94,11 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller {
   virtual std::string Name() = 0;
   virtual void AdvanceGeneration() = 0;
   virtual void ResetKickState() = 0;
-  EventEnginePosixInterface& GetFileDescriptors() { return file_descriptors_; }
+  EventEnginePosixInterface& posix_interface() { return posix_interface_; }
   ~PosixEventPoller() override = default;
 
  protected:
-  EventEnginePosixInterface file_descriptors_;
+  EventEnginePosixInterface posix_interface_;
 };
 
 }  // namespace grpc_event_engine::experimental

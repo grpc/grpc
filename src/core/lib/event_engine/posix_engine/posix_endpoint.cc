@@ -96,14 +96,15 @@ namespace {
 
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
-Int64Result TcpSend(EventEnginePosixInterface* fds, const FileDescriptor& fd,
-                    const struct msghdr* msg, int* saved_errno,
-                    int additional_flags = 0) {
+Int64Result TcpSend(EventEnginePosixInterface* posix_interface,
+                    const FileDescriptor& fd, const struct msghdr* msg,
+                    int* saved_errno, int additional_flags = 0) {
   GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
   Int64Result send_result;
   do {
     grpc_core::global_stats().IncrementSyscallWrite();
-    send_result = fds->SendMsg(fd, msg, SENDMSG_FLAGS | additional_flags);
+    send_result =
+        posix_interface->SendMsg(fd, msg, SENDMSG_FLAGS | additional_flags);
     *saved_errno = send_result.errno_value();
   } while (send_result.IsPosixError(EINTR));
   return send_result;
@@ -337,10 +338,10 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     grpc_core::global_stats().IncrementTcpReadOfferIovSize(
         incoming_buffer_->Count());
     Int64Result res;
-    EventEnginePosixInterface& fds = poller_->GetFileDescriptors();
+    EventEnginePosixInterface& posix_interface = poller_->posix_interface();
     do {
       grpc_core::global_stats().IncrementSyscallRead();
-      res = fds.RecvMsg(fd_, &msg, 0);
+      res = posix_interface.RecvMsg(fd_, &msg, 0);
     } while (res.IsPosixError(EINTR));
 
     if (res.IsPosixError(EAGAIN)) {
@@ -522,8 +523,8 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   // the socket before generating an interrupt for packet receive. If the call
   // succeeds, it returns the number of bytes (wait threshold) that was actually
   // set.
-  auto result = poller_->GetFileDescriptors().SetSockOpt(
-      fd_, SOL_SOCKET, SO_RCVLOWAT, remaining);
+  auto result = poller_->posix_interface().SetSockOpt(fd_, SOL_SOCKET,
+                                                      SO_RCVLOWAT, remaining);
   if (result.ok()) {
     set_rcvlowat_ = *result;
   } else {
@@ -732,11 +733,11 @@ bool PosixEndpointImpl::ProcessErrors() {
   } aligned_buf;
   msg.msg_control = aligned_buf.rbuf;
   Int64Result r;
-  EventEnginePosixInterface& fds = poller_->GetFileDescriptors();
+  EventEnginePosixInterface& posix_interface = poller_->posix_interface();
   while (true) {
     msg.msg_controllen = sizeof(aligned_buf.rbuf);
     do {
-      r = fds.RecvMsg(fd_, &msg, MSG_ERRQUEUE);
+      r = posix_interface.RecvMsg(fd_, &msg, MSG_ERRQUEUE);
     } while (r.IsPosixError(EINTR));
 
     if (r.IsPosixError(EAGAIN)) {
@@ -871,10 +872,11 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
                                             Int64Result* sent_length,
                                             int* saved_errno,
                                             int additional_flags) {
-  auto& fds = poller_->GetFileDescriptors();
+  auto& posix_interface = poller_->posix_interface();
   if (!socket_ts_enabled_) {
-    if (!fds.SetSockOpt(fd_, SOL_SOCKET, SO_TIMESTAMPING,
-                        kTimestampingSocketOptions)
+    if (!posix_interface
+             .SetSockOpt(fd_, SOL_SOCKET, SO_TIMESTAMPING,
+                         kTimestampingSocketOptions)
              .ok()) {
       return false;
     }
@@ -896,7 +898,8 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
 
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
   grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
-  Int64Result length = TcpSend(&fds, fd_, msg, saved_errno, additional_flags);
+  Int64Result length =
+      TcpSend(&posix_interface, fd_, msg, saved_errno, additional_flags);
   if (!length.ok()) {
     return false;
   }
@@ -904,7 +907,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   // Only save timestamps if all the bytes were taken by sendmsg.
   if (sending_length == static_cast<size_t>(*length)) {
     traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + *length),
-                                &poller_->GetFileDescriptors(), fd_,
+                                &poller_->posix_interface(), fd_,
                                 outgoing_buffer_arg_);
     outgoing_buffer_arg_ = nullptr;
   }
@@ -998,7 +1001,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
       msg.msg_controllen = 0;
       grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
-      send_status = TcpSend(&poller_->GetFileDescriptors(), fd_, &msg,
+      send_status = TcpSend(&poller_->posix_interface(), fd_, &msg,
                             &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp_zerocopy_send_ctx_->UpdateZeroCopyOptMemStateAfterSend(
@@ -1120,7 +1123,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
       send_result =
-          TcpSend(&poller_->GetFileDescriptors(), fd_, &msg, &saved_errno);
+          TcpSend(&poller_->posix_interface(), fd_, &msg, &saved_errno);
     }
 
     if (!send_result.ok()) {
@@ -1309,16 +1312,16 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       engine_(engine) {
   fd_ = handle_->WrappedFd();
   CHECK(options.resource_quota != nullptr);
-  auto& fds = poller_->GetFileDescriptors();
-  auto peer_addr_string = fds.PeerAddressString(fd_);
+  auto& posix_interface = poller_->posix_interface();
+  auto peer_addr_string = posix_interface.PeerAddressString(fd_);
   mem_quota_ = options.resource_quota->memory_quota();
   memory_owner_ = mem_quota_->CreateMemoryOwner();
   self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
-  auto local_address = fds.LocalAddress(fd_);
+  auto local_address = posix_interface.LocalAddress(fd_);
   if (local_address.ok()) {
     local_address_ = *local_address;
   }
-  auto peer_address = fds.PeerAddress(fd_);
+  auto peer_address = posix_interface.PeerAddress(fd_);
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
   }
@@ -1341,7 +1344,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                  << "ulimit value is not set. Use ulimit -l <value> to set its "
                  << "value.";
     } else {
-      if (fds.SetSockOpt(fd_, SOL_SOCKET, SO_ZEROCOPY, 1).ok()) {
+      if (posix_interface.SetSockOpt(fd_, SOL_SOCKET, SO_ZEROCOPY, 1).ok()) {
         zerocopy_enabled = false;
         LOG(ERROR) << "Failed to set zerocopy options on the socket.";
       }
@@ -1358,7 +1361,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       zerocopy_enabled, options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
 #ifdef GRPC_HAVE_TCP_INQ
-  auto result = fds.SetSockOpt(fd_, SOL_TCP, TCP_INQ, 1);
+  auto result = posix_interface.SetSockOpt(fd_, SOL_TCP, TCP_INQ, 1);
   if (result.ok()) {
     inq_capable_ = true;
   } else {

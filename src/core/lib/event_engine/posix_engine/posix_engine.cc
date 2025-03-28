@@ -415,7 +415,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   PosixResult err;
   do {
     so_error_size = sizeof(so_error);
-    err = fd->Poller()->GetFileDescriptors().GetSockOpt(
+    err = fd->Poller()->posix_interface().GetSockOpt(
         fd->WrappedFd(), SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
   } while (err.IsPosixError(EINTR));
   if (!err.ok()) {
@@ -473,8 +473,8 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
   PosixResult err;
   int connect_errno;
   do {
-    err = fork_support_->Poller()->GetFileDescriptors().Connect(
-        fd, addr.address(), addr.size());
+    err = fork_support_->Poller()->posix_interface().Connect(fd, addr.address(),
+                                                             addr.size());
   } while (err.IsPosixError(EINTR));
   connect_errno = err.ok() ? 0 : err.errno_value();
 
@@ -808,8 +808,7 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
   CHECK_NE(poller, nullptr);
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
   absl::StatusOr<EventEnginePosixInterface::PosixSocketCreateResult> socket =
-      poller->GetFileDescriptors().CreateAndPrepareTcpClientSocket(options,
-                                                                   addr);
+      poller->posix_interface().CreateAndPrepareTcpClientSocket(options, addr);
   if (!socket.ok()) {
     Run([on_connect = std::move(on_connect),
          status = socket.status()]() mutable { on_connect(status); });
@@ -829,7 +828,7 @@ EventEngine::ConnectionHandle PosixEventEngine::CreateEndpointFromUnconnectedFd(
     MemoryAllocator memory_allocator, EventEngine::Duration timeout) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   return CreateEndpointFromUnconnectedFdInternal(
-      fork_support_->Poller()->GetFileDescriptors().Adopt(fd),
+      fork_support_->Poller()->posix_interface().Adopt(fd),
       std::move(on_connect), addr, TcpOptionsFromEndpointConfig(config),
       std::move(memory_allocator), timeout);
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
@@ -848,7 +847,7 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
   PosixEventPoller* poller = fork_support_->Poller();
   DCHECK_NE(poller, nullptr);
   EventHandle* handle =
-      poller->CreateHandle(poller->GetFileDescriptors().Adopt(fd), "tcp-client",
+      poller->CreateHandle(poller->posix_interface().Adopt(fd), "tcp-client",
                            poller->CanTrackErrors());
   return CreatePosixEndpoint(handle, nullptr, shared_from_this(),
                              std::move(memory_allocator),

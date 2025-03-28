@@ -107,7 +107,7 @@ class PosixEngineListenerImpl
     ListenerSocketsContainer::ListenerSocket& Socket() { return socket_; }
     FileDescriptor Fd() { return handle_->WrappedFd(); }
     ~AsyncConnectionAcceptor() {
-      auto address = handle_->Poller()->GetFileDescriptors().LocalAddress(
+      auto address = handle_->Poller()->posix_interface().LocalAddress(
           handle_->WrappedFd());
       if (address.ok()) {
         // If uds socket, unlink it so that the corresponding file is deleted.

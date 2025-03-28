@@ -222,7 +222,7 @@ void ListenCb(server* sv, absl::Status status) {
   }
 
   do {
-    fd = g_event_poller->GetFileDescriptors().Accept(
+    fd = g_event_poller->posix_interface().Accept(
         listen_em_fd->WrappedFd(), reinterpret_cast<struct sockaddr*>(&ss),
         &slen);
   } while (fd.IsPosixError(EINTR));
@@ -268,7 +268,7 @@ int ServerStart(server* sv) {
   EXPECT_EQ(listen(fd, MAX_NUM_FD), 0);
 
   sv->em_fd = g_event_poller->CreateHandle(
-      g_event_poller->GetFileDescriptors().Adopt(fd), "server", false);
+      g_event_poller->posix_interface().Adopt(fd), "server", false);
   sv->listen_closure = PosixEngineClosure::TestOnlyToClosure(
       [sv](absl::Status status) { ListenCb(sv, status); });
   sv->em_fd->NotifyOnRead(sv->listen_closure);
@@ -358,7 +358,7 @@ void ClientStart(client* cl, int port) {
   }
 
   cl->em_fd = g_event_poller->CreateHandle(
-      g_event_poller->GetFileDescriptors().Adopt(fd), "client", false);
+      g_event_poller->posix_interface().Adopt(fd), "client", false);
   ClientSessionWrite(cl, absl::OkStatus());
 }
 
@@ -470,7 +470,7 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   EXPECT_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
 
   em_fd = g_event_poller->CreateHandle(
-      g_event_poller->GetFileDescriptors().Adopt(sv[0]),
+      g_event_poller->posix_interface().Adopt(sv[0]),
       "TestEventPollerHandleChange", false);
   EXPECT_NE(em_fd, nullptr);
   // Register the first callback, then make its FD readable
@@ -570,8 +570,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     EXPECT_GT(num_wakeups_, 0);
     EXPECT_NE(scheduler_, nullptr);
     EXPECT_NE(poller_, nullptr);
-    wakeup_fd_ =
-        *PipeWakeupFd::CreatePipeWakeupFd(&poller_->GetFileDescriptors());
+    wakeup_fd_ = *PipeWakeupFd::CreatePipeWakeupFd(&poller_->posix_interface());
     handle_ = poller_->CreateHandle(wakeup_fd_->ReadFd(), "test", false);
     EXPECT_NE(handle_, nullptr);
     handle_->NotifyOnRead(on_read_);
