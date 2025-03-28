@@ -139,7 +139,7 @@ void Chttp2(fuzzer_input::Msg msg) {
   RunServerFuzzer(msg, [](FuzzingEventEngine* engine, grpc_server* server,
                           int port_num, const ChannelArgs&) {
     auto* creds = grpc_insecure_server_credentials_create();
-    grpc_core::Notification done_adding_port;
+    Notification done_adding_port;
     engine->Run([&]() {
       LOG(ERROR) << "[DO NOT SUBMIT] adding port";
       grpc_server_add_http2_port(
@@ -149,7 +149,7 @@ void Chttp2(fuzzer_input::Msg msg) {
     });
     do {
       LOG(ERROR) << "[DO NOT SUBMIT] ticking";
-      engine->Tick(grpc_core::Duration::Seconds(1));
+      engine->Tick(Duration::Seconds(1));
     } while (!done_adding_port.HasBeenNotified());
     LOG(ERROR) << "[DO NOT SUBMIT] done ticking";
     grpc_server_credentials_release(creds);
