@@ -174,6 +174,7 @@ grpc_cc_library(
     ],
     deps = [
         "build",
+        "grpc_test_util_base",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
