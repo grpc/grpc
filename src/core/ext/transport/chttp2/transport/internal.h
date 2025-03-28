@@ -83,6 +83,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "third_party/grpc/src/core/lib/resource_quota/stream_quota.h"
 
 // Flag that this closure barrier may be covering a write in a pollset, and so
 //   we should not complete this closure until we can prove that the write got
@@ -300,6 +301,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       transport_framing_endpoint_extension = nullptr;
 
   grpc_core::MemoryOwner memory_owner;
+  grpc_core::StreamQuotaRefPtr stream_quota;
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
 

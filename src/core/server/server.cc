@@ -85,6 +85,8 @@
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
+#include "third_party/grpc/src/core/lib/resource_quota/resource_quota.h"
+#include "third_party/grpc/src/core/lib/resource_quota/stream_quota.h"
 
 namespace grpc_core {
 
@@ -1201,7 +1203,8 @@ Server::Server(const ChannelArgs& args)
       max_time_in_pending_queue_(Duration::Seconds(
           channel_args_
               .GetInt(GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS)
-              .value_or(30))) {
+              .value_or(30))),
+      stream_quota_(channel_args_.GetObject<ResourceQuota>()->stream_quota()) {
   SourceConstructed();
 }
 
@@ -1720,6 +1723,7 @@ class Server::ChannelData::ConnectivityWatcher
 
 Server::ChannelData::~ChannelData() {
   if (server_ != nullptr) {
+    server_->stream_quota_->DecrementOpenChannels();
     MutexLock lock(&server_->mu_global_);
     if (list_position_.has_value()) {
       server_->channels_.erase(*list_position_);
@@ -1743,6 +1747,9 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     server_->channels_.push_front(this);
     list_position_ = server_->channels_.begin();
   }
+
+  server_->stream_quota_->IncrementOpenChannels();
+
   // Start accept_stream transport op.
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   GRPC_CHECK(transport->filter_stack_transport() != nullptr);
@@ -1880,12 +1887,18 @@ Server::CallData::CallData(grpc_call_element* elem,
                     elem, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
+
+  server_->stream_quota_->IncrementOutstandingRequests();
 }
 
 Server::CallData::~CallData() {
   GRPC_CHECK(state_.load(std::memory_order_relaxed) != CallState::PENDING);
   grpc_metadata_array_destroy(&initial_metadata_);
   grpc_byte_buffer_destroy(payload_);
+
+  if (server_ != nullptr) {
+    server_->stream_quota_->DecrementOutstandingRequests();
+  }
 }
 
 void Server::CallData::SetState(CallState state) {

@@ -98,6 +98,15 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "stream_quota_test",
+    srcs = ["stream_quota_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//third_party/grpc/src/core:stream_quota"],
+)
+
+grpc_cc_test(
     name = "resource_quota_test",
     srcs = ["resource_quota_test.cc"],
     external_deps = ["gtest"],
