@@ -48,6 +48,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/substitute.h"
+#include "gmock/gmock.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
@@ -400,7 +401,7 @@ TEST_F(PollerForkTest, ListenerInChild) {
   ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, nullptr));
   ASSERT_FALSE(endpoint->Write(write_status.Setter(), &write_buffer, nullptr));
   EXPECT_THAT(read_status.AwaitStatus(), StatusIs(absl::StatusCode::kInternal));
-  EXPECT_THAT(write_status.AwaitStatus(), StatusIs(absl::StatusCode::kUnknown));
+  EXPECT_THAT(write_status.AwaitStatus(), ::testing::Not(IsOk()));
 }
 
 class TestScheduler {

@@ -577,7 +577,7 @@ IF_POSIX_SOCKET(
       return fd;
     close_and_error:
       FileDescriptorResult result(OperationResultKind::kError, errno);
-      Close(*fd);
+      Close(fd.fd());
       return result;
     })
 
