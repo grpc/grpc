@@ -40,10 +40,11 @@ void ResetDNSResolver(std::shared_ptr<DNSResolver> resolver) {
   *g_dns_resolver = std::move(resolver);
 }
 
-std::shared_ptr<DNSResolver> GetDNSResolver() {
+std::shared_ptr<DNSResolver> GetDNSResolver(SourceLocation location) {
   if (IsEventEngineDnsEnabled() && IsEventEngineDnsNonClientChannelEnabled()) {
     LOG(ERROR) << "The legacy iomgr DNS resolver is disabled. Please use "
-                  "EventEngine's DNSResolver instead.";
+                  "EventEngine's DNSResolver instead. Called from "
+               << location;
     return nullptr;
   }
   return *g_dns_resolver;

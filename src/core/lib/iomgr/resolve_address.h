@@ -120,7 +120,8 @@ void ResetDNSResolver(std::shared_ptr<DNSResolver> resolver);
 
 // Get the singleton DNS resolver instance which should be used for all
 // DNS resolution in gRPC.
-std::shared_ptr<DNSResolver> GetDNSResolver();
+std::shared_ptr<DNSResolver> GetDNSResolver(
+    SourceLocation location = SourceLocation());
 
 }  // namespace grpc_core
 
