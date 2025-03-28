@@ -257,6 +257,9 @@ struct GlobalStats {
     kHttp2TransportRemoteWindowUpdate,
     kHttp2TransportWindowUpdatePeriod,
     kHttp2StreamWindowUpdatePeriod,
+    kHttp2WriteTargetSize,
+    kHttp2WriteDataFrameSize,
+    kHttp2ReadDataFrameSize,
     kWrrSubchannelListSize,
     kWrrSubchannelReadySize,
     kWorkSerializerRunTimeMs,
@@ -347,6 +350,9 @@ struct GlobalStats {
   Histogram_16777216_20 http2_transport_remote_window_update;
   Histogram_100000_20 http2_transport_window_update_period;
   Histogram_100000_20 http2_stream_window_update_period;
+  Histogram_16777216_20 http2_write_target_size;
+  Histogram_16777216_20 http2_write_data_frame_size;
+  Histogram_16777216_20 http2_read_data_frame_size;
   Histogram_10000_20 wrr_subchannel_list_size;
   Histogram_10000_20 wrr_subchannel_ready_size;
   Histogram_100000_20 work_serializer_run_time_ms;
@@ -557,6 +563,15 @@ class GlobalStatsCollector {
   void IncrementHttp2StreamWindowUpdatePeriod(int value) {
     data_.this_cpu().http2_stream_window_update_period.Increment(value);
   }
+  void IncrementHttp2WriteTargetSize(int value) {
+    data_.this_cpu().http2_write_target_size.Increment(value);
+  }
+  void IncrementHttp2WriteDataFrameSize(int value) {
+    data_.this_cpu().http2_write_data_frame_size.Increment(value);
+  }
+  void IncrementHttp2ReadDataFrameSize(int value) {
+    data_.this_cpu().http2_read_data_frame_size.Increment(value);
+  }
   void IncrementWrrSubchannelListSize(int value) {
     data_.this_cpu().wrr_subchannel_list_size.Increment(value);
   }
@@ -677,6 +692,9 @@ class GlobalStatsCollector {
     HistogramCollector_16777216_20 http2_transport_remote_window_update;
     HistogramCollector_100000_20 http2_transport_window_update_period;
     HistogramCollector_100000_20 http2_stream_window_update_period;
+    HistogramCollector_16777216_20 http2_write_target_size;
+    HistogramCollector_16777216_20 http2_write_data_frame_size;
+    HistogramCollector_16777216_20 http2_read_data_frame_size;
     HistogramCollector_10000_20 wrr_subchannel_list_size;
     HistogramCollector_10000_20 wrr_subchannel_ready_size;
     HistogramCollector_100000_20 work_serializer_run_time_ms;
