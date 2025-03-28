@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "testing/base/public/gunit.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
