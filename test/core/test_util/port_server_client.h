@@ -19,11 +19,19 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_PORT_SERVER_CLIENT_H
 #define GRPC_TEST_CORE_TEST_UTIL_PORT_SERVER_CLIENT_H
 
-#include <memory>
+#include <grpc/support/port_platform.h>
+
 // C interface to port_server.py
 
 // must be synchronized with tools/run_tests/python_utils/start_port_server.py
+#ifdef GPR_WINDOWS
+// IPv6 is incredibly slow in the Windows CI stack, possibly more broadly.
+// Using IPv4-only brings the HTTP Get response time down from 2 seconds to
+// O(10ms).
+#define GRPC_PORT_SERVER_ADDRESS "127.0.0.1:32766"
+#else
 #define GRPC_PORT_SERVER_ADDRESS "localhost:32766"
+#endif
 
 int grpc_pick_port_using_server(void);
 void grpc_free_port_using_server(int port);
