@@ -103,7 +103,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//third_party/grpc/src/core:stream_quota"],
+    deps = ["//src/core:stream_quota"],
 )
 
 grpc_cc_test(

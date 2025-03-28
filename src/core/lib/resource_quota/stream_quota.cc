@@ -1,4 +1,4 @@
-#include "third_party/grpc/src/core/lib/resource_quota/stream_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 
 #include <algorithm>
 #include <atomic>

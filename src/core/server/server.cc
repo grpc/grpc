@@ -66,6 +66,8 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
@@ -85,8 +87,6 @@
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
-#include "third_party/grpc/src/core/lib/resource_quota/resource_quota.h"
-#include "third_party/grpc/src/core/lib/resource_quota/stream_quota.h"
 
 namespace grpc_core {
 

@@ -1856,8 +1856,8 @@ grpc_cc_library(
         "ref_counted",
         "sync",
         ":per_cpu",
-        "//third_party/grpc:gpr",
-        "//third_party/grpc:ref_counted_ptr",
+        "//:gpr",
+        "//:ref_counted_ptr",
     ],
 )
 
