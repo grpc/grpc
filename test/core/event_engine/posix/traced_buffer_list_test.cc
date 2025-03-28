@@ -81,10 +81,10 @@ TEST(BufferListTest, TestShutdownFlushesList) {
   TcpSetWriteTimestampsCallback(TestShutdownFlushesListVerifier);
   TracedBufferList traced_buffers;
   int verifier_called[NUM_ELEM];
-  FileDescriptors fds;
+  EventEnginePosixInterface posix_interface;
   for (auto i = 0; i < NUM_ELEM; i++) {
     verifier_called[i] = 0;
-    traced_buffers.AddNewEntry(i, &fds, FileDescriptor(0, 0),
+    traced_buffers.AddNewEntry(i, &posix_interface, FileDescriptor(0, 0),
                                static_cast<void*>(&verifier_called[i]));
   }
   traced_buffers.Shutdown(nullptr, absl::OkStatus());
@@ -115,8 +115,9 @@ TEST(BufferListTest, TestVerifierCalledOnAck) {
       });
   TracedBufferList traced_buffers;
   int verifier_called = 0;
-  FileDescriptors fds;
-  traced_buffers.AddNewEntry(213, &fds, FileDescriptor(0, 0), &verifier_called);
+  EventEnginePosixInterface posix_interface;
+  traced_buffers.AddNewEntry(213, &posix_interface, FileDescriptor(0, 0),
+                             &verifier_called);
   traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
   ASSERT_EQ(verifier_called, 1);
   ASSERT_TRUE(traced_buffers.Size() == 0);
@@ -135,8 +136,9 @@ TEST(BufferListTest, TestProcessTimestampAfterShutdown) {
   TcpSetWriteTimestampsCallback(TestShutdownFlushesListVerifier);
   TracedBufferList traced_buffers;
   int verifier_called = 0;
-  FileDescriptors fds;
-  traced_buffers.AddNewEntry(213, &fds, FileDescriptor(0, 0), &verifier_called);
+  EventEnginePosixInterface posix_interface;
+  traced_buffers.AddNewEntry(213, &posix_interface, FileDescriptor(0, 0),
+                             &verifier_called);
   ASSERT_TRUE(traced_buffers.Size() == 1);
   traced_buffers.Shutdown(nullptr, absl::OkStatus());
   ASSERT_TRUE(traced_buffers.Size() == 0);
@@ -168,12 +170,15 @@ TEST(BufferListTest, TestLongPendingAckForOneTracedBuffer) {
   gpr_atm_rel_store(&verifier_called[1], static_cast<gpr_atm>(0));
   gpr_atm_rel_store(&verifier_called[2], static_cast<gpr_atm>(0));
 
-  FileDescriptors fds;
+  EventEnginePosixInterface posix_interface;
 
   //  Add 3 traced buffers
-  tb_list.AddNewEntry(1, &fds, FileDescriptor(0, 0), &verifier_called[0]);
-  tb_list.AddNewEntry(2, &fds, FileDescriptor(0, 0), &verifier_called[1]);
-  tb_list.AddNewEntry(3, &fds, FileDescriptor(0, 0), &verifier_called[2]);
+  tb_list.AddNewEntry(1, &posix_interface, FileDescriptor(0, 0),
+                      &verifier_called[0]);
+  tb_list.AddNewEntry(2, &posix_interface, FileDescriptor(0, 0),
+                      &verifier_called[1]);
+  tb_list.AddNewEntry(3, &posix_interface, FileDescriptor(0, 0),
+                      &verifier_called[2]);
 
   AdvanceClockMillis(kMaxPendingAckMillis);
   tss.ts[0].tv_sec = g_now.tv_sec;
@@ -258,12 +263,13 @@ TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
         }
       });
   TracedBufferList tb_list;
-  FileDescriptors fds;
+  EventEnginePosixInterface posix_interface;
   for (int i = 0; i < kNumTracedBuffers; i++) {
     serr[i].ee_data = i + 1;
     serr[i].ee_info = SCM_TSTAMP_ACK;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
-    tb_list.AddNewEntry(i + 1, &fds, FileDescriptor(0, 0), &verifier_called[i]);
+    tb_list.AddNewEntry(i + 1, &posix_interface, FileDescriptor(0, 0),
+                        &verifier_called[i]);
   }
   int elapsed_time_millis = 0;
   int increment_millis = (2 * kMaxPendingAckMillis) / 10;

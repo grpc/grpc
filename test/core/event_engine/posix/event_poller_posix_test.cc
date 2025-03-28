@@ -241,7 +241,7 @@ void ListenCb(server* sv, absl::Status status) {
   fcntl(fd->iomgr_fd(), F_SETFL, flags | O_NONBLOCK);
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
-  se->em_fd = g_event_poller->CreateHandle(*fd, "listener", false);
+  se->em_fd = g_event_poller->CreateHandle(fd.fd(), "listener", false);
   se->session_read_closure = PosixEngineClosure::TestOnlyToClosure(
       [se](absl::Status status) { SessionReadCb(se, status); });
   se->em_fd->NotifyOnRead(se->session_read_closure);

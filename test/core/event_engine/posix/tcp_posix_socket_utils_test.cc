@@ -29,7 +29,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
-#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/util/useful.h"
 
@@ -112,7 +112,7 @@ TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
       sock = socket(AF_INET6, SOCK_STREAM, 0);
     }
     EXPECT_GT(sock, 0);
-    FileDescriptors fds;
+    EventEnginePosixInterface fds;
     FileDescriptor wrapped = fds.Adopt(sock);
     struct test_socket_mutator mutator;
     grpc_socket_mutator_init(&mutator.base, vtable);
@@ -147,7 +147,7 @@ TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
 
 // Need to be discussed in a code review - do we need this at this granularity?
 // TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
-//   FileDescriptors fds;
+//   EventEnginePosixInterface fds;
 //   int sock = socket(PF_INET, SOCK_STREAM, 0);
 //   if (sock < 0) {
 //     // Try ipv6

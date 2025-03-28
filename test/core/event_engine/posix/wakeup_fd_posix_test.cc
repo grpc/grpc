@@ -28,8 +28,8 @@ TEST(WakeupFdPosixTest, PipeWakeupFdTest) {
   if (!PipeWakeupFd::IsSupported()) {
     return;
   }
-  FileDescriptors fds;
-  auto pipe_wakeup_fd = PipeWakeupFd::CreatePipeWakeupFd(&fds);
+  EventEnginePosixInterface posix_interface;
+  auto pipe_wakeup_fd = PipeWakeupFd::CreatePipeWakeupFd(&posix_interface);
   EXPECT_TRUE(pipe_wakeup_fd.ok());
   EXPECT_TRUE((*pipe_wakeup_fd)->ReadFd().ready());
   EXPECT_TRUE((*pipe_wakeup_fd)->WriteFd().ready());
@@ -41,8 +41,9 @@ TEST(WakeupFdPosixTest, EventFdWakeupFdTest) {
   if (!EventFdWakeupFd::IsSupported()) {
     return;
   }
-  FileDescriptors fds;
-  auto eventfd_wakeup_fd = EventFdWakeupFd::CreateEventFdWakeupFd(&fds);
+  EventEnginePosixInterface posix_interface;
+  auto eventfd_wakeup_fd =
+      EventFdWakeupFd::CreateEventFdWakeupFd(&posix_interface);
   EXPECT_TRUE(eventfd_wakeup_fd.ok());
   EXPECT_TRUE((*eventfd_wakeup_fd)->ReadFd().ready());
   EXPECT_FALSE((*eventfd_wakeup_fd)->WriteFd().ready());
