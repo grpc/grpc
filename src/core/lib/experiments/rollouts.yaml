@@ -102,6 +102,8 @@
   default: false
 - name: schedule_cancellation_over_write
   default: false
+- name: server_global_callbacks_ownership
+  default: false
 - name: server_listener
   default: true
 - name: server_privacy

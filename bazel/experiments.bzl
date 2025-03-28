@@ -45,6 +45,7 @@ EXPERIMENT_ENABLES = {
     "rq_fast_reject": "rq_fast_reject",
     "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
+    "server_global_callbacks_ownership": "server_global_callbacks_ownership",
     "server_listener": "server_listener",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",

@@ -119,6 +119,20 @@ Histogram_1800000_40 operator-(const Histogram_1800000_40& left,
   }
   return result;
 }
+void HistogramCollector_16777216_50::Collect(
+    Histogram_16777216_50* result) const {
+  for (int i = 0; i < 50; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_16777216_50 operator-(const Histogram_16777216_50& left,
+                                const Histogram_16777216_50& right) {
+  Histogram_16777216_50 result;
+  for (int i = 0; i < 50; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
 const absl::string_view
     GlobalStats::counter_name[static_cast<int>(Counter::COUNT)] = {
         "client_calls_created",
@@ -226,6 +240,9 @@ const absl::string_view
         "http2_transport_remote_window_update",
         "http2_transport_window_update_period",
         "http2_stream_window_update_period",
+        "http2_write_target_size",
+        "http2_write_data_frame_size",
+        "http2_read_data_frame_size",
         "wrr_subchannel_list_size",
         "wrr_subchannel_ready_size",
         "work_serializer_run_time_ms",
@@ -269,6 +286,9 @@ const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     "Transport window update sent by peer",
     "Period in milliseconds at which peer sends transport window update",
     "Period in milliseconds at which peer sends stream window update",
+    "Number of bytes targetted for http2 writes",
+    "Number of bytes for each data frame written",
+    "Number of bytes for each data frame read",
     "Number of subchannels in a subchannel list at picker creation time",
     "Number of READY subchannels in a subchannel list at picker creation time",
     "Number of milliseconds work serializers run for",
@@ -333,6 +353,20 @@ const int kStatsTable12[41] = {
 const uint8_t kStatsTable13[37] = {
     4,  5,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
     22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
+const int kStatsTable14[51] = {
+    0,       1,        2,       3,       5,       7,       10,      14,
+    20,      28,       39,      54,      75,      104,     144,     200,
+    277,     383,      530,     733,     1014,    1402,    1939,    2681,
+    3706,    5123,     7082,    9790,    13533,   18707,   25859,   35746,
+    49412,   68303,    94416,   130512,  180408,  249380,  344720,  476509,
+    658682,  910501,   1258592, 1739760, 2404882, 3324285, 4595181, 6351949,
+    8780340, 12137120, 16777216};
+const uint8_t kStatsTable15[88] = {
+    4,  4,  5,  5,  6,  6,  7,  7,  8,  8,  9,  9,  10, 11, 11, 12, 12, 13,
+    13, 14, 14, 15, 15, 16, 16, 17, 18, 18, 18, 19, 20, 20, 21, 21, 22, 22,
+    23, 23, 24, 24, 25, 25, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32,
+    32, 33, 33, 34, 35, 35, 36, 36, 37, 37, 38, 38, 39, 39, 40, 40, 41, 42,
+    42, 43, 43, 44, 44, 45, 45, 46, 46, 47, 47, 48, 48, 49, 50, 50};
 }  // namespace
 int Histogram_100000_20::BucketFor(int value) {
   if (value < 3) {
@@ -483,6 +517,25 @@ int Histogram_1800000_40::BucketFor(int value) {
     }
   }
 }
+int Histogram_16777216_50::BucketFor(int value) {
+  if (value < 4) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 14680065) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable15[((val.uint - 4616189618054758400ull) >> 50)];
+      return bucket - (value < kStatsTable14[bucket]);
+    } else {
+      return 49;
+    }
+  }
+}
 GlobalStats::GlobalStats()
     : client_calls_created{0},
       server_calls_created{0},
@@ -556,13 +609,13 @@ HistogramView GlobalStats::histogram(Histogram which) const {
       return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
                            http2_header_table_size.buckets()};
     case Histogram::kHttp2InitialWindowSize:
-      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+      return HistogramView{&Histogram_16777216_50::BucketFor, kStatsTable14, 50,
                            http2_initial_window_size.buckets()};
     case Histogram::kHttp2MaxConcurrentStreams:
       return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
                            http2_max_concurrent_streams.buckets()};
     case Histogram::kHttp2MaxFrameSize:
-      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+      return HistogramView{&Histogram_16777216_50::BucketFor, kStatsTable14, 50,
                            http2_max_frame_size.buckets()};
     case Histogram::kHttp2MaxHeaderListSize:
       return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
@@ -583,6 +636,15 @@ HistogramView GlobalStats::histogram(Histogram which) const {
     case Histogram::kHttp2StreamWindowUpdatePeriod:
       return HistogramView{&Histogram_100000_20::BucketFor, kStatsTable0, 20,
                            http2_stream_window_update_period.buckets()};
+    case Histogram::kHttp2WriteTargetSize:
+      return HistogramView{&Histogram_16777216_50::BucketFor, kStatsTable14, 50,
+                           http2_write_target_size.buckets()};
+    case Histogram::kHttp2WriteDataFrameSize:
+      return HistogramView{&Histogram_16777216_50::BucketFor, kStatsTable14, 50,
+                           http2_write_data_frame_size.buckets()};
+    case Histogram::kHttp2ReadDataFrameSize:
+      return HistogramView{&Histogram_16777216_50::BucketFor, kStatsTable14, 50,
+                           http2_read_data_frame_size.buckets()};
     case Histogram::kWrrSubchannelListSize:
       return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable10, 20,
                            wrr_subchannel_list_size.buckets()};
@@ -744,6 +806,11 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         &result->http2_transport_window_update_period);
     data.http2_stream_window_update_period.Collect(
         &result->http2_stream_window_update_period);
+    data.http2_write_target_size.Collect(&result->http2_write_target_size);
+    data.http2_write_data_frame_size.Collect(
+        &result->http2_write_data_frame_size);
+    data.http2_read_data_frame_size.Collect(
+        &result->http2_read_data_frame_size);
     data.wrr_subchannel_list_size.Collect(&result->wrr_subchannel_list_size);
     data.wrr_subchannel_ready_size.Collect(&result->wrr_subchannel_ready_size);
     data.work_serializer_run_time_ms.Collect(
@@ -874,6 +941,12 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->http2_stream_window_update_period =
       http2_stream_window_update_period -
       other.http2_stream_window_update_period;
+  result->http2_write_target_size =
+      http2_write_target_size - other.http2_write_target_size;
+  result->http2_write_data_frame_size =
+      http2_write_data_frame_size - other.http2_write_data_frame_size;
+  result->http2_read_data_frame_size =
+      http2_read_data_frame_size - other.http2_read_data_frame_size;
   result->wrr_subchannel_list_size =
       wrr_subchannel_list_size - other.wrr_subchannel_list_size;
   result->wrr_subchannel_ready_size =

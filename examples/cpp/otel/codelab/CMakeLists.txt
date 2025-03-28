@@ -80,6 +80,7 @@ foreach(_target
   target_link_libraries(${_target}
     absl::flags
     absl::flags_parse
+    absl::log_initialize
     opentelemetry-cpp::metrics
     opentelemetry-cpp::prometheus_exporter
     gRPC::grpcpp_otel_plugin
