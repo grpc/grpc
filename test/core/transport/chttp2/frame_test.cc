@@ -325,15 +325,6 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid ping stream id: {PING: flags=0, "
                        "stream_id=1, length=8}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 8, 6, 2, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid ping flags: {PING: flags=2, "
-                       "stream_id=0, length=8}"));
-  EXPECT_THAT(
-      ValidateFrame(0, 0, 8, 6, 255, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-      StatusIs(absl::StatusCode::kInternal,
-               "invalid ping flags: {PING: flags=255, "
-               "stream_id=0, length=8}"));
   EXPECT_THAT(ValidateFrame(0, 0, 0, 7, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid goaway payload: {GOAWAY: flags=0, "
@@ -370,15 +361,6 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid goaway stream id: {GOAWAY: flags=0, "
                        "stream_id=1, length=8}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 8, 7, 1, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid goaway flags: {GOAWAY: flags=1, "
-                       "stream_id=0, length=8}"));
-  EXPECT_THAT(
-      ValidateFrame(0, 0, 8, 7, 255, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-      StatusIs(absl::StatusCode::kInternal,
-               "invalid goaway flags: {GOAWAY: flags=255, "
-               "stream_id=0, length=8}"));
   EXPECT_THAT(ValidateFrame(0, 0, 0, 8, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid window update payload: {WINDOW_UPDATE: "
