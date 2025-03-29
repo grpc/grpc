@@ -17,6 +17,9 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
 HISTORY = 1
 
+def presubmit_regression_check(**kwargs):
+    return 2
+
 def grpc_benchmark_args():
     """Command line arguments for running a microbenchmark as a test"""
     return ["--benchmark_min_time=0.001s"]
