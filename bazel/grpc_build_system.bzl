@@ -90,59 +90,12 @@ def _update_visibility(visibility):
     if visibility == None:
         return None
 
-    # Visibility rules prefixed with '@grpc:' are used to flag different visibility rule
-    # classes upstream.
-    PUBLIC = ["//visibility:public"]
-    PRIVATE = ["//:__subpackages__"]
-    VISIBILITY_TARGETS = {
-        "alt_grpc++_base_legacy": PRIVATE,
-        "alt_grpc_base_legacy": PRIVATE,
-        "alt_grpc++_base_unsecure_legacy": PRIVATE,
-        "alts_frame_protector": PRIVATE,
-        "channelz": PRIVATE,
-        "chaotic_good": PRIVATE,
-        "client_channel": PRIVATE,
-        "cli": PRIVATE,
-        "core_credentials": PRIVATE,
-        "debug_location": PRIVATE,
-        "endpoint_tests": PRIVATE,
-        "exec_ctx": PRIVATE,
-        "gpr_public_hdrs": PRIVATE,
-        "grpclb": PRIVATE,
-        "grpc_experiments": PRIVATE,
-        "grpc_opencensus_plugin": PUBLIC,
-        "grpc_public_hdrs": PRIVATE,
-        "grpcpp_gcp_observability": PUBLIC,
-        "grpc_resolver_fake": PRIVATE,
-        "grpc++_public_hdrs": PRIVATE,
-        "http": PRIVATE,
-        "httpcli": PRIVATE,
-        "iomgr_internal_errqueue": PRIVATE,
-        "iomgr_buffer_list": PRIVATE,
-        "json_reader_legacy": PRIVATE,
-        "latent_see": PRIVATE,
-        "otel_plugin": PRIVATE,
-        "public": PUBLIC,
-        "ref_counted_ptr": PRIVATE,
-        "tcp_tracer": PRIVATE,
-        "trace": PRIVATE,
-        "tsi_interface": PRIVATE,
-        "tsi": PRIVATE,
-        "xds": PRIVATE,
-        "xds_client_core": PRIVATE,
-        "xds_end2end_test_utils": PRIVATE,
-        "grpc_python_observability": PRIVATE,
-        "event_engine_base_hdrs": PRIVATE,
-        "useful": PRIVATE,
-    }
-    final_visibility = []
-    for rule in visibility:
-        if rule.startswith("@grpc:"):
-            for replacement in VISIBILITY_TARGETS[rule[len("@grpc:"):]]:
-                final_visibility.append(replacement)
-        else:
-            final_visibility.append(rule)
-    return [x for x in final_visibility]
+    final_visibility = list(visibility)
+    if (final_visibility != ["//visibility:public"] and
+        final_visibility != ["//visibility:private"] and
+        "//:__subpackages__" not in final_visibility):
+        final_visibility.append("//:__subpackages__")
+    return final_visibility
 
 def _include_prefix():
     include_prefix = ""
