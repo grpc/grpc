@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SEQ_BIT_SET_H
-#define SEQ_BIT_SET_H
+#ifndef GRPC_SRC_CORE_UTIL_SEQ_BIT_SET_H
+#define GRPC_SRC_CORE_UTIL_SEQ_BIT_SET_H
 
 #include <cstdint>
 #include <set>
@@ -33,7 +33,7 @@ class SeqBitSet {
   bool IsSet(uint64_t seq) const;
 
  private:
-  static constexpr size_t kNumFutureBitEntries = 3;
+  static constexpr std::size_t kNumFutureBitEntries = 3;
   // All bits before seq epoch_ are set.
   uint64_t epoch_ = 0;
   uint64_t future_bits_[kNumFutureBitEntries] = {0, 0, 0};
@@ -42,4 +42,4 @@ class SeqBitSet {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_UTIL_SEQ_BIT_SET_H

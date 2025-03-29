@@ -808,5 +808,5 @@ grpc_fuzz_test(
         "fuzztest_main",
         "gtest",
     ],
-    deps=  ["//src/core:seq_bit_set"],
+    deps = ["//src/core:seq_bit_set"],
 )
