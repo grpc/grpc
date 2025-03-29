@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_SERIALIZATION_TRAITS_H
 #define GRPCPP_IMPL_SERIALIZATION_TRAITS_H
 
+#include <grpc/event_engine/memory_allocator.h>
+
 namespace grpc {
 
 /// Defines how to serialize and deserialize some type.
@@ -56,6 +58,49 @@ namespace grpc {
 template <class Message,
           class UnusedButHereForPartialTemplateSpecialization = void>
 class SerializationTraits;
+
+namespace impl {
+
+template <typename Message, typename Buffer, typename = void>
+struct SerializeDispatch;
+
+template <typename Message, typename Buffer>
+struct SerializeDispatch<
+    Message, Buffer,
+    absl::void_t<decltype(SerializationTraits<Message>::Serialize(
+        std::declval<grpc_event_engine::experimental::MemoryAllocator*>(),
+        std::declval<const Message&>(), std::declval<Buffer*>()))>> {
+  static auto Serialize(
+      grpc_event_engine::experimental::MemoryAllocator* allocator,
+      const Message& msg, Buffer* buffer) {
+    return SerializationTraits<Message>::Serialize(allocator, msg, buffer);
+  }
+};
+
+template <typename Message, typename BufferPtr>
+struct SerializeDispatch<
+    Message, BufferPtr,
+    absl::void_t<decltype(SerializationTraits<Message>::Serialize(
+        std::declval<const Message&>(), std::declval<BufferPtr>()))>> {
+  static auto Serialize(grpc_event_engine::experimental::MemoryAllocator*,
+                        const Message& msg, BufferPtr buffer) {
+    return SerializationTraits<Message>::Serialize(msg, buffer);
+  }
+};
+
+}  // namespace impl
+
+template <typename Message, typename BufferPtr>
+auto Serialize(grpc_event_engine::experimental::MemoryAllocator* allocator,
+               const Message& msg, BufferPtr buffer) {
+  return impl::SerializeDispatch<Message, BufferPtr>::Serialize(allocator, msg,
+                                                                buffer);
+}
+
+template <typename BufferPtr, typename Message>
+auto Deserialize(BufferPtr buffer, Message* msg) {
+  return SerializationTraits<Message>::Deserialize(buffer, msg);
+}
 
 }  // namespace grpc
 
