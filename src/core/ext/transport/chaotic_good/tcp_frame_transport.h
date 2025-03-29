@@ -28,23 +28,27 @@ namespace grpc_core {
 namespace chaotic_good {
 
 struct TcpFrameHeader {
-  // Frame header size is fixed to 12 bytes.
-  enum { kFrameHeaderSize = 12 };
+  // Frame header size is fixed to 24 bytes.
+  enum { kFrameHeaderSize = 24 };
 
   FrameHeader header;
-  uint32_t payload_connection_id = 0;
+  // if 0 ==> this frames payload will be on the control channel
+  // otherwise ==> a data frame will be sent on a data channel with a matching
+  // tag.
+  uint64_t payload_tag = 0;
 
-  // Parses a frame header from a buffer of 12 bytes. All 12 bytes are consumed.
+  // Parses a frame header from a buffer of kFrameHeaderSize bytes. All
+  // kFrameHeaderSize bytes are consumed.
   static absl::StatusOr<TcpFrameHeader> Parse(const uint8_t* data);
-  // Serializes a frame header into a buffer of 12 bytes.
+  // Serializes a frame header into a buffer of kFrameHeaderSize bytes.
   void Serialize(uint8_t* data) const;
 
   // Report contents as a string
   std::string ToString() const;
 
   bool operator==(const TcpFrameHeader& h) const {
-    return header == h.header &&
-           payload_connection_id == h.payload_connection_id;
+    return header == h.header && payload_tag == h.payload_tag &&
+           send_timestamp == h.send_timestamp;
   }
 
   // Required padding to maintain alignment.
@@ -89,6 +93,7 @@ class TcpFrameTransport final : public FrameTransport {
   DataEndpoints data_endpoints_;
   const Options options_;
   InterActivityLatch<void> closed_;
+  uint64_t next_payload_tag_ = 1;
 };
 
 }  // namespace chaotic_good
