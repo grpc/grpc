@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_DATA_ENDPOINTS_H
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
@@ -51,9 +52,10 @@ struct DataFrameHeader {
   }
 };
 
-inline uint64_t SendTime() {
-  return std::chrono::steady_clock::now().time_since_epoch().count();
-}
+class Clock {
+ public:
+  virtual uint64_t Now() = 0;
+};
 
 class SendRate {
  public:
@@ -121,8 +123,10 @@ class OutputBuffer {
 // The set of output buffers for all connected data endpoints
 class OutputBuffers : public RefCounted<OutputBuffers> {
  public:
+  explicit OutputBuffers(Clock* clock) : clock_(clock) {}
+
   auto Write(uint64_t payload_tag, SliceBuffer output_buffer) {
-    return [payload_tag, send_time = SendTime(),
+    return [payload_tag, send_time = clock_->Now(),
             output_buffer = std::move(output_buffer), this]() mutable {
       return PollWrite(payload_tag, send_time, output_buffer);
     };
@@ -147,6 +151,7 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
   std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
   std::atomic<uint32_t> ready_endpoints_{0};
+  Clock* const clock_;
 };
 
 class InputQueue : public RefCounted<InputQueue> {
@@ -251,7 +256,8 @@ class DataEndpoints {
   explicit DataEndpoints(
       std::vector<PendingConnection> endpoints,
       grpc_event_engine::experimental::EventEngine* event_engine,
-      bool enable_tracing);
+      bool enable_tracing,
+      data_endpoints_detail::Clock* clock = DefaultClock());
 
   // Try to queue output_buffer against a data endpoint.
   // Returns a promise that resolves to the data endpoint connection id
@@ -268,6 +274,17 @@ class DataEndpoints {
   bool empty() const { return output_buffers_->ReadyEndpoints() == 0; }
 
  private:
+  static data_endpoints_detail::Clock* DefaultClock() {
+    class ClockImpl final : public data_endpoints_detail::Clock {
+     public:
+      uint64_t Now() override {
+        return std::chrono::steady_clock::now().time_since_epoch().count();
+      }
+    };
+    static ClockImpl clock;
+    return &clock;
+  }
+
   RefCountedPtr<data_endpoints_detail::OutputBuffers> output_buffers_;
   RefCountedPtr<data_endpoints_detail::InputQueue> input_queues_;
   Mutex mu_;

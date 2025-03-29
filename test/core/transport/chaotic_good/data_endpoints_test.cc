@@ -31,6 +31,8 @@
 #include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 
+#include <cstdint>
+
 #include "gtest/gtest.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
@@ -41,6 +43,15 @@ class DataEndpointsTest : public YodelTest {
  protected:
   using YodelTest::YodelTest;
 };
+
+chaotic_good::data_endpoints_detail::Clock* Time1Clock() {
+  class Clock : public chaotic_good::data_endpoints_detail::Clock {
+   public:
+    uint64_t Now() override { return 1; }
+  };
+  static Clock clock;
+  return &clock;
+}
 
 #define DATA_ENDPOINTS_TEST(name) YODEL_TEST(DataEndpointsTest, name)
 
@@ -57,14 +68,14 @@ std::vector<chaotic_good::PendingConnection> Endpoints(Args... args) {
 DATA_ENDPOINTS_TEST(CanWrite) {
   util::testing::MockPromiseEndpoint ep(1234);
   chaotic_good::DataEndpoints data_endpoints(
-      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false);
+      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false,
+      Time1Clock());
   ep.ExpectWrite(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       event_engine().get());
   SpawnTestSeqWithoutContext(
       "write",
-      data_endpoints.Write(SliceBuffer(Slice::FromCopiedString("hello"))),
-      [](uint32_t id) { EXPECT_EQ(id, 0); });
+      data_endpoints.Write(123, SliceBuffer(Slice::FromCopiedString("hello"))));
   WaitForAllPendingWork();
 }
 
@@ -74,7 +85,8 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   chaotic_good::DataEndpoints data_endpoints(
       Endpoints(std::move(ep1.promise_endpoint),
                 std::move(ep2.promise_endpoint)),
-      event_engine().get(), false);
+      event_engine().get(), false,
+      Time1Clock());
   SliceBuffer writes1;
   SliceBuffer writes2;
   ep1.CaptureWrites(writes1, event_engine().get());
@@ -83,10 +95,8 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   uint32_t write2_ep = 42;
   SpawnTestSeqWithoutContext(
       "write",
-      data_endpoints.Write(SliceBuffer(Slice::FromCopiedString("hello"))),
-      [&write1_ep](uint32_t id) { write1_ep = id; },
-      data_endpoints.Write(SliceBuffer(Slice::FromCopiedString("world"))),
-      [&write2_ep](uint32_t id) { write2_ep = id; });
+      data_endpoints.Write(123, SliceBuffer(Slice::FromCopiedString("hello"))),
+      data_endpoints.Write(124, SliceBuffer(Slice::FromCopiedString("world"))));
   TickUntilTrue([&]() { return writes1.Length() + writes2.Length() == 10; });
   WaitForAllPendingWork();
   EXPECT_THAT(write1_ep, ::testing::AnyOf(0, 1));
@@ -102,11 +112,12 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
 DATA_ENDPOINTS_TEST(CanRead) {
   util::testing::MockPromiseEndpoint ep(1234);
   chaotic_good::DataEndpoints data_endpoints(
-      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false);
+      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false,
+      Time1Clock());
   ep.ExpectRead(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       event_engine().get());
-  SpawnTestSeqWithoutContext("read", data_endpoints.Read(0, 5).Await(),
+  SpawnTestSeqWithoutContext("read", data_endpoints.Read(5).Await(),
                              [](absl::StatusOr<SliceBuffer> result) {
                                EXPECT_TRUE(result.ok());
                                EXPECT_EQ(result->JoinIntoString(), "hello");

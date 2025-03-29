@@ -107,7 +107,7 @@ Poll<SliceBuffer> OutputBuffers::PollNext(uint32_t connection_id) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   MutexLock lock(&mu_);
-  auto current_time = SendTime();
+  const auto current_time = clock_->Now();
   auto& buffer = buffers_[connection_id];
   CHECK(buffer.has_value());
   buffer->MaybeCompleteSend(current_time);
@@ -298,8 +298,9 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
 DataEndpoints::DataEndpoints(
     std::vector<PendingConnection> endpoints_vec,
     grpc_event_engine::experimental::EventEngine* event_engine,
-    bool enable_tracing)
-    : output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>()),
+    bool enable_tracing, data_endpoints_detail::Clock* clock)
+    : output_buffers_(
+          MakeRefCounted<data_endpoints_detail::OutputBuffers>(clock)),
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   CHECK(event_engine != nullptr);
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
