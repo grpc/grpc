@@ -608,8 +608,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "seq_bit_set",
-    hdrs = ["util/seq_bit_set.h"],
     srcs = ["util/seq_bit_set.cc"],
+    hdrs = ["util/seq_bit_set.h"],
 )
 
 grpc_cc_library(
