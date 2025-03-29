@@ -47,8 +47,7 @@ struct TcpFrameHeader {
   std::string ToString() const;
 
   bool operator==(const TcpFrameHeader& h) const {
-    return header == h.header && payload_tag == h.payload_tag &&
-           send_timestamp == h.send_timestamp;
+    return header == h.header && payload_tag == h.payload_tag;
   }
 
   // Required padding to maintain alignment.

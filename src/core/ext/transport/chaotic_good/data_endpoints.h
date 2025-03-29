@@ -31,7 +31,7 @@ namespace chaotic_good {
 
 namespace data_endpoints_detail {
 
-struct FrameHeader {
+struct DataFrameHeader {
   enum { kFrameHeaderSize = 20 };
   uint64_t payload_tag;
   uint64_t send_timestamp;
@@ -39,9 +39,16 @@ struct FrameHeader {
 
   // Parses a frame header from a buffer of kFrameHeaderSize bytes. All
   // kFrameHeaderSize bytes are consumed.
-  static absl::StatusOr<FrameHeader> Parse(const uint8_t* data);
+  static absl::StatusOr<DataFrameHeader> Parse(const uint8_t* data);
   // Serializes a frame header into a buffer of kFrameHeaderSize bytes.
   void Serialize(uint8_t* data) const;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const DataFrameHeader& frame) {
+    sink.Append(absl::StrCat("DataFrameHeader{payload_tag:", frame.payload_tag,
+                             ",send_timestamp:", frame.send_timestamp,
+                             ",payload_length:", frame.payload_length, "}"));
+  }
 };
 
 inline uint64_t SendTime() {

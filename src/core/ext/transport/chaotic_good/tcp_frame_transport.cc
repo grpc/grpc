@@ -20,8 +20,10 @@
 
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
+#include "src/core/ext/transport/chaotic_good/serialize_little_endian.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
@@ -34,42 +36,6 @@ namespace chaotic_good {
 // TcpFrameHeader
 
 namespace {
-void WriteLittleEndianUint32(uint32_t value, uint8_t* data) {
-  data[0] = static_cast<uint8_t>(value);
-  data[1] = static_cast<uint8_t>(value >> 8);
-  data[2] = static_cast<uint8_t>(value >> 16);
-  data[3] = static_cast<uint8_t>(value >> 24);
-}
-
-void WriteLittleEndianUint64(uint64_t value, uint8_t* data) {
-  data[0] = static_cast<uint8_t>(value);
-  data[1] = static_cast<uint8_t>(value >> 8);
-  data[2] = static_cast<uint8_t>(value >> 16);
-  data[3] = static_cast<uint8_t>(value >> 24);
-  data[4] = static_cast<uint8_t>(value >> 32);
-  data[5] = static_cast<uint8_t>(value >> 40);
-  data[6] = static_cast<uint8_t>(value >> 48);
-  data[7] = static_cast<uint8_t>(value >> 56);
-}
-
-uint32_t ReadLittleEndianUint32(const uint8_t* data) {
-  return static_cast<uint32_t>(data[0]) |
-         (static_cast<uint32_t>(data[1]) << 8) |
-         (static_cast<uint32_t>(data[2]) << 16) |
-         (static_cast<uint32_t>(data[3]) << 24);
-}
-
-uint64_t ReadLittleEndianUint64(const uint8_t* data) {
-  return static_cast<uint64_t>(data[0]) |
-         (static_cast<uint64_t>(data[1]) << 8) |
-         (static_cast<uint64_t>(data[2]) << 16) |
-         (static_cast<uint64_t>(data[3]) << 24) |
-         (static_cast<uint64_t>(data[4]) << 32) |
-         (static_cast<uint64_t>(data[5]) << 40) |
-         (static_cast<uint64_t>(data[6]) << 48) |
-         (static_cast<uint64_t>(data[7]) << 56);
-}
-
 uint32_t DataConnectionPadding(uint32_t payload_length, uint32_t alignment) {
   if (payload_length % alignment == 0) return 0;
   return alignment - (payload_length % alignment);
@@ -88,7 +54,7 @@ void TcpFrameHeader::Serialize(uint8_t* data) const {
 absl::StatusOr<TcpFrameHeader> TcpFrameHeader::Parse(const uint8_t* data) {
   TcpFrameHeader tcp_header;
   const uint32_t type_and_tag = ReadLittleEndianUint64(data);
-  tcp_header.header.type = static_cast<FrameType>(type);
+  tcp_header.header.type = static_cast<FrameType>(type_and_tag & 0xff);
   tcp_header.payload_tag = type_and_tag >> 8;
   tcp_header.header.stream_id = ReadLittleEndianUint32(data + 8);
   tcp_header.header.payload_length = ReadLittleEndianUint32(data + 12);
@@ -139,8 +105,8 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
       [this, header, &frame]() mutable {
         SliceBuffer control_bytes;
         SliceBuffer data_bytes;
-        auto tag = next_tag_;
-        ++next_tag_;
+        auto tag = next_payload_tag_;
+        ++next_payload_tag_;
         TcpFrameHeader{header, tag}.Serialize(
             control_bytes.AddTiny(TcpFrameHeader::kFrameHeaderSize));
         const size_t padding = DataConnectionPadding(
@@ -148,7 +114,7 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
             options_.encode_alignment);
         frame.SerializePayload(data_bytes);
         GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CHAOTIC_GOOD: Send " << payload.Length()
+            << "CHAOTIC_GOOD: Send " << data_bytes.Length()
             << "b payload on data channel; add " << padding << " bytes for "
             << options_.encode_alignment << " alignment";
         if (padding != 0) {
@@ -156,8 +122,9 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
           memset(slice.data(), 0, padding);
           data_bytes.AppendIndexed(Slice(std::move(slice)));
         }
-        return Join(control_endpoint_.Write(std::move(control_bytes)),
-                    data_endpoints_.Write(tag, std::move(data_bytes)));
+        return DiscardResult(
+            Join(control_endpoint_.Write(std::move(control_bytes)),
+                 data_endpoints_.Write(tag, std::move(data_bytes))));
       });
 }
 
@@ -225,11 +192,9 @@ auto TcpFrameTransport::ReadFrameBytes() {
                   frame_header.Padding(options_.decode_alignment);
               return IncomingFrame(
                   frame_header.header,
-                  Map(data_endpoints_
-                          .Read(frame_header.payload_tag,
-                                frame_header.header.payload_length + padding)
-                          .Await(),
-                      [padding](absl::StatusOr<SliceBuffer> payload)
+                  Map(data_endpoints_.Read(frame_header.payload_tag).Await(),
+                      [padding,
+                       frame_header](absl::StatusOr<SliceBuffer> payload)
                           -> absl::StatusOr<SliceBuffer> {
                         if (payload.ok()) {
                           if (payload->Length() !=

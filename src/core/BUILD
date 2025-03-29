@@ -8016,6 +8016,9 @@ grpc_cc_library(
         "seq",
         "slice_buffer",
         "try_seq",
+        "status_flag",
+        "chaotic_good_serialize_little_endian",
+        "seq_bit_set",
         "//:promise",
     ],
 )
@@ -8044,6 +8047,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_serialize_little_endian",
+    hdrs = [
+        "ext/transport/chaotic_good/serialize_little_endian.h",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_tcp_frame_transport",
     srcs = [
         "ext/transport/chaotic_good/tcp_frame_transport.cc",
@@ -8057,11 +8067,13 @@ grpc_cc_library(
         "chaotic_good_frame_header",
         "chaotic_good_frame_transport",
         "chaotic_good_pending_connection",
+        "chaotic_good_serialize_little_endian",
         "event_engine_tcp_socket_utils",
         "if",
         "inter_activity_latch",
         "loop",
         "race",
+        "join",
         "seq",
         "try_seq",
     ],

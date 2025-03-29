@@ -22,6 +22,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/escaping.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/serialize_little_endian.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
@@ -34,6 +35,23 @@ namespace grpc_core {
 namespace chaotic_good {
 
 namespace data_endpoints_detail {
+
+///////////////////////////////////////////////////////////////////////////////
+// FrameHeader
+
+void DataFrameHeader::Serialize(uint8_t* data) const {
+  WriteLittleEndianUint64(payload_tag, data);
+  WriteLittleEndianUint64(send_timestamp, data + 8);
+  WriteLittleEndianUint32(payload_length, data + 16);
+}
+
+absl::StatusOr<DataFrameHeader> DataFrameHeader::Parse(const uint8_t* data) {
+  DataFrameHeader header;
+  header.payload_tag = ReadLittleEndianUint64(data);
+  header.send_timestamp = ReadLittleEndianUint64(data + 8);
+  header.payload_length = ReadLittleEndianUint32(data + 16);
+  return header;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // OutputBuffer
@@ -54,7 +72,7 @@ Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   const uint32_t length = output_buffer.Length();
-  const size_t write_size = FrameHeader::kFrameHeaderSize + length;
+  const size_t write_size = DataFrameHeader::kFrameHeaderSize + length;
   MutexLock lock(&mu_);
   size_t best_endpoint = std::numeric_limits<size_t>::max();
   double earliest_delivery = std::numeric_limits<double>::max();
@@ -79,8 +97,8 @@ Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
       << best_endpoint << " queue " << this;
   waker = buffers_[best_endpoint]->TakeWaker();
   SliceBuffer& output = buffers_[best_endpoint]->pending();
-  FrameHeader{payload_tag, send_time, length}.Serialize(
-      output.AddTiny(FrameHeader::kFrameHeaderSize));
+  DataFrameHeader{payload_tag, send_time, length}.Serialize(
+      output.AddTiny(DataFrameHeader::kFrameHeaderSize));
   output.TakeAndAppend(output_buffer);
   return Empty{};
 }
@@ -201,18 +219,18 @@ auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
   return Loop([id, endpoint = std::move(endpoint),
                input_queues = std::move(input_queues)]() {
     return TrySeq(
-        endpoint->ReadSlice(FrameHeader::kFrameHeaderSize),
+        endpoint->ReadSlice(DataFrameHeader::kFrameHeaderSize),
         [](Slice frame_header) {
-          return FrameHeader::Parse(frame_header.data());
+          return DataFrameHeader::Parse(frame_header.data());
         },
-        [id, endpoint](FrameHeader frame_header) {
+        [id, endpoint](DataFrameHeader frame_header) {
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: Read " << frame_header
               << " on data connection #" << id;
           return TryStaple(endpoint->Read(frame_header.payload_length),
                            frame_header);
         },
-        [input_queues](std::tuple<SliceBuffer, FrameHeader> buffer_frame)
+        [input_queues](std::tuple<SliceBuffer, DataFrameHeader> buffer_frame)
             -> LoopCtl<absl::Status> {
           auto& [buffer, frame_header] = buffer_frame;
           input_queues->CompleteRead(frame_header.payload_tag,

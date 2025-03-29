@@ -298,7 +298,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         if (frame_header.ok()) {
           if (frame_header->header.type != FrameType::kSettings) {
             frame_header = absl::InternalError("Not a settings frame");
-          } else if (frame_header->payload_connection_id != 0) {
+          } else if (frame_header->payload_tag != 0) {
             frame_header = absl::InternalError("Unexpected connection id");
           } else if (frame_header->header.stream_id != 0) {
             frame_header = absl::InternalError("Unexpected stream id");
