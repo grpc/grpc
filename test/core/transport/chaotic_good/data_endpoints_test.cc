@@ -31,6 +31,7 @@
 #include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 
+#include <cmath>
 #include <cstdint>
 
 #include "gtest/gtest.h"
@@ -38,6 +39,66 @@
 #include "test/core/transport/util/mock_promise_endpoint.h"
 
 namespace grpc_core {
+
+namespace chaotic_good::data_endpoints_detail {
+
+enum class SendRateOpType : uint8_t {
+  kStartSend,
+  kMaybeCompleteSend,
+  kDeliveryTime
+};
+
+struct SendRateOp {
+  SendRateOpType type;
+  uint64_t current_time;
+  uint64_t arg;
+};
+
+auto AnySendOp() {
+  return fuzztest::Map(
+      [](uint8_t type, uint64_t current_time, uint64_t arg) {
+        if (current_time == 0) current_time = 1;
+        switch (type % 3) {
+          case 0:
+            return SendRateOp{SendRateOpType::kStartSend, current_time, arg};
+          case 1:
+            return SendRateOp{SendRateOpType::kMaybeCompleteSend, current_time,
+                              0};
+          case 2:
+            return SendRateOp{SendRateOpType::kDeliveryTime, current_time, arg};
+          default:
+            LOG(FATAL) << "unreachable";
+        }
+      },
+      fuzztest::Arbitrary<uint8_t>(), fuzztest::Arbitrary<uint64_t>(),
+      fuzztest::Arbitrary<uint64_t>());
+}
+
+void SendRateIsRobust(double initial_rate, std::vector<SendRateOp> ops) {
+  SendRate send_rate(initial_rate);
+  for (const auto& op : ops) {
+    switch (op.type) {
+      case SendRateOpType::kStartSend:
+        send_rate.StartSend(op.current_time, op.arg);
+        break;
+      case SendRateOpType::kMaybeCompleteSend:
+        send_rate.MaybeCompleteSend(op.current_time);
+        break;
+      case SendRateOpType::kDeliveryTime: {
+        const double delivery_time =
+            send_rate.DeliveryTime(op.current_time, op.arg);
+        EXPECT_FALSE(std::isnan(delivery_time));
+        EXPECT_GE(delivery_time, 0.0);
+        break;
+      }
+    }
+  }
+}
+FUZZ_TEST(SendRateTest, SendRateIsRobust)
+    .WithDomains(fuzztest::InRange<double>(1e-9, 1e9),
+                 fuzztest::VectorOf(AnySendOp()));
+
+}  // namespace chaotic_good::data_endpoints_detail
 
 class DataEndpointsTest : public YodelTest {
  protected:
