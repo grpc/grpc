@@ -26,6 +26,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/escaping.h"
 #include "utils.h"
 
 namespace {
@@ -287,6 +288,19 @@ void ExpandTransitiveDeps(nlohmann::json& config) {
     lib["transitive_deps"] = calc.Calculate(lib["name"]);
   }
 }
+
+void AddSupportedBazelVersions(nlohmann::json& config) {
+  std::ifstream file("../../bazel/supported_versions.txt");
+  std::string line;
+  std::vector<std::string> versions;
+  while (std::getline(file, line)) {
+    line = absl::StripAsciiWhitespace(line);
+    if (line.empty()) continue;
+    versions.push_back(line);
+  }
+  config["supported_bazel_versions"] = versions;
+  config["primary_bazel_version"] = versions.front();
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
@@ -296,4 +310,5 @@ void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   ExpandTransitiveDeps(config);
   AddPhpConfig(config);
   ExpandVersion(config);
+  AddSupportedBazelVersions(config);
 }
