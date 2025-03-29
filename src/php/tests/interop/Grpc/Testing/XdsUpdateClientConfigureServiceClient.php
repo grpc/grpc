@@ -40,7 +40,7 @@ class XdsUpdateClientConfigureServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\ClientConfigureRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Grpc\Testing\ClientConfigureResponse>
      */
     public function Configure(\Grpc\Testing\ClientConfigureRequest $argument,
       $metadata = [], $options = []) {
