@@ -147,7 +147,6 @@ InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
 
 Poll<absl::StatusOr<SliceBuffer>> InputQueue::PollRead(uint64_t payload_tag) {
   MutexLock lock(&mu_);
-  LOG(INFO) << "XX: " << payload_tag << " " << read_completed_;
   if (!read_completed_.IsSet(payload_tag)) {
     read_wakers_.emplace(payload_tag,
                          GetContext<Activity>()->MakeNonOwningWaker());

@@ -226,15 +226,15 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
 
 DATA_ENDPOINTS_TEST(CanRead) {
   util::testing::MockPromiseEndpoint ep(1234);
-  chaotic_good::DataEndpoints data_endpoints(
-      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false,
-      Time1Clock());
+  ep.ExpectRead({DataFrameHeader(5, 1, 5)}, event_engine().get());
   ep.ExpectRead(
-      {DataFrameHeader(5, 1, 5),
-       grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
+      {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       event_engine().get());
   auto close_ep =
       ep.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false,
+      Time1Clock());
   SpawnTestSeqWithoutContext("read", data_endpoints.Read(5).Await(),
                              [](absl::StatusOr<SliceBuffer> result) {
                                EXPECT_TRUE(result.ok());
