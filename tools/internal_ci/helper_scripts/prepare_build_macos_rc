@@ -219,7 +219,7 @@ then
   php --version
 
   # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
-  mkdir -p /usr/local/lib/php/pecl
+  # mkdir -p /usr/local/lib/php/pecl
 
   # Download the right version of phpunit to match PHP version
   sudo curl -sSL https://phar.phpunit.de/phpunit-9.5.9.phar -o /usr/local/bin/phpunit
