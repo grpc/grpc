@@ -200,9 +200,18 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
   time brew install php@8.1 || true
-  export LDFLAGS="-L/usr/local/opt/php@8.1/lib ${LDFLAGS}"
-  export CPPFLAGS="-I/usr/local/opt/php@8.1/include ${CPPFLAGS}"
-  export PATH="/usr/local/opt/php@8.1/bin:/usr/local/opt/php@8.1/sbin:${PATH}"
+  if [ -e "/usr/local/opt/php@8.1/" ]; then
+    PHP_PATH="/usr/local/opt/php@8.1/"
+  elif [ -e "/opt/homebrew/opt/php@8.1" ]; then
+    PHP_PATH="/usr/local/opt/php@8.1/"
+  else
+    echo "Error: Unable to check php install path" >&2
+    exit 1
+  fi
+
+  export LDFLAGS="-L${PHP_PATH}/lib ${LDFLAGS}"
+  export CPPFLAGS="-I${PHP_PATH}include ${CPPFLAGS}"
+  export PATH="${PHP_PATH}/bin:${PHP_PATH}/sbin:${PATH}"
 
   # the exit code from "brew install php@8.1" is useless
   # so instead we check if PHP was indeed installed successfully.
