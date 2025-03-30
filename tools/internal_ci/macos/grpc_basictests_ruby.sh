@@ -15,5 +15,5 @@
 
 set -ex
 
-#export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
+export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
 $(dirname $0)/grpc_run_tests_matrix.sh
