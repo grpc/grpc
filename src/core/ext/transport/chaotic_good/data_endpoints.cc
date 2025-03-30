@@ -138,7 +138,7 @@ void OutputBuffers::AddEndpoint(uint32_t connection_id) {
 InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
   {
     MutexLock lock(&mu_);
-    if (read_completed_.Set(payload_tag)) {
+    if (read_requested_.Set(payload_tag)) {
       return ReadTicket(Failure{}, nullptr);
     }
   }
@@ -147,6 +147,7 @@ InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
 
 Poll<absl::StatusOr<SliceBuffer>> InputQueue::PollRead(uint64_t payload_tag) {
   MutexLock lock(&mu_);
+  LOG(INFO) << "XX: " << payload_tag << " " << read_completed_;
   if (!read_completed_.IsSet(payload_tag)) {
     read_wakers_.emplace(payload_tag,
                          GetContext<Activity>()->MakeNonOwningWaker());
@@ -184,6 +185,8 @@ void InputQueue::Cancel(uint64_t payload_tag) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   MutexLock lock(&mu_);
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: Cancel payload_tag #" << payload_tag;
   auto it = read_wakers_.find(payload_tag);
   if (it != read_wakers_.end()) {
     waker = std::move(it->second);

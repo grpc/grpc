@@ -230,13 +230,18 @@ DATA_ENDPOINTS_TEST(CanRead) {
       Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false,
       Time1Clock());
   ep.ExpectRead(
-      {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
+      {DataFrameHeader(5, 1, 5),
+       grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       event_engine().get());
+  auto close_ep =
+      ep.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
   SpawnTestSeqWithoutContext("read", data_endpoints.Read(5).Await(),
                              [](absl::StatusOr<SliceBuffer> result) {
                                EXPECT_TRUE(result.ok());
                                EXPECT_EQ(result->JoinIntoString(), "hello");
                              });
+  WaitForAllPendingWork();
+  close_ep();
   WaitForAllPendingWork();
 }
 

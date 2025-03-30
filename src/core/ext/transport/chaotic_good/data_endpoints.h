@@ -190,10 +190,10 @@ class InputQueue : public RefCounted<InputQueue> {
       return If(
           payload_tag_.ok(),
           [this]() {
-            return
-                [input_queues = input_queues_, payload_tag = payload_tag_]() {
-                  return input_queues->PollRead(*payload_tag);
-                };
+            return [input_queues = input_queues_,
+                    payload_tag = std::exchange(*payload_tag_, 0)]() {
+              return input_queues->PollRead(payload_tag);
+            };
           },
           []() {
             return []() -> absl::StatusOr<SliceBuffer> {

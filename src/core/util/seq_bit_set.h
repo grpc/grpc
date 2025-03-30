@@ -18,6 +18,9 @@
 #include <cstdint>
 #include <set>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+
 namespace grpc_core {
 
 // A bitset of flags for whether a sequence number has been
@@ -31,6 +34,20 @@ class SeqBitSet {
   // Returns true if seq was already set, false if not.
   bool Set(uint64_t seq);
   bool IsSet(uint64_t seq) const;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, SeqBitSet sbs) {
+    std::set<uint64_t> rest = sbs.far_future_bits_;
+    for (size_t i = 0; i < kNumFutureBitEntries; i++) {
+      for (int j = 0; j < 64; j++) {
+        if (sbs.future_bits_[i] & (1ull << j)) {
+          rest.insert(sbs.epoch_ + i * 64 + j);
+        }
+      }
+    }
+    out.Append(absl::StrCat("epoch:", sbs.epoch_, " set:{",
+                            absl::StrJoin(rest, ","), "}"));
+  }
 
  private:
   static constexpr std::size_t kNumFutureBitEntries = 3;

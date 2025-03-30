@@ -610,6 +610,9 @@ grpc_cc_library(
     name = "seq_bit_set",
     srcs = ["util/seq_bit_set.cc"],
     hdrs = ["util/seq_bit_set.h"],
+    external_deps = [
+        "absl/strings"
+    ]
 )
 
 grpc_cc_library(
