@@ -216,7 +216,7 @@ then
   # the exit code from "brew install php@8.1" is useless
   # so instead we check if PHP was indeed installed successfully.
   # Failing early is better than cryptic errors later in the build process.
-  /usr/local/opt/php@8.1/bin/php --version
+  php --version
 
   # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
   mkdir -p /usr/local/lib/php/pecl
