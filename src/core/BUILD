@@ -2801,6 +2801,7 @@ grpc_cc_library(
         "iomgr_port",
         "resolved_address",
         "status_helper",
+        "event_engine_common",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",

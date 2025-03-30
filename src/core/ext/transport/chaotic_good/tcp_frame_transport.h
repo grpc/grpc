@@ -28,8 +28,8 @@ namespace grpc_core {
 namespace chaotic_good {
 
 struct TcpFrameHeader {
-  // Frame header size is fixed to 24 bytes.
-  enum { kFrameHeaderSize = 24 };
+  // Frame header size is fixed.
+  enum { kFrameHeaderSize = 16 };
 
   FrameHeader header;
   // if 0 ==> this frames payload will be on the control channel

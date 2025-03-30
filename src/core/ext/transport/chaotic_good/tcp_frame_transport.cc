@@ -44,16 +44,17 @@ uint32_t DataConnectionPadding(uint32_t payload_length, uint32_t alignment) {
 
 // Serializes a frame header into a buffer of 24 bytes.
 void TcpFrameHeader::Serialize(uint8_t* data) const {
-  WriteLittleEndianUint64(static_cast<uint64_t>(header.type) | payload_tag << 8,
-                          data);
+  DCHECK_EQ(payload_tag >> 56, 0) << payload_tag;
+  WriteLittleEndianUint64(
+      static_cast<uint64_t>(header.type) | (payload_tag << 8), data);
   WriteLittleEndianUint32(header.stream_id, data + 8);
   WriteLittleEndianUint32(header.payload_length, data + 12);
 }
 
-// Parses a frame header from a buffer of 24 bytes. All 24 bytes are consumed.
+// Parses a frame header from a buffer.
 absl::StatusOr<TcpFrameHeader> TcpFrameHeader::Parse(const uint8_t* data) {
   TcpFrameHeader tcp_header;
-  const uint32_t type_and_tag = ReadLittleEndianUint64(data);
+  const uint64_t type_and_tag = ReadLittleEndianUint64(data);
   tcp_header.header.type = static_cast<FrameType>(type_and_tag & 0xff);
   tcp_header.payload_tag = type_and_tag >> 8;
   tcp_header.header.stream_id = ReadLittleEndianUint32(data + 8);
