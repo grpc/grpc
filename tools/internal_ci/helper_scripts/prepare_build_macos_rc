@@ -218,21 +218,19 @@ then
   # Failing early is better than cryptic errors later in the build process.
   php --version
 
-  php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-  php -r "if (hash_file('sha384', 'composer-setup.php') === 'dac665fdc30fdd8ec78b38b9800061b4150413ff2e3b6f88543c636f7cd84f6db9189d43a81e5503cda447da73c7e5b6') { echo 'Installer verified'.PHP_EOL; } else { echo 'Installer corrupt'.PHP_EOL; unlink('composer-setup.php'); exit(1); }"
-  php composer-setup.php --install-dir /tmp
-  php -r "unlink('composer-setup.php');"
-  #sudo mv /tmp/composer.phar /usr/local/bin/composer
-
-  php /tmp/composer.phar global require phpunit/phpunit:9.5.9
-
-
-  # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
-  # mkdir -p /usr/local/lib/php/pecl
-
-  # Download the right version of phpunit to match PHP version
-  #sudo curl -sSL https://phar.phpunit.de/phpunit-9.5.9.phar -o /usr/local/bin/phpunit
-  #sudo chmod +x /usr/local/bin/phpunit
+  if $is_sonoma; then
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    php -r "if (hash_file('sha384', 'composer-setup.php') === 'dac665fdc30fdd8ec78b38b9800061b4150413ff2e3b6f88543c636f7cd84f6db9189d43a81e5503cda447da73c7e5b6') { echo 'Installer verified'.PHP_EOL; } else { echo 'Installer corrupt'.PHP_EOL; unlink('composer-setup.php'); exit(1); }"
+    php composer-setup.php --install-dir /tmp
+    php -r "unlink('composer-setup.php');"
+    php /tmp/composer.phar global require phpunit/phpunit:9.5.9
+  else
+    # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
+    mkdir -p /usr/local/lib/php/pecl
+    # Download the right version of phpunit to match PHP version
+    sudo curl -sSL https://phar.phpunit.de/phpunit-9.5.9.phar -o /usr/local/bin/phpunit
+    sudo chmod +x /usr/local/bin/phpunit
+  fi
 fi
 
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
