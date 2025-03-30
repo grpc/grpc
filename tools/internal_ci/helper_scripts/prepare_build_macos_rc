@@ -203,7 +203,7 @@ then
   if [ -e "/usr/local/opt/php@8.1/" ]; then
     PHP_PATH="/usr/local/opt/php@8.1/"
   elif [ -e "/opt/homebrew/opt/php@8.1" ]; then
-    PHP_PATH="/usr/local/opt/php@8.1/"
+    PHP_PATH="/opt/homebrew/opt/php@8.1"
   else
     echo "Error: Unable to check php install path" >&2
     exit 1
