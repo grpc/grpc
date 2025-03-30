@@ -168,7 +168,7 @@ then
   "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
   # Ensure the generated artifacts are valid using "twine check"
   # pinning twine's dependency package `cryptography` version to 3.3.2 (last version without Rust dependency)
-  venv/bin/python -m pip install "cryptography==3.3.2" "twine==5.0.0" "readme_renderer<40.0"
+  venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
   venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
   if [ "$GRPC_BUILD_MAC" == "" ]; then
     venv/bin/python -m twine check src/python/grpcio_observability/dist/*
