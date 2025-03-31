@@ -20,13 +20,13 @@
 #include "absl/strings/escaping.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
-#include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 
-using grpc_core::chaotic_good::FrameHeader;
-using HeaderBuffer = std::array<uint8_t, FrameHeader::kFrameHeaderSize>;
+using grpc_core::chaotic_good::TcpFrameHeader;
+using HeaderBuffer = std::array<uint8_t, TcpFrameHeader::kFrameHeaderSize>;
 
 void RoundTrips(HeaderBuffer buffer) {
-  auto r = FrameHeader::Parse(buffer.data());
+  auto r = TcpFrameHeader::Parse(buffer.data());
   if (!r.ok()) return;
   HeaderBuffer reserialized;
   r->Serialize(reserialized.data());

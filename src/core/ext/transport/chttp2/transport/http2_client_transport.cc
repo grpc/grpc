@@ -363,10 +363,6 @@ Http2ClientTransport::Http2ClientTransport(
   general_party_arena->SetContext<EventEngine>(event_engine.get());
   general_party_ = Party::Make(std::move(general_party_arena));
 
-  auto write_party_arena = SimpleArenaAllocator(0)->MakeArena();
-  write_party_arena->SetContext<EventEngine>(event_engine.get());
-  write_party_ = Party::Make(std::move(write_party_arena));
-
   general_party_->Spawn("ReadLoop", ReadLoop(), OnReadLoopEnded());
   // TODO(tjagtap) : [PH2][P2] Fix when needed.
   general_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
@@ -377,7 +373,6 @@ Http2ClientTransport::~Http2ClientTransport() {
   // TODO(tjagtap) : [PH2][P1] : Implement the needed cleanup
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor Begin";
   general_party_.reset();
-  write_party_.reset();
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }
 

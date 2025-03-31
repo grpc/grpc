@@ -36,6 +36,8 @@ grpc_cc_library(
         "otel/sdk/src/metrics",
     ],
     tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     deps = [
         "//:grpc++",
@@ -57,8 +59,6 @@ grpc_cc_test(
         "otel/sdk/src/metrics",
     ],
     tags = [
-        # TODO(b/398739502): Remove after fixing
-        "grpc:broken-internally",
         # TODO(b/332369798): Remove after fixing bug
         "grpc:otel-namespace-calamity",
     ],
@@ -122,8 +122,8 @@ grpc_cc_test(
         "otel/sdk/src/trace",
     ],
     tags = [
-        # TODO(b/398739502): Remove after fixing
-        "grpc:broken-internally",
+        # Incompatible with internal tracing
+        "grpc:no-internal-poller",
         # TODO(b/332369798): Remove after fixing bug
         "grpc:otel-namespace-calamity",
     ],
