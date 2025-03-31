@@ -23,6 +23,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 
 namespace grpc_core {
@@ -127,6 +128,7 @@ class SerializeExtraBytesRequired {
   size_t operator()(const Http2WindowUpdateFrame&) { return 4; }
   size_t operator()(const Http2SecurityFrame&) { return 0; }
   size_t operator()(const Http2UnknownFrame&) { Crash("unreachable"); }
+  size_t operator()(const Http2EmptyFrame&) { Crash("unreachable"); }
 };
 
 class SerializeHeaderAndPayload {
@@ -232,6 +234,8 @@ class SerializeHeaderAndPayload {
   }
 
   void operator()(Http2UnknownFrame&) { Crash("unreachable"); }
+
+  void operator()(Http2EmptyFrame&) {}
 
  private:
   SliceBuffer& out_;
@@ -367,18 +371,9 @@ absl::StatusOr<Http2PingFrame> ParsePingFrame(const Http2FrameHeader& hdr,
         absl::StrCat("invalid ping stream id: ", hdr.ToString()));
   }
 
-  bool ack;
-  switch (hdr.flags) {
-    case 0:
-      ack = false;
-      break;
-    case kFlagAck:
-      ack = true;
-      break;
-    default:
-      return absl::InternalError(
-          absl::StrCat("invalid ping flags: ", hdr.ToString()));
-  }
+  // RFC9113 : Unused flags MUST be ignored on receipt and MUST be left unset
+  // (0x00) when sending.
+  bool ack = ((hdr.flags & kFlagAck) == kFlagAck);
 
   uint8_t buffer[8];
   payload.CopyToBuffer(buffer);
@@ -397,11 +392,6 @@ absl::StatusOr<Http2GoawayFrame> ParseGoawayFrame(const Http2FrameHeader& hdr,
   if (hdr.stream_id != 0) {
     return absl::InternalError(
         absl::StrCat("invalid goaway stream id: ", hdr.ToString()));
-  }
-
-  if (hdr.flags != 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid goaway flags: ", hdr.ToString()));
   }
 
   uint8_t buffer[8];
@@ -520,6 +510,23 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
     default:
       return Http2UnknownFrame{};
   }
+}
+
+GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
+  CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
+  uint8_t buffer[kGrpcHeaderSizeInBytes];
+  payload.MoveFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
+  GrpcMessageHeader header;
+  header.flags = buffer[0];
+  header.length = Read4b(buffer + 1);
+  return header;
+}
+
+void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
+                                   const uint32_t length) {
+  uint8_t* frame_hdr = payload.AddTiny(kGrpcHeaderSizeInBytes);
+  frame_hdr[0] = flags;
+  Write4b(length, frame_hdr + 1);
 }
 
 }  // namespace grpc_core

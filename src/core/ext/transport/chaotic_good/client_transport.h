@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <initializer_list>  // IWYU pragma: keep
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -36,10 +37,11 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
+#include "src/core/call/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/lib/promise/activity.h"
@@ -56,7 +58,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/sync.h"
@@ -67,8 +68,8 @@ namespace chaotic_good {
 class ChaoticGoodClientTransport final : public ClientTransport {
  public:
   ChaoticGoodClientTransport(const ChannelArgs& args,
-                             PromiseEndpoint control_endpoint, Config config,
-                             RefCountedPtr<ClientConnectionFactory> connector);
+                             OrphanablePtr<FrameTransport> frame_transport,
+                             MessageChunker message_chunker);
   ~ChaoticGoodClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -81,45 +82,72 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void Orphan() override;
 
   void StartCall(CallHandler call_handler) override;
-  void AbortWithError();
 
  private:
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallHandler call) : call(std::move(call)) {}
+    explicit Stream(CallHandler call)
+        : call(std::move(call)),
+          frame_dispatch_serializer(this->call.party()->MakeSpawnSerializer()) {
+    }
     CallHandler call;
     MessageReassembly message_reassembly;
+    Party::SpawnSerializer* frame_dispatch_serializer;
   };
-  using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
+  using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream> >;
 
-  uint32_t MakeStream(CallHandler call_handler);
-  RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
+  class StreamDispatch final : public FrameTransportSink {
+   public:
+    explicit StreamDispatch(MpscSender<Frame> outgoing_frames);
+
+    void OnIncomingFrame(IncomingFrame incoming_frame) override;
+    void OnFrameTransportClosed(absl::Status status) override;
+
+    uint32_t MakeStream(CallHandler call_handler);
+
+    void StartConnectivityWatch(
+        grpc_connectivity_state state,
+        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+    void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
+
+   private:
+    template <typename T>
+    void DispatchFrame(IncomingFrame incoming_frame);
+    RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
+
+    // Push one frame into a call
+    static auto PushFrameIntoCall(ServerInitialMetadataFrame frame,
+                                  RefCountedPtr<Stream> stream);
+    static auto PushFrameIntoCall(MessageFrame frame,
+                                  RefCountedPtr<Stream> stream);
+    static auto PushFrameIntoCall(ServerTrailingMetadataFrame frame,
+                                  RefCountedPtr<Stream> stream);
+    static auto PushFrameIntoCall(BeginMessageFrame frame,
+                                  RefCountedPtr<Stream> stream);
+    static auto PushFrameIntoCall(MessageChunkFrame frame,
+                                  RefCountedPtr<Stream> stream);
+
+    static constexpr const uint32_t kClosedTransportStreamId =
+        std::numeric_limits<uint32_t>::max();
+
+    Mutex mu_;
+    uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
+    // Map of stream incoming server frames, key
+    // is stream_id.
+    StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
+    ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
+        "chaotic_good_client", GRPC_CHANNEL_READY};
+    MpscSender<Frame> outgoing_frames_;
+  };
+
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
-  auto OnTransportActivityDone(absl::string_view what);
-  template <typename T>
-  auto DispatchFrame(RefCountedPtr<ChaoticGoodTransport> transport,
-                     IncomingFrame incoming_frame);
-  auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
-  // Push one frame into a call
-  auto PushFrameIntoCall(ServerInitialMetadataFrame frame,
-                         RefCountedPtr<Stream> stream);
-  auto PushFrameIntoCall(MessageFrame frame, RefCountedPtr<Stream> stream);
-  auto PushFrameIntoCall(ServerTrailingMetadataFrame frame,
-                         RefCountedPtr<Stream> stream);
-  auto PushFrameIntoCall(BeginMessageFrame frame, RefCountedPtr<Stream> stream);
-  auto PushFrameIntoCall(MessageChunkFrame frame, RefCountedPtr<Stream> stream);
 
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   grpc_event_engine::experimental::MemoryAllocator allocator_;
-  // Max buffer is set to 4, so that for stream writes each time it will queue
-  // at most 2 frames.
-  MpscReceiver<ClientFrame> outgoing_frames_;
-  Mutex mu_;
-  uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
-  // Map of stream incoming server frames, key is stream_id.
-  StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<StreamDispatch> stream_dispatch_;
+  MpscSender<Frame> outgoing_frames_;
   RefCountedPtr<Party> party_;
-  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
-      "chaotic_good_client", GRPC_CHANNEL_READY};
   MessageChunker message_chunker_;
+  OrphanablePtr<FrameTransport> frame_transport_;
 };
 
 }  // namespace chaotic_good

@@ -27,6 +27,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/any_invocable.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/retry_service_config.h"
@@ -39,7 +40,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
@@ -256,8 +256,9 @@ class RetryFilter::LegacyCallData final {
     bool lb_call_committed_ = false;
 
     grpc_closure on_per_attempt_recv_timer_;
-    std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-        per_attempt_recv_timer_handle_;
+    grpc_event_engine::experimental::EventEngine::TaskHandle
+        per_attempt_recv_timer_handle_ =
+            grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
 
     // BatchData.batch.payload points to this.
     grpc_transport_stream_op_batch_payload batch_payload_;
@@ -373,7 +374,6 @@ class RetryFilter::LegacyCallData final {
   const internal::RetryMethodConfig* retry_policy_ = nullptr;
   BackOff retry_backoff_;
 
-  grpc_slice path_;  // Request path.
   Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
@@ -410,8 +410,8 @@ class RetryFilter::LegacyCallData final {
   bool retry_codepath_started_ : 1;
   bool sent_transparent_retry_not_seen_by_server_ : 1;
   int num_attempts_completed_ = 0;
-  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      retry_timer_handle_;
+  grpc_event_engine::experimental::EventEngine::TaskHandle retry_timer_handle_ =
+      grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
   grpc_closure retry_closure_;
 
   // Cached data for retrying send ops.

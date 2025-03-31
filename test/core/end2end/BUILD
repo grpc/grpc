@@ -291,6 +291,8 @@ grpc_cc_test(
     tags = [
         "requires-net:ipv4",
         "requires-net:loopback",
+        # relies on ares for dns resolution
+        "grpc:broken-internally",
     ],
     deps = [
         "cq_verifier",
@@ -311,6 +313,7 @@ grpc_cc_test(
         "//src/core:iomgr_fwd",
         "//src/core:resolved_address",
         "//src/core:time",
+        "//test/core/event_engine:delegating_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
 )

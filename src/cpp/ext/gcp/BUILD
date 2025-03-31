@@ -82,8 +82,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     visibility = [
+        "//bazel:grpc_python_observability",
         "//test:__subpackages__",
-        "@grpc:grpc_python_observability",
     ],
     deps = [
         "//:gpr",

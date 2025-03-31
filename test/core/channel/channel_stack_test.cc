@@ -101,7 +101,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   int* channel_data;
   int* call_data;
   grpc_core::ExecCtx exec_ctx;
-  grpc_slice path = grpc_slice_from_static_string("/service/method");
 
   channel_stack = static_cast<grpc_channel_stack*>(
       gpr_malloc(grpc_channel_stack_size(&filters, 1)));
@@ -123,7 +122,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_call_element_args args = {
       call_stack,                         // call_stack
       nullptr,                            // server_transport_data
-      path,                               // path
       gpr_get_cycle_counter(),            // start_time
       grpc_core::Timestamp::InfFuture(),  // deadline
       nullptr,                            // arena
@@ -145,8 +143,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   EXPECT_EQ(*channel_data, 2);
 
   GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
-
-  grpc_slice_unref(path);
 }
 
 int main(int argc, char** argv) {

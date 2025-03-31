@@ -40,8 +40,21 @@ if test "$PHP_GRPC" != "no"; then
 
   PHP_SUBST(GRPC_SHARED_LIBADD)
   PHP_NEW_EXTENSION(grpc,
+    src/core/call/call_arena_allocator.cc \
+    src/core/call/call_filters.cc \
+    src/core/call/call_spine.cc \
+    src/core/call/call_state.cc \
+    src/core/call/client_call.cc \
+    src/core/call/interception_chain.cc \
+    src/core/call/message.cc \
+    src/core/call/metadata.cc \
+    src/core/call/metadata_batch.cc \
+    src/core/call/metadata_info.cc \
+    src/core/call/parsed_metadata.cc \
     src/core/call/request_buffer.cc \
     src/core/call/security_context.cc \
+    src/core/call/server_call.cc \
+    src/core/call/status_util.cc \
     src/core/channelz/channel_trace.cc \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
@@ -518,7 +531,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack_builder_impl.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/promise_based_filter.cc \
-    src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
@@ -543,6 +555,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
+    src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc \
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
     src/core/lib/event_engine/posix_engine/timer_heap.cc \
@@ -676,7 +689,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/channel_create.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_stack_type.cc \
-    src/core/lib/surface/client_call.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
     src/core/lib/surface/connection_context.cc \
@@ -687,23 +699,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
-    src/core/lib/surface/server_call.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/call_arena_allocator.cc \
-    src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
-    src/core/lib/transport/call_spine.cc \
-    src/core/lib/transport/call_state.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/interception_chain.cc \
-    src/core/lib/transport/message.cc \
-    src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
-    src/core/lib/transport/metadata_info.cc \
-    src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \

@@ -56,6 +56,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/query_extensions.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -1937,6 +1938,12 @@ grpc_endpoint* grpc_tcp_create(
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                                const grpc_core::PosixTcpOptions& options,
                                absl::string_view peer_string) {
+  CHECK(!grpc_event_engine::experimental::UsePollsetAlternative())
+      << "This function must not be called when the pollset_alternative "
+         "experiment is enabled. This is a bug.";
+  CHECK(!grpc_core::IsEventEngineForAllOtherEndpointsEnabled())
+      << "The event_engine_for_all_other_endpoints experiment should prevent "
+         "this method from being called. This is a bug.";
   grpc_tcp* tcp = new grpc_tcp(options);
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);

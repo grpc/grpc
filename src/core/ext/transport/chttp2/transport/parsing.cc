@@ -40,6 +40,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -66,7 +67,6 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
@@ -536,6 +536,8 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
 static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   // Update BDP accounting since we have received a data frame.
   grpc_core::BdpEstimator* bdp_est = t->flow_control.bdp_estimator();
+  grpc_core::global_stats().IncrementHttp2ReadDataFrameSize(
+      t->incoming_frame_size);
   if (bdp_est) {
     if (t->bdp_ping_blocked) {
       t->bdp_ping_blocked = false;
@@ -961,7 +963,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
         {0, 0, GRPC_SLICE_LENGTH(slice)});
     call_tracer =
         grpc_core::IsCallTracerTransportFixEnabled()
-            ? s->CallTracer()
+            ? s->call_tracer
             : s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   }
   grpc_error_handle error = parser->Parse(

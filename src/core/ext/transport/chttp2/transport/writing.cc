@@ -34,6 +34,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -61,7 +62,6 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
@@ -252,6 +252,7 @@ class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
     grpc_core::global_stats().IncrementHttp2WritesBegun();
+    grpc_core::global_stats().IncrementHttp2WriteTargetSize(target_write_size_);
   }
 
   void FlushSettings() {
@@ -485,11 +486,10 @@ class StreamWriteContext {
                 .Add(write_stats));
       }
     } else {
-      auto* call_tracer = s_->CallTracer();
-      if (call_tracer != nullptr && call_tracer->IsSampled()) {
+      if (s_->call_tracer != nullptr && s_->call_tracer->IsSampled()) {
         grpc_core::HttpAnnotation::WriteStats write_stats;
         write_stats.target_write_size = write_context_->target_write_size();
-        call_tracer->RecordAnnotation(
+        s_->call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(
                 grpc_core::HttpAnnotation::Type::kHeadWritten,
                 gpr_now(GPR_CLOCK_REALTIME))
@@ -646,9 +646,8 @@ class StreamWriteContext {
                 .Add(s_->flow_control.stats()));
       }
     } else {
-      auto* call_tracer = s_->CallTracer();
-      if (call_tracer != nullptr && call_tracer->IsSampled()) {
-        call_tracer->RecordAnnotation(
+      if (s_->call_tracer != nullptr && s_->call_tracer->IsSampled()) {
+        s_->call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
                                       gpr_now(GPR_CLOCK_REALTIME))
                 .Add(s_->t->flow_control.stats())
@@ -699,10 +698,9 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             grpc_core::GrpcHttp2GetCopyContextFn();
         if (copy_context_fn != nullptr &&
             grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
-          t->context_list->emplace_back(copy_context_fn(s->arena),
-                                        outbuf_relative_start_pos,
-                                        num_stream_bytes, s->byte_counter,
-                                        s->write_counter - 1, s->tcp_tracer);
+          t->context_list->emplace_back(
+              copy_context_fn(s->arena), outbuf_relative_start_pos,
+              num_stream_bytes, s->byte_counter, s->write_counter - 1, nullptr);
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;

@@ -55,6 +55,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/metadata_info.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -96,15 +98,12 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/metadata_info.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
-#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -235,16 +234,6 @@ grpc_core::CallTracerAnnotationInterface* ParentCallTracerIfSampled(
     return nullptr;
   }
   return parent_call_tracer;
-}
-
-std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
-    grpc_chttp2_stream* s) {
-  auto* call_attempt_tracer =
-      s->arena->GetContext<grpc_core::CallTracerInterface>();
-  if (call_attempt_tracer == nullptr || !call_attempt_tracer->IsSampled()) {
-    return nullptr;
-  }
-  return call_attempt_tracer->StartNewTcpTrace();
 }
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
@@ -856,7 +845,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
       }()),
       arena(arena),
       flow_control(&t->flow_control),
-      call_tracer_wrapper(this) {
+      call_tracer_wrapper(this),
+      call_tracer(arena->GetContext<grpc_core::CallTracerInterface>()) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
@@ -1386,9 +1376,8 @@ static void trace_annotations(grpc_chttp2_stream* s) {
               .Add(s->flow_control.stats()));
     }
   } else {
-    auto* call_tracer = s->CallTracer();
-    if (call_tracer != nullptr && call_tracer->IsSampled()) {
-      call_tracer->RecordAnnotation(
+    if (s->call_tracer != nullptr && s->call_tracer->IsSampled()) {
+      s->call_tracer->RecordAnnotation(
           grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
                                     gpr_now(GPR_CLOCK_REALTIME))
               .Add(s->t->flow_control.stats())
@@ -1645,14 +1634,13 @@ static void perform_stream_op_locked(void* stream_op,
   if (!grpc_core::IsCallTracerTransportFixEnabled()) {
     s->parent_call_tracer = ParentCallTracerIfSampled(s);
   }
-  // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
-  // https://github.com/grpc/grpc/pull/38729 for more information.) On the
-  // client, the call attempt tracer will be available for use when the
-  // send_initial_metadata op arrives.
-  if (s->t->is_client && op->send_initial_metadata) {
+  // Some server filters populate CallTracerInterface in the context only after
+  // reading initial metadata. (Client-side population is done by
+  // client_channel filter.)
+  if (!t->is_client && !grpc_core::IsCallTracerInTransportEnabled() &&
+      op->send_initial_metadata) {
     s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
   }
-  s->tcp_tracer = TcpTracerIfSampled(s);
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op
               << "]: " << grpc_transport_stream_op_batch_string(op, false)

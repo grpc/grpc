@@ -42,6 +42,10 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
+    tags = [
+        # authority based dns uri's not supported
+        "grpc:fails-internally",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -55,6 +59,9 @@ grpc_cc_test(
     external_deps = [
         "absl/log:log",
         "gtest",
+    ],
+    tags = [
+        "grpc:broken-internally",
     ],
     deps = [
         "//:gpr",

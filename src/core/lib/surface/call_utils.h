@@ -44,6 +44,9 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/map.h"
@@ -51,9 +54,6 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/transport/message.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/crash.h"
 
 namespace grpc_core {

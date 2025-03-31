@@ -28,6 +28,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -40,7 +41,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -57,14 +57,6 @@ using grpc_event_engine::experimental::EventEngine;
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
-
-void Http2ClientTransport::StartCall(GRPC_UNUSED CallHandler call_handler) {
-  HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall Begin";
-  // TODO(tjagtap) : [PH2][P1] : Implement this function.
-  // TODO(tjagtap) : [PH2][P1] : Add CallHandler to Stream. Add the stream to
-  // our stream_list_
-  HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall End";
-}
 
 void Http2ClientTransport::PerformOp(GRPC_UNUSED grpc_transport_op* op) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport PerformOp Begin";
@@ -85,41 +77,185 @@ void Http2ClientTransport::AbortWithError() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport AbortWithError End";
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Promise factory for processing each type of frame
+
+auto Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
+  // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame Factory";
+  return
+      [frame1 = std::move(frame)]() -> absl::Status {
+        // TODO(tjagtap) : [PH2][P1] : Implement this.
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessHttp2DataFrame Promise { stream_id="
+            << frame1.stream_id << ", end_stream=" << frame1.end_stream
+            << ", payload=" << frame1.payload.JoinIntoString() << "}";
+        return absl::OkStatus();
+      };
+}
+
+auto Http2ClientTransport::ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
+  // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2HeaderFrame Factory";
+  return
+      [frame1 = std::move(frame)]() -> absl::Status {
+        // TODO(tjagtap) : [PH2][P1] : Implement this.
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
+            << frame1.stream_id << ", end_headers=" << frame1.end_headers
+            << ", end_stream=" << frame1.end_stream
+            << ", payload=" << frame1.payload.JoinIntoString() << " }";
+        return absl::OkStatus();
+      };
+}
+
+auto Http2ClientTransport::ProcessHttp2RstStreamFrame(
+    Http2RstStreamFrame frame) {
+  // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2RstStreamFrame Factory";
+  return
+      [frame1 = frame]() -> absl::Status {
+        // TODO(tjagtap) : [PH2][P1] : Implement this.
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessHttp2RstStreamFrame Promise{ stream_id="
+            << frame1.stream_id << ", error_code=" << frame1.error_code << " }";
+        return absl::OkStatus();
+      };
+}
+
+auto Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
+  // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
+  return
+      [frame1 = std::move(frame)]() -> absl::Status {
+        // TODO(tjagtap) : [PH2][P1] : Implement this.
+        // Load into this.settings_
+        // Take necessary actions as per settings that have changed.
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessHttp2SettingsFrame Promise { ack="
+            << frame1.ack << ", settings length=" << frame1.settings.size()
+            << "}";
+        return absl::OkStatus();
+      };
+}
+
+auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
+  // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2PingFrame Factory";
+  return
+      [frame1 = frame]() -> absl::Status {
+        // TODO(tjagtap) : [PH2][P1] : Implement this.
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessHttp2PingFrame Promise { ack="
+            << frame1.ack << ", opaque=" << frame1.opaque << " }";
+        return absl::OkStatus();
+      };
+}
+
+auto Http2ClientTransport::ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
+  // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Factory";
+  return
+      [frame1 = std::move(frame)]() -> absl::Status {
+        // TODO(tjagtap) : [PH2][P1] : Implement this.
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessHttp2GoawayFrame Promise { "
+               "last_stream_id="
+            << frame1.last_stream_id << ", error_code=" << frame1.error_code
+            << ", debug_data=" << frame1.debug_data.as_string_view() << "}";
+        return absl::OkStatus();
+      };
+}
+
+auto Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
+    Http2WindowUpdateFrame frame) {
+  // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
+  HTTP2_TRANSPORT_DLOG
+      << "Http2Transport ProcessHttp2WindowUpdateFrame Factory";
+  return
+      [frame1 = frame]() -> absl::Status {
+        // TODO(tjagtap) : [PH2][P1] : Implement this.
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessHttp2WindowUpdateFrame Promise { "
+               " stream_id="
+            << frame1.stream_id << ", increment=" << frame1.increment << "}";
+        return absl::OkStatus();
+      };
+}
+
+auto Http2ClientTransport::ProcessHttp2ContinuationFrame(
+    Http2ContinuationFrame frame) {
+  // https://www.rfc-editor.org/rfc/rfc9113.html#name-continuation
+  HTTP2_TRANSPORT_DLOG
+      << "Http2Transport ProcessHttp2ContinuationFrame Factory";
+  return
+      [frame1 = std::move(frame)]() -> absl::Status {
+        // TODO(tjagtap) : [PH2][P1] : Implement this.
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessHttp2ContinuationFrame Promise { "
+               "stream_id="
+            << frame1.stream_id << ", end_headers=" << frame1.end_headers
+            << ", payload=" << frame1.payload.JoinIntoString() << " }";
+        return absl::OkStatus();
+      };
+}
+
+auto Http2ClientTransport::ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
+  // TODO(tjagtap) : [PH2][P2] : This is not in the RFC. Understand usage.
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SecurityFrame Factory";
+  return
+      [frame1 = std::move(frame)]() -> absl::Status {
+        // TODO(tjagtap) : [PH2][P2] : Implement this.
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessHttp2SecurityFrame Promise { payload="
+            << frame1.payload.JoinIntoString() << " }";
+        return absl::OkStatus();
+      };
+}
+
 auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Factory";
   return AssertResultType<absl::Status>(MatchPromise(
       std::move(frame),
-      [](Http2DataFrame frame) {
+      [this](Http2DataFrame frame) {
         return ProcessHttp2DataFrame(std::move(frame));
       },
-      [](Http2HeaderFrame frame) {
+      [this](Http2HeaderFrame frame) {
         return ProcessHttp2HeaderFrame(std::move(frame));
       },
-      [](Http2RstStreamFrame frame) {
+      [this](Http2RstStreamFrame frame) {
         return ProcessHttp2RstStreamFrame(frame);
       },
-      [](Http2SettingsFrame frame) {
+      [this](Http2SettingsFrame frame) {
         return ProcessHttp2SettingsFrame(std::move(frame));
       },
-      [](Http2PingFrame frame) { return ProcessHttp2PingFrame(frame); },
-      [](Http2GoawayFrame frame) {
+      [this](Http2PingFrame frame) { return ProcessHttp2PingFrame(frame); },
+      [this](Http2GoawayFrame frame) {
         return ProcessHttp2GoawayFrame(std::move(frame));
       },
-      [](Http2WindowUpdateFrame frame) {
+      [this](Http2WindowUpdateFrame frame) {
         return ProcessHttp2WindowUpdateFrame(frame);
       },
-      [](Http2ContinuationFrame frame) {
+      [this](Http2ContinuationFrame frame) {
         return ProcessHttp2ContinuationFrame(std::move(frame));
       },
-      [](Http2SecurityFrame frame) {
+      [this](Http2SecurityFrame frame) {
         return ProcessHttp2SecurityFrame(std::move(frame));
       },
       [](GRPC_UNUSED Http2UnknownFrame frame) {
         // As per HTTP2 RFC, implementations MUST ignore and discard frames of
         // unknown types.
         return absl::OkStatus();
+      },
+      [](GRPC_UNUSED Http2EmptyFrame frame) {
+        LOG(DFATAL)
+            << "ParseFramePayload should never return a Http2EmptyFrame";
+        return absl::OkStatus();
       }));
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Read Related Promises and Promise Factories
 
 auto Http2ClientTransport::ReadAndProcessOneFrame() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame Factory";
@@ -176,14 +312,19 @@ auto Http2ClientTransport::OnReadLoopEnded() {
   };
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Write Related Promises and Promise Factories
+
 auto Http2ClientTransport::WriteFromQueue() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Factory";
-  return []() -> Poll<absl::Status> {
-    // TODO(tjagtap) : [PH2][P1] : Implement this.
-    // Read from the mpsc queue and write it to endpoint
-    HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
-    return Pending{};
-  };
+  return TrySeq(outgoing_frames_.NextBatch(),
+                [&endpoint = endpoint_](std::vector<Http2Frame> frames) {
+                  SliceBuffer output_buf;
+                  Serialize(absl::Span<Http2Frame>(frames), output_buf);
+                  HTTP2_CLIENT_DLOG
+                      << "Http2ClientTransport WriteFromQueue Promise";
+                  return endpoint.Write(std::move(output_buf));
+                });
 }
 
 auto Http2ClientTransport::WriteLoop() {
@@ -205,6 +346,9 @@ auto Http2ClientTransport::OnWriteLoopEnded() {
   };
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Constructor Destructor
+
 Http2ClientTransport::Http2ClientTransport(
     PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine)
@@ -219,10 +363,6 @@ Http2ClientTransport::Http2ClientTransport(
   general_party_arena->SetContext<EventEngine>(event_engine.get());
   general_party_ = Party::Make(std::move(general_party_arena));
 
-  auto write_party_arena = SimpleArenaAllocator(0)->MakeArena();
-  write_party_arena->SetContext<EventEngine>(event_engine.get());
-  write_party_ = Party::Make(std::move(write_party_arena));
-
   general_party_->Spawn("ReadLoop", ReadLoop(), OnReadLoopEnded());
   // TODO(tjagtap) : [PH2][P2] Fix when needed.
   general_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
@@ -233,9 +373,11 @@ Http2ClientTransport::~Http2ClientTransport() {
   // TODO(tjagtap) : [PH2][P1] : Implement the needed cleanup
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor Begin";
   general_party_.reset();
-  write_party_.reset();
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Stream Related Operations
 
 RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
     uint32_t stream_id) {
@@ -272,6 +414,17 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
   stream_list_.emplace(stream_id,
                        MakeRefCounted<Stream>(std::move(call_handler)));
   return stream_id;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Call Spine related operations
+
+void Http2ClientTransport::StartCall(GRPC_UNUSED CallHandler call_handler) {
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall Begin";
+  // TODO(tjagtap) : [PH2][P1] : Implement this function.
+  // TODO(tjagtap) : [PH2][P1] : Add CallHandler to Stream. Add the stream to
+  // our stream_list_
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall End";
 }
 
 }  // namespace http2

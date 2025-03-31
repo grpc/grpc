@@ -26,6 +26,8 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/common_closures.h"
+#include "src/core/lib/event_engine/extensions/iomgr_compatible.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/iomgr/port.h"
@@ -40,7 +42,10 @@
 
 namespace grpc_event_engine::experimental {
 
-class WindowsEventEngineListener : public EventEngine::Listener {
+class WindowsEventEngineListener
+    : public ExtendedType<
+          EventEngine::Listener,
+          grpc_event_engine::experimental::IomgrCompatibleListener> {
  public:
   WindowsEventEngineListener(
       IOCP* iocp, AcceptCallback accept_cb,
@@ -51,9 +56,9 @@ class WindowsEventEngineListener : public EventEngine::Listener {
   ~WindowsEventEngineListener() override;
   absl::StatusOr<int> Bind(const EventEngine::ResolvedAddress& addr) override;
   absl::Status Start() override;
-  // TODO(hork): this may only be needed for the iomgr shim, to accommodate
-  // calls to grpc_tcp_server_shutdown_listeners
-  void ShutdownListeners();
+
+  // Part of IomgrCompatibleListener
+  void Shutdown() override;
 
  private:
   /// Responsible for listening on a single port.

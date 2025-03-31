@@ -52,12 +52,18 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 
 typedef struct freereq {
   gpr_mu* mu = nullptr;
   grpc_polling_entity pops = {};
   int done = 0;
 } freereq;
+
+static std::string get_port_server_address() {
+  // must be kep in sync with tools/run_tests/python_utils/start_port_server.py
+  return grpc_core::LocalIpAndPort(32766);
+}
 
 static void destroy_pops_and_shutdown(void* p, grpc_error_handle /*error*/) {
   grpc_pollset* pollset =
@@ -98,7 +104,7 @@ void grpc_free_port_using_server(int port) {
                                            grpc_schedule_on_exec_ctx);
 
     std::string path = absl::StrFormat("/drop/%d", port);
-    auto uri = grpc_core::URI::Create("https", GRPC_PORT_SERVER_ADDRESS, path,
+    auto uri = grpc_core::URI::Create("https", get_port_server_address(), path,
                                       {} /* query params */, "" /* fragment */);
     CHECK_OK(uri);
     auto http_request = grpc_core::HttpRequest::Get(
@@ -137,7 +143,7 @@ typedef struct portreq {
   grpc_polling_entity pops = {};
   int port = 0;
   int retries = 0;
-  char* server = nullptr;
+  std::string server;
   grpc_http_response response = {};
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request;
 } portreq;
@@ -228,8 +234,8 @@ int grpc_pick_port_using_server(void) {
     shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
                                            grpc_schedule_on_exec_ctx);
     pr.port = -1;
-    pr.server = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
-    auto uri = grpc_core::URI::Create("http", GRPC_PORT_SERVER_ADDRESS, "/get",
+    pr.server = get_port_server_address();
+    auto uri = grpc_core::URI::Create("http", pr.server, "/get",
                                       {} /* query params */, "" /* fragment */);
     CHECK_OK(uri);
     auto http_request = grpc_core::HttpRequest::Get(
