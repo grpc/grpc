@@ -37,6 +37,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/credentials/transport/security_connector.h"
@@ -51,7 +52,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/fake_transport_security.h"
@@ -396,7 +396,7 @@ class FakeChannelCredsFactory : public ChannelCredsFactory<> {
    public:
     absl::string_view type() const override { return Type(); }
     bool Equals(const ChannelCredsConfig&) const override { return true; }
-    Json ToJson() const override { return Json::FromObject({}); }
+    std::string ToString() const override { return "{}"; }
   };
 
   static absl::string_view Type() { return "fake"; }

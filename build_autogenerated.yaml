@@ -4028,8 +4028,10 @@ libs:
   language: c++
   public_headers: []
   headers:
+  - src/core/tsi/fake_transport_security.h
   - src/core/util/subprocess.h
   - test/core/end2end/data/ssl_test_data.h
+  - test/core/test_util/fake_transport_credentials.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/credentials.h
@@ -4037,12 +4039,14 @@ libs:
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
   src:
+  - src/core/tsi/fake_transport_security.cc
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/test_util/fake_transport_credentials.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
@@ -5186,20 +5190,25 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/tsi/fake_transport_security.h
   - src/core/util/subprocess.h
+  - test/core/test_util/fake_transport_credentials.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/credentials.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
+  - src/core/tsi/fake_transport_security.cc
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
+  - test/core/test_util/fake_transport_credentials.cc
   - test/cpp/naming/address_sorting_test.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
   deps:
   - gtest
+  - grpc
   - grpc++_unsecure
   - grpc_test_util_unsecure
   - grpc++_test_config
@@ -5971,14 +5980,18 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/tsi/fake_transport_security.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fake_transport_credentials.h
   - test/core/test_util/test_call_creds.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/tsi/fake_transport_security.cc
   - test/core/credentials/call/call_credentials_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fake_transport_credentials.cc
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
@@ -7904,9 +7917,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_credentials.h
   - test/core/test_util/test_call_creds.h
   src:
+  - src/core/tsi/fake_transport_security.cc
   - test/core/credentials/transport/composite/composite_credentials_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
@@ -12144,9 +12161,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_credentials.h
   src:
+  - src/core/tsi/fake_transport_security.cc
   - test/core/credentials/transport/insecure/insecure_credentials_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14556,9 +14577,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/tsi/fake_transport_security.h
-  - test/core/test_util/fake_transport_credentials.h
+  headers: []
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -14568,8 +14587,6 @@ targets:
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
-  - src/core/tsi/fake_transport_security.cc
-  - test/core/test_util/fake_transport_credentials.cc
   - test/cpp/end2end/resource_quota_end2end_stress_test.cc
   deps:
   - gtest
@@ -14715,9 +14732,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_credentials.h
   src:
+  - src/core/tsi/fake_transport_security.cc
   - test/core/surface/secure_channel_create_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14865,9 +14886,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_credentials.h
   src:
+  - src/core/tsi/fake_transport_security.cc
   - test/core/surface/server_chttp2_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14989,9 +15014,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_credentials.h
   src:
+  - src/core/tsi/fake_transport_security.cc
   - test/core/surface/server_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
   deps:
   - gtest
   - grpc_test_util
@@ -17427,9 +17456,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_credentials.h
   src:
+  - src/core/tsi/fake_transport_security.cc
   - test/core/credentials/transport/xds/xds_credentials_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
   deps:
   - gtest
   - grpc_test_util

@@ -69,9 +69,9 @@ _DEPS = [
     "//src/core:time",
     "//test/core/test_util:fail_first_call_filter",
     "//test/core/test_util:fake_stats_plugin",
+    "//test/core/test_util:fake_transport_credentials",
     "//test/core/test_util:grpc_test_util",
     "//test/core/test_util:test_lb_policies",
-    "//test/core/test_util:fake_transport_credentials",
 ]
 
 _TESTS = [
