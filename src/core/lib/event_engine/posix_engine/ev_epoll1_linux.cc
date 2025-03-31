@@ -167,7 +167,7 @@ bool InitEpoll1PollerLinux() {
   if (!fd.ok()) {
     return false;
   }
-  fds.Close(fd.fd());
+  fds.Close(fd.value());
   return true;
 }
 
@@ -244,7 +244,7 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
 
 Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
     : scheduler_(scheduler), was_kicked_(false), closed_(false) {
-  g_epoll_set_.epfd = posix_interface_.EpollCreateAndCloexec().fd();
+  g_epoll_set_.epfd = posix_interface_.EpollCreateAndCloexec().value();
   wakeup_fd_ = *CreateWakeupFd(&posix_interface_);
   CHECK(wakeup_fd_ != nullptr);
   CHECK(g_epoll_set_.epfd.ready());
@@ -463,7 +463,7 @@ void Epoll1Poller::AdvanceGeneration() {
     }
   }
   g_epoll_set_ = {};
-  g_epoll_set_.epfd = posix_interface_.EpollCreateAndCloexec().fd();
+  g_epoll_set_.epfd = posix_interface_.EpollCreateAndCloexec().value();
   CHECK(g_epoll_set_.epfd.ready());
   GRPC_TRACE_LOG(event_engine_poller, INFO)
       << "Post-fork grpc epoll fd: " << g_epoll_set_.epfd;

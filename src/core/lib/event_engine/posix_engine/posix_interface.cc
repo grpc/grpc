@@ -492,7 +492,7 @@ bool IsSocketReusePortSupported() {
     }
     if (s.ok()) {
       bool result = SetSocketReusePort(s->iomgr_fd(), 1).ok();
-      fds.Close(s.fd());
+      fds.Close(s.value());
       return result;
     } else {
       return false;
@@ -530,35 +530,35 @@ void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
 //
 // Factories
 //
-IF_POSIX_SOCKET(FileDescriptorResult EventEnginePosixInterface::Accept(
+IF_POSIX_SOCKET(PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept(
                     const FileDescriptor& sockfd, struct sockaddr* addr,
                     socklen_t* addrlen),
                 {
-                  return RunIfCorrectGeneration<FileDescriptorResult>(
+                  return RunIfCorrectGeneration<PosixErrorOr<FileDescriptor>>(
                       sockfd,
                       [&](int fd) {
                         return RegisterPosixResult(accept(fd, addr, addrlen));
                       },
-                      FileDescriptorResult::WrongGeneration());
+                      PosixErrorOr<FileDescriptor>::WrongGeneration());
                 })
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 
 IF_POSIX_SOCKET(
-    FileDescriptorResult EventEnginePosixInterface::Accept4(
+    PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
         const FileDescriptor& sockfd,
         grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
         int nonblock, int cloexec),
     {
       EventEngine::ResolvedAddress peer_addr;
       socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-      FileDescriptorResult fd =
+      PosixErrorOr<FileDescriptor> fd =
           Accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
       if (!fd.ok()) {
         return fd;
       }
       int flags;
-      int raw_fd = fd->fd();
+      int raw_fd = fd->value();
       if (nonblock) {
         flags = fcntl(raw_fd, F_GETFL, 0);
         if (flags < 0) goto close_and_error;
@@ -576,15 +576,15 @@ IF_POSIX_SOCKET(
       addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
       return fd;
     close_and_error:
-      FileDescriptorResult result(OperationResultKind::kError, errno);
-      Close(fd.fd());
+      PosixErrorOr<FileDescriptor> result(OperationResultKind::kError, errno);
+      Close(fd.value());
       return result;
     })
 
 #else  // GRPC_POSIX_SOCKETUTILS
 
 IF_POSIX_SOCKET(
-    FileDescriptorResult EventEnginePosixInterface::Accept4(
+    PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
         const FileDescriptor& sockfd,
         grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
         int nonblock, int cloexec),
@@ -597,14 +597,14 @@ IF_POSIX_SOCKET(
             flags |= cloexec ? SOCK_CLOEXEC : 0;
             EventEngine::ResolvedAddress peer_addr;
             socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-            FileDescriptorResult ret = RegisterPosixResult(accept4(
+            PosixErrorOr<FileDescriptor> ret = RegisterPosixResult(accept4(
                 fd, const_cast<sockaddr*>(peer_addr.address()), &len, flags));
             if (ret.ok()) {
               addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
             }
             return ret;
           },
-          FileDescriptorResult::WrongGeneration());
+          PosixErrorOr<FileDescriptor>::WrongGeneration());
     })
 
 #endif  // GRPC_POSIX_SOCKETUTILS
@@ -621,7 +621,7 @@ absl::StatusOr<FileDescriptor> EventEnginePosixInterface::CreateDualStackSocket(
   return Adopt(*fd);
 }
 
-IF_POSIX_SOCKET(FileDescriptorResult EventEnginePosixInterface::Socket(
+IF_POSIX_SOCKET(PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Socket(
                     int domain, int type, int protocol),
                 { return RegisterPosixResult(socket(domain, type, protocol)); })
 
@@ -644,8 +644,8 @@ IF_POSIX_SOCKET(absl::StatusOr<PipeEnds> EventEnginePosixInterface::Pipe(), {
   return status;
 })
 
-FileDescriptorResult EventEnginePosixInterface::EventFd(int initval,
-                                                        int flags) {
+PosixErrorOr<FileDescriptor> EventEnginePosixInterface::EventFd(int initval,
+                                                                int flags) {
 #ifdef GRPC_LINUX_EVENTFD
   return RegisterPosixResult(eventfd(initval, flags));
 #else
@@ -653,7 +653,8 @@ FileDescriptorResult EventEnginePosixInterface::EventFd(int initval,
 #endif
 }
 
-FileDescriptorResult EventEnginePosixInterface::EpollCreateAndCloexec() {
+PosixErrorOr<FileDescriptor>
+EventEnginePosixInterface::EpollCreateAndCloexec() {
 #ifdef GRPC_LINUX_EPOLL
 #ifdef GRPC_LINUX_EPOLL_CREATE1
   auto fd = RegisterPosixResult(epoll_create1(EPOLL_CLOEXEC));
@@ -666,9 +667,9 @@ FileDescriptorResult EventEnginePosixInterface::EpollCreateAndCloexec() {
   if (!fd.ok()) {
     LOG(ERROR) << "epoll_create unavailable";
     return fd;
-  } else if (fcntl(fd->fd(), F_SETFD, FD_CLOEXEC) != 0) {
+  } else if (fcntl(fd->value(), F_SETFD, FD_CLOEXEC) != 0) {
     LOG(ERROR) << "fcntl following epoll_create failed";
-    return FileDescriptorResult(OperationResultKind::kError, error_no);
+    return PosixErrorOr<FileDescriptor>(OperationResultKind::kError, error_no);
   }
   return fd;
 #endif  // GRPC_LINUX_EPOLL_CREATE1

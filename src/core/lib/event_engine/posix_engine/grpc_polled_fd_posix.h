@@ -116,7 +116,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     }
     owned_fds_.insert(as);
     return std::make_unique<GrpcPolledFdPosix>(
-        as, poller_->CreateHandle(fd.fd(), "c-ares socket",
+        as, poller_->CreateHandle(fd.value(), "c-ares socket",
                                   poller_->CanTrackErrors()));
   }
 
@@ -133,10 +133,12 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     auto& posix_interface =
         static_cast<GrpcPolledFdFactoryPosix*>(polled_fd_factory)
             ->poller_->posix_interface();
-    return posix_interface.Socket(af, type, protocol)
-        .if_ok(-1, [&](const FileDescriptor& fd) {
-          return posix_interface.ToInteger(fd);
-        });
+    auto socket = posix_interface.Socket(af, type, protocol);
+    if (socket.ok()) {
+      return posix_interface.ToInteger(socket.value());
+    } else {
+      return -1;
+    }
   }
 
   /// Overridden connect API for c-ares
@@ -145,10 +147,12 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     auto& posix_interface =
         static_cast<GrpcPolledFdFactoryPosix*>(polled_fd_factory)
             ->poller_->posix_interface();
-    return posix_interface.FromInteger(as).if_ok(
-        -1, [&](const FileDescriptor& fd) {
-          return posix_interface.Connect(fd, target, target_len).ok() ? 0 : -1;
-        });
+    auto fd = posix_interface.FromInteger(as);
+    if (!fd.ok()) {
+      return -1;
+    }
+    return posix_interface.Connect(fd.value(), target, target_len).ok() ? 0
+                                                                        : -1;
   }
 
   /// Overridden writev API for c-ares
@@ -157,11 +161,12 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     auto& posix_interface =
         static_cast<GrpcPolledFdFactoryPosix*>(polled_fd_factory)
             ->poller_->posix_interface();
-    return posix_interface.FromInteger(as).if_ok(
-        -1, [&](const FileDescriptor& fd) {
-          auto result = posix_interface.WriteV(fd, iov, iovec_count);
-          return result.ok() ? *result : -1;
-        });
+    auto fd = posix_interface.FromInteger(as);
+    if (!fd.ok()) {
+      return -1;
+    }
+    auto result = posix_interface.WriteV(fd.value(), iov, iovec_count);
+    return result.ok() ? *result : -1;
   }
 
   /// Overridden recvfrom API for c-ares
@@ -172,12 +177,13 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     auto& posix_interface =
         static_cast<GrpcPolledFdFactoryPosix*>(polled_fd_factory)
             ->poller_->posix_interface();
-    return posix_interface.FromInteger(as).if_ok(
-        -1, [&](const FileDescriptor& fd) {
-          auto result = posix_interface.RecvFrom(fd, data, data_len, flags,
-                                                 from, from_len);
-          return result.ok() ? *result : -1;
-        });
+    auto fd = posix_interface.FromInteger(as);
+    if (!fd.ok()) {
+      return -1;
+    }
+    auto result = posix_interface.RecvFrom(fd.value(), data, data_len, flags,
+                                           from, from_len);
+    return result.ok() ? *result : -1;
   }
 
   /// Overridden close API for c-ares
@@ -187,10 +193,11 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     if (self->owned_fds_.find(as) == self->owned_fds_.end()) {
       // c-ares owns this fd, grpc has never seen it
       auto& posix_interface = self->poller_->posix_interface();
-      return posix_interface.FromInteger(as).if_ok(0, [&](const auto& fd) {
-        posix_interface.Close(fd);
-        return 0;
-      });
+      auto fd = posix_interface.FromInteger(as);
+      if (!fd.ok()) {
+        return -1;
+      }
+      posix_interface.Close(fd.value());
     }
     return 0;
   }
@@ -203,15 +210,16 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   ///   - non-blocking
   ///   - cloexec flag
   ///   - disable nagle
-  static int ConfigureSocket(ares_socket_t fd, int type,
+  static int ConfigureSocket(ares_socket_t as, int type,
                              void* polled_fd_factory) {
     auto& posix_interface =
         static_cast<GrpcPolledFdFactoryPosix*>(polled_fd_factory)
             ->poller_->posix_interface();
-    return posix_interface.FromInteger(fd).if_ok(
-        -1, [&](const FileDescriptor& fd) {
-          return posix_interface.ConfigureSocket(fd, type);
-        });
+    auto fd = posix_interface.FromInteger(as);
+    if (!fd.ok()) {
+      return -1;
+    }
+    return posix_interface.ConfigureSocket(fd.value(), type);
   }
 
   const struct ares_socket_functions kSockFuncs = {

@@ -100,9 +100,12 @@ TEST(FileDescriptorCollectionTest, FromInteger) {
             ForkEnabled() ? 7 : gen + 7);
   EXPECT_EQ(collection.FromInteger(gen + 7)->generation(),
             ForkEnabled() ? 31 : 0);
-  EXPECT_EQ(collection.FromInteger((2 << kIntFdBits) + 7).kind(),
-            ForkEnabled() ? OperationResultKind::kWrongGeneration
-                          : OperationResultKind::kSuccess);
+  auto result = collection.FromInteger((2 << kIntFdBits) + 7);
+  if (ForkEnabled()) {
+    EXPECT_TRUE(result.IsWrongGenerationError());
+  } else {
+    EXPECT_TRUE(result.ok());
+  }
 }
 
 TEST(FileDescriptorCollectionTest, Remove) {

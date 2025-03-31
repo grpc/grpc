@@ -78,27 +78,20 @@ int FileDescriptorCollection::ToInteger(const FileDescriptor& fd) const {
   return fn(raw, fd.generation());
 }
 
-FileDescriptorResult FileDescriptorCollection::FromInteger(int fd) const {
+PosixErrorOr<FileDescriptor> FileDescriptorCollection::FromInteger(
+    int fd) const {
   if (fd <= 0) {
-    return FileDescriptorResult(FileDescriptor::Invalid());
+    return PosixErrorOr<FileDescriptor>(FileDescriptor::Invalid());
   }
   if (!IsForkEnabled()) {
-    return FileDescriptorResult({fd, 0});
+    return PosixErrorOr<FileDescriptor>({fd, 0});
   }
   int generation = current_generation_.load(std::memory_order_relaxed);
   if ((fd >> kIntFdBits) != (generation & kGenerationMask)) {
-    return FileDescriptorResult(OperationResultKind::kWrongGeneration, 0);
+    return PosixErrorOr<FileDescriptor>::WrongGeneration();
   }
-  return FileDescriptorResult(
+  return PosixErrorOr<FileDescriptor>(
       FileDescriptor(fd & ((1 << kIntFdBits) - 1), generation));
-}
-
-FileDescriptorResult FileDescriptorCollection::RegisterPosixResult(int result) {
-  if (result > 0) {
-    return FileDescriptorResult(Add(result));
-  } else {
-    return FileDescriptorResult(OperationResultKind::kError, errno);
-  }
 }
 
 }  // namespace grpc_event_engine::experimental

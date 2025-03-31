@@ -209,7 +209,7 @@ void ListenShutdownCb(server* sv) {
 
 // Called when a new TCP connection request arrives in the listening port.
 void ListenCb(server* sv, absl::Status status) {
-  FileDescriptorResult fd;
+  PosixErrorOr<FileDescriptor> fd;
   int flags;
   session* se;
   struct sockaddr_storage ss;
@@ -233,15 +233,15 @@ void ListenCb(server* sv, absl::Status status) {
     return;
   } else if (!fd.ok()) {
     LOG(ERROR) << "Failed to accept a connection, returned error: "
-               << fd.status();
+               << fd.StrError();
   }
-  ASSERT_TRUE(fd.ok()) << fd.status();
+  ASSERT_TRUE(fd.ok()) << fd.StrError();
   EXPECT_LT(fd->iomgr_fd(), FD_SETSIZE);
   flags = fcntl(fd->iomgr_fd(), F_GETFL, 0);
   fcntl(fd->iomgr_fd(), F_SETFL, flags | O_NONBLOCK);
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
-  se->em_fd = g_event_poller->CreateHandle(fd.fd(), "listener", false);
+  se->em_fd = g_event_poller->CreateHandle(fd.value(), "listener", false);
   se->session_read_closure = PosixEngineClosure::TestOnlyToClosure(
       [se](absl::Status status) { SessionReadCb(se, status); });
   se->em_fd->NotifyOnRead(se->session_read_closure);

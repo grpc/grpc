@@ -23,78 +23,13 @@
 #include <optional>
 #include <string>
 #include <utility>
-#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
-#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine::experimental {
-
-template <typename T>
-class PosixErrorOr {
- public:
-  PosixErrorOr() = default;
-  PosixErrorOr(const PosixErrorOr& other) = default;
-  PosixErrorOr(PosixErrorOr&& other) = default;
-  PosixErrorOr& operator=(const PosixErrorOr& other) = default;
-  PosixErrorOr& operator=(PosixErrorOr&& other) = default;
-
-  static PosixErrorOr Error(int code) { return PosixErrorOr({code}); }
-
-  static PosixErrorOr WrongGeneration() {
-    return PosixErrorOr(WrongGenerationError());
-  }
-
-  explicit PosixErrorOr(T value) : value_(std::move(value)) {}
-
-  bool ok() const { return std::holds_alternative<T>(value_); }
-
-  int code() const {
-    const PosixError* error = std::get_if<PosixError>(&value_);
-    CHECK_NE(error, nullptr);
-    return error->code;
-  }
-
-  bool IsPosixError() const {
-    return std::holds_alternative<PosixError>(value_);
-  }
-
-  bool IsPosixError(int code) const {
-    const PosixError* error = std::get_if<PosixError>(&value_);
-    return error != nullptr && code == error->code;
-  }
-
-  bool IsWrongGenerationError() const {
-    return std::holds_alternative<WrongGenerationError>(value_);
-  }
-
-  T* operator->() { return &std::get<T>(value_); }
-  T& operator*() { return std::get<T>(value_); }
-
-  std::string StrError() const {
-    if (ok()) {
-      return "ok";
-    } else if (IsWrongGenerationError()) {
-      return "wrong generation";
-    } else {
-      return grpc_core::StrError(code());
-    }
-  }
-
- private:
-  struct PosixError {
-    int code;
-  };
-  struct WrongGenerationError {};
-
-  explicit PosixErrorOr(std::variant<PosixError, WrongGenerationError, T> error)
-      : value_(std::move(error)) {}
-
-  std::variant<PosixError, WrongGenerationError, T> value_;
-};
 
 class EventEnginePosixInterface {
  public:
@@ -114,15 +49,16 @@ class EventEnginePosixInterface {
   static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
                                              bool is_client);
 
-  FileDescriptorResult Accept(const FileDescriptor& sockfd,
-                              struct sockaddr* addr, socklen_t* addrlen);
-  FileDescriptorResult Accept4(const FileDescriptor& sockfd,
-                               EventEngine::ResolvedAddress& addr, int nonblock,
-                               int cloexec);
-  FileDescriptorResult EventFd(int initval, int flags);
-  FileDescriptorResult Socket(int domain, int type, int protocol);
+  PosixErrorOr<FileDescriptor> Accept(const FileDescriptor& sockfd,
+                                      struct sockaddr* addr,
+                                      socklen_t* addrlen);
+  PosixErrorOr<FileDescriptor> Accept4(const FileDescriptor& sockfd,
+                                       EventEngine::ResolvedAddress& addr,
+                                       int nonblock, int cloexec);
+  PosixErrorOr<FileDescriptor> EventFd(int initval, int flags);
+  PosixErrorOr<FileDescriptor> Socket(int domain, int type, int protocol);
   absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>> Pipe();
-  FileDescriptorResult EpollCreateAndCloexec();
+  PosixErrorOr<FileDescriptor> EpollCreateAndCloexec();
 
   // Represents fd as integer. Needed for APIs like ARES, that need to have
   // a single int as a handle.
@@ -141,18 +77,18 @@ class EventEnginePosixInterface {
   }
 
   // May return a wrong generation error
-  FileDescriptorResult FromInteger(int fd) {
+  PosixErrorOr<FileDescriptor> FromInteger(int fd) {
 #if GRPC_ENABLE_FORK_SUPPORT
     static const auto kFromInteger =
         grpc_core::IsEventEngineForkEnabled()
             ? [](const FileDescriptorCollection& collection,
                  int fd) { return collection.FromInteger(fd); }
             : [](const FileDescriptorCollection& collection, int fd) {
-                return FileDescriptorResult(FileDescriptor(fd, 0));
+                return PosixErrorOr<FileDescriptor>(FileDescriptor(fd, 0));
               };
     return kFromInteger(descriptors_, fd);
 #else   // GRPC_ENABLE_FORK_SUPPORT
-    return FileDescriptorResult(FileDescriptor(fd, 0));
+    return PosixErrorOr<FileDescriptor>(FileDescriptor(fd, 0));
 #endif  // GRPC_ENABLE_FORK_SUPPORT
   }
 
@@ -323,11 +259,11 @@ class EventEnginePosixInterface {
 #endif  // GRPC_ENABLE_FORK_SUPPORT
   }
 
-  FileDescriptorResult RegisterPosixResult(int result) {
+  PosixErrorOr<FileDescriptor> RegisterPosixResult(int result) {
     if (result > 0) {
-      return FileDescriptorResult(Adopt(result));
+      return PosixErrorOr<FileDescriptor>(Adopt(result));
     } else {
-      return FileDescriptorResult(OperationResultKind::kError, errno);
+      return PosixErrorOr<FileDescriptor>::Error(errno);
     }
   }
 

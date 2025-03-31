@@ -14,6 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "file_descriptor_collection.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
@@ -138,9 +139,8 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     auto& posix_interface = handle_->Poller()->posix_interface();
     // Note: If we ever decide to return this address to the user, remember to
     // strip off the ::ffff:0.0.0.0/96 prefix first.
-    FileDescriptorResult fd =
-        posix_interface.Accept4(handle_->WrappedFd(), addr, 1, 1);
-    if (fd.kind() == OperationResultKind::kWrongGeneration) {
+    auto fd = posix_interface.Accept4(handle_->WrappedFd(), addr, 1, 1);
+    if (fd.IsWrongGenerationError()) {
       LOG(ERROR) << "Closing acceptor. accept4 was called with fd from a wrong "
                     "generation";
       // Shutting down the acceptor. Unref the ref grabbed in
@@ -148,8 +148,8 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       Unref();
       return;
     }
-    if (fd.kind() == OperationResultKind::kError) {
-      switch (fd.errno_value()) {
+    if (fd.IsPosixError()) {
+      switch (fd.code()) {
         case EINTR:
           continue;
         case EMFILE:
@@ -195,7 +195,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     // For UNIX sockets, the accept call might not fill up the member
     // sun_path of sockaddr_un, so explicitly call getpeername to get it.
     if (addr.address()->sa_family == AF_UNIX) {
-      auto peer_address = posix_interface.PeerAddress(fd.fd());
+      auto peer_address = posix_interface.PeerAddress(fd.value());
       if (!peer_address.ok()) {
         auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
         LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
@@ -204,16 +204,16 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
                    << (listener_addr_uri.ok() ? *listener_addr_uri
                                               : "<unknown>")
                    << ":" << socket_.port;
-        posix_interface.Close(fd.fd());
+        posix_interface.Close(fd.value());
         handle_->NotifyOnRead(notify_on_accept_);
         return;
       }
       addr = std::move(peer_address).value();
     }
 
-    (void)posix_interface.SetSocketNoSigpipeIfPossible(fd.fd());
+    (void)posix_interface.SetSocketNoSigpipeIfPossible(fd.value());
     auto result = posix_interface.ApplySocketMutatorInOptions(
-        fd.fd(), GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
+        fd.value(), GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
     if (!result.ok()) {
       LOG(ERROR) << "Closing acceptor. Failed to apply socket mutator: "
                  << result;
@@ -234,7 +234,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
     auto endpoint = CreatePosixEndpoint(
         /*handle=*/listener_->poller_->CreateHandle(
-            fd.fd(), *peer_name, listener_->poller_->CanTrackErrors()),
+            fd.value(), *peer_name, listener_->poller_->CanTrackErrors()),
         /*on_shutdown=*/nullptr, /*engine=*/listener_->engine_,
         // allocator=
         listener_->memory_allocator_factory_->CreateMemoryAllocator(

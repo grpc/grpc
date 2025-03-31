@@ -17,12 +17,81 @@
 
 #include <atomic>
 #include <unordered_set>
+#include <variant>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_event_engine::experimental {
+
+template <typename T>
+class PosixErrorOr {
+ public:
+  PosixErrorOr() = default;
+  PosixErrorOr(const PosixErrorOr& other) = default;
+  PosixErrorOr(PosixErrorOr&& other) = default;
+  PosixErrorOr& operator=(const PosixErrorOr& other) = default;
+  PosixErrorOr& operator=(PosixErrorOr&& other) = default;
+
+  static PosixErrorOr Error(int code) { return PosixErrorOr(PosixError{code}); }
+
+  static PosixErrorOr WrongGeneration() {
+    return PosixErrorOr(WrongGenerationError());
+  }
+
+  explicit PosixErrorOr(T value) : value_(std::move(value)) {}
+
+  bool ok() const { return std::holds_alternative<T>(value_); }
+
+  int code() const {
+    const PosixError* error = std::get_if<PosixError>(&value_);
+    CHECK_NE(error, nullptr);
+    return error->code;
+  }
+
+  bool IsPosixError() const {
+    return std::holds_alternative<PosixError>(value_);
+  }
+
+  bool IsPosixError(int code) const {
+    const PosixError* error = std::get_if<PosixError>(&value_);
+    return error != nullptr && code == error->code;
+  }
+
+  bool IsWrongGenerationError() const {
+    return std::holds_alternative<WrongGenerationError>(value_);
+  }
+
+  T* operator->() { return &std::get<T>(value_); }
+  T& operator*() { return std::get<T>(value_); }
+  T value() const {
+    CHECK(ok());
+    return std::get<T>(value_);
+  }
+
+  std::string StrError() const {
+    if (ok()) {
+      return "ok";
+    } else if (IsWrongGenerationError()) {
+      return "wrong generation";
+    } else {
+      return grpc_core::StrError(code());
+    }
+  }
+
+ private:
+  struct PosixError {
+    int code;
+  };
+  struct WrongGenerationError {};
+
+  explicit PosixErrorOr(std::variant<PosixError, WrongGenerationError, T> error)
+      : value_(std::move(error)) {}
+
+  std::variant<PosixError, WrongGenerationError, T> value_;
+};
 
 class FileDescriptor {
  public:
@@ -124,46 +193,6 @@ class PosixResult {
   int errno_value_ = 0;
 };
 
-// Result of the factory call. kWrongGeneration may happen in the call to
-// Accept*
-class FileDescriptorResult final : public PosixResult {
- public:
-  static FileDescriptorResult WrongGeneration() {
-    return FileDescriptorResult(OperationResultKind::kWrongGeneration, 0);
-  }
-
-  FileDescriptorResult() = default;
-  explicit FileDescriptorResult(const FileDescriptor& fd)
-      : PosixResult(OperationResultKind::kSuccess, 0), fd_(fd) {}
-  FileDescriptorResult(OperationResultKind kind, int errno_value)
-      : PosixResult(kind, errno_value) {}
-
-  const FileDescriptor* operator->() const {
-    CHECK_OK(status());
-    return &fd_;
-  }
-
-  FileDescriptor fd() const {
-    CHECK_OK(status());
-    return fd_;
-  }
-
-  bool ok() const override { return PosixResult::ok() && fd_.ready(); }
-
-  template <typename R, typename Fn>
-  R if_ok(R if_bad, const Fn& fn) {
-    if (ok()) {
-      return fn(fd_);
-    } else {
-      return std::move(if_bad);
-    }
-  }
-
- private:
-  // gRPC wrapped FileDescriptor, as described above
-  FileDescriptor fd_;
-};
-
 class FileDescriptorCollection {
  public:
   // Encodes a file descriptor (fd) and its generation into a single integer,
@@ -184,10 +213,8 @@ class FileDescriptorCollection {
   FileDescriptor Add(int fd);
   bool Remove(const FileDescriptor& fd);
 
-  FileDescriptorResult RegisterPosixResult(int result);
-
   int ToInteger(const FileDescriptor& fd) const;
-  FileDescriptorResult FromInteger(int fd) const;
+  PosixErrorOr<FileDescriptor> FromInteger(int fd) const;
 
   // Advances the generation, clears the list of fds and returns them
   std::unordered_set<int> AdvanceGeneration();
