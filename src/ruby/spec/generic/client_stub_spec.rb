@@ -66,7 +66,7 @@ def sanity_check_values_of_accessors(op_view,
                                      expected_trailing_metadata)
   expected_status = Struct::Status.new
   expected_status.code = 0
-  expected_status.details = 'OK'
+  expected_status.details = ''
   expected_status.metadata = expected_trailing_metadata
 
   expect(op_view.status).to eq(expected_status)
