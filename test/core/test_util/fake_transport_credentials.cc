@@ -54,7 +54,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/transport/auth_context.h"
-#include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -62,6 +61,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
+#include "test/core/test_util/fake_transport_security.h"
 
 namespace {
 

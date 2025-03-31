@@ -3877,31 +3877,6 @@ grpc_cc_library(
     ],
 )
 
-# TODO(roth): Move this target and the underlying code to the test tree.
-grpc_cc_library(
-    name = "tsi_fake_credentials",
-    srcs = [
-        "//src/core:tsi/fake_transport_security.cc",
-    ],
-    hdrs = [
-        "//src/core:tsi/fake_transport_security.h",
-    ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
-    visibility = [
-        "//visibility:public",
-    ],
-    deps = [
-        "gpr",
-        "tsi_base",
-        "//src/core:dump_args",
-        "//src/core:slice",
-        "//src/core:useful",
-    ],
-)
-
 grpc_cc_library(
     name = "grpc_jwt_credentials",
     srcs = [

@@ -4028,7 +4028,7 @@ libs:
   language: c++
   public_headers: []
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - src/core/util/subprocess.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/test_util/fake_transport_credentials.h
@@ -4039,7 +4039,7 @@ libs:
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
   src:
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/end2end/data/client_certs.cc
@@ -5190,7 +5190,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - src/core/util/subprocess.h
   - test/core/test_util/fake_transport_credentials.h
   - test/cpp/util/byte_buffer_proto_helper.h
@@ -5198,7 +5198,7 @@ targets:
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/test_util/fake_transport_credentials.cc
@@ -5980,14 +5980,14 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fake_transport_credentials.h
   - test/core/test_util/test_call_creds.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/credentials/call/call_credentials_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
@@ -7314,10 +7314,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fake_transport_credentials.h
   src:
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/credentials/transport/channel_creds_registry_test.cc
   - test/core/test_util/fake_transport_credentials.cc
   deps:
@@ -7666,13 +7666,13 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   - test/core/test_util/fake_transport_credentials.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_auth_filter_test.cc
   - test/core/filters/filter_test.cc
@@ -7917,11 +7917,11 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fake_transport_credentials.h
   - test/core/test_util/test_call_creds.h
   src:
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/credentials/transport/composite/composite_credentials_test.cc
   - test/core/test_util/fake_transport_credentials.cc
   - test/core/test_util/test_call_creds.cc
@@ -8285,7 +8285,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8332,7 +8332,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_chaotic_good_config.cc
@@ -8404,7 +8404,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8451,7 +8451,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_chaotic_good_config.cc
@@ -8611,7 +8611,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8658,7 +8658,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_config.cc
@@ -8726,7 +8726,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8773,7 +8773,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_security_config.cc
@@ -8841,7 +8841,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8888,7 +8888,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_security_config.cc
@@ -9044,7 +9044,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9091,7 +9091,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_config.cc
@@ -9247,7 +9247,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9294,7 +9294,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_inproc_config.cc
@@ -9362,7 +9362,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9409,7 +9409,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_inproc_config.cc
@@ -9565,7 +9565,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9612,7 +9612,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_posix_config.cc
@@ -9680,7 +9680,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9727,7 +9727,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_posix_config.cc
@@ -12162,10 +12162,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fake_transport_credentials.h
   src:
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/credentials/transport/insecure/insecure_credentials_test.cc
   - test/core/test_util/fake_transport_credentials.cc
   deps:
@@ -14733,10 +14733,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fake_transport_credentials.h
   src:
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/surface/secure_channel_create_test.cc
   - test/core/test_util/fake_transport_credentials.cc
   deps:
@@ -14887,10 +14887,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fake_transport_credentials.h
   src:
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/surface/server_chttp2_test.cc
   - test/core/test_util/fake_transport_credentials.cc
   deps:
@@ -15015,10 +15015,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fake_transport_credentials.h
   src:
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/surface/server_test.cc
   - test/core/test_util/fake_transport_credentials.cc
   deps:
@@ -17457,10 +17457,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/tsi/fake_transport_security.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fake_transport_credentials.h
   src:
-  - src/core/tsi/fake_transport_security.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/credentials/transport/xds/xds_credentials_test.cc
   - test/core/test_util/fake_transport_credentials.cc
   deps:
