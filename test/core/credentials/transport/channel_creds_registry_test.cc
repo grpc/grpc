@@ -28,8 +28,8 @@
 #include "src/core/credentials/transport/composite/composite_channel_credentials.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
-#include "test/core/test_util/test_config.h"
 #include "test/core/test_util/fake_transport_credentials.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

@@ -405,11 +405,10 @@ class FakeChannelCredsFactory : public ChannelCredsFactory<> {
 }  // namespace
 
 void RegisterFakeChannelCredentialsBuilder() {
-  CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
-        builder->channel_creds_registry()->RegisterChannelCredsFactory(
-            std::make_unique<FakeChannelCredsFactory>());
-      });
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    builder->channel_creds_registry()->RegisterChannelCredsFactory(
+        std::make_unique<FakeChannelCredsFactory>());
+  });
 }
 
 }  // namespace grpc_core
