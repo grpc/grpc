@@ -4394,6 +4394,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "//src/core:http2_error",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
