@@ -7561,6 +7561,7 @@ grpc_cc_library(
         "check_class_size",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_status",
         "http2_transport",
         "loop",
         "map",
