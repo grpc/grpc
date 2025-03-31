@@ -60,7 +60,7 @@ grpc_cc_library(
         # TODO(b/332369798): Remove after fixing bug
         "grpc:otel-namespace-calamity",
     ],
-    visibility = ["@grpc:otel_plugin"],
+    visibility = ["//bazel:otel_plugin"],
     deps = [
         "//:call_tracer",
         "//:config",
