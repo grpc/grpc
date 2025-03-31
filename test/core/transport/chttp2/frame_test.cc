@@ -222,7 +222,6 @@ TEST(Frame, ParseHttp2DataFrame) {
       ParseFrame(FRAME_LENGTH(5), FrameType::kData, FRAME_FLAGS(0),
                  STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
       Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
-<<<<<<< HEAD
 
   EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), FrameType::kData, FRAME_FLAGS(1),
                        STREAM_IDENTIFIER_MAX, PAYLOAD_KIDS),
@@ -233,16 +232,6 @@ TEST(Frame, ParseHttp2DataFrame) {
 TEST(Frame, ParseHttp2HeaderFrame) {
   EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), FrameType::kHeader, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
-=======
-  EXPECT_EQ(
-      ParseFrame(0, 0, 4, 0, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
-      Http2Frame(
-          Http2DataFrame{0x98381822, true, SliceBufferFromString("kids")}));
-}
-
-TEST(Frame, ParseHttp2HeaderFrame) {
-  EXPECT_EQ(ParseFrame(0, 0, 5, 1, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
->>>>>>> master
             Http2Frame(Http2HeaderFrame{1, false, false,
                                         SliceBufferFromString("hello")}));
 
@@ -259,7 +248,6 @@ TEST(Frame, ParseHttp2HeaderFrame) {
 
 TEST(Frame, DISABLED_ParseHttp2HeaderFrameWithPriority) {
   EXPECT_EQ(
-<<<<<<< HEAD
       ParseFrame(FRAME_LENGTH(13), kFrameTypeHeader, FRAME_FLAGS(kFlagPriority),
                  STREAM_IDENTIFIER(1), STREAM_IDENTIFIER_4(1, 2, 3, 4),
                  /*Weight*/ 5, PAYLOAD_HELLO, 0, 0, 0),
@@ -270,19 +258,6 @@ TEST(Frame, DISABLED_ParseHttp2HeaderFrameWithPriority) {
 TEST(Frame, ParseHttp2ContinuationFrame) {
   EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeContinuation, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
-=======
-      ParseFrame(0, 0, 4, 1, 4, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
-      Http2Frame(Http2HeaderFrame{0x98381822, true, false,
-                                  SliceBufferFromString("kids")}));
-  EXPECT_EQ(
-      ParseFrame(0, 0, 4, 1, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
-      Http2Frame(Http2HeaderFrame{0x98381822, false, true,
-                                  SliceBufferFromString("kids")}));
-}
-
-TEST(Frame, ParseHttp2ContinuationFrame) {
-  EXPECT_EQ(ParseFrame(0, 0, 5, 9, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
->>>>>>> master
             Http2Frame(Http2ContinuationFrame{1, false,
                                               SliceBufferFromString("hello")}));
   EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeContinuation, FRAME_FLAGS(4),
@@ -291,7 +266,6 @@ TEST(Frame, ParseHttp2ContinuationFrame) {
                                               SliceBufferFromString("hello")}));
 }
 
-<<<<<<< HEAD
 TEST(Frame, ParseHttp2Http2RstStreamFrame) {
   EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeRstStream, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(1), ERROR_CODE(0x0a)),
@@ -299,16 +273,6 @@ TEST(Frame, ParseHttp2Http2RstStreamFrame) {
 }
 
 TEST(Frame, ParseHttp2Http2SettingsFrame) {
-=======
-TEST(Frame, ParseHttp2RstStreamFrame) {
-  EXPECT_EQ(ParseFrame(0, 0, 4, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0x0a),
-            Http2Frame(Http2RstStreamFrame{1, GRPC_HTTP2_CONNECT_ERROR}));
-}
-
-TEST(Frame, ParseHttp2SettingsFrame) {
-  EXPECT_EQ(ParseFrame(0, 0, 0, 4, 0, 0, 0, 0, 0),
-            Http2Frame(Http2SettingsFrame{}));
->>>>>>> master
   EXPECT_EQ(
       ParseFrame(FRAME_LENGTH(0), FrameType::kSettings, FRAME_FLAGS(0),
                  STREAM_IDENTIFIER(0)),
@@ -330,7 +294,6 @@ TEST(Frame, ParseHttp2SettingsFrame) {
             Http2Frame(Http2SettingsFrame{true, {}}));
 }
 
-<<<<<<< HEAD
 TEST(Frame, ParseHttp2Http2PingFrame) {
   EXPECT_EQ(ParseFrame(FRAME_LENGTH(8), FrameType::kPing, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(0), OPAQUE_DATA_64_BIT),
@@ -339,15 +302,6 @@ TEST(Frame, ParseHttp2Http2PingFrame) {
   EXPECT_EQ(ParseFrame(FRAME_LENGTH(8), FrameType::kPing, FRAME_FLAGS(1),
                        STREAM_IDENTIFIER(0), OPAQUE_DATA_64_BIT),
             Http2Frame(Http2PingFrame{true, OPAQUE_DATA_64_VALUE}));
-=======
-TEST(Frame, ParseHttp2PingFrame) {
-  EXPECT_EQ(ParseFrame(0, 0, 8, 6, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x9a,
-                       0xbc, 0xde, 0xf0),
-            Http2Frame(Http2PingFrame{false, 0x123456789abcdef0}));
-  EXPECT_EQ(ParseFrame(0, 0, 8, 6, 1, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x9a,
-                       0xbc, 0xde, 0xf0),
-            Http2Frame(Http2PingFrame{true, 0x123456789abcdef0}));
->>>>>>> master
 }
 
 TEST(Frame, ParseHttp2GoawayFrame) {
@@ -361,7 +315,6 @@ TEST(Frame, ParseHttp2GoawayFrame) {
 }
 
 TEST(Frame, ParseHttp2WindowUpdateFrame) {
-<<<<<<< HEAD
   EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), FrameType::kWindowUpdate,
                        FRAME_FLAGS(0), STREAM_IDENTIFIER(1),
                        WINDOW_SIZE_INCREMENT(0x12, 0x34, 0x56, 0x78)),
@@ -371,22 +324,11 @@ TEST(Frame, ParseHttp2WindowUpdateFrame) {
 TEST(Frame, ParseHttp2Http2SecurityFrame) {
   EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeSecurity, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(0), PAYLOAD_HELLO),
-=======
-  EXPECT_EQ(ParseFrame(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12, 0x34, 0x56, 0x78),
-            Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
-}
-
-TEST(Frame, ParseHttp2SecurityFrame) {
-  EXPECT_EQ(ParseFrame(0, 0, 5, 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'),
->>>>>>> master
             Http2Frame(Http2SecurityFrame{SliceBufferFromString("hello")}));
 }
 
 TEST(Frame, ParseHttp2DataFramePadded) {
-<<<<<<< HEAD
   // RFC9113 : Padding octets MUST be set to zero when sending.
-=======
->>>>>>> master
   EXPECT_EQ(
       ParseFrame(FRAME_LENGTH(9), kFrameTypeData, FRAME_FLAGS(9),
                  STREAM_IDENTIFIER(1), PAD_LENGTH(3), PAYLOAD_HELLO, 0, 0, 0),
@@ -425,7 +367,6 @@ TEST(Frame, ParseRejectsPushPromise) {
       ValidateFrame(FRAME_LENGTH(10), FrameType::kPushPromise, FRAME_FLAGS(0),
                     STREAM_IDENTIFIER(1), RANDOM_NUM),
       StatusIs(absl::StatusCode::kInternal,
-<<<<<<< HEAD
                "PUSH_PROMISE MUST NOT be sent if the SETTINGS_ENABLE_PUSH "
                "setting of the peer endpoint is set to 0"));
 }
@@ -476,35 +417,6 @@ TEST(Frame, ParseRejectsRstStreamFrame) {
 
   EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeRstStream,
   FRAME_FLAGS(0), STREAM_IDENTIFIER(2), ERROR_CODE(0)),
-=======
-               "push promise not supported (and SETTINGS_ENABLE_PUSH "
-               "explicitly disabled)."));
-}
-
-TEST(Frame, ParseRejectsDataFrame) {
-  EXPECT_THAT(ValidateFrame(0, 0, 0, 0, 0, 0, 0, 0, 0),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid stream id: {DATA: flags=0, "
-                       "stream_id=0, length=0}"));
-}
-
-TEST(Frame, ParseRejectsHeaderFrame) {
-  EXPECT_THAT(ValidateFrame(0, 0, 0, 1, 0, 0, 0, 0, 0),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid stream id: {HEADER: flags=0, "
-                       "stream_id=0, length=0}"));
-}
-
-TEST(Frame, ParseRejectsContinuationFrame) {
-  EXPECT_THAT(ValidateFrame(0, 0, 0, 9, 0, 0, 0, 0, 0),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid stream id: {CONTINUATION: flags=0, "
-                       "stream_id=0, length=0}"));
-}
-
-TEST(Frame, ParseRejectsRstStreamFrame) {
-  EXPECT_THAT(ValidateFrame(0, 0, 3, 3, 0, 0, 0, 0, 1, 100, 100, 100),
->>>>>>> master
               StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : Streams initiated by a client MUST use
   odd-numbered stream identifiers"));
