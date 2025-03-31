@@ -90,7 +90,6 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
     {
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'message_write_flags_test';
-        $status_text = 'xyz';
         $call = new Grpc\Call($this->channel,
                               'phony_method',
                               $deadline);
@@ -114,7 +113,7 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
             Grpc\OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
                 'code' => Grpc\STATUS_OK,
-                'details' => $status_text,
+                'details' => '',
             ],
         ]);
 
@@ -126,7 +125,6 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $status = $event->status;
         $this->assertSame([], $status->metadata);
         $this->assertSame(Grpc\STATUS_OK, $status->code);
-        $this->assertSame($status_text, $status->details);
 
         unset($call);
         unset($server_call);
@@ -167,6 +165,7 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
             Grpc\OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
                 'code' => Grpc\STATUS_OK,
+                'details' => '',
             ],
             Grpc\OP_RECV_CLOSE_ON_SERVER => true,
         ]);

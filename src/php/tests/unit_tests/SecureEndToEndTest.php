@@ -131,6 +131,7 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
             Grpc\OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
                 'code' => Grpc\STATUS_OK,
+                'details' => '',
             ],
         ]);
 
@@ -186,6 +187,7 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
             Grpc\OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
                 'code' => Grpc\STATUS_OK,
+                'details' => '',
             ],
             Grpc\OP_RECV_CLOSE_ON_SERVER => true,
         ]);
