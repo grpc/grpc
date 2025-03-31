@@ -98,6 +98,51 @@ absl::Status ValidateFrame(I... i) {
   return std::get<Http2Error>(value).absl_status();
 }
 
+#define FRAME_LENGTH(num) 0, 0, (num)
+
+#define FRAME_FLAGS(num) (num)
+
+#define PAD_LENGTH(num) (num)
+
+#define STREAM_IDENTIFIER(num) 0, 0, 0, (num)
+#define STREAM_IDENTIFIER_4(n1, n2, n3, n4) (n1), (n2), (n3), (n4)
+#define STREAM_IDENTIFIER_MAX 0x7F, 0xFF, 0xFF, 0xFF
+#define STREAM_IDENTIFIER_BAD 0x8, 0, 0, 0
+
+#define WINDOW_SIZE_INCREMENT(n1, n2, n3, n4) (n1), (n2), (n3), (n4)
+
+#define RANDOM_ZERO 0, 0, 0
+#define RANDOM_NUM 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+
+#define ERROR_CODE(num) 0, 0, 0, (num)
+
+#define PAYLOAD_HELLO 'h', 'e', 'l', 'l', 'o'
+#define PAYLOAD_KIDS 'k', 'i', 'd', 's'
+
+#define OPAQUE_DATA_64_BIT 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0
+#define OPAQUE_DATA_64_VALUE 0x123456789abcdef0
+
+// HTTP2 Frame Types
+enum class FrameType : uint8_t {
+  kData = 0,
+  kHeader = 1,
+  // type 2 was Priority which has been deprecated.
+  kRstStream = 3,
+  kSettings = 4,
+  kPushPromise = 5,
+  kPing = 6,
+  kGoaway = 7,
+  kWindowUpdate = 8,
+  kContinuation = 9,
+  kCustomSecurity = 200,  // Custom Frame Type
+};
+
+constexpr uint8_t kFlagEndStream = 1;
+constexpr uint8_t kFlagAck = 1;
+constexpr uint8_t kFlagEndHeaders = 4;
+constexpr uint8_t kFlagPadded = 8;
+constexpr uint8_t kFlagPriority = 0x20;
+
 TEST(Header, Serialization) {
   EXPECT_EQ(Serialize(Http2FrameHeader{0, 0, 0, 0}),
             ByteVec(0, 0, 0, 0, 0, 0, 0, 0, 0));
@@ -172,136 +217,96 @@ TEST(Frame, Serialization) {
             ByteVec(0, 0, 5, 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'));
 }
 
-#define FRAME_LENGTH(num) 0, 0, (num)
-
-#define FLAGS(num) (num)
-
-#define PAD_LENGTH(num) (num)
-
-#define STREAM_IDENTIFIER(num) 0, 0, 0, (num)
-#define STREAM_IDENTIFIER_4(num1, num2, num3, num4) \
-  (num1), (num2), (num3), (num4)
-
-#define STREAM_IDENTIFIER_MAX 0x7F, 0xFF, 0xFF, 0xFF
-#define STREAM_IDENTIFIER_BAD 0x8, 0, 0, 0
-
-#define WINDOW_SIZE_INCREMENT(num1, num2, num3, num4) \
-  (num1), (num2), (num3), (num4)
-
-#define RANDOM_ZERO 0, 0, 0
-#define RANDOM_NUM 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-
-#define ERROR_CODE(num) 0, 0, 0, (num)
-
-#define PAYLOAD_HELLO 'h', 'e', 'l', 'l', 'o'
-#define PAYLOAD_KIDS 'k', 'i', 'd', 's'
-
-#define OPAQUE_DATA_64_BIT 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0
-#define OPAQUE_DATA_64_VALUE 0x123456789abcdef0
-
-// HTTP2 Frame Types
-constexpr uint8_t kFrameTypeData = 0;
-constexpr uint8_t kFrameTypeHeader = 1;
-// type 2 was Priority which has been deprecated.
-constexpr uint8_t kFrameTypeRstStream = 3;
-constexpr uint8_t kFrameTypeSettings = 4;
-constexpr uint8_t kFrameTypePushPromise = 5;
-constexpr uint8_t kFrameTypePing = 6;
-constexpr uint8_t kFrameTypeGoaway = 7;
-constexpr uint8_t kFrameTypeWindowUpdate = 8;
-constexpr uint8_t kFrameTypeContinuation = 9;
-
-// Custom Frame Type
-constexpr uint8_t kFrameTypeSecurity = 200;
-
-constexpr uint8_t kFlagEndStream = 1;
-constexpr uint8_t kFlagAck = 1;
-constexpr uint8_t kFlagEndHeaders = 4;
-constexpr uint8_t kFlagPadded = 8;
-constexpr uint8_t kFlagPriority = 0x20;
-
 TEST(Frame, ParseHttp2DataFrame) {
   EXPECT_EQ(
-      ParseFrame(FRAME_LENGTH(5), kFrameTypeData, FLAGS(0),
+      ParseFrame(FRAME_LENGTH(5), FrameType::kData, FRAME_FLAGS(0),
                  STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
       Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeData, FLAGS(1),
+
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), FrameType::kData, FRAME_FLAGS(1),
                        STREAM_IDENTIFIER_MAX, PAYLOAD_KIDS),
             Http2Frame(Http2DataFrame{0x7FFFFFFF, true,
                                       SliceBufferFromString("kids")}));
 }
 
 TEST(Frame, ParseHttp2HeaderFrame) {
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeHeader, FLAGS(0),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), FrameType::kHeader, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
             Http2Frame(Http2HeaderFrame{1, false, false,
                                         SliceBufferFromString("hello")}));
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeHeader, FLAGS(4),
+
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), FrameType::kHeader, FRAME_FLAGS(4),
                        STREAM_IDENTIFIER_MAX, PAYLOAD_KIDS),
             Http2Frame(Http2HeaderFrame{0x7FFFFFFF, true, false,
                                         SliceBufferFromString("kids")}));
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeHeader, FLAGS(1),
+
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), FrameType::kHeader, FRAME_FLAGS(1),
                        STREAM_IDENTIFIER_MAX, PAYLOAD_KIDS),
             Http2Frame(Http2HeaderFrame{0x7FFFFFFF, false, true,
                                         SliceBufferFromString("kids")}));
 }
 
 TEST(Frame, DISABLED_ParseHttp2HeaderFrameWithPriority) {
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(13), kFrameTypeHeader, FLAGS(kFlagPriority),
-                       STREAM_IDENTIFIER(1), STREAM_IDENTIFIER_4(1, 2, 3, 4),
-                       /*Weight*/ 5, PAYLOAD_HELLO, 0, 0, 0),
-            Http2Frame(Http2HeaderFrame{1, false, false,
-                                        SliceBufferFromString("hello")}));
+  EXPECT_EQ(
+      ParseFrame(FRAME_LENGTH(13), kFrameTypeHeader, FRAME_FLAGS(kFlagPriority),
+                 STREAM_IDENTIFIER(1), STREAM_IDENTIFIER_4(1, 2, 3, 4),
+                 /*Weight*/ 5, PAYLOAD_HELLO, 0, 0, 0),
+      Http2Frame(
+          Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
 }
 
 TEST(Frame, ParseHttp2ContinuationFrame) {
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeContinuation, FLAGS(0),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeContinuation, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
             Http2Frame(Http2ContinuationFrame{1, false,
                                               SliceBufferFromString("hello")}));
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeContinuation, FLAGS(4),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeContinuation, FRAME_FLAGS(4),
                        STREAM_IDENTIFIER(1), PAYLOAD_HELLO),
             Http2Frame(Http2ContinuationFrame{1, true,
                                               SliceBufferFromString("hello")}));
 }
 
 TEST(Frame, ParseHttp2Http2RstStreamFrame) {
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeRstStream, FLAGS(0),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeRstStream, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(1), ERROR_CODE(0x0a)),
             Http2Frame(Http2RstStreamFrame{1, GRPC_HTTP2_CONNECT_ERROR}));
 }
 
 TEST(Frame, ParseHttp2Http2SettingsFrame) {
   EXPECT_EQ(
-      ParseFrame(FRAME_LENGTH(0), kFrameTypeSettings, FLAGS(0),
+      ParseFrame(FRAME_LENGTH(0), FrameType::kSettings, FRAME_FLAGS(0),
                  STREAM_IDENTIFIER(0)),
       Http2Frame(Http2SettingsFrame{}));  // Q - Is this even a valid frame?
+
   EXPECT_EQ(
-      ParseFrame(FRAME_LENGTH(6), kFrameTypeSettings, FLAGS(0),
+      ParseFrame(FRAME_LENGTH(6), FrameType::kSettings, FRAME_FLAGS(0),
                  STREAM_IDENTIFIER(0), 0x12, 0x34, 0x9a, 0xbc, 0xde, 0xf0),
       Http2Frame(Http2SettingsFrame{false, {{0x1234, 0x9abcdef0}}}));
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(12), kFrameTypeSettings, FLAGS(0),
+
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(12), FrameType::kSettings, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(0), 0x12, 0x34, 0x9a, 0xbc, 0xde, 0xf0,
                        0x43, 0x21, 0x12, 0x34, 0x56, 0x78),
             Http2Frame(Http2SettingsFrame{
                 false, {{0x1234, 0x9abcdef0}, {0x4321, 0x12345678}}}));
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(0), kFrameTypeSettings, FLAGS(1),
+
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(0), FrameType::kSettings, FRAME_FLAGS(1),
                        STREAM_IDENTIFIER(0)),
             Http2Frame(Http2SettingsFrame{true, {}}));
 }
 
 TEST(Frame, ParseHttp2Http2PingFrame) {
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(8), kFrameTypePing, FLAGS(0),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(8), FrameType::kPing, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(0), OPAQUE_DATA_64_BIT),
             Http2Frame(Http2PingFrame{false, OPAQUE_DATA_64_VALUE}));
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(8), kFrameTypePing, FLAGS(1),
+
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(8), FrameType::kPing, FRAME_FLAGS(1),
                        STREAM_IDENTIFIER(0), OPAQUE_DATA_64_BIT),
             Http2Frame(Http2PingFrame{true, OPAQUE_DATA_64_VALUE}));
 }
 
 TEST(Frame, ParseHttp2GoawayFrame) {
   EXPECT_EQ(
-      ParseFrame(FRAME_LENGTH(13), kFrameTypeGoaway, FLAGS(0),
+      ParseFrame(FRAME_LENGTH(13), kFrameTypeGoaway, FRAME_FLAGS(0),
                  STREAM_IDENTIFIER(0),
                  STREAM_IDENTIFIER_4(0x12, 0x34, 0x56, 0x78), ERROR_CODE(0x0b),
                  PAYLOAD_HELLO),
@@ -309,15 +314,15 @@ TEST(Frame, ParseHttp2GoawayFrame) {
                                   Slice::FromCopiedString("hello")}));
 }
 
-TEST(Frame, ParseHttp2Http2WindowUpdateFrame) {
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), kFrameTypeWindowUpdate, FLAGS(0),
-                       STREAM_IDENTIFIER(1),
+TEST(Frame, ParseHttp2WindowUpdateFrame) {
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(4), FrameType::kWindowUpdate,
+                       FRAME_FLAGS(0), STREAM_IDENTIFIER(1),
                        WINDOW_SIZE_INCREMENT(0x12, 0x34, 0x56, 0x78)),
             Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
 }
 
 TEST(Frame, ParseHttp2Http2SecurityFrame) {
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeSecurity, FLAGS(0),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(5), kFrameTypeSecurity, FRAME_FLAGS(0),
                        STREAM_IDENTIFIER(0), PAYLOAD_HELLO),
             Http2Frame(Http2SecurityFrame{SliceBufferFromString("hello")}));
 }
@@ -325,39 +330,41 @@ TEST(Frame, ParseHttp2Http2SecurityFrame) {
 TEST(Frame, ParseHttp2DataFramePadded) {
   // RFC9113 : Padding octets MUST be set to zero when sending.
   EXPECT_EQ(
-      ParseFrame(FRAME_LENGTH(9), kFrameTypeData, FLAGS(9),
+      ParseFrame(FRAME_LENGTH(9), kFrameTypeData, FRAME_FLAGS(9),
                  STREAM_IDENTIFIER(1), PAD_LENGTH(3), PAYLOAD_HELLO, 0, 0, 0),
       Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
 }
 
 TEST(Frame, ParseHttp2HeaderFramePadded) {
   EXPECT_EQ(
-      ParseFrame(FRAME_LENGTH(8), kFrameTypeHeader, FLAGS(kFlagPadded),
+      ParseFrame(FRAME_LENGTH(8), kFrameTypeHeader, FRAME_FLAGS(kFlagPadded),
                  STREAM_IDENTIFIER(1), PAD_LENGTH(2), PAYLOAD_HELLO, 0, 0),
       Http2Frame(
           Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(13), kFrameTypeHeader,
-                       FLAGS(kFlagPriority & kFlagPadded), STREAM_IDENTIFIER(1),
-                       PAD_LENGTH(2), STREAM_IDENTIFIER_4(1, 2, 3, 4),
-                       /*Weight*/ 5, PAYLOAD_HELLO, 0, 0),
-            Http2Frame(Http2HeaderFrame{1, false, false,
-                                        SliceBufferFromString("hello")}));
+  EXPECT_EQ(
+      ParseFrame(FRAME_LENGTH(13), kFrameTypeHeader,
+                 FRAME_FLAGS(kFlagPriority & kFlagPadded), STREAM_IDENTIFIER(1),
+                 PAD_LENGTH(2), STREAM_IDENTIFIER_4(1, 2, 3, 4),
+                 /*Weight*/ 5, PAYLOAD_HELLO, 0, 0),
+      Http2Frame(
+          Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
 }
 
 TEST(Frame, UnknownIgnored) {
   // 77 = some random undefined frame
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(10), 77, FLAGS(0), STREAM_IDENTIFIER(1),
-                       RANDOM_NUM),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(10), 77, FRAME_FLAGS(0),
+                       STREAM_IDENTIFIER(1), RANDOM_NUM),
             Http2Frame(Http2UnknownFrame{}));
+
   // 2 = PRIORITY, we just ignore it
-  EXPECT_EQ(ParseFrame(FRAME_LENGTH(10), 2, FLAGS(0), STREAM_IDENTIFIER(1),
-                       RANDOM_NUM),
+  EXPECT_EQ(ParseFrame(FRAME_LENGTH(10), 2, FRAME_FLAGS(0),
+                       STREAM_IDENTIFIER(1), RANDOM_NUM),
             Http2Frame(Http2UnknownFrame{}));
 }
 
 TEST(Frame, ParseRejectsPushPromise) {
   EXPECT_THAT(
-      ValidateFrame(FRAME_LENGTH(10), kFrameTypePushPromise, FLAGS(0),
+      ValidateFrame(FRAME_LENGTH(10), FrameType::kPushPromise, FRAME_FLAGS(0),
                     STREAM_IDENTIFIER(1), RANDOM_NUM),
       StatusIs(absl::StatusCode::kInternal,
                "PUSH_PROMISE MUST NOT be sent if the SETTINGS_ENABLE_PUSH "
@@ -365,64 +372,26 @@ TEST(Frame, ParseRejectsPushPromise) {
 }
 
 TEST(Frame, ParseRejectsDataFrame) {
-  // DATA Frame {
-  //   Length (24),
-  //   Type (8) = 0x00,
-
-  //   Unused Flags (4),
-  //   PADDED Flag (1),
-  //   Unused Flags (2),
-  //   END_STREAM Flag (1),
-
-  //   Reserved (1),
-  //   Stream Identifier (31),
-
-  //   [Pad Length (8)],
-  //   Data (..),
-  //   Padding (..2040),
-  // }
-  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeData, FLAGS(0),
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeData, FRAME_FLAGS(0),
   STREAM_IDENTIFIER(0), RANDOM_ZERO), StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : DATA frames MUST be associated with a
   stream"));
 
   EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeData,
-  FLAGS(0), STREAM_IDENTIFIER(1), RANDOM_ZERO),
+  FRAME_FLAGS(0), STREAM_IDENTIFIER(1), RANDOM_ZERO),
               StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : Streams initiated by a client MUST use
   odd-numbered stream identifiers"));
 }
 
 TEST(Frame, ParseRejectsHeaderFrame) {
-  // HEADERS Frame {
-  //   Length (24),
-  //   Type (8) = 0x01,
-
-  //   Unused Flags (2),
-  //   PRIORITY Flag (1),
-  //   Unused Flag (1),
-  //   PADDED Flag (1),
-  //   END_HEADERS Flag (1),
-  //   Unused Flag (1),
-  //   END_STREAM Flag (1),
-
-  //   Reserved (1),
-  //   Stream Identifier (31),
-
-  //   [Pad Length (8)],
-  //   [Exclusive (1)],
-  //   [Stream Dependency (31)],
-  //   [Weight (8)],
-  //   Field Block Fragment (..),
-  //   Padding (..2040),
-  // }
-  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeHeader, FLAGS(0),
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeHeader, FRAME_FLAGS(0),
   STREAM_IDENTIFIER(0), RANDOM_ZERO), StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : HEADERS frames MUST be associated with a
   stream"));
 
   EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeHeader,
-  FLAGS(0), STREAM_IDENTIFIER(2), RANDOM_ZERO),
+  FRAME_FLAGS(0), STREAM_IDENTIFIER(2), RANDOM_ZERO),
               StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : Streams initiated by a client MUST use
   odd-numbered stream identifiers"));
@@ -441,35 +410,24 @@ TEST(Frame, ParseRejectsContinuationFrame) {
 }
 
 TEST(Frame, ParseRejectsRstStreamFrame) {
-  // RST_STREAM Frame {
-  //   Length (24) = 0x04,
-  //   Type (8) = 0x03,
-
-  //   Unused Flags (8),
-
-  //   Reserved (1),
-  //   Stream Identifier (31),
-
-  //   Error Code (32),
-  // }
-  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeRstStream, FLAGS(0),
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeRstStream, FRAME_FLAGS(0),
   STREAM_IDENTIFIER(0), ERROR_CODE(0)), StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : RST_STREAM frames MUST be associated with a
   stream"));
 
   EXPECT_THAT(ValidateFrame(FRAME_LENGTH(0), kFrameTypeRstStream,
-  FLAGS(0), STREAM_IDENTIFIER(2), ERROR_CODE(0)),
+  FRAME_FLAGS(0), STREAM_IDENTIFIER(2), ERROR_CODE(0)),
               StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : Streams initiated by a client MUST use
   odd-numbered stream identifiers"));
 
   EXPECT_THAT(ValidateFrame(FRAME_LENGTH(3),
-  kFrameTypeRstStream, FLAGS(0), STREAM_IDENTIFIER(1), ERROR_CODE(0)),
+  kFrameTypeRstStream, FRAME_FLAGS(0), STREAM_IDENTIFIER(1), ERROR_CODE(0)),
               StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : A RST_STREAM frame with a length other than 4
   octets MUST be treated as a connection error"));
 
-  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(4), kFrameTypeRstStream, FLAGS(0),
+  EXPECT_THAT(ValidateFrame(FRAME_LENGTH(4), kFrameTypeRstStream, FRAME_FLAGS(0),
   STREAM_IDENTIFIER(1), ERROR_CODE(0)), StatusIs(absl::StatusCode::kInternal,
                        "RFC9113 : A RST_STREAM frame with a length other than 4
   octets MUST be treated as a connection error"));
