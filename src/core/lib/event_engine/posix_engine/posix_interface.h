@@ -72,7 +72,7 @@ class EventEnginePosixInterface {
                  const FileDescriptor& fd) { return fd.fd_; };
     return kToInteger(descriptors_, fd);
 #else   // GRPC_ENABLE_FORK_SUPPORT
-    return fd.fd();
+    return fd.fd_;
 #endif  // GRPC_ENABLE_FORK_SUPPORT
   }
 
