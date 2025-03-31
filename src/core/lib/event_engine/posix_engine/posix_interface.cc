@@ -124,20 +124,8 @@ std::atomic<int> g_socket_supports_tcp_user_timeout(
     SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT);
 #endif  // GRPC_POSIX_SOCKET
 
-PosixResult PosixResultSuccess() {
-  return PosixResult(OperationResultKind::kSuccess, 0);
-}
-
-PosixResult PosixResultError() {
-  return PosixResult(OperationResultKind::kError, errno);
-}
-
-PosixResult PosixResultWrongGeneration() {
-  return PosixResult(OperationResultKind::kWrongGeneration, 0);
-}
-
-PosixResult PosixResultSimpleWrap(int result) {
-  return result == 0 ? PosixResultSuccess() : PosixResultError();
+PosixErrorOr<void> PosixResultSimpleWrap(int result) {
+  return result == 0 ? PosixErrorOr<void>() : PosixErrorOr<void>::Error(errno);
 }
 
 absl::Status ErrorForFd(
@@ -678,7 +666,7 @@ EventEnginePosixInterface::EpollCreateAndCloexec() {
 #endif  // GRPC_LINUX_EPOLL
 }
 
-IF_POSIX_SOCKET(PosixResult EventEnginePosixInterface::Connect(
+IF_POSIX_SOCKET(PosixErrorOr<void> EventEnginePosixInterface::Connect(
                     const FileDescriptor& sockfd, const struct sockaddr* addr,
                     socklen_t addrlen),
                 {
@@ -687,19 +675,21 @@ IF_POSIX_SOCKET(PosixResult EventEnginePosixInterface::Connect(
                   });
                 })
 
-IF_POSIX_SOCKET(PosixResult EventEnginePosixInterface::Ioctl(
+IF_POSIX_SOCKET(PosixErrorOr<void> EventEnginePosixInterface::Ioctl(
                     const FileDescriptor& fd, int op, void* arg),
                 {
                   return PosixResultWrap(
                       fd, [&](int fd) { return ioctl(fd, op, arg); });
                 });
 
-IF_POSIX_SOCKET(
-    PosixResult EventEnginePosixInterface::Shutdown(const FileDescriptor& fd,
-                                                    int how),
-    { return PosixResultWrap(fd, [&](int fd) { return shutdown(fd, how); }); })
+IF_POSIX_SOCKET(PosixErrorOr<void> EventEnginePosixInterface::Shutdown(
+                    const FileDescriptor& fd, int how),
+                {
+                  return PosixResultWrap(
+                      fd, [&](int fd) { return shutdown(fd, how); });
+                })
 
-IF_POSIX_SOCKET(PosixResult EventEnginePosixInterface::GetSockOpt(
+IF_POSIX_SOCKET(PosixErrorOr<void> EventEnginePosixInterface::GetSockOpt(
                     const FileDescriptor& fd, int level, int optname,
                     void* optval, void* optlen),
                 {
@@ -733,7 +723,8 @@ IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::Write(
                     const FileDescriptor& fd, absl::Span<char> buf),
                 { return Int64Wrap(fd, write, buf.data(), buf.size()); })
 
-PosixResult EventEnginePosixInterface::EventFdRead(const FileDescriptor& fd) {
+PosixErrorOr<void> EventEnginePosixInterface::EventFdRead(
+    const FileDescriptor& fd) {
 #ifdef GRPC_LINUX_EVENTFD
   return PosixResultWrap(fd, [](int fd) {
     eventfd_t value;
@@ -744,7 +735,8 @@ PosixResult EventEnginePosixInterface::EventFdRead(const FileDescriptor& fd) {
 #endif  // GRPC_LINUX_EVENTFD
 }
 
-PosixResult EventEnginePosixInterface::EventFdWrite(const FileDescriptor& fd) {
+PosixErrorOr<void> EventEnginePosixInterface::EventFdWrite(
+    const FileDescriptor& fd) {
 #ifdef GRPC_LINUX_EVENTFD
   return PosixResultWrap(fd, [](int fd) { return eventfd_write(fd, 1); });
 #else   // GRPC_LINUX_EVENTFD
@@ -783,18 +775,18 @@ PosixErrorOr<int64_t> EventEnginePosixInterface::WriteV(
 //
 // Epoll
 //
-IF_EPOLL(PosixResult EventEnginePosixInterface::EpollCtlDel(
+IF_EPOLL(PosixErrorOr<void> EventEnginePosixInterface::EpollCtlDel(
              const FileDescriptor& epfd, const FileDescriptor& fd),
          {
            if (!IsCorrectGeneration(epfd) || !IsCorrectGeneration(fd)) {
-             return PosixResultWrongGeneration();
+             return PosixErrorOr<void>::WrongGeneration();
            }
            epoll_event phony_event;
            return PosixResultSimpleWrap(
                epoll_ctl(epfd.fd(), EPOLL_CTL_DEL, fd.fd(), &phony_event));
          })
 
-IF_EPOLL(PosixResult EventEnginePosixInterface::EpollCtlAdd(
+IF_EPOLL(PosixErrorOr<void> EventEnginePosixInterface::EpollCtlAdd(
              const FileDescriptor& epfd, bool writable,
              const FileDescriptor& fd, void* data),
          {
@@ -805,7 +797,7 @@ IF_EPOLL(PosixResult EventEnginePosixInterface::EpollCtlAdd(
            }
            event.data.ptr = data;
            if (!IsCorrectGeneration(epfd) || !IsCorrectGeneration(fd)) {
-             return PosixResult(OperationResultKind::kWrongGeneration, 0);
+             return PosixErrorOr<void>::WrongGeneration();
            }
            return PosixResultSimpleWrap(
                epoll_ctl(epfd.fd(), EPOLL_CTL_ADD, fd.fd(), &event));
@@ -1089,12 +1081,12 @@ void EventEnginePosixInterface::ConfigureDefaultTcpUserTimeout(bool enable,
   }
 }
 
-PosixResult EventEnginePosixInterface::PosixResultWrap(
+PosixErrorOr<void> EventEnginePosixInterface::PosixResultWrap(
     const FileDescriptor& wrapped,
     const absl::AnyInvocable<int(int) const>& fn) const {
   return RunIfCorrectGeneration(
       wrapped, [&](int fd) { return PosixResultSimpleWrap(fn(fd)); },
-      PosixResultWrongGeneration());
+      PosixErrorOr<void>::WrongGeneration());
 }
 
 void EventEnginePosixInterface::AdvanceGeneration() {

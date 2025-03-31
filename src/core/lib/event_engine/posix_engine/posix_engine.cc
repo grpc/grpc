@@ -37,6 +37,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "file_descriptor_collection.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/poller.h"
@@ -412,15 +413,20 @@ void AsyncConnect::OnWritable(absl::Status status)
   }
 
   int so_error = 0;
-  PosixResult err;
+  PosixErrorOr<void> err;
   do {
     so_error_size = sizeof(so_error);
     err = fd->Poller()->posix_interface().GetSockOpt(
         fd->WrappedFd(), SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
   } while (err.IsPosixError(EINTR));
   if (!err.ok()) {
-    status = absl::FailedPreconditionError(
-        absl::StrCat("getsockopt: ", err.status()));
+    if (err.IsWrongGenerationError()) {
+      status = absl::FailedPreconditionError(
+          "getsockopt: file descriptor was created pre fork");
+    } else {
+      status = absl::FailedPreconditionError(
+          absl::StrCat("getsockopt: ", err.StrError()));
+    }
     return;
   }
 
@@ -470,13 +476,21 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     const EventEngine::ResolvedAddress& addr,
     const PosixTcpOptions& tcp_options, MemoryAllocator memory_allocator,
     EventEngine::Duration timeout) {
-  PosixResult err;
+  PosixErrorOr<void> err;
   int connect_errno;
   do {
     err = fork_support_->Poller()->posix_interface().Connect(fd, addr.address(),
                                                              addr.size());
   } while (err.IsPosixError(EINTR));
-  connect_errno = err.ok() ? 0 : err.errno_value();
+  if (err.IsWrongGenerationError()) {
+    Run([on_connect = std::move(on_connect),
+         ep = absl::FailedPreconditionError(
+             "connect failed: file descriptor was created before "
+             "fork")]() mutable { on_connect(std::move(ep)); });
+    return EventEngine::ConnectionHandle::kInvalid;
+  }
+
+  connect_errno = err.ok() ? 0 : err.code();
 
   auto addr_uri = ResolvedAddressToURI(addr);
   if (!addr_uri.ok()) {

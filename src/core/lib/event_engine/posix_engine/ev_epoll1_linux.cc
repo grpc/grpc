@@ -190,7 +190,7 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
     if (!was_shutdown) {
       auto result = fds.EpollCtlDel(poller_->g_epoll_set_.epfd, fd_);
       if (!result.ok()) {
-        LOG(ERROR) << "OrphanHandle: epoll_ctl failed: " << result.status();
+        LOG(ERROR) << "OrphanHandle: epoll_ctl failed: " << result.StrError();
       }
     }
     *release_fd = fd_;
@@ -234,7 +234,7 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
           poller_->g_epoll_set_.epfd, fd_);
       if (!result.ok()) {
         LOG(ERROR) << "HandleShutdownInternal: epoll_ctl failed: "
-                   << result.status();
+                   << result.StrError();
       }
     }
     write_closure_->SetShutdown(why);
@@ -250,10 +250,9 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
   CHECK(g_epoll_set_.epfd.ready());
   GRPC_TRACE_LOG(event_engine_poller, INFO)
       << "grpc epoll fd: " << g_epoll_set_.epfd;
-  CHECK_OK(posix_interface_
-               .EpollCtlAdd(g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(),
-                            wakeup_fd_.get())
-               .status());
+  auto result = posix_interface_.EpollCtlAdd(
+      g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(), wakeup_fd_.get());
+  CHECK(result.ok()) << result.StrError();
   g_epoll_set_.num_events = 0;
   g_epoll_set_.cursor = 0;
 }
@@ -304,7 +303,7 @@ EventHandle* Epoll1Poller::CreateHandle(FileDescriptor fd,
       reinterpret_cast<void*>(reinterpret_cast<intptr_t>(new_handle) |
                               (track_err ? 1 : 0)));
   if (!result.ok()) {
-    LOG(ERROR) << "epoll_ctl failed: " << result.status();
+    LOG(ERROR) << "epoll_ctl failed: " << result.StrError();
   }
 
   return new_handle;
@@ -478,7 +477,7 @@ void Epoll1Poller::ResetKickState() {
   wakeup_fd_ = *CreateWakeupFd(&posix_interface_);
   auto status = posix_interface_.EpollCtlAdd(
       g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(), wakeup_fd_.get());
-  CHECK_OK(status.status());
+  CHECK(status.ok()) << status.StrError();
   grpc_core::MutexLock lock(&mu_);
   was_kicked_ = false;
 }

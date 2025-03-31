@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "absl/strings/str_cat.h"
+#include "file_descriptor_collection.h"
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
@@ -48,27 +49,25 @@ absl::Status EventFdWakeupFd::Init() {
 }
 
 absl::Status EventFdWakeupFd::ConsumeWakeup() {
-  PosixResult err;
+  PosixErrorOr<void> err;
   do {
     err = fds_->EventFdRead(ReadFd());
   } while (err.IsPosixError(EINTR));
-  if (!err.ok() && err.errno_value() != EAGAIN) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("eventfd_read: ", grpc_core::StrError(err.errno_value())));
+  if (!err.ok() && !err.IsPosixError(EAGAIN)) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("eventfd_read: ", err.StrError()));
   }
   return absl::OkStatus();
 }
 
 absl::Status EventFdWakeupFd::Wakeup() {
-  PosixResult err;
+  PosixErrorOr<void> err;
   do {
     err = fds_->EventFdWrite(ReadFd());
   } while (err.IsPosixError(EINTR));
   if (!err.ok()) {
     return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("eventfd_write: ",
-                                     grpc_core::StrError(err.errno_value())));
+                        absl::StrCat("eventfd_write: ", err.StrError()));
   }
   return absl::OkStatus();
 }

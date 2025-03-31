@@ -115,11 +115,11 @@ class EventEnginePosixInterface {
   void Close(const FileDescriptor& fd);
 
   // Posix
-  PosixResult Connect(const FileDescriptor& sockfd, const struct sockaddr* addr,
-                      socklen_t addrlen);
-  PosixResult GetSockOpt(const FileDescriptor& fd, int level, int optname,
-                         void* optval, void* optlen);
-  PosixResult Ioctl(const FileDescriptor& fd, int op, void* arg);
+  PosixErrorOr<void> Connect(const FileDescriptor& sockfd,
+                             const struct sockaddr* addr, socklen_t addrlen);
+  PosixErrorOr<void> GetSockOpt(const FileDescriptor& fd, int level,
+                                int optname, void* optval, void* optlen);
+  PosixErrorOr<void> Ioctl(const FileDescriptor& fd, int op, void* arg);
   PosixErrorOr<int64_t> RecvFrom(const FileDescriptor& fd, void* buf,
                                  size_t len, int flags,
                                  struct sockaddr* src_addr, socklen_t* addrlen);
@@ -130,16 +130,17 @@ class EventEnginePosixInterface {
                                    int optname, uint32_t optval);
   PosixErrorOr<int64_t> SendMsg(const FileDescriptor& fd,
                                 const struct msghdr* message, int flags);
-  PosixResult Shutdown(const FileDescriptor& fd, int how);
+  PosixErrorOr<void> Shutdown(const FileDescriptor& fd, int how);
   PosixErrorOr<int64_t> Write(const FileDescriptor& fd,
                               absl::Span<char> buffer);
   PosixErrorOr<int64_t> WriteV(const FileDescriptor& fd,
                                const struct iovec* iov, int iovcnt);
 
   // Epoll
-  PosixResult EpollCtlAdd(const FileDescriptor& epfd, bool writable,
-                          const FileDescriptor& fd, void* data);
-  PosixResult EpollCtlDel(const FileDescriptor& epfd, const FileDescriptor& fd);
+  PosixErrorOr<void> EpollCtlAdd(const FileDescriptor& epfd, bool writable,
+                                 const FileDescriptor& fd, void* data);
+  PosixErrorOr<void> EpollCtlDel(const FileDescriptor& epfd,
+                                 const FileDescriptor& fd);
 
   // Return LocalAddress as EventEngine::ResolvedAddress
   absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(
@@ -188,15 +189,15 @@ class EventEnginePosixInterface {
 
   absl::StatusOr<int> GetUnusedPort();
 
-  PosixResult EventFdRead(const FileDescriptor& fd);
-  PosixResult EventFdWrite(const FileDescriptor& fd);
+  PosixErrorOr<void> EventFdRead(const FileDescriptor& fd);
+  PosixErrorOr<void> EventFdWrite(const FileDescriptor& fd);
 
  private:
   absl::Status PrepareTcpClientSocket(int fd,
                                       const EventEngine::ResolvedAddress& addr,
                                       const PosixTcpOptions& options);
 
-  PosixResult PosixResultWrap(
+  PosixErrorOr<void> PosixResultWrap(
       const FileDescriptor& wrapped,
       const absl::AnyInvocable<int(int) const>& fn) const;
 

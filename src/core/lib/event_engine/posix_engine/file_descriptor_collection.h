@@ -16,10 +16,10 @@
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_FILE_DESCRIPTOR_COLLECTION_H
 
 #include <atomic>
+#include <type_traits>
 #include <unordered_set>
 #include <variant>
 
-#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/sync.h"
@@ -28,10 +28,17 @@ namespace grpc_event_engine::experimental {
 
 template <typename T>
 class PosixErrorOr {
+ private:
+  // Convenient alias
+  template <typename T1>
+  using if_not_void_t = std::enable_if_t<std::negation_v<std::is_void<T1>>, T1>;
+
  public:
   PosixErrorOr() = default;
   PosixErrorOr(const PosixErrorOr& other) = default;
   PosixErrorOr(PosixErrorOr&& other) = default;
+  template <typename T1 = T>
+  explicit PosixErrorOr(if_not_void_t<T1> value) : value_(std::move(value)) {}
   PosixErrorOr& operator=(const PosixErrorOr& other) = default;
   PosixErrorOr& operator=(PosixErrorOr&& other) = default;
 
@@ -41,9 +48,10 @@ class PosixErrorOr {
     return PosixErrorOr(WrongGenerationError());
   }
 
-  explicit PosixErrorOr(T value) : value_(std::move(value)) {}
-
-  bool ok() const { return std::holds_alternative<T>(value_); }
+  bool ok() const {
+    return std::holds_alternative<
+        std::conditional_t<std::is_void_v<T>, std::monostate, T>>(value_);
+  }
 
   int code() const {
     const PosixError* error = std::get_if<PosixError>(&value_);
@@ -64,9 +72,18 @@ class PosixErrorOr {
     return std::holds_alternative<WrongGenerationError>(value_);
   }
 
-  T* operator->() { return &std::get<T>(value_); }
-  T& operator*() { return std::get<T>(value_); }
-  T value() const {
+  template <typename T1 = T>
+  if_not_void_t<T1>* operator->() {
+    return &std::get<T>(value_);
+  }
+
+  template <typename T1 = T>
+  if_not_void_t<T1>& operator*() {
+    return std::get<T>(value_);
+  }
+
+  template <typename T1 = T>
+  if_not_void_t<T1> value() const {
     CHECK(ok());
     return std::get<T>(value_);
   }
@@ -75,7 +92,7 @@ class PosixErrorOr {
     if (ok()) {
       return "ok";
     } else if (IsWrongGenerationError()) {
-      return "wrong generation";
+      return "file descriptor was created pre fork";
     } else {
       return grpc_core::StrError(code());
     }
@@ -86,11 +103,13 @@ class PosixErrorOr {
     int code;
   };
   struct WrongGenerationError {};
+  using Payload =
+      std::variant<std::conditional_t<std::is_void_v<T>, std::monostate, T>,
+                   PosixError, WrongGenerationError>;
 
-  explicit PosixErrorOr(std::variant<PosixError, WrongGenerationError, T> error)
-      : value_(std::move(error)) {}
+  explicit PosixErrorOr(Payload error) : value_(std::move(error)) {}
 
-  std::variant<PosixError, WrongGenerationError, T> value_;
+  Payload value_;
 };
 
 class FileDescriptor {
@@ -137,60 +156,6 @@ class FileDescriptor {
 #if GRPC_ENABLE_FORK_SUPPORT
   int generation_ = 0;
 #endif  // GRPC_ENABLE_FORK_SUPPORT
-};
-
-enum class OperationResultKind {
-  kSuccess,          // Operation does not return a file descriptor and
-                     // return value was >= 0. native_result holds the
-                     // original return value.
-  kError,            // Check native_result and errno for details
-  kWrongGeneration,  // System call was not performed because file
-                     // descriptor belongs to the wrong generation.
-};
-
-template <typename Sink>
-void AbslStringify(Sink& sink, OperationResultKind kind) {
-  sink.Append(kind == OperationResultKind::kSuccess ? "(Success)"
-              : kind == OperationResultKind::kError ? "(Error)"
-                                                    : "(Wrong Generation)");
-}
-
-// Result of the factory call. kWrongGeneration may happen in the call to
-// Accept*
-class PosixResult {
- public:
-  constexpr PosixResult() = default;
-  explicit constexpr PosixResult(OperationResultKind kind, int errno_value)
-      : kind_(kind), errno_value_(errno_value) {}
-
-  virtual ~PosixResult() = default;
-
-  absl::Status status() const {
-    switch (kind_) {
-      case OperationResultKind::kSuccess:
-        return absl::OkStatus();
-      case OperationResultKind::kError:
-        return absl::ErrnoToStatus(errno_value_, "");
-      case OperationResultKind::kWrongGeneration:
-        return absl::InternalError(
-            "File descriptor is from the wrong generation");
-    }
-  }
-
-  virtual bool ok() const { return kind_ == OperationResultKind::kSuccess; }
-
-  bool IsPosixError(int err) const {
-    return kind_ == OperationResultKind::kError && errno_value_ == err;
-  }
-
-  OperationResultKind kind() const { return kind_; }
-  int errno_value() const { return errno_value_; }
-
- private:
-  OperationResultKind kind_ = OperationResultKind::kSuccess;
-  // errno value on call completion, in order to reduce the race conditions
-  // from relying on global variable.
-  int errno_value_ = 0;
 };
 
 class FileDescriptorCollection {
