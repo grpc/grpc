@@ -77,15 +77,21 @@ class SendRate {
     send_start_time_ = 0;
   }
   double DeliveryTime(uint64_t current_time, size_t bytes) {
-    uint64_t start_time = current_time;
+    // start time relative to the current time for this send
+    double start_time = 0.0;
     if (send_start_time_ != 0) {
-      uint64_t predicted_end_time =
-          send_start_time_ + current_rate_ * send_size_;
-      if (predicted_end_time > start_time) {
-        start_time = predicted_end_time;
-      }
+      // Use integer subtraction to avoid rounding errors, getting everything
+      // with a zero base of 'now' to maximize precision.
+      // Since we have uint64_ts and want a signed double result we need to
+      // care about argument ordering to get a valid result.
+      const double send_start_time_relative_to_now =
+          current_time > send_start_time_
+              ? -static_cast<double>(current_time - send_start_time_)
+              : static_cast<double>(send_start_time_ - current_time);
+      const double predicted_end_time =
+          send_start_time_relative_to_now + current_rate_ * send_size_;
+      if (predicted_end_time > start_time) start_time = predicted_end_time;
     }
-    start_time -= current_time;
     return start_time + bytes / current_rate_;
   }
 
