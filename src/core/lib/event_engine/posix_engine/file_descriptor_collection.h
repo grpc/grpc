@@ -126,7 +126,7 @@ class FileDescriptor {
   constexpr FileDescriptor(int fd, int /* generation */) : fd_(fd) {};
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
-  bool ready() const { return fd_ > 0; }
+  bool ready() const { return fd_ >= 0; }
   // Escape for iomgr and tests. Not to be used elsewhere
   int iomgr_fd() const { return fd_; }
   // For logging/debug purposes - may include generation in the future, do not
@@ -151,12 +151,11 @@ class FileDescriptor {
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
  private:
-  int fd() const { return fd_; }
   // Can get raw fd!
   friend class FileDescriptorCollection;
   friend class EventEnginePosixInterface;
 
-  int fd_ = 0;
+  int fd_ = -1;
 #if GRPC_ENABLE_FORK_SUPPORT
   int generation_ = 0;
 #endif  // GRPC_ENABLE_FORK_SUPPORT

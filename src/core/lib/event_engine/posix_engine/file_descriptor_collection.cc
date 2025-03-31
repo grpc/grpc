@@ -47,7 +47,7 @@ bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
   }
   if (fd.generation() == current_generation_.load(std::memory_order_relaxed)) {
     grpc_core::MutexLock lock(&mu_);
-    if (file_descriptors_.erase(fd.fd()) == 1) {
+    if (file_descriptors_.erase(fd.fd_) == 1) {
       return true;
     }
   }
@@ -62,9 +62,9 @@ std::unordered_set<int> FileDescriptorCollection::AdvanceGeneration() {
 }
 
 int FileDescriptorCollection::ToInteger(const FileDescriptor& fd) const {
-  int raw = fd.fd();
-  if (raw <= 0) {
-    return 0;
+  int raw = fd.fd_;
+  if (raw <= -1) {
+    return -1;
   }
   static const auto fn =
       IsForkEnabled()

@@ -511,7 +511,7 @@ void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
     return;
   }
 #endif  // GRPC_ENABLE_FORK_SUPPORT
-  close(fd.fd());
+  close(fd.fd_);
 #endif  // GRPC_POSIX_SOCKET
 }
 
@@ -783,7 +783,7 @@ IF_EPOLL(PosixErrorOr<void> EventEnginePosixInterface::EpollCtlDel(
            }
            epoll_event phony_event;
            return PosixResultSimpleWrap(
-               epoll_ctl(epfd.fd(), EPOLL_CTL_DEL, fd.fd(), &phony_event));
+               epoll_ctl(epfd.fd_, EPOLL_CTL_DEL, fd.fd_, &phony_event));
          })
 
 IF_EPOLL(PosixErrorOr<void> EventEnginePosixInterface::EpollCtlAdd(
@@ -800,7 +800,7 @@ IF_EPOLL(PosixErrorOr<void> EventEnginePosixInterface::EpollCtlAdd(
              return PosixErrorOr<void>::WrongGeneration();
            }
            return PosixResultSimpleWrap(
-               epoll_ctl(epfd.fd(), EPOLL_CTL_ADD, fd.fd(), &event));
+               epoll_ctl(epfd.fd_, EPOLL_CTL_ADD, fd.fd_, &event));
          })
 
 absl::StatusOr<EventEngine::ResolvedAddress>
@@ -922,7 +922,7 @@ EventEnginePosixInterface::CreateAndPrepareTcpClientSocket(
     }
   }
   auto error =
-      PrepareTcpClientSocket(socket_fd->fd(), mapped_target_addr, options);
+      PrepareTcpClientSocket(socket_fd->fd_, mapped_target_addr, options);
   if (!error.ok()) {
     return error;
   }
@@ -937,7 +937,7 @@ absl::Status EventEnginePosixInterface::SetSocketMutator(
   if (!IsCorrectGeneration(fd)) {
     return absl::InternalError("SetSocketMutator: FD has a wrong generation");
   }
-  if (!grpc_socket_mutator_mutate_fd(mutator, fd.fd(), usage)) {
+  if (!grpc_socket_mutator_mutate_fd(mutator, fd.fd_, usage)) {
     return absl::Status(absl::StatusCode::kInternal,
                         "grpc_socket_mutator failed.");
   }
@@ -950,7 +950,7 @@ absl::Status EventEnginePosixInterface::ApplySocketMutatorInOptions(
   if (!IsCorrectGeneration(fd)) {
     return absl::InternalError("ApplySocketMutatorInOptions: wrong generation");
   }
-  return InternalApplySocketMutatorInOptions(fd.fd(), usage, options);
+  return InternalApplySocketMutatorInOptions(fd.fd_, usage, options);
 }
 
 int EventEnginePosixInterface::ConfigureSocket(const FileDescriptor& fd,
@@ -983,7 +983,7 @@ IF_POSIX_SOCKET(
       if (!IsCorrectGeneration(fd)) {
         return absl::InternalError("PrepareListenerSocket: wrong generation");
       }
-      int f = fd.fd();
+      int f = fd.fd_;
       if (IsSocketReusePortSupported() && options.allow_reuse_port &&
           address.address()->sa_family != AF_UNIX &&
           !ResolvedAddressIsVSock(address)) {

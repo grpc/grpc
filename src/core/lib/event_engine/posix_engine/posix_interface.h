@@ -69,7 +69,7 @@ class EventEnginePosixInterface {
             ? [](const FileDescriptorCollection& collection,
                  const FileDescriptor& fd) { return collection.ToInteger(fd); }
             : [](const FileDescriptorCollection& collection,
-                 const FileDescriptor& fd) { return fd.fd(); };
+                 const FileDescriptor& fd) { return fd.fd_; };
     return kToInteger(descriptors_, fd);
 #else   // GRPC_ENABLE_FORK_SUPPORT
     return fd.fd();
@@ -213,7 +213,7 @@ class EventEnginePosixInterface {
 #else   // GRPC_ENABLE_FORK_SUPPORT
     (void)r;  // Get rid of the unused warning
 #endif  // GRPC_ENABLE_FORK_SUPPORT
-    return std::invoke(fn, fd.fd());
+    return std::invoke(fn, fd.fd_);
   }
 
   template <typename... Args>
