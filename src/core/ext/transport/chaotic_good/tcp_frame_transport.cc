@@ -64,7 +64,8 @@ absl::StatusOr<TcpFrameHeader> TcpFrameHeader::Parse(const uint8_t* data) {
 
 uint32_t TcpFrameHeader::Padding(uint32_t alignment) const {
   if (payload_tag == 0) return 0;
-  return DataConnectionPadding(header.payload_length, alignment);
+  return DataConnectionPadding(kFrameHeaderSize + header.payload_length,
+                               alignment);
 }
 
 std::string TcpFrameHeader::ToString() const {
@@ -97,8 +98,10 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
       // ... then write it to the control endpoint
       [this, &header, &frame]() {
         SliceBuffer output;
-        TcpFrameHeader{header, 0}.Serialize(
-            output.AddTiny(TcpFrameHeader::kFrameHeaderSize));
+        TcpFrameHeader hdr{header, 0};
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD: Send control frame " << hdr.ToString();
+        hdr.Serialize(output.AddTiny(TcpFrameHeader::kFrameHeaderSize));
         frame.SerializePayload(output);
         return control_endpoint_.Write(std::move(output));
       },
@@ -108,8 +111,10 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
         SliceBuffer data_bytes;
         auto tag = next_payload_tag_;
         ++next_payload_tag_;
-        TcpFrameHeader{header, tag}.Serialize(
-            control_bytes.AddTiny(TcpFrameHeader::kFrameHeaderSize));
+        TcpFrameHeader hdr{header, tag};
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD: Send control frame " << hdr.ToString();
+        hdr.Serialize(control_bytes.AddTiny(TcpFrameHeader::kFrameHeaderSize));
         const size_t padding = DataConnectionPadding(
             TcpFrameHeader::kFrameHeaderSize + header.payload_length,
             options_.encode_alignment);
@@ -200,8 +205,12 @@ auto TcpFrameTransport::ReadFrameBytes() {
                         if (payload.ok()) {
                           if (payload->Length() !=
                               frame_header.header.payload_length + padding) {
-                            return absl::UnavailableError(
-                                "Length mismatch on tagged payload");
+                            return absl::UnavailableError(absl::StrCat(
+                                "Length mismatch on tagged payload: data "
+                                "channel received ",
+                                payload->Length(), " bytes, with padding ",
+                                padding, ", but got control channel header ",
+                                frame_header.ToString()));
                           }
                           payload->RemoveLastNBytesNoInline(padding);
                         }
