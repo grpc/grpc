@@ -18,6 +18,7 @@
 #include <atomic>
 #include <type_traits>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 
 #include "absl/strings/str_format.h"
@@ -83,9 +84,18 @@ class PosixErrorOr {
   }
 
   template <typename T1 = T>
-  if_not_void_t<T1> value() const {
+  const if_not_void_t<T1>& value() const {
     CHECK(ok());
     return std::get<T>(value_);
+  }
+
+  template <typename T1 = T>
+  if_not_void_t<T1> value_or(T1&& default_value) const {
+    if (ok()) {
+      return value();
+    } else {
+      return std::forward<T1>(default_value);
+    }
   }
 
   std::string StrError() const {
