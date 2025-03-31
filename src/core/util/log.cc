@@ -99,17 +99,9 @@ void gpr_log_verbosity_init(void) {
   // to grpc.
   absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
   if (absl::EqualsIgnoreCase(verbosity, "INFO")) {
-    LOG_FIRST_N(WARNING, 1)
-        << "Log level INFO is not suitable for production. Prefer WARNING or "
-           "ERROR. However if you see this message in a debug environment or "
-           "test environment it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
-    LOG_FIRST_N(WARNING, 1)
-        << "Log level DEBUG is not suitable for production. Prefer WARNING or "
-           "ERROR. However if you see this message in a debug environment or "
-           "test environment it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", 2);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
