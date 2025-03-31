@@ -23,6 +23,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <regex>
 
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
@@ -55,8 +56,8 @@ std::string GetDbFileContent(int argc, char** argv) {
 }
 
 // A simple parser for the json db file. It requires the db file to have the
-// exact form of [{"location": { "latitude": 123, "longitude": 456}, "name":
-// "the name can be empty" }, { ... } ...
+// exact form of [{"location":{"latitude":123,"longitude":456},"name":
+// "the name can be empty"},{ ... }...
 class Parser {
  public:
   explicit Parser(const std::string& db) : db_(db) {
@@ -141,18 +142,6 @@ class Parser {
  * @param json The input JSON string to be minified.
  * @return A minified version of the input JSON string.
  *
- * The function iterates through each character of the input JSON string.
- * It keeps track of whether it is currently inside a string (denoted by double
- * quotes). If it encounters a double quote that is not preceded by a backslash,
- * it toggles the `in_string` state. If the character is inside a string or is
- * not a whitespace character, it is added to the result. This effectively
- * removes all whitespace characters outside of strings.
- *
- * Note: This function does not validate the JSON structure or handle escape
- * sequences within strings. It assumes that the input JSON is well-formed. It
- * also does not handle other JSON-specific characters like commas, colons, or
- * brackets. It only focuses on removing whitespace characters.
- *
  * Example usage:
  * std::string json = R"({"key": "value", "array": [1, 2, 3]})";
  * std::string minified = MinifyJson(json);
@@ -163,23 +152,9 @@ class Parser {
  * @see https://www.json.org/json-en.html
  */
 std::string MinifyJson(const std::string& json) {
-  std::string result;
-  bool in_string = false;  // mark if currently inside a string
-  char prev_char = '\0';   // previous character, used to detect `\"`
-  for (char c : json) {
-    // Toggle in_string if we encounter a double quote not preceded by a
-    // backslash This handles escaped quotes within strings When encountering
-    // `"`, toggle the in_string state (ignore `\"`)
-    if (c == '"' && prev_char != '\\') {
-      in_string = !in_string;
-    }
-    // Keep the character {if inside a string} or {if it's not a whitespace}
-    if (in_string || !isspace(c)) {
-      result += c;
-    }
-    prev_char = c;  // update prev_char
-  }
-  return result;
+  std::regex whitespaceOutsideQuotes(R"(\s+(?=(?:(?:[^"]*"){2})*[^"]*$))");
+  // Replace all matches with an empty string
+  return std::regex_replace(json, whitespaceOutsideQuotes, "");
 }
 
 void ParseDb(const std::string& db, std::vector<Feature>* feature_list) {
