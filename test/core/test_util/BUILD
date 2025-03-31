@@ -573,7 +573,8 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(                                                                    name = "tsi_fake_credentials",
+grpc_cc_library(
+    name = "tsi_fake_credentials",
     srcs = [
         "fake_transport_security.cc",
     ],
