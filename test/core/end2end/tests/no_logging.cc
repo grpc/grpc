@@ -191,6 +191,10 @@ CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
   }
 #endif
   VerifyLogNoiseLogSink nolog_verifier(absl::LogSeverityAtLeast::kInfo, 2);
+  // Allow info logs, but not error logs on the first request.
+  // This allows connection warnings to be printed, and potentially some
+  // initialization noise - we tolerate that - this test is about not spamming
+  // on the per-RPC path.
   nolog_verifier.AllowInfoLogs(true);
   SimpleRequest(*this);
   nolog_verifier.AllowInfoLogs(false);
