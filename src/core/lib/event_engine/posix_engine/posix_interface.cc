@@ -546,7 +546,7 @@ IF_POSIX_SOCKET(
         return fd;
       }
       int flags;
-      int raw_fd = fd->value();
+      int raw_fd = fd.value().fd_;
       if (nonblock) {
         flags = fcntl(raw_fd, F_GETFL, 0);
         if (flags < 0) goto close_and_error;
@@ -564,7 +564,7 @@ IF_POSIX_SOCKET(
       addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
       return fd;
     close_and_error:
-      PosixErrorOr<FileDescriptor> result(OperationResultKind::kError, errno);
+      auto result = PosixErrorOr<FileDescriptor>::Error(errno);
       Close(fd.value());
       return result;
     })
