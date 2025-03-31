@@ -112,6 +112,10 @@ class PosixErrorOr {
   Payload value_;
 };
 
+// Represents a file descriptor, potentially associated with a fork generation.
+// When compiling with fork support (GRPC_ENABLE_FORK_SUPPORT is defined),
+// FileDescriptor includes a generation number to track its validity across
+// forks. Otherwise, it only stores the fd.
 class FileDescriptor {
  public:
   constexpr FileDescriptor() = default;
@@ -158,6 +162,9 @@ class FileDescriptor {
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
+// Manages a collection of file descriptors, tracking their validity across
+// forks by associating them with a generation number. This is necessary
+// to ensure FDs created before a fork are not used after the fork.
 class FileDescriptorCollection {
  public:
   // Encodes a file descriptor (fd) and its generation into a single integer,
@@ -175,15 +182,37 @@ class FileDescriptorCollection {
   static constexpr int kIntFdBits = 28;
   static constexpr int kGenerationMask = 0x7;  // 3 bits
 
+  // Adds a raw file descriptor `fd` to the collection and associates it
+  // with the current generation. Simply constructs a new FileDescriptor
+  // instance without adding to a collection if fork is disabled.
   FileDescriptor Add(int fd);
+  // Removes a FileDescriptor from the collection.
+  // If fork support is disabled, this always returns true.
+  // If fork support is enabled, fd is only removed if its generation matches
+  // the current collection generation.
   bool Remove(const FileDescriptor& fd);
 
+  // TODO (eostroukhov) Completely recreate the ARES resolver on fork and
+  // remove 2 methods below
+  // Encodes a FileDescriptor (fd and generation) into a single integer.
+  // If fork support is disabled, this simply returns the raw fd.
+  // If fork support is enabled, it combines the fd and the lower bits of the
+  // generation according to the defined bitmask and shift.
   int ToInteger(const FileDescriptor& fd) const;
+  // Decodes an integer (previously encoded by ToInteger) back into a
+  // FileDescriptor.
+  // If fork support is disabled, it creates a FileDescriptor with generation 0.
+  // If fork support is enabled, it extracts the fd and checks if the encoded
+  // generation bits match the current generation bits.
   PosixErrorOr<FileDescriptor> FromInteger(int fd) const;
 
-  // Advances the generation, clears the list of fds and returns them
+  // Advances the collection's generation number, clears the internal list of
+  // tracked file descriptors, and returns the set of fds that were being
+  // tracked under the previous generation. This should be called after a fork
+  // in the child process.
   std::unordered_set<int> AdvanceGeneration();
 
+  // Returns the current generation number of the collection.
   int generation() const {
     return current_generation_.load(std::memory_order_relaxed);
   }
