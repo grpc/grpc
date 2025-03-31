@@ -371,18 +371,9 @@ absl::StatusOr<Http2PingFrame> ParsePingFrame(const Http2FrameHeader& hdr,
         absl::StrCat("invalid ping stream id: ", hdr.ToString()));
   }
 
-  bool ack;
-  switch (hdr.flags) {
-    case 0:
-      ack = false;
-      break;
-    case kFlagAck:
-      ack = true;
-      break;
-    default:
-      return absl::InternalError(
-          absl::StrCat("invalid ping flags: ", hdr.ToString()));
-  }
+  // RFC9113 : Unused flags MUST be ignored on receipt and MUST be left unset
+  // (0x00) when sending.
+  bool ack = ((hdr.flags & kFlagAck) == kFlagAck);
 
   uint8_t buffer[8];
   payload.CopyToBuffer(buffer);
@@ -401,11 +392,6 @@ absl::StatusOr<Http2GoawayFrame> ParseGoawayFrame(const Http2FrameHeader& hdr,
   if (hdr.stream_id != 0) {
     return absl::InternalError(
         absl::StrCat("invalid goaway stream id: ", hdr.ToString()));
-  }
-
-  if (hdr.flags != 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid goaway flags: ", hdr.ToString()));
   }
 
   uint8_t buffer[8];
