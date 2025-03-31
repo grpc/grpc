@@ -98,6 +98,8 @@ void grpc_server_security_context_destroy(void* ctx);
 namespace grpc_core {
 template <>
 struct ArenaContextType<SecurityContext> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForwardAndReverse;
   static void Destroy(SecurityContext* p) { p->~SecurityContext(); }
 };
 

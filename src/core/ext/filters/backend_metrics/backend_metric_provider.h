@@ -28,6 +28,8 @@ class BackendMetricProvider {
 
 template <>
 struct ArenaContextType<BackendMetricProvider> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
   static void Destroy(BackendMetricProvider*) {}
 };
 
