@@ -135,20 +135,20 @@ class Http2ClientTransport final : public ClientTransport {
   auto OnWriteLoopEnded();
 
   RefCountedPtr<Party> general_party_;
-  RefCountedPtr<Party> write_party_;
 
   PromiseEndpoint endpoint_;
-  Http2Settings settings_;
+  Http2SettingsManager settings_;
 
   // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
   Http2FrameHeader current_frame_header_;
 
   // Managing the streams
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallHandler call) : call(std::move(call)) {}
-    // Transport holds one CallHandler object for each Stream.
+    explicit Stream(CallHandler call)
+        : call(std::move(call)), stream_state(HttpStreamState::kIdle) {}
+
     CallHandler call;
-    HttpStreamState stream_state = HttpStreamState::kIdle;
+    HttpStreamState stream_state;
     TransportSendQeueue send_queue;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };

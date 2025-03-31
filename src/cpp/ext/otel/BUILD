@@ -56,6 +56,10 @@ grpc_cc_library(
         "absl/types:span",
         "otel/api",
     ],
+    tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
     visibility = ["@grpc:otel_plugin"],
     deps = [
         "//:call_tracer",
