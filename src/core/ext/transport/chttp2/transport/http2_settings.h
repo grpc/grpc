@@ -47,7 +47,8 @@ class Http2Settings {
 
   void Diff(bool is_first_send, const Http2Settings& old,
             absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) const;
-  GRPC_MUST_USE_RESULT Http2ErrorCode Apply(uint16_t key, uint32_t value);
+  GRPC_MUST_USE_RESULT http2::Http2ErrorCode Apply(uint16_t key,
+                                                   uint32_t value);
   uint32_t header_table_size() const { return header_table_size_; }
   uint32_t max_concurrent_streams() const { return max_concurrent_streams_; }
   uint32_t initial_window_size() const { return initial_window_size_; }
