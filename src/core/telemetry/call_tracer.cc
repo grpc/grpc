@@ -169,9 +169,6 @@ class DelegatingClientCallTracer : public ClientCallTracer {
         tracer->RecordAnnotation(annotation);
       }
     }
-    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-      return nullptr;
-    }
     void SetOptionalLabel(OptionalLabelKey key,
                           RefCountedStringValue value) override {
       for (auto* tracer : tracers_) {
@@ -312,9 +309,6 @@ class DelegatingServerCallTracer : public ServerCallTracer {
     for (auto* tracer : tracers_) {
       tracer->RecordAnnotation(annotation);
     }
-  }
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
   }
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }

@@ -261,11 +261,6 @@ void PythonOpenCensusServerCallTracer::RecordAnnotation(
   }
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface>
-PythonOpenCensusServerCallTracer::StartNewTcpTrace() {
-  return nullptr;
-}
-
 std::string PythonOpenCensusServerCallTracer::TraceId() {
   return absl::BytesToHexString(
       absl::string_view(context_.GetSpanContext().TraceId()));

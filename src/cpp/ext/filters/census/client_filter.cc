@@ -303,11 +303,6 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
   }
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface>
-OpenCensusCallTracer::OpenCensusCallAttemptTracer::StartNewTcpTrace() {
-  return nullptr;
-}
-
 //
 // OpenCensusCallTracer
 //

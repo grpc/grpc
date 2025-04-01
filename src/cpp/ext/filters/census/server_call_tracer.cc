@@ -181,9 +181,6 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
         break;
     }
   }
-  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
 
  private:
   experimental::CensusContext context_;

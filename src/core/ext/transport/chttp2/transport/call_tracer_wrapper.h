@@ -54,9 +54,6 @@ class Chttp2CallTracerWrapper final : public CallTracerInterface {
   void RecordReceivedDecompressedMessage(
       const Message& /*recv_decompressed_message*/) override {}
   void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
   void RecordAnnotation(absl::string_view /*annotation*/) override {}
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
   std::string TraceId() override { return ""; }

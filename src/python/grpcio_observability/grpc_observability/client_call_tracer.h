@@ -75,7 +75,6 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
-    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
     void SetOptionalLabel(OptionalLabelKey key,
                           grpc_core::RefCountedStringValue value) override;
 

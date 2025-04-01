@@ -188,9 +188,6 @@ class FakeCallTracer : public ClientCallTracer {
     }
 
     void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
-    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-      return nullptr;
-    }
     void RecordEnd(const gpr_timespec& /*latency*/) override {
       test_state_->NotifyClient();
       delete this;
@@ -244,9 +241,6 @@ class FakeServerCallTracer : public ServerCallTracer {
   void RecordReceivedDecompressedMessage(
       const Message& /*recv_decompressed_message*/) override {}
   void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
   void RecordReceivedTrailingMetadata(
       grpc_metadata_batch* /*recv_trailing_metadata*/) override {}
 

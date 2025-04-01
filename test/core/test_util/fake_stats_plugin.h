@@ -94,9 +94,6 @@ class FakeClientCallTracer : public ClientCallTracer {
       annotation_logger_->push_back(std::string(annotation));
     }
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
-    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-      return nullptr;
-    }
     void SetOptionalLabel(OptionalLabelKey key,
                           RefCountedStringValue value) override {
       optional_labels_.emplace(key, std::move(value));
@@ -191,9 +188,6 @@ class FakeServerCallTracer : public ServerCallTracer {
     annotation_logger_->push_back(std::string(annotation));
   }
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
   bool IsSampled() override { return false; }

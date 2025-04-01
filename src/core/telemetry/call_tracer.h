@@ -122,11 +122,6 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
       const TransportByteSize& transport_byte_size) = 0;
   virtual void RecordOutgoingBytes(
       const TransportByteSize& transport_byte_size) = 0;
-
-  // Traces a new TCP transport attempt for this call attempt. Note the TCP
-  // transport may finish tracing and unref the TCP tracer before or after the
-  // call completion in gRPC core. No TCP tracing when null is returned.
-  virtual std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() = 0;
 };
 
 // Interface for a tracer that records activities on a call. Actual attempts for
