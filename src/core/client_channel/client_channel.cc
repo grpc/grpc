@@ -495,7 +495,7 @@ class ClientChannel::ClientChannelControlHelper
   }
 
   GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup() override {
-    return client_channel_->stats_plugin_group_;
+    return *client_channel_->stats_plugin_group_;
   }
 
   void AddTraceEvent(TraceSeverity severity, absl::string_view message) override

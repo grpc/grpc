@@ -179,7 +179,8 @@ class ClientChannel : public Channel {
   ClientChannelFactory* const client_channel_factory_;
   const std::string default_authority_;
   channelz::ChannelNode* const channelz_node_;
-  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
 
   //
   // Idleness state.

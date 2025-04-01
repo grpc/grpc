@@ -98,8 +98,8 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
         GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
     if (stats_plugin_list != nullptr) {
       for (const auto& plugin : **stats_plugin_list) {
-        (*r)->stats_plugin_group->AddStatsPlugin(
-            plugin, plugin->GetServerScopeConfig(args));
+        (*(*r)->stats_plugin_group)
+            ->AddStatsPlugin(plugin, plugin->GetServerScopeConfig(args));
       }
     }
   } else {
@@ -119,8 +119,8 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
         GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
     if (stats_plugin_list != nullptr) {
       for (const auto& plugin : **stats_plugin_list) {
-        (*r)->stats_plugin_group->AddStatsPlugin(
-            plugin, plugin->GetChannelScopeConfig(scope));
+        (*(*r)->stats_plugin_group)
+            ->AddStatsPlugin(plugin, plugin->GetChannelScopeConfig(scope));
       }
     }
   }

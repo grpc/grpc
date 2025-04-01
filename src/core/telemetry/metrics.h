@@ -369,7 +369,8 @@ class GlobalStatsPluginRegistry {
   // stats plugins. They got a stats plugin group which contains all the stats
   // plugins for a specific scope and all operations on the stats plugin group
   // will be applied to all the stats plugins within the group.
-  class StatsPluginGroup {
+  class StatsPluginGroup
+      : public std::enable_shared_from_this<StatsPluginGroup> {
    public:
     // Adds a stats plugin and a scope config (per-channel or per-server) to the
     // group.
@@ -499,9 +500,10 @@ class GlobalStatsPluginRegistry {
 
   // The following functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
-  static StatsPluginGroup GetStatsPluginsForChannel(
+  static std::shared_ptr<StatsPluginGroup> GetStatsPluginsForChannel(
       const experimental::StatsPluginChannelScope& scope);
-  static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);
+  static std::shared_ptr<StatsPluginGroup> GetStatsPluginsForServer(
+      const ChannelArgs& args);
 
  private:
   struct GlobalStatsPluginNode {
