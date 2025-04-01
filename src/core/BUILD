@@ -3167,13 +3167,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "http2_errors",
-    hdrs = [
-        "lib/transport/http2_errors.h",
-    ],
-)
-
-grpc_cc_library(
     name = "channel_stack_type",
     srcs = [
         "lib/surface/channel_stack_type.cc",
@@ -4874,7 +4867,7 @@ grpc_cc_library(
         "error",
         "exec_ctx_wakeup_scheduler",
         "experiments",
-        "http2_errors",
+        "http2_status",
         "idle_filter_state",
         "loop",
         "metadata_batch",
@@ -6491,7 +6484,7 @@ grpc_cc_library(
     srcs = ["lib/transport/status_conversion.cc"],
     hdrs = ["lib/transport/status_conversion.h"],
     deps = [
-        "http2_errors",
+        "http2_status",
         "time",
         "//:gpr_platform",
         "//:grpc_public_hdrs",
@@ -6508,7 +6501,7 @@ grpc_cc_library(
     deps = [
         "error",
         "experiments",
-        "http2_errors",
+        "http2_status",
         "status_conversion",
         "status_helper",
         "time",
@@ -7518,7 +7511,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "http2_errors",
+        "http2_status",
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",

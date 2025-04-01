@@ -1661,7 +1661,6 @@ let package = Package(
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/error_utils.cc",
         "src/core/lib/transport/error_utils.h",
-        "src/core/lib/transport/http2_errors.h",
         "src/core/lib/transport/status_conversion.cc",
         "src/core/lib/transport/status_conversion.h",
         "src/core/lib/transport/timeout_encoding.cc",

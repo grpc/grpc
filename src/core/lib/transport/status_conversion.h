@@ -22,12 +22,12 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/transport/http2_errors.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/util/time.h"
 
 // Conversion of grpc status codes to http2 error codes (for RST_STREAM)
-grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status);
-grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
+Http2ErrorCode grpc_status_to_http2_error(grpc_status_code status);
+grpc_status_code grpc_http2_error_to_grpc_status(Http2ErrorCode error,
                                                  grpc_core::Timestamp deadline);
 
 // Conversion of HTTP status codes (:status) to grpc status codes

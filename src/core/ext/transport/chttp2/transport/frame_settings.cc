@@ -193,7 +193,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         }
         auto error =
             parser->incoming_settings->Apply(parser->id, parser->value);
-        if (error != GRPC_HTTP2_NO_ERROR) {
+        if (error != Http2ErrorCode::kNoError) {
           grpc_chttp2_goaway_append(
               t->last_new_stream_id, error,
               grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf);
