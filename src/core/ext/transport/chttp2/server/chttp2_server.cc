@@ -632,7 +632,8 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
     // Set an HTTP2 error of NO_ERROR to do graceful GOAWAYs.
     op->goaway_error = grpc_error_set_int(
         GRPC_ERROR_CREATE("Server is stopping to serve requests."),
-        StatusIntProperty::kHttp2Error, Http2ErrorCode::kNoError);
+        StatusIntProperty::kHttp2Error,
+        static_cast<intptr_t>(Http2ErrorCode::kNoError));
     transport->PerformOp(op);
   }
 }
@@ -1215,7 +1216,8 @@ void NewChttp2ServerListener::ActiveConnection::SendGoAwayImplLocked() {
             // Set an HTTP2 error of NO_ERROR to do graceful GOAWAYs.
             op->goaway_error = grpc_error_set_int(
                 GRPC_ERROR_CREATE("Server is stopping to serve requests."),
-                StatusIntProperty::kHttp2Error, Http2ErrorCode::kNoError);
+                StatusIntProperty::kHttp2Error,
+                static_cast<intptr_t>(Http2ErrorCode::kNoError));
             transport->PerformOp(op);
           }
         });

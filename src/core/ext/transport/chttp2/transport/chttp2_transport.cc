@@ -1211,7 +1211,8 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   // that is enabled by default and double the configured KEEPALIVE_TIME used
   // for new connections on that channel.
   if (GPR_UNLIKELY(t->is_client &&
-                   goaway_error == Http2ErrorCode::kEnhanceYourCalm &&
+                   goaway_error ==
+                       static_cast<int>(Http2ErrorCode::kEnhanceYourCalm) &&
                    goaway_text == "too_many_pings")) {
     LOG(ERROR) << t->peer_string.as_string_view()
                << ": Received a GOAWAY with error code ENHANCE_YOUR_CALM and "
@@ -1832,9 +1833,10 @@ void grpc_chttp2_keepalive_timeout(
                                    << ": Keepalive timeout. Closing transport.";
         send_goaway(
             t.get(),
-            grpc_error_set_int(GRPC_ERROR_CREATE("keepalive_timeout"),
-                               grpc_core::StatusIntProperty::kHttp2Error,
-                               Http2ErrorCode::kEnhanceYourCalm),
+            grpc_error_set_int(
+                GRPC_ERROR_CREATE("keepalive_timeout"),
+                grpc_core::StatusIntProperty::kHttp2Error,
+                static_cast<intptr_t>(Http2ErrorCode::kEnhanceYourCalm)),
             /*immediate_disconnect_hint=*/true);
         close_transport_locked(
             t.get(),
