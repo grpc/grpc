@@ -28,7 +28,7 @@
 
 using grpc_core::htpp2::Http2ErrorCode;
 
-#define GRPC_STATUS_TO_http2_status(a, b) \
+#define GRPC_STATUS_TO_HTTP2_ERROR(a, b) \
   ASSERT_EQ(grpc_status_to_http2_status(a), (b))
 #define http2_status_TO_GRPC_STATUS(a, deadline, b)                \
   do {                                                             \
@@ -42,38 +42,38 @@ using grpc_core::htpp2::Http2ErrorCode;
   ASSERT_EQ(grpc_http2_status_to_grpc_status(a), (b))
 
 TEST(StatusConversionTest, TestGrpcStatusToHttp2Error) {
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_OK, Http2ErrorCode::kNoError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_CANCELLED, Http2ErrorCode::kCancel);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_UNKNOWN,
-                              Http2ErrorCode::kInternalError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_INVALID_ARGUMENT,
-                              Http2ErrorCode::kInternalError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_DEADLINE_EXCEEDED,
-                              Http2ErrorCode::kCancel);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_NOT_FOUND,
-                              Http2ErrorCode::kInternalError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_ALREADY_EXISTS,
-                              Http2ErrorCode::kInternalError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_PERMISSION_DENIED,
-                              Http2ErrorCode::kInadequateSecurity);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_UNAUTHENTICATED,
-                              Http2ErrorCode::kInternalError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_RESOURCE_EXHAUSTED,
-                              Http2ErrorCode::kEnhanceYourCalm);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_FAILED_PRECONDITION,
-                              Http2ErrorCode::kInternalError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_ABORTED,
-                              Http2ErrorCode::kInternalError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_OUT_OF_RANGE,
-                              Http2ErrorCode::kInternalError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_UNIMPLEMENTED,
-                              Http2ErrorCode::kInternalError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_INTERNAL,
-                              Http2ErrorCode::kInternalError);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_UNAVAILABLE,
-                              Http2ErrorCode::kRefusedStream);
-  GRPC_STATUS_TO_http2_status(GRPC_STATUS_DATA_LOSS,
-                              Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OK, Http2ErrorCode::kNoError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_CANCELLED, Http2ErrorCode::kCancel);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNKNOWN,
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_INVALID_ARGUMENT,
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DEADLINE_EXCEEDED,
+                             Http2ErrorCode::kCancel);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_NOT_FOUND,
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_ALREADY_EXISTS,
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_PERMISSION_DENIED,
+                             Http2ErrorCode::kInadequateSecurity);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNAUTHENTICATED,
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_RESOURCE_EXHAUSTED,
+                             Http2ErrorCode::kEnhanceYourCalm);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_FAILED_PRECONDITION,
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_ABORTED,
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OUT_OF_RANGE,
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNIMPLEMENTED,
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_INTERNAL,
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNAVAILABLE,
+                             Http2ErrorCode::kRefusedStream);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DATA_LOSS,
+                             Http2ErrorCode::kInternalError);
 }
 
 TEST(StatusConversionTest, TestGrpcStatusToHttp2Status) {

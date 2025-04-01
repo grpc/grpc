@@ -41,8 +41,6 @@
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 
-using grpc_core::http2::Http2ErrorCode;
-
 namespace grpc_core {
 
 namespace {
