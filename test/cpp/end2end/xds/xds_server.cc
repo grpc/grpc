@@ -74,39 +74,162 @@ void AdsServiceImpl::UnsetResource(const std::string& type_url,
   }
 }
 
-Status AdsServiceImpl::StreamAggregatedResources(ServerContext* context,
-                                                 Stream* stream) {
+AdsServiceImpl::Reactor::Reactor(
+    std::shared_ptr<AdsServiceImpl> ads_service_impl,
+    CallbackServerContext* context)
+    : ads_service_impl_(std::move(ads_service_impl)), context_(context) {
   LOG(INFO) << "ADS[" << debug_label_ << "]: StreamAggregatedResources starts";
   {
-    grpc_core::MutexLock lock(&ads_mu_);
-    if (forced_ads_failure_.has_value()) {
+    grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
+    if (ads_service_impl_->forced_ads_failure_.has_value()) {
       LOG(INFO) << "ADS[" << debug_label_
                 << "]: StreamAggregatedResources forcing early failure "
                    "with status code: "
-                << forced_ads_failure_.value().error_code()
-                << ", message: " << forced_ads_failure_.value().error_message();
-      return forced_ads_failure_.value();
+                << ads_service_impl_->forced_ads_failure_.value().error_code()
+                << ", message: "
+                << ads_service_impl_->forced_ads_failure_.value().error_message();
+      return *ads_service_impl_->forced_ads_failure_;
     }
   }
-  AddClient(context->peer());
-  // Take a reference of the AdsServiceImpl object, which will go
-  // out of scope when this request handler returns.  This ensures
-  // that the parent won't be destroyed until this stream is complete.
-  std::shared_ptr<AdsServiceImpl> ads_service_impl = shared_from_this();
-  // Resources (type/name pairs) that have changed since the client
-  // subscribed to them.
-  UpdateQueue update_queue;
-  // Resources that the client will be subscribed to keyed by resource type
-  // url.
-  SubscriptionMap subscription_map;
-  // Sent state for each resource type.
-  std::map<std::string /*type_url*/, SentState> sent_state_map;
-  // Spawn a thread to read requests from the stream.
-  // Requests will be delivered to this thread in a queue.
-  std::deque<DiscoveryRequest> requests;
-  bool stream_closed = false;
-  std::thread reader(std::bind(&AdsServiceImpl::BlockingRead, this, stream,
-                               &requests, &stream_closed));
+  ads_service_impl_->AddClient(context->peer());
+  StartRead(&request_);
+}
+
+void AdsServiceImpl::Reactor::OnDone() {
+  LOG(INFO) << "ADS[" << debug_label_ << "]: OnDone()";
+  // Clean up any subscriptions that were still active when the call
+  // finished.
+  {
+    grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
+    for (auto& [type_url, subscription_name_map] : subscription_map_) {
+      for (auto& [resource_name, subscription_state] : subscription_name_map) {
+        ResourceNameMap& resource_name_map =
+            ads_service_impl_->resource_map_[type_url].resource_name_map;
+        ResourceState& resource_state = resource_name_map[resource_name];
+        resource_state.subscriptions.erase(&subscription_state);
+      }
+    }
+  }
+  ads_service_impl_->RemoveClient(context_->peer());
+}
+
+void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: OnReadDone("
+            << ok << ")";
+  if (!seen_first_request_) {
+    if (ads_service_impl_->check_first_request_ != nullptr) {
+      ads_service_impl_->check_first_request_(request_);
+    }
+    seen_first_request_ = true;
+  }
+  grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
+            << "]: Received request for type "
+            << request_.type_url() << " with content "
+            << request_.DebugString();
+  SentState& sent_state = sent_state_map[request_.type_url()];
+  // Check the nonce sent by the client, if any.
+  // (This will be absent on the first request on a stream.)
+  if (request_.response_nonce().empty()) {
+    int client_resource_type_version = 0;
+    if (!request_.version_info().empty()) {
+      CHECK(absl::SimpleAtoi(request_.version_info(),
+                             &client_resource_type_version));
+    }
+    if (ads_service_impl_->check_version_callback_ != nullptr) {
+      ads_service_impl_->check_version_callback_(
+          request_.type_url(), client_resource_type_version);
+    }
+  } else {
+    int client_nonce;
+    CHECK(absl::SimpleAtoi(request_.response_nonce(), &client_nonce));
+    // Check for ACK or NACK.
+    ResponseState response_state;
+    if (!request_.has_error_detail()) {
+      response_state.state = ResponseState::ACKED;
+      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
+                << "]: client ACKed resource_type=" << request_.type_url()
+                << " version=" << request_.version_info();
+    } else {
+      response_state.state = ResponseState::NACKED;
+      if (ads_service_impl_->check_nack_status_code_ != nullptr) {
+        ads_service_impl_->check_nack_status_code_(
+            static_cast<absl::StatusCode>(request_.error_detail().code()));
+      }
+      response_state.error_message = request_.error_detail().message();
+      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
+                << "]: client NACKed resource_type=" << request_.type_url()
+                << " version=" << request_.version_info() << ": "
+                << response_state.error_message;
+    }
+    ads_service_impl_->resource_type_response_state_[request_.type_url()]
+        .emplace_back(
+            std::move(response_state));
+    // Ignore requests with stale nonces.
+    if (client_nonce < sent_state->nonce) return;
+  }
+  // Ignore resource types as requested by tests.
+  if (ads_service_impl_->resource_types_to_ignore_.find(request_.type_url()) !=
+      ads_service_impl_->resource_types_to_ignore_.end()) {
+    return;
+  }
+  // Look at all the resource names in the request.
+  auto& subscription_name_map = subscription_map_[request_.type_url()];
+  auto& resource_type_state =
+      ads_service_impl_->resource_map_[request_.type_url()];
+  auto& resource_name_map = resource_type_state.resource_name_map;
+  std::set<std::string> resources_in_current_request;
+  std::set<std::string> resources_added_to_response;
+  for (const std::string& resource_name : request_.resource_names()) {
+    resources_in_current_request.emplace(resource_name);
+    auto& subscription_state = subscription_name_map[resource_name];
+    auto& resource_state = resource_name_map[resource_name];
+    // Subscribe if needed.
+    // Send the resource in the response if either (a) this is
+    // a new subscription or (b) there is an updated version of
+    // this resource to send.
+// FIXME
+    if (MaybeSubscribe(request_.type_url(), resource_name, &subscription_state,
+                       &resource_state, update_queue) ||
+        ClientNeedsResourceUpdate(resource_type_state, resource_state,
+                                  sent_state->resource_type_version)) {
+      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
+                << "]: Sending update for type=" << request_.type_url()
+                << " name=" << resource_name;
+      resources_added_to_response.emplace(resource_name);
+      if (!response->has_value()) response->emplace();
+      if (resource_state.resource.has_value()) {
+        auto* resource = (*response)->add_resources();
+        resource->CopyFrom(*resource_state.resource);
+        if (ads_service_impl_->wrap_resources_) {
+          envoy::service::discovery::v3::Resource resource_wrapper;
+          *resource_wrapper.mutable_resource() = std::move(*resource);
+          resource->PackFrom(resource_wrapper);
+        }
+      }
+    } else {
+      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
+                << "]: client does not need update for type="
+                << request_.type_url() << " name=" << resource_name;
+    }
+  }
+  // Process unsubscriptions for any resource no longer
+  // present in the request's resource list.
+  ProcessUnsubscriptions(request_.type_url(), resources_in_current_request,
+                         &subscription_name_map, &resource_name_map);
+  // Construct response if needed.
+  if (!resources_added_to_response.empty()) {
+    CompleteBuildingDiscoveryResponse(
+        request_.type_url(), resource_type_state.resource_type_version,
+        subscription_name_map, resources_added_to_response, sent_state,
+        &response->value());
+  }
+}
+
+
+// FIXME: redo the rest of this old main loop
+#if 0
+
   // Main loop to process requests and updates.
   while (true) {
     // Boolean to keep track if the loop received any work to do: a
@@ -120,19 +243,15 @@ Status AdsServiceImpl::StreamAggregatedResources(ServerContext* context,
       // If the stream has been closed or our parent is being shut
       // down, stop immediately.
       if (stream_closed || ads_done_) break;
+
       // Otherwise, see if there's a request to read from the queue.
       if (!requests.empty()) {
         DiscoveryRequest request = std::move(requests.front());
         requests.pop_front();
         did_work = true;
-        LOG(INFO) << "ADS[" << debug_label_ << "]: Received request for type "
-                  << request.type_url() << " with content "
-                  << request.DebugString();
-        SentState& sent_state = sent_state_map[request.type_url()];
-        // Process request.
-        ProcessRequest(request, &update_queue, &subscription_map, &sent_state,
-                       &response);
+// ALREADY MOVED
       }
+
     }
     if (response.has_value()) {
       LOG(INFO) << "ADS[" << debug_label_
@@ -168,124 +287,14 @@ Status AdsServiceImpl::StreamAggregatedResources(ServerContext* context,
     // immediately continue.
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10));
   }
+
   // Done with main loop.  Clean up before returning.
   // Join reader thread.
   reader.join();
-  // Clean up any subscriptions that were still active when the call
-  // finished.
-  {
-    grpc_core::MutexLock lock(&ads_mu_);
-    for (auto& [type_url, subscription_name_map] : subscription_map) {
-      for (auto& [resource_name, subscription_state] : subscription_name_map) {
-        ResourceNameMap& resource_name_map =
-            resource_map_[type_url].resource_name_map;
-        ResourceState& resource_state = resource_name_map[resource_name];
-        resource_state.subscriptions.erase(&subscription_state);
-      }
-    }
-  }
-  LOG(INFO) << "ADS[" << debug_label_ << "]: StreamAggregatedResources done";
-  RemoveClient(context->peer());
+
   return Status::OK;
 }
-
-void AdsServiceImpl::ProcessRequest(
-    const DiscoveryRequest& request, UpdateQueue* update_queue,
-    SubscriptionMap* subscription_map, SentState* sent_state,
-    std::optional<DiscoveryResponse>* response) {
-  // Check the nonce sent by the client, if any.
-  // (This will be absent on the first request on a stream.)
-  if (request.response_nonce().empty()) {
-    int client_resource_type_version = 0;
-    if (!request.version_info().empty()) {
-      CHECK(absl::SimpleAtoi(request.version_info(),
-                             &client_resource_type_version));
-    }
-    if (check_version_callback_ != nullptr) {
-      check_version_callback_(request.type_url(), client_resource_type_version);
-    }
-  } else {
-    int client_nonce;
-    CHECK(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
-    // Check for ACK or NACK.
-    ResponseState response_state;
-    if (!request.has_error_detail()) {
-      response_state.state = ResponseState::ACKED;
-      LOG(INFO) << "ADS[" << debug_label_
-                << "]: client ACKed resource_type=" << request.type_url()
-                << " version=" << request.version_info();
-    } else {
-      response_state.state = ResponseState::NACKED;
-      if (check_nack_status_code_ != nullptr) {
-        check_nack_status_code_(
-            static_cast<absl::StatusCode>(request.error_detail().code()));
-      }
-      response_state.error_message = request.error_detail().message();
-      LOG(INFO) << "ADS[" << debug_label_
-                << "]: client NACKed resource_type=" << request.type_url()
-                << " version=" << request.version_info() << ": "
-                << response_state.error_message;
-    }
-    resource_type_response_state_[request.type_url()].emplace_back(
-        std::move(response_state));
-    // Ignore requests with stale nonces.
-    if (client_nonce < sent_state->nonce) return;
-  }
-  // Ignore resource types as requested by tests.
-  if (resource_types_to_ignore_.find(request.type_url()) !=
-      resource_types_to_ignore_.end()) {
-    return;
-  }
-  // Look at all the resource names in the request.
-  auto& subscription_name_map = (*subscription_map)[request.type_url()];
-  auto& resource_type_state = resource_map_[request.type_url()];
-  auto& resource_name_map = resource_type_state.resource_name_map;
-  std::set<std::string> resources_in_current_request;
-  std::set<std::string> resources_added_to_response;
-  for (const std::string& resource_name : request.resource_names()) {
-    resources_in_current_request.emplace(resource_name);
-    auto& subscription_state = subscription_name_map[resource_name];
-    auto& resource_state = resource_name_map[resource_name];
-    // Subscribe if needed.
-    // Send the resource in the response if either (a) this is
-    // a new subscription or (b) there is an updated version of
-    // this resource to send.
-    if (MaybeSubscribe(request.type_url(), resource_name, &subscription_state,
-                       &resource_state, update_queue) ||
-        ClientNeedsResourceUpdate(resource_type_state, resource_state,
-                                  sent_state->resource_type_version)) {
-      LOG(INFO) << "ADS[" << debug_label_
-                << "]: Sending update for type=" << request.type_url()
-                << " name=" << resource_name;
-      resources_added_to_response.emplace(resource_name);
-      if (!response->has_value()) response->emplace();
-      if (resource_state.resource.has_value()) {
-        auto* resource = (*response)->add_resources();
-        resource->CopyFrom(resource_state.resource.value());
-        if (wrap_resources_) {
-          envoy::service::discovery::v3::Resource resource_wrapper;
-          *resource_wrapper.mutable_resource() = std::move(*resource);
-          resource->PackFrom(resource_wrapper);
-        }
-      }
-    } else {
-      LOG(INFO) << "ADS[" << debug_label_
-                << "]: client does not need update for type="
-                << request.type_url() << " name=" << resource_name;
-    }
-  }
-  // Process unsubscriptions for any resource no longer
-  // present in the request's resource list.
-  ProcessUnsubscriptions(request.type_url(), resources_in_current_request,
-                         &subscription_name_map, &resource_name_map);
-  // Construct response if needed.
-  if (!resources_added_to_response.empty()) {
-    CompleteBuildingDiscoveryResponse(
-        request.type_url(), resource_type_state.resource_type_version,
-        subscription_name_map, resources_added_to_response, sent_state,
-        &response->value());
-  }
-}
+#endif
 
 void AdsServiceImpl::ProcessUpdate(const std::string& resource_type,
                                    const std::string& resource_name,
@@ -309,7 +318,7 @@ void AdsServiceImpl::ProcessUpdate(const std::string& resource_type,
       response->emplace();
       if (resource_state.resource.has_value()) {
         auto* resource = (*response)->add_resources();
-        resource->CopyFrom(resource_state.resource.value());
+        resource->CopyFrom(*resource_state.resource);
       }
       CompleteBuildingDiscoveryResponse(
           resource_type, resource_type_state.resource_type_version,
@@ -317,28 +326,6 @@ void AdsServiceImpl::ProcessUpdate(const std::string& resource_type,
           &response->value());
     }
   }
-}
-
-void AdsServiceImpl::BlockingRead(Stream* stream,
-                                  std::deque<DiscoveryRequest>* requests,
-                                  bool* stream_closed) {
-  DiscoveryRequest request;
-  bool seen_first_request = false;
-  while (stream->Read(&request)) {
-    if (!seen_first_request) {
-      if (check_first_request_ != nullptr) {
-        check_first_request_(request);
-      }
-      seen_first_request = true;
-    }
-    {
-      grpc_core::MutexLock lock(&ads_mu_);
-      requests->emplace_back(std::move(request));
-    }
-  }
-  LOG(INFO) << "ADS[" << debug_label_ << "]: Null read, stream closed";
-  grpc_core::MutexLock lock(&ads_mu_);
-  *stream_closed = true;
 }
 
 void AdsServiceImpl::CompleteBuildingDiscoveryResponse(

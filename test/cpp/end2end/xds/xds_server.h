@@ -56,7 +56,7 @@ constexpr char kEdsTypeUrl[] =
 // An ADS service implementation.
 class AdsServiceImpl
     : public CountedService<
-          ::envoy::service::discovery::v3::AggregatedDiscoveryService::Service>,
+          ::envoy::service::discovery::v3::AggregatedDiscoveryService::CallbackService>,
       public std::enable_shared_from_this<AdsServiceImpl> {
  public:
   using DiscoveryRequest = ::envoy::service::discovery::v3::DiscoveryRequest;
@@ -186,24 +186,101 @@ class AdsServiceImpl
   // A queue of resource type/name pairs that have changed since the client
   // subscribed to them.
   using UpdateQueue = std::deque<
-      std::pair<std::string /* type url */, std::string /* resource name */>>;
+      std::pair<std::string /*type_url*/, std::string /*resource_name*/>>;
 
-  // A struct representing a client's subscription to a particular resource.
-  struct SubscriptionState {
-    // The queue upon which to place updates when the resource is updated.
-    UpdateQueue* update_queue;
-  };
+  class Reactor
+      : public ServerBidiReactor<DiscoveryRequest, DiscoveryResponse> {
+   public:
+    Reactor(std::shared_ptr<AdsServiceImpl> ads_service_impl,
+            CallbackServerContext* context);
 
-  // A struct representing the a client's subscription to all the resources.
-  using SubscriptionNameMap =
-      std::map<std::string /* resource_name */, SubscriptionState>;
-  using SubscriptionMap =
-      std::map<std::string /* type_url */, SubscriptionNameMap>;
+   private:
+    // A struct representing a client's subscription to a particular resource.
+    struct SubscriptionState {
+      // The queue upon which to place updates when the resource is updated.
+      UpdateQueue* update_queue;
+    };
 
-  // Sent state for a given resource type.
-  struct SentState {
-    int nonce = 0;
-    int resource_type_version = 0;
+    // A struct representing the a client's subscription to all the resources.
+    using SubscriptionNameMap =
+        std::map<std::string /*resource_name*/, SubscriptionState>;
+    using SubscriptionMap =
+        std::map<std::string /*type_url*/, SubscriptionNameMap>;
+
+    // Sent state for a given resource type.
+    struct SentState {
+      int nonce = 0;
+      int resource_type_version = 0;
+    };
+
+    void OnReadDone(bool ok) override;
+    void OnWriteDone(bool ok) override;
+    void OnDone() override;
+    void OnCancel() override;
+
+    void StartWrite(const std::string& resource_type)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AdsServiceImpl::ads_mu_);
+
+    // Processes a resource update from the test.
+    // Populates response if needed.
+    void ProcessUpdate(const std::string& resource_type,
+                       const std::string& resource_name,
+                       SubscriptionMap* subscription_map,
+                       SentState* sent_state,
+                       std::optional<DiscoveryResponse>* response)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AdsServiceImpl::ads_mu_);
+
+    // Completing the building a DiscoveryResponse by adding common information
+    // for all resources and by adding all subscribed resources for LDS and CDS.
+    void CompleteBuildingDiscoveryResponse(
+        const std::string& resource_type, const int version,
+        const SubscriptionNameMap& subscription_name_map,
+        const std::set<std::string>& resources_added_to_response,
+        SentState* sent_state, DiscoveryResponse* response)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AdsServiceImpl::ads_mu_);
+
+    // Checks whether the client needs to receive a newer version of
+    // the resource.
+    static bool ClientNeedsResourceUpdate(
+        const ResourceTypeState& resource_type_state,
+        const ResourceState& resource_state, int client_resource_type_version);
+
+    // Subscribes to a resource if not already subscribed:
+    // 1. Sets the update_queue field in subscription_state.
+    // 2. Adds subscription_state to resource_state->subscriptions.
+    bool MaybeSubscribe(const std::string& resource_type,
+                        const std::string& resource_name,
+                        SubscriptionState* subscription_state,
+                        ResourceState* resource_state,
+                        UpdateQueue* update_queue);
+
+    // Removes subscriptions for resources no longer present in the
+    // current request.
+    void ProcessUnsubscriptions(
+        const std::string& resource_type,
+        const std::set<std::string>& resources_in_current_request,
+        SubscriptionNameMap* subscription_name_map,
+        ResourceNameMap* resource_name_map);
+
+    std::shared_ptr<AdsServiceImpl> ads_service_impl_;
+    CallbackServerContext* context_;
+
+    // Resources (type/name pairs) that have changed since the client
+    // subscribed to them.
+    UpdateQueue update_queue_;
+    // Resources that the client will be subscribed to keyed by resource type
+    // url.
+    SubscriptionMap subscription_map_;
+    // Sent state for each resource type.
+    std::map<std::string /*type_url*/, SentState> sent_state_map_;
+
+    DiscoveryRequest request_;
+    DiscoveryResponse response_;
+    bool seen_first_request_ = false;
+
+    bool write_pending_ = false ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_);
+    std::set<std::string /*type_url*/> response_needed_
+        ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_);
   };
 
   // A struct representing the current state for an individual resource.
@@ -218,70 +295,19 @@ class AdsServiceImpl
 
   // The current state for all individual resources of a given type.
   using ResourceNameMap =
-      std::map<std::string /* resource_name */, ResourceState>;
+      std::map<std::string /*resource_name*/, ResourceState>;
 
   struct ResourceTypeState {
     int resource_type_version = 0;
     ResourceNameMap resource_name_map;
   };
 
-  using ResourceMap = std::map<std::string /* type_url */, ResourceTypeState>;
+  using ResourceMap = std::map<std::string /*type_url*/, ResourceTypeState>;
 
-  using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
-
-  Status StreamAggregatedResources(ServerContext* context,
-                                   Stream* stream) override;
-
-  // Processes a response read from the client.
-  // Populates response if needed.
-  void ProcessRequest(const DiscoveryRequest& request,
-                      UpdateQueue* update_queue,
-                      SubscriptionMap* subscription_map, SentState* sent_state,
-                      std::optional<DiscoveryResponse>* response)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_);
-
-  // Processes a resource update from the test.
-  // Populates response if needed.
-  void ProcessUpdate(const std::string& resource_type,
-                     const std::string& resource_name,
-                     SubscriptionMap* subscription_map, SentState* sent_state,
-                     std::optional<DiscoveryResponse>* response)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_);
-
-  // Starting a thread to do blocking read on the stream until cancel.
-  void BlockingRead(Stream* stream, std::deque<DiscoveryRequest>* requests,
-                    bool* stream_closed);
-
-  // Completing the building a DiscoveryResponse by adding common information
-  // for all resources and by adding all subscribed resources for LDS and CDS.
-  void CompleteBuildingDiscoveryResponse(
-      const std::string& resource_type, const int version,
-      const SubscriptionNameMap& subscription_name_map,
-      const std::set<std::string>& resources_added_to_response,
-      SentState* sent_state, DiscoveryResponse* response)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_);
-
-  // Checks whether the client needs to receive a newer version of
-  // the resource.
-  static bool ClientNeedsResourceUpdate(
-      const ResourceTypeState& resource_type_state,
-      const ResourceState& resource_state, int client_resource_type_version);
-
-  // Subscribes to a resource if not already subscribed:
-  // 1. Sets the update_queue field in subscription_state.
-  // 2. Adds subscription_state to resource_state->subscriptions.
-  bool MaybeSubscribe(const std::string& resource_type,
-                      const std::string& resource_name,
-                      SubscriptionState* subscription_state,
-                      ResourceState* resource_state, UpdateQueue* update_queue);
-
-  // Removes subscriptions for resources no longer present in the
-  // current request.
-  void ProcessUnsubscriptions(
-      const std::string& resource_type,
-      const std::set<std::string>& resources_in_current_request,
-      SubscriptionNameMap* subscription_name_map,
-      ResourceNameMap* resource_name_map);
+  ServerBidiReactor<DiscoveryRequest, DiscoveryResponse>*
+  StreamAggregatedResources(CallbackServerContext* context) override {
+    return new Reactor(shared_from_this(), context);
+  }
 
   void AddClient(const std::string& client) {
     grpc_core::MutexLock lock(&clients_mu_);
@@ -300,7 +326,7 @@ class AdsServiceImpl
   grpc_core::CondVar ads_cond_;
   grpc_core::Mutex ads_mu_;
   bool ads_done_ ABSL_GUARDED_BY(ads_mu_) = false;
-  std::map<std::string /* type_url */, std::deque<ResponseState>>
+  std::map<std::string /*type_url*/, std::deque<ResponseState>>
       resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
   std::set<std::string /*resource_type*/> resource_types_to_ignore_
       ABSL_GUARDED_BY(ads_mu_);
