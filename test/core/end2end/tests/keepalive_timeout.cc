@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -54,7 +55,7 @@ CORE_END2END_TEST(Http2SingleHopTests, KeepaliveTimeout) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
-  EXPECT_EQ(server_status.message(), "ping timeout");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("ping timeout"));
 }
 
 // Verify that reads reset the keepalive ping timer. The client sends 30 pings

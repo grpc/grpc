@@ -454,7 +454,7 @@ def targets():
         # Python
         PythonDistribTest("linux", "x64", "bullseye", presubmit=True),
         PythonDistribTest("linux", "x86", "bullseye", presubmit=True),
-        PythonDistribTest("linux", "x64", "fedora39"),
+        PythonDistribTest("linux", "x64", "fedora40"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
         PythonDistribTest("linux", "x64", "ubuntu2204"),
@@ -471,7 +471,7 @@ def targets():
         PythonDistribTest(
             "linux", "x86", "bullseye", source=True, presubmit=True
         ),
-        PythonDistribTest("linux", "x64", "fedora39", source=True),
+        PythonDistribTest("linux", "x64", "fedora40", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
         PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
         # Ruby

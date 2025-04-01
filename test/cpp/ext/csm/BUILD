@@ -31,15 +31,14 @@ grpc_cc_test(
         "gtest",
         "otel/sdk/src/metrics",
     ],
-  
     tags = [ "use_openssl",
         # TODO(b/398739502): Remove after fixing
         "grpc:broken-internally",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     deps = [
         "//:grpc++",
-        "//:grpcpp_csm_observability",
-        "//:grpcpp_otel_plugin",
         "//src/cpp/ext/csm:csm_observability",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:grpc_test_util",
@@ -56,10 +55,11 @@ grpc_cc_test(
         "gtest",
         "otel/sdk/src/metrics",
     ],
-
     tags = [ "use_openssl",
         # TODO(b/398739502): Remove after fixing
         "grpc:broken-internally",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     deps = [
         "//:grpc++",

@@ -25,6 +25,7 @@
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -34,7 +35,6 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
@@ -135,7 +135,7 @@ CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status.message(), "access denied");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("access denied"));
   ShutdownAndDestroyServer();
 };
 
@@ -178,7 +178,7 @@ CORE_END2END_TEST(CoreEnd2endTests, ClientFilterCallInitFails) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status.message(), "access denied");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("access denied"));
 }
 
 CORE_END2END_TEST(CoreClientChannelTests,
@@ -234,7 +234,7 @@ CORE_END2END_TEST(CoreClientChannelTests, SubchannelFilterCallInitFails) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status.message(), "access denied");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("access denied"));
   // Create a new call.  (The first call uses a different code path in
   // client_channel.c than subsequent calls on the same channel, and we need to
   // test both.)
@@ -251,7 +251,7 @@ CORE_END2END_TEST(CoreClientChannelTests, SubchannelFilterCallInitFails) {
   Expect(2, true);
   Step();
   EXPECT_EQ(server_status2.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status2.message(), "access denied");
+  EXPECT_THAT(server_status2.message(), ::testing::HasSubstr("access denied"));
 }
 
 }  // namespace

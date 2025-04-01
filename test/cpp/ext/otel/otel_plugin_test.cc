@@ -2269,7 +2269,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
   request.set_message("foo");
   EchoResponse response;
   grpc::ClientContext context;
-  stub->Echo(&context, request, &response);
+  auto status = stub->Echo(&context, request, &response);
+  ASSERT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
   SendRPC();
   const std::vector<absl::string_view> kLabelKeys = {
       "grpc.method", "grpc.target", "grpc.status"};

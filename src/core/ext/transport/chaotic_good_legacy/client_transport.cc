@@ -281,9 +281,9 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
 }
 
 namespace {
-absl::Status BooleanSuccessToTransportError(bool success) {
-  return success ? absl::OkStatus()
-                 : absl::UnavailableError("Transport closed.");
+absl::Status BooleanSuccessToTransportError(StatusFlag success) {
+  return success.ok() ? absl::OkStatus()
+                      : absl::UnavailableError("Transport closed.");
 }
 }  // namespace
 
@@ -351,8 +351,9 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
                     if (!result.ok()) {
                       GRPC_TRACE_LOG(chaotic_good, INFO)
                           << "CHAOTIC_GOOD: Send cancel";
-                      if (!sender.UnbufferedImmediateSend(
-                              CancelFrame{stream_id})) {
+                      if (!sender
+                               .UnbufferedImmediateSend(CancelFrame{stream_id})
+                               .ok()) {
                         GRPC_TRACE_LOG(chaotic_good, INFO)
                             << "CHAOTIC_GOOD: Send cancel failed";
                       }

@@ -33,6 +33,7 @@ for general contribution guidelines.
 - [pawbhard](https://github.com/pawbhard), Google LLC
 - [pfreixes](https://github.com/pfreixes), Skyscanner Ltd
 - [ran-su](https://github.com/ran-su), Google LLC
+- [rishesh007](https://github.com/rishesh007), Google LLC
 - [sanjaypujare](https://github.com/sanjaypujare), Google LLC
 - [sastryvp](https://github.com/sastryvp), Google LLC
 - [sergiitk](https://github.com/sergiitk), Google LLC
