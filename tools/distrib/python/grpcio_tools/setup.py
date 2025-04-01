@@ -353,7 +353,7 @@ setuptools.setup(
     },
     entry_points={
         "console_scripts": [
-            "python-grpc-tools-protoc = grpc_tools.protoc:main",
+            "python-grpc-tools-protoc = grpc_tools.protoc:entrypoint",
         ],
     },
 )
