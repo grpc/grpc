@@ -29,17 +29,17 @@
 using grpc_core::htpp2::Http2ErrorCode;
 
 #define GRPC_STATUS_TO_HTTP2_ERROR(a, b) \
-  ASSERT_EQ(grpc_status_to_http2_status(a), (b))
-#define HTTP2_ERROR_TO_GRPC_STATUS(a, deadline, b)                 \
-  do {                                                             \
-    grpc_core::ExecCtx exec_ctx;                                   \
-    ASSERT_EQ(grpc_http2_status_to_grpc_status(a, deadline), (b)); \
-                                                                   \
+  ASSERT_EQ(grpc_status_to_http2_error(a), (b))
+#define HTTP2_ERROR_TO_GRPC_STATUS(a, deadline, b)                \
+  do {                                                            \
+    grpc_core::ExecCtx exec_ctx;                                  \
+    ASSERT_EQ(grpc_http2_error_to_grpc_status(a, deadline), (b)); \
+                                                                  \
   } while (0)
 #define GRPC_STATUS_TO_HTTP2_STATUS(a, b) \
-  ASSERT_EQ(grpc_status_to_http2_status(a), (b))
+  ASSERT_EQ(grpc_status_to_http2_error(a), (b))
 #define HTTP2_STATUS_TO_GRPC_STATUS(a, b) \
-  ASSERT_EQ(grpc_http2_status_to_grpc_status(a), (b))
+  ASSERT_EQ(grpc_http2_error_to_grpc_status(a), (b))
 
 TEST(StatusConversionTest, TestGrpcStatusToHttp2Error) {
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OK, Http2ErrorCode::kNoError);
@@ -179,7 +179,7 @@ TEST(StatusConversionTest, TestHttp2StatusToGrpcStatus) {
 TEST(StatusConversionTest, TestGrpcHttp2StatusToGrpcStatusAll) {
   // check all status values can be converted
   for (int i = 0; i <= 999; i++) {
-    grpc_http2_status_to_grpc_status(i);
+    grpc_http2_error_to_grpc_status(i);
   }
 }
 

@@ -68,7 +68,7 @@ absl::Status CheckServerMetadata(ServerMetadata* b) {
     } else {
       return absl::Status(
           static_cast<absl::StatusCode>(
-              grpc_http2_status_to_grpc_status(*status)),
+              grpc_http2_error_to_grpc_status(*status)),
           absl::StrCat("Received http2 header with status: ", *status));
     }
   }

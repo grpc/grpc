@@ -79,7 +79,7 @@ class JwtTokenFetcherCallCredentials::HttpFetchRequest final
     }
     if (self->response_.status != 200) {
       grpc_status_code status_code =
-          grpc_http2_status_to_grpc_status(self->response_.status);
+          grpc_http2_error_to_grpc_status(self->response_.status);
       if (status_code != GRPC_STATUS_UNAVAILABLE) {
         status_code = GRPC_STATUS_UNAUTHENTICATED;
       }

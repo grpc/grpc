@@ -2735,7 +2735,7 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
             absl::StrCat("Trying to connect an http1.x server (HTTP status ",
                          response.status, ")")),
         grpc_core::StatusIntProperty::kRpcStatus,
-        grpc_http2_status_to_grpc_status(response.status));
+        grpc_http2_error_to_grpc_status(response.status));
   }
 
   grpc_http_parser_destroy(&parser);
