@@ -307,6 +307,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list_entry.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
+  - src/core/ext/transport/chttp2/transport/errors.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
@@ -2335,6 +2336,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list_entry.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
+  - src/core/ext/transport/chttp2/transport/errors.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
@@ -10788,6 +10790,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/errors.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -11078,6 +11081,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/errors.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
