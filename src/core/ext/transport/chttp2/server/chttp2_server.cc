@@ -99,6 +99,7 @@
 
 namespace grpc_core {
 
+using grpc_core::htpp2::Http2ErrorCode;
 using grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::EventEngineSupportsFdExtension;
