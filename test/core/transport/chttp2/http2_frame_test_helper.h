@@ -51,7 +51,8 @@ class Http2FrameTestHelper {
 
   EventEngineSlice EventEngineSliceFromHttp2RstStreamFrame(
       const uint32_t stream_id = 1,
-      const uint32_t error_code = Http2ErrorCode::kConnectError) const {
+      const uint32_t error_code =
+          grpc_core::http2::Http2ErrorCode::kConnectError) const {
     return EventEngineSliceFromHttp2Frame(
         Http2RstStreamFrame{stream_id, error_code});
   }
