@@ -17,7 +17,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-using grpc_core::htpp2::Http2ErrorCode;
+using grpc_core::http2::Http2ErrorCode;
 
 namespace grpc_core {
 

@@ -26,9 +26,10 @@
 #include "src/core/util/time.h"
 
 // Conversion of grpc status codes to http2 error codes (for RST_STREAM)
-Http2ErrorCode grpc_status_to_http2_error(grpc_status_code status);
-grpc_status_code grpc_http2_error_to_grpc_status(Http2ErrorCode error,
-                                                 grpc_core::Timestamp deadline);
+grpc_core::http2::Http2ErrorCode grpc_status_to_http2_error(
+    grpc_status_code status);
+grpc_status_code grpc_http2_error_to_grpc_status(
+    grpc_core::http2::Http2ErrorCode error, grpc_core::Timestamp deadline);
 
 // Conversion of HTTP status codes (:status) to grpc status codes
 grpc_status_code grpc_http2_status_to_grpc_status(int status);

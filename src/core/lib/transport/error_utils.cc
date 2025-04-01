@@ -28,7 +28,7 @@
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/status_helper.h"
 
-using grpc_core::htpp2::Http2ErrorCode;
+using grpc_core::http2::Http2ErrorCode;
 
 static grpc_error_handle recursively_find_error_with_field(
     grpc_error_handle error, grpc_core::StatusIntProperty which) {
