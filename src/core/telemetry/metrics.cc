@@ -120,6 +120,28 @@ void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
   }
 }
 
+int GlobalStatsPluginRegistry::StatsPluginGroup::ChannelArgsCompare(
+    const StatsPluginGroup* a, const StatsPluginGroup* b) {
+  for (size_t i = 0; i < a->plugins_state_.size(); ++i) {
+    if (b->plugins_state_.size() == i) return 1;  // a is greater
+    auto& a_state = a->plugins_state_[i];
+    auto& b_state = b->plugins_state_[i];
+    int r = QsortCompare(a_state.plugin.get(), b_state.plugin.get());
+    if (r != 0) return r;
+    if (a_state.scope_config == nullptr) {
+      if (b_state.scope_config != nullptr) return -1;  // a is less
+      // If both are null, they're equal.
+    } else {
+      if (b_state.scope_config == nullptr) return 1;  // a is greater
+      // Neither is null, so compare.
+      r = a_state.scope_config->Compare(*b_state.scope_config);
+      if (r != 0) return r;
+    }
+  }
+  if (b->plugins_state_.size() > a->plugins_state_.size()) return -1;
+  return 0;
+}
+
 std::atomic<GlobalStatsPluginRegistry::GlobalStatsPluginNode*>
     GlobalStatsPluginRegistry::plugins_;
 

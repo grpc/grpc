@@ -71,6 +71,44 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
       args = channel_args_mutator(target.c_str(), args, channel_stack_type);
     }
   }
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group;
+  if (channel_stack_type == GRPC_SERVER_CHANNEL) {
+    stats_plugin_group =
+        GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+    // Add per-server stats plugins.
+    auto* stats_plugin_list = args.GetPointer<
+        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
+        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
+    if (stats_plugin_list != nullptr) {
+      for (const auto& plugin : **stats_plugin_list) {
+        stats_plugin_group->AddStatsPlugin(plugin,
+                                           plugin->GetServerScopeConfig(args));
+      }
+    }
+  } else {
+    std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
+                                .value_or(CoreConfiguration::Get()
+                                              .resolver_registry()
+                                              .GetDefaultAuthority(target));
+    grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
+        args);
+    experimental::StatsPluginChannelScope scope(target, authority,
+                                                endpoint_config);
+    stats_plugin_group =
+        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+    // Add per-channel stats plugins.
+    auto* stats_plugin_list = args.GetPointer<
+        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
+        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
+    if (stats_plugin_list != nullptr) {
+      for (const auto& plugin : **stats_plugin_list) {
+        stats_plugin_group->AddStatsPlugin(
+            plugin, plugin->GetChannelScopeConfig(scope));
+      }
+    }
+  }
+  args = args.SetObject(stats_plugin_group);
   ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type,
       args);
@@ -89,41 +127,7 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
     LOG(ERROR) << "channel stack builder failed: " << status;
     return status;
   }
-  if (channel_stack_type == GRPC_SERVER_CHANNEL) {
-    *(*r)->stats_plugin_group =
-        GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
-    // Add per-server stats plugins.
-    auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
-        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
-    if (stats_plugin_list != nullptr) {
-      for (const auto& plugin : **stats_plugin_list) {
-        (*(*r)->stats_plugin_group)
-            ->AddStatsPlugin(plugin, plugin->GetServerScopeConfig(args));
-      }
-    }
-  } else {
-    std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
-                                .value_or(CoreConfiguration::Get()
-                                              .resolver_registry()
-                                              .GetDefaultAuthority(target));
-    grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
-        args);
-    experimental::StatsPluginChannelScope scope(target, authority,
-                                                endpoint_config);
-    *(*r)->stats_plugin_group =
-        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
-    // Add per-channel stats plugins.
-    auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
-        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
-    if (stats_plugin_list != nullptr) {
-      for (const auto& plugin : **stats_plugin_list) {
-        (*(*r)->stats_plugin_group)
-            ->AddStatsPlugin(plugin, plugin->GetChannelScopeConfig(scope));
-      }
-    }
-  }
+  *(*r)->stats_plugin_group = std::move(stats_plugin_group);
   return MakeRefCounted<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
       std::move(target), args, std::move(*r));

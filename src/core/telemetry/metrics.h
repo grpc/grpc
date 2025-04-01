@@ -275,6 +275,10 @@ class StatsPlugin {
   class ScopeConfig {
    public:
     virtual ~ScopeConfig() = default;
+
+    // NOTE: This is safe to invoke ONLY if both ScopeConfig objects
+    // come from the same StatsPlugin.
+    virtual int Compare(const ScopeConfig& other) const = 0;
   };
 
   virtual ~StatsPlugin() = default;
@@ -471,6 +475,12 @@ class GlobalStatsPluginRegistry {
     // Adds all available server call tracers associated with the stats plugins
     // within the group to \a call_context.
     void AddServerCallTracers(Arena* arena);
+
+    static absl::string_view ChannelArgName() {
+      return "grpc.internal.stats_plugin_group";
+    }
+    static int ChannelArgsCompare(const StatsPluginGroup* a,
+                                  const StatsPluginGroup* b);
 
    private:
     friend class RegisteredMetricCallback;
