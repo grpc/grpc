@@ -133,7 +133,7 @@ XdsHttpFaultFilter::GenerateFilterConfig(
                 fault_abort);
         abort_http_status_code != 0 && abort_http_status_code != 200) {
       abort_grpc_status_code =
-          grpc_http2_error_to_grpc_status(abort_http_status_code);
+          grpc_http2_status_to_grpc_status(abort_http_status_code);
     }
     // Set the abort_code, even if it's OK
     fault_injection_policy_json["abortCode"] =

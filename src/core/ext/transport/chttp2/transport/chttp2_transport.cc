@@ -2646,11 +2646,11 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
 static void end_all_the_calls(grpc_chttp2_transport* t,
                               grpc_error_handle error) {
-  intptr_t http2_status;
+  intptr_t http2_error;
   // If there is no explicit grpc or HTTP/2 error, set to UNAVAILABLE on server.
   if (!t->is_client && !grpc_error_has_clear_grpc_status(error) &&
       !grpc_error_get_int(error, grpc_core::StatusIntProperty::kHttp2Error,
-                          &http2_status)) {
+                          &http2_error)) {
     error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kRpcStatus,
                                GRPC_STATUS_UNAVAILABLE);
   }
@@ -2735,7 +2735,7 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
             absl::StrCat("Trying to connect an http1.x server (HTTP status ",
                          response.status, ")")),
         grpc_core::StatusIntProperty::kRpcStatus,
-        grpc_http2_error_to_grpc_status(response.status));
+        grpc_http2_status_to_grpc_status(response.status));
   }
 
   grpc_http_parser_destroy(&parser);

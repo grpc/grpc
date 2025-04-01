@@ -31,7 +31,7 @@ grpc_status_code grpc_http2_error_to_grpc_status(Http2ErrorCode error,
                                                  grpc_core::Timestamp deadline);
 
 // Conversion of HTTP status codes (:status) to grpc status codes
-grpc_status_code grpc_http2_error_to_grpc_status(int status);
-int grpc_status_to_http2_error(grpc_status_code status);
+grpc_status_code grpc_http2_status_to_grpc_status(int status);
+int grpc_status_to_http2_status(grpc_status_code status);
 
 #endif  // GRPC_SRC_CORE_LIB_TRANSPORT_STATUS_CONVERSION_H
