@@ -64,7 +64,7 @@ grpc_status_code grpc_http2_error_to_grpc_status(
   }
 }
 
-grpc_status_code grpc_http2_error_to_grpc_status(int status) {
+grpc_status_code grpc_http2_status_to_grpc_status(int status) {
   switch (status) {
     // these HTTP2 status codes are called out explicitly in status.proto
     case 200:
@@ -91,4 +91,4 @@ grpc_status_code grpc_http2_error_to_grpc_status(int status) {
   }
 }
 
-int grpc_status_to_http2_error(grpc_status_code /*status*/) { return 200; }
+int grpc_status_to_http2_status(grpc_status_code /*status*/) { return 200; }
