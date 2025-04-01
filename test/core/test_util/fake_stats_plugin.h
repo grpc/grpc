@@ -210,11 +210,6 @@ std::string MakeLabelString(
 
 class FakeStatsPlugin : public StatsPlugin {
  public:
-  class ScopeConfig : public StatsPlugin::ScopeConfig {
-   public:
-    int Compare(const ScopeConfig&) const override { return 0; }
-  };
-
   explicit FakeStatsPlugin(
       absl::AnyInvocable<
           bool(const experimental::StatsPluginChannelScope& /*scope*/) const>
