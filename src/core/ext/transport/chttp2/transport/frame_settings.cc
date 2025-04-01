@@ -40,6 +40,8 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/useful.h"
 
+using http2::Http2ErrorCode;
+
 static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
   *out++ = static_cast<uint8_t>(length >> 16);
   *out++ = static_cast<uint8_t>(length >> 8);
@@ -195,7 +197,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             parser->incoming_settings->Apply(parser->id, parser->value);
         if (error != Http2ErrorCode::kNoError) {
           grpc_chttp2_goaway_append(
-              t->last_new_stream_id, error,
+              t->last_new_stream_id, static_cast<uint32_t>(error),
               grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf);
           return GRPC_ERROR_CREATE(absl::StrFormat(
               "invalid value %u passed for %s", parser->value,

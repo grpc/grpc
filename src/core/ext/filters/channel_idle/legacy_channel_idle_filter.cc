@@ -186,7 +186,8 @@ void LegacyMaxAgeFilter::PostInit() {
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
                 op->goaway_error = grpc_error_set_int(
                     GRPC_ERROR_CREATE("max_age"),
-                    StatusIntProperty::kHttp2Error, Http2ErrorCode::kNoError);
+                    StatusIntProperty::kHttp2Error,
+                    static_cast<intptr_t>(Http2ErrorCode::kNoError));
                 grpc_channel_element* elem =
                     grpc_channel_stack_element(channel_stack, 0);
                 elem->filter->start_transport_op(elem, op);

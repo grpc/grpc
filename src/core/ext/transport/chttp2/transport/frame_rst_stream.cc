@@ -38,6 +38,8 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/status_helper.h"
 
+using http2::Http2ErrorCode;
+
 grpc_slice grpc_chttp2_rst_stream_create(
     uint32_t id, uint32_t code, grpc_core::CallTracerInterface* call_tracer) {
   static const size_t frame_size = 13;
@@ -116,7 +118,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
         << "[chttp2 transport=" << t << " stream=" << s
         << "] received RST_STREAM(reason=" << reason << ")";
     grpc_error_handle error;
-    if (reason != Http2ErrorCode::kNoError ||
+    if (reason != static_cast<uint32_t>(Http2ErrorCode::kNoError) ||
         s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(
           grpc_error_set_str(
