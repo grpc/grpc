@@ -1645,7 +1645,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />

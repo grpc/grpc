@@ -395,7 +395,7 @@ struct grpc_transport_stream_op_batch_payload {
   /// error=GRPC_CHTTP2_NO_ERROR to force a full close
   /// - at all other times: use grpc_error_get_status to get a status code, and
   ///   convert to a HTTP2 error code using
-  ///   grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
+  ///   grpc_chttp2_grpc_status_to_http2_status. Send a RST_STREAM with this
   ///   error.
   struct {
     // Error contract: the transport that gets this op must cause cancel_error

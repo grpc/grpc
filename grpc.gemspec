@@ -1663,7 +1663,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/connectivity_state.h )
   s.files += %w( src/core/lib/transport/error_utils.cc )
   s.files += %w( src/core/lib/transport/error_utils.h )
-  s.files += %w( src/core/lib/transport/http2_errors.h )
   s.files += %w( src/core/lib/transport/status_conversion.cc )
   s.files += %w( src/core/lib/transport/status_conversion.h )
   s.files += %w( src/core/lib/transport/timeout_encoding.cc )

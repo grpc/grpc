@@ -991,7 +991,7 @@ class ChannelBroadcaster {
     op->goaway_error =
         send_goaway ? grpc_error_set_int(GRPC_ERROR_CREATE("Server shutdown"),
                                          StatusIntProperty::kHttp2Error,
-                                         GRPC_HTTP2_NO_ERROR)
+                                         Http2ErrorCode::kNoError)
                     : absl::OkStatus();
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;

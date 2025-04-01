@@ -45,11 +45,11 @@ static grpc_error_handle recursively_find_error_with_field(
 
 namespace {
 
-std::optional<grpc_http2_error_code> GetHttp2Error(const absl::Status& status) {
+std::optional<Http2ErrorCode> GetHttp2Error(const absl::Status& status) {
   auto http_error_code = grpc_core::StatusGetInt(
       status, grpc_core::StatusIntProperty::kHttp2Error);
   if (http_error_code.has_value()) {
-    return static_cast<grpc_http2_error_code>(*http_error_code);
+    return static_cast<Http2ErrorCode>(*http_error_code);
   }
   return std::nullopt;
 }
@@ -59,7 +59,7 @@ std::optional<grpc_http2_error_code> GetHttp2Error(const absl::Status& status) {
 void grpc_error_get_status(grpc_error_handle error,
                            grpc_core::Timestamp deadline,
                            grpc_status_code* code, std::string* message,
-                           grpc_http2_error_code* http_error,
+                           Http2ErrorCode* http_error,
                            const char** error_string) {
   if (grpc_core::IsErrorFlattenEnabled()) {
     auto http_error_code = GetHttp2Error(error);
@@ -69,7 +69,7 @@ void grpc_error_get_status(grpc_error_handle error,
       // status code.
       if (error.code() == absl::StatusCode::kUnknown &&
           http_error_code.has_value()) {
-        *code = grpc_http2_error_to_grpc_status(*http_error_code, deadline);
+        *code = grpc_http2_status_to_grpc_status(*http_error_code, deadline);
       } else {
         *code = static_cast<grpc_status_code>(error.code());
       }
@@ -86,11 +86,11 @@ void grpc_error_get_status(grpc_error_handle error,
       if (http_error_code.has_value()) {
         *http_error = *http_error_code;
       } else if (error.code() != absl::StatusCode::kUnknown) {
-        *http_error = grpc_status_to_http2_error(
+        *http_error = grpc_status_to_http2_status(
             static_cast<grpc_status_code>(error.code()));
       } else {
-        *http_error =
-            error.ok() ? GRPC_HTTP2_NO_ERROR : GRPC_HTTP2_INTERNAL_ERROR;
+        *http_error = error.ok() ? Http2ErrorCode::kNoError
+                                 : Http2ErrorCode::kInternalError;
       }
     }
     return;
@@ -111,7 +111,7 @@ void grpc_error_get_status(grpc_error_handle error,
       *message = "";
     }
     if (http_error != nullptr) {
-      *http_error = GRPC_HTTP2_NO_ERROR;
+      *http_error = Http2ErrorCode::kNoError;
     }
     return;
   }
@@ -139,8 +139,8 @@ void grpc_error_get_status(grpc_error_handle error,
   } else if (grpc_error_get_int(found_error,
                                 grpc_core::StatusIntProperty::kHttp2Error,
                                 &integer)) {
-    status = grpc_http2_error_to_grpc_status(
-        static_cast<grpc_http2_error_code>(integer), deadline);
+    status = grpc_http2_status_to_grpc_status(
+        static_cast<Http2ErrorCode>(integer), deadline);
   } else {
     status = static_cast<grpc_status_code>(found_error.code());
   }
@@ -153,15 +153,15 @@ void grpc_error_get_status(grpc_error_handle error,
   if (http_error != nullptr) {
     if (grpc_error_get_int(
             found_error, grpc_core::StatusIntProperty::kHttp2Error, &integer)) {
-      *http_error = static_cast<grpc_http2_error_code>(integer);
+      *http_error = static_cast<Http2ErrorCode>(integer);
     } else if (grpc_error_get_int(found_error,
                                   grpc_core::StatusIntProperty::kRpcStatus,
                                   &integer)) {
       *http_error =
-          grpc_status_to_http2_error(static_cast<grpc_status_code>(integer));
+          grpc_status_to_http2_status(static_cast<grpc_status_code>(integer));
     } else {
-      *http_error =
-          found_error.ok() ? GRPC_HTTP2_NO_ERROR : GRPC_HTTP2_INTERNAL_ERROR;
+      *http_error = found_error.ok() ? Http2ErrorCode::kNoError
+                                     : Http2ErrorCode::kInternalError;
     }
   }
 

@@ -19,7 +19,7 @@ alignment:absl::little_endian::Load64
 float-divide-by-zero:grpc::testing::postprocess_scenario_result
 enum:grpc_op_string
 signed-integer-overflow:chrono
-enum:grpc_http2_error_to_grpc_status
+enum:grpc_http2_status_to_grpc_status
 enum:grpc_chttp2_cancel_stream
 enum:api_fuzzer
 # TODO(juanlishen): Remove this suppression after
