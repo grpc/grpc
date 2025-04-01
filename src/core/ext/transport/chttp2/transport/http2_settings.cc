@@ -24,7 +24,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/lib/transport/http2_errors.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -88,13 +88,13 @@ std::string Http2Settings::WireIdToName(uint16_t wire_id) {
   }
 }
 
-Http2ErrorCode Http2Settings::Apply(uint16_t key, uint32_t value) {
+grpc_http2_error_code Http2Settings::Apply(uint16_t key, uint32_t value) {
   switch (key) {
     case kHeaderTableSizeWireId:
       header_table_size_ = value;
       break;
     case kEnablePushWireId:
-      if (value > 1) return Http2ErrorCode::kProtocolError;
+      if (value > 1) return GRPC_HTTP2_PROTOCOL_ERROR;
       enable_push_ = value != 0;
       break;
     case kMaxConcurrentStreamsWireId:
@@ -102,13 +102,13 @@ Http2ErrorCode Http2Settings::Apply(uint16_t key, uint32_t value) {
       break;
     case kInitialWindowSizeWireId:
       if (value > max_initial_window_size()) {
-        return Http2ErrorCode::kFlowControlError;
+        return GRPC_HTTP2_FLOW_CONTROL_ERROR;
       }
       initial_window_size_ = value;
       break;
     case kMaxFrameSizeWireId:
       if (value < min_max_frame_size() || value > max_max_frame_size()) {
-        return Http2ErrorCode::kProtocolError;
+        return GRPC_HTTP2_PROTOCOL_ERROR;
       }
       max_frame_size_ = value;
       break;
@@ -116,7 +116,7 @@ Http2ErrorCode Http2Settings::Apply(uint16_t key, uint32_t value) {
       max_header_list_size_ = std::min(value, 16777216u);
       break;
     case kGrpcAllowTrueBinaryMetadataWireId:
-      if (value > 1) return Http2ErrorCode::kProtocolError;
+      if (value > 1) return GRPC_HTTP2_PROTOCOL_ERROR;
       allow_true_binary_metadata_ = value != 0;
       break;
     case kGrpcPreferredReceiveCryptoFrameSizeWireId:
@@ -125,11 +125,11 @@ Http2ErrorCode Http2Settings::Apply(uint16_t key, uint32_t value) {
                 max_preferred_receive_crypto_message_size());
       break;
     case kGrpcAllowSecurityFrameWireId:
-      if (value > 1) return Http2ErrorCode::kProtocolError;
+      if (value > 1) return GRPC_HTTP2_PROTOCOL_ERROR;
       allow_security_frame_ = value != 0;
       break;
   }
-  return Http2ErrorCode::kNoError;
+  return GRPC_HTTP2_NO_ERROR;
 }
 
 std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {

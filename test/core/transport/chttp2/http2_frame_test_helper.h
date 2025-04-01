@@ -22,10 +22,10 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/http2_errors.h"
 
 namespace grpc_core {
 namespace transport {
@@ -51,7 +51,7 @@ class Http2FrameTestHelper {
 
   EventEngineSlice EventEngineSliceFromHttp2RstStreamFrame(
       const uint32_t stream_id = 1,
-      const uint32_t error_code = Http2ErrorCode::kConnectError) const {
+      const uint32_t error_code = GRPC_HTTP2_CONNECT_ERROR) const {
     return EventEngineSliceFromHttp2Frame(
         Http2RstStreamFrame{stream_id, error_code});
   }

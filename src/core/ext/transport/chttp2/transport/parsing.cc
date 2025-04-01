@@ -54,7 +54,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
@@ -67,6 +66,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
@@ -586,7 +586,7 @@ error_handler:
     grpc_chttp2_mark_stream_closed(t, s, true, false,
                                    absl_status_to_grpc_error(status));
     grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
-                                             Http2ErrorCode::kProtocolError,
+                                             GRPC_HTTP2_PROTOCOL_ERROR,
                                              &s->call_tracer_wrapper);
     return init_non_header_skip_frame_parser(t);
   } else {
@@ -653,10 +653,9 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     } else if (GPR_UNLIKELY(t->stream_map.size() + t->extra_streams >=
                             t->settings.acked().max_concurrent_streams())) {
       ++t->num_pending_induced_frames;
-      grpc_slice_buffer_add(
-          &t->qbuf,
-          grpc_chttp2_rst_stream_create(
-              t->incoming_stream_id, Http2ErrorCode::kRefusedStream, nullptr));
+      grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
+                                          t->incoming_stream_id,
+                                          GRPC_HTTP2_REFUSED_STREAM, nullptr));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (grpc_core::IsRqFastRejectEnabled() &&
@@ -666,9 +665,9 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       grpc_core::global_stats().IncrementRqCallsRejected();
       ++t->num_pending_induced_frames;
       grpc_slice_buffer_add(
-          &t->qbuf, grpc_chttp2_rst_stream_create(
-                        t->incoming_stream_id, Http2ErrorCode::kEnhanceYourCalm,
-                        nullptr));
+          &t->qbuf,
+          grpc_chttp2_rst_stream_create(t->incoming_stream_id,
+                                        GRPC_HTTP2_ENHANCE_YOUR_CALM, nullptr));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
@@ -678,10 +677,9 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       ++t->num_pending_induced_frames;
-      grpc_slice_buffer_add(
-          &t->qbuf,
-          grpc_chttp2_rst_stream_create(
-              t->incoming_stream_id, Http2ErrorCode::kRefusedStream, nullptr));
+      grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
+                                          t->incoming_stream_id,
+                                          GRPC_HTTP2_REFUSED_STREAM, nullptr));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(t->stream_map.size() >=
@@ -694,10 +692,9 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       // setting, but are over the next value that will be advertised.
       // Apply some backpressure by randomly not accepting new streams.
       ++t->num_pending_induced_frames;
-      grpc_slice_buffer_add(
-          &t->qbuf,
-          grpc_chttp2_rst_stream_create(
-              t->incoming_stream_id, Http2ErrorCode::kRefusedStream, nullptr));
+      grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
+                                          t->incoming_stream_id,
+                                          GRPC_HTTP2_REFUSED_STREAM, nullptr));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT ||
@@ -721,9 +718,9 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           << " before settings have been acknowledged";
       ++t->num_pending_induced_frames;
       grpc_slice_buffer_add(
-          &t->qbuf, grpc_chttp2_rst_stream_create(
-                        t->incoming_stream_id, Http2ErrorCode::kEnhanceYourCalm,
-                        nullptr));
+          &t->qbuf,
+          grpc_chttp2_rst_stream_create(t->incoming_stream_id,
+                                        GRPC_HTTP2_ENHANCE_YOUR_CALM, nullptr));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       t->last_new_stream_id = t->incoming_stream_id;
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
@@ -946,7 +943,7 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
   grpc_chttp2_transport* t = s->t.get();
   if (!s->write_closed) {
-    grpc_chttp2_add_rst_stream_to_next_write(t, s->id, Http2ErrorCode::kNoError,
+    grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
                                              &s->call_tracer_wrapper);
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM);
     grpc_chttp2_mark_stream_closed(t, s, true, true, absl::OkStatus());

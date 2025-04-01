@@ -1056,6 +1056,7 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -2628,6 +2629,7 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -4650,6 +4652,7 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -6059,6 +6062,7 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
@@ -6467,6 +6471,7 @@ targets:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -6853,6 +6858,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -7557,6 +7563,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -10014,6 +10021,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -10412,6 +10420,7 @@ targets:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -10824,6 +10833,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -10941,6 +10951,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -11080,6 +11091,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/util/glob.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
@@ -12236,6 +12248,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -12700,6 +12713,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -13452,6 +13466,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/bitset.h
   - src/core/util/glob.h
@@ -14351,6 +14366,7 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
