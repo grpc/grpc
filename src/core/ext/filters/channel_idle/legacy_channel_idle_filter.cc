@@ -55,18 +55,18 @@
 
 namespace grpc_core {
 
-using grpc_core::http2::Http2ErrorCode
+using grpc_core::http2::Http2ErrorCode;
 
-    namespace {
-  constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
+namespace {
+constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
 
-  // If these settings change, make sure that we are not sending a GOAWAY for
-  // inproc transport, since a GOAWAY to inproc ends up destroying the
-  // transport.
-  const auto kDefaultMaxConnectionAge = Duration::Infinity();
-  const auto kDefaultMaxConnectionAgeGrace = Duration::Infinity();
-  const auto kDefaultMaxConnectionIdle = Duration::Infinity();
-  const auto kMaxConnectionAgeJitter = 0.1;
+// If these settings change, make sure that we are not sending a GOAWAY for
+// inproc transport, since a GOAWAY to inproc ends up destroying the
+// transport.
+const auto kDefaultMaxConnectionAge = Duration::Infinity();
+const auto kDefaultMaxConnectionAgeGrace = Duration::Infinity();
+const auto kDefaultMaxConnectionIdle = Duration::Infinity();
+const auto kMaxConnectionAgeJitter = 0.1;
 
 }  // namespace
 
