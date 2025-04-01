@@ -40,7 +40,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/useful.h"
 
-using http2::Http2ErrorCode;
+using grpc_core::http2::Http2ErrorCode;
 
 static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
   *out++ = static_cast<uint8_t>(length >> 16);

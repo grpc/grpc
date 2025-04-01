@@ -74,7 +74,7 @@
 
 // IWYU pragma: no_include "src/core/util/orphanable.h"
 
-using http2::Http2ErrorCode;
+using grpc_core::http2::Http2ErrorCode;
 
 static void add_to_write_list(grpc_chttp2_write_cb** list,
                               grpc_chttp2_write_cb* cb) {

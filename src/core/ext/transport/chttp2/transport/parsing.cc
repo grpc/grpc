@@ -76,6 +76,7 @@
 #include "src/core/util/status_helper.h"
 
 using grpc_core::HPackParser;
+using grpc_core::http2::Http2ErrorCode;
 
 static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
                                            size_t& requests_started);

@@ -227,6 +227,7 @@ namespace {
 
 using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
+using grpc_core::http2::Http2ErrorCode;
 
 grpc_core::CallTracerAnnotationInterface* ParentCallTracerIfSampled(
     grpc_chttp2_stream* s) {
@@ -1854,9 +1855,10 @@ void grpc_chttp2_ping_timeout(
                                    << ": Ping timeout. Closing transport.";
         send_goaway(
             t.get(),
-            grpc_error_set_int(GRPC_ERROR_CREATE("ping_timeout"),
-                               grpc_core::StatusIntProperty::kHttp2Error,
-                               Http2ErrorCode::kEnhanceYourCalm),
+            grpc_error_set_int(
+                GRPC_ERROR_CREATE("ping_timeout"),
+                grpc_core::StatusIntProperty::kHttp2Error,
+                static_cast<intptr_t>(Http2ErrorCode::kEnhanceYourCalm)),
             /*immediate_disconnect_hint=*/true);
         close_transport_locked(
             t.get(),
@@ -1875,9 +1877,10 @@ void grpc_chttp2_settings_timeout(
                                    << ": Settings timeout. Closing transport.";
         send_goaway(
             t.get(),
-            grpc_error_set_int(GRPC_ERROR_CREATE("settings_timeout"),
-                               grpc_core::StatusIntProperty::kHttp2Error,
-                               Http2ErrorCode::kSettingsTimeout),
+            grpc_error_set_int(
+                GRPC_ERROR_CREATE("settings_timeout"),
+                grpc_core::StatusIntProperty::kHttp2Error,
+                static_cast<intptr_t>(Http2ErrorCode::kSettingsTimeout)),
             /*immediate_disconnect_hint=*/true);
         close_transport_locked(
             t.get(),
@@ -2007,9 +2010,10 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
 
 void grpc_chttp2_exceeded_ping_strikes(grpc_chttp2_transport* t) {
   send_goaway(t,
-              grpc_error_set_int(GRPC_ERROR_CREATE("too_many_pings"),
-                                 grpc_core::StatusIntProperty::kHttp2Error,
-                                 Http2ErrorCode::kEnhanceYourCalm),
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE("too_many_pings"),
+                  grpc_core::StatusIntProperty::kHttp2Error,
+                  static_cast<intptr_t>(Http2ErrorCode::kEnhanceYourCalm)),
               /*immediate_disconnect_hint=*/true);
   // The transport will be closed after the write is done
   close_transport_locked(
@@ -2639,7 +2643,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                               grpc_slice_from_cpp_string(std::move(message)));
         grpc_chttp2_reset_ping_clock(t);
         grpc_chttp2_add_rst_stream_to_next_write(
-            t, id, Http2ErrorCode::kNoError, nullptr);
+            t, id, static_cast<intptr_t>(Http2ErrorCode::kNoError), nullptr);
 
         grpc_chttp2_initiate_write(t,
                                    GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);
@@ -3213,9 +3217,10 @@ static void benign_reclaimer_locked(
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - send goaway to free memory";
     send_goaway(t.get(),
-                grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
-                                   grpc_core::StatusIntProperty::kHttp2Error,
-                                   Http2ErrorCode::kEnhanceYourCalm),
+                grpc_error_set_int(
+                    GRPC_ERROR_CREATE("Buffers full"),
+                    grpc_core::StatusIntProperty::kHttp2Error,
+                    static_cast<intptr_t>(Http2ErrorCode::kEnhanceYourCalm)),
                 /*immediate_disconnect_hint=*/true);
   } else if (error.ok() && GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
     LOG(INFO) << "HTTP2: " << t->peer_string.as_string_view()
@@ -3241,9 +3246,10 @@ static void destructive_reclaimer_locked(
     grpc_core::global_stats().IncrementRqCallsDropped();
     grpc_chttp2_cancel_stream(
         t.get(), s,
-        grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
-                           grpc_core::StatusIntProperty::kHttp2Error,
-                           Http2ErrorCode::kEnhanceYourCalm),
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE("Buffers full"),
+            grpc_core::StatusIntProperty::kHttp2Error,
+            static_cast<intptr_t>(Http2ErrorCode::kEnhanceYourCalm)),
         false);
     if (!t->stream_map.empty()) {
       // Since we cancel one stream per destructive reclamation, if
