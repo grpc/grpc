@@ -25,6 +25,8 @@ bool UseEventEngineClient() {
 #if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
   return false;
 #endif
+  grpc_core::Crash(
+      "Hypothesis disproven: iOS depends on the experiment system");
   return grpc_core::IsEventEngineClientEnabled();
 }
 

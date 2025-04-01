@@ -66,6 +66,8 @@ void grpc_client_channel_global_init_backup_polling() {
   g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
                               grpc_core::IsEventEngineListenerEnabled() &&
                               grpc_core::IsEventEngineDnsEnabled();
+  grpc_core::Crash(
+      "Hypothesis disproven: iOS depends on the experiment system");
   if (g_backup_polling_disabled) {
     return;
   }

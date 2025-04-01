@@ -124,6 +124,8 @@ void grpc_init(void) {
     }
     grpc_iomgr_init();
     if (grpc_core::IsEventEngineDnsEnabled()) {
+      grpc_core::Crash(
+          "Hypothesis disproven: iOS depends on the experiment system");
       address_sorting_init();
       auto status = AresInit();
       if (!status.ok()) {
@@ -148,6 +150,8 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     if (grpc_core::IsEventEngineDnsEnabled()) {
+      grpc_core::Crash(
+          "Hypothesis disproven: iOS depends on the experiment system");
       address_sorting_shutdown();
       AresShutdown();
     } else {
