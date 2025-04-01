@@ -318,7 +318,7 @@ class OpenTelemetryPluginImpl
                   : "other") {}
 
     int Compare(const ScopeConfig& other) const override {
-      const auto& o = DownCast<const ClientScopeConfig&>(other);
+      const auto& o = grpc_core::DownCast<const ClientScopeConfig&>(other);
       int r = grpc_core::QsortCompare(filtered_target_, o.filtered_target_);
       if (r != 0) return r;
       return active_plugin_options_view_.Compare(o.active_plugin_options_view_);
@@ -343,7 +343,7 @@ class OpenTelemetryPluginImpl
               ActivePluginOptionsView::MakeForServer(args, otel_plugin)) {}
 
     int Compare(const ScopeConfig& other) const override {
-      const auto& o = DownCast<const ServerScopeConfig&>(other);
+      const auto& o = grpc_core::DownCast<const ServerScopeConfig&>(other);
       return active_plugin_options_view_.Compare(o.active_plugin_options_view_);
     }
 

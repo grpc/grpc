@@ -77,6 +77,7 @@ grpc_cc_library(
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
         "//src/core:context",
+        "//src/core:down_cast",
         "//src/core:error",
         "//src/core:experiments",
         "//src/core:match",
