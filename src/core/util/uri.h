@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -68,12 +67,7 @@ class URI {
   static std::string PercentDecode(absl::string_view str);
 
   const std::string& scheme() const { return scheme_; }
-  std::string authority() const {
-    if (!user_info_.empty()) {
-      return absl::StrCat(user_info_, "@", host_port_);
-    }
-    return host_port_;
-  }
+  std::string authority() const;
   const std::string& user_info() const { return user_info_; }
   const std::string& host_port() const { return host_port_; }
   const std::string& path() const { return path_; }

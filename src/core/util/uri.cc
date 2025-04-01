@@ -31,6 +31,7 @@
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
@@ -224,6 +225,13 @@ std::string URI::PercentDecode(absl::string_view str) {
     }
   }
   return out;
+}
+
+std::string URI::authority() {
+  if (!user_info_.empty()) {
+    return absl::StrCat(user_info_, "@", host_port_);
+  }
+  return host_port_;
 }
 
 absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
