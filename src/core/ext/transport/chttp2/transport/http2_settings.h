@@ -29,8 +29,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/util/useful.h"
 
-using grpc_core::http2::Http2ErrorCode;
-
 namespace grpc_core {
 
 class Http2Settings {
