@@ -283,8 +283,8 @@ class OpenTelemetryPluginImpl
     }
 
     int Compare(const ActivePluginOptionsView& other) const {
-      return QsortCompare(active_mask_.to_ulong(),
-                          other.active_mask_.to_ulong());
+      return grpc_core::QsortCompare(active_mask_.to_ulong(),
+                                     other.active_mask_.to_ulong());
     }
 
    private:
@@ -319,7 +319,7 @@ class OpenTelemetryPluginImpl
 
     int Compare(const ScopeConfig& other) const override {
       const auto& o = DownCast<const ClientScopeConfig&>(other);
-      int r = QosrtCompare(filtered_target_, o.filtered_target_);
+      int r = grpc_core::QsortCompare(filtered_target_, o.filtered_target_);
       if (r != 0) return r;
       return active_plugin_options_view_.Compare(o.active_plugin_options_view_);
     }
