@@ -30,7 +30,7 @@ class StreamQuota : public RefCounted<StreamQuota> {
 
   void DecrementOutstandingRequests() {
     stats_.this_cpu().outstanding_requests.fetch_sub(1,
-                                                    std::memory_order_relaxed);
+                                                     std::memory_order_relaxed);
   }
 
   void IncrementOpenChannels() {

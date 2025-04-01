@@ -1,8 +1,7 @@
 #include "src/core/lib/resource_quota/stream_quota.h"
 
-#include "src/core/util/ref_counted_ptr.h"
-
 #include "gtest/gtest.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 namespace testing {

@@ -10,8 +10,8 @@ namespace grpc_core {
 void StreamQuota::SetMaxOutstandingStreams(
     uint32_t new_max_outstanding_streams) {
   for (auto& limiter : limiters_) {
-    limiter.max_outstanding_requests.store(
-        new_max_outstanding_streams, std::memory_order_relaxed);
+    limiter.max_outstanding_requests.store(new_max_outstanding_streams,
+                                           std::memory_order_relaxed);
   }
 }
 
@@ -19,9 +19,8 @@ uint32_t StreamQuota::GetPerConnectionMaxConcurrentRequests(
     uint32_t current_open_requests) {
   Limiter& limiter = limiters_.this_cpu();
   Statistics& stats = stats_.this_cpu();
-  limiter.periodic_update.Tick([this, &limiter](Duration) {
-    UpdatePerConnectionLimits(limiter);
-  });
+  limiter.periodic_update.Tick(
+      [this, &limiter](Duration) { UpdatePerConnectionLimits(limiter); });
   const uint64_t allowed_requests_per_channel =
       limiter.allowed_requests_per_channel.load(std::memory_order_relaxed);
   const uint64_t target_mean_requests_per_channel =
