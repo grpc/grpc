@@ -65,7 +65,7 @@ const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
     case StatusIntProperty::kRpcStatus:
       return TYPE_URL(TYPE_INT_TAG "grpc_status");
     case StatusIntProperty::kHttp2Error:
-      return TYPE_URL(TYPE_INT_TAG "http2_status");
+      return TYPE_URL(TYPE_INT_TAG "http2_error");
     case StatusIntProperty::ChannelConnectivityState:
       return TYPE_URL(TYPE_INT_TAG "channel_connectivity_state");
     case StatusIntProperty::kLbPolicyDrop:

@@ -26,6 +26,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/test_util/test_config.h"
 
+using grpc_core::htpp2::Http2ErrorCode;
+
 #define GRPC_STATUS_TO_http2_status(a, b) \
   ASSERT_EQ(grpc_status_to_http2_status(a), (b))
 #define http2_status_TO_GRPC_STATUS(a, deadline, b)                \

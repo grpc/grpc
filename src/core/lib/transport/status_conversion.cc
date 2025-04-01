@@ -20,6 +20,8 @@
 
 #include <grpc/support/port_platform.h>
 
+using grpc_core::htpp2::Http2ErrorCode;
+
 Http2ErrorCode grpc_status_to_http2_status(grpc_status_code status) {
   switch (status) {
     case GRPC_STATUS_OK:

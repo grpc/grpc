@@ -39,7 +39,7 @@
 void grpc_error_get_status(grpc_error_handle error,
                            grpc_core::Timestamp deadline,
                            grpc_status_code* code, std::string* message,
-                           Http2ErrorCode* http_error,
+                           grpc_core::http2::Http2ErrorCode* http_error,
                            const char** error_string);
 
 /// Utility Function to convert a grpc_error_handle  \a error to an
