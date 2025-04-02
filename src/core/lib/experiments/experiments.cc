@@ -138,6 +138,11 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_global_callbacks_ownership =
+    "If set, server global callbacks ownership is fixed to not be owned by "
+    "gRPC.";
+const char* const additional_constraints_server_global_callbacks_ownership =
+    "{}";
 const char* const description_server_listener =
     "If set, the new server listener classes are used.";
 const char* const additional_constraints_server_listener = "{}";
@@ -168,8 +173,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
-     true},
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -231,6 +235,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_global_callbacks_ownership",
+     description_server_global_callbacks_ownership,
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
+     false, true},
     {"server_listener", description_server_listener,
      additional_constraints_server_listener, nullptr, 0, true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
@@ -362,6 +370,11 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_global_callbacks_ownership =
+    "If set, server global callbacks ownership is fixed to not be owned by "
+    "gRPC.";
+const char* const additional_constraints_server_global_callbacks_ownership =
+    "{}";
 const char* const description_server_listener =
     "If set, the new server listener classes are used.";
 const char* const additional_constraints_server_listener = "{}";
@@ -392,8 +405,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
-     true},
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -455,6 +467,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_global_callbacks_ownership",
+     description_server_global_callbacks_ownership,
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
+     false, true},
     {"server_listener", description_server_listener,
      additional_constraints_server_listener, nullptr, 0, true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
@@ -586,6 +602,11 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_global_callbacks_ownership =
+    "If set, server global callbacks ownership is fixed to not be owned by "
+    "gRPC.";
+const char* const additional_constraints_server_global_callbacks_ownership =
+    "{}";
 const char* const description_server_listener =
     "If set, the new server listener classes are used.";
 const char* const additional_constraints_server_listener = "{}";
@@ -616,8 +637,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
-     true},
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -679,6 +699,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_global_callbacks_ownership",
+     description_server_global_callbacks_ownership,
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
+     false, true},
     {"server_listener", description_server_listener,
      additional_constraints_server_listener, nullptr, 0, true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,

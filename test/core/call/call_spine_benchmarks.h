@@ -354,7 +354,6 @@ class TransportFixture {
   RefCountedPtr<Acceptor> acceptor_ = MakeRefCounted<Acceptor>();
   BenchmarkTransport transport_ = traits_.MakeTransport();
 };
-
 }  // namespace grpc_core
 
 // Declare all relevant benchmarks for a given fixture

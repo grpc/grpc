@@ -19,6 +19,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/strings/str_format.h"
 #include "examples/protos/helloworld.grpc.pb.h"
 

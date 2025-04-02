@@ -435,7 +435,7 @@ for dirname in [
             "grpc_cc_library": grpc_cc_library,
             "grpc_cc_test": grpc_cc_library,
             "grpc_cc_benchmark": grpc_cc_library,
-            "grpc_core_end2end_test": lambda **kwargs: None,
+            "grpc_core_end2end_test_suite": lambda **kwargs: None,
             "grpc_filegroup": lambda **kwargs: None,
             "grpc_transport_test": lambda **kwargs: None,
             "grpc_yodel_test": lambda **kwargs: None,

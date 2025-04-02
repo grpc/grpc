@@ -31,6 +31,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "opentelemetry/exporters/ostream/metric_exporter.h"
 #include "opentelemetry/exporters/ostream/metric_exporter_factory.h"
 #include "opentelemetry/exporters/ostream/span_exporter_factory.h"
@@ -51,6 +52,7 @@ ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Register a global gRPC OpenTelemetry plugin configured with an ostream
   // exporter.
   auto ostream_metrics_exporter =

@@ -31,6 +31,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/stats.h"
 #include "src/core/util/status_helper.h"
 
 absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
@@ -75,6 +76,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 
   grpc_slice_buffer_move_first_no_ref(inbuf, write_bytes, outbuf);
 
+  grpc_core::global_stats().IncrementHttp2WriteDataFrameSize(write_bytes);
   call_tracer->RecordOutgoingBytes({header_size, 0, 0});
 }
 

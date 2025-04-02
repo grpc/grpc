@@ -31,7 +31,7 @@ class TcpTraceExtension {
   static absl::string_view EndpointExtensionName() {
     return "io.grpc.event_engine.extension.tcp_trace";
   }
-  virtual std::shared_ptr<grpc_core::TcpTracerInterface>
+  virtual std::shared_ptr<grpc_core::TcpConnectionTracer>
   InitializeAndReturnTcpTracer() = 0;
 };
 

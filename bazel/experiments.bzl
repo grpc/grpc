@@ -45,6 +45,7 @@ EXPERIMENT_ENABLES = {
     "rq_fast_reject": "rq_fast_reject",
     "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
+    "server_global_callbacks_ownership": "server_global_callbacks_ownership",
     "server_listener": "server_listener",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
@@ -67,7 +68,6 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
-                "chaotic_good_framing_layer",
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
@@ -103,6 +103,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
@@ -132,7 +133,6 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
-                "chaotic_good_framing_layer",
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
@@ -165,6 +165,7 @@ EXPERIMENTS = {
         },
         "on": {
             "core_end2end_test": [
+                "chaotic_good_framing_layer",
                 "event_engine_for_all_other_endpoints",
                 "posix_ee_skip_grpc_init",
                 "server_listener",
@@ -183,7 +184,6 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
-                "chaotic_good_framing_layer",
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
@@ -219,6 +219,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
