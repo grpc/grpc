@@ -192,8 +192,7 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   chaotic_good::DataEndpoints data_endpoints(
       Endpoints(std::move(ep1.promise_endpoint),
                 std::move(ep2.promise_endpoint)),
-      event_engine().get(), false,
-      Time1Clock());
+      event_engine().get(), false, Time1Clock());
   SliceBuffer writes;
   ep1.CaptureWrites(writes, event_engine().get());
   ep2.CaptureWrites(writes, event_engine().get());
