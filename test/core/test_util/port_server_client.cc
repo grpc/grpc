@@ -104,7 +104,8 @@ void grpc_free_port_using_server(int port) {
                                            grpc_schedule_on_exec_ctx);
 
     std::string path = absl::StrFormat("/drop/%d", port);
-    auto uri = grpc_core::URI::Create("https", /*user_info=*/"", get_port_server_address(), path,
+    auto uri = grpc_core::URI::Create("https", /*user_info=*/"",
+                                      get_port_server_address(), path,
                                       {} /* query params */, "" /* fragment */);
     CHECK_OK(uri);
     auto http_request = grpc_core::HttpRequest::Get(
@@ -236,8 +237,9 @@ int grpc_pick_port_using_server(void) {
                                            grpc_schedule_on_exec_ctx);
     pr.port = -1;
     pr.server = get_port_server_address();
-    auto uri = grpc_core::URI::Create("http", /*user_info=*/"", pr.server, "/get",
-                                      {} /* query params */, "" /* fragment */);
+    auto uri =
+        grpc_core::URI::Create("http", /*user_info=*/"", pr.server, "/get",
+                               {} /* query params */, "" /* fragment */);
     CHECK_OK(uri);
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), nullptr /* channel args */, &pr.pops, &req,
