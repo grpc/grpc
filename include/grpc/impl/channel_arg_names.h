@@ -49,11 +49,17 @@
  * server will close the connection. Int valued, milliseconds. INT_MAX means
  * unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_IDLE_MS "grpc.max_connection_idle_ms"
-/** Maximum time that a channel may exist. Int valued, milliseconds.
- * INT_MAX means unlimited. */
+/** Maximum time in milliseconds that a channel may exist. Int valued, milliseconds.
+  * when time expires, the server sends a 'GOAWAY' frame to the client.
+  * New RPCs will not be accepted, but existing ones can continue untill they complete.
+  * If grpc.max_connection_age_ms is not set, active RPCs may be interrupted when the connection closes.
+  * Defaults to INT_MAX. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_MS "grpc.max_connection_age_ms"
 /** Grace period after the channel reaches its max age. Int valued,
-   milliseconds. INT_MAX means unlimited. */
+   milliseconds.
+  * Extends the connection lifetime beyond 'grpc.max_connection_age_grace_ms' if RPCs are still active.
+  * prevent abrupt termination of long-running RPCs.
+  * once this grace period ends, any remaining RPCs will be forcefully terminated. Defaults to INT_MAX. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
 /** Timeout after the last RPC finishes on the client channel at which the
  * channel goes back into IDLE state. Int valued, milliseconds. INT_MAX means
