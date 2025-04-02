@@ -18,6 +18,7 @@
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_event_engine::experimental {
 
