@@ -16,7 +16,8 @@
 
   #AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_status/grpc_status/_grpcio_metadata.py.template`!!!
 
-  VERSION = '${settings.python_version.pep440()}'
+  __version__ = """${settings.python_version.pep440()}"""
   
+
 
 
