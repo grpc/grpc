@@ -1,4 +1,4 @@
-# Copyright 2025 gRPC authors.
+# Copyright 2025 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,5 +14,4 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_status/grpc_status/_grpcio_metadata.py.template`!!!
 
-__version__ = """1.72.0.dev0"""
-
+VERSION = "1.72.0.dev0"
