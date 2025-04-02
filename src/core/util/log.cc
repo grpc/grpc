@@ -110,10 +110,10 @@ void gpr_log_verbosity_init(void) {
   } else if (absl::EqualsIgnoreCase(verbosity, "NONE")) {
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-  } else if (verbosity.empty()) {
+  } else if (verbosity.empty() || absl::EqualsIgnoreCase(verbosity, "")) {
     // Do not alter absl settings if GRPC_VERBOSITY flag is not set.
   } else {
-    LOG(ERROR) << "Unknown log verbosity: \"" << verbosity << "\"";
+    LOG_FIRST_N(ERROR, 1) << "Unknown log verbosity: \"" << verbosity << "\"";
   }
 #endif  // GRPC_VERBOSITY_MACRO
 }
