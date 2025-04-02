@@ -8353,6 +8353,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8560,6 +8563,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8679,6 +8685,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8794,6 +8803,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8997,6 +9009,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9200,6 +9215,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9315,6 +9333,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9518,6 +9539,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9633,6 +9657,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9836,6 +9863,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
