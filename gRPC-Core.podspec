@@ -200,7 +200,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.39'
+    ss.dependency 'BoringSSL-GRPC', '0.0.40'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -1423,7 +1423,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/event_engine_context.h',
                       'src/core/lib/event_engine/extensions/can_track_errors.h',
                       'src/core/lib/event_engine/extensions/chaotic_good_extension.h',
+                      'src/core/lib/event_engine/extensions/iomgr_compatible.h',
                       'src/core/lib/event_engine/extensions/supports_fd.h',
+                      'src/core/lib/event_engine/extensions/supports_win_sockets.h',
                       'src/core/lib/event_engine/extensions/tcp_trace.h',
                       'src/core/lib/event_engine/forkable.cc',
                       'src/core/lib/event_engine/forkable.h',
@@ -1456,6 +1458,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc',
                       'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
+                      'src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc',
                       'src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc',
                       'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/posix_engine/timer.cc',
@@ -3116,7 +3119,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/event_engine_context.h',
                               'src/core/lib/event_engine/extensions/can_track_errors.h',
                               'src/core/lib/event_engine/extensions/chaotic_good_extension.h',
+                              'src/core/lib/event_engine/extensions/iomgr_compatible.h',
                               'src/core/lib/event_engine/extensions/supports_fd.h',
+                              'src/core/lib/event_engine/extensions/supports_win_sockets.h',
                               'src/core/lib/event_engine/extensions/tcp_trace.h',
                               'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/grpc_polled_fd.h',

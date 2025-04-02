@@ -102,7 +102,7 @@
 - histogram: http2_initial_window_size
   doc: Http2 initial window size received through SETTINGS frame
   max: 16777216
-  buckets: 20
+  buckets: 50
 - histogram: http2_max_concurrent_streams
   doc: Http2 max concurrent streams received through SETTINGS frame
   max: 16777216
@@ -110,7 +110,7 @@
 - histogram: http2_max_frame_size
   doc: Http2 max frame size received through SETTINGS frame
   max: 16777216
-  buckets: 20
+  buckets: 50
 - histogram: http2_max_header_list_size
   doc: Http2 max header list size received through SETTINGS frame
   max: 16777216
@@ -135,6 +135,18 @@
   doc: Period in milliseconds at which peer sends stream window update
   max: 100000
   buckets: 20
+- histogram: http2_write_target_size
+  doc: Number of bytes targetted for http2 writes
+  max: 16777216
+  buckets: 50
+- histogram: http2_write_data_frame_size
+  doc: Number of bytes for each data frame written
+  max: 16777216
+  buckets: 50
+- histogram: http2_read_data_frame_size
+  doc: Number of bytes for each data frame read
+  max: 16777216
+  buckets: 50
 # completion queues
 - counter: cq_pluck_creates
   doc: Number of completion queues created for cq_pluck (indicates sync api usage)

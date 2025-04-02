@@ -23,7 +23,7 @@
 
 namespace grpc_core {
 
-class GrpcXdsServerInterface : public XdsBootstrap::XdsServer {
+class GrpcXdsServerInterface : public XdsBootstrap::XdsServerTarget {
  public:
   virtual RefCountedPtr<ChannelCredsConfig> channel_creds_config() const = 0;
 };

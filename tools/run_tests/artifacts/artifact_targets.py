@@ -343,7 +343,7 @@ class ProtocArtifact:
             environ["LDFLAGS"] = ""
             if self.platform == "linux":
                 dockerfile_dir = (
-                    "tools/dockerfile/grpc_artifact_centos6_{}".format(
+                    "tools/dockerfile/grpc_artifact_manylinux2014_{}".format(
                         self.arch
                     )
                 )
@@ -351,7 +351,7 @@ class ProtocArtifact:
                     # for aarch64, use a dockcross manylinux image that will
                     # give us both ready to use crosscompiler and sufficient backward compatibility
                     dockerfile_dir = (
-                        "tools/dockerfile/grpc_artifact_protoc_aarch64"
+                        "tools/dockerfile/grpc_artifact_manylinux2014_aarch64"
                     )
                 environ["LDFLAGS"] += " -static-libgcc -static-libstdc++ -s"
                 return create_docker_jobspec(

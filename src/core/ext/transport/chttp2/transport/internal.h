@@ -73,7 +73,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
-#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted.h"
@@ -672,13 +671,19 @@ struct grpc_chttp2_stream {
 
   grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
 
-  // TODO(roth): Remove this when call v3 is supported.
+  // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
+  // https://github.com/grpc/grpc/pull/38729 for more information.)
+  // In the transport, we use tracers for two things, recording byte stats and
+  // recording annotations. Recording byte stats is safe as long as call_tracer
+  // is non null. Recording annotations on the other hand is only safe after
+  // send_initial_metadata. On the client, this is not an issue since that is
+  // the first operation. On the server, we would ideally be able to record
+  // annotations as soon as we have parsed initial metadata, but in our legacy
+  // stack, we create the stream before parsing headers. In the new v3 stack,
+  // that won't be an issue.
   grpc_core::CallTracerInterface* call_tracer = nullptr;
   // TODO(yashykt): Remove this once call_tracer_transport_fix is rolled out
   grpc_core::CallTracerAnnotationInterface* parent_call_tracer = nullptr;
-
-  /// Only set when enabled.
-  std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
 
   // time this stream was created
   gpr_timespec creation_time = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -700,14 +705,6 @@ struct grpc_chttp2_stream {
   // The last time a stream window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
-
-  // TODO(yashykt): Remove this when call v3 is supported.
-  grpc_core::CallTracerInterface* CallTracer() const {
-    if (t->is_client) {
-      return call_tracer;
-    }
-    return arena->GetContext<grpc_core::CallTracerInterface>();
-  }
 };
 
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"

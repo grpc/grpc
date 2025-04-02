@@ -236,6 +236,24 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
 // move things out of frames)
 void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 
+///////////////////////////////////////////////////////////////////////////////
+// GRPC Header
+
+constexpr uint8_t kGrpcHeaderSizeInBytes = 5;
+
+struct GrpcMessageHeader {
+  uint8_t flags;
+  uint32_t length;
+};
+
+// If the payload SliceBuffer is too small to hold a gRPC header, this function
+// will crash. The calling function MUST ensure that the payload SliceBuffer
+// has length greater than or equal to the gRPC header.
+GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload);
+
+void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
+                                   const uint32_t length);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
