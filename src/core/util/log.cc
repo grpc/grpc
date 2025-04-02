@@ -113,7 +113,7 @@ void gpr_log_verbosity_init(void) {
   } else if (verbosity.empty()) {
     // Do not alter absl settings if GRPC_VERBOSITY flag is not set.
   } else {
-    LOG(ERROR) << "Unknown log verbosity: " << verbosity;
+    LOG(ERROR) << "Unknown log verbosity: \"" << verbosity << "\"";
   }
 #endif  // GRPC_VERBOSITY_MACRO
 }
