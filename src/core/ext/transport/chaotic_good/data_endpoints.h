@@ -55,6 +55,9 @@ struct DataFrameHeader {
 class Clock {
  public:
   virtual uint64_t Now() = 0;
+
+ protected:
+  ~Clock() = default;
 };
 
 class SendRate {
@@ -63,7 +66,7 @@ class SendRate {
       double initial_rate = 1.25 /*10 gigabits/sec in bytes/nanosec*/)
       : current_rate_(initial_rate) {}
   void StartSend(uint64_t current_time, uint64_t send_size) {
-    CHECK_NE(current_time, 0);
+    CHECK_NE(current_time, 0u);
     send_start_time_ = current_time;
     send_size_ = send_size;
   }
