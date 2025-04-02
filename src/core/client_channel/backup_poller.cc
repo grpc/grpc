@@ -57,22 +57,22 @@ static backup_poller* g_poller = nullptr;  // guarded by g_poller_mu
 // treated as const.
 static grpc_core::Duration g_poll_interval =
     grpc_core::Duration::Milliseconds(DEFAULT_POLL_INTERVAL_MS);
+#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
 // TODO(hork): delete the backup poller when EventEngine is rolled out
 // everywhere.
 static bool g_backup_polling_disabled;
+#endif
 
 void grpc_client_channel_global_init_backup_polling() {
   // Disable backup polling if EventEngine is used everywhere.
-#ifdef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
-  g_backup_polling_disabled = false;
-#else
+#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
   g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
                               grpc_core::IsEventEngineListenerEnabled() &&
                               grpc_core::IsEventEngineDnsEnabled();
-#endif
   if (g_backup_polling_disabled) {
     return;
   }
+#endif
 
   gpr_mu_init(&g_poller_mu);
   int32_t poll_interval_ms =
@@ -161,11 +161,13 @@ static void g_poller_init_locked() {
 
 void grpc_client_channel_start_backup_polling(
     grpc_pollset_set* interested_parties) {
+#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
   if (g_backup_polling_disabled ||
       g_poll_interval == grpc_core::Duration::Zero() ||
       grpc_iomgr_run_in_background()) {
     return;
   }
+#endif
   gpr_mu_lock(&g_poller_mu);
   g_poller_init_locked();
   gpr_ref(&g_poller->refs);
@@ -181,11 +183,13 @@ void grpc_client_channel_start_backup_polling(
 
 void grpc_client_channel_stop_backup_polling(
     grpc_pollset_set* interested_parties) {
+#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
   if (g_backup_polling_disabled ||
       g_poll_interval == grpc_core::Duration::Zero() ||
       grpc_iomgr_run_in_background()) {
     return;
   }
+#endif
   grpc_pollset_set_del_pollset(interested_parties, g_poller->pollset);
   g_poller_unref();
 }
