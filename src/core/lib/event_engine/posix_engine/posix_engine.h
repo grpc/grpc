@@ -135,6 +135,13 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   // An interface for objects that handle fork
   class ForkSupport {
    public:
+    class OnForkCallback {
+     public:
+      virtual ~OnForkCallback() = default;
+      virtual bool IsAlive() const = 0;
+      virtual void operator()() const = 0;
+    };
+
     virtual ~ForkSupport() = default;
     virtual void BeforeFork() = 0;
     virtual void AfterFork(bool advance_generation) = 0;
@@ -142,6 +149,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
     virtual PosixEventPoller* Poller() const = 0;
     virtual ThreadPool* executor() const = 0;
     virtual TimerManager* timer_manager() = 0;
+    virtual void OnAdvanceGeneration(
+        std::unique_ptr<OnForkCallback> callback) = 0;
   };
 
   class PosixDNSResolver : public EventEngine::DNSResolver {

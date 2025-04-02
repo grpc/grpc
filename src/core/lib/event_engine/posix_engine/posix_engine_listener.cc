@@ -246,7 +246,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       // Call on_accept_ and then resume accepting new connections
       // by continuing the parent for-loop.
       listener_->on_accept_(
-          /*listener_fd=*/handle_->WrappedFd().iomgr_fd(),
+          /*listener_fd=*/handle_->WrappedFd().fd(),
           /*endpoint=*/std::move(endpoint),
           /*is_external=*/false,
           /*memory_allocator=*/

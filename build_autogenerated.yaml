@@ -5687,6 +5687,16 @@ targets:
   - gtest
   - grpc_test_util_unsecure
   uses_polling: false
+- name: ares_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/ares_resolver_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: async_end2end_test
   gtest: true
   build: test

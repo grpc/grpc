@@ -23,8 +23,6 @@
 namespace grpc_event_engine::experimental {
 
 namespace {
-constexpr int kIntFdBits = FileDescriptorCollection::kIntFdBits;
-
 bool ForkEnabled() {
 #ifndef GRPC_ENABLE_FORK_SUPPORT
   return false;
@@ -33,14 +31,6 @@ bool ForkEnabled() {
 #endif
 }
 
-int ExpectedFdWithGeneration(int fd, int gen) {
-  if (ForkEnabled()) {
-    return fd +
-           ((gen & FileDescriptorCollection::kGenerationMask) << kIntFdBits);
-  } else {
-    return fd;
-  }
-}
 }  // namespace
 
 TEST(FileDescriptorCollectionTest, AdvanceGeneration) {
@@ -66,46 +56,6 @@ TEST(FileDescriptorCollectionTest, AdvanceGeneration) {
   collection.Remove(FileDescriptor(10, 1));
   EXPECT_THAT(collection.AdvanceGeneration(),
               ::testing::UnorderedElementsAre(5, 10));
-}
-
-TEST(FileDescriptorCollectionTest, ToInteger) {
-  FileDescriptorCollection collection;
-  auto fd1 = collection.Add(5);
-  EXPECT_EQ(collection.ToInteger(fd1), ExpectedFdWithGeneration(5, 1));
-  collection.AdvanceGeneration();
-  collection.AdvanceGeneration();
-  collection.AdvanceGeneration();
-  // Still uses the FD generation
-  EXPECT_EQ(collection.ToInteger(fd1), ExpectedFdWithGeneration(5, 1));
-  auto fd2 = collection.Add(5);
-  EXPECT_EQ(collection.ToInteger(fd2), ExpectedFdWithGeneration(5, 4));
-  for (size_t i = 0; i < 30; ++i) {
-    collection.AdvanceGeneration();
-  }
-  EXPECT_EQ(collection.ToInteger(collection.Add(3)),
-            ExpectedFdWithGeneration(3, 34));
-}
-
-TEST(FileDescriptorCollectionTest, FromInteger) {
-  FileDescriptorCollection collection;
-  // More generation that mask would track
-  for (size_t i = 0; i < 30; ++i) {
-    collection.AdvanceGeneration();
-  }
-  int gen =
-      (collection.generation() & FileDescriptorCollection::kGenerationMask)
-      << kIntFdBits;
-  EXPECT_EQ(collection.FromInteger(0)->iomgr_fd(), -1);
-  EXPECT_EQ(collection.FromInteger(gen + 7)->iomgr_fd(),
-            ForkEnabled() ? 7 : gen + 7);
-  EXPECT_EQ(collection.FromInteger(gen + 7)->generation(),
-            ForkEnabled() ? 31 : 0);
-  auto result = collection.FromInteger((2 << kIntFdBits) + 7);
-  if (ForkEnabled()) {
-    EXPECT_TRUE(result.IsWrongGenerationError());
-  } else {
-    EXPECT_TRUE(result.ok());
-  }
 }
 
 TEST(FileDescriptorCollectionTest, Remove) {

@@ -298,12 +298,27 @@ grpc_cc_test(
     tags = [
         "no_windows",
     ],
-    uses_event_engine = False,
+    uses_event_engine = True,
     uses_polling = True,
     deps = [
         ":posix_engine_test_utils",
         "//:grpc++",
         "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+
+grpc_cc_test(
+    name = "ares_resolver_test",
+    srcs = ["ares_resolver_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//:gpr_platform",
         "//test/core/test_util:grpc_test_util",
     ],
 )

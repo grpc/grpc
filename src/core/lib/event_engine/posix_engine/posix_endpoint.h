@@ -39,7 +39,6 @@
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 #include "src/core/lib/iomgr/port.h"
@@ -632,7 +631,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
     return impl_->GetLocalAddress();
   }
 
-  int GetWrappedFd() override { return impl_->GetWrappedFd().iomgr_fd(); }
+  int GetWrappedFd() override { return impl_->GetWrappedFd().fd(); }
 
   bool CanTrackErrors() override { return impl_->CanTrackErrors(); }
 

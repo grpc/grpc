@@ -1289,10 +1289,8 @@ PosixEndpointImpl ::~PosixEndpointImpl() {
   handle_->OrphanHandle(on_done_,
                         on_release_fd_ == nullptr ? nullptr : &release_fd, "");
   if (on_release_fd_ != nullptr) {
-    engine_->Run(
-        [on_release_fd = std::move(on_release_fd_), release_fd]() mutable {
-          on_release_fd(release_fd.iomgr_fd());
-        });
+    engine_->Run([on_release_fd = std::move(on_release_fd_),
+                  release_fd]() mutable { on_release_fd(release_fd.fd()); });
   }
   delete on_read_;
   delete on_write_;

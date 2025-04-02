@@ -137,11 +137,7 @@ class FileDescriptor {
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
   bool ready() const { return fd_ >= 0; }
-  // Escape for iomgr and tests. Not to be used elsewhere
-  int iomgr_fd() const { return fd_; }
-  // For logging/debug purposes - may include generation in the future, do not
-  // rely on it for Posix calls!
-  int debug_fd() const { return fd_; }
+  int fd() const { return fd_; }
 
   constexpr static FileDescriptor Invalid() { return FileDescriptor(-1, 0); }
 
@@ -176,21 +172,6 @@ class FileDescriptor {
 // to ensure FDs created before a fork are not used after the fork.
 class FileDescriptorCollection {
  public:
-  // Encodes a file descriptor (fd) and its generation into a single integer,
-  // required by some libraries (e.g., Ares).
-  // Formula: `fd + ((generation & kGenerationMask) << kIntFdBits)`.
-  //
-  // Use ToInteger/FromInteger for conversion.
-  //
-  // LIMITATIONS:
-  // 1. Fails (with an assertion) if fd > 28 bits. However, POSIX assigns
-  //    the lowest available fd, making 2^28 (~268M) open fds highly impractical
-  //    due to kernel resource usage.
-  // 2. Only uses the lower 3 bits of generation, risking collisions (e.g., gen
-  //    9 accepts gen 1).
-  static constexpr int kIntFdBits = 28;
-  static constexpr int kGenerationMask = 0x7;  // 3 bits
-
   // Adds a raw file descriptor `fd` to the collection and associates it
   // with the current generation. Simply constructs a new FileDescriptor
   // instance without adding to a collection if fork is disabled.
@@ -200,21 +181,6 @@ class FileDescriptorCollection {
   // If fork support is enabled, fd is only removed if its generation matches
   // the current collection generation.
   bool Remove(const FileDescriptor& fd);
-
-  // TODO (eostroukhov) Completely recreate the ARES resolver on fork and
-  // remove 2 methods below
-  // Encodes a FileDescriptor (fd and generation) into a single integer.
-  // If fork support is disabled, this simply returns the raw fd.
-  // If fork support is enabled, it combines the fd and the lower bits of the
-  // generation according to the defined bitmask and shift.
-  int ToInteger(const FileDescriptor& fd) const;
-  // Decodes an integer (previously encoded by ToInteger) back into a
-  // FileDescriptor.
-  // If fork support is disabled, it creates a FileDescriptor with generation 0.
-  // If fork support is enabled, it extracts the fd and checks if the encoded
-  // generation bits match the current generation bits.
-  PosixErrorOr<FileDescriptor> FromInteger(int fd) const;
-
   // Advances the collection's generation number, clears the internal list of
   // tracked file descriptors, and returns the set of fds that were being
   // tracked under the previous generation. This should be called after a fork

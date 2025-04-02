@@ -88,6 +88,26 @@ namespace {
 
 #if GRPC_ENABLE_FORK_SUPPORT
 
+class ReinitAresResolverOnFork
+    : public PosixEventEngine::ForkSupport::OnForkCallback {
+ public:
+  explicit ReinitAresResolverOnFork(
+      std::weak_ptr<AresResolver::ReinitHandle> handle)
+      : handle_(std::move(handle)) {}
+
+  void operator()() const override {
+    auto locked = handle_.lock();
+    if (locked != nullptr) {
+      locked->Reinit();
+    }
+  }
+
+  bool IsAlive() const override { return !handle_.expired(); }
+
+ private:
+  std::weak_ptr<AresResolver::ReinitHandle> handle_;
+};
+
 // Fork support - mutex and global list of event engines
 // Should never be destroyed to avoid race conditions on process shutdown
 absl::NoDestructor<grpc_core::Mutex> fork_mu;
@@ -206,7 +226,7 @@ class PosixEngineForkSupport final : public PosixEventEngine::ForkSupport {
 
   ~PosixEngineForkSupport() override {
     {
-      grpc_core::MutexLock lock(&poll_cycle_mu_);
+      grpc_core::MutexLock lock(&mu_);
       polling_cycle_.reset();
     }
     timer_manager_.Shutdown();
@@ -221,7 +241,7 @@ class PosixEngineForkSupport final : public PosixEventEngine::ForkSupport {
   void BeforeFork() override {
     timer_manager_.PrepareFork();
     {
-      grpc_core::MutexLock lock(&poll_cycle_mu_);
+      grpc_core::MutexLock lock(&mu_);
       polling_cycle_.reset();
     }
     executor_->PrepareFork();
@@ -234,6 +254,12 @@ class PosixEngineForkSupport final : public PosixEventEngine::ForkSupport {
       }
       poller_manager_->Poller()->ResetKickState();
     }
+    if (advance_generation) {
+      grpc_core::MutexLock lock(&mu_);
+      for (const auto& cb : on_advance_generation_callbacks_) {
+        (*cb)();
+      }
+    }
     executor_->PostFork();
     timer_manager_.PostFork();
     SchedulePoller();
@@ -241,7 +267,7 @@ class PosixEngineForkSupport final : public PosixEventEngine::ForkSupport {
 
   void SchedulePoller() override {
     if (poller_manager_ != nullptr && poller_manager_->Poller() != nullptr) {
-      grpc_core::MutexLock lock(&poll_cycle_mu_);
+      grpc_core::MutexLock lock(&mu_);
       CHECK(!polling_cycle_.has_value());
       polling_cycle_.emplace(poller_manager_);
     }
@@ -257,13 +283,30 @@ class PosixEngineForkSupport final : public PosixEventEngine::ForkSupport {
   ThreadPool* executor() const override { return executor_.get(); }
   TimerManager* timer_manager() override { return &timer_manager_; }
 
+  void OnAdvanceGeneration(std::unique_ptr<OnForkCallback> callback) override {
+    grpc_core::MutexLock lock(&mu_);
+    on_advance_generation_callbacks_.emplace_back(std::move(callback));
+    // Cleanup in case we have expired callbacks, prevents the list from growing
+    // indefinitely
+    auto new_end = std::remove_if(
+        on_advance_generation_callbacks_.begin(),
+        on_advance_generation_callbacks_.end(),
+        +[](const std::unique_ptr<OnForkCallback>& callback) {
+          return !callback->IsAlive();
+        });
+    on_advance_generation_callbacks_.erase(
+        new_end, on_advance_generation_callbacks_.end());
+  }
+
  private:
-  grpc_core::Mutex poll_cycle_mu_;
+  grpc_core::Mutex mu_;
   // Ensures there's ever only one of these.
-  std::optional<PollingCycle> polling_cycle_ ABSL_GUARDED_BY(&poll_cycle_mu_);
+  std::optional<PollingCycle> polling_cycle_ ABSL_GUARDED_BY(&mu_);
   std::shared_ptr<ThreadPool> executor_;
   TimerManager timer_manager_;
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
+  std::vector<std::unique_ptr<OnForkCallback>> on_advance_generation_callbacks_
+      ABSL_GUARDED_BY(&mu_);
 };
 
 PollingCycle::PollingCycle(
@@ -745,6 +788,11 @@ PosixEventEngine::GetDNSResolver(
     if (!ares_resolver.ok()) {
       return ares_resolver.status();
     }
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+    fork_support_->OnAdvanceGeneration(
+        std::make_unique<ReinitAresResolverOnFork>(
+            ares_resolver->get()->GetReinitHandle()));
+#endif  // GRPC_ENABLE_FORK_SUPPORT
     return std::make_unique<PosixEventEngine::PosixDNSResolver>(
         std::move(*ares_resolver));
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)

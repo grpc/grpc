@@ -591,7 +591,7 @@ Poller::WorkResult PollPoller::Work(
             pfd_count++;
           } else {
             LOG(ERROR) << "Polling FD from a wrong generation: "
-                       << head->WrappedFd().debug_fd();
+                       << head->WrappedFd();
           }
         }
       }

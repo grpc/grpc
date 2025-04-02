@@ -17,7 +17,6 @@
 #include <atomic>
 #include <unordered_set>
 
-#include "absl/functional/any_invocable.h"
 #include "src/core/lib/experiments/experiments.h"
 
 namespace grpc_event_engine::experimental {
@@ -59,39 +58,6 @@ std::unordered_set<int> FileDescriptorCollection::AdvanceGeneration() {
   std::unordered_set<int> result = std::move(file_descriptors_);
   ++current_generation_;
   return result;
-}
-
-int FileDescriptorCollection::ToInteger(const FileDescriptor& fd) const {
-  int raw = fd.fd_;
-  if (raw <= -1) {
-    return -1;
-  }
-  static const auto fn =
-      IsForkEnabled()
-          ? absl::AnyInvocable<int(int, int) const>(+[](int fd,
-                                                        int gen) -> int {
-              CHECK_LT(fd, 1 << kIntFdBits) << "Too many open file descriptors";
-              return fd + ((gen & kGenerationMask) << kIntFdBits);
-            })
-          : absl::AnyInvocable<int(int, int) const>(
-                +[](int fd, int /* gen */) -> int { return fd; });
-  return fn(raw, fd.generation());
-}
-
-PosixErrorOr<FileDescriptor> FileDescriptorCollection::FromInteger(
-    int fd) const {
-  if (fd <= 0) {
-    return PosixErrorOr<FileDescriptor>(FileDescriptor::Invalid());
-  }
-  if (!IsForkEnabled()) {
-    return PosixErrorOr<FileDescriptor>({fd, 0});
-  }
-  int generation = current_generation_.load(std::memory_order_relaxed);
-  if ((fd >> kIntFdBits) != (generation & kGenerationMask)) {
-    return PosixErrorOr<FileDescriptor>::WrongGeneration();
-  }
-  return PosixErrorOr<FileDescriptor>(
-      FileDescriptor(fd & ((1 << kIntFdBits) - 1), generation));
 }
 
 }  // namespace grpc_event_engine::experimental

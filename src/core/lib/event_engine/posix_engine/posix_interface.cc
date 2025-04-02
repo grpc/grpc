@@ -19,7 +19,6 @@
 #include <sys/types.h>
 
 #include <cerrno>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <utility>
@@ -72,10 +71,6 @@
 #define IF_EPOLL(signature, body) \
   signature { grpc_core::Crash("unimplemented"); }
 #endif  // GRPC_POSIX_SOCKET
-
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-#include <sys/uio.h>
-#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
 #if GPR_LINUX == 1
 // For Linux, it will be detected to support TCP_USER_TIMEOUT
@@ -479,7 +474,7 @@ bool IsSocketReusePortSupported() {
       s = fds.Socket(AF_INET6, SOCK_STREAM, 0);
     }
     if (s.ok()) {
-      bool result = SetSocketReusePort(s->iomgr_fd(), 1).ok();
+      bool result = SetSocketReusePort(s->fd(), 1).ok();
       fds.Close(s.value());
       return result;
     } else {
@@ -744,14 +739,6 @@ PosixErrorOr<void> EventEnginePosixInterface::EventFdWrite(
 #endif  // GRPC_LINUX_EVENTFD
 }
 
-IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::RecvFrom(
-                    const FileDescriptor& fd, void* buf, size_t len, int flags,
-                    struct sockaddr* src_addr, socklen_t* addrlen),
-                {
-                  return Int64Wrap(fd, recvfrom, buf, len, flags, src_addr,
-                                   addrlen);
-                })
-
 IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::RecvMsg(
                     const FileDescriptor& fd, struct msghdr* message,
                     int flags),
@@ -761,16 +748,6 @@ IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::SendMsg(
                     const FileDescriptor& fd, const struct msghdr* message,
                     int flags),
                 { return Int64Wrap(fd, sendmsg, message, flags); })
-
-PosixErrorOr<int64_t> EventEnginePosixInterface::WriteV(
-    const FileDescriptor& fd, const struct iovec* iov, int iovcnt) {
-#if defined(GRPC_POSIX_SOCKET) && GRPC_ARES == 1 && \
-    defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-  return Int64Wrap(fd, writev, iov, iovcnt);
-#else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-  grpc_core::Crash("Not available");
-#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-}
 
 //
 // Epoll

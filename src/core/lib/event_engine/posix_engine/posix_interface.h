@@ -60,38 +60,6 @@ class EventEnginePosixInterface {
   absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>> Pipe();
   PosixErrorOr<FileDescriptor> EpollCreateAndCloexec();
 
-  // Represents fd as integer. Needed for APIs like ARES, that need to have
-  // a single int as a handle.
-  int ToInteger(const FileDescriptor& fd) {
-#if GRPC_ENABLE_FORK_SUPPORT
-    static const auto kToInteger =
-        grpc_core::IsEventEngineForkEnabled()
-            ? [](const FileDescriptorCollection& collection,
-                 const FileDescriptor& fd) { return collection.ToInteger(fd); }
-            : [](const FileDescriptorCollection& collection,
-                 const FileDescriptor& fd) { return fd.fd_; };
-    return kToInteger(descriptors_, fd);
-#else   // GRPC_ENABLE_FORK_SUPPORT
-    return fd.fd_;
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-  }
-
-  // May return a wrong generation error
-  PosixErrorOr<FileDescriptor> FromInteger(int fd) {
-#if GRPC_ENABLE_FORK_SUPPORT
-    static const auto kFromInteger =
-        grpc_core::IsEventEngineForkEnabled()
-            ? [](const FileDescriptorCollection& collection,
-                 int fd) { return collection.FromInteger(fd); }
-            : [](const FileDescriptorCollection& collection, int fd) {
-                return PosixErrorOr<FileDescriptor>(FileDescriptor(fd, 0));
-              };
-    return kFromInteger(descriptors_, fd);
-#else   // GRPC_ENABLE_FORK_SUPPORT
-    return PosixErrorOr<FileDescriptor>(FileDescriptor(fd, 0));
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-  }
-
   // Creates a new socket for connecting to (or listening on) an address.
   //
   // If addr is AF_INET6, this creates an IPv6 socket first.  If that fails,
@@ -120,9 +88,6 @@ class EventEnginePosixInterface {
   PosixErrorOr<void> GetSockOpt(const FileDescriptor& fd, int level,
                                 int optname, void* optval, void* optlen);
   PosixErrorOr<void> Ioctl(const FileDescriptor& fd, int op, void* arg);
-  PosixErrorOr<int64_t> RecvFrom(const FileDescriptor& fd, void* buf,
-                                 size_t len, int flags,
-                                 struct sockaddr* src_addr, socklen_t* addrlen);
   PosixErrorOr<int64_t> Read(const FileDescriptor& fd, absl::Span<char> buffer);
   PosixErrorOr<int64_t> RecvMsg(const FileDescriptor& fd,
                                 struct msghdr* message, int flags);
@@ -133,8 +98,6 @@ class EventEnginePosixInterface {
   PosixErrorOr<void> Shutdown(const FileDescriptor& fd, int how);
   PosixErrorOr<int64_t> Write(const FileDescriptor& fd,
                               absl::Span<char> buffer);
-  PosixErrorOr<int64_t> WriteV(const FileDescriptor& fd,
-                               const struct iovec* iov, int iovcnt);
 
   // Epoll
   PosixErrorOr<void> EpollCtlAdd(const FileDescriptor& epfd, bool writable,
@@ -191,6 +154,13 @@ class EventEnginePosixInterface {
 
   PosixErrorOr<void> EventFdRead(const FileDescriptor& fd);
   PosixErrorOr<void> EventFdWrite(const FileDescriptor& fd);
+  int generation() const {
+#if GRPC_ENABLE_FORK_SUPPORT
+    return descriptors_.generation();
+#else   // GRPC_ENABLE_FORK_SUPPORT
+    return 0;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+  }
 
  private:
   absl::Status PrepareTcpClientSocket(int fd,
