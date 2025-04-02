@@ -26,6 +26,8 @@
 #include <thread>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
@@ -161,7 +163,7 @@ class AdsServiceImpl
   }
 
   // Starts the service.
-  void Start();
+  void Start() {}
 
   // Shuts down the service.
   void Shutdown();
@@ -183,27 +185,20 @@ class AdsServiceImpl
   }
 
  private:
-  // A queue of resource type/name pairs that have changed since the client
-  // subscribed to them.
-  using UpdateQueue = std::deque<
-      std::pair<std::string /*type_url*/, std::string /*resource_name*/>>;
-
   class Reactor
       : public ServerBidiReactor<DiscoveryRequest, DiscoveryResponse> {
    public:
     Reactor(std::shared_ptr<AdsServiceImpl> ads_service_impl,
             CallbackServerContext* context);
 
-   private:
-    // A struct representing a client's subscription to a particular resource.
-    struct SubscriptionState {
-      // The queue upon which to place updates when the resource is updated.
-      UpdateQueue* update_queue;
-    };
+    void MaybeStartWrite(const std::string& resource_type)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AdsServiceImpl::ads_mu_);
 
-    // A struct representing the a client's subscription to all the resources.
+   private:
+    // A struct representing the client's subscription to all the resources.
     using SubscriptionNameMap =
-        std::map<std::string /*resource_name*/, SubscriptionState>;
+        absl::flat_hash_map<std::string /*resource_name*/,
+                            bool /*new_subscription*/>;
     using SubscriptionMap =
         std::map<std::string /*type_url*/, SubscriptionNameMap>;
 
@@ -218,56 +213,15 @@ class AdsServiceImpl
     void OnDone() override;
     void OnCancel() override;
 
-    void StartWrite(const std::string& resource_type)
+    void MaybeStartNextWrite()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AdsServiceImpl::ads_mu_);
-
-    // Processes a resource update from the test.
-    // Populates response if needed.
-    void ProcessUpdate(const std::string& resource_type,
-                       const std::string& resource_name,
-                       SubscriptionMap* subscription_map,
-                       SentState* sent_state,
-                       std::optional<DiscoveryResponse>* response)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AdsServiceImpl::ads_mu_);
-
-    // Completing the building a DiscoveryResponse by adding common information
-    // for all resources and by adding all subscribed resources for LDS and CDS.
-    void CompleteBuildingDiscoveryResponse(
-        const std::string& resource_type, const int version,
-        const SubscriptionNameMap& subscription_name_map,
-        const std::set<std::string>& resources_added_to_response,
-        SentState* sent_state, DiscoveryResponse* response)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AdsServiceImpl::ads_mu_);
-
-    // Checks whether the client needs to receive a newer version of
-    // the resource.
-    static bool ClientNeedsResourceUpdate(
-        const ResourceTypeState& resource_type_state,
-        const ResourceState& resource_state, int client_resource_type_version);
-
-    // Subscribes to a resource if not already subscribed:
-    // 1. Sets the update_queue field in subscription_state.
-    // 2. Adds subscription_state to resource_state->subscriptions.
-    bool MaybeSubscribe(const std::string& resource_type,
-                        const std::string& resource_name,
-                        SubscriptionState* subscription_state,
-                        ResourceState* resource_state,
-                        UpdateQueue* update_queue);
-
-    // Removes subscriptions for resources no longer present in the
-    // current request.
-    void ProcessUnsubscriptions(
-        const std::string& resource_type,
-        const std::set<std::string>& resources_in_current_request,
-        SubscriptionNameMap* subscription_name_map,
-        ResourceNameMap* resource_name_map);
 
     std::shared_ptr<AdsServiceImpl> ads_service_impl_;
     CallbackServerContext* context_;
 
-    // Resources (type/name pairs) that have changed since the client
-    // subscribed to them.
-    UpdateQueue update_queue_;
+// FIXME: use our own lock
+
+// FIXME: combine these two maps
     // Resources that the client will be subscribed to keyed by resource type
     // url.
     SubscriptionMap subscription_map_;
@@ -278,7 +232,7 @@ class AdsServiceImpl
     DiscoveryResponse response_;
     bool seen_first_request_ = false;
 
-    bool write_pending_ = false ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_);
+    bool write_pending_ ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_) = false;
     std::set<std::string /*type_url*/> response_needed_
         ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_);
   };
@@ -290,12 +244,12 @@ class AdsServiceImpl
     // The resource type version that this resource was last updated in.
     int resource_type_version = 0;
     // A list of subscriptions to this resource.
-    std::set<SubscriptionState*> subscriptions;
+    std::set<Reactor*> subscriptions;
   };
 
   // The current state for all individual resources of a given type.
   using ResourceNameMap =
-      std::map<std::string /*resource_name*/, ResourceState>;
+      absl::flat_hash_map<std::string /*resource_name*/, ResourceState>;
 
   struct ResourceTypeState {
     int resource_type_version = 0;
@@ -323,9 +277,8 @@ class AdsServiceImpl
   std::function<void(absl::StatusCode)> check_nack_status_code_;
   std::string debug_label_;
 
-  grpc_core::CondVar ads_cond_;
   grpc_core::Mutex ads_mu_;
-  bool ads_done_ ABSL_GUARDED_BY(ads_mu_) = false;
+// FIXME: combine various maps
   std::map<std::string /*type_url*/, std::deque<ResponseState>>
       resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
   std::set<std::string /*resource_type*/> resource_types_to_ignore_
