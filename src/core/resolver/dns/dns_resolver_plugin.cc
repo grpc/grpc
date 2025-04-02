@@ -38,8 +38,7 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
 #endif
 #ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
   if (IsEventEngineDnsEnabled()) {
-    grpc_core::Crash(
-        "Hypothesis disproven: iOS depends on the experiment system");
+    Crash("Hypothesis disproven: iOS depends on the experiment system");
     VLOG(2) << "Using EventEngine dns resolver";
     builder->resolver_registry()->RegisterResolverFactory(
         std::make_unique<EventEngineClientChannelDNSResolverFactory>());
