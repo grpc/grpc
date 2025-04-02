@@ -55,7 +55,7 @@
 
 namespace grpc_core {
 
-using grpc_core::http2::Http2ErrorCode;
+using http2::Http2ErrorCode;
 
 namespace {
 constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);

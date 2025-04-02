@@ -99,11 +99,11 @@
 
 namespace grpc_core {
 
-using grpc_core::http2::Http2ErrorCode;
 using grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::EventEngineSupportsFdExtension;
 using grpc_event_engine::experimental::QueryExtension;
+using http2::Http2ErrorCode;
 
 const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
