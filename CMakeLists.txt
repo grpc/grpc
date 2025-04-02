@@ -12858,6 +12858,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(end2end_chaotic_good_no_logging_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::log_entry
+    absl::log_sink
+    absl::log_sink_registry
     grpc_authorization_provider
     ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
@@ -13043,6 +13046,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(end2end_chaotic_good_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::log_entry
+    absl::log_sink
+    absl::log_sink_registry
     grpc_authorization_provider
     ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
@@ -13139,6 +13145,9 @@ target_include_directories(end2end_http2_no_logging_test
 target_link_libraries(end2end_http2_no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -13234,6 +13243,9 @@ target_include_directories(end2end_http2_security_no_logging_test
 target_link_libraries(end2end_http2_security_no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -13417,6 +13429,9 @@ target_include_directories(end2end_http2_security_test
 target_link_libraries(end2end_http2_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -13600,6 +13615,9 @@ target_include_directories(end2end_http2_test
 target_link_libraries(end2end_http2_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -13695,6 +13713,9 @@ target_include_directories(end2end_inproc_no_logging_test
 target_link_libraries(end2end_inproc_no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -13878,6 +13899,9 @@ target_include_directories(end2end_inproc_test
 target_link_libraries(end2end_inproc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -13973,6 +13997,9 @@ target_include_directories(end2end_posix_no_logging_test
 target_link_libraries(end2end_posix_no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -14156,6 +14183,9 @@ target_include_directories(end2end_posix_test
 target_link_libraries(end2end_posix_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
