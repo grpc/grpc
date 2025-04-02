@@ -138,6 +138,7 @@ class PosixEventEngine::ForkSupport {
       }
       poller_manager_->Poller()->ResetKickState();
     }
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
     if (advance_generation) {
       grpc_core::MutexLock lock(&mu_);
       for (const auto& cb : resolver_handles_) {
@@ -145,6 +146,7 @@ class PosixEventEngine::ForkSupport {
         locked->Reinit();
       }
     }
+#endif
     executor_->PostFork();
     timer_manager_.PostFork();
     SchedulePoller();
@@ -168,6 +170,8 @@ class PosixEventEngine::ForkSupport {
   ThreadPool* executor() const { return executor_.get(); }
   TimerManager* timer_manager() { return &timer_manager_; }
 
+#if defined(GRPC_ENABLE_FORK_SUPPORT) && GRPC_ARES == 1 && \
+    defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   void OnAdvanceGeneration(
       std::weak_ptr<AresResolver::ReinitHandle> resolver_handle) {
     grpc_core::MutexLock lock(&mu_);
@@ -181,6 +185,7 @@ class PosixEventEngine::ForkSupport {
         });
     resolver_handles_.erase(new_end, resolver_handles_.end());
   }
+#endif
 
  private:
   // RAII wrapper for a polling cycle. Starts a new one in ctor and stops
@@ -207,8 +212,11 @@ class PosixEventEngine::ForkSupport {
   std::shared_ptr<ThreadPool> executor_;
   TimerManager timer_manager_;
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
+#if defined(GRPC_ENABLE_FORK_SUPPORT) && GRPC_ARES == 1 && \
+    defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   std::vector<std::weak_ptr<AresResolver::ReinitHandle>> resolver_handles_
       ABSL_GUARDED_BY(&mu_);
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
 namespace {
