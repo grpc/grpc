@@ -346,8 +346,8 @@ TEST_F(PollerForkTest, ListenerInParent) {
   LOG(INFO) << "Before fork in parent";
   // Let the data reach the buffers
   absl::SleepFor(absl::Milliseconds(50 * grpc_test_slowdown_factor()));
-  ee()->fork_support_for_tests()->BeforeFork();
-  ee()->fork_support_for_tests()->AfterFork(false);
+  ee()->BeforeForkForTests();
+  ee()->AfterForkForTests(false);
   LOG(INFO) << "After fork in parent";
   ASSERT_THAT(client.Read(write_buffer.Length()), IsOk());
   ASSERT_THAT(client.Write("Hi!"), IsOk());
@@ -388,8 +388,8 @@ TEST_F(PollerForkTest, ListenerInChild) {
   LOG(INFO) << "Before fork in child";
   // Let the data reach the buffers
   absl::SleepFor(absl::Milliseconds(50 * grpc_test_slowdown_factor()));
-  ee()->fork_support_for_tests()->BeforeFork();
-  ee()->fork_support_for_tests()->AfterFork(true);
+  ee()->BeforeForkForTests();
+  ee()->AfterForkForTests(true);
   LOG(INFO) << "After fork in child";
   EXPECT_THAT(read_status.AwaitStatus(),
               StatusIs(absl::StatusCode::kResourceExhausted));

@@ -34,7 +34,6 @@
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/iomgr/port.h"
@@ -133,25 +132,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                                public grpc_core::KeepsGrpcInitialized {
  public:
   // An interface for objects that handle fork
-  class ForkSupport {
-   public:
-    class OnForkCallback {
-     public:
-      virtual ~OnForkCallback() = default;
-      virtual bool IsAlive() const = 0;
-      virtual void operator()() const = 0;
-    };
-
-    virtual ~ForkSupport() = default;
-    virtual void BeforeFork() = 0;
-    virtual void AfterFork(bool advance_generation) = 0;
-    virtual void SchedulePoller() = 0;
-    virtual PosixEventPoller* Poller() const = 0;
-    virtual ThreadPool* executor() const = 0;
-    virtual TimerManager* timer_manager() = 0;
-    virtual void OnAdvanceGeneration(
-        std::unique_ptr<OnForkCallback> callback) = 0;
-  };
+  class ForkSupport;
 
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
@@ -227,9 +208,9 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-  std::shared_ptr<ForkSupport> fork_support_for_tests() const {
-    return fork_support_;
-  }
+  PosixEventPoller* PollerForTests() const;
+  void AfterForkForTests(bool advance_generation);
+  void BeforeForkForTests();
 
   // The posix EventEngine returned by this method would have a shared ownership
   // of the poller and would not be in-charge of driving the poller by calling

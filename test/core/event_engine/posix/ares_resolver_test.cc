@@ -19,6 +19,7 @@
 
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/test_config.h"
 
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
@@ -46,7 +47,7 @@ class AresResolverTest : public testing::Test {
 
   std::unique_ptr<GrpcPolledFdFactory> MakePolledFdFactory() {
     return std::make_unique<GrpcPolledFdFactoryPosix>(
-        event_engine_->fork_support_for_tests()->Poller());
+        event_engine_->PollerForTests());
   }
 
   std::shared_ptr<PosixEventEngine> event_engine_;
@@ -82,7 +83,7 @@ TEST_F(AresResolverTest, ForkSupportInParent) {
   // code. It is ok for unit test that is aware of actual implementation.
   // The trick here is that polling should be stopped so the callback is not
   // called before AfterFork
-  event_engine_->fork_support_for_tests()->BeforeFork();
+  event_engine_->BeforeForkForTests();
   resolver->get()->LookupHostname(
       [&](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
         lookup_result = std::move(result);
@@ -90,7 +91,7 @@ TEST_F(AresResolverTest, ForkSupportInParent) {
       },
       "youtube.com", "80");
   // Parent does not advance generation
-  event_engine_->fork_support_for_tests()->AfterFork(false);
+  event_engine_->AfterForkForTests(false);
   notification.WaitForNotification();
   ASSERT_TRUE(lookup_result.ok()) << lookup_result.status();
   EXPECT_FALSE(lookup_result.value().empty());
@@ -102,7 +103,7 @@ TEST_F(AresResolverTest, ForkSupportInChild) {
   ASSERT_NE(*resolver, nullptr);
   grpc_core::Notification notification;
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> lookup_result;
-  event_engine_->fork_support_for_tests()->BeforeFork();
+  event_engine_->BeforeForkForTests();
   resolver->get()->LookupHostname(
       [&](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
         lookup_result = std::move(result);
@@ -110,7 +111,7 @@ TEST_F(AresResolverTest, ForkSupportInChild) {
       },
       "google.com", "80");
   // Child advances the generation
-  event_engine_->fork_support_for_tests()->AfterFork(true);
+  event_engine_->AfterForkForTests(true);
   notification.WaitForNotification();
   // This "unknown" error comes from the Ares library when the CAres channel is
   // closed.
