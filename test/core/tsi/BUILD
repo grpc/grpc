@@ -44,6 +44,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:tsi_fake_credentials",
     ],
 )
 

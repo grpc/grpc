@@ -15127,6 +15127,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(fake_transport_security_test
+  test/core/test_util/fake_transport_security.cc
   test/core/tsi/fake_transport_security_test.cc
   test/core/tsi/transport_security_test_lib.cc
 )

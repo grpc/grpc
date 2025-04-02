@@ -10220,8 +10220,10 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/fake_transport_security.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/test_util/fake_transport_security.cc
   - test/core/tsi/fake_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
