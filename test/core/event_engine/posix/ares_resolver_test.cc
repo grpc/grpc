@@ -59,13 +59,12 @@ TEST_F(AresResolverTest, ResolveGoogleCom) {
   ASSERT_NE(*resolver, nullptr);
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> lookup_result;
   grpc_core::Notification notification;
-      resolver->get()->LookupHostname(
-          [&](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-                  result) {
-            lookup_result = std::move(result);
-            notification.Notify();
-          },
-          "google.com", "80");
+  resolver->get()->LookupHostname(
+      [&](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+        lookup_result = std::move(result);
+        notification.Notify();
+      },
+      "google.com", "80");
   notification.WaitForNotification();
   ASSERT_TRUE(lookup_result.ok()) << lookup_result.status();
   EXPECT_FALSE(lookup_result.value().empty());

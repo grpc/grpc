@@ -308,7 +308,6 @@ grpc_cc_test(
     ],
 )
 
-
 grpc_cc_test(
     name = "ares_resolver_test",
     srcs = ["ares_resolver_test.cc"],
