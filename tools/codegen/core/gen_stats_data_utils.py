@@ -27,8 +27,7 @@ _REQUIRED_FIELDS = ["name", "doc", "scope"]
 def make_type(name, fields, defaults):
     return (
         collections.namedtuple(
-            name, " ".join(_REQUIRED_FIELDS + fields),
-            defaults = defaults
+            name, " ".join(_REQUIRED_FIELDS + fields), defaults=defaults
         ),
         [],
     )
@@ -129,6 +128,30 @@ def snake_to_pascal(name):
     return "".join([x.capitalize() for x in name.split("_")])
 
 
+Shape = collections.namedtuple("Shape", "max buckets bits")
+
+
+def shape_signature(shape):
+    return "%d_%d_%d" % (shape.max, shape.buckets, shape.bits)
+
+
+def histogram_shape(histogram, global_scope):
+    if global_scope:
+        return Shape(histogram.max, histogram.buckets, 64)
+    else:
+        return Shape(
+            histogram.max,
+            histogram.scope_buckets
+            if histogram.scope_buckets
+            else histogram.buckets,
+            histogram.scope_counter_bits,
+        )
+
+
+def histogram_shape_signature(histogram, global_scope):
+    return shape_signature(histogram_shape(histogram, global_scope))
+
+
 class StatsDataGenerator:
     """Generates stats_data.h and stats_data.cc."""
 
@@ -137,10 +160,11 @@ class StatsDataGenerator:
         self._types = (
             make_type("Counter", [], []),
             make_type(
-                "Histogram", ["max", "buckets", "scope_counter_bits"], [64]
+                "Histogram",
+                ["max", "buckets", "scope_counter_bits", "scope_buckets"],
+                [64, 0],
             ),
         )
-        self._shape = collections.namedtuple("Shape", "max buckets")
         self._inst_map = dict((t[0].__name__, t[1]) for t in self._types)
         self._static_tables = []
         self._shapes = set()
@@ -158,9 +182,9 @@ class StatsDataGenerator:
                     break
             assert found, "Bad decl: %s" % attr
         for histogram in self._inst_map["Histogram"]:
-            self._shapes.add(
-                self._shape(max=histogram.max, buckets=histogram.buckets)
-            )
+            self._shapes.add(histogram_shape(histogram, True))
+            if histogram.scope != "global":
+                self._shapes.add(histogram_shape(histogram, False))
         # make self._scopes a sorted list, but with global at the start
         assert "global" in self._scopes
         self._scopes.remove("global")
@@ -305,19 +329,20 @@ class StatsDataGenerator:
                 )
 
             for shape in self._shapes:
+                if shape.bits == 64:
+                    print(
+                        "class HistogramCollector_%s;" % shape_signature(shape),
+                        file=H,
+                    )
                 print(
-                    "class HistogramCollector_%d_%d;"
-                    % (shape.max, shape.buckets),
-                    file=H,
-                )
-                print(
-                    "class Histogram_%d_%d {" % (shape.max, shape.buckets),
+                    "class Histogram_%s {" % shape_signature(shape),
                     file=H,
                 )
                 print(" public:", file=H)
                 print("  static int BucketFor(int value);", file=H)
                 print(
-                    "  const uint64_t* buckets() const { return buckets_; }",
+                    "  const uint%d_t* buckets() const { return buckets_; }"
+                    % shape.bits,
                     file=H,
                 )
                 print(
@@ -326,60 +351,86 @@ class StatsDataGenerator:
                     file=H,
                 )
                 print("  void Increment(int value) {", file=H)
-                print(
-                    "    ++buckets_[Histogram_%d_%d::BucketFor(value)];"
-                    % (shape.max, shape.buckets),
-                    file=H,
-                )
+                if shape.bits == 64:
+                    print(
+                        "    ++buckets_[Histogram_%s::BucketFor(value)];"
+                        % shape_signature(shape),
+                        file=H,
+                    )
+                else:
+                    print(
+                        "    auto& bucket = buckets_[Histogram_%s::BucketFor(value)];"
+                        % shape_signature(shape),
+                        file=H,
+                    )
+                    print(
+                        "    if (GPR_UNLIKELY(bucket == std::numeric_limits<uint%d_t>::max())) {"
+                        % shape.bits,
+                        file=H,
+                    )
+                    print(
+                        "      for (size_t i=0; i<%d; ++i) {" % shape.buckets,
+                        file=H,
+                    )
+                    print("        buckets_[i] /= 2;", file=H)
+                    print("      }", file=H)
+                    print("    }", file=H)
+                    print("    ++bucket;", file=H)
                 print("  }", file=H)
-                print(
-                    "  friend Histogram_%d_%d operator-(const Histogram_%d_%d& left,"
-                    " const Histogram_%d_%d& right);"
-                    % (
-                        shape.max,
-                        shape.buckets,
-                        shape.max,
-                        shape.buckets,
-                        shape.max,
-                        shape.buckets,
-                    ),
-                    file=H,
-                )
+                if shape.bits == 64:
+                    print(
+                        "  friend Histogram_%s operator-(const Histogram_%s& left,"
+                        " const Histogram_%s& right);"
+                        % (
+                            shape_signature(shape),
+                            shape_signature(shape),
+                            shape_signature(shape),
+                        ),
+                        file=H,
+                    )
                 print(" private:", file=H)
+                if shape.bits == 64:
+                    print(
+                        "  friend class HistogramCollector_%s;"
+                        % shape_signature(shape),
+                        file=H,
+                    )
                 print(
-                    "  friend class HistogramCollector_%d_%d;"
-                    % (shape.max, shape.buckets),
-                    file=H,
-                )
-                print("  uint64_t buckets_[%d]{};" % shape.buckets, file=H)
-                print("};", file=H)
-                print(
-                    "class HistogramCollector_%d_%d {"
-                    % (shape.max, shape.buckets),
-                    file=H,
-                )
-                print(" public:", file=H)
-                print("  void Increment(int value) {", file=H)
-                print(
-                    "    buckets_[Histogram_%d_%d::BucketFor(value)]"
-                    % (shape.max, shape.buckets),
-                    file=H,
-                )
-                print(
-                    "        .fetch_add(1, std::memory_order_relaxed);", file=H
-                )
-                print("  }", file=H)
-                print(
-                    "  void Collect(Histogram_%d_%d* result) const;"
-                    % (shape.max, shape.buckets),
-                    file=H,
-                )
-                print(" private:", file=H)
-                print(
-                    "  std::atomic<uint64_t> buckets_[%d]{};" % shape.buckets,
+                    "  uint%d_t buckets_[%d]{};" % (shape.bits, shape.buckets),
                     file=H,
                 )
                 print("};", file=H)
+
+                if shape.bits == 64:
+                    print(
+                        "class HistogramCollector_%s {"
+                        % shape_signature(shape),
+                        file=H,
+                    )
+                    print(" public:", file=H)
+                    print("  void Increment(int value) {", file=H)
+                    print(
+                        "    buckets_[Histogram_%s::BucketFor(value)]"
+                        % shape_signature(shape),
+                        file=H,
+                    )
+                    print(
+                        "        .fetch_add(1, std::memory_order_relaxed);",
+                        file=H,
+                    )
+                    print("  }", file=H)
+                    print(
+                        "  void Collect(Histogram_%s* result) const;"
+                        % shape_signature(shape),
+                        file=H,
+                    )
+                    print(" private:", file=H)
+                    print(
+                        "  std::atomic<uint64_t> buckets_[%d]{};"
+                        % shape.buckets,
+                        file=H,
+                    )
+                    print("};", file=H)
 
             for scope in self._scopes:
                 include_ctr = (
@@ -447,14 +498,17 @@ class StatsDataGenerator:
                     if not include_ctr(ctr):
                         continue
                     print(
-                        "  Histogram_%d_%d %s;"
-                        % (ctr.max, ctr.buckets, ctr.name),
+                        "  Histogram_%s %s;"
+                        % (
+                            histogram_shape_signature(ctr, scope == "global"),
+                            ctr.name,
+                        ),
                         file=H,
                     )
-                print(
-                    "  HistogramView histogram(Histogram which) const;", file=H
-                )
                 if scope == "global":
+                    print(
+                        "  HistogramView histogram(Histogram which) const;", file=H
+                    )
                     print(
                         "  std::unique_ptr<%s> Diff(const %s& other) const;"
                         % (class_name, class_name),
@@ -522,8 +576,13 @@ class StatsDataGenerator:
                         if not include_ctr(ctr):
                             continue
                         print(
-                            "    HistogramCollector_%d_%d %s;"
-                            % (ctr.max, ctr.buckets, ctr.name),
+                            "    HistogramCollector_%s %s;"
+                            % (
+                                histogram_shape_signature(
+                                    ctr, scope == "global"
+                                ),
+                                ctr.name,
+                            ),
                             file=H,
                         )
                     print("  };", file=H)
@@ -629,47 +688,49 @@ class StatsDataGenerator:
             )
 
             for shape in self._shapes:
-                print(
-                    "void HistogramCollector_%d_%d::Collect(Histogram_%d_%d* result)"
-                    " const {"
-                    % (shape.max, shape.buckets, shape.max, shape.buckets),
-                    file=C,
-                )
-                print("  for (int i=0; i<%d; i++) {" % shape.buckets, file=C)
-                print(
-                    (
-                        "    result->buckets_[i] +="
-                        " buckets_[i].load(std::memory_order_relaxed);"
-                    ),
-                    file=C,
-                )
-                print("  }", file=C)
-                print("}", file=C)
-                print(
-                    "Histogram_%d_%d operator-(const Histogram_%d_%d& left, const"
-                    " Histogram_%d_%d& right) {"
-                    % (
-                        shape.max,
-                        shape.buckets,
-                        shape.max,
-                        shape.buckets,
-                        shape.max,
-                        shape.buckets,
-                    ),
-                    file=C,
-                )
-                print(
-                    "  Histogram_%d_%d result;" % (shape.max, shape.buckets),
-                    file=C,
-                )
-                print("  for (int i=0; i<%d; i++) {" % shape.buckets, file=C)
-                print(
-                    "    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];",
-                    file=C,
-                )
-                print("  }", file=C)
-                print("  return result;", file=C)
-                print("}", file=C)
+                if shape.bits == 64:
+                    print(
+                        "void HistogramCollector_%s::Collect(Histogram_%s* result)"
+                        " const {"
+                        % (shape_signature(shape), shape_signature(shape)),
+                        file=C,
+                    )
+                    print(
+                        "  for (int i=0; i<%d; i++) {" % shape.buckets, file=C
+                    )
+                    print(
+                        (
+                            "    result->buckets_[i] +="
+                            " buckets_[i].load(std::memory_order_relaxed);"
+                        ),
+                        file=C,
+                    )
+                    print("  }", file=C)
+                    print("}", file=C)
+                    print(
+                        "Histogram_%s operator-(const Histogram_%s& left, const"
+                        " Histogram_%s& right) {"
+                        % (
+                            shape_signature(shape),
+                            shape_signature(shape),
+                            shape_signature(shape),
+                        ),
+                        file=C,
+                    )
+                    print(
+                        "  Histogram_%s result;" % shape_signature(shape),
+                        file=C,
+                    )
+                    print(
+                        "  for (int i=0; i<%d; i++) {" % shape.buckets, file=C
+                    )
+                    print(
+                        "    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];",
+                        file=C,
+                    )
+                    print("  }", file=C)
+                    print("  return result;", file=C)
+                    print("}", file=C)
 
             print("namespace {", file=C)
             for i, tbl in enumerate(self._static_tables):
@@ -687,15 +748,13 @@ class StatsDataGenerator:
 
             for shape, code in zip(self._shapes, histo_code):
                 print(
-                    "int Histogram_%d_%d::BucketFor(int value) {%s}"
-                    % (shape.max, shape.buckets, code),
+                    "int Histogram_%s::BucketFor(int value) {%s}"
+                    % (shape_signature(shape), code),
                     file=C,
                 )
 
             for scope in self._scopes:
-                include_ctr = (
-                    lambda ctr: scope == "global" or ctr.scope == scope
-                )
+                include_ctr = (lambda ctr: scope == "global" or ctr.scope == scope)
                 class_name = snake_to_pascal(scope) + "Stats"
                 for typename, instances in sorted(self._inst_map.items()):
                     print(
@@ -735,39 +794,38 @@ class StatsDataGenerator:
                     file=C,
                 )
 
-                print(
-                    "HistogramView %s::histogram(Histogram which) const {"
-                    % class_name,
-                    file=C,
-                )
-                print("  switch (which) {", file=C)
-                print(
-                    "    default: GPR_UNREACHABLE_CODE(return HistogramView());",
-                    file=C,
-                )
-                for inst in self._inst_map["Histogram"]:
-                    if not include_ctr(inst):
-                        continue
+                if scope == "global":
                     print(
-                        "    case Histogram::k%s:" % snake_to_pascal(inst.name),
+                        "HistogramView %s::histogram(Histogram which) const {"
+                        % class_name,
                         file=C,
                     )
+                    print("  switch (which) {", file=C)
                     print(
-                        "      return HistogramView{&Histogram_%d_%d::BucketFor,"
-                        " kStatsTable%d, %d, %s.buckets()};"
-                        % (
-                            inst.max,
-                            inst.buckets,
-                            histo_bucket_boundaries[
-                                self._shape(inst.max, inst.buckets)
-                            ],
-                            inst.buckets,
-                            inst.name,
-                        ),
+                        "    default: GPR_UNREACHABLE_CODE(return HistogramView());",
                         file=C,
                     )
-                print("  }", file=C)
-                print("}", file=C)
+                    for inst in self._inst_map["Histogram"]:
+                        if not include_ctr(inst):
+                            continue
+                        print(
+                            "    case Histogram::k%s:" % snake_to_pascal(inst.name),
+                            file=C,
+                        )
+                        shape = histogram_shape(inst, inst.scope == "global")
+                        print(
+                            "      return HistogramView{&Histogram_%s::BucketFor,"
+                            " kStatsTable%d, %d, %s.buckets()};"
+                            % (
+                                shape_signature(shape),
+                                histo_bucket_boundaries[shape],
+                                shape.buckets,
+                                inst.name,
+                            ),
+                            file=C,
+                        )
+                    print("  }", file=C)
+                    print("}", file=C)
 
             print(
                 "std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect()"

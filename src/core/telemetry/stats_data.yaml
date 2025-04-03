@@ -180,6 +180,7 @@
   buckets: 50
   scope: http2
   scope_counter_bits: 8
+  scope_buckets: 8
 - histogram: http2_write_data_frame_size
   doc: Number of bytes for each data frame written
   max: 16777216
