@@ -518,7 +518,7 @@ PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
   addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
   return fd;
 close_and_error:
-  auto result = PosixErrorOr<FileDescriptor>::Error(errno);
+  PosixErrorOr<FileDescriptor> result(PosixError::Error(errno));
   Close(fd.value());
   return result;
 }
