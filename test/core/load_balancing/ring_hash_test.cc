@@ -436,12 +436,29 @@ TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
   }
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
+  // Before we get the new picker, do a bunch more picks with the old
+  // picker, to ensure that we don't trigger any new connection attempts.
+  // (We shouldn't have even created the other subchannels yet.)
+  for (size_t i = 0; i < 10; ++i) {
+    ExpectPickQueued(picker.get());
+  }
+  WaitForWorkSerializerToFlush();
+  WaitForWorkSerializerToFlush();
+  for (size_t i = 0; i < kAddresses.size(); ++i) {
+    if (i != index) {
+      EXPECT_EQ(nullptr, FindSubchannel(kAddresses[i])) << "index " << i;
+    }
+  }
+  // Now the subchannel that we triggered the connection attempt on
+  // reports CONNECTING, which triggers returning a new picker.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
   ExpectPickQueued(picker.get());
   // No other subchannels should have been created yet.
   for (size_t i = 0; i < kAddresses.size(); ++i) {
-    if (i != index) EXPECT_EQ(nullptr, FindSubchannel(kAddresses[i]));
+    if (i != index) {
+      EXPECT_EQ(nullptr, FindSubchannel(kAddresses[i])) << "index " << i;
+    }
   }
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);

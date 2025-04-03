@@ -24,6 +24,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <map>
 #include <memory>
@@ -252,7 +253,7 @@ class RingHash final : public LoadBalancingPolicy {
       for (const auto& [_, endpoint] : ring_hash_->endpoint_map_) {
         endpoints_[endpoint->index()] = endpoint->GetInfoForPicker();
         if (endpoints_[endpoint->index()].state == GRPC_CHANNEL_CONNECTING) {
-          has_endpoint_in_connecting_state_ = true;
+          has_endpoint_in_connecting_state_.store(true);
         }
       }
     }
@@ -292,7 +293,7 @@ class RingHash final : public LoadBalancingPolicy {
     RefCountedPtr<RingHash> ring_hash_;
     RefCountedPtr<Ring> ring_;
     std::vector<RingHashEndpoint::EndpointInfo> endpoints_;
-    bool has_endpoint_in_connecting_state_ = false;
+    std::atomic<bool> has_endpoint_in_connecting_state_{false};
     std::string resolution_note_;
     RefCountedStringValue request_hash_header_;
   };
@@ -405,21 +406,23 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   } else {
     // Using a random hash.  We will use the first READY endpoint we
     // find, triggering at most one endpoint to attempt connecting.
-    bool requested_connection = has_endpoint_in_connecting_state_;
+    bool connection_attempt_pending = false;
     for (size_t i = 0; i < ring.size(); ++i) {
       const auto& entry = ring[(index + i) % ring.size()];
       const auto& endpoint_info = endpoints_[entry.endpoint_index];
       if (endpoint_info.state == GRPC_CHANNEL_READY) {
         return endpoint_info.picker->Pick(args);
       }
-      if (!requested_connection && endpoint_info.state == GRPC_CHANNEL_IDLE) {
-        new EndpointConnectionAttempter(
-            ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
-            endpoint_info.endpoint);
-        requested_connection = true;
+      if (endpoint_info.state == GRPC_CHANNEL_IDLE) {
+        if (!has_endpoint_in_connecting_state_.exchange(true)) {
+          new EndpointConnectionAttempter(
+              ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
+              endpoint_info.endpoint);
+        }
+        connection_attempt_pending = true;
       }
     }
-    if (requested_connection) return PickResult::Queue();
+    if (connection_attempt_pending) return PickResult::Queue();
   }
   std::string message = absl::StrCat(
       "ring hash cannot find a connected endpoint; first failure: ",
