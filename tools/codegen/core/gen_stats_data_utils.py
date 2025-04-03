@@ -507,7 +507,8 @@ class StatsDataGenerator:
                     )
                 if scope == "global":
                     print(
-                        "  HistogramView histogram(Histogram which) const;", file=H
+                        "  HistogramView histogram(Histogram which) const;",
+                        file=H,
                     )
                     print(
                         "  std::unique_ptr<%s> Diff(const %s& other) const;"
@@ -754,7 +755,9 @@ class StatsDataGenerator:
                 )
 
             for scope in self._scopes:
-                include_ctr = (lambda ctr: scope == "global" or ctr.scope == scope)
+                include_ctr = (
+                    lambda ctr: scope == "global" or ctr.scope == scope
+                )
                 class_name = snake_to_pascal(scope) + "Stats"
                 for typename, instances in sorted(self._inst_map.items()):
                     print(
@@ -809,7 +812,8 @@ class StatsDataGenerator:
                         if not include_ctr(inst):
                             continue
                         print(
-                            "    case Histogram::k%s:" % snake_to_pascal(inst.name),
+                            "    case Histogram::k%s:"
+                            % snake_to_pascal(inst.name),
                             file=C,
                         )
                         shape = histogram_shape(inst, scope == "global")
