@@ -3750,6 +3750,7 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_security_base",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
     ],
 )
 
@@ -4053,6 +4054,7 @@ grpc_cc_library(
         "//:parse_address",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:uri",
     ],
 )
@@ -4129,6 +4131,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_fake_credentials",
     ],
@@ -4167,6 +4170,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:tsi_base",
     ],
 )
@@ -4230,6 +4234,7 @@ grpc_cc_library(
         "//:promise",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
+        "//:transport_auth_context",
         "//:tsi_base",
         "//:uri",
     ],
@@ -4273,6 +4278,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
         "//:tsi_ssl_session_cache",
@@ -4334,6 +4340,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:uri",
     ],
 )
@@ -4409,6 +4416,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
         "//:tsi_ssl_session_cache",
@@ -4443,6 +4451,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
     ],
 )
 
@@ -4478,6 +4487,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
     ],
 )
 
@@ -4517,6 +4527,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:uri",
     ],
 )
@@ -4570,6 +4581,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:uri",
     ],
 )
@@ -4625,6 +4637,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:uri",
     ],
 )
@@ -4660,6 +4673,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
     ],
@@ -4919,6 +4933,7 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_security_base",
+        "//:transport_auth_context",
     ],
 )
 
@@ -5046,6 +5061,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_security_base",
         "//:promise",
+        "//:transport_auth_context",
     ],
 )
 
@@ -5130,6 +5146,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_security_base",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
     ],
 )
 
@@ -5220,6 +5237,7 @@ grpc_cc_library(
         "//:protobuf_timestamp_upb",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
+        "//:transport_auth_context",
         "//:work_serializer",
     ],
 )
@@ -5324,6 +5342,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:rls_upb",
+        "//:transport_auth_context",
         "//:work_serializer",
     ],
 )
@@ -5451,6 +5470,7 @@ grpc_cc_library(
         "//:grpc_credentials_util",
         "//:grpc_security_base",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
     ],
 )
 
@@ -5948,6 +5968,7 @@ grpc_cc_library(
         "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
+        "//:transport_auth_context",
         "//:tsi_ssl_credentials",
         "//:uri",
         "//:work_serializer",
@@ -6007,6 +6028,7 @@ grpc_cc_library(
         "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:xds_client",
     ],
 )
@@ -6088,6 +6110,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server",
         "//:sockaddr_utils",
+        "//:transport_auth_context",
         "//:uri",
         "//:xds_client",
     ],
@@ -6115,6 +6138,7 @@ grpc_cc_library(
         "//:grpc_core_credentials_header",
         "//:grpc_security_base",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
     ],
 )
 
@@ -6160,6 +6184,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:work_serializer",
     ],
 )
@@ -6958,6 +6983,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:parse_address",
         "//:promise",
+        "//:transport_auth_context",
         "//:uri",
     ],
     alwayslink = 1,
@@ -7735,6 +7761,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
+        "//:transport_auth_context",
     ],
 )
 
@@ -7796,6 +7823,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server",
         "//:sockaddr_utils",
+        "//:transport_auth_context",
         "//:uri",
     ],
 )
@@ -8782,6 +8810,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:uri",
     ],
 )

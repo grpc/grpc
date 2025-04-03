@@ -568,6 +568,7 @@ grpc_cc_library(
         "http_connect_handshaker",
         "iomgr_timer",
         "server",
+        "transport_auth_context",
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -661,6 +662,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server",
         "sockaddr_utils",
+        "transport_auth_context",
         "tsi_base",
         "uri",
         "//src/core:channel_args",
@@ -1050,6 +1052,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_security_base",
+        "transport_auth_context",
     ],
 )
 
@@ -1118,6 +1121,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_unsecure",
+        "transport_auth_context",
         "//src/core:gpr_atm",
         "//src/core:grpc_insecure_credentials",
     ],
@@ -1737,6 +1741,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "sockaddr_utils",
         "stats",
+        "transport_auth_context",
         "//src/core:activity",
         "//src/core:arena_promise",
         "//src/core:cancel_callback",
@@ -2088,6 +2093,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "transport_auth_context",
+    srcs = [
+        "//src/core:transport/auth_context.cc",
+    ],
+    hdrs = [
+        "//src/core:transport/auth_context.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "gpr",
+        "grpc_core_credentials_header",
+        "grpc_public_hdrs",
+        "grpc_trace",
+        "ref_counted_ptr",
+        "resource_quota_api",
+        "//src/core:connection_context",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_security_base",
     srcs = [
         "//src/core:call/security_context.cc",
@@ -2101,7 +2129,6 @@ grpc_cc_library(
         "//src/core:filter/auth/server_auth_filter.cc",
         "//src/core:handshaker/security/secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",
-        "//src/core:transport/auth_context.cc",
     ],
     hdrs = [
         "//src/core:call/security_context.h",
@@ -2115,7 +2142,6 @@ grpc_cc_library(
         "//src/core:filter/auth/auth_filters.h",
         "//src/core:handshaker/security/secure_endpoint.h",
         "//src/core:handshaker/security/security_handshaker.h",
-        "//src/core:transport/auth_context.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2147,6 +2173,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota_api",
         "stats",
+        "transport_auth_context",
         "tsi_base",
         "//src/core:activity",
         "//src/core:arena",
@@ -2327,6 +2354,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota_api",
         "server",
+        "transport_auth_context",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
@@ -2418,6 +2446,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota_api",
         "server",
+        "transport_auth_context",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_init",
@@ -3631,6 +3660,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "sockaddr_utils",
         "stats",
+        "transport_auth_context",
         "uri",
         "work_serializer",
         "//src/core:arena",
@@ -3813,6 +3843,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "resource_quota_api",
+        "transport_auth_context",
         "uri",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
@@ -3865,6 +3896,7 @@ grpc_cc_library(
         "iomgr",
         "promise",
         "ref_counted_ptr",
+        "transport_auth_context",
         "tsi_alts_credentials",
         "tsi_base",
         "//src/core:arena_promise",
@@ -3940,6 +3972,7 @@ grpc_cc_library(
         "orphanable",
         "promise",
         "ref_counted_ptr",
+        "transport_auth_context",
         "uri",
         "//src/core:arena_promise",
         "//src/core:closure",
@@ -3985,6 +4018,7 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "grpc_security_base",
+        "transport_auth_context",
         "//src/core:error",
         "//src/core:json",
         "//src/core:load_file",
@@ -4023,6 +4057,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_core_credentials_header",
         "grpc_security_base",
+        "transport_auth_context",
         "tsi_alts_frame_protector",
         "tsi_base",
         "//src/core:channel_args",
@@ -4149,6 +4184,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "ref_counted_ptr",
+        "transport_auth_context",
         "tsi_base",
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
@@ -4666,6 +4702,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "stats",
         "tcp_tracer",
+        "transport_auth_context",
         "//src/core:arena",
         "//src/core:bdp_estimator",
         "//src/core:bitset",
