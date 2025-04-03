@@ -123,7 +123,6 @@ grpc_cc_library(
         "absl/utility",
     ],
     deps = [
-        "grpc_slice",
         "resolved_address",
         "slice",
         "slice_buffer",
@@ -131,6 +130,7 @@ grpc_cc_library(
         "slice_refcount",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//:grpc_slice",
     ],
 )
 
