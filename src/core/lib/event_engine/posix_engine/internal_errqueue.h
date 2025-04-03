@@ -162,9 +162,8 @@ struct tcp_info {
 #define TCP_INFO 11
 #endif
 
-PosixErrorOr<void> GetSocketTcpInfo(tcp_info* info,
-                                    EventEnginePosixInterface* fds,
-                                    const FileDescriptor& fd);
+PosixError GetSocketTcpInfo(tcp_info* info, EventEnginePosixInterface* fds,
+                            const FileDescriptor& fd);
 
 #endif  // GRPC_LINUX_ERRQUEUE
 

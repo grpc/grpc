@@ -46,9 +46,7 @@ bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
   }
   if (fd.generation() == current_generation_.load(std::memory_order_relaxed)) {
     grpc_core::MutexLock lock(&mu_);
-    if (file_descriptors_.erase(fd.fd_) == 1) {
-      return true;
-    }
+    return file_descriptors_.erase(fd.fd_) == 1;
   }
   return false;
 }

@@ -448,7 +448,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   }
 
   int so_error = 0;
-  PosixErrorOr<void> err;
+  PosixError err;
   do {
     so_error_size = sizeof(so_error);
     err = fd->Poller()->posix_interface().GetSockOpt(
@@ -511,7 +511,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     const EventEngine::ResolvedAddress& addr,
     const PosixTcpOptions& tcp_options, MemoryAllocator memory_allocator,
     EventEngine::Duration timeout) {
-  PosixErrorOr<void> err;
+  PosixError err;
   int connect_errno;
   do {
     err = fork_support_->Poller()->posix_interface().Connect(fd, addr.address(),
@@ -525,7 +525,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     return EventEngine::ConnectionHandle::kInvalid;
   }
 
-  connect_errno = err.ok() ? 0 : err.code();
+  connect_errno = err.ok() ? 0 : err.errno_value();
 
   auto addr_uri = ResolvedAddressToURI(addr);
   if (!addr_uri.ok()) {

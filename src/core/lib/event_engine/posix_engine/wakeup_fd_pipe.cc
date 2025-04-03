@@ -55,7 +55,7 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
       return absl::Status(absl::StatusCode::kInternal,
                           absl::StrCat("read: wrong fd generation"));
     } else {
-      switch (r.code()) {
+      switch (r.errno_value()) {
         case EAGAIN:
           return absl::OkStatus();
         case EINTR:

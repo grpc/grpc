@@ -16,7 +16,7 @@
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_FILE_DESCRIPTOR_COLLECTION_H
 
 #include <atomic>
-#include <type_traits>
+#include <string>
 #include <unordered_set>
 #include <utility>
 #include <variant>
@@ -27,98 +27,113 @@
 
 namespace grpc_event_engine::experimental {
 
-template <typename T>
-class PosixErrorOr {
- private:
-  // Convenient alias
-  template <typename T1>
-  using if_not_void_t = std::enable_if_t<std::negation_v<std::is_void<T1>>, T1>;
-
+class PosixError {
  public:
-  PosixErrorOr() = default;
-  PosixErrorOr(const PosixErrorOr& other) = default;
-  PosixErrorOr(PosixErrorOr&& other) = default;
-  template <typename T1 = T>
-  explicit PosixErrorOr(if_not_void_t<T1> value) : value_(std::move(value)) {}
-  PosixErrorOr& operator=(const PosixErrorOr& other) = default;
-  PosixErrorOr& operator=(PosixErrorOr&& other) = default;
-
-  static PosixErrorOr Error(int code) { return PosixErrorOr(PosixError{code}); }
-
-  static PosixErrorOr WrongGeneration() {
-    return PosixErrorOr(WrongGenerationError());
+  static PosixError WrongGeneration() {
+    return PosixError(WrongGenerationError());
   }
 
-  bool ok() const {
-    return std::holds_alternative<
-        std::conditional_t<std::is_void_v<T>, std::monostate, T>>(value_);
+  static PosixError Error(int errno_value) {
+    return PosixError(PosixErrorValue{.errno_value = errno_value});
   }
 
-  int code() const {
-    const PosixError* error = std::get_if<PosixError>(&value_);
-    CHECK_NE(error, nullptr);
-    return error->code;
-  }
+  PosixError() : PosixError(std::monostate()) {}
+
+  bool ok() const { return std::holds_alternative<std::monostate>(payload_); }
 
   bool IsPosixError() const {
-    return std::holds_alternative<PosixError>(value_);
+    return std::holds_alternative<PosixErrorValue>(payload_);
   }
 
-  bool IsPosixError(int code) const {
-    const PosixError* error = std::get_if<PosixError>(&value_);
-    return error != nullptr && code == error->code;
+  bool IsPosixError(int errno_value) const {
+    const PosixErrorValue* error_value =
+        std::get_if<PosixErrorValue>(&payload_);
+    return error_value != nullptr && error_value->errno_value == errno_value;
   }
 
   bool IsWrongGenerationError() const {
-    return std::holds_alternative<WrongGenerationError>(value_);
+    return std::holds_alternative<WrongGenerationError>(payload_);
   }
 
-  template <typename T1 = T>
-  if_not_void_t<T1>* operator->() {
-    return &std::get<T>(value_);
-  }
-
-  template <typename T1 = T>
-  if_not_void_t<T1>& operator*() {
-    return std::get<T>(value_);
-  }
-
-  template <typename T1 = T>
-  const if_not_void_t<T1>& value() const {
-    CHECK(ok());
-    return std::get<T>(value_);
-  }
-
-  template <typename T1 = T>
-  if_not_void_t<T1> value_or(T1&& default_value) const {
-    if (ok()) {
-      return value();
-    } else {
-      return std::forward<T1>(default_value);
-    }
+  int errno_value() const {
+    return std::get<PosixErrorValue>(payload_).errno_value;
   }
 
   std::string StrError() const {
     if (ok()) {
       return "ok";
-    } else if (IsWrongGenerationError()) {
-      return "file descriptor was created pre fork";
-    } else {
-      return grpc_core::StrError(code());
     }
+    if (IsWrongGenerationError()) {
+      return "file descriptor was created pre fork";
+    }
+    return grpc_core::StrError(errno_value());
   }
 
  private:
-  struct PosixError {
-    int code;
+  struct PosixErrorValue {
+    int errno_value;
   };
   struct WrongGenerationError {};
   using Payload =
-      std::variant<std::conditional_t<std::is_void_v<T>, std::monostate, T>,
-                   PosixError, WrongGenerationError>;
+      std::variant<std::monostate, PosixErrorValue, WrongGenerationError>;
 
+  explicit PosixError(Payload error) : payload_(error) {}
+
+  Payload payload_;
+};
+
+template <typename T>
+class PosixErrorOr {
+ public:
+  using Payload = std::variant<T, PosixError>;
+
+  PosixErrorOr() = default;
+  PosixErrorOr(const PosixErrorOr& other) = default;
+  PosixErrorOr(PosixErrorOr&& other) = default;
   explicit PosixErrorOr(Payload error) : value_(std::move(error)) {}
+  PosixErrorOr& operator=(const PosixErrorOr& other) = default;
+  PosixErrorOr& operator=(PosixErrorOr&& other) = default;
 
+  bool ok() const { return std::holds_alternative<T>(value_); }
+
+  int errno_value() const { return std::get<PosixError>(value_).errno_value(); }
+
+  bool IsPosixError() const {
+    const PosixError* error = std::get_if<PosixError>(&value_);
+    return error != nullptr && error->IsPosixError();
+  }
+
+  bool IsPosixError(int errno_value) const {
+    const PosixError* error = std::get_if<PosixError>(&value_);
+    return error != nullptr && error->IsPosixError(errno_value);
+  }
+
+  bool IsWrongGenerationError() const {
+    const PosixError* error = std::get_if<PosixError>(&value_);
+    return error != nullptr && error->IsWrongGenerationError();
+  }
+
+  T* operator->() { return &std::get<T>(value_); }
+
+  T& operator*() { return std::get<T>(value_); }
+
+  const T& value() const { return std::get<T>(value_); }
+
+  T value_or(T default_value) const {
+    if (ok()) {
+      return value();
+    }
+    return default_value;
+  }
+
+  std::string StrError() const {
+    if (ok()) {
+      return "ok";
+    }
+    return std::get<PosixError>(value_).StrError();
+  }
+
+ private:
   Payload value_;
 };
 
@@ -179,7 +194,7 @@ class FileDescriptorCollection {
   // Removes a FileDescriptor from the collection.
   // If fork support is disabled, this always returns true.
   // If fork support is enabled, fd is only removed if its generation matches
-  // the current collection generation.
+  // the current collection generation. Returns true if the fd was removed.
   bool Remove(const FileDescriptor& fd);
   // Advances the collection's generation number, clears the internal list of
   // tracked file descriptors, and returns the set of fds that were being

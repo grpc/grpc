@@ -35,9 +35,8 @@
 namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_LINUX_ERRQUEUE
-PosixErrorOr<void> GetSocketTcpInfo(tcp_info* info,
-                                    EventEnginePosixInterface* fds,
-                                    const FileDescriptor& fd) {
+PosixError GetSocketTcpInfo(tcp_info* info, EventEnginePosixInterface* fds,
+                            const FileDescriptor& fd) {
   memset(info, 0, sizeof(*info));
   info->length = offsetof(tcp_info, length);
   return fds->GetSockOpt(fd, IPPROTO_TCP, TCP_INFO, info, &(info->length));

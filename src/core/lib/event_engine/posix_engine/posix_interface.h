@@ -33,11 +33,6 @@ namespace grpc_event_engine::experimental {
 
 class EventEnginePosixInterface {
  public:
-  struct PosixSocketCreateResult {
-    FileDescriptor sock;
-    EventEngine::ResolvedAddress mapped_target_addr;
-  };
-
   EventEnginePosixInterface() = default;
   EventEnginePosixInterface(const EventEnginePosixInterface& other) = delete;
   EventEnginePosixInterface(EventEnginePosixInterface&& other) = delete;
@@ -83,11 +78,11 @@ class EventEnginePosixInterface {
   void Close(const FileDescriptor& fd);
 
   // Posix
-  PosixErrorOr<void> Connect(const FileDescriptor& sockfd,
-                             const struct sockaddr* addr, socklen_t addrlen);
-  PosixErrorOr<void> GetSockOpt(const FileDescriptor& fd, int level,
-                                int optname, void* optval, void* optlen);
-  PosixErrorOr<void> Ioctl(const FileDescriptor& fd, int op, void* arg);
+  PosixError Connect(const FileDescriptor& sockfd, const struct sockaddr* addr,
+                     socklen_t addrlen);
+  PosixError GetSockOpt(const FileDescriptor& fd, int level, int optname,
+                        void* optval, void* optlen);
+  PosixError Ioctl(const FileDescriptor& fd, int op, void* arg);
   PosixErrorOr<int64_t> Read(const FileDescriptor& fd, absl::Span<char> buffer);
   PosixErrorOr<int64_t> RecvMsg(const FileDescriptor& fd,
                                 struct msghdr* message, int flags);
@@ -95,15 +90,14 @@ class EventEnginePosixInterface {
                                    int optname, uint32_t optval);
   PosixErrorOr<int64_t> SendMsg(const FileDescriptor& fd,
                                 const struct msghdr* message, int flags);
-  PosixErrorOr<void> Shutdown(const FileDescriptor& fd, int how);
+  PosixError Shutdown(const FileDescriptor& fd, int how);
   PosixErrorOr<int64_t> Write(const FileDescriptor& fd,
                               absl::Span<char> buffer);
 
   // Epoll
-  PosixErrorOr<void> EpollCtlAdd(const FileDescriptor& epfd, bool writable,
-                                 const FileDescriptor& fd, void* data);
-  PosixErrorOr<void> EpollCtlDel(const FileDescriptor& epfd,
-                                 const FileDescriptor& fd);
+  PosixError EpollCtlAdd(const FileDescriptor& epfd, bool writable,
+                         const FileDescriptor& fd, void* data);
+  PosixError EpollCtlDel(const FileDescriptor& epfd, const FileDescriptor& fd);
 
   // Return LocalAddress as EventEngine::ResolvedAddress
   absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(
@@ -118,6 +112,11 @@ class EventEnginePosixInterface {
   // Tries to set SO_NOSIGPIPE if available on this platform.
   // If SO_NO_SIGPIPE is not available, returns not OK status.
   absl::Status SetSocketNoSigpipeIfPossible(const FileDescriptor& fd);
+
+  struct PosixSocketCreateResult {
+    FileDescriptor sock;
+    EventEngine::ResolvedAddress mapped_target_addr;
+  };
 
   // Return a PosixSocketCreateResult which manages a configured, unbound,
   // unconnected TCP client fd.
@@ -152,8 +151,8 @@ class EventEnginePosixInterface {
 
   absl::StatusOr<int> GetUnusedPort();
 
-  PosixErrorOr<void> EventFdRead(const FileDescriptor& fd);
-  PosixErrorOr<void> EventFdWrite(const FileDescriptor& fd);
+  PosixError EventFdRead(const FileDescriptor& fd);
+  PosixError EventFdWrite(const FileDescriptor& fd);
   int generation() const {
 #if GRPC_ENABLE_FORK_SUPPORT
     return descriptors_.generation();
@@ -163,11 +162,19 @@ class EventEnginePosixInterface {
   }
 
  private:
+  static bool IsEventEngineForkEnabled() {
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+    return grpc_core::IsEventEngineForkEnabled();
+#else   // GRPC_ENABLE_FORK_SUPPORT
+    return false;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+  }
+
   absl::Status PrepareTcpClientSocket(int fd,
                                       const EventEngine::ResolvedAddress& addr,
                                       const PosixTcpOptions& options);
 
-  PosixErrorOr<void> PosixResultWrap(
+  PosixError PosixResultWrap(
       const FileDescriptor& wrapped,
       const absl::AnyInvocable<int(int) const>& fn) const;
 
@@ -176,66 +183,52 @@ class EventEnginePosixInterface {
   template <typename R, typename Fn>
   R RunIfCorrectGeneration(const FileDescriptor& fd, const Fn& fn,
                            R&& r) const {
-#if GRPC_ENABLE_FORK_SUPPORT
-    if (!IsCorrectGeneration(fd)) {
-      return std::forward<R>(r);
+    if (IsCorrectGeneration(fd)) {
+      return std::invoke(fn, fd.fd_);
     }
-#else   // GRPC_ENABLE_FORK_SUPPORT
-    (void)r;  // Get rid of the unused warning
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-    return std::invoke(fn, fd.fd_);
+    return std::forward<R>(r);
   }
 
   template <typename... Args>
   PosixErrorOr<int64_t> PosixResultWrap(const FileDescriptor& fd,
                                         int (*fn)(int, Args...),
                                         Args&&... args) const {
-    return RunIfCorrectGeneration(
-        fd,
-        [&](int raw) {
-          int64_t result = std::invoke(fn, raw, std::forward<Args>(args)...);
-          return result < 0 ? PosixErrorOr<int64_t>::Error(errno)
-                            : PosixErrorOr<int64_t>(result);
-        },
-        PosixErrorOr<int64_t>::WrongGeneration());
+    if (!IsCorrectGeneration(fd)) {
+      return PosixErrorOr<int64_t>(PosixError::WrongGeneration());
+    }
+    int64_t result = std::invoke(fn, fd.fd(), std::forward<Args>(args)...);
+    if (result < 0) {
+      return PosixErrorOr<int64_t>(PosixError::Error(errno));
+    }
+    return PosixErrorOr<int64_t>(result);
   }
 
   // Templated Fn to make it easier to compile on all platforms.
   template <typename Fn, typename... Args>
   PosixErrorOr<int64_t> Int64Wrap(const FileDescriptor& fd, const Fn& fn,
                                   Args&&... args) const {
-    return RunIfCorrectGeneration(
-        fd,
-        [&](int raw) {
-          auto result = std::invoke(fn, raw, std::forward<Args>(args)...);
-          return result < 0 ? PosixErrorOr<int64_t>::Error(errno)
-                            : PosixErrorOr<int64_t>(result);
-        },
-        PosixErrorOr<int64_t>::WrongGeneration());
+    if (!IsCorrectGeneration(fd)) {
+      return PosixErrorOr<int64_t>(PosixError::WrongGeneration());
+    }
+    auto result = std::invoke(fn, fd.fd(), std::forward<Args>(args)...);
+    if (result < 0) {
+      return PosixErrorOr<int64_t>(PosixError::Error(errno));
+    }
+    return PosixErrorOr<int64_t>(result);
   }
 
   bool IsCorrectGeneration(const FileDescriptor& fd) const {
-#if GRPC_ENABLE_FORK_SUPPORT
-    static const auto kIsGeneration =
-        grpc_core::IsEventEngineForkEnabled()
-            ? [](const FileDescriptorCollection& collection,
-                 const FileDescriptor&
-                     fd) { return collection.generation() == fd.generation(); }
-            : [](const FileDescriptorCollection& collection,
-                 const FileDescriptor& fd) { return true; };
-    return kIsGeneration(descriptors_, fd);
-#else   // GRPC_ENABLE_FORK_SUPPORT
-    (void)fd;
+    if (IsEventEngineForkEnabled()) {
+      return descriptors_.generation() == fd.generation();
+    }
     return true;
-#endif  // GRPC_ENABLE_FORK_SUPPORT
   }
 
   PosixErrorOr<FileDescriptor> RegisterPosixResult(int result) {
-    if (result > 0) {
+    if (result >= 0) {
       return PosixErrorOr<FileDescriptor>(Adopt(result));
-    } else {
-      return PosixErrorOr<FileDescriptor>::Error(errno);
     }
+    return PosixErrorOr<FileDescriptor>(PosixError::Error(errno));
   }
 
 #if GRPC_ENABLE_FORK_SUPPORT

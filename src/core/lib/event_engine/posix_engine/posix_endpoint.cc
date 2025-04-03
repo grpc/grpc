@@ -106,7 +106,7 @@ PosixErrorOr<int64_t> TcpSend(EventEnginePosixInterface* posix_interface,
     grpc_core::global_stats().IncrementSyscallWrite();
     send_result =
         posix_interface->SendMsg(fd, msg, SENDMSG_FLAGS | additional_flags);
-    *saved_errno = send_result.IsPosixError() ? send_result.code() : 0;
+    *saved_errno = send_result.IsPosixError() ? send_result.errno_value() : 0;
   } while (send_result.IsPosixError(EINTR));
   return send_result;
 }
@@ -217,7 +217,7 @@ absl::Status PosixOSError(const PosixErrorOr<int64_t>& error_no,
                           absl::string_view call_name) {
   if (error_no.IsPosixError()) {
     return absl::UnknownError(absl::StrCat(call_name, ": ", error_no.StrError(),
-                                           " (", error_no.code(), ")"));
+                                           " (", error_no.errno_value(), ")"));
   } else {
     return absl::UnknownError(
         absl::StrCat(call_name, ": Wrong file descriptor generation"));
