@@ -56,8 +56,7 @@ class GrpcMessageAssembler {
     if (message_buffer_.Length() <= kGrpcHeaderSizeInBytes) {
       header_ = ExtractGrpcHeader(message_buffer_);
       if (message_buffer_.Length() + kGrpcHeaderSizeInBytes >= header_.length) {
-        // Special case: if gRPC header has length 0, we return an empty
-        // message.
+        // If gRPC header has length 0, we return an empty message.
         // Bounds: Max len of a valid gRPC message is 4 GB in gRPC C++. 2GB for
         // other stacks. Since 4 bytes can hold length of 4GB, we dont check
         // bounds.
@@ -78,8 +77,6 @@ class GrpcMessageAssembler {
     }
 
    public:
-    // TODO : Special case : what if we get only half a message and end_Stream?
-    // Fail the STREAM.
     bool is_end_of_stream_ = false;
     SliceBuffer message_buffer_;
   };

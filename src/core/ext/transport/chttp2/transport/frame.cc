@@ -14,6 +14,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 

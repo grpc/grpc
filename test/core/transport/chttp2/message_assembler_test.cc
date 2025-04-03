@@ -37,6 +37,8 @@ namespace testing {
 
 using grpc_event_engine::experimental::Slice;
 
+TEST(GrpcMessageAssembler, ObjectCreation) { GrpcMessageAssembler assembler; }
+
 TEST(GrpcMessageAssembler, OneMessageInOneFrame) { CHECK(true); }
 
 TEST(GrpcMessageAssembler, OneMessageInThreeFrames) { CHECK(true); }
