@@ -56,7 +56,7 @@ TEST_P(SpiffeIdFailureTest, SpiffeIdTestFailure) {
 INSTANTIATE_TEST_SUITE_P(
     SpifeIdTestFailureSuiteInstantiation, SpiffeIdFailureTest,
     ::testing::ValuesIn<SpiffeIdFailureTestCase>({
-        {"Empty", "", "empty uri"},
+        {"Empty", "", "empty URI"},
         {"TooLong", std::string(2049, 'a'),
          "maximum allowed for SPIFFE ID is 2048"},
         {"ContainsHashtag", "ab#de", "cannot contain query fragments"},

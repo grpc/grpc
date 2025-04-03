@@ -9271,6 +9271,9 @@ grpc_cc_library(
         "libcrypto",
         "libssl",
     ],
+    deps = [
+        "status_helper",
+    ],
 )
 
 ### UPB Targets

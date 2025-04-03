@@ -30,7 +30,7 @@ namespace grpc_core {
 namespace {
 
 constexpr absl::string_view kSpiffePrefix = "spiffe://";
-constexpr int kMaxTrustDomainLength = 256;
+constexpr int kMaxTrustDomainLength = 255;
 
 // Checks broad conditions on the whole input before splitting into the
 // pieces of a SPIFFE id
@@ -65,7 +65,7 @@ absl::Status ValidateTrustDomain(absl::string_view trust_domain) {
   if (trust_domain.empty()) {
     return absl::InvalidArgumentError("Trust domain cannot be empty");
   }
-  if (trust_domain.size() >= kMaxTrustDomainLength) {
+  if (trust_domain.size() > kMaxTrustDomainLength) {
     return absl::InvalidArgumentError(absl::StrFormat(
         "Trust domain maximum length is %i characters", kMaxTrustDomainLength));
   }

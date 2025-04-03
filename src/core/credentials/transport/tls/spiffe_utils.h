@@ -25,7 +25,6 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
-namespace experimental {
 
 // A representation of a SPIFFE ID per the spec:
 // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#the-spiffe-identity-and-verifiable-identity-document
@@ -46,7 +45,6 @@ class SpiffeId {
   const std::string path_;
 };
 
-}  // namespace experimental
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SSL_UTILS_H
