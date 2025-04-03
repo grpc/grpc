@@ -1229,6 +1229,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
+        "absl/container:inlined_vector",
     ],
     deps = [
         "exec_ctx",

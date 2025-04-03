@@ -283,6 +283,39 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   ValidateChannel(channelz_channel, {0, 0, 0});
 }
 
+class TestDataSource final : public DataSource {
+ public:
+  using DataSource::DataSource;
+  void AddJson(Json::Object& object) {
+    object["test"] = Json::FromString("yes");
+  }
+};
+
+TEST_P(ChannelzChannelTest, BasicDataSource) {
+  ExecCtx exec_ctx;
+  ChannelFixture channel(GetParam());
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
+  {
+    TestDataSource data_source(channelz_channel->Ref());
+    Json json = channelz_channel->RenderJson();
+    ASSERT_EQ(json.type(), Json::Type::kObject);
+    const Json::Object& object = json.object();
+    auto it = object.find("test");
+    ASSERT_NE(it, object.end());
+    ASSERT_EQ(it->second.type(), Json::Type::kString);
+    EXPECT_EQ(it->second.string(), "yes");
+  }
+  // Render again without the data source
+  {
+    Json json = channelz_channel->RenderJson();
+    ASSERT_EQ(json.type(), Json::Type::kObject);
+    const Json::Object& object = json.object();
+    auto it = object.find("test");
+    EXPECT_EQ(it, object.end());
+  }
+}
+
 TEST(ChannelzChannelTest, ChannelzDisabled) {
   ExecCtx exec_ctx;
   // explicitly disable channelz
