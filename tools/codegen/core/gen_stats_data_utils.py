@@ -21,7 +21,7 @@ import ctypes
 import math
 import sys
 
-_REQUIRED_FIELDS = ["name", "doc"]
+_REQUIRED_FIELDS = ["name", "doc", "scope"]
 
 
 def make_type(name, fields):
