@@ -77,6 +77,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "event_engine_extensions",
     hdrs = [
+        "lib/event_engine/extensions/blocking_dns.h",
         "lib/event_engine/extensions/can_track_errors.h",
         "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/iomgr_compatible.h",
@@ -2430,6 +2431,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "notification",
         "time",
         "//:event_engine_base_hdrs",

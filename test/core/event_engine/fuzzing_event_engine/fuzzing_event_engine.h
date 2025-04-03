@@ -40,6 +40,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
