@@ -22,11 +22,11 @@
 #include <cstdint>
 #include <utility>
 
-#include ""
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -151,6 +151,7 @@ class Http2ClientTransport final : public ClientTransport {
     CallHandler call;
     HttpStreamState stream_state;
     TransportSendQeueue send_queue;
+    GrpcMessageAssembler assembler;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
 
