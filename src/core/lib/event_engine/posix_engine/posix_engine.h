@@ -213,17 +213,17 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   void BeforeForkForTests();
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
-PosixEventPoller* PollerForTests() const;
-// The posix EventEngine returned by this method would have a shared ownership
-// of the poller and would not be in-charge of driving the poller by calling
-// its Work(..) method. Instead its upto the test to drive the poller. The
-// returned posix EventEngine will also not attempt to shutdown the poller
-// since it does not own it.
-static std::shared_ptr<PosixEventEngine> MakeTestOnlyPosixEventEngine(
-    std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
-        test_only_poller) {
-  return std::make_shared<PosixEventEngine>(std::move(test_only_poller));
-}
+  PosixEventPoller* PollerForTests() const;
+  // The posix EventEngine returned by this method would have a shared ownership
+  // of the poller and would not be in-charge of driving the poller by calling
+  // its Work(..) method. Instead its upto the test to drive the poller. The
+  // returned posix EventEngine will also not attempt to shutdown the poller
+  // since it does not own it.
+  static std::shared_ptr<PosixEventEngine> MakeTestOnlyPosixEventEngine(
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+          test_only_poller) {
+    return std::make_shared<PosixEventEngine>(std::move(test_only_poller));
+  }
 #endif  // GRPC_POSIX_SOCKET_TCP
 
  private:
