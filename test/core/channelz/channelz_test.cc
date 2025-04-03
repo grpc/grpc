@@ -286,7 +286,7 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
 class TestDataSource final : public DataSource {
  public:
   using DataSource::DataSource;
-  void AddJson(Json::Object& object) {
+  void AddJson(Json::Object& object) override {
     object["test"] = Json::FromString("yes");
   }
 };
