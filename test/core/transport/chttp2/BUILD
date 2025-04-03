@@ -516,6 +516,7 @@ grpc_cc_test(
         "//:chttp2_frame",
         "//:ref_counted_ptr",
         "//src/core:message",
+        "//src/core:message_assembler",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//test/core/transport/chttp2:http2_frame_test_helper",

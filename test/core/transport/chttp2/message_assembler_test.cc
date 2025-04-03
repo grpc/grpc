@@ -16,6 +16,8 @@
 //
 //
 
+#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
+
 #include <grpc/grpc.h>
 
 #include <memory>
