@@ -16096,8 +16096,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/fake_transport_security.h
   src:
+  - test/core/test_util/fake_transport_security.cc
   - test/core/tsi/transport_security_test.cc
   deps:
   - gtest

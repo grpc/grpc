@@ -29692,6 +29692,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(transport_security_test
+  test/core/test_util/fake_transport_security.cc
   test/core/tsi/transport_security_test.cc
 )
 if(WIN32 AND MSVC)
