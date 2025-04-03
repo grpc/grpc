@@ -50,7 +50,7 @@ class GrpcMessageAssembler {
            "frame does not make sense.";
     is_end_stream_ = is_end_stream;
     payload.MoveFirstNBytesIntoSliceBuffer(payload.Length(), message_buffer_);
-    DCHECK_EQ(payload.Length(), 0);
+    DCHECK_EQ(payload.Length(), 0u);
   }
 
   // We expect the caller to run GenerateMessage in a loop till it returns
@@ -78,7 +78,7 @@ class GrpcMessageAssembler {
     return ReturnNullOrError();
   }
 
- public:
+ private:
   absl::StatusOr<MessageHandle> ReturnNullOrError() {
     if (is_end_stream_ && message_buffer_.Length() > 0) {
       return absl::InternalError("Incomplete gRPC frame received");
