@@ -15,6 +15,39 @@
 # Stats data declaration
 # use tools/codegen/core/gen_stats_data.py to turn this into stats_data.h
 
+# Format:
+#
+# Supported metric-types: counter, histogram
+#
+# First field for each metric should be `metric-type: name-of-metric`
+#
+# Also required is a `doc` field to document the state, and a `scope` field
+# to list the scope at which this metric should be collected.
+# `global` metrics can be manipulated via a global singleton `global_stats`.
+#
+# Updating a global metric is threadsafe.
+#
+# Other metrics create bespoke `Collector` classes that can be instantiated
+# at appropriate places and manipulated directly.
+#
+# Updating a non-global metric is not threadsafe (external locking is required).
+#
+# Additionally, all scoped metrics are also included in the global scope, so
+# a summary view is always available.
+#
+# Histogram specific fields:
+#   max           (required) max value that can be inserted in the histogram
+#   buckets       (required) how many buckets to use for the histogram
+#                 bucket ranges exponentially grow in size from 0 -- max across
+#                 these buckets
+#   scope_buckets (optional) if placed on a non-global scoped histogram,
+#                 specifies the number of buckets to track on the scoped
+#                 histogram (the global version will then use `buckets`)
+#   scope_counter_bits (optional) if placed on a non-global scoped histogram,
+#                 specifies the number of bits to track for each bucket count.
+#                 If one bucket overflows, we halve all buckets and continue
+#                 counting.
+
 # overall
 - counter: client_calls_created
   doc: Number of client side calls created by this process
