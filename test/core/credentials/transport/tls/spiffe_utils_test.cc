@@ -31,8 +31,6 @@
 #include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 
-using ::grpc_core::experimental::SpiffeId;
-
 namespace grpc_core {
 namespace testing {
 

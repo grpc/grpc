@@ -24,17 +24,20 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
-
-constexpr absl::string_view SPIFFE_PREFIX = "spiffe://";
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
-namespace experimental {
 namespace {
 
-absl::Status doInitialUriValidation(absl::string_view uri) {
+constexpr absl::string_view kSpiffePrefix = "spiffe://";
+constexpr int kMaxTrustDomainLength = 256;
+
+// Checks broad conditions on the whole input before splitting into the
+// pieces of a SPIFFE id
+absl::Status DoInitialUriValidation(absl::string_view uri) {
   if (uri.empty()) {
     return absl::InvalidArgumentError(
-        "SpiffeId cannot be parsed from empty uri");
+        "SPIFFE ID cannot be parsed from empty URI");
   }
   if (uri.length() > 2048) {
     return absl::InvalidArgumentError(absl::StrFormat(
@@ -49,16 +52,22 @@ absl::Status doInitialUriValidation(absl::string_view uri) {
     return absl::InvalidArgumentError(
         "SPIFFE ID cannot contain query parameters");
   }
+  for (char ch : uri) {
+    if (!absl::ascii_isascii(ch)) {
+      return absl::InvalidArgumentError(absl::StrFormat(
+          "SPIFFE ID URI cannot contain non-ascii characters. Found %c", ch));
+    }
+  }
   return absl::OkStatus();
 }
 
-absl::Status validateTrustDomain(absl::string_view trust_domain) {
+absl::Status ValidateTrustDomain(absl::string_view trust_domain) {
   if (trust_domain.empty()) {
     return absl::InvalidArgumentError("Trust domain cannot be empty");
   }
-  if (trust_domain.size() >= 256) {
-    return absl::InvalidArgumentError(
-        "Trust domain maximum length is 255 characters");
+  if (trust_domain.size() >= kMaxTrustDomainLength) {
+    return absl::InvalidArgumentError(absl::StrFormat(
+        "Trust domain maximum length is %i characters", kMaxTrustDomainLength));
   }
   for (auto c : trust_domain) {
     if (c >= 'a' && c <= 'z') continue;
@@ -74,7 +83,7 @@ absl::Status validateTrustDomain(absl::string_view trust_domain) {
   return absl::OkStatus();
 }
 
-absl::Status validatePathSegment(absl::string_view path_segment) {
+absl::Status ValidatePathSegment(absl::string_view path_segment) {
   if (path_segment.empty()) {
     return absl::InvalidArgumentError("Path segment cannot be empty");
   }
@@ -97,12 +106,12 @@ absl::Status validatePathSegment(absl::string_view path_segment) {
   return absl::OkStatus();
 }
 
-absl::Status validatePath(absl::string_view path) {
+absl::Status ValidatePath(absl::string_view path) {
   if (path.empty()) {
     return absl::OkStatus();
   }
   for (absl::string_view segment : absl::StrSplit(path, '/')) {
-    if (absl::Status status = validatePathSegment(segment); !status.ok()) {
+    if (absl::Status status = ValidatePathSegment(segment); !status.ok()) {
       return status;
     }
   }
@@ -111,19 +120,16 @@ absl::Status validatePath(absl::string_view path) {
 
 }  // namespace
 
-// spiffe://trust-domain-name/path
 absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view uri) {
-  if (absl::Status status = doInitialUriValidation(uri); !status.ok()) {
-    return status;
-  }
-  if (!absl::StartsWithIgnoreCase(uri, SPIFFE_PREFIX)) {
+  GRPC_RETURN_IF_ERROR(DoInitialUriValidation(uri));
+  if (!absl::StartsWithIgnoreCase(uri, kSpiffePrefix)) {
     return absl::InvalidArgumentError("SPIFFE ID must start with spiffe://");
   }
   if (absl::EndsWith(uri, /*suffix=*/"/")) {
     return absl::InvalidArgumentError("SPIFFE ID cannot end with a /");
   }
   // The input definitely starts with spiffe://
-  absl::string_view trust_domain_and_path = uri.substr(SPIFFE_PREFIX.length());
+  absl::string_view trust_domain_and_path = uri.substr(kSpiffePrefix.length());
   absl::string_view trust_domain;
   absl::string_view path;
   if (absl::StartsWith(trust_domain_and_path, "/")) {
@@ -141,12 +147,8 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view uri) {
   } else {
     trust_domain = trust_domain_and_path;
   }
-  if (absl::Status status = validateTrustDomain(trust_domain); !status.ok()) {
-    return status;
-  }
-  if (absl::Status status = validatePath(path); !status.ok()) {
-    return status;
-  }
+  GRPC_RETURN_IF_ERROR(ValidateTrustDomain(trust_domain));
+  GRPC_RETURN_IF_ERROR(ValidatePath(path));
   // If we have a path re-add the prepending `/`, otherwise leave it empty
   if (path.empty()) {
     return SpiffeId(trust_domain, "");
@@ -154,5 +156,4 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view uri) {
   return SpiffeId(trust_domain, absl::StrCat("/", path));
 }
 
-}  // namespace experimental
 }  // namespace grpc_core
