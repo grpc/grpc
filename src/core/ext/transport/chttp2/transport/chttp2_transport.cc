@@ -67,6 +67,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame_security.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
@@ -97,7 +98,6 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
@@ -225,6 +225,7 @@ namespace {
 
 using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
+using grpc_core::http2::Http2ErrorCode;
 
 grpc_core::CallTracerAnnotationInterface* ParentCallTracerIfSampled(
     grpc_chttp2_stream* s) {
@@ -1183,7 +1184,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
       << last_stream_id;
   // We want to log this irrespective of whether http tracing is enabled if we
   // received a GOAWAY with a non NO_ERROR code.
-  if (goaway_error != GRPC_HTTP2_NO_ERROR) {
+  if (goaway_error != static_cast<int>(Http2ErrorCode::kNoError)) {
     LOG(INFO) << t->peer_string.as_string_view() << ": Got goaway ["
               << goaway_error
               << "] err=" << grpc_core::StatusToString(t->goaway_error);
@@ -1210,7 +1211,8 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   // that is enabled by default and double the configured KEEPALIVE_TIME used
   // for new connections on that channel.
   if (GPR_UNLIKELY(t->is_client &&
-                   goaway_error == GRPC_HTTP2_ENHANCE_YOUR_CALM &&
+                   goaway_error ==
+                       static_cast<int>(Http2ErrorCode::kEnhanceYourCalm) &&
                    goaway_text == "too_many_pings")) {
     LOG(ERROR) << t->peer_string.as_string_view()
                << ": Received a GOAWAY with error code ENHANCE_YOUR_CALM and "
@@ -1831,9 +1833,10 @@ void grpc_chttp2_keepalive_timeout(
                                    << ": Keepalive timeout. Closing transport.";
         send_goaway(
             t.get(),
-            grpc_error_set_int(GRPC_ERROR_CREATE("keepalive_timeout"),
-                               grpc_core::StatusIntProperty::kHttp2Error,
-                               GRPC_HTTP2_ENHANCE_YOUR_CALM),
+            grpc_error_set_int(
+                GRPC_ERROR_CREATE("keepalive_timeout"),
+                grpc_core::StatusIntProperty::kHttp2Error,
+                static_cast<intptr_t>(Http2ErrorCode::kEnhanceYourCalm)),
             /*immediate_disconnect_hint=*/true);
         close_transport_locked(
             t.get(),
@@ -1852,9 +1855,10 @@ void grpc_chttp2_ping_timeout(
                                    << ": Ping timeout. Closing transport.";
         send_goaway(
             t.get(),
-            grpc_error_set_int(GRPC_ERROR_CREATE("ping_timeout"),
-                               grpc_core::StatusIntProperty::kHttp2Error,
-                               GRPC_HTTP2_ENHANCE_YOUR_CALM),
+            grpc_error_set_int(
+                GRPC_ERROR_CREATE("ping_timeout"),
+                grpc_core::StatusIntProperty::kHttp2Error,
+                static_cast<intptr_t>(Http2ErrorCode::kEnhanceYourCalm)),
             /*immediate_disconnect_hint=*/true);
         close_transport_locked(
             t.get(),
@@ -1873,9 +1877,10 @@ void grpc_chttp2_settings_timeout(
                                    << ": Settings timeout. Closing transport.";
         send_goaway(
             t.get(),
-            grpc_error_set_int(GRPC_ERROR_CREATE("settings_timeout"),
-                               grpc_core::StatusIntProperty::kHttp2Error,
-                               GRPC_HTTP2_SETTINGS_TIMEOUT),
+            grpc_error_set_int(
+                GRPC_ERROR_CREATE("settings_timeout"),
+                grpc_core::StatusIntProperty::kHttp2Error,
+                static_cast<intptr_t>(Http2ErrorCode::kSettingsTimeout)),
             /*immediate_disconnect_hint=*/true);
         close_transport_locked(
             t.get(),
@@ -1975,7 +1980,7 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
 
 static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
                         const bool immediate_disconnect_hint) {
-  grpc_http2_error_code http_error;
+  Http2ErrorCode http_error;
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp::InfFuture(), nullptr,
                         &message, &http_error, nullptr);
@@ -2005,9 +2010,10 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
 
 void grpc_chttp2_exceeded_ping_strikes(grpc_chttp2_transport* t) {
   send_goaway(t,
-              grpc_error_set_int(GRPC_ERROR_CREATE("too_many_pings"),
-                                 grpc_core::StatusIntProperty::kHttp2Error,
-                                 GRPC_HTTP2_ENHANCE_YOUR_CALM),
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE("too_many_pings"),
+                  grpc_core::StatusIntProperty::kHttp2Error,
+                  static_cast<intptr_t>(Http2ErrorCode::kEnhanceYourCalm)),
               /*immediate_disconnect_hint=*/true);
   // The transport will be closed after the write is done
   close_transport_locked(
@@ -2290,7 +2296,7 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
   if (!s->read_closed || !s->write_closed) {
     if (s->id != 0) {
-      grpc_http2_error_code http_error;
+      Http2ErrorCode http_error;
       grpc_error_get_status(due_to_error, s->deadline, nullptr, nullptr,
                             &http_error, nullptr);
       grpc_core::MaybeTarpit(
@@ -2636,8 +2642,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         grpc_slice_buffer_add(&t->qbuf,
                               grpc_slice_from_cpp_string(std::move(message)));
         grpc_chttp2_reset_ping_clock(t);
-        grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_NO_ERROR,
-                                                 nullptr);
+        grpc_chttp2_add_rst_stream_to_next_write(
+            t, id, static_cast<intptr_t>(Http2ErrorCode::kNoError), nullptr);
 
         grpc_chttp2_initiate_write(t,
                                    GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);
@@ -3211,9 +3217,10 @@ static void benign_reclaimer_locked(
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - send goaway to free memory";
     send_goaway(t.get(),
-                grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
-                                   grpc_core::StatusIntProperty::kHttp2Error,
-                                   GRPC_HTTP2_ENHANCE_YOUR_CALM),
+                grpc_error_set_int(
+                    GRPC_ERROR_CREATE("Buffers full"),
+                    grpc_core::StatusIntProperty::kHttp2Error,
+                    static_cast<intptr_t>(Http2ErrorCode::kEnhanceYourCalm)),
                 /*immediate_disconnect_hint=*/true);
   } else if (error.ok() && GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
     LOG(INFO) << "HTTP2: " << t->peer_string.as_string_view()
@@ -3239,9 +3246,10 @@ static void destructive_reclaimer_locked(
     grpc_core::global_stats().IncrementRqCallsDropped();
     grpc_chttp2_cancel_stream(
         t.get(), s,
-        grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
-                           grpc_core::StatusIntProperty::kHttp2Error,
-                           GRPC_HTTP2_ENHANCE_YOUR_CALM),
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE("Buffers full"),
+            grpc_core::StatusIntProperty::kHttp2Error,
+            static_cast<intptr_t>(Http2ErrorCode::kEnhanceYourCalm)),
         false);
     if (!t->stream_map.empty()) {
       // Since we cancel one stream per destructive reclamation, if

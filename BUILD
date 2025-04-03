@@ -4391,6 +4391,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "//src/core:http2_status",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -4678,8 +4679,8 @@ grpc_cc_library(
         "//src/core:event_engine_query_extensions",
         "//src/core:experiments",
         "//src/core:gpr_manual_constructor",
-        "//src/core:http2_errors",
         "//src/core:http2_settings",
+        "//src/core:http2_status",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
