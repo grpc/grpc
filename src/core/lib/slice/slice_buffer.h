@@ -112,6 +112,10 @@ class SliceBuffer {
     grpc_slice_buffer_move_first_into_buffer(&slice_buffer_, n, dst);
   }
 
+  void CopyFirstNBytesIntoBuffer(size_t n, void* dst) {
+    grpc_slice_buffer_copy_first_into_buffer(&slice_buffer_, n, dst);
+  }
+
   /// Removes/deletes the last n bytes in the SliceBuffer and add it to the
   /// other SliceBuffer
   void MoveLastNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {

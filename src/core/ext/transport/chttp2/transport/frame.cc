@@ -14,8 +14,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
@@ -26,6 +24,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 

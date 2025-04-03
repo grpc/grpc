@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 
 #include <memory>
@@ -28,7 +26,8 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 
 namespace grpc_core {
