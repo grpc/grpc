@@ -17831,6 +17831,8 @@ add_executable(h2_ssl_cert_test
   test/core/end2end/h2_ssl_cert_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
 )
