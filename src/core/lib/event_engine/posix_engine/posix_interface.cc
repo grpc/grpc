@@ -56,8 +56,6 @@
 
 // File needs to be compilable on all platforms. These macros will produce stubs
 // if specific feature is not available in specific environment
-#ifdef GRPC_POSIX_SOCKET
-#define IF_POSIX_SOCKET(signature, body) signature body
 #ifdef GRPC_LINUX_EPOLL
 #include <sys/epoll.h>
 #define IF_EPOLL(signature, body) signature body
@@ -65,12 +63,6 @@
 #define IF_EPOLL(signature, body) \
   signature { grpc_core::Crash("unimplemented"); }
 #endif  // GRPC_LINUX_EPOLL
-#else   // GRPC_POSIX_SOCKET
-#define IF_POSIX_SOCKET(signature, body) \
-  signature { grpc_core::Crash("unimplemented"); }
-#define IF_EPOLL(signature, body) \
-  signature { grpc_core::Crash("unimplemented"); }
-#endif  // GRPC_POSIX_SOCKET
 
 #if GPR_LINUX == 1
 // For Linux, it will be detected to support TCP_USER_TIMEOUT
@@ -92,10 +84,9 @@
 
 namespace grpc_event_engine::experimental {
 
-namespace {
+#ifdef GRPC_POSIX_SOCKET
 
-// Comma in the type is not friendly with macros
-using PipeEnds = std::pair<FileDescriptor, FileDescriptor>;
+namespace {
 
 // This way if constexpr can be used and also macro nesting is not needed
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -112,12 +103,10 @@ int kDefaultServerUserTimeoutMs = 20000;
 bool kDefaultClientUserTimeoutEnabled = false;
 bool kDefaultServerUserTimeoutEnabled = true;
 
-#ifdef GRPC_POSIX_SOCKET
 // Whether the socket supports TCP_USER_TIMEOUT option.
 // (0: don't know, 1: support, -1: not support)
 std::atomic<int> g_socket_supports_tcp_user_timeout(
     SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT);
-#endif  // GRPC_POSIX_SOCKET
 
 absl::Status ErrorForFd(
     int fd, const experimental::EventEngine::ResolvedAddress& addr) {
@@ -128,41 +117,35 @@ absl::Status ErrorForFd(
                                    std::string(addr_str, addr.size())));
 }
 
-IF_POSIX_SOCKET(
-    int CreateSocket(std::function<int(int, int, int)> socket_factory,
-                     int family, int type, int protocol),
-    {
-      int res = socket_factory != nullptr
-                    ? socket_factory(family, type, protocol)
-                    : socket(family, type, protocol);
-      if (res < 0 && errno == EMFILE) {
-        int saved_errno = errno;
-        LOG_EVERY_N_SEC(ERROR, 10)
-            << "socket(" << family << ", " << type << ", " << protocol
-            << ") returned " << res << " with error: |"
-            << grpc_core::StrError(errno)
-            << "|. This process might not have a sufficient file descriptor "
-               "limit "
-               "for the number of connections grpc wants to open (which is "
-               "generally a function of the number of grpc channels, the lb "
-               "policy "
-               "of each channel, and the number of backends each channel is "
-               "load "
-               "balancing across).";
-        errno = saved_errno;
-      }
-      return res;
-    })
+int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
+                 int type, int protocol) {
+  int res = socket_factory != nullptr ? socket_factory(family, type, protocol)
+                                      : socket(family, type, protocol);
+  if (res < 0 && errno == EMFILE) {
+    int saved_errno = errno;
+    LOG_EVERY_N_SEC(ERROR, 10)
+        << "socket(" << family << ", " << type << ", " << protocol
+        << ") returned " << res << " with error: |"
+        << grpc_core::StrError(errno)
+        << "|. This process might not have a sufficient file descriptor limit "
+           "for the number of connections grpc wants to open (which is "
+           "generally a function of the number of grpc channels, the lb policy "
+           "of each channel, and the number of backends each channel is load "
+           "balancing across).";
+    errno = saved_errno;
+  }
+  return res;
+}
 
 // Tries to set the socket's receive buffer to given size.
-IF_POSIX_SOCKET(absl::Status SetSocketRcvBuf(int fd, int buffer_size_bytes), {
+absl::Status SetSocketRcvBuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? absl::OkStatus()
              : absl::Status(absl::StatusCode::kInternal,
                             absl::StrCat("setsockopt(SO_RCVBUF): ",
                                          grpc_core::StrError(errno)));
-})
+}
 
 // get max listen queue size on linux
 int InitMaxAcceptQueueSize() {
@@ -197,7 +180,7 @@ int GetMaxAcceptQueueSize() {
 }
 
 // Set a socket to non blocking mode
-IF_POSIX_SOCKET(absl::Status SetSocketNonBlocking(int fd, int non_blocking), {
+absl::Status SetSocketNonBlocking(int fd, int non_blocking) {
   int oldflags = fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -214,12 +197,11 @@ IF_POSIX_SOCKET(absl::Status SetSocketNonBlocking(int fd, int non_blocking), {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
-
   return absl::OkStatus();
-})
+}
 
 // Set a socket to close on exec
-IF_POSIX_SOCKET(absl::Status SetSocketCloexec(int fd, int close_on_exec), {
+absl::Status SetSocketCloexec(int fd, int close_on_exec) {
   int oldflags = fcntl(fd, F_GETFD, 0);
   if (oldflags < 0) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -238,33 +220,31 @@ IF_POSIX_SOCKET(absl::Status SetSocketCloexec(int fd, int close_on_exec), {
   }
 
   return absl::OkStatus();
-})
+}
 
 // set a socket to reuse old addresses
-IF_POSIX_SOCKET(
-    absl::Status SetSocketOption(int fd, int level, int option, int value,
-                                 absl::string_view debug_label),
-    {
-      int val = (value != 0);
-      int newval;
-      socklen_t intlen = sizeof(newval);
-      if (0 != setsockopt(fd, level, option, &val, sizeof(val))) {
-        return absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("setsockopt(", debug_label,
-                                         "): ", grpc_core::StrError(errno)));
-      }
-      if (0 != getsockopt(fd, level, option, &newval, &intlen)) {
-        return absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("setsockopt(", debug_label,
-                                         "): ", grpc_core::StrError(errno)));
-      }
-      if ((newval != 0) != val) {
-        return absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("Failed to set ", debug_label));
-      }
+absl::Status SetSocketOption(int fd, int level, int option, int value,
+                             absl::string_view debug_label) {
+  int val = (value != 0);
+  int newval;
+  socklen_t intlen = sizeof(newval);
+  if (0 != setsockopt(fd, level, option, &val, sizeof(val))) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("setsockopt(", debug_label,
+                                     "): ", grpc_core::StrError(errno)));
+  }
+  if (0 != getsockopt(fd, level, option, &newval, &intlen)) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("setsockopt(", debug_label,
+                                     "): ", grpc_core::StrError(errno)));
+  }
+  if ((newval != 0) != val) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("Failed to set ", debug_label));
+  }
 
-      return absl::OkStatus();
-    })
+  return absl::OkStatus();
+}
 
 // set a socket to reuse old ports
 absl::Status SetSocketReusePort(int fd, GRPC_UNUSED int reuse) {
@@ -277,7 +257,7 @@ absl::Status SetSocketReusePort(int fd, GRPC_UNUSED int reuse) {
 }
 
 // Set Differentiated Services Code Point (DSCP)
-IF_POSIX_SOCKET(absl::Status SetSocketDscp(int fdesc, int dscp), {
+absl::Status SetSocketDscp(int fdesc, int dscp) {
   if (dscp == PosixTcpOptions::kDscpNotSet) {
     return absl::OkStatus();
   }
@@ -307,79 +287,75 @@ IF_POSIX_SOCKET(absl::Status SetSocketDscp(int fdesc, int dscp), {
     }
   }
   return absl::OkStatus();
-})
+}
 
 // Set a socket to use zerocopy
 absl::Status SetSocketZeroCopy(int fd) {
-#if defined(GRPC_POSIX_SOCKET) && defined(GRPC_LINUX_ERRQUEUE)
+#ifdef GRPC_LINUX_ERRQUEUE
   return SetSocketOption(fd, SOL_SOCKET, SO_ZEROCOPY, 1, "SO_ZEROCOPY");
-#else   // defined(GRPC_POSIX_SOCKET) && defined(GRPC_LINUX_ERRQUEUE)
+#else   // GRPC_LINUX_ERRQUEUE
   return absl::Status(absl::StatusCode::kInternal,
                       absl::StrCat("setsockopt(SO_ZEROCOPY): ",
                                    grpc_core::StrError(ENOSYS).c_str()));
-#endif  // defined(GRPC_POSIX_SOCKET) && defined(GRPC_LINUX_ERRQUEUE)
+#endif  // GRPC_LINUX_ERRQUEUE
 }
 
 // Set TCP_USER_TIMEOUT
-IF_POSIX_SOCKET(
-    void TrySetSocketTcpUserTimeout(int fd, const PosixTcpOptions& options,
-                                    bool is_client),
-    {
-      if (g_socket_supports_tcp_user_timeout.load() < 0) {
+void TrySetSocketTcpUserTimeout(int fd, const PosixTcpOptions& options,
+                                bool is_client) {
+  if (g_socket_supports_tcp_user_timeout.load() < 0) {
+    return;
+  }
+  bool enable = is_client ? kDefaultClientUserTimeoutEnabled
+                          : kDefaultServerUserTimeoutEnabled;
+  int timeout =
+      is_client ? kDefaultClientUserTimeoutMs : kDefaultServerUserTimeoutMs;
+  if (options.keep_alive_time_ms > 0) {
+    enable = options.keep_alive_time_ms != INT_MAX;
+  }
+  if (options.keep_alive_timeout_ms > 0) {
+    timeout = options.keep_alive_timeout_ms;
+  }
+  if (enable) {
+    int newval;
+    socklen_t len = sizeof(newval);
+    // If this is the first time to use TCP_USER_TIMEOUT, try to check
+    // if it is available.
+    if (g_socket_supports_tcp_user_timeout.load() == 0) {
+      if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+        // This log is intentionally not protected behind a flag, so that
+        // users know that TCP_USER_TIMEOUT is not being used.
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
+               "won't be used thereafter";
+        g_socket_supports_tcp_user_timeout.store(-1);
+      } else {
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
+               "used thereafter";
+        g_socket_supports_tcp_user_timeout.store(1);
+      }
+    }
+    if (g_socket_supports_tcp_user_timeout.load() > 0) {
+      if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
+                          sizeof(timeout))) {
+        LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
+                   << grpc_core::StrError(errno);
         return;
       }
-      bool enable = is_client ? kDefaultClientUserTimeoutEnabled
-                              : kDefaultServerUserTimeoutEnabled;
-      int timeout =
-          is_client ? kDefaultClientUserTimeoutMs : kDefaultServerUserTimeoutMs;
-      if (options.keep_alive_time_ms > 0) {
-        enable = options.keep_alive_time_ms != INT_MAX;
+      if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+        LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
+                   << grpc_core::StrError(errno);
+        return;
       }
-      if (options.keep_alive_timeout_ms > 0) {
-        timeout = options.keep_alive_timeout_ms;
+      if (newval != timeout) {
+        // Do not fail on failing to set TCP_USER_TIMEOUT
+        LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
+        return;
       }
-      if (enable) {
-        int newval;
-        socklen_t len = sizeof(newval);
-        // If this is the first time to use TCP_USER_TIMEOUT, try to check
-        // if it is available.
-        if (g_socket_supports_tcp_user_timeout.load() == 0) {
-          if (0 !=
-              getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-            // This log is intentionally not protected behind a flag, so that
-            // users know that TCP_USER_TIMEOUT is not being used.
-            GRPC_TRACE_LOG(tcp, INFO)
-                << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
-                   "won't be used thereafter";
-            g_socket_supports_tcp_user_timeout.store(-1);
-          } else {
-            GRPC_TRACE_LOG(tcp, INFO)
-                << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
-                   "used thereafter";
-            g_socket_supports_tcp_user_timeout.store(1);
-          }
-        }
-        if (g_socket_supports_tcp_user_timeout.load() > 0) {
-          if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
-                              sizeof(timeout))) {
-            LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
-                       << grpc_core::StrError(errno);
-            return;
-          }
-          if (0 !=
-              getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-            LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
-                       << grpc_core::StrError(errno);
-            return;
-          }
-          if (newval != timeout) {
-            // Do not fail on failing to set TCP_USER_TIMEOUT
-            LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
-            return;
-          }
-        }
-      }
-    })
+    }
+  }
+}
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
@@ -392,50 +368,47 @@ bool SetSocketDualStack(int fd) {
 #endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-IF_POSIX_SOCKET(absl::StatusOr<int> InternalCreateDualStackSocket(
-                    std::function<int(int, int, int)> socket_factory,
-                    const experimental::EventEngine::ResolvedAddress& addr,
-                    int type, int protocol, DSMode& dsmode),
-                {
-                  const sockaddr* sock_addr = addr.address();
-                  int family = sock_addr->sa_family;
-                  int newfd;
-                  if (family == AF_INET6) {
-                    if (IsIpv6LoopbackAvailable()) {
-                      newfd =
-                          CreateSocket(socket_factory, family, type, protocol);
-                    } else {
-                      newfd = -1;
-                      errno = EAFNOSUPPORT;
-                    }
-                    // Check if we've got a valid dualstack socket.
-                    if (newfd > 0 && SetSocketDualStack(newfd)) {
-                      dsmode = DSMode::DSMODE_DUALSTACK;
-                      return newfd;
-                    }
-                    // If this isn't an IPv4 address, then return whatever we've
-                    // got.
-                    if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
-                      if (newfd < 0) {
-                        return ErrorForFd(newfd, addr);
-                      }
-                      dsmode = DSMode::DSMODE_IPV6;
-                      return newfd;
-                    }
-                    // Fall back to AF_INET.
-                    if (newfd >= 0) {
-                      close(newfd);
-                    }
-                    family = AF_INET;
-                  }
-                  dsmode = family == AF_INET ? DSMode::DSMODE_IPV4
-                                             : DSMode::DSMODE_NONE;
-                  newfd = CreateSocket(socket_factory, family, type, protocol);
-                  if (newfd < 0) {
-                    return ErrorForFd(newfd, addr);
-                  }
-                  return newfd;
-                })
+absl::StatusOr<int> InternalCreateDualStackSocket(
+    std::function<int(int, int, int)> socket_factory,
+    const experimental::EventEngine::ResolvedAddress& addr, int type,
+    int protocol, DSMode& dsmode) {
+  const sockaddr* sock_addr = addr.address();
+  int family = sock_addr->sa_family;
+  int newfd;
+  if (family == AF_INET6) {
+    if (IsIpv6LoopbackAvailable()) {
+      newfd = CreateSocket(socket_factory, family, type, protocol);
+    } else {
+      newfd = -1;
+      errno = EAFNOSUPPORT;
+    }
+    // Check if we've got a valid dualstack socket.
+    if (newfd > 0 && SetSocketDualStack(newfd)) {
+      dsmode = DSMode::DSMODE_DUALSTACK;
+      return newfd;
+    }
+    // If this isn't an IPv4 address, then return whatever we've
+    // got.
+    if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
+      if (newfd < 0) {
+        return ErrorForFd(newfd, addr);
+      }
+      dsmode = DSMode::DSMODE_IPV6;
+      return newfd;
+    }
+    // Fall back to AF_INET.
+    if (newfd >= 0) {
+      close(newfd);
+    }
+    family = AF_INET;
+  }
+  dsmode = family == AF_INET ? DSMode::DSMODE_IPV4 : DSMode::DSMODE_NONE;
+  newfd = CreateSocket(socket_factory, family, type, protocol);
+  if (newfd < 0) {
+    return ErrorForFd(newfd, addr);
+  }
+  return newfd;
+}
 
 absl::Status InternalSetSocketNoSigpipeIfPossible(GRPC_UNUSED int fd) {
 #ifdef GRPC_HAVE_SO_NOSIGPIPE
@@ -496,94 +469,83 @@ std::optional<int> EventEnginePosixInterface::GetFdForPolling(
 }
 
 void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
-#ifdef GRPC_POSIX_SOCKET
   if (IsEventEngineForkEnabled() && !descriptors_.Remove(fd)) {
     return;
   }
   close(fd.fd_);
-#endif  // GRPC_POSIX_SOCKET
 }
 
 //
 // Factories
 //
-IF_POSIX_SOCKET(PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept(
-                    const FileDescriptor& sockfd, struct sockaddr* addr,
-                    socklen_t* addrlen),
-                {
-                  return RunIfCorrectGeneration<PosixErrorOr<FileDescriptor>>(
-                      sockfd,
-                      [&](int fd) {
-                        return RegisterPosixResult(accept(fd, addr, addrlen));
-                      },
-                      PosixErrorOr<FileDescriptor>(
-                          PosixError::WrongGeneration()));
-                })
+PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept(
+    const FileDescriptor& sockfd, struct sockaddr* addr, socklen_t* addrlen) {
+  return RunIfCorrectGeneration<PosixErrorOr<FileDescriptor>>(
+      sockfd,
+      [&](int fd) { return RegisterPosixResult(accept(fd, addr, addrlen)); },
+      PosixErrorOr<FileDescriptor>(PosixError::WrongGeneration()));
+}
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 
-IF_POSIX_SOCKET(
-    PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
-        const FileDescriptor& sockfd,
-        grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-        int nonblock, int cloexec),
-    {
-      EventEngine::ResolvedAddress peer_addr;
-      socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-      PosixErrorOr<FileDescriptor> fd =
-          Accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
-      if (!fd.ok()) {
-        return fd;
-      }
-      int flags;
-      int raw_fd = fd.value().fd_;
-      if (nonblock) {
-        flags = fcntl(raw_fd, F_GETFL, 0);
-        if (flags < 0) goto close_and_error;
-        if (fcntl(raw_fd, F_SETFL, flags | O_NONBLOCK) != 0) {
-          goto close_and_error;
-        }
-      }
-      if (cloexec) {
-        flags = fcntl(raw_fd, F_GETFD, 0);
-        if (flags < 0) goto close_and_error;
-        if (fcntl(raw_fd, F_SETFD, flags | FD_CLOEXEC) != 0) {
-          goto close_and_error;
-        }
-      }
-      addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
-      return fd;
-    close_and_error:
-      auto result = PosixErrorOr<FileDescriptor>::Error(errno);
-      Close(fd.value());
-      return result;
-    })
+PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
+    const FileDescriptor& sockfd,
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
+    int nonblock, int cloexec) {
+  EventEngine::ResolvedAddress peer_addr;
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+  PosixErrorOr<FileDescriptor> fd =
+      Accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
+  if (!fd.ok()) {
+    return fd;
+  }
+  int flags;
+  int raw_fd = fd.value().fd_;
+  if (nonblock) {
+    flags = fcntl(raw_fd, F_GETFL, 0);
+    if (flags < 0) goto close_and_error;
+    if (fcntl(raw_fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+      goto close_and_error;
+    }
+  }
+  if (cloexec) {
+    flags = fcntl(raw_fd, F_GETFD, 0);
+    if (flags < 0) goto close_and_error;
+    if (fcntl(raw_fd, F_SETFD, flags | FD_CLOEXEC) != 0) {
+      goto close_and_error;
+    }
+  }
+  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+  return fd;
+close_and_error:
+  auto result = PosixErrorOr<FileDescriptor>::Error(errno);
+  Close(fd.value());
+  return result;
+}
 
 #else  // GRPC_POSIX_SOCKETUTILS
 
-IF_POSIX_SOCKET(
-    PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
-        const FileDescriptor& sockfd,
-        grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-        int nonblock, int cloexec),
-    {
-      return RunIfCorrectGeneration(
-          sockfd,
-          [&](int fd) {
-            int flags = 0;
-            flags |= nonblock ? SOCK_NONBLOCK : 0;
-            flags |= cloexec ? SOCK_CLOEXEC : 0;
-            EventEngine::ResolvedAddress peer_addr;
-            socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-            PosixErrorOr<FileDescriptor> ret = RegisterPosixResult(accept4(
-                fd, const_cast<sockaddr*>(peer_addr.address()), &len, flags));
-            if (ret.ok()) {
-              addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
-            }
-            return ret;
-          },
-          PosixErrorOr<FileDescriptor>(PosixError::WrongGeneration()));
-    })
+PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
+    const FileDescriptor& sockfd,
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
+    int nonblock, int cloexec) {
+  return RunIfCorrectGeneration(
+      sockfd,
+      [&](int fd) {
+        int flags = 0;
+        flags |= nonblock ? SOCK_NONBLOCK : 0;
+        flags |= cloexec ? SOCK_CLOEXEC : 0;
+        EventEngine::ResolvedAddress peer_addr;
+        socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+        PosixErrorOr<FileDescriptor> ret = RegisterPosixResult(accept4(
+            fd, const_cast<sockaddr*>(peer_addr.address()), &len, flags));
+        if (ret.ok()) {
+          addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+        }
+        return ret;
+      },
+      PosixErrorOr<FileDescriptor>(PosixError::WrongGeneration()));
+}
 
 #endif  // GRPC_POSIX_SOCKETUTILS
 
@@ -599,11 +561,14 @@ absl::StatusOr<FileDescriptor> EventEnginePosixInterface::CreateDualStackSocket(
   return Adopt(*fd);
 }
 
-IF_POSIX_SOCKET(PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Socket(
-                    int domain, int type, int protocol),
-                { return RegisterPosixResult(socket(domain, type, protocol)); })
+PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Socket(int domain,
+                                                               int type,
+                                                               int protocol) {
+  return RegisterPosixResult(socket(domain, type, protocol));
+}
 
-IF_POSIX_SOCKET(absl::StatusOr<PipeEnds> EventEnginePosixInterface::Pipe(), {
+absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>>
+EventEnginePosixInterface::Pipe() {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
@@ -620,7 +585,7 @@ IF_POSIX_SOCKET(absl::StatusOr<PipeEnds> EventEnginePosixInterface::Pipe(), {
   close(pipefd[0]);
   close(pipefd[1]);
   return status;
-})
+}
 
 PosixErrorOr<FileDescriptor> EventEnginePosixInterface::EventFd(int initval,
                                                                 int flags) {
@@ -656,59 +621,54 @@ EventEnginePosixInterface::EpollCreateAndCloexec() {
 #endif  // GRPC_LINUX_EPOLL
 }
 
-IF_POSIX_SOCKET(PosixError EventEnginePosixInterface::Connect(
-                    const FileDescriptor& sockfd, const struct sockaddr* addr,
-                    socklen_t addrlen),
-                {
-                  return PosixResultWrap(sockfd, [&](int sockfd) {
-                    return connect(sockfd, addr, addrlen);
-                  });
-                })
+PosixError EventEnginePosixInterface::Connect(const FileDescriptor& sockfd,
+                                              const struct sockaddr* addr,
+                                              socklen_t addrlen) {
+  return PosixResultWrap(
+      sockfd, [&](int sockfd) { return connect(sockfd, addr, addrlen); });
+}
 
-IF_POSIX_SOCKET(PosixError EventEnginePosixInterface::Ioctl(
-                    const FileDescriptor& fd, int op, void* arg),
-                {
-                  return PosixResultWrap(
-                      fd, [&](int fd) { return ioctl(fd, op, arg); });
-                });
+PosixError EventEnginePosixInterface::Ioctl(const FileDescriptor& fd, int op,
+                                            void* arg) {
+  return PosixResultWrap(fd, [&](int fd) { return ioctl(fd, op, arg); });
+}
 
-IF_POSIX_SOCKET(
-    PosixError EventEnginePosixInterface::Shutdown(const FileDescriptor& fd,
-                                                   int how),
-    { return PosixResultWrap(fd, [&](int fd) { return shutdown(fd, how); }); })
+PosixError EventEnginePosixInterface::Shutdown(const FileDescriptor& fd,
+                                               int how) {
+  return PosixResultWrap(fd, [&](int fd) { return shutdown(fd, how); });
+}
 
-IF_POSIX_SOCKET(PosixError EventEnginePosixInterface::GetSockOpt(
-                    const FileDescriptor& fd, int level, int optname,
-                    void* optval, void* optlen),
-                {
-                  return PosixResultWrap(fd, [&](int fd) {
-                    return getsockopt(fd, level, optname, optval,
-                                      static_cast<socklen_t*>(optlen));
-                  });
-                })
+PosixError EventEnginePosixInterface::GetSockOpt(const FileDescriptor& fd,
+                                                 int level, int optname,
+                                                 void* optval, void* optlen) {
+  return PosixResultWrap(fd, [&](int fd) {
+    return getsockopt(fd, level, optname, optval,
+                      static_cast<socklen_t*>(optlen));
+  });
+}
 
-IF_POSIX_SOCKET(
-    PosixErrorOr<int64_t> EventEnginePosixInterface::SetSockOpt(
-        const FileDescriptor& fd, int level, int optname, uint32_t optval),
-    {
-      return RunIfCorrectGeneration(
-          fd,
-          [&](int fd) {
-            if (setsockopt(fd, level, optname, &optval, sizeof(optval)) < 0) {
-              return PosixErrorOr<int64_t>(PosixError::Error(errno));
-            }
-            return PosixErrorOr<int64_t>(optval);
-          },
-          PosixErrorOr<int64_t>(PosixError::WrongGeneration()));
-    })
+PosixErrorOr<int64_t> EventEnginePosixInterface::SetSockOpt(
+    const FileDescriptor& fd, int level, int optname, uint32_t optval) {
+  return RunIfCorrectGeneration(
+      fd,
+      [&](int fd) {
+        if (setsockopt(fd, level, optname, &optval, sizeof(optval)) < 0) {
+          return PosixErrorOr<int64_t>(PosixError::Error(errno));
+        }
+        return PosixErrorOr<int64_t>(optval);
+      },
+      PosixErrorOr<int64_t>(PosixError::WrongGeneration()));
+}
 
-IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::Read(
-                    const FileDescriptor& fd, absl::Span<char> buf),
-                { return Int64Wrap(fd, read, buf.data(), buf.size()); })
+PosixErrorOr<int64_t> EventEnginePosixInterface::Read(const FileDescriptor& fd,
+                                                      absl::Span<char> buf) {
+  return Int64Wrap(fd, read, buf.data(), buf.size());
+}
 
-IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::Write(
-                    const FileDescriptor& fd, absl::Span<char> buf),
-                { return Int64Wrap(fd, write, buf.data(), buf.size()); })
+PosixErrorOr<int64_t> EventEnginePosixInterface::Write(const FileDescriptor& fd,
+                                                       absl::Span<char> buf) {
+  return Int64Wrap(fd, write, buf.data(), buf.size());
+}
 
 PosixError EventEnginePosixInterface::EventFdRead(const FileDescriptor& fd) {
 #ifdef GRPC_LINUX_EVENTFD
@@ -729,15 +689,15 @@ PosixError EventEnginePosixInterface::EventFdWrite(const FileDescriptor& fd) {
 #endif  // GRPC_LINUX_EVENTFD
 }
 
-IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::RecvMsg(
-                    const FileDescriptor& fd, struct msghdr* message,
-                    int flags),
-                { return Int64Wrap(fd, recvmsg, message, flags); })
+PosixErrorOr<int64_t> EventEnginePosixInterface::RecvMsg(
+    const FileDescriptor& fd, struct msghdr* message, int flags) {
+  return Int64Wrap(fd, recvmsg, message, flags);
+}
 
-IF_POSIX_SOCKET(PosixErrorOr<int64_t> EventEnginePosixInterface::SendMsg(
-                    const FileDescriptor& fd, const struct msghdr* message,
-                    int flags),
-                { return Int64Wrap(fd, sendmsg, message, flags); })
+PosixErrorOr<int64_t> EventEnginePosixInterface::SendMsg(
+    const FileDescriptor& fd, const struct msghdr* message, int flags) {
+  return Int64Wrap(fd, sendmsg, message, flags);
+}
 
 //
 // Epoll
@@ -834,41 +794,37 @@ absl::Status EventEnginePosixInterface::SetSocketNoSigpipeIfPossible(
                                 absl::OkStatus());
 }
 
-IF_POSIX_SOCKET(
-    absl::Status EventEnginePosixInterface::PrepareTcpClientSocket(
-        int fd, const EventEngine::ResolvedAddress& addr,
-        const PosixTcpOptions& options),
-    {
-      bool close_fd = true;
-      auto sock_cleanup = absl::MakeCleanup([&close_fd, &fd]() -> void {
-        if (close_fd && fd > 0) {
-          close(fd);
-        }
-      });
-      GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(fd, 1));
-      GRPC_RETURN_IF_ERROR(SetSocketCloexec(fd, 1));
-      if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
-        GRPC_RETURN_IF_ERROR(
-            SetSocketRcvBuf(fd, options.tcp_receive_buffer_size));
-      }
-      if (addr.address()->sa_family != AF_UNIX &&
-          !ResolvedAddressIsVSock(addr)) {
-        // If its not a unix socket or vsock address.
-        GRPC_RETURN_IF_ERROR(
-            SetSocketOption(fd, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
-        GRPC_RETURN_IF_ERROR(
-            SetSocketOption(fd, SOL_SOCKET, SO_REUSEADDR, 1, "SO_REUSEADDR"));
-        GRPC_RETURN_IF_ERROR(SetSocketDscp(fd, options.dscp));
-        TrySetSocketTcpUserTimeout(fd, options, true);
-      }
-      GRPC_RETURN_IF_ERROR(InternalSetSocketNoSigpipeIfPossible(fd));
-      GRPC_RETURN_IF_ERROR(InternalApplySocketMutatorInOptions(
-          fd, GRPC_FD_CLIENT_CONNECTION_USAGE, options));
-      // No errors. Set close_fd to false to ensure the socket is
-      // not closed.
-      close_fd = false;
-      return absl::OkStatus();
-    })
+absl::Status EventEnginePosixInterface::PrepareTcpClientSocket(
+    int fd, const EventEngine::ResolvedAddress& addr,
+    const PosixTcpOptions& options) {
+  bool close_fd = true;
+  auto sock_cleanup = absl::MakeCleanup([&close_fd, &fd]() -> void {
+    if (close_fd && fd > 0) {
+      close(fd);
+    }
+  });
+  GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(fd, 1));
+  GRPC_RETURN_IF_ERROR(SetSocketCloexec(fd, 1));
+  if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
+    GRPC_RETURN_IF_ERROR(SetSocketRcvBuf(fd, options.tcp_receive_buffer_size));
+  }
+  if (addr.address()->sa_family != AF_UNIX && !ResolvedAddressIsVSock(addr)) {
+    // If its not a unix socket or vsock address.
+    GRPC_RETURN_IF_ERROR(
+        SetSocketOption(fd, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
+    GRPC_RETURN_IF_ERROR(
+        SetSocketOption(fd, SOL_SOCKET, SO_REUSEADDR, 1, "SO_REUSEADDR"));
+    GRPC_RETURN_IF_ERROR(SetSocketDscp(fd, options.dscp));
+    TrySetSocketTcpUserTimeout(fd, options, true);
+  }
+  GRPC_RETURN_IF_ERROR(InternalSetSocketNoSigpipeIfPossible(fd));
+  GRPC_RETURN_IF_ERROR(InternalApplySocketMutatorInOptions(
+      fd, GRPC_FD_CLIENT_CONNECTION_USAGE, options));
+  // No errors. Set close_fd to false to ensure the socket is
+  // not closed.
+  close_fd = false;
+  return absl::OkStatus();
+}
 
 absl::StatusOr<EventEnginePosixInterface::PosixSocketCreateResult>
 EventEnginePosixInterface::CreateAndPrepareTcpClientSocket(
@@ -948,96 +904,93 @@ int EventEnginePosixInterface::ConfigureSocket(const FileDescriptor& fd,
       -1);
 }
 
-IF_POSIX_SOCKET(
-    absl::StatusOr<EventEngine::ResolvedAddress>
-        EventEnginePosixInterface::PrepareListenerSocket(
-            const FileDescriptor& fd, const PosixTcpOptions& options,
-            const EventEngine::ResolvedAddress& address),
-    {
-      if (!IsCorrectGeneration(fd)) {
-        return absl::InternalError("PrepareListenerSocket: wrong generation");
-      }
-      int f = fd.fd_;
-      if (IsSocketReusePortSupported() && options.allow_reuse_port &&
-          address.address()->sa_family != AF_UNIX &&
-          !ResolvedAddressIsVSock(address)) {
-        GRPC_RETURN_IF_ERROR(SetSocketReusePort(f, 1));
-      }
+absl::StatusOr<EventEngine::ResolvedAddress>
+EventEnginePosixInterface::PrepareListenerSocket(
+    const FileDescriptor& fd, const PosixTcpOptions& options,
+    const EventEngine::ResolvedAddress& address) {
+  if (!IsCorrectGeneration(fd)) {
+    return absl::InternalError("PrepareListenerSocket: wrong generation");
+  }
+  int f = fd.fd_;
+  if (IsSocketReusePortSupported() && options.allow_reuse_port &&
+      address.address()->sa_family != AF_UNIX &&
+      !ResolvedAddressIsVSock(address)) {
+    GRPC_RETURN_IF_ERROR(SetSocketReusePort(f, 1));
+  }
 
-      GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
-      GRPC_RETURN_IF_ERROR(SetSocketCloexec(f, 1));
+  GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(f, 1));
+  GRPC_RETURN_IF_ERROR(SetSocketCloexec(f, 1));
 
-      if (address.address()->sa_family != AF_UNIX &&
-          !ResolvedAddressIsVSock(address)) {
-        GRPC_RETURN_IF_ERROR(
-            SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
-        GRPC_RETURN_IF_ERROR(
-            SetSocketOption(f, SOL_SOCKET, SO_REUSEADDR, 1, "SO_REUSEADDR"));
-        GRPC_RETURN_IF_ERROR(SetSocketDscp(f, options.dscp));
-        TrySetSocketTcpUserTimeout(f, options, false);
-      }
-      GRPC_RETURN_IF_ERROR(InternalSetSocketNoSigpipeIfPossible(f));
-      GRPC_RETURN_IF_ERROR(InternalApplySocketMutatorInOptions(
-          f, GRPC_FD_SERVER_LISTENER_USAGE, options));
-      if (kLinuxErrqueue && !SetSocketZeroCopy(f).ok()) {
-        // it's not fatal, so just log it.
-        VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
-      }
-      if (bind(f, address.address(), address.size()) < 0) {
-        auto sockaddr_str = ResolvedAddressToString(address);
-        if (!sockaddr_str.ok()) {
-          LOG(ERROR) << "Could not convert sockaddr to string: "
-                     << sockaddr_str.status();
-          sockaddr_str = "<unparsable>";
-        }
-        sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
-        return absl::FailedPreconditionError(
-            absl::StrCat("Error in bind for address '", *sockaddr_str,
-                         "': ", std::strerror(errno)));
-      }
-      if (listen(f, GetMaxAcceptQueueSize()) < 0) {
-        return absl::FailedPreconditionError(
-            absl::StrCat("Error in listen: ", std::strerror(errno)));
-      }
-      socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-      EventEngine::ResolvedAddress sockname_temp;
-      if (getsockname(f, const_cast<sockaddr*>(sockname_temp.address()), &len) <
-          0) {
-        return absl::FailedPreconditionError(
-            absl::StrCat("Error in getsockname: ", std::strerror(errno)));
-      }
-      return sockname_temp;
-    })
+  if (address.address()->sa_family != AF_UNIX &&
+      !ResolvedAddressIsVSock(address)) {
+    GRPC_RETURN_IF_ERROR(
+        SetSocketOption(f, IPPROTO_TCP, TCP_NODELAY, 1, "TCP_NODELAY"));
+    GRPC_RETURN_IF_ERROR(
+        SetSocketOption(f, SOL_SOCKET, SO_REUSEADDR, 1, "SO_REUSEADDR"));
+    GRPC_RETURN_IF_ERROR(SetSocketDscp(f, options.dscp));
+    TrySetSocketTcpUserTimeout(f, options, false);
+  }
+  GRPC_RETURN_IF_ERROR(InternalSetSocketNoSigpipeIfPossible(f));
+  GRPC_RETURN_IF_ERROR(InternalApplySocketMutatorInOptions(
+      f, GRPC_FD_SERVER_LISTENER_USAGE, options));
+  if (kLinuxErrqueue && !SetSocketZeroCopy(f).ok()) {
+    // it's not fatal, so just log it.
+    VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
+  }
+  if (bind(f, address.address(), address.size()) < 0) {
+    auto sockaddr_str = ResolvedAddressToString(address);
+    if (!sockaddr_str.ok()) {
+      LOG(ERROR) << "Could not convert sockaddr to string: "
+                 << sockaddr_str.status();
+      sockaddr_str = "<unparsable>";
+    }
+    sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
+    return absl::FailedPreconditionError(
+        absl::StrCat("Error in bind for address '", *sockaddr_str,
+                     "': ", std::strerror(errno)));
+  }
+  if (listen(f, GetMaxAcceptQueueSize()) < 0) {
+    return absl::FailedPreconditionError(
+        absl::StrCat("Error in listen: ", std::strerror(errno)));
+  }
+  socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+  EventEngine::ResolvedAddress sockname_temp;
+  if (getsockname(f, const_cast<sockaddr*>(sockname_temp.address()), &len) <
+      0) {
+    return absl::FailedPreconditionError(
+        absl::StrCat("Error in getsockname: ", std::strerror(errno)));
+  }
+  return sockname_temp;
+}
 
 // Bind to "::" to get a port number not used by any address.
-IF_POSIX_SOCKET(
-    absl::StatusOr<int> EventEnginePosixInterface::GetUnusedPort(), {
-      EventEngine::ResolvedAddress wild = ResolvedAddressMakeWild6(0);
-      DSMode dsmode;
-      auto fd =
-          InternalCreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
-      GRPC_RETURN_IF_ERROR(fd.status());
-      if (dsmode == DSMode::DSMODE_IPV4) {
-        wild = ResolvedAddressMakeWild4(0);
-      }
-      if (bind(*fd, wild.address(), wild.size()) != 0) {
-        close(*fd);
-        return absl::FailedPreconditionError(
-            absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
-      }
-      socklen_t len = wild.size();
-      if (getsockname(*fd, const_cast<sockaddr*>(wild.address()), &len) != 0) {
-        close(*fd);
-        return absl::FailedPreconditionError(
-            absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
-      }
-      close(*fd);
-      int port = ResolvedAddressGetPort(wild);
-      if (port <= 0) {
-        return absl::FailedPreconditionError("Bad port");
-      }
-      return port;
-    })
+absl::StatusOr<int> EventEnginePosixInterface::GetUnusedPort() {
+  EventEngine::ResolvedAddress wild = ResolvedAddressMakeWild6(0);
+  DSMode dsmode;
+  auto fd =
+      InternalCreateDualStackSocket(nullptr, wild, SOCK_STREAM, 0, dsmode);
+  GRPC_RETURN_IF_ERROR(fd.status());
+  if (dsmode == DSMode::DSMODE_IPV4) {
+    wild = ResolvedAddressMakeWild4(0);
+  }
+  if (bind(*fd, wild.address(), wild.size()) != 0) {
+    close(*fd);
+    return absl::FailedPreconditionError(
+        absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
+  }
+  socklen_t len = wild.size();
+  if (getsockname(*fd, const_cast<sockaddr*>(wild.address()), &len) != 0) {
+    close(*fd);
+    return absl::FailedPreconditionError(
+        absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
+  }
+  close(*fd);
+  int port = ResolvedAddressGetPort(wild);
+  if (port <= 0) {
+    return absl::FailedPreconditionError("Bad port");
+  }
+  return port;
+}
 
 void EventEnginePosixInterface::ConfigureDefaultTcpUserTimeout(bool enable,
                                                                int timeout,
@@ -1069,7 +1022,6 @@ PosixError EventEnginePosixInterface::PosixResultWrap(
 }
 
 void EventEnginePosixInterface::AdvanceGeneration() {
-#ifdef GRPC_POSIX_SOCKET
 #ifdef GRPC_ENABLE_FORK_SUPPORT
   if (!grpc_core::IsEventEngineForkEnabled()) {
     grpc_core::Crash(
@@ -1081,7 +1033,129 @@ void EventEnginePosixInterface::AdvanceGeneration() {
     }
   }
 #endif  // GRPC_ENABLE_FORK_SUPPORT
-#endif  // GRPC_POSIX_SOCKET
 }
+
+#else  // GRPC_POSIX_SOCKET
+
+int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
+                 int type, int protocol) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::Status SetSocketRcvBuf(int fd, int buffer_size_bytes) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::Status SetSocketNonBlocking(int fd, int non_blocking) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::Status SetSocketCloexec(int fd, int close_on_exec) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::Status SetSocketOption(int fd, int level, int option, int value,
+                             absl::string_view debug_label) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::Status SetSocketDscp(int fdesc, int dscp) {
+  grpc_core::Crash("unimplemented");
+}
+
+void TrySetSocketTcpUserTimeout(int fd, const PosixTcpOptions& options,
+                                bool is_client) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::StatusOr<int> InternalCreateDualStackSocket(
+    std::function<int(int, int, int)> socket_factory,
+    const experimental::EventEngine::ResolvedAddress& addr, int type,
+    int protocol, DSMode& dsmode)
+    PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept(
+        const FileDescriptor& sockfd, struct sockaddr* addr,
+        socklen_t* addrlen) {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
+    const FileDescriptor& sockfd,
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
+    int nonblock, int cloexec)
+    PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Socket(
+        int domain, int type, int protocol) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>>
+EventEnginePosixInterface::Pipe() {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixError EventEnginePosixInterface::Connect(const FileDescriptor& sockfd,
+                                              const struct sockaddr* addr,
+                                              socklen_t addrlen) {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixError EventEnginePosixInterface::Ioctl(const FileDescriptor& fd, int op,
+                                            void* arg) {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixError EventEnginePosixInterface::Shutdown(const FileDescriptor& fd,
+                                               int how) {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixError EventEnginePosixInterface::GetSockOpt(const FileDescriptor& fd,
+                                                 int level, int optname,
+                                                 void* optval, void* optlen) {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixErrorOr<int64_t> EventEnginePosixInterface::SetSockOpt(
+    const FileDescriptor& fd, int level, int optname, uint32_t optval) {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixErrorOr<int64_t> EventEnginePosixInterface::Read(const FileDescriptor& fd,
+                                                      absl::Span<char> buf) {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixErrorOr<int64_t> EventEnginePosixInterface::Write(const FileDescriptor& fd,
+                                                       absl::Span<char> buf) {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixErrorOr<int64_t> EventEnginePosixInterface::RecvMsg(
+    const FileDescriptor& fd, struct msghdr* message, int flags) {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixErrorOr<int64_t> EventEnginePosixInterface::SendMsg(
+    const FileDescriptor& fd, const struct msghdr* message, int flags) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::Status EventEnginePosixInterface::PrepareTcpClientSocket(
+    int fd, const EventEngine::ResolvedAddress& addr,
+    const PosixTcpOptions& options) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::StatusOr<EventEngine::ResolvedAddress>
+EventEnginePosixInterface::PrepareListenerSocket(
+    const FileDescriptor& fd, const PosixTcpOptions& options,
+    const EventEngine::ResolvedAddress& address) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::StatusOr<int> EventEnginePosixInterface::GetUnusedPort() {
+  grpc_core::Crash("unimplemented");
+}
+
+#endif  // GRPC_POSIX_SOCKET
 
 }  // namespace grpc_event_engine::experimental
