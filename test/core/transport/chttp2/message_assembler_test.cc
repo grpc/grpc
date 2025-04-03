@@ -54,6 +54,10 @@ TEST(GrpcMessageAssembler, One2GBMessage) { CHECK(true); }
 
 TEST(GrpcMessageAssembler, One4GBMessage) { CHECK(true); }
 
+TEST(GrpcMessageAssembler, IncompleteMessage1) { CHECK(true); }
+
+TEST(GrpcMessageAssembler, IncompleteMessage2) { CHECK(true); }
+
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
