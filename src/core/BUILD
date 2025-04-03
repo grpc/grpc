@@ -3105,6 +3105,7 @@ grpc_cc_library(
     deps = [
         "histogram_view",
         "per_cpu",
+        "no_destruct",
         "//:gpr_platform",
     ],
 )

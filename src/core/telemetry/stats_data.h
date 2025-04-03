@@ -25,9 +25,12 @@
 
 #include "absl/strings/string_view.h"
 #include "src/core/telemetry/histogram_view.h"
+#include "src/core/util/no_destruct.h"
 #include "src/core/util/per_cpu.h"
 
 namespace grpc_core {
+class GlobalStatsCollector;
+class Http2StatsCollector;
 class HistogramCollector_100000_20;
 class Histogram_100000_20 {
  public:
@@ -456,9 +459,13 @@ class GlobalStatsCollector {
   void IncrementHttp2PingsSent() {
     data_.this_cpu().http2_pings_sent.fetch_add(1, std::memory_order_relaxed);
   }
+
+ private:
   void IncrementHttp2WritesBegun() {
     data_.this_cpu().http2_writes_begun.fetch_add(1, std::memory_order_relaxed);
   }
+
+ public:
   void IncrementHttp2TransportStalls() {
     data_.this_cpu().http2_transport_stalls.fetch_add(
         1, std::memory_order_relaxed);
@@ -659,6 +666,7 @@ class GlobalStatsCollector {
   }
 
  private:
+  friend class Http2StatsCollector;
   struct Data {
     std::atomic<uint64_t> client_calls_created{0};
     std::atomic<uint64_t> server_calls_created{0};
@@ -741,6 +749,38 @@ class GlobalStatsCollector {
     HistogramCollector_16777216_20 chaotic_good_tcp_write_size_control;
   };
   PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};
+};
+inline GlobalStatsCollector& global_stats() {
+  return *NoDestructSingleton<GlobalStatsCollector>::Get();
+}
+struct Http2Stats {
+  enum class Counter { kHttp2WritesBegun, COUNT };
+  enum class Histogram { COUNT };
+  Http2Stats();
+  static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];
+  static const absl::string_view
+      histogram_name[static_cast<int>(Histogram::COUNT)];
+  static const absl::string_view counter_doc[static_cast<int>(Counter::COUNT)];
+  static const absl::string_view
+      histogram_doc[static_cast<int>(Histogram::COUNT)];
+  union {
+    struct {
+      uint64_t http2_writes_begun;
+    };
+    uint64_t counters[static_cast<int>(Counter::COUNT)];
+  };
+  HistogramView histogram(Histogram which) const;
+};
+class Http2StatsCollector {
+ public:
+  const Http2Stats& View() const { return data_; };
+  void IncrementHttp2WritesBegun() {
+    ++data_.http2_writes_begun;
+    global_stats().IncrementHttp2WritesBegun();
+  }
+
+ private:
+  Http2Stats data_;
 };
 }  // namespace grpc_core
 
