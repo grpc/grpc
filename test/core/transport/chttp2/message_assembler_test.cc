@@ -61,9 +61,5 @@ TEST(GrpcMessageAssembler, One4GBMessage) { CHECK(true); }
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  // Must call to create default EventEngine.
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }
