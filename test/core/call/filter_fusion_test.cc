@@ -18,10 +18,11 @@
 
 #include <type_traits>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using testing::ElementsAre;
 
@@ -32,7 +33,7 @@ namespace {
 // without needing to pass context around
 std::vector<std::string> history;
 
-class Test1 {
+class Test1 : public grpc_core::ImplementChannelFilter<Test1> {
  public:
   class Call {
    public:
@@ -57,18 +58,18 @@ class Test1 {
    private:
   };
 
-  bool StartTransportOp(grpc_transport_op* op) {
+  bool StartTransportOp(grpc_transport_op* op) override {
     history.push_back("Test1::StartTransportOp");
     return false;
   }
 
-  bool GetChannelInfo(const grpc_channel_info* info) {
+  bool GetChannelInfo(const grpc_channel_info* info) override {
     history.push_back("Test1::GetChannelInfo");
     return false;
   }
 };
 
-class Test2 {
+class Test2 : public grpc_core::ImplementChannelFilter<Test2> {
  public:
   class Call {
    public:
@@ -104,7 +105,7 @@ class Test2 {
   }
 };
 
-class Test3 {
+class Test3 : public grpc_core::ImplementChannelFilter<Test3> {
  public:
   class Call {
    public:
@@ -145,7 +146,7 @@ class Test3 {
   }
 };
 
-class Test4 {
+class Test4 : public grpc_core::ImplementChannelFilter<Test4> {
  public:
   class Call {
    public:
@@ -179,7 +180,7 @@ class Test4 {
   }
 };
 
-class Test5 {
+class Test5 : public grpc_core::ImplementChannelFilter<Test5> {
  public:
   class Call {
    public:
@@ -253,8 +254,6 @@ TEST(FusedFilterTest, ClientFilterTest) {
   auto message = Arena::MakePooled<Message>();
   auto server_metadata_handle = Arena::MakePooled<ServerMetadata>();
   auto server_trailing_metadata_handle = Arena::MakePooled<ServerMetadata>();
-  auto server_trailing_metadata_handle_half_close =
-      Arena::MakePooled<ServerMetadata>();
   auto client_metadata_handle = Arena::MakePooled<ClientMetadata>();
   struct grpc_call_final_info info;
   message = RunSuccessfulPromise<Message>(
@@ -265,10 +264,8 @@ TEST(FusedFilterTest, ClientFilterTest) {
       call.OnServerInitialMetadata(std::move(server_metadata_handle), &filter));
   RunSuccessfulPromise<ClientMetadata>(
       call.OnClientInitialMetadata(std::move(client_metadata_handle), &filter));
-  RunSuccessfulPromise<ServerMetadata>(call.OnServerTrailingMetadata(
-      std::move(server_trailing_metadata_handle), &filter));
-  RunSuccessfulPromise<ServerMetadata>(call.OnClientToServerHalfClose(
-      std::move(server_trailing_metadata_handle_half_close)));
+  call.OnServerTrailingMetadata(*server_trailing_metadata_handle, &filter);
+  call.OnClientToServerHalfClose();
   call.OnFinalize(&info, &filter);
   EXPECT_THAT(
       history,
