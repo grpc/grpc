@@ -667,7 +667,7 @@ class ForkSupport {
     grpc_core::Crash("Not implemented");
     return nullptr;
   }
-}
+};
 
 #endif  // GRPC_POSIX_SOCKET_TCP
 
