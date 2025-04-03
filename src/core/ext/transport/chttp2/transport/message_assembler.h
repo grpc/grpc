@@ -54,31 +54,35 @@ class GrpcMessageAssembler {
   // We expect the caller to run GenerateMessage in a loop till it returns
   // nullptr or error.
   absl::StatusOr<MessageHandle> GenerateMessage() {
-    if (message_buffer_.Length() <= kGrpcHeaderSizeInBytes) {
-      GrpcMessageHeader header_ = ExtractGrpcHeader(message_buffer_);
-      if (message_buffer_.Length() + kGrpcHeaderSizeInBytes >= header_.length) {
-        // If gRPC header has length 0, we return an empty message.
-        // Bounds: Max len of a valid gRPC message is 4 GB in gRPC C++. 2GB for
-        // other stacks. Since 4 bytes can hold length of 4GB, we dont check
-        // bounds.
-        SliceBuffer discard;
-        message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
-                                                       discard);
-        discard.Clear();
-        SliceBuffer temp;
-        message_buffer_.MoveFirstNBytesIntoSliceBuffer(header_.length, temp);
-        MessageHandle grpc_message = Arena::MakePooled<Message>();
-        grpc_message->payload()->Append(std::move(temp));
-        return grpc_message;
-      }
-      if (is_end_of_stream_ && message_buffer_.Length() > 0) {
-        absl::InternalError("Incomplete gRPC frame received");
-      }
-      return nullptr;
+    if (message_buffer_.Length() < kGrpcHeaderSizeInBytes) {
+      return IsValidEndState(is_end_of_stream);
     }
+    GrpcMessageHeader header_ = ExtractGrpcHeader(message_buffer_);
+    if (message_buffer_.Length() + kGrpcHeaderSizeInBytes >= header_.length) {
+      // If gRPC header has length 0, we return an empty message.
+      // Bounds: Max len of a valid gRPC message is 4 GB in gRPC C++. 2GB for
+      // other stacks. Since 4 bytes can hold length of 4GB, we dont check
+      // bounds.
+      SliceBuffer discard;
+      message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
+                                                     discard);
+      discard.Clear();
+      SliceBuffer temp;
+      message_buffer_.MoveFirstNBytesIntoSliceBuffer(header_.length, temp);
+      MessageHandle grpc_message = Arena::MakePooled<Message>();
+      grpc_message->payload()->Append(std::move(temp));
+      return grpc_message;
+    }
+    return IsValidEndState(is_end_of_stream);
   }
 
  public:
+  absl::StatusOr<MessageHandle> IsValidEndState(bool is_end_of_stream) {
+    if (is_end_of_stream_ && message_buffer_.Length() > 0) {
+      absl::InternalError("Incomplete gRPC frame received");
+    }
+    return nullptr;
+  }
   bool is_end_of_stream_ = false;
   SliceBuffer message_buffer_;
 };
