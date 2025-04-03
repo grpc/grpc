@@ -103,6 +103,12 @@ class SliceBuffer {
     grpc_slice_buffer_move_first(&slice_buffer_, n, &other.slice_buffer_);
   }
 
+  /// Copy the first n bytes of the SliceBuffer into a memory pointed to by dst.
+  /// The original SliceBuffer remains unchanged.
+  void CopyFirstNBytesIntoBuffer(size_t n, uint8_t* dst) {
+    grpc_slice_buffer_copy_first_into_buffer(&slice_buffer_, n, dst);
+  }
+
   /// Removes and unrefs all slices in the SliceBuffer.
   void Clear() { grpc_slice_buffer_reset_and_unref(&slice_buffer_); }
 

@@ -448,7 +448,7 @@ TEST(Frame, GrpcHeaderTest) {
   EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
 
   GrpcMessageHeader header = ExtractGrpcHeader(payload);
-  EXPECT_EQ(payload.Length(), 0);
+  EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
   EXPECT_EQ(header.flags, kFlags);
   EXPECT_EQ(header.length, kLength);
 }

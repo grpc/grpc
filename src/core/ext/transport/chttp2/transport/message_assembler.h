@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2024 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,82 +40,51 @@ namespace http2 {
 // This class helps to assemble gRPC Messages from a series of Http2DataFrame
 // payloads by processing the payloads one at a time.
 class GrpcMessageAssembler {
-  // Input : The payload must contain the payload from the Http2DataFrame.
+ public:
+  // Input : The input must contain the payload from the Http2DataFrame.
   // This function will move the payload into an internal buffer.
-  void AppendNewDataFrame(SliceBuffer& payload) {
+  void AppendNewDataFrame(SliceBuffer& payload, bool is_end_of_stream) {
+    is_end_of_stream_ = is_end_of_stream;
     DCHECK_GE(payload.Length(), 0);
     payload.MoveFirstNBytesIntoSliceBuffer(payload.Length(), message_buffer_);
     DCHECK_EQ(payload.Length(), 0);
   }
-  // Input : This is reference to grpc_message.
-  // If we have an entire gRPC message buffered, the message will be moved into
-  // grpc_message and the function will return true.
-  // If we don't have an entire gRPC message buffered, message will not be
-  // edited and the function will return false.
+
   // We expect the caller to run GenerateMessage in a loop till it returns
-  // false.
-  bool GenerateMessage(MessageHandle& grpc_message) {
-    if (state_ == ReadingState::kNewMessage) {
-      if (message_buffer_.Length() <= kGrpcHeaderSizeInBytes) {
-        // We don't have enough bytes for a full header.
-        // The partial header is saved in message_buffer_.
-        // No message should be sent to caller.
-        return false;
-      }
+  // nullptr or error.
+  absl::StatusOr<MessageHandle> GenerateMessage() {
+    if (message_buffer_.Length() <= kGrpcHeaderSizeInBytes) {
       header_ = ExtractGrpcHeader(message_buffer_);
-      state_ = ReadingState::kCompleteHeader;
-    }
-    if (state_ == ReadingState::kCompleteHeader &&
-        message_buffer_.Length() >= header_.length) {
-      // TODO : Special case : if gRPC header has message length 0?
-      // Pass it up
-      // Max len of a gRPC message. 4 GB. Other stacks fail at 2GB.
-      SliceBuffer temp;
-      message_buffer_.MoveFirstNBytesIntoSliceBuffer(header_.length, temp);
-      grpc_message->payload()->Append(std::move(temp));
-      state_ = ReadingState::kNewMessage;
-      header_.flags = 0;
-      header_.length = 0;
-      return true;
-    }
-    return false;
-  }
-
- public:
-  // TODO : Special case : what if we get only half a message and end_Stream?
-  // Fail the STREAM.
-  enum class ReadingState : uint8_t {
-    kNewMessage,
-    kCompleteHeader,
-  };
-  ReadingState state_ = ReadingState::kNewMessage;
-  GrpcMessageHeader header_;
-  SliceBuffer message_buffer_;
-};
-
-/*
-  class Http2ClientTransport {
-    Stream {
-      // ... other stuff ...
-      GrpcMessageAssembler assemble_;
-    };
-  };
-
-  ProcessDataFrame(Http2DataFrame frame) {
-    Stream stream = LookUp(frame.stream_id);
-    if(stream is valid and not closed) {
-      stream.assemble_.AppendNewDataFrame(frame.payload);
-      MessageHandler message = MakeNewMessageHandler();
-      while(stream.assemble_.GenerateMessage(message)) {
-        stream.call_handler.PushMessage(std::move(message));
-        message = MakeNewMessageHandler();
+      if (message_buffer_.Length() + kGrpcHeaderSizeInBytes >= header_.length) {
+        // Special case: if gRPC header has length 0, we return an empty
+        // message.
+        // Bounds: Max len of a valid gRPC message is 4 GB in gRPC C++. 2GB for
+        // other stacks. Since 4 bytes can hold length of 4GB, we dont check
+        // bounds.
+        SliceBuffer discard;
+        message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
+                                                       discard);
+        discard.Clear();
+        SliceBuffer temp;
+        message_buffer_.MoveFirstNBytesIntoSliceBuffer(header_.length, temp);
+        MessageHandle grpc_message = Arena::MakePooled<Message>();
+        grpc_message->payload()->Append(std::move(temp));
+        return grpc_message;
       }
+      if (is_end_of_stream_ && message_buffer_.Length() > 0) {
+        absl::InternalError("Incomplete gRPC frame received");
+      }
+      return nullptr;
     }
-  }
 
-*/
+   public:
+    // TODO : Special case : what if we get only half a message and end_Stream?
+    // Fail the STREAM.
+    bool is_end_of_stream_ = false;
+    SliceBuffer message_buffer_;
+  };
 
-GRPC_CHECK_CLASS_SIZE(GrpcMessageAssembler, 10);
+  GRPC_CHECK_CLASS_SIZE(GrpcMessageAssembler, 10);
 
 }  // namespace http2
 }  // namespace grpc_core

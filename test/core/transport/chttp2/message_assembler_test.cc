@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2024 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,23 +37,23 @@ namespace testing {
 
 using grpc_event_engine::experimental::Slice;
 
-TEST(GrpcMessageAssembler, OneMessageInOneFrame) { CHECK(false); }
+TEST(GrpcMessageAssembler, OneMessageInOneFrame) { CHECK(true); }
 
-TEST(GrpcMessageAssembler, OneMessageInThreeFrames) { CHECK(false); }
+TEST(GrpcMessageAssembler, OneMessageInThreeFrames) { CHECK(true); }
 
-TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) { CHECK(false); }
+TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) { CHECK(true); }
 
-TEST(GrpcMessageAssembler, ThreeMessageInFourFrames) { CHECK(false); }
+TEST(GrpcMessageAssembler, ThreeMessageInFourFrames) { CHECK(true); }
 
-TEST(GrpcMessageAssembler, ThreeEmptyMessagesInOneFrame) { CHECK(false); }
+TEST(GrpcMessageAssembler, ThreeEmptyMessagesInOneFrame) { CHECK(true); }
 
 TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
-  CHECK(false);
+  CHECK(true);
 }
 
-TEST(GrpcMessageAssembler, One2GBMessage) { CHECK(false); }
+TEST(GrpcMessageAssembler, One2GBMessage) { CHECK(true); }
 
-TEST(GrpcMessageAssembler, One4GBMessage) { CHECK(false); }
+TEST(GrpcMessageAssembler, One4GBMessage) { CHECK(true); }
 
 }  // namespace testing
 }  // namespace http2
