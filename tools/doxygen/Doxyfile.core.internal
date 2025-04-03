@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 46.0.0
+PROJECT_NUMBER         = 47.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -2082,7 +2082,9 @@ src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/event_engine_context.h \
 src/core/lib/event_engine/extensions/can_track_errors.h \
 src/core/lib/event_engine/extensions/chaotic_good_extension.h \
+src/core/lib/event_engine/extensions/iomgr_compatible.h \
 src/core/lib/event_engine/extensions/supports_fd.h \
+src/core/lib/event_engine/extensions/supports_win_sockets.h \
 src/core/lib/event_engine/extensions/tcp_trace.h \
 src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \

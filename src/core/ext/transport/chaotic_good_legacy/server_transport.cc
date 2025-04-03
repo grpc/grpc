@@ -123,9 +123,9 @@ auto ChaoticGoodServerTransport::DispatchFrame(
 
 namespace {
 auto BooleanSuccessToTransportErrorCapturingInitiator(CallInitiator initiator) {
-  return [initiator = std::move(initiator)](bool success) {
-    return success ? absl::OkStatus()
-                   : absl::UnavailableError("Transport closed.");
+  return [initiator = std::move(initiator)](StatusFlag success) {
+    return success.ok() ? absl::OkStatus()
+                        : absl::UnavailableError("Transport closed.");
   };
 }
 }  // namespace

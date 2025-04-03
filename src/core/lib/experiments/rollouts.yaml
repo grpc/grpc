@@ -48,6 +48,10 @@
   default: true
 - name: call_v3
   default: false
+- name: chaotic_good_framing_layer
+  default: true
+- name: error_flatten
+  default: false
 - name: event_engine_callback_cq
   default: true
 - name: event_engine_client
@@ -82,6 +86,8 @@
   default: true
 - name: monitoring_experiment
   default: true
+- name: pollset_alternative
+  default: false
 - name: posix_ee_skip_grpc_init
   default: true
 - name: promise_based_http2_client_transport
@@ -93,6 +99,8 @@
 - name: rstpit
   default: false
 - name: schedule_cancellation_over_write
+  default: false
+- name: server_global_callbacks_ownership
   default: false
 - name: server_listener
   default: true

@@ -136,8 +136,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     }
     // Client call tracers should be created after propagating relevant
     // properties (tracing included) from the parent.
-    channel_stack->stats_plugin_group->AddClientCallTracers(
-        Slice(CSliceRef(path)), args->registered_method, arena.get());
+    (*channel_stack->stats_plugin_group)
+        ->AddClientCallTracers(Slice(CSliceRef(path)), args->registered_method,
+                               arena.get());
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -164,7 +165,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         arena->SetContext<CallTracerInterface>(server_call_tracer);
       }
     }
-    channel_stack->stats_plugin_group->AddServerCallTracers(arena.get());
+    (*channel_stack->stats_plugin_group)->AddServerCallTracers(arena.get());
   }
 
   // initial refcount dropped by grpc_call_unref
@@ -275,7 +276,7 @@ void FilterStackCall::ExternalUnref() {
   destroy_called_ = true;
   bool cancel = gpr_atm_acq_load(&received_final_op_atm_) == 0;
   if (cancel) {
-    CancelWithError(absl::CancelledError());
+    CancelWithError(absl::CancelledError("CANCELLED"));
   } else {
     // Unset the call combiner cancellation closure.  This has the
     // effect of scheduling the previously set cancellation closure, if
@@ -453,21 +454,31 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
   } else {
     std::optional<grpc_status_code> grpc_status = b->Take(GrpcStatusMetadata());
     if (grpc_status.has_value()) {
-      grpc_status_code status_code = *grpc_status;
       grpc_error_handle error;
-      if (status_code != GRPC_STATUS_OK) {
-        Slice peer = GetPeerString();
-        error = grpc_error_set_int(
-            GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ",
-                                           peer.as_string_view())),
-            StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
-      }
-      auto grpc_message = b->Take(GrpcMessageMetadata());
-      if (grpc_message.has_value()) {
-        error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
-                                   grpc_message->as_string_view());
-      } else if (!error.ok()) {
-        error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage, "");
+      if (IsErrorFlattenEnabled()) {
+        auto grpc_message = b->Take(GrpcMessageMetadata());
+        absl::string_view message;
+        if (grpc_message.has_value()) message = grpc_message->as_string_view();
+        error =
+            absl::Status(static_cast<absl::StatusCode>(*grpc_status), message);
+      } else {
+        grpc_status_code status_code = *grpc_status;
+        if (status_code != GRPC_STATUS_OK) {
+          Slice peer = GetPeerString();
+          error = grpc_error_set_int(
+              GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ",
+                                             peer.as_string_view())),
+              StatusIntProperty::kRpcStatus,
+              static_cast<intptr_t>(status_code));
+        }
+        auto grpc_message = b->Take(GrpcMessageMetadata());
+        if (grpc_message.has_value()) {
+          error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
+                                     grpc_message->as_string_view());
+        } else if (!error.ok()) {
+          error =
+              grpc_error_set_str(error, StatusStrProperty::kGrpcMessage, "");
+        }
       }
       SetFinalStatus(error);
     } else if (!is_client()) {

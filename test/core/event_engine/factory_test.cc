@@ -85,12 +85,12 @@ TEST_F(EventEngineFactoryTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
     ASSERT_EQ(ee2.use_count(), 2);
   }
   // Ensure the first shared_ptr did not delete the global
-  ASSERT_TRUE(ee2.unique());
+  ASSERT_EQ(ee2.use_count(), 1);
   // destroy the global engine via the last shared_ptr, and create a new one.
   ee2.reset();
   ee2 = GetDefaultEventEngine();
   ASSERT_EQ(2, create_count);
-  ASSERT_TRUE(ee2.unique());
+  ASSERT_EQ(ee2.use_count(), 1);
 }
 
 }  // namespace
