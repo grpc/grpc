@@ -20610,10 +20610,6 @@ add_executable(message_assembler_test
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/event_engine/event_engine.cc
-  src/core/lib/event_engine/resolved_address.cc
-  src/core/lib/event_engine/slice.cc
-  src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/iomgr/closure.cc
@@ -20681,7 +20677,6 @@ target_link_libraries(message_assembler_test
   absl::type_traits
   absl::statusor
   absl::span
-  absl::utility
   gpr
 )
 

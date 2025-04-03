@@ -12909,9 +12909,6 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
-  - src/core/lib/event_engine/extensions/can_track_errors.h
-  - src/core/lib/event_engine/handle_containers.h
-  - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/iomgr/closure.h
@@ -12920,8 +12917,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
@@ -12972,10 +12967,6 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
-  - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/resolved_address.cc
-  - src/core/lib/event_engine/slice.cc
-  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/iomgr/closure.cc
@@ -13013,7 +13004,6 @@ targets:
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
-  - absl/utility:utility
   - gpr
 - name: message_compress_test
   gtest: true
