@@ -7628,7 +7628,8 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
-        "event_engine_common",
+        ":slice",
+        ":slice_buffer",
         "//:chttp2_frame",
         "//:ref_counted_ptr",
     ],
