@@ -227,7 +227,7 @@ std::string URI::PercentDecode(absl::string_view str) {
   return out;
 }
 
-std::string URI::authority() {
+std::string URI::authority() const {
   if (!user_info_.empty()) {
     return absl::StrCat(user_info_, "@", host_port_);
   }
