@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_status/grpc_status/_grpcio_metadata.py.template`!!!
-
+# AUTO-GENERATED FROM
+# `$REPO_ROOT/templates/src/python/grpcio_status/grpc_status/_grpcio_metadata.py.template`!!!
 __version__ = """1.72.0.dev0"""
