@@ -36,7 +36,15 @@ namespace testing {
 
 TEST(GrpcMessageAssembler, ObjectCreation) { GrpcMessageAssembler assembler; }
 
-TEST(GrpcMessageAssembler, OneMessageInOneFrame) { CHECK(true); }
+TEST(GrpcMessageAssembler, EmptyMessageInOneFrame) {
+  GrpcMessageAssembler assembler;
+  SliceBuffer one_message;
+  assembler.AppendNewDataFrame(one_message, true);
+  absl::StatusOr<MessageHandle> result = assembler.GenerateMessage();
+  // Validate value
+}
+
+TEST(GrpcMessageAssembler, OneMessageInOneFrame) {}
 
 TEST(GrpcMessageAssembler, OneMessageInThreeFrames) { CHECK(true); }
 

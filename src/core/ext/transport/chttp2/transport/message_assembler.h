@@ -80,8 +80,8 @@ class GrpcMessageAssembler {
 
  public:
   absl::StatusOr<MessageHandle> ReturnNullOrError() {
-    if (is_end_of_stream_ && message_buffer_.Length() > 0) {
-      absl::InternalError("Incomplete gRPC frame received");
+    if (is_end_stream_ && message_buffer_.Length() > 0) {
+      return absl::InternalError("Incomplete gRPC frame received");
     }
     return nullptr;
   }
