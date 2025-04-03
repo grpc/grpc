@@ -14785,9 +14785,11 @@ targets:
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
+  - test/core/test_util/fake_transport_security.h
   src:
   - test/core/handshake/secure_endpoint_test.cc
   - test/core/iomgr/endpoint_tests.cc
+  - test/core/test_util/fake_transport_security.cc
   deps:
   - gtest
   - grpc_test_util

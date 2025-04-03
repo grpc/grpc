@@ -25406,6 +25406,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(secure_endpoint_test
   test/core/handshake/secure_endpoint_test.cc
   test/core/iomgr/endpoint_tests.cc
+  test/core/test_util/fake_transport_security.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
