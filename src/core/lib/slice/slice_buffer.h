@@ -26,6 +26,8 @@
 
 #include "src/core/lib/slice/slice.h"
 
+namespace grpc_core {
+
 // Copy the first n bytes of src into memory pointed to by dst.
 void grpc_slice_buffer_copy_first_into_buffer(const grpc_slice_buffer* src,
                                               size_t n, void* dst);
@@ -35,8 +37,6 @@ void grpc_slice_buffer_move_first_no_inline(grpc_slice_buffer* src, size_t n,
 
 void grpc_slice_buffer_trim_end_no_inline(grpc_slice_buffer* sb, size_t n,
                                           grpc_slice_buffer* garbage);
-
-namespace grpc_core {
 
 /// A slice buffer holds the memory for a collection of slices.
 /// The SliceBuffer object itself is meant to only hide the C-style API,

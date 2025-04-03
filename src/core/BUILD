@@ -123,6 +123,7 @@ grpc_cc_library(
         "absl/utility",
     ],
     deps = [
+        "grpc_slice",
         "resolved_address",
         "slice",
         "slice_buffer",
