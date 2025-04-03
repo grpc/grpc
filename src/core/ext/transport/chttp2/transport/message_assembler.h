@@ -72,7 +72,7 @@ class GrpcMessageAssembler {
       SliceBuffer temp;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(header.length, temp);
       MessageHandle grpc_message = Arena::MakePooled<Message>();
-      grpc_message->payload()->Append(std::move(temp));
+      grpc_message->payload()->Append(temp);
       return grpc_message;
     }
     return ReturnNullOrError();
