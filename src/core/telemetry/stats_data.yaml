@@ -178,7 +178,8 @@
   doc: Number of bytes targetted for http2 writes
   max: 16777216
   buckets: 50
-  scope: global
+  scope: http2
+  scope_counter_bits: 8
 - histogram: http2_write_data_frame_size
   doc: Number of bytes for each data frame written
   max: 16777216

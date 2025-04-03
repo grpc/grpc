@@ -254,7 +254,7 @@ class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
     t->http2_stats.IncrementHttp2WritesBegun();
-    grpc_core::global_stats().IncrementHttp2WriteTargetSize(target_write_size_);
+    t->http2_stats.IncrementHttp2WriteTargetSize(target_write_size_);
   }
 
   void FlushSettings() {

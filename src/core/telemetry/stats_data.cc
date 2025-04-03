@@ -717,14 +717,21 @@ const absl::string_view
         "Number of HTTP2 writes initiated",
 };
 const absl::string_view
-    Http2Stats::histogram_name[static_cast<int>(Histogram::COUNT)] = {};
+    Http2Stats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
+        "http2_write_target_size",
+};
 const absl::string_view
-    Http2Stats::histogram_doc[static_cast<int>(Histogram::COUNT)] = {};
+    Http2Stats::histogram_doc[static_cast<int>(Histogram::COUNT)] = {
+        "Number of bytes targetted for http2 writes",
+};
 Http2Stats::Http2Stats() : http2_writes_begun{0} {}
 HistogramView Http2Stats::histogram(Histogram which) const {
   switch (which) {
     default:
       GPR_UNREACHABLE_CODE(return HistogramView());
+    case Histogram::kHttp2WriteTargetSize:
+      return HistogramView{&Histogram_16777216_50::BucketFor, kStatsTable14, 50,
+                           http2_write_target_size.buckets()};
   }
 }
 std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {

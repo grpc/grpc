@@ -24,10 +24,11 @@ import sys
 _REQUIRED_FIELDS = ["name", "doc", "scope"]
 
 
-def make_type(name, fields):
+def make_type(name, fields, defaults):
     return (
         collections.namedtuple(
-            name, " ".join(list(set(_REQUIRED_FIELDS + fields)))
+            name, " ".join(_REQUIRED_FIELDS + fields),
+            defaults = defaults
         ),
         [],
     )
@@ -134,8 +135,10 @@ class StatsDataGenerator:
     def __init__(self, attrs):
         self._attrs = attrs
         self._types = (
-            make_type("Counter", []),
-            make_type("Histogram", ["max", "buckets"]),
+            make_type("Counter", [], []),
+            make_type(
+                "Histogram", ["max", "buckets", "scope_counter_bits"], [64]
+            ),
         )
         self._shape = collections.namedtuple("Shape", "max buckets")
         self._inst_map = dict((t[0].__name__, t[1]) for t in self._types)
@@ -322,6 +325,13 @@ class StatsDataGenerator:
                     % shape.buckets,
                     file=H,
                 )
+                print("  void Increment(int value) {", file=H)
+                print(
+                    "    ++buckets_[Histogram_%d_%d::BucketFor(value)];"
+                    % (shape.max, shape.buckets),
+                    file=H,
+                )
+                print("  }", file=H)
                 print(
                     "  friend Histogram_%d_%d operator-(const Histogram_%d_%d& left,"
                     " const Histogram_%d_%d& right);"

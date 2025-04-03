@@ -37,6 +37,9 @@ class Histogram_100000_20 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 20; }
+  void Increment(int value) {
+    ++buckets_[Histogram_100000_20::BucketFor(value)];
+  }
   friend Histogram_100000_20 operator-(const Histogram_100000_20& left,
                                        const Histogram_100000_20& right);
 
@@ -61,6 +64,9 @@ class Histogram_65536_26 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 26; }
+  void Increment(int value) {
+    ++buckets_[Histogram_65536_26::BucketFor(value)];
+  }
   friend Histogram_65536_26 operator-(const Histogram_65536_26& left,
                                       const Histogram_65536_26& right);
 
@@ -85,6 +91,7 @@ class Histogram_100_20 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 20; }
+  void Increment(int value) { ++buckets_[Histogram_100_20::BucketFor(value)]; }
   friend Histogram_100_20 operator-(const Histogram_100_20& left,
                                     const Histogram_100_20& right);
 
@@ -109,6 +116,9 @@ class Histogram_16777216_20 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 20; }
+  void Increment(int value) {
+    ++buckets_[Histogram_16777216_20::BucketFor(value)];
+  }
   friend Histogram_16777216_20 operator-(const Histogram_16777216_20& left,
                                          const Histogram_16777216_20& right);
 
@@ -133,6 +143,7 @@ class Histogram_80_10 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 10; }
+  void Increment(int value) { ++buckets_[Histogram_80_10::BucketFor(value)]; }
   friend Histogram_80_10 operator-(const Histogram_80_10& left,
                                    const Histogram_80_10& right);
 
@@ -157,6 +168,9 @@ class Histogram_10000_20 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 20; }
+  void Increment(int value) {
+    ++buckets_[Histogram_10000_20::BucketFor(value)];
+  }
   friend Histogram_10000_20 operator-(const Histogram_10000_20& left,
                                       const Histogram_10000_20& right);
 
@@ -181,6 +195,9 @@ class Histogram_1800000_40 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 40; }
+  void Increment(int value) {
+    ++buckets_[Histogram_1800000_40::BucketFor(value)];
+  }
   friend Histogram_1800000_40 operator-(const Histogram_1800000_40& left,
                                         const Histogram_1800000_40& right);
 
@@ -205,6 +222,9 @@ class Histogram_16777216_50 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 50; }
+  void Increment(int value) {
+    ++buckets_[Histogram_16777216_50::BucketFor(value)];
+  }
   friend Histogram_16777216_50 operator-(const Histogram_16777216_50& left,
                                          const Histogram_16777216_50& right);
 
@@ -594,9 +614,13 @@ class GlobalStatsCollector {
   void IncrementHttp2StreamWindowUpdatePeriod(int value) {
     data_.this_cpu().http2_stream_window_update_period.Increment(value);
   }
+
+ private:
   void IncrementHttp2WriteTargetSize(int value) {
     data_.this_cpu().http2_write_target_size.Increment(value);
   }
+
+ public:
   void IncrementHttp2WriteDataFrameSize(int value) {
     data_.this_cpu().http2_write_data_frame_size.Increment(value);
   }
@@ -755,7 +779,7 @@ inline GlobalStatsCollector& global_stats() {
 }
 struct Http2Stats {
   enum class Counter { kHttp2WritesBegun, COUNT };
-  enum class Histogram { COUNT };
+  enum class Histogram { kHttp2WriteTargetSize, COUNT };
   Http2Stats();
   static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];
   static const absl::string_view
@@ -769,6 +793,7 @@ struct Http2Stats {
     };
     uint64_t counters[static_cast<int>(Counter::COUNT)];
   };
+  Histogram_16777216_50 http2_write_target_size;
   HistogramView histogram(Histogram which) const;
 };
 class Http2StatsCollector {
@@ -777,6 +802,10 @@ class Http2StatsCollector {
   void IncrementHttp2WritesBegun() {
     ++data_.http2_writes_begun;
     global_stats().IncrementHttp2WritesBegun();
+  }
+  void IncrementHttp2WriteTargetSize(int value) {
+    data_.http2_write_target_size.Increment(value);
+    global_stats().IncrementHttp2WriteTargetSize(value);
   }
 
  private:
