@@ -12901,6 +12901,7 @@ targets:
   headers:
   - src/core/call/message.h
   - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/message_assembler.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -12941,7 +12942,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
