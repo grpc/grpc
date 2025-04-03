@@ -47,6 +47,7 @@ EXPERIMENT_ENABLES = {
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
     "server_listener": "server_listener",
+    "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
@@ -89,6 +90,9 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "promise_test": [
+                "sleep_promise_exec_ctx_removal",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
@@ -155,6 +159,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "promise_test": [
+                "sleep_promise_exec_ctx_removal",
+            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
@@ -205,6 +212,9 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "promise_test": [
+                "sleep_promise_exec_ctx_removal",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
