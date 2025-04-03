@@ -218,9 +218,11 @@ class EventEnginePosixInterface {
   }
 
   bool IsCorrectGeneration(const FileDescriptor& fd) const {
+#ifdef GRPC_ENABLE_FORK_SUPPORT
     if (IsEventEngineForkEnabled()) {
       return descriptors_.generation() == fd.generation();
     }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
     return true;
   }
 

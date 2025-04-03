@@ -454,9 +454,11 @@ bool IsSocketReusePortSupported() {
 }
 
 FileDescriptor EventEnginePosixInterface::Adopt(int fd) {
+#ifdef GRPC_ENABLE_FORK_SUPPORT
   if (IsEventEngineForkEnabled()) {
     return descriptors_.Add(fd);
   }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   return FileDescriptor(fd, 0);
 }
 
@@ -469,9 +471,11 @@ std::optional<int> EventEnginePosixInterface::GetFdForPolling(
 }
 
 void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
+#ifdef GRPC_ENABLE_FORK_SUPPORT
   if (IsEventEngineForkEnabled() && !descriptors_.Remove(fd)) {
     return;
   }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   close(fd.fd_);
 }
 
@@ -480,7 +484,7 @@ void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
 //
 PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept(
     const FileDescriptor& sockfd, struct sockaddr* addr, socklen_t* addrlen) {
-  return RunIfCorrectGeneration<PosixErrorOr<FileDescriptor>>(
+  return RunIfCorrectGeneration<PosixErrorOr<FileDescriptor> >(
       sockfd,
       [&](int fd) { return RegisterPosixResult(accept(fd, addr, addrlen)); },
       PosixErrorOr<FileDescriptor>(PosixError::WrongGeneration()));
@@ -567,7 +571,7 @@ PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Socket(int domain,
   return RegisterPosixResult(socket(domain, type, protocol));
 }
 
-absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>>
+absl::StatusOr<std::pair<FileDescriptor, FileDescriptor> >
 EventEnginePosixInterface::Pipe() {
   int pipefd[2];
   int r = pipe(pipefd);
@@ -739,7 +743,7 @@ IF_EPOLL(PosixError EventEnginePosixInterface::EpollCtlAdd(
 
 absl::StatusOr<EventEngine::ResolvedAddress>
 EventEnginePosixInterface::LocalAddress(const FileDescriptor& fd) {
-  return RunIfCorrectGeneration<absl::StatusOr<EventEngine::ResolvedAddress>>(
+  return RunIfCorrectGeneration<absl::StatusOr<EventEngine::ResolvedAddress> >(
       fd,
       [](int fd) -> absl::StatusOr<EventEngine::ResolvedAddress> {
         EventEngine::ResolvedAddress addr;
@@ -765,7 +769,7 @@ absl::StatusOr<std::string> EventEnginePosixInterface::LocalAddressString(
 
 absl::StatusOr<EventEngine::ResolvedAddress>
 EventEnginePosixInterface::PeerAddress(const FileDescriptor& fd) {
-  return RunIfCorrectGeneration<absl::StatusOr<EventEngine::ResolvedAddress>>(
+  return RunIfCorrectGeneration<absl::StatusOr<EventEngine::ResolvedAddress> >(
       fd,
       [](int fd) -> absl::StatusOr<EventEngine::ResolvedAddress> {
         EventEngine::ResolvedAddress addr;
@@ -1022,11 +1026,11 @@ PosixError EventEnginePosixInterface::PosixResultWrap(
 }
 
 void EventEnginePosixInterface::AdvanceGeneration() {
-#ifdef GRPC_ENABLE_FORK_SUPPORT
-  if (!grpc_core::IsEventEngineForkEnabled()) {
+  if (!IsEventEngineForkEnabled()) {
     grpc_core::Crash(
         "Fork support is disabled but AdvanceGeneration was called");
   }
+#ifdef GRPC_ENABLE_FORK_SUPPORT
   for (int fd : descriptors_.AdvanceGeneration()) {
     if (fd > 0) {
       close(fd);
@@ -1042,119 +1046,125 @@ int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
   grpc_core::Crash("unimplemented");
 }
 
-absl::Status SetSocketRcvBuf(int fd, int buffer_size_bytes) {
-  grpc_core::Crash("unimplemented");
-}
+  absl::Status SetSocketRcvBuf(int fd, int buffer_size_bytes) {
+    grpc_core::Crash("unimplemented");
+  }
 
-absl::Status SetSocketNonBlocking(int fd, int non_blocking) {
-  grpc_core::Crash("unimplemented");
-}
+  absl::Status SetSocketNonBlocking(int fd, int non_blocking) {
+    grpc_core::Crash("unimplemented");
+  }
 
-absl::Status SetSocketCloexec(int fd, int close_on_exec) {
-  grpc_core::Crash("unimplemented");
-}
+  absl::Status SetSocketCloexec(int fd, int close_on_exec) {
+    grpc_core::Crash("unimplemented");
+  }
 
-absl::Status SetSocketOption(int fd, int level, int option, int value,
-                             absl::string_view debug_label) {
-  grpc_core::Crash("unimplemented");
-}
+  absl::Status SetSocketOption(int fd, int level, int option, int value,
+                               absl::string_view debug_label) {
+    grpc_core::Crash("unimplemented");
+  }
 
-absl::Status SetSocketDscp(int fdesc, int dscp) {
-  grpc_core::Crash("unimplemented");
-}
+  absl::Status SetSocketDscp(int fdesc, int dscp) {
+    grpc_core::Crash("unimplemented");
+  }
 
-void TrySetSocketTcpUserTimeout(int fd, const PosixTcpOptions& options,
-                                bool is_client) {
-  grpc_core::Crash("unimplemented");
-}
+  void TrySetSocketTcpUserTimeout(int fd, const PosixTcpOptions& options,
+                                  bool is_client) {
+    grpc_core::Crash("unimplemented");
+  }
 
-absl::StatusOr<int> InternalCreateDualStackSocket(
-    std::function<int(int, int, int)> socket_factory,
-    const experimental::EventEngine::ResolvedAddress& addr, int type,
-    int protocol, DSMode& dsmode)
-    PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept(
-        const FileDescriptor& sockfd, struct sockaddr* addr,
-        socklen_t* addrlen) {
-  grpc_core::Crash("unimplemented");
-}
+  absl::StatusOr<int> InternalCreateDualStackSocket(
+      std::function<int(int, int, int)> socket_factory,
+      const experimental::EventEngine::ResolvedAddress& addr, int type,
+      int protocol, DSMode& dsmode) {
+    grpc_core::Crash("unimplemented");
+  }
 
-PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
-    const FileDescriptor& sockfd,
-    grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-    int nonblock, int cloexec)
-    PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Socket(
-        int domain, int type, int protocol) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept(
+      const FileDescriptor& sockfd, struct sockaddr* addr, socklen_t* addrlen) {
+    grpc_core::Crash("unimplemented");
+  }
 
-absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>>
-EventEnginePosixInterface::Pipe() {
-  grpc_core::Crash("unimplemented");
-}
+  PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
+      const FileDescriptor& sockfd,
+      grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
+      int nonblock, int cloexec) {
+    grpc_core::Crash("unimplemented");
+  }
 
-PosixError EventEnginePosixInterface::Connect(const FileDescriptor& sockfd,
-                                              const struct sockaddr* addr,
-                                              socklen_t addrlen) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Socket(int domain,
+                                                                 int type,
+                                                                 int protocol) {
+    grpc_core::Crash("unimplemented");
+  }
 
-PosixError EventEnginePosixInterface::Ioctl(const FileDescriptor& fd, int op,
-                                            void* arg) {
-  grpc_core::Crash("unimplemented");
-}
+  absl::StatusOr<std::pair<FileDescriptor, FileDescriptor> >
+  EventEnginePosixInterface::Pipe() {
+    grpc_core::Crash("unimplemented");
+  }
 
-PosixError EventEnginePosixInterface::Shutdown(const FileDescriptor& fd,
-                                               int how) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixError EventEnginePosixInterface::Connect(const FileDescriptor& sockfd,
+                                                const struct sockaddr* addr,
+                                                socklen_t addrlen) {
+    grpc_core::Crash("unimplemented");
+  }
 
-PosixError EventEnginePosixInterface::GetSockOpt(const FileDescriptor& fd,
-                                                 int level, int optname,
-                                                 void* optval, void* optlen) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixError EventEnginePosixInterface::Ioctl(const FileDescriptor& fd, int op,
+                                              void* arg) {
+    grpc_core::Crash("unimplemented");
+  }
 
-PosixErrorOr<int64_t> EventEnginePosixInterface::SetSockOpt(
-    const FileDescriptor& fd, int level, int optname, uint32_t optval) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixError EventEnginePosixInterface::Shutdown(const FileDescriptor& fd,
+                                                 int how) {
+    grpc_core::Crash("unimplemented");
+  }
 
-PosixErrorOr<int64_t> EventEnginePosixInterface::Read(const FileDescriptor& fd,
-                                                      absl::Span<char> buf) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixError EventEnginePosixInterface::GetSockOpt(const FileDescriptor& fd,
+                                                   int level, int optname,
+                                                   void* optval, void* optlen) {
+    grpc_core::Crash("unimplemented");
+  }
 
-PosixErrorOr<int64_t> EventEnginePosixInterface::Write(const FileDescriptor& fd,
-                                                       absl::Span<char> buf) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixErrorOr<int64_t> EventEnginePosixInterface::SetSockOpt(
+      const FileDescriptor& fd, int level, int optname, uint32_t optval) {
+    grpc_core::Crash("unimplemented");
+  }
 
-PosixErrorOr<int64_t> EventEnginePosixInterface::RecvMsg(
-    const FileDescriptor& fd, struct msghdr* message, int flags) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixErrorOr<int64_t> EventEnginePosixInterface::Read(
+      const FileDescriptor& fd, absl::Span<char> buf) {
+    grpc_core::Crash("unimplemented");
+  }
 
-PosixErrorOr<int64_t> EventEnginePosixInterface::SendMsg(
-    const FileDescriptor& fd, const struct msghdr* message, int flags) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixErrorOr<int64_t> EventEnginePosixInterface::Write(
+      const FileDescriptor& fd, absl::Span<char> buf) {
+    grpc_core::Crash("unimplemented");
+  }
 
-absl::Status EventEnginePosixInterface::PrepareTcpClientSocket(
-    int fd, const EventEngine::ResolvedAddress& addr,
-    const PosixTcpOptions& options) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixErrorOr<int64_t> EventEnginePosixInterface::RecvMsg(
+      const FileDescriptor& fd, struct msghdr* message, int flags) {
+    grpc_core::Crash("unimplemented");
+  }
 
-absl::StatusOr<EventEngine::ResolvedAddress>
-EventEnginePosixInterface::PrepareListenerSocket(
-    const FileDescriptor& fd, const PosixTcpOptions& options,
-    const EventEngine::ResolvedAddress& address) {
-  grpc_core::Crash("unimplemented");
-}
+  PosixErrorOr<int64_t> EventEnginePosixInterface::SendMsg(
+      const FileDescriptor& fd, const struct msghdr* message, int flags) {
+    grpc_core::Crash("unimplemented");
+  }
 
-absl::StatusOr<int> EventEnginePosixInterface::GetUnusedPort() {
-  grpc_core::Crash("unimplemented");
-}
+  absl::Status EventEnginePosixInterface::PrepareTcpClientSocket(
+      int fd, const EventEngine::ResolvedAddress& addr,
+      const PosixTcpOptions& options) {
+    grpc_core::Crash("unimplemented");
+  }
+
+  absl::StatusOr<EventEngine::ResolvedAddress>
+  EventEnginePosixInterface::PrepareListenerSocket(
+      const FileDescriptor& fd, const PosixTcpOptions& options,
+      const EventEngine::ResolvedAddress& address) {
+    grpc_core::Crash("unimplemented");
+  }
+
+  absl::StatusOr<int> EventEnginePosixInterface::GetUnusedPort() {
+    grpc_core::Crash("unimplemented");
+  }
 
 #endif  // GRPC_POSIX_SOCKET
 
