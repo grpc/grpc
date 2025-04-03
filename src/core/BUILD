@@ -611,8 +611,8 @@ grpc_cc_library(
     srcs = ["util/seq_bit_set.cc"],
     hdrs = ["util/seq_bit_set.h"],
     external_deps = [
-        "absl/strings"
-    ]
+        "absl/strings",
+    ],
 )
 
 grpc_cc_library(
@@ -2798,10 +2798,10 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
+        "event_engine_common",
         "iomgr_port",
         "resolved_address",
         "status_helper",
-        "event_engine_common",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
@@ -8011,6 +8011,7 @@ grpc_cc_library(
     deps = [
         "1999",
         "chaotic_good_pending_connection",
+        "chaotic_good_serialize_little_endian",
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
@@ -8018,11 +8019,10 @@ grpc_cc_library(
         "grpc_promise_endpoint",
         "loop",
         "seq",
-        "slice_buffer",
-        "try_seq",
-        "status_flag",
-        "chaotic_good_serialize_little_endian",
         "seq_bit_set",
+        "slice_buffer",
+        "status_flag",
+        "try_seq",
         "//:promise",
     ],
 )
@@ -8075,9 +8075,9 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "if",
         "inter_activity_latch",
+        "join",
         "loop",
         "race",
-        "join",
         "seq",
         "try_seq",
     ],
