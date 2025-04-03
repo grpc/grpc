@@ -1587,6 +1587,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/resource_quota/periodic_update.h )
   s.files += %w( src/core/lib/resource_quota/resource_quota.cc )
   s.files += %w( src/core/lib/resource_quota/resource_quota.h )
+  s.files += %w( src/core/lib/resource_quota/stream_quota.cc )
+  s.files += %w( src/core/lib/resource_quota/stream_quota.h )
   s.files += %w( src/core/lib/resource_quota/thread_quota.cc )
   s.files += %w( src/core/lib/resource_quota/thread_quota.h )
   s.files += %w( src/core/lib/security/authorization/audit_logging.cc )

@@ -23,11 +23,6 @@
 namespace grpc_core {
 
 bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
-  if (period_start_ == Timestamp::ProcessEpoch()) {
-    period_start_ = Timestamp::Now();
-    updates_remaining_.store(1, std::memory_order_release);
-    return false;
-  }
   // updates_remaining_ just reached 0 and the thread calling this function was
   // the decrementer that got us there.
   // We can now safely mutate any non-atomic mutable variables (we've got a
