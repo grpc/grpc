@@ -65,12 +65,13 @@ class Http2ClientTransport final : public ClientTransport {
   // inlining. For now definitions are in the cc file to
   // reduce cognitive load in the header.
   auto EnqueueOutgoingFrame(Http2Frame frame) {
-    return AssertResultType<absl::Status>(
-        Map(outgoing_frames_.MakeSender().Send(std::move(frame)), [](bool ok) {
-          HTTP2_CLIENT_DLOG << "Http2ClientTransport::EnqueueOutgoingFrame ok="
-                            << ok;
-          return (ok) ? absl::OkStatus()
-                      : absl::InternalError("Failed to enqueue frame");
+    return AssertResultType<absl::Status>(Map(
+        outgoing_frames_.MakeSender().Send(std::move(frame)),
+        [](StatusFlag status) {
+          HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
+          return (status.ok()) ? absl::OkStatus()
+                               : absl::InternalError("Failed to enqueue frame");
         }));
   }
 
