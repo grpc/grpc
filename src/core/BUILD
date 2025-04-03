@@ -130,7 +130,6 @@ grpc_cc_library(
         "slice_refcount",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//:grpc_slice",
     ],
 )
 
@@ -7629,9 +7628,7 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
-        "message",
-        ":slice",
-        ":slice_buffer",
+        "event_engine_common",
         "//:chttp2_frame",
         "//:ref_counted_ptr",
     ],
