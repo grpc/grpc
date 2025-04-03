@@ -30,7 +30,6 @@
 #include "gtest/gtest.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "test/core/transport/chttp2/http2_frame_test_helper.h"
 
 namespace grpc_core {
 namespace http2 {
