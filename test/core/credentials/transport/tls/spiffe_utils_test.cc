@@ -61,6 +61,7 @@ INSTANTIATE_TEST_SUITE_P(
          "maximum allowed for SPIFFE ID is 2048"},
         {"ContainsHashtag", "ab#de", "cannot contain query fragments"},
         {"ContainsQuestionMark", "ab?de", "cannot contain query parameters"},
+
         {"DoesNotStartWithSpiffe", "www://foo/bar",
          "must start with spiffe://"},
         {"EndsWithSlash", "spiffe://foo/bar/", "cannot end with a /"},
@@ -79,6 +80,10 @@ INSTANTIATE_TEST_SUITE_P(
          ". or .."},
         {"PathSegmentBadCharacter", "spiffe://example/path/foo.bar/foo@bar",
          "invalid character @"},
+        {"ContainsNonASCIITrustDomain", "spiffe://µ/path",
+         "cannot contain non-ascii characters"},
+        {"ContainsNonASCIIPath", "spiffe://foo.bar/µ",
+         "cannot contain non-ascii characters"},
     }),
     [](const ::testing::TestParamInfo<SpiffeIdFailureTest::ParamType>& info) {
       return info.param.test_name;
