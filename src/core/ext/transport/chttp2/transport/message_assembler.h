@@ -76,13 +76,12 @@ class GrpcMessageAssembler {
       }
       return nullptr;
     }
+  }
 
-   public:
-    bool is_end_of_stream_ = false;
-    SliceBuffer message_buffer_;
-  };
-
-  GRPC_CHECK_CLASS_SIZE(GrpcMessageAssembler, 10);
+ public:
+  bool is_end_of_stream_ = false;
+  SliceBuffer message_buffer_;
+};
 
 }  // namespace http2
 }  // namespace grpc_core
