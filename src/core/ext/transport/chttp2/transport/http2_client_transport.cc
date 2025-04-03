@@ -428,7 +428,7 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
 
 auto Http2ClientTransport::CallOutboundLoop(
     CallHandler call_handler, const uint32_t stream_id,
-    std::tuple<InterActivityMutex<int>::Lock, ClientMetadataHandle>
+    std::tuple<InterActivityMutex<uint32_t>::Lock, ClientMetadataHandle>
         lock_metadata /* Locked stream_mutex */) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop";
 

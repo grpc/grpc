@@ -148,7 +148,7 @@ class Http2ClientTransport final : public ClientTransport {
   // down towards the endpoint.
   auto CallOutboundLoop(
       CallHandler call_handler, const uint32_t stream_id,
-      std::tuple<InterActivityMutex<int>::Lock, ClientMetadataHandle>
+      std::tuple<InterActivityMutex<uint32_t>::Lock, ClientMetadataHandle>
           lock_metadata);
 
   RefCountedPtr<Party> general_party_;
@@ -181,7 +181,7 @@ class Http2ClientTransport final : public ClientTransport {
   uint32_t next_stream_id_ ABSL_GUARDED_BY(transport_mutex_) = 1;
 
   // Mutex to preserve the order of headers being sent out for new streams.
-  InterActivityMutex<int> stream_mutex_;
+  InterActivityMutex<uint32_t> stream_mutex_;
   HPackCompressor encoder_;
 
   uint32_t MakeStream(CallHandler call_handler);
