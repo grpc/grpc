@@ -438,7 +438,6 @@ void grpc_slice_buffer_copy_first_into_buffer(const grpc_slice_buffer* src,
     n -= slice_len;
   }
 }
-
 template <bool allow_inline>
 void grpc_slice_buffer_trim_end_impl(grpc_slice_buffer* sb, size_t n,
                                      grpc_slice_buffer* garbage) {
