@@ -662,8 +662,8 @@ HistogramView GlobalStats::histogram(Histogram which) const {
       return HistogramView{&Histogram_100000_20_64::BucketFor, kStatsTable2, 20,
                            http2_stream_window_update_period.buckets()};
     case Histogram::kHttp2WriteTargetSize:
-      return HistogramView{&Histogram_16777216_8_8::BucketFor, kStatsTable8, 8,
-                           http2_write_target_size.buckets()};
+      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
+                           50, http2_write_target_size.buckets()};
     case Histogram::kHttp2WriteDataFrameSize:
       return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
                            50, http2_write_data_frame_size.buckets()};

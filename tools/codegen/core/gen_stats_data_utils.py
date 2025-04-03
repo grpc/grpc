@@ -812,7 +812,7 @@ class StatsDataGenerator:
                             "    case Histogram::k%s:" % snake_to_pascal(inst.name),
                             file=C,
                         )
-                        shape = histogram_shape(inst, inst.scope == "global")
+                        shape = histogram_shape(inst, scope == "global")
                         print(
                             "      return HistogramView{&Histogram_%s::BucketFor,"
                             " kStatsTable%d, %d, %s.buckets()};"
