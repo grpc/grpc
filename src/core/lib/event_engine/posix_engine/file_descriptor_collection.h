@@ -34,7 +34,7 @@ class PosixError {
   }
 
   static PosixError Error(int errno_value) {
-    return PosixError(PosixErrorValue{.errno_value = errno_value});
+    return PosixError(PosixErrorValue{errno_value});
   }
 
   PosixError() : PosixError(std::monostate()) {}
