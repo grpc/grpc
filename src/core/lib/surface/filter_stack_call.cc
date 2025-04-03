@@ -136,8 +136,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     }
     // Client call tracers should be created after propagating relevant
     // properties (tracing included) from the parent.
-    channel_stack->stats_plugin_group->AddClientCallTracers(
-        Slice(CSliceRef(path)), args->registered_method, arena.get());
+    (*channel_stack->stats_plugin_group)
+        ->AddClientCallTracers(Slice(CSliceRef(path)), args->registered_method,
+                               arena.get());
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -164,7 +165,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         arena->SetContext<CallTracerInterface>(server_call_tracer);
       }
     }
-    channel_stack->stats_plugin_group->AddServerCallTracers(arena.get());
+    (*channel_stack->stats_plugin_group)->AddServerCallTracers(arena.get());
   }
 
   // initial refcount dropped by grpc_call_unref

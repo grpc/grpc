@@ -199,7 +199,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gusto"  # @unused
 
-core_version = "46.0.0"  # @unused
+core_version = "47.0.0"  # @unused
 
 version = "1.72.0-dev"  # @unused
 
