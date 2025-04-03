@@ -55,7 +55,7 @@ class GrpcMessageAssembler {
   // nullptr or error.
   absl::StatusOr<MessageHandle> GenerateMessage() {
     if (message_buffer_.Length() <= kGrpcHeaderSizeInBytes) {
-      header_ = ExtractGrpcHeader(message_buffer_);
+      GrpcMessageHeader header_ = ExtractGrpcHeader(message_buffer_);
       if (message_buffer_.Length() + kGrpcHeaderSizeInBytes >= header_.length) {
         // If gRPC header has length 0, we return an empty message.
         // Bounds: Max len of a valid gRPC message is 4 GB in gRPC C++. 2GB for
