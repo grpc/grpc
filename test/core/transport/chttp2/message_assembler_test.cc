@@ -36,7 +36,7 @@ namespace testing {
 
 TEST(GrpcMessageAssembler, ObjectCreation) { GrpcMessageAssembler assembler; }
 
-TEST(GrpcMessageAssembler, EmptyMessageInOneFrame) {
+TEST(GrpcMessageAssembler, OneEmptyMessageInOneFrame) {
   GrpcMessageAssembler assembler;
   SliceBuffer one_message;
   assembler.AppendNewDataFrame(one_message, true);
