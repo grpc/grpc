@@ -323,6 +323,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
@@ -1056,7 +1057,6 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -2352,6 +2352,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
@@ -2629,7 +2630,6 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -4418,6 +4418,7 @@ libs:
   - src/core/credentials/transport/tls/load_system_roots_supported.h
   - src/core/credentials/transport/tls/tls_utils.h
   - src/core/credentials/transport/transport_credentials.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -4653,7 +4654,6 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -6013,6 +6013,7 @@ targets:
   - src/core/call/metadata_compression_traits.h
   - src/core/call/parsed_metadata.h
   - src/core/call/simple_slice_based_metadata.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6063,7 +6064,6 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
@@ -6255,6 +6255,7 @@ targets:
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6473,7 +6474,6 @@ targets:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -6821,6 +6821,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6860,7 +6861,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -7527,6 +7527,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -7565,7 +7566,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -10026,6 +10026,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -10053,7 +10054,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -10235,6 +10235,7 @@ targets:
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -10453,7 +10454,6 @@ targets:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -10826,6 +10826,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -10865,7 +10866,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -10936,6 +10936,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -10983,7 +10984,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -11114,6 +11114,7 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -11122,7 +11123,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/util/glob.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
@@ -12240,6 +12240,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -12279,7 +12280,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -12697,6 +12697,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -12744,7 +12745,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -13476,6 +13476,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -13497,7 +13498,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/bitset.h
   - src/core/util/glob.h
@@ -14342,6 +14342,7 @@ targets:
   - src/core/call/parsed_metadata.h
   - src/core/call/request_buffer.h
   - src/core/call/simple_slice_based_metadata.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -14397,7 +14398,6 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
