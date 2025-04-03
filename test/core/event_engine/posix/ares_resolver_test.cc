@@ -67,6 +67,9 @@ TEST_F(AresResolverTest, ResolveGoogleCom) {
       },
       "google.com", "80");
   notification.WaitForNotification();
+  if (lookup_result.status().code() == absl::StatusCode::kUnavailable) {
+    GTEST_SKIP() << "Running in hermetic environment";
+  }
   ASSERT_TRUE(lookup_result.ok()) << lookup_result.status();
   EXPECT_FALSE(lookup_result.value().empty());
 }
@@ -93,6 +96,9 @@ TEST_F(AresResolverTest, ForkSupportInParent) {
   // Parent does not advance generation
   event_engine_->AfterForkForTests(false);
   notification.WaitForNotification();
+  if (lookup_result.status().code() == absl::StatusCode::kUnavailable) {
+    GTEST_SKIP() << "Running in hermetic environment";
+  }
   ASSERT_TRUE(lookup_result.ok()) << lookup_result.status();
   EXPECT_FALSE(lookup_result.value().empty());
 }
@@ -113,6 +119,9 @@ TEST_F(AresResolverTest, ForkSupportInChild) {
   // Child advances the generation
   event_engine_->AfterForkForTests(true);
   notification.WaitForNotification();
+  if (lookup_result.status().code() == absl::StatusCode::kUnavailable) {
+    GTEST_SKIP() << "Running in hermetic environment";
+  }
   // This "unknown" error comes from the Ares library when the CAres channel is
   // closed.
   EXPECT_EQ(lookup_result.status().code(), absl::StatusCode::kUnknown)
@@ -126,6 +135,9 @@ TEST_F(AresResolverTest, ForkSupportInChild) {
       },
       "google.com", "80");
   notification2.WaitForNotification();
+  if (lookup_result.status().code() == absl::StatusCode::kUnavailable) {
+    GTEST_SKIP() << "Running in hermetic environment";
+  }
   ASSERT_TRUE(lookup_result.ok()) << lookup_result.status();
   EXPECT_FALSE(lookup_result.value().empty());
 }

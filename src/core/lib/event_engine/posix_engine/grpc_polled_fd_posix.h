@@ -143,21 +143,20 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   /// Overridden connect API for c-ares
   static int Connect(ares_socket_t as, const struct sockaddr* target,
-                     ares_socklen_t target_len, void* polled_fd_factory) {
+                     ares_socklen_t target_len, void* /* unused */) {
     return connect(as, target, target_len);
   }
 
   /// Overridden writev API for c-ares
   static ares_ssize_t WriteV(ares_socket_t as, const struct iovec* iov,
-                             int iovec_count, void* polled_fd_factory) {
+                             int iovec_count, void* /* unused */) {
     return writev(as, iov, iovec_count);
   }
 
   /// Overridden recvfrom API for c-ares
   static ares_ssize_t RecvFrom(ares_socket_t as, void* data, size_t data_len,
                                int flags, struct sockaddr* from,
-                               ares_socklen_t* from_len,
-                               void* polled_fd_factory) {
+                               ares_socklen_t* from_len, void* /* unused */) {
     return recvfrom(as, data, data_len, flags, from, from_len);
   }
 

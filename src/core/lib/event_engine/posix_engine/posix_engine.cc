@@ -654,6 +654,21 @@ PosixEventEngine::PosixEventEngine()
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
+#else  // GRPC_POSIX_SOCKET_TCP
+
+class ForkSupport {
+ public:
+  ThreadPool* executor() const {
+    grpc_core::Crash("Not implemented");
+    return nullptr;
+  }
+
+  TimerManager* timer_manager() {
+    grpc_core::Crash("Not implemented");
+    return nullptr;
+  }
+}
+
 #endif  // GRPC_POSIX_SOCKET_TCP
 
 struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
