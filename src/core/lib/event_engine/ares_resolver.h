@@ -16,11 +16,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string_view>
 #include <utility>
 
 #include "absl/status/status.h"
-#include "src/core/lib/debug/trace.h"
 
 #if GRPC_ARES == 1
 
@@ -70,7 +68,7 @@ class AresResolver : public RefCountedDNSResolverInterface {
   // Do not instantiate directly -- use CreateAresResolver() instead.
   AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
                std::shared_ptr<EventEngine> event_engine, ares_channel channel,
-               std::string_view dns_server);
+               absl::string_view dns_server);
   ~AresResolver() override;
   void Orphan() override ABSL_LOCKS_EXCLUDED(mutex_);
 

@@ -58,6 +58,8 @@
 
 namespace grpc_event_engine::experimental {
 
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+
 std::string GetBacktrace() {
   std::array<void*, 10> ptrs;
   int frames = absl::GetStackTrace(ptrs.data(), ptrs.size(), 1);
@@ -515,6 +517,14 @@ TEST(ExperimentalAsyncPollTest, AsyncPollTest) {
   }
   cycle.reset();
 }
+
+#else  // GRPC_ENABLE_FORK_SUPPORT
+
+TEST(PollerForkTest, Skipped) {
+  GTEST_SKIP() << "Compiled without fork support";
+}
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 }  // namespace grpc_event_engine::experimental
 

@@ -17,7 +17,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
-#include <sys/socket.h>
 
 #include <memory>
 
@@ -32,6 +31,7 @@
 
 #include <ares.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <sys/uio.h>
 
 #include <string>

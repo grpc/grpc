@@ -122,6 +122,8 @@ class PosixEventEngine::ForkSupport {
     executor_->Quiesce();
   }
 
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+
   void BeforeFork() {
     timer_manager_.PrepareFork();
     {
@@ -152,6 +154,8 @@ class PosixEventEngine::ForkSupport {
     SchedulePoller();
   }
 
+#endif  // GRPC_ENABLE_POSIX_FORK
+
   void SchedulePoller() {
     if (poller_manager_ != nullptr && poller_manager_->Poller() != nullptr) {
       grpc_core::MutexLock lock(&mu_);
@@ -172,7 +176,7 @@ class PosixEventEngine::ForkSupport {
 
 #if defined(GRPC_ENABLE_FORK_SUPPORT) && GRPC_ARES == 1 && \
     defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-  void OnAdvanceGeneration(
+  void RegisterResolver(
       std::weak_ptr<AresResolver::ReinitHandle> resolver_handle) {
     grpc_core::MutexLock lock(&mu_);
     resolver_handles_.emplace_back(std::move(resolver_handle));
@@ -777,7 +781,7 @@ PosixEventEngine::GetDNSResolver(
       return ares_resolver.status();
     }
 #ifdef GRPC_ENABLE_FORK_SUPPORT
-    fork_support_->OnAdvanceGeneration(ares_resolver->get()->GetReinitHandle());
+    fork_support_->RegisterResolver(ares_resolver->get()->GetReinitHandle());
 #endif  // GRPC_ENABLE_FORK_SUPPORT
     return std::make_unique<PosixEventEngine::PosixDNSResolver>(
         std::move(*ares_resolver));
@@ -964,7 +968,7 @@ PosixEventEngine::CreatePosixListener(
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
-#ifdef GRPC_POSIX_SOCKET_TCP
+#if defined(GRPC_POSIX_SOCKET_TCP) && defined(GRPC_ENABLE_FORK_SUPPORT)
 
 PosixEventPoller* PosixEventEngine::PollerForTests() const {
   return fork_support_->Poller();
@@ -976,6 +980,6 @@ void PosixEventEngine::AfterForkForTests(bool advance_generation) {
 
 void PosixEventEngine::BeforeForkForTests() { fork_support_->BeforeFork(); }
 
-#endif  // GRPC_POSIX_SOCKET_TCP
+#endif  // defined (GRPC_POSIX_SOCKET_TCP) && defined(GRPC_ENABLE_FORK_SUPPORT)
 
 }  // namespace grpc_event_engine::experimental

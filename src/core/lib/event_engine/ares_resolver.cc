@@ -257,7 +257,7 @@ AresResolver::CreateAresResolver(
 AresResolver::AresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     std::shared_ptr<EventEngine> event_engine, ares_channel channel,
-    std::string_view dns_server)
+    absl::string_view dns_server)
     : RefCountedDNSResolverInterface(
           GRPC_TRACE_FLAG_ENABLED(cares_resolver) ? "AresResolver" : nullptr),
       channel_(channel),
