@@ -292,7 +292,7 @@ TEST(GrpcMessageAssembler, FourMessageInThreeFrames) {
 TEST(GrpcMessageAssembler, IncompleteMessageHeader) {
   SliceBuffer frame1;
   AppendGrpcHeaderToSliceBuffer(frame1, flags, 5);
-  frame1.RemoveLastNBytes(2);
+  frame1.RemoveLastNBytes(1);
 
   GrpcMessageAssembler assembler;
   assembler.AppendNewDataFrame(frame1, end_stream);
