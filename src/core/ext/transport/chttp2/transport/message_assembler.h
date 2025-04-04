@@ -80,6 +80,7 @@ class GrpcMessageAssembler {
 
  private:
   absl::StatusOr<MessageHandle> ReturnNullOrError() {
+    // TODO(tjagtap) : [PH2][P1] Replace with Http2StatusOr when that PR lands
     if (is_end_stream_ && message_buffer_.Length() > 0) {
       return absl::InternalError("Incomplete gRPC frame received");
     }
