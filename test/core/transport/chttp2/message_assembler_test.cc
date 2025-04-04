@@ -35,11 +35,27 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
+constexpr absl::string_view str_1024 =
+    "1000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "2000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "3000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "4000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "5000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "6000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "7000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "8000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "1000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "2000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "3000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "4000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "5000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "6000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "7000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "8000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 ";
+
 constexpr bool not_end_stream = false;
 constexpr bool end_stream = true;
 constexpr bool flags = 0;
-
-constexpr absl::string_view kHelloWorld = "Hello World!";
 
 constexpr absl::string_view kString1 = "One Hello World!";
 constexpr absl::string_view kString2 = "Two Hello World!";
@@ -64,8 +80,6 @@ void AppendPartialMessage(SliceBuffer& payload, absl::string_view str) {
   payload.Append(Slice::FromCopiedString(str));
 }
 
-TEST(GrpcMessageAssembler, ObjectCreation) { GrpcMessageAssembler assembler; }
-
 TEST(GrpcMessageAssembler, OneEmptyMessageInOneFrame) {
   SliceBuffer http2_frame_payload;
   AppendEmptyMessage(http2_frame_payload);
@@ -87,9 +101,9 @@ TEST(GrpcMessageAssembler, OneEmptyMessageInOneFrame) {
 
 TEST(GrpcMessageAssembler, OneMessageInOneFrame) {
   SliceBuffer http2_frame_payload;
-  AppendHeaderAndMessage(http2_frame_payload, kHelloWorld);
+  AppendHeaderAndMessage(http2_frame_payload, str_1024);
   EXPECT_EQ(http2_frame_payload.Length(),
-            kGrpcHeaderSizeInBytes + kHelloWorld.size());
+            kGrpcHeaderSizeInBytes + str_1024.size());
 
   GrpcMessageAssembler assembler;
   assembler.AppendNewDataFrame(http2_frame_payload, end_stream);
@@ -97,7 +111,7 @@ TEST(GrpcMessageAssembler, OneMessageInOneFrame) {
   EXPECT_EQ(http2_frame_payload.Length(), 0);
   absl::StatusOr<MessageHandle> result1 = assembler.GenerateMessage();
   EXPECT_TRUE(result1.ok());
-  EXPECT_EQ(result1->get()->payload()->Length(), kHelloWorld.size());
+  EXPECT_EQ(result1->get()->payload()->Length(), str_1024.size());
   absl::StatusOr<MessageHandle> result2 = assembler.GenerateMessage();
   EXPECT_TRUE(result2.ok());
   EXPECT_EQ(result2->get(), nullptr);
@@ -214,10 +228,6 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
 }
 
 TEST(GrpcMessageAssembler, ThreeMessageInFourFrames) { CHECK(end_stream); }
-
-SliceBuffer Generate4GBPayload() { SliceBuffer payload; }
-
-TEST(GrpcMessageAssembler, One4GBMessage) { CHECK(end_stream); }
 
 TEST(GrpcMessageAssembler, IncompleteMessage1) { CHECK(end_stream); }
 
