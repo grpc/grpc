@@ -106,6 +106,8 @@
   default: true
 - name: server_privacy
   default: false
+- name: sleep_promise_exec_ctx_removal
+  default: false
 - name: tcp_frame_size_tuning
   default: false
 - name: tcp_rcv_lowat
