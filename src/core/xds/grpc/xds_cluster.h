@@ -17,12 +17,12 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CLUSTER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CLUSTER_H
 
+#include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -36,8 +36,8 @@
 namespace grpc_core {
 
 inline bool LrsServersEqual(
-    const std::shared_ptr<const GrpcXdsServer>& lrs_server1,
-    const std::shared_ptr<const GrpcXdsServer>& lrs_server2) {
+    const std::shared_ptr<const GrpcXdsServerTarget>& lrs_server1,
+    const std::shared_ptr<const GrpcXdsServerTarget>& lrs_server2) {
   if (lrs_server1 == nullptr) return lrs_server2 == nullptr;
   if (lrs_server2 == nullptr) return false;
   // Neither one is null, so compare them.
@@ -81,7 +81,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
     }
   };
 
-  absl::variant<Eds, LogicalDns, Aggregate> type;
+  std::variant<Eds, LogicalDns, Aggregate> type;
 
   // The LB policy to use for locality and endpoint picking.
   Json::Array lb_policy_config;
@@ -90,9 +90,11 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   // The LRS server to use for load reporting.
   // If null, load reporting will be disabled.
-  std::shared_ptr<const GrpcXdsServer> lrs_load_reporting_server;
+  std::shared_ptr<const GrpcXdsServerTarget> lrs_load_reporting_server;
   // The set of metrics to propagate from ORCA to LRS.
   RefCountedPtr<const BackendMetricPropagation> lrs_backend_metric_propagation;
+
+  bool use_http_connect = false;
 
   // Tls Context used by clients
   CommonTlsContext common_tls_context;
@@ -104,7 +106,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   // cluster.
   uint32_t max_concurrent_requests = 1024;
 
-  absl::optional<OutlierDetectionConfig> outlier_detection;
+  std::optional<OutlierDetectionConfig> outlier_detection;
 
   XdsHealthStatusSet override_host_statuses;
 

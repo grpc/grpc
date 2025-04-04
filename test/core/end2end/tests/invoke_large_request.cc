@@ -31,7 +31,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(Http2SingleHopTest, InvokeLargeRequest) {
+CORE_END2END_TEST(Http2SingleHopTests, InvokeLargeRequest) {
   const size_t kMessageSize = 10 * 1024 * 1024;
   auto send_from_client = RandomSlice(kMessageSize);
   auto send_from_server = RandomSlice(kMessageSize);

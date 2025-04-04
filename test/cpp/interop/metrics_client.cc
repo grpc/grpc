@@ -32,7 +32,7 @@
 int kDeadlineSecs = 10;
 
 ABSL_FLAG(std::string, metrics_server_address, "localhost:8081",
-          "The metrics server addresses in the fomrat <hostname>:<port>");
+          "The metrics server addresses in the format <hostname>:<port>");
 // TODO(Capstan): Consider using absl::Duration
 ABSL_FLAG(int32_t, deadline_secs, kDeadlineSecs,
           "The deadline (in seconds) for RCP call");

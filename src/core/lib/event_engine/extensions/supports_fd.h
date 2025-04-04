@@ -22,8 +22,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class EndpointSupportsFdExtension {
  public:
@@ -177,7 +176,6 @@ class EventEngineSupportsFdExtension {
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) = 0;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H

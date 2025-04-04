@@ -72,6 +72,12 @@ alias(
 )
 
 alias(
+    name = "gtest_main",
+    actual = "@com_google_googletest//:gtest_main",
+    tags = ["manual"],
+)
+
+alias(
     name = "fuzztest",
     actual = "@com_google_fuzztest//fuzztest",
     tags = ["manual"],
@@ -200,17 +206,5 @@ alias(
 alias(
     name = "googleapis_logging_cc_proto",
     actual = "@com_google_googleapis//google/logging/v2:logging_cc_proto",
-    tags = ["manual"],
-)
-
-alias(
-    name = "twisted",
-    actual = "@com_github_twisted_twisted//:twisted",
-    tags = ["manual"],
-)
-
-alias(
-    name = "yaml",
-    actual = "@com_github_yaml_pyyaml//:yaml",
     tags = ["manual"],
 )

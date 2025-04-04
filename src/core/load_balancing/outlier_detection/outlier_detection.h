@@ -20,7 +20,8 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>  // for uint32_t
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -70,8 +71,8 @@ struct OutlierDetectionConfig {
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
   };
-  absl::optional<SuccessRateEjection> success_rate_ejection;
-  absl::optional<FailurePercentageEjection> failure_percentage_ejection;
+  std::optional<SuccessRateEjection> success_rate_ejection;
+  std::optional<FailurePercentageEjection> failure_percentage_ejection;
 
   bool operator==(const OutlierDetectionConfig& other) const {
     return interval == other.interval &&

@@ -30,8 +30,8 @@
 #include "opentelemetry/sdk/metrics/export/metric_producer.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/notification.h"
 #include "test/core/test_util/fake_stats_plugin.h"
@@ -262,8 +262,8 @@ OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
   absl::Status expected_status;
   if (!options.use_meter_provider) {
-    expected_status =
-        absl::InvalidArgumentError("Need to configure a valid meter provider.");
+    expected_status = absl::InvalidArgumentError(
+        "Need to configure a valid meter provider or tracer provider.");
   }
   auto reader = ConfigureOTBuilder(std::move(options), &ot_builder);
   EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), expected_status);

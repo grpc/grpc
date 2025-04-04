@@ -89,14 +89,14 @@ void Chttp2PingCallbacks::CancelAll(
   ping_requested_ = false;
 }
 
-absl::optional<uint64_t> Chttp2PingCallbacks::OnPingTimeout(
+std::optional<uint64_t> Chttp2PingCallbacks::OnPingTimeout(
     Duration ping_timeout,
     grpc_event_engine::experimental::EventEngine* event_engine,
     Callback callback) {
   CHECK(started_new_ping_without_setting_timeout_);
   started_new_ping_without_setting_timeout_ = false;
   auto it = inflight_.find(most_recent_inflight_);
-  if (it == inflight_.end()) return absl::nullopt;
+  if (it == inflight_.end()) return std::nullopt;
   it->second.on_timeout =
       event_engine->RunAfter(ping_timeout, std::move(callback));
   return most_recent_inflight_;

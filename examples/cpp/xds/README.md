@@ -6,7 +6,7 @@ This xDS example builds on the [Hello World Example](https://github.com/grpc/grp
 
 The client takes two command-line arguments -
 * target - By default, the client tries to connect to the xDS "xds:///helloworld:50051" and gRPC would use xDS to resolve this target and connect to the server backend. This can be overridden to change the target.
-* secure - Bool value, defaults to true. When this is set, [XdsCredentials](https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md) will be used with a fallback on `InsecureChannelCredentials`. If unset, `InsecureChannelCredentials` will be used.
+* xds-creds - Bool value, defaults to true. When this is set, [XdsCredentials](https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md) will be used with a fallback on `InsecureChannelCredentials`. If unset, `InsecureChannelCredentials` will be used.
 
 The server takes three command-line arguments -
 * port - Port on which the Hello World service is run. Defaults to 50051.

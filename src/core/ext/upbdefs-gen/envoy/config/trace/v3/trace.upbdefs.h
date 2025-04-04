@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPBDEFS_H_
-#define ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPBDEFS_H_
+#ifndef ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -25,4 +25,4 @@ extern _upb_DefPool_Init envoy_config_trace_v3_trace_proto_upbdefinit;
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_H__UPBDEFS_H_ */

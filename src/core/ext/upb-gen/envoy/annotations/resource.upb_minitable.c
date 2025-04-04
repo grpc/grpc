@@ -35,7 +35,7 @@ const upb_MiniTable envoy__annotations__ResourceAnnotation_msg_init = {
 const upb_MiniTable* envoy__annotations__ResourceAnnotation_msg_init_ptr = &envoy__annotations__ResourceAnnotation_msg_init;
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension envoy_annotations_resource_ext = {
-  {265073217, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {265073217, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__ServiceOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &envoy__annotations__ResourceAnnotation_msg_init},
 

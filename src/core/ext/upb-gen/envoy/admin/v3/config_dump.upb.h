@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_CONFIG_DUMP_PROTO_UPB_H_
-#define ENVOY_ADMIN_V3_CONFIG_DUMP_PROTO_UPB_H_
+#ifndef ENVOY_ADMIN_V3_CONFIG_DUMP_PROTO_UPB_H__UPB_H_
+#define ENVOY_ADMIN_V3_CONFIG_DUMP_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -777,4 +777,4 @@ UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_SecretsConfigDump_StaticSe
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_CONFIG_DUMP_PROTO_UPB_H_ */
+#endif  /* ENVOY_ADMIN_V3_CONFIG_DUMP_PROTO_UPB_H__UPB_H_ */

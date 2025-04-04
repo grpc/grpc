@@ -22,27 +22,22 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
-#include "absl/types/optional.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
-
-const NoInterceptor ClientLoadReportingFilter::Call::OnServerToClientMessage;
-const NoInterceptor ClientLoadReportingFilter::Call::OnClientToServerMessage;
-const NoInterceptor ClientLoadReportingFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ClientLoadReportingFilter::Call::OnFinalize;
 
 const grpc_channel_filter ClientLoadReportingFilter::kFilter =
     MakePromiseBasedFilter<ClientLoadReportingFilter, FilterEndpoint::kClient,

@@ -51,7 +51,7 @@ fi
 # build grpc_ruby_plugin
 mkdir -p cmake/build
 pushd cmake/build
-cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=${CMAKE_CONFIG} ../..
+cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=${CMAKE_CONFIG} -DCMAKE_CXX_STANDARD=17 ../..
 make protoc grpc_ruby_plugin -j2
 popd
 

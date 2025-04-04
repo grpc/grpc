@@ -15,24 +15,26 @@
 
 set -e
 
-BUILDIFIER_VERSION="4.2.2"
+BUILDIFIER_VERSION="8.0.0"
 TEMP_BUILDIFIER_PATH="/tmp/buildifier"
 EXTRA_BUILDIFIER_FLAGS="$*"
 
 function error_handling() {
     error=$1
-    if [[ -x "$error" ]]; then
+    if [[ -n "$error" ]]; then
         echo "${error}"
         exit 1
     fi
 }
 
 function download_buildifier() {
-    platform="$(uname -s)"
+    platform="$(uname -sm)"
     case "${platform}" in
-        Linux*)     download_link="https://github.com/bazelbuild/buildtools/releases/download/${BUILDIFIER_VERSION}/buildifier";;
-        Darwin*)    download_link="https://github.com/bazelbuild/buildtools/releases/download/${BUILDIFIER_VERSION}/buildifier.mac";;
-        *)          error_handling "Unsupported platform: ${platform}";;
+        "Linux x86_64")  download_link="https://github.com/bazelbuild/buildtools/releases/download/v${BUILDIFIER_VERSION}/buildifier-linux-amd64";;
+        "Linux aarch64") download_link="https://github.com/bazelbuild/buildtools/releases/download/v${BUILDIFIER_VERSION}/buildifier-linux-arm64";;
+        "Darwin x86_64") download_link="https://github.com/bazelbuild/buildtools/releases/download/v${BUILDIFIER_VERSION}/buildifier-darwin-amd64";;
+        "Darwin arm64")  download_link="https://github.com/bazelbuild/buildtools/releases/download/v${BUILDIFIER_VERSION}/buildifier-darwin-arm64";;
+        *)               error_handling "Unsupported platform: ${platform}";;
     esac
 
     if [ -x "$(command -v curl)" ]; then

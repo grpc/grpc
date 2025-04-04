@@ -53,8 +53,7 @@
 
 #define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class Epoll1EventHandle : public EventHandle {
  public:
@@ -179,40 +178,7 @@ int EpollCreateAndCloexec() {
 // Only used when GRPC_ENABLE_FORK_SUPPORT=1
 std::list<Epoll1Poller*> fork_poller_list;
 
-// Only used when GRPC_ENABLE_FORK_SUPPORT=1
-Epoll1EventHandle* fork_fd_list_head = nullptr;
 gpr_mu fork_fd_list_mu;
-
-void ForkFdListAddHandle(Epoll1EventHandle* handle) {
-  if (grpc_core::Fork::Enabled()) {
-    gpr_mu_lock(&fork_fd_list_mu);
-    handle->ForkFdListPos().next = fork_fd_list_head;
-    handle->ForkFdListPos().prev = nullptr;
-    if (fork_fd_list_head != nullptr) {
-      fork_fd_list_head->ForkFdListPos().prev = handle;
-    }
-    fork_fd_list_head = handle;
-    gpr_mu_unlock(&fork_fd_list_mu);
-  }
-}
-
-void ForkFdListRemoveHandle(Epoll1EventHandle* handle) {
-  if (grpc_core::Fork::Enabled()) {
-    gpr_mu_lock(&fork_fd_list_mu);
-    if (fork_fd_list_head == handle) {
-      fork_fd_list_head = handle->ForkFdListPos().next;
-    }
-    if (handle->ForkFdListPos().prev != nullptr) {
-      handle->ForkFdListPos().prev->ForkFdListPos().next =
-          handle->ForkFdListPos().next;
-    }
-    if (handle->ForkFdListPos().next != nullptr) {
-      handle->ForkFdListPos().next->ForkFdListPos().prev =
-          handle->ForkFdListPos().prev;
-    }
-    gpr_mu_unlock(&fork_fd_list_mu);
-  }
-}
 
 void ForkPollerListAddPoller(Epoll1Poller* poller) {
   if (grpc_core::Fork::Enabled()) {
@@ -237,14 +203,7 @@ bool InitEpoll1PollerLinux();
 // the child process without interfering with connections or RPCs ongoing in the
 // parent.
 void ResetEventManagerOnFork() {
-  // Delete all pending Epoll1EventHandles.
   gpr_mu_lock(&fork_fd_list_mu);
-  while (fork_fd_list_head != nullptr) {
-    close(fork_fd_list_head->WrappedFd());
-    Epoll1EventHandle* next = fork_fd_list_head->ForkFdListPos().next;
-    delete fork_fd_list_head;
-    fork_fd_list_head = next;
-  }
   // Delete all registered pollers. This also closes all open epoll_sets
   while (!fork_poller_list.empty()) {
     Epoll1Poller* poller = fork_poller_list.front();
@@ -305,7 +264,6 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
     close(fd_);
   }
 
-  ForkFdListRemoveHandle(this);
   {
     // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
     // required here.
@@ -356,7 +314,7 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
   CHECK_GE(g_epoll_set_.epfd, 0);
   GRPC_TRACE_LOG(event_engine_poller, INFO)
       << "grpc epoll fd: " << g_epoll_set_.epfd;
-  struct epoll_event ev {};
+  struct epoll_event ev{};
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
   ev.data.ptr = wakeup_fd_.get();
   CHECK(epoll_ctl(g_epoll_set_.epfd, EPOLL_CTL_ADD, wakeup_fd_->ReadFd(),
@@ -402,7 +360,6 @@ EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
       new_handle->ReInit(fd);
     }
   }
-  ForkFdListAddHandle(new_handle);
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
   // Use the least significant bit of ev.data.ptr to store track_err. We expect
@@ -575,14 +532,12 @@ void Epoll1Poller::PostforkParent() {}
 // TODO(vigneshbabu): implement
 void Epoll1Poller::PostforkChild() {}
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #else  // defined(GRPC_LINUX_EPOLL)
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
@@ -629,8 +584,7 @@ void Epoll1Poller::PostforkParent() {}
 
 void Epoll1Poller::PostforkChild() {}
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 #endif  // !defined(GRPC_LINUX_EPOLL)

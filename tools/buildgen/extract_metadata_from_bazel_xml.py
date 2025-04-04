@@ -88,6 +88,10 @@ EXTERNAL_PROTO_LIBRARIES = {
     "com_github_cncf_xds": ExternalProtoLibrary(
         destination="third_party/xds", proto_prefix="third_party/xds/"
     ),
+    "com_envoyproxy_protoc_gen_validate": ExternalProtoLibrary(
+        destination="third_party/protoc-gen-validate",
+        proto_prefix="third_party/protoc-gen-validate/",
+    ),
     "opencensus_proto": ExternalProtoLibrary(
         destination="third_party/opencensus-proto/src",
         proto_prefix="third_party/opencensus-proto/src/",
@@ -189,6 +193,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
                 "upb_proto_reflection_library",
                 "alias",
                 "bind",
+                "genrule",
             ]:
                 if rule_name in result:
                     raise Exception("Rule %s already present" % rule_name)
@@ -355,6 +360,13 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return "opentelemetry-cpp::api"
     elif bazel_dep == "@io_opentelemetry_cpp//sdk/src/metrics:metrics":
         return "opentelemetry-cpp::metrics"
+    elif bazel_dep == "@io_opentelemetry_cpp//sdk/src/trace:trace":
+        return "opentelemetry-cpp::trace"
+    elif (
+        bazel_dep
+        == "@io_opentelemetry_cpp//exporters/memory:in_memory_span_exporter"
+    ):
+        return "opentelemetry-cpp::in_memory_span_exporter"
     else:
         # Two options here:
         # * either this is not external dependency at all (which is fine, we will treat it as internal library)
@@ -661,15 +673,10 @@ def _expand_upb_proto_library_rules(bazel_rules):
 
 def _patch_grpc_proto_library_rules(bazel_rules):
     for name, bazel_rule in bazel_rules.items():
-        contains_proto = any(
-            src.endswith(".proto") for src in bazel_rule.get("srcs", [])
-        )
         generator_func = bazel_rule.get("generator_function", None)
-
-        if (
-            name.startswith("//")
-            and contains_proto
-            and generator_func == "grpc_proto_library"
+        if name.startswith("//") and (
+            generator_func == "grpc_proto_library"
+            or bazel_rule["class"] == "cc_proto_library"
         ):
             # Add explicit protobuf dependency for internal c++ proto targets.
             bazel_rule["deps"].append("//third_party:protobuf")
@@ -1011,7 +1018,6 @@ def _generate_build_extra_metadata_for_tests(
                     " to %s" % (test_name, long_name)
                 )
                 test_metadata[test_name]["_RENAME"] = long_name
-    print(test_metadata["test/cpp/ext/otel:otel_plugin_test"])
     return test_metadata
 
 
@@ -1323,6 +1329,27 @@ _BUILD_EXTRA_METADATA = {
         "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
         "_RENAME": "otel_plugin_test",
     },
+    "test/cpp/ext/otel:grpc_text_map_carrier_test": {
+        "language": "c++",
+        "build": "plugin_test",
+        "_TYPE": "target",
+        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
+        "_RENAME": "grpc_text_map_carrier_test",
+    },
+    "test/cpp/ext/otel:grpc_trace_bin_text_map_propagator_test": {
+        "language": "c++",
+        "build": "plugin_test",
+        "_TYPE": "target",
+        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
+        "_RENAME": "grpc_trace_bin_text_map_propagator_test",
+    },
+    "test/cpp/ext/otel:otel_tracing_test": {
+        "language": "c++",
+        "build": "plugin_test",
+        "_TYPE": "target",
+        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
+        "_RENAME": "otel_tracing_test",
+    },
     # TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     # For now it's ok to disable them as these binaries aren't very useful anyway.
     # 'test/core/security:create_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_create_jwt' },
@@ -1431,15 +1458,6 @@ tests = _exclude_unwanted_cc_tests(_extract_cc_tests(bazel_rules))
 # only very little "extra metadata" would be needed and/or it would be trivial
 # to generate it automatically.
 all_extra_metadata = {}
-# TODO(veblush): Remove this workaround once protobuf is upgraded to 26.x
-if "@com_google_protobuf//third_party/utf8_range:utf8_range" not in bazel_rules:
-    md = _BUILD_EXTRA_METADATA[
-        "@com_google_protobuf//third_party/utf8_range:utf8_range"
-    ]
-    del _BUILD_EXTRA_METADATA[
-        "@com_google_protobuf//third_party/utf8_range:utf8_range"
-    ]
-    _BUILD_EXTRA_METADATA["@utf8_range//:utf8_range"] = md
 all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)
 )

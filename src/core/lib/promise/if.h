@@ -19,9 +19,9 @@
 
 #include <memory>
 #include <utility>
+#include <variant>
 
 #include "absl/status/statusor.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
@@ -31,9 +31,50 @@ namespace grpc_core {
 
 namespace promise_detail {
 
+// If promise combinator.
+//
+// If(C condition, T if_true, F if_false)
+//
+// Takes exactly 3 inputs
+//
+// The first input C can be one of the following
+// 1. A bool variable or constant.
+// 2. A promise that returns Poll<bool>
+// 3. A promise factory that returns a promise that returns Poll<bool>
+// 4. A promise that returns Poll<absl::StatusOr<bool>>
+// 5. A promise factory that returns a promise that returns
+//    Poll<absl::StatusOr<bool>>
+//
+// The second and third inputs can be one of the following
+// 1. Promise
+// 2. Promise Factory
+// The second and third promises must have the same return type.
+//
+// The If combinator works in the following way
+// 1. It processes the first input first. If the first input is a promise or a
+// promise factory, the promise is executed. The return value of this execution
+// could either be Poll<bool> or Poll<absl::StatusOr<bool>> . If the first input
+// is a bool, it is taken as it is.
+// 2. If the first promise returns Pending{} , the second and third promises are
+// not executed.
+// 3. If the promise returns any failure status , the second and third promises
+// are not executed.
+// 4. If the return value of the first promise is equivalent to true, the
+// combinator executes the second promise (if_true).
+// 5. If the return value of the first promise is equivalent to false, the
+// combinator executes the third promise (if_false).
+//
+// Both the condition and the if_true/if_false promises will be executed
+// serially on the same thread.
+//
+// If first input is a constant, it's guaranteed that one of the promise
+// factories if_true or if_false will be evaluated before returning from this
+// function. This makes it safe to capture lambda arguments in the promise
+// factory by reference.
+
 template <typename CallPoll, typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION typename CallPoll::PollResult ChooseIf(
-    CallPoll call_poll, bool result, T* if_true, F* if_false) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline typename CallPoll::PollResult
+ChooseIf(CallPoll call_poll, bool result, T* if_true, F* if_false) {
   if (result) {
     auto promise = if_true->Make();
     return call_poll(promise);
@@ -44,8 +85,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION typename CallPoll::PollResult ChooseIf(
 }
 
 template <typename CallPoll, typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION typename CallPoll::PollResult ChooseIf(
-    CallPoll call_poll, absl::StatusOr<bool> result, T* if_true, F* if_false) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline typename CallPoll::PollResult
+ChooseIf(CallPoll call_poll, absl::StatusOr<bool> result, T* if_true,
+         F* if_false) {
   if (!result.ok()) {
     return typename CallPoll::PollResult(result.status());
   } else if (*result) {
@@ -57,12 +99,14 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION typename CallPoll::PollResult ChooseIf(
   }
 }
 
+}  // namespace promise_detail
+
 template <typename C, typename T, typename F>
 class If {
  private:
   using TrueFactory = promise_detail::OncePromiseFactory<void, T>;
   using FalseFactory = promise_detail::OncePromiseFactory<void, F>;
-  using ConditionPromise = PromiseLike<C>;
+  using ConditionPromise = promise_detail::PromiseLike<C>;
   using TruePromise = typename TrueFactory::Promise;
   using FalsePromise = typename FalseFactory::Promise;
   using Result =
@@ -75,7 +119,7 @@ class If {
                           FalseFactory(std::move(if_false))}) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
-    return absl::visit(CallPoll<false>{this}, state_);
+    return std::visit(CallPoll<false>{this}, state_);
   }
 
  private:
@@ -84,7 +128,7 @@ class If {
     TrueFactory if_true;
     FalseFactory if_false;
   };
-  using State = absl::variant<Evaluating, TruePromise, FalsePromise>;
+  using State = std::variant<Evaluating, TruePromise, FalsePromise>;
   State state_;
 
   template <bool kSetState>
@@ -187,23 +231,8 @@ class If<bool, T, F> {
 #endif
 };
 
-}  // namespace promise_detail
-
-// If promise combinator.
-// Takes 3 promise factories, and evaluates the first.
-// If it returns failure, returns failure for the entire combinator.
-// If it returns true, evaluates the second promise.
-// If it returns false, evaluates the third promise.
-// If C is a constant, it's guaranteed that one of the promise factories
-// if_true or if_false will be evaluated before returning from this function.
-// This makes it safe to capture lambda arguments in the promise factory by
-// reference.
 template <typename C, typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::If<C, T, F> If(
-    C condition, T if_true, F if_false) {
-  return promise_detail::If<C, T, F>(std::move(condition), std::move(if_true),
-                                     std::move(if_false));
-}
+If(C, T, F) -> If<C, T, F>;
 
 }  // namespace grpc_core
 

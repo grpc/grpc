@@ -20,7 +20,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 #include <net/if.h>
 #include <string.h>
 #include <sys/un.h>
@@ -31,7 +30,8 @@
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-#include "src/core/lib/config/config_vars.h"
+#include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -177,6 +177,11 @@ static void test_named_and_numeric_scope_ids(void) {
 ABSL_FLAG(std::string, resolver, "", "Resolver type (ares or native)");
 
 TEST(ResolveAddressUsingAresResolverPosixTest, MainTest) {
+  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+    GTEST_SKIP()
+        << "The event_engine_dns_non_client_channel experiment is "
+           "enabled, so the legacy resolver is not used in this binary.";
+  }
   // First set the resolver type based off of --resolver
   std::string resolver_type = absl::GetFlag(FLAGS_resolver);
   // In case that there are more than one argument on the command line,

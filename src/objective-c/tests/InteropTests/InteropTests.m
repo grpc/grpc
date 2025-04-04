@@ -21,7 +21,6 @@
 #include <grpc/status.h>
 
 #import <GRPCClient/GRPCCall+ChannelArg.h>
-#import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall+Interceptor.h>
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/GRPCInterceptor.h>
@@ -1606,10 +1605,6 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
   GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
-    if ([[self class] transport] == gGRPCCoreCronetID) {
-      // Cronet does not support keepalive
-      return;
-    }
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Keepalive"];
 
     const NSTimeInterval kTestTimeout = 5;

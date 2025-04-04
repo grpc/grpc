@@ -20,8 +20,7 @@
 
 #include "absl/functional/any_invocable.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // An interface for thread-safe EventEngine callback work queues.
 //
@@ -58,7 +57,6 @@ class WorkQueue {
   virtual const void* owner() = 0;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_WORK_QUEUE_H

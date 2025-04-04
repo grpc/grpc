@@ -29,7 +29,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "envoy/config/rbac/v3/rbac.upb.h"
+#include "envoy/config/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/rbac/audit_loggers/stream/v3/stream.pb.h"
 #include "google/protobuf/struct.pb.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
@@ -37,13 +38,10 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/proto/grpc/testing/xds/v3/audit_logger_stream.pb.h"
-#include "src/proto/grpc/testing/xds/v3/extension.pb.h"
-#include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
-#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
+#include "xds/type/v3/typed_struct.pb.h"
 
 namespace grpc_core {
 namespace testing {
@@ -64,7 +62,7 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
   std::string serialized_config = config.SerializeAsString();
   upb::Arena arena;
   upb::DefPool def_pool;
-  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(), nullptr,
+  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(),
                                             def_pool.ptr(), arena.ptr()};
   auto* upb_config =
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(

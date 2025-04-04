@@ -22,14 +22,14 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/service_config/service_config_parser.h"
@@ -42,13 +42,13 @@ namespace grpc_core {
 
 class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
  public:
-  absl::optional<uint32_t> max_send_size() const { return max_send_size_; }
-  absl::optional<uint32_t> max_recv_size() const { return max_recv_size_; }
+  std::optional<uint32_t> max_send_size() const { return max_send_size_; }
+  std::optional<uint32_t> max_recv_size() const { return max_recv_size_; }
 
   MessageSizeParsedConfig() = default;
 
-  MessageSizeParsedConfig(absl::optional<uint32_t> max_send_size,
-                          absl::optional<uint32_t> max_recv_size)
+  MessageSizeParsedConfig(std::optional<uint32_t> max_send_size,
+                          std::optional<uint32_t> max_recv_size)
       : max_send_size_(max_send_size), max_recv_size_(max_recv_size) {}
 
   static const MessageSizeParsedConfig* GetFromCallContext(
@@ -59,8 +59,8 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
  private:
-  absl::optional<uint32_t> max_send_size_;
-  absl::optional<uint32_t> max_recv_size_;
+  std::optional<uint32_t> max_send_size_;
+  std::optional<uint32_t> max_recv_size_;
 };
 
 class MessageSizeParser : public ServiceConfigParser::Parser {
@@ -79,8 +79,8 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
   static absl::string_view parser_name() { return "message_size"; }
 };
 
-absl::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
-absl::optional<uint32_t> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
+std::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
+std::optional<uint32_t> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
 
 class ServerMessageSizeFilter final
     : public ImplementChannelFilter<ServerMessageSizeFilter> {
@@ -97,13 +97,13 @@ class ServerMessageSizeFilter final
 
   class Call {
    public:
-    static const NoInterceptor OnClientInitialMetadata;
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientInitialMetadata;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
     ServerMetadataHandle OnClientToServerMessage(
         const Message& message, ServerMessageSizeFilter* filter);
-    static const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnClientToServerHalfClose;
     ServerMetadataHandle OnServerToClientMessage(
         const Message& message, ServerMessageSizeFilter* filter);
   };
@@ -127,14 +127,13 @@ class ClientMessageSizeFilter final
 
   class Call {
    public:
-    explicit Call(ClientMessageSizeFilter* filter);
-
-    static const NoInterceptor OnClientInitialMetadata;
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    void OnClientInitialMetadata(ClientMetadata&,
+                                 ClientMessageSizeFilter* filter);
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
     ServerMetadataHandle OnClientToServerMessage(const Message& message);
-    static const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnClientToServerHalfClose;
     ServerMetadataHandle OnServerToClientMessage(const Message& message);
 
    private:

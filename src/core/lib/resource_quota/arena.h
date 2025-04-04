@@ -30,6 +30,7 @@
 #include <stddef.h>
 
 #include <atomic>
+#include <cstddef>
 #include <iosfwd>
 #include <memory>
 #include <utility>
@@ -93,7 +94,7 @@ class ArenaContextTraits : public BaseArenaContextTraits {
 };
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void DestroyArenaContext(void* p) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
   ArenaContextType<T>::Destroy(static_cast<T*>(p));
 }
 
@@ -188,6 +189,14 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
     auto* p = New<ManagedNewImpl<T>>(std::forward<Args>(args)...);
     p->Link(&managed_new_head_);
     return &p->t;
+  }
+
+  template <typename T, typename... Args>
+  absl::enable_if_t<std::is_same<typename T::RefCountedUnrefBehaviorType,
+                                 UnrefCallDtor>::value,
+                    RefCountedPtr<T>>
+  MakeRefCounted(Args&&... args) {
+    return RefCountedPtr<T>(New<T>(std::forward<Args>(args)...));
   }
 
   class PooledDeleter {
@@ -360,6 +369,84 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   std::atomic<Zone*> last_zone_{nullptr};
   std::atomic<ManagedNewObject*> managed_new_head_{nullptr};
   RefCountedPtr<ArenaFactory> arena_factory_;
+};
+
+// Arena backed single-producer-single-consumer queue
+// Based on implementation from
+// https://www.1024cores.net/home/lock-free-algorithms/queues/unbounded-spsc-queue
+template <typename T, bool kOptimizeAlignment = true>
+class ArenaSpsc {
+ public:
+  explicit ArenaSpsc(Arena* arena) : arena_(arena) {}
+
+  ~ArenaSpsc() {
+    while (Pop().has_value()) {
+    }
+  }
+
+  ArenaSpsc(const ArenaSpsc&) = delete;
+  ArenaSpsc& operator=(const ArenaSpsc&) = delete;
+
+  // Push `value` onto the queue; at most one thread can be calling this at a
+  // time.
+  void Push(T value) {
+    Node* n = AllocNode();
+    Construct(&n->value, std::move(value));
+    n->next.store(nullptr, std::memory_order_relaxed);
+    head_->next.store(n, std::memory_order_release);
+    head_ = n;
+  }
+
+  // Pop a value from the queue; at most one thread can be calling this at a
+  // time. If the queue was empty when called, returns nullopt.
+  std::optional<T> Pop() {
+    Node* n = tail_.load(std::memory_order_relaxed);
+    Node* next = n->next.load(std::memory_order_acquire);
+    if (next == nullptr) return std::nullopt;
+    T result = std::move(next->value);
+    Destruct(&next->value);
+    tail_.store(next, std::memory_order_release);
+    return result;
+  }
+
+ private:
+  struct Node {
+    Node() {}
+    ~Node() {}
+    explicit Node(std::nullptr_t) : next{nullptr} {}
+    std::atomic<Node*> next;
+    union {
+      T value;
+    };
+  };
+
+  Node* AllocNode() {
+    if (first_ != tail_copy_) {
+      Node* n = first_;
+      first_ = first_->next.load(std::memory_order_relaxed);
+      return n;
+    }
+    tail_copy_ = tail_.load(std::memory_order_acquire);
+    if (first_ != tail_copy_) {
+      Node* n = first_;
+      first_ = first_->next.load(std::memory_order_relaxed);
+      return n;
+    }
+    return arena_->New<Node>();
+  }
+
+  Arena* const arena_;
+  Node first_node_{nullptr};
+  // Accessed mainly by consumer, infrequently by producer
+  std::atomic<Node*> tail_{&first_node_};
+  // Ensure alignment on next cacheline to deliminate producer and consumer
+  // Head of queue
+  alignas(kOptimizeAlignment ? GPR_CACHELINE_SIZE
+                             : alignof(Node*)) Node* head_{&first_node_};
+  // Last unused node
+  Node* first_{&first_node_};
+  // Helper, points somewhere between first and tail
+  Node* tail_copy_{&first_node_};
 };
 
 // Arenas form a context for activities

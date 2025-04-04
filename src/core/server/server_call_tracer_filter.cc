@@ -24,12 +24,12 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/lib/channel/call_finalization.h"
+#include "src/core/call/call_finalization.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
@@ -87,15 +87,11 @@ class ServerCallTracerFilter
       call_tracer->RecordSendTrailingMetadata(&server_trailing_metadata);
     }
 
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
   };
 };
-
-const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerMessage;
-const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerCallTracerFilter::Call::OnServerToClientMessage;
 
 const grpc_channel_filter ServerCallTracerFilter::kFilter =
     MakePromiseBasedFilter<ServerCallTracerFilter, FilterEndpoint::kServer,

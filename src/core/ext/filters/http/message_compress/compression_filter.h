@@ -24,15 +24,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
+
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -65,7 +66,7 @@ class ChannelCompression {
 
   struct DecompressArgs {
     grpc_compression_algorithm algorithm;
-    absl::optional<uint32_t> max_recv_message_length;
+    std::optional<uint32_t> max_recv_message_length;
   };
 
   grpc_compression_algorithm default_compression_algorithm() const {
@@ -83,15 +84,16 @@ class ChannelCompression {
 
   // Compress one message synchronously.
   MessageHandle CompressMessage(MessageHandle message,
-                                grpc_compression_algorithm algorithm) const;
+                                grpc_compression_algorithm algorithm,
+                                CallTracerInterface* call_tracer) const;
   // Decompress one message synchronously.
-  absl::StatusOr<MessageHandle> DecompressMessage(bool is_client,
-                                                  MessageHandle message,
-                                                  DecompressArgs args) const;
+  absl::StatusOr<MessageHandle> DecompressMessage(
+      bool is_client, MessageHandle message, DecompressArgs args,
+      CallTracerInterface* call_tracer) const;
 
  private:
   // Max receive message length, if set.
-  absl::optional<uint32_t> max_recv_size_;
+  std::optional<uint32_t> max_recv_size_;
   size_t message_size_service_config_parser_index_;
   // The default, channel-level, compression algorithm.
   grpc_compression_algorithm default_compression_algorithm_;
@@ -129,13 +131,16 @@ class ClientCompressionFilter final
     absl::StatusOr<MessageHandle> OnServerToClientMessage(
         MessageHandle message, ClientCompressionFilter* filter);
 
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
 
    private:
     grpc_compression_algorithm compression_algorithm_;
     ChannelCompression::DecompressArgs decompress_args_;
+    // TODO(yashykt): Remove call_tracer_ after migration to call v3 stack. (See
+    // https://github.com/grpc/grpc/pull/38729 for more information.)
+    CallTracerInterface* call_tracer_ = nullptr;
   };
 
  private:
@@ -168,9 +173,9 @@ class ServerCompressionFilter final
     MessageHandle OnServerToClientMessage(MessageHandle message,
                                           ServerCompressionFilter* filter);
 
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
 
    private:
     ChannelCompression::DecompressArgs decompress_args_;

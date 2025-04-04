@@ -32,7 +32,7 @@ bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
   // the decrementer that got us there.
   // We can now safely mutate any non-atomic mutable variables (we've got a
   // guarantee that no other thread will), and by the time this function returns
-  // we must store a postive number into updates_remaining_.
+  // we must store a positive number into updates_remaining_.
   auto now = Timestamp::Now();
   Duration time_so_far = now - period_start_;
   if (time_so_far < period_) {

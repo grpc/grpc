@@ -16,7 +16,6 @@
 //
 //
 
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -27,13 +26,14 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/test/default_reactor_test_peer.h>
 #include <grpcpp/test/mock_stream.h>
-#include <gtest/gtest.h>
 
 #include <climits>
 #include <iostream>
+#include <optional>
 
 #include "absl/log/log.h"
-#include "absl/types/optional.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -188,7 +188,7 @@ TEST_F(MockCallbackTest, MockedCallSucceedsWithWait) {
   struct {
     grpc::internal::Mutex mu;
     grpc::internal::CondVar cv;
-    absl::optional<grpc::Status> ABSL_GUARDED_BY(mu) status;
+    std::optional<grpc::Status> ABSL_GUARDED_BY(mu) status;
   } status;
   DefaultReactorTestPeer peer(&ctx, [&](grpc::Status s) {
     grpc::internal::MutexLock l(&status.mu);

@@ -201,16 +201,16 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordSendMessage(const grpc_core::SliceBuffer& /*send_message*/) {
+    RecordSendMessage(const grpc_core::Message& /*send_message*/) {
   ++sent_message_count_;
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordReceivedMessage(const grpc_core::SliceBuffer& /*recv_message*/) {
+    RecordReceivedMessage(const grpc_core::Message& /*recv_message*/) {
   ++recv_message_count_;
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface> PythonOpenCensusCallTracer::
+std::shared_ptr<grpc_core::TcpCallTracer> PythonOpenCensusCallTracer::
     PythonOpenCensusCallAttemptTracer::StartNewTcpTrace() {
   return nullptr;
 }

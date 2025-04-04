@@ -66,29 +66,16 @@ class OpenTelemetryPluginImpl::ServerCallTracer
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override;
 
-  void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override {
-    RecordAnnotation(
-        absl::StrFormat("Send message: %ld bytes", send_message.Length()));
-  }
+  void RecordSendMessage(const grpc_core::Message& send_message) override;
   void RecordSendCompressedMessage(
-      const grpc_core::SliceBuffer& send_compressed_message) override {
-    RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
-                                     send_compressed_message.Length()));
-  }
+      const grpc_core::Message& send_compressed_message) override;
 
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) override;
 
-  void RecordReceivedMessage(
-      const grpc_core::SliceBuffer& recv_message) override {
-    RecordAnnotation(
-        absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
-  }
+  void RecordReceivedMessage(const grpc_core::Message& recv_message) override;
   void RecordReceivedDecompressedMessage(
-      const grpc_core::SliceBuffer& recv_decompressed_message) override {
-    RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
-                                     recv_decompressed_message.Length()));
-  }
+      const grpc_core::Message& recv_decompressed_message) override;
 
   void RecordReceivedTrailingMetadata(
       grpc_metadata_batch* /*recv_trailing_metadata*/) override {}
@@ -104,14 +91,12 @@ class OpenTelemetryPluginImpl::ServerCallTracer
   void RecordOutgoingBytes(
       const TransportByteSize& transport_byte_size) override;
 
-  void RecordAnnotation(absl::string_view /*annotation*/) override {
-    // Not implemented
-  }
+  void RecordAnnotation(absl::string_view annotation) override;
 
   void RecordAnnotation(const Annotation& /*annotation*/) override {
     // Not implemented
   }
-  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+  std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override {
     // No TCP trace.
     return nullptr;
   }
@@ -141,6 +126,9 @@ class OpenTelemetryPluginImpl::ServerCallTracer
   // the call's party.
   std::atomic<uint64_t> incoming_bytes_{0};
   std::atomic<uint64_t> outgoing_bytes_{0};
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
+  uint64_t send_seq_num_ = 0;
+  uint64_t recv_seq_num_ = 0;
 };
 
 }  // namespace internal

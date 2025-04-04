@@ -25,13 +25,13 @@
 #include <chrono>
 #include <map>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -65,7 +65,7 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   }
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakePickFirstConfig(
-      absl::optional<bool> shuffle_address_list = absl::nullopt) {
+      std::optional<bool> shuffle_address_list = std::nullopt) {
     return MakeConfig(Json::FromArray({Json::FromObject(
         {{"pick_first",
           shuffle_address_list.has_value()
@@ -75,7 +75,7 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   }
 
   // Gets order the addresses are being picked. Return type is void so
-  // assertions can be used
+  // assertions can be used.
   void GetOrderAddressesArePicked(
       absl::Span<const absl::string_view> addresses,
       std::vector<absl::string_view>* out_address_order) {
@@ -460,29 +460,26 @@ TEST_F(PickFirstTest, ResolverUpdateBeforeLeavingIdle) {
   // subchannels (i.e., before it can transition from IDLE to CONNECTING),
   // we send a new update.
   absl::Notification notification;
-  work_serializer_->Run(
-      [&]() {
-        // Inject second update into WorkSerializer queue before we
-        // exit idle, so that the second update gets run before the initial
-        // subchannel connectivity state notifications from the first update
-        // are delivered.
-        work_serializer_->Run(
-            [&]() {
-              // Second update.
-              absl::Status status = lb_policy()->UpdateLocked(
-                  BuildUpdate(kNewAddresses, MakePickFirstConfig(false)));
-              EXPECT_TRUE(status.ok()) << status;
-              // Trigger notification once all connectivity state
-              // notifications have been delivered.
-              work_serializer_->Run([&]() { notification.Notify(); },
-                                    DEBUG_LOCATION);
-            },
-            DEBUG_LOCATION);
-        // Exit idle.
-        lb_policy()->ExitIdleLocked();
-      },
-      DEBUG_LOCATION);
-  notification.WaitForNotification();
+  work_serializer_->Run([&]() {
+    // Inject second update into WorkSerializer queue before we
+    // exit idle, so that the second update gets run before the initial
+    // subchannel connectivity state notifications from the first update
+    // are delivered.
+    work_serializer_->Run([&]() {
+      // Second update.
+      absl::Status status = lb_policy()->UpdateLocked(
+          BuildUpdate(kNewAddresses, MakePickFirstConfig(false)));
+      EXPECT_TRUE(status.ok()) << status;
+      // Trigger notification once all connectivity state
+      // notifications have been delivered.
+      work_serializer_->Run([&]() { notification.Notify(); });
+    });
+    // Exit idle.
+    lb_policy()->ExitIdleLocked();
+  });
+  while (!notification.HasBeenNotified()) {
+    fuzzing_ee_->Tick();
+  }
   // The LB policy should have created subchannels for the new addresses.
   auto* subchannel3 = FindSubchannel(kNewAddresses[0]);
   ASSERT_NE(subchannel3, nullptr);
@@ -1060,7 +1057,6 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
 }
 
 TEST_F(PickFirstTest, AddressUpdateRemovedSelectedAddress) {
-  if (!IsPickFirstNewEnabled()) return;
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
@@ -1170,6 +1166,123 @@ TEST_F(PickFirstTest, AddressUpdateRetainsSelectedAddress) {
     EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
   }
   EXPECT_FALSE(subchannel2->ConnectionRequested());
+}
+
+// This exercizes a bug seen in the wild that caused a crash.  For
+// details, see https://github.com/grpc/grpc/pull/38144.
+TEST_F(PickFirstTest, SubchannelNotificationAfterShutdown) {
+  // Send an update containing two addresses.
+  constexpr std::array<absl::string_view, 2> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for each address.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  auto* subchannel2 = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel2, nullptr);
+  // When the LB policy receives the first subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // The following things happen in order:
+  // 1. We enqueue a READY notification for the subchannel in the
+  //    WorkSerializer, but do not yet execute it.
+  // 2. We enqueue the Happy Eyeballs timer callback in the
+  //    WorkSerializer, but do not yet execute it.
+  // 3. We shut down the LB policy.  This will try to cancel the Happy
+  //    Eyeballs timer, but since the timer has already fired,
+  //    cancellation will fail.
+  // 4. Now we drain the WorkSerializer queue.  The LB policy sees the READY
+  //    notification.  Before the bug fix, this caused us to select the
+  //    subchannel instead of ignoring the notification.  With the bug fix,
+  //    this update should never actually be delivered to the LB policy,
+  //    since it will have already shut down the subchannel.
+  // 5. The LB policy now sees the Happy Eyeballs timer callback.  This
+  //    is a no-op, because the LB policy has already been shut down,
+  //    but it will release the last ref to the subchannel list.
+  //
+  // To get the ordering right here, we need to do steps 2 and 3
+  // inside the WorkSerializer, after the READY notification has been
+  // enqueued but before we drain the WorkSerializer queue.
+  subchannel->SetConnectivityState(
+      GRPC_CHANNEL_READY, /*status=*/absl::OkStatus(),
+      /*validate_state_transition=*/true,
+      /*run_before_flush=*/[&]() {
+        // Step 2: Trigger the timer.  The callback will be enqueued in
+        // the WorkSerializer, but we don't drain it yet.
+        IncrementTimeBy(Duration::Milliseconds(250),
+                        /*flush_work_serializer=*/false);
+        // Step 3: Shut down the LB policy.
+        lb_policy_.reset();
+      });
+  // Now the subchannel reports IDLE.  Before the bug fix, this
+  // triggered a crash.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+}
+
+// This exercizes a bug seen in the wild that caused us to silently stop
+// triggering connection attempts at the end of the Happy Eyeballs pass.
+TEST_F(PickFirstTest,
+       SubchannelInitiallyReportsTransientFailureButIsIdleForHappyEyeballs) {
+  constexpr std::array<absl::string_view, 2> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  // Pre-initialize the second subchannel to report TRANSIENT_FAILURE as
+  // its initial state.
+  auto* subchannel2 = CreateSubchannel(kAddresses[1]);
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    absl::UnavailableError("failed to connect"),
+                                    /*validate_state_transition=*/false);
+  // Send an update containing two addresses.
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for the first address.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  // When the LB policy receives the first subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // Second subchannel finishes backoff.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  // No connection attempt triggered on the second subchannel yet.
+  EXPECT_FALSE(subchannel2->ConnectionRequested());
+  // Now the Happy Eyeballs timer fires.
+  IncrementTimeBy(Duration::Milliseconds(250));
+  // This triggers a connection attempt on the second subchannel.
+  EXPECT_TRUE(subchannel2->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // Second subchannel fails immediately.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    absl::UnavailableError("ugh"));
+  // Second subchannel finishes backoff.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  // Now the first subchannel fails.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                   absl::UnavailableError("ugh2"));
+  // This should trigger an immediate re-attempt on the second subchannel.
+  EXPECT_TRUE(subchannel2->ConnectionRequested());
+  // Subchannel should report CONNECTING.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // The LB policy should request re-resolution.
+  ExpectReresolutionRequest();
+  // The LB policy will report TRANSIENT_FAILURE.
+  WaitForConnectionFailed([&](const absl::Status& status) {
+    EXPECT_EQ(status,
+              absl::UnavailableError("failed to connect to all addresses; "
+                                     "last error: UNAVAILABLE: ugh2"));
+  });
 }
 
 TEST_F(PickFirstTest, WithShuffle) {

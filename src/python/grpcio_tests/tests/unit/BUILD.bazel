@@ -11,8 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-load("//bazel:internal_python_rules.bzl", "internal_py_grpc_test")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library")
+load("//bazel:internal_python_rules.bzl", "internal_py_grpc_test")
 
 package(default_visibility = ["//visibility:public"])
 

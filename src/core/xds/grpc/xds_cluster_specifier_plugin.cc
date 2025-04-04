@@ -22,11 +22,11 @@
 
 #include <map>
 #include <utility>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/variant.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
@@ -55,7 +55,7 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
     XdsExtension extension, upb_Arena* arena, upb_DefPool* symtab,
     ValidationErrors* errors) const {
   absl::string_view* serialized_plugin_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_plugin_config == nullptr) {
     errors->AddError("could not parse plugin config");
     return {};
@@ -129,8 +129,8 @@ XdsClusterSpecifierPluginRegistry::GetPluginForType(
 
 void XdsClusterSpecifierPluginRegistry::PopulateSymtab(
     upb_DefPool* symtab) const {
-  for (const auto& p : registry_) {
-    p.second->PopulateSymtab(symtab);
+  for (const auto& [_, plugin] : registry_) {
+    plugin->PopulateSymtab(symtab);
   }
 }
 

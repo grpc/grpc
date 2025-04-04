@@ -29,10 +29,9 @@ DIRS=(
     'setup.py'
 )
 
-VIRTUALENV=black_virtual_environment
+VIRTUALENV=venv_black_code
+python3 -m virtualenv $VIRTUALENV
+source $VIRTUALENV/bin/activate
 
-python3 -m virtualenv $VIRTUALENV -p $(which python3)
-PYTHON=${VIRTUALENV}/bin/python
-"$PYTHON" -m pip install black==23.3.0
-
-$PYTHON -m black --config=black.toml $ACTION "${DIRS[@]}"
+python3 -m pip install black==23.3.0
+python3 -m black --config=black.toml $ACTION "${DIRS[@]}"

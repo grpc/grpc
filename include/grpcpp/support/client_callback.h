@@ -316,6 +316,10 @@ class ClientBidiReactor : public internal::ClientReactor {
   /// all cases. If it is not called, it indicates an application-level problem
   /// (like failure to remove a hold).
   ///
+  /// OnDone is called exactly once, and not concurrently with any (other)
+  /// reaction. (Holds may be needed (see above) to prevent OnDone from being
+  /// called concurrently with calls to the reactor from outside of reactions.)
+  ///
   /// \param[in] s The status outcome of this RPC
   void OnDone(const grpc::Status& /*s*/) override {}
 

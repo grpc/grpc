@@ -16,8 +16,7 @@
 //
 //
 
-#include <gtest/gtest.h>
-
+#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/time.h"
@@ -329,12 +328,12 @@ static void test_connect(size_t num_connects,
                          const grpc_channel_args* channel_args,
                          test_addrs* dst_addrs, bool test_dst_addrs) {
   grpc_core::ExecCtx exec_ctx;
-  // Use aligned_stroage to allocate grpc_resolved_address objects on stack
+  // Use aligned_storage to allocate grpc_resolved_address objects on stack
   // to meet the alignment requirement of sockaddr_storage type.
-  std::aligned_storage<sizeof(grpc_resolved_address),
-                       alignof(sockaddr_storage)>::type resolved_addr_buffer;
-  std::aligned_storage<sizeof(grpc_resolved_address),
-                       alignof(sockaddr_storage)>::type resolved_addr1_buffer;
+  alignas(sockaddr_storage) char
+      resolved_addr_buffer[sizeof(grpc_resolved_address)];
+  alignas(sockaddr_storage) char
+      resolved_addr1_buffer[sizeof(grpc_resolved_address)];
   grpc_resolved_address& resolved_addr =
       *reinterpret_cast<grpc_resolved_address*>(&resolved_addr_buffer);
   grpc_resolved_address& resolved_addr1 =
@@ -708,13 +707,21 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
+// return true for special interfaces
+// For Mac these interfaces are not allowed to bind and listen
+// these would not be used in below test
+static bool FilterSpecialInterfaces(const char* ifname) {
+  // skip unnamed interface
+  if (!ifname) return true;
+  // skip utun[0-9] interface, Mac VPN interfaces
+  if (absl::StrContains(ifname, "utun")) return true;
+  // skip awdl0 interface, Used for peer-peer b/w apple devices
+  if (absl::StrContains(ifname, "awdl")) return true;
+  return false;
+}
+
 TEST(TcpServerPosixTest, MainTest) {
   grpc_closure destroyed;
-  grpc_arg chan_args[1];
-  chan_args[0].type = GRPC_ARG_INTEGER;
-  chan_args[0].key = const_cast<char*>(GRPC_ARG_EXPAND_WILDCARD_ADDRS);
-  chan_args[0].value.integer = 1;
-  const grpc_channel_args channel_args = {1, chan_args};
   struct ifaddrs* ifa = nullptr;
   struct ifaddrs* ifa_it;
   // Zalloc dst_addrs to avoid oversized frames.
@@ -747,6 +754,8 @@ TEST(TcpServerPosixTest, MainTest) {
          ifa_it = ifa_it->ifa_next) {
       if (ifa_it->ifa_addr == nullptr) {
         continue;
+      } else if (FilterSpecialInterfaces(ifa_it->ifa_name)) {
+        continue;
       } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
         dst_addrs->addrs[dst_addrs->naddrs].addr.len =
             static_cast<socklen_t>(sizeof(struct sockaddr_in));
@@ -775,9 +784,9 @@ TEST(TcpServerPosixTest, MainTest) {
     test_connect(1, nullptr, dst_addrs, true);
 
     // Test connect(2) with dst_addrs.
-    test_connect(1, &channel_args, dst_addrs, false);
+    test_connect(1, nullptr, dst_addrs, false);
     // Test connect(2) with dst_addrs.
-    test_connect(10, &channel_args, dst_addrs, false);
+    test_connect(10, nullptr, dst_addrs, false);
 
     GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                       grpc_schedule_on_exec_ctx);

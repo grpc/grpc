@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H_
-#define XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H_
+#ifndef XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H__UPB_H_
+#define XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -151,4 +151,4 @@ UPB_INLINE struct xds_core_v3_ContextParams* xds_core_v3_ResourceName_mutable_co
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H_ */
+#endif  /* XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H__UPB_H_ */

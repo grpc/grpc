@@ -22,10 +22,12 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -34,10 +36,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/address_filtering.h"
@@ -225,10 +225,11 @@ std::string MakeChildPolicyName(absl::string_view cluster,
 class PriorityEndpointIterator final : public EndpointAddressesIterator {
  public:
   PriorityEndpointIterator(
-      std::string cluster_name,
+      std::string cluster_name, bool use_http_connect,
       std::shared_ptr<const XdsEndpointResource> endpoints,
       std::vector<size_t /*child_number*/> priority_child_numbers)
       : cluster_name_(std::move(cluster_name)),
+        use_http_connect_(use_http_connect),
         endpoints_(std::move(endpoints)),
         priority_child_numbers_(std::move(priority_child_numbers)) {}
 
@@ -239,9 +240,7 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
       const auto& priority_entry = priority_list[priority];
       std::string priority_child_name =
           MakeChildPolicyName(cluster_name_, priority_child_numbers_[priority]);
-      for (const auto& p : priority_entry.localities) {
-        const auto& locality_name = p.first;
-        const auto& locality = p.second;
+      for (const auto& [locality_name, locality] : priority_entry.localities) {
         std::vector<RefCountedStringValue> hierarchical_path = {
             RefCountedStringValue(priority_child_name),
             locality_name->human_readable_string()};
@@ -251,13 +250,14 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
           uint32_t endpoint_weight =
               locality.lb_weight *
               endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-          callback(EndpointAddresses(
-              endpoint.addresses(),
+          ChannelArgs args =
               endpoint.args()
                   .SetObject(hierarchical_path_attr)
                   .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
                   .SetObject(locality_name->Ref())
-                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight)));
+                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight);
+          if (!use_http_connect_) args = args.Remove(GRPC_ARG_XDS_HTTP_PROXY);
+          callback(EndpointAddresses(endpoint.addresses(), args));
         }
       }
     }
@@ -265,6 +265,7 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
 
  private:
   std::string cluster_name_;
+  bool use_http_connect_;
   std::shared_ptr<const XdsEndpointResource> endpoints_;
   std::vector<size_t /*child_number*/> priority_child_numbers_;
 };
@@ -345,7 +346,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       // Can't do this for an aggregate cluster, because even if the aggregate
       // cluster itself didn't change, the leaf clusters may have changed.
       if (*new_cluster_config == *old_cluster_config &&
-          absl::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
+          std::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
               new_cluster_config->children)) {
         return absl::OkStatus();
       }
@@ -356,7 +357,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   static constexpr absl::string_view kArgXdsAggregateClusterName =
       GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_aggregate_cluster_name";
   if (XdsAggregateClusterBackwardCompatibilityEnabled()) {
-    if (absl::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
+    if (std::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
             new_cluster_config->children)) {
       auto aggregate_cluster = args.args.GetString(kArgXdsAggregateClusterName);
       if (aggregate_cluster.has_value()) {
@@ -393,7 +394,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
             old_cluster_config, *new_cluster_config, endpoint_config);
         // Populate addresses and resolution_note for child policy.
         update_args.addresses = std::make_shared<PriorityEndpointIterator>(
-            cluster_name_, endpoint_config.endpoints,
+            cluster_name_, new_cluster_config->cluster->use_http_connect,
+            endpoint_config.endpoints,
             child_name_state_.priority_child_numbers);
         update_args.resolution_note = endpoint_config.resolution_note;
         // Construct child policy config.
@@ -454,7 +456,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
     const XdsConfig::ClusterConfig* old_cluster,
     const XdsConfig::ClusterConfig& new_cluster,
     const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const {
-  CHECK(!absl::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
+  CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
       new_cluster.children));
   // First, build some maps from locality to child number and the reverse
   // from old_cluster and child_name_state_.
@@ -464,7 +466,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
       child_locality_map;
   if (old_cluster != nullptr) {
     auto* old_endpoint_config =
-        absl::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
+        std::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
             &old_cluster->children);
     if (old_endpoint_config != nullptr) {
       const auto& prev_priority_list =
@@ -474,8 +476,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
         size_t child_number =
             child_name_state_.priority_child_numbers[priority];
         const auto& localities = prev_priority_list[priority].localities;
-        for (const auto& p : localities) {
-          XdsLocalityName* locality_name = p.first;
+        for (const auto& [locality_name, _] : localities) {
           locality_child_map[locality_name] = child_number;
           child_locality_map[child_number].insert(locality_name);
         }
@@ -491,11 +492,10 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
       GetUpdatePriorityList(endpoint_config.endpoints.get());
   for (size_t priority = 0; priority < priority_list.size(); ++priority) {
     const auto& localities = priority_list[priority].localities;
-    absl::optional<size_t> child_number;
+    std::optional<size_t> child_number;
     // If one of the localities in this priority already existed, reuse its
     // child number.
-    for (const auto& p : localities) {
-      XdsLocalityName* locality_name = p.first;
+    for (const auto& [locality_name, _] : localities) {
       if (!child_number.has_value()) {
         auto it = locality_child_map.find(locality_name);
         if (it != locality_child_map.end()) {
@@ -538,20 +538,13 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
     const XdsClusterResource* aggregate_cluster_resource) {
   const auto& cluster_resource = *new_cluster.cluster;
   const bool is_logical_dns =
-      absl::holds_alternative<XdsClusterResource::LogicalDns>(
+      std::holds_alternative<XdsClusterResource::LogicalDns>(
           cluster_resource.type);
   // Determine what xDS LB policy to use.
   Json xds_lb_policy;
-  if (is_logical_dns) {
-    xds_lb_policy = Json::FromArray({
-        Json::FromObject({
-            {"pick_first", Json::FromObject({})},
-        }),
-    });
-  }
-  // TODO(roth): Remove this "else if" block after the 1.63 release.
-  else if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
-           aggregate_cluster_resource != nullptr) {
+  // TODO(roth): Remove this "if" condition after the 1.63 release.
+  if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
+      aggregate_cluster_resource != nullptr) {
     xds_lb_policy =
         Json::FromArray(aggregate_cluster_resource->lb_policy_config);
   } else {

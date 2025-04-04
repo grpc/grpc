@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 
@@ -36,7 +37,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
@@ -46,6 +46,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/telemetry/stats.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -91,8 +92,7 @@
 
 #define MAX_READ_IOVEC 64
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
@@ -103,6 +103,7 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
   GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
   ssize_t sent_length;
   do {
+    grpc_core::global_stats().IncrementSyscallWrite();
     sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
   } while (sent_length < 0 && (*saved_errno = errno) == EINTR);
   return sent_length;
@@ -276,8 +277,6 @@ void PosixEndpointImpl::FinishEstimate() {
 }
 
 absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
-  grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kFd,
-                          handle_->WrappedFd());
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   return src_error;
@@ -328,7 +327,11 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     }
     msg.msg_flags = 0;
 
+    grpc_core::global_stats().IncrementTcpReadOffer(incoming_buffer_->Length());
+    grpc_core::global_stats().IncrementTcpReadOfferIovSize(
+        incoming_buffer_->Count());
     do {
+      grpc_core::global_stats().IncrementSyscallRead();
       read_bytes = recvmsg(fd_, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
@@ -361,6 +364,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       return true;
     }
 
+    grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     AddToEstimate(static_cast<size_t>(read_bytes));
     DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
 
@@ -465,7 +469,7 @@ void PosixEndpointImpl::MaybePostReclaimer() {
     memory_owner_.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
         [self = Ref(DEBUG_LOCATION, "Posix Reclaimer")](
-            absl::optional<grpc_core::ReclamationSweep> sweep) {
+            std::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
             self->PerformReclamation();
           }
@@ -533,12 +537,14 @@ void PosixEndpointImpl::MaybeMakeReadSlices() {
         extra_wanted -= kBigAlloc;
         incoming_buffer_->AppendIndexed(
             Slice(memory_owner_.MakeSlice(kBigAlloc)));
+        grpc_core::global_stats().IncrementTcpReadAlloc64k();
       }
     } else {
       while (extra_wanted > 0) {
         extra_wanted -= kSmallAlloc;
         incoming_buffer_->AppendIndexed(
             Slice(memory_owner_.MakeSlice(kSmallAlloc)));
+        grpc_core::global_stats().IncrementTcpReadAlloc8k();
       }
     }
     MaybePostReclaimer();
@@ -862,6 +868,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   msg->msg_controllen = CMSG_SPACE(sizeof(uint32_t));
 
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
+  grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
   ssize_t length = TcpSend(fd_, msg, saved_errno, additional_flags);
   *sent_length = length;
   // Only save timestamps if all the bytes were taken by sendmsg.
@@ -958,6 +965,8 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
     if (!tried_sending_message) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
+      grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
+      grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
       sent_length = TcpSend(fd_, &msg, &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp_zerocopy_send_ctx_->UpdateZeroCopyOptMemStateAfterSend(
@@ -1075,6 +1084,8 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     if (!tried_sending_message) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
+      grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
+      grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
       sent_length = TcpSend(fd_, &msg, &saved_errno);
     }
 
@@ -1214,7 +1225,7 @@ bool PosixEndpointImpl::Write(
   // Write succeeded immediately. Return true and don't run the on_writable
   // callback.
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-      << "Endpoint[" << this << "]: Write succeded immediately";
+      << "Endpoint[" << this << "]: Write succeeded immediately";
   return true;
 }
 
@@ -1347,13 +1358,11 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
                                          std::move(allocator), options);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
@@ -1362,7 +1371,6 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
   grpc_core::Crash("Cannot create PosixEndpoint on this platform");
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_TCP

@@ -37,6 +37,8 @@
   doc: Number of connections dropped due to resource quota exceeded
 - counter: rq_calls_dropped
   doc: Number of calls dropped due to resource quota exceeded
+- counter: rq_calls_rejected
+  doc: Number of calls rejected (never started) due to resource quota exceeded
 # tcp
 - counter: syscall_write
   doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process
@@ -93,6 +95,58 @@
   doc: Lifetime of HPACK entries in the cache (in milliseconds)
   max: 1800000
   buckets: 40
+- histogram: http2_header_table_size
+  doc: Http2 header table size received through SETTINGS frame
+  max: 16777216
+  buckets: 20
+- histogram: http2_initial_window_size
+  doc: Http2 initial window size received through SETTINGS frame
+  max: 16777216
+  buckets: 50
+- histogram: http2_max_concurrent_streams
+  doc: Http2 max concurrent streams received through SETTINGS frame
+  max: 16777216
+  buckets: 20
+- histogram: http2_max_frame_size
+  doc: Http2 max frame size received through SETTINGS frame
+  max: 16777216
+  buckets: 50
+- histogram: http2_max_header_list_size
+  doc: Http2 max header list size received through SETTINGS frame
+  max: 16777216
+  buckets: 20
+- histogram: http2_preferred_receive_crypto_message_size
+  doc: Http2 preferred receive crypto message size received through SETTINGS frame
+  max: 16777216
+  buckets: 20
+- histogram: http2_stream_remote_window_update
+  doc: Stream window update sent by peer
+  max: 16777216
+  buckets: 20
+- histogram: http2_transport_remote_window_update
+  doc: Transport window update sent by peer
+  max: 16777216
+  buckets: 20
+- histogram: http2_transport_window_update_period
+  doc: Period in milliseconds at which peer sends transport window update
+  max: 100000
+  buckets: 20
+- histogram: http2_stream_window_update_period
+  doc: Period in milliseconds at which peer sends stream window update
+  max: 100000
+  buckets: 20
+- histogram: http2_write_target_size
+  doc: Number of bytes targetted for http2 writes
+  max: 16777216
+  buckets: 50
+- histogram: http2_write_data_frame_size
+  doc: Number of bytes for each data frame written
+  max: 16777216
+  buckets: 50
+- histogram: http2_read_data_frame_size
+  doc: Number of bytes for each data frame read
+  max: 16777216
+  buckets: 50
 # completion queues
 - counter: cq_pluck_creates
   doc: Number of completion queues created for cq_pluck (indicates sync api usage)

@@ -36,7 +36,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler'
-  v = '3.28.1'
+  v = '4.30.0'
   s.version  = v
   s.summary  = 'The Protobuf Compiler (protoc) generates Objective-C files from .proto files'
   s.description = <<-DESC
@@ -97,9 +97,9 @@ Pod::Spec.new do |s|
   s.authors  = { 'The Protocol Buffers contributors' => 'protobuf@googlegroups.com' }
 
   repo = 'google/protobuf'
-  file = "protoc-#{v}-osx-x86_64.zip"
+  file = "protoc-#{v.delete_prefix("3.")}-osx-universal_binary.zip"
   s.source = {
-    :http => "https://github.com/#{repo}/releases/download/v#{v}/#{file}",
+    :http => "https://github.com/#{repo}/releases/download/v#{v.delete_prefix("3.")}/#{file}",
     # TODO(jcanizales): Add sha1 or sha256
     # :sha1 => '??',
   }
@@ -108,11 +108,11 @@ Pod::Spec.new do |s|
                      'google/**/*.proto' # Well-known protobuf types
 
   # Restrict the protobuf runtime version to the one supported by this version of protoc.
-  s.dependency 'Protobuf', '~> 3.0'
+  s.dependency 'Protobuf', '~> 4.0'
   # For the Protobuf dependency not to complain:
-  s.ios.deployment_target = '10.0'
-  s.osx.deployment_target = '10.12'
-  s.tvos.deployment_target = '12.0'
+  s.ios.deployment_target = '15.0'
+  s.osx.deployment_target = '11.0'
+  s.tvos.deployment_target = '13.0'
   s.watchos.deployment_target = '6.0'
   s.visionos.deployment_target = '1.0'
 

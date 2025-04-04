@@ -209,7 +209,7 @@ class GlobalInstrumentsRegistry {
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
   static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
       GlobalInstrumentHandle handle);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindInstrumentByName(absl::string_view name);
 
  private:
@@ -275,6 +275,10 @@ class StatsPlugin {
   class ScopeConfig {
    public:
     virtual ~ScopeConfig() = default;
+
+    // NOTE: This is safe to invoke ONLY if both ScopeConfig objects
+    // come from the same StatsPlugin.
+    virtual int Compare(const ScopeConfig& other) const = 0;
   };
 
   virtual ~StatsPlugin() = default;
@@ -369,7 +373,8 @@ class GlobalStatsPluginRegistry {
   // stats plugins. They got a stats plugin group which contains all the stats
   // plugins for a specific scope and all operations on the stats plugin group
   // will be applied to all the stats plugins within the group.
-  class StatsPluginGroup {
+  class StatsPluginGroup
+      : public std::enable_shared_from_this<StatsPluginGroup> {
    public:
     // Adds a stats plugin and a scope config (per-channel or per-server) to the
     // group.
@@ -446,6 +451,8 @@ class GlobalStatsPluginRegistry {
       return false;
     }
 
+    size_t size() const { return plugins_state_.size(); }
+
     // Registers a callback to be used to populate callback metrics.
     // The callback will update the specified metrics.  The callback
     // will be invoked no more often than min_interval.  Multiple callbacks may
@@ -469,6 +476,12 @@ class GlobalStatsPluginRegistry {
     // within the group to \a call_context.
     void AddServerCallTracers(Arena* arena);
 
+    static absl::string_view ChannelArgName() {
+      return "grpc.internal.stats_plugin_group";
+    }
+    static int ChannelArgsCompare(const StatsPluginGroup* a,
+                                  const StatsPluginGroup* b);
+
    private:
     friend class RegisteredMetricCallback;
 
@@ -477,7 +490,6 @@ class GlobalStatsPluginRegistry {
       std::shared_ptr<StatsPlugin> plugin;
     };
 
-    // C++17 has fold expression that may simplify this.
     template <GlobalInstrumentsRegistry::ValueType V,
               GlobalInstrumentsRegistry::InstrumentType I, size_t M, size_t N>
     static constexpr void AssertIsCallbackGaugeHandle(
@@ -489,11 +501,6 @@ class GlobalStatsPluginRegistry {
           I == GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge,
           "InstrumentType must be kCallbackGauge");
     }
-    template <typename T, typename... Args>
-    static constexpr void AssertIsCallbackGaugeHandle(T t, Args&&... args) {
-      AssertIsCallbackGaugeHandle(t);
-      AssertIsCallbackGaugeHandle(args...);
-    }
 
     std::vector<PluginState> plugins_state_;
   };
@@ -503,18 +510,21 @@ class GlobalStatsPluginRegistry {
 
   // The following functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
-  static StatsPluginGroup GetStatsPluginsForChannel(
+  static std::shared_ptr<StatsPluginGroup> GetStatsPluginsForChannel(
       const experimental::StatsPluginChannelScope& scope);
-  static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);
+  static std::shared_ptr<StatsPluginGroup> GetStatsPluginsForServer(
+      const ChannelArgs& args);
 
  private:
+  struct GlobalStatsPluginNode {
+    std::shared_ptr<StatsPlugin> plugin;
+    GlobalStatsPluginNode* next = nullptr;
+  };
   friend class GlobalStatsPluginRegistryTestPeer;
 
   GlobalStatsPluginRegistry() = default;
 
-  static NoDestruct<Mutex> mutex_;
-  static NoDestruct<std::vector<std::shared_ptr<StatsPlugin>>> plugins_
-      ABSL_GUARDED_BY(mutex_);
+  static std::atomic<GlobalStatsPluginNode*> plugins_;
 };
 
 // A metric callback that is registered with a stats plugin group.
@@ -553,7 +563,7 @@ inline std::unique_ptr<RegisteredMetricCallback>
 GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
     absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
     Duration min_interval, Args... args) {
-  AssertIsCallbackGaugeHandle(args...);
+  (AssertIsCallbackGaugeHandle(args), ...);
   return std::make_unique<RegisteredMetricCallback>(
       *this, std::move(callback),
       std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{args...},

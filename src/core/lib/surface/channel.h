@@ -24,12 +24,14 @@
 #include <grpc/support/time.h>
 
 #include <map>
+#include <optional>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/call/call_arena_allocator.h"
+#include "src/core/call/call_destination.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -37,8 +39,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
-#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/cpp_impl_of.h"
 #include "src/core/util/ref_counted.h"
@@ -59,7 +59,7 @@ class Channel : public UnstartedCallDestination,
  public:
   struct RegisteredCall {
     Slice path;
-    absl::optional<Slice> authority;
+    std::optional<Slice> authority;
 
     explicit RegisteredCall(const char* method_arg, const char* host_arg);
     RegisteredCall(const RegisteredCall& other);
@@ -75,7 +75,7 @@ class Channel : public UnstartedCallDestination,
                                 uint32_t propagation_mask,
                                 grpc_completion_queue* cq,
                                 grpc_pollset_set* pollset_set_alternative,
-                                Slice path, absl::optional<Slice> authority,
+                                Slice path, std::optional<Slice> authority,
                                 Timestamp deadline, bool registered_method) = 0;
 
   virtual grpc_event_engine::experimental::EventEngine* event_engine()

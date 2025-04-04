@@ -41,7 +41,7 @@ void FillGprFromTimestamp(gpr_timespec* gts, const struct timespec* ts) {
 }
 
 void DefaultTimestampsCallback(void* /*arg*/, Timestamps* /*ts*/,
-                               absl::Status /*shudown_err*/) {
+                               absl::Status /*shutdown_err*/) {
   VLOG(2) << "Timestamps callback has not been registered";
 }
 

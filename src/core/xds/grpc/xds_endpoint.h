@@ -32,6 +32,9 @@
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 
+// Per-endpoint channel arg key for xDS-configured HTTP CONNECT proxy.
+#define GRPC_ARG_XDS_HTTP_PROXY "grpc.internal.xds_http_proxy"
+
 namespace grpc_core {
 
 struct XdsEndpointResource : public XdsResourceType::ResourceData {

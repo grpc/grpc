@@ -20,11 +20,11 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
-#include <gtest/gtest.h>
 
 #include <set>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "src/cpp/server/load_reporter/constants.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -132,7 +132,7 @@ TEST_F(LoadDataStoreTest, ReassignOrphanStores) {
   auto assigned_to_lb_id_4 =
       load_data_store.GetAssignedStores(kHostname2, kLbId4);
   // There is no active LB for the first host now. kLbId4 is active but
-  // it's for the second host, so it wll NOT adopt the orphaned stores.
+  // it's for the second host, so it will NOT adopt the orphaned stores.
   EXPECT_FALSE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_4,
                                          kHostname1, kLbId1, kLoadKey1));
   EXPECT_FALSE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_4,
@@ -187,16 +187,16 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   // Close the assigned_lb_id, orphaned_lb_id will be re-assigned again.
   load_data_store.ReportStreamClosed(kHostname1, assigned_lb_id);
   active_lb_ids.erase(assigned_lb_id);
-  size_t orphaned_lb_id_occurences = 0;
+  size_t orphaned_lb_id_occurrences = 0;
   for (const auto& lb_id : active_lb_ids) {
     if (PerBalancerStoresContains(
             load_data_store,
             load_data_store.GetAssignedStores(kHostname1, lb_id), kHostname1,
             orphaned_lb_id, kLoadKey1)) {
-      orphaned_lb_id_occurences++;
+      orphaned_lb_id_occurrences++;
     }
   }
-  EXPECT_EQ(orphaned_lb_id_occurences, 1U);
+  EXPECT_EQ(orphaned_lb_id_occurrences, 1U);
 }
 
 TEST_F(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {

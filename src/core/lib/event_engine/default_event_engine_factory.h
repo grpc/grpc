@@ -20,13 +20,11 @@
 
 #include <memory>
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 /// Create an EventEngine using the default factory provided at link time.
-std::unique_ptr<EventEngine> DefaultEventEngineFactory();
+std::shared_ptr<EventEngine> DefaultEventEngineFactory();
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_FACTORY_H

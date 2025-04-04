@@ -25,13 +25,13 @@
 #include <string.h>
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/env.h"

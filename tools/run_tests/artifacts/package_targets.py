@@ -134,7 +134,7 @@ class RubyPackage:
         del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         return create_docker_jobspec(
             self.name,
-            "tools/dockerfile/grpc_artifact_centos6_x64",
+            "tools/dockerfile/grpc_artifact_manylinux2014_x64",
             "tools/run_tests/artifacts/build_package_ruby.sh",
         )
 
@@ -142,9 +142,17 @@ class RubyPackage:
 class PythonPackage:
     """Collects python eggs and wheels created in the artifact phase"""
 
-    def __init__(self):
+    def __init__(self, platform="", arch=""):
         self.name = "python_package"
         self.labels = ["package", "python", "linux"]
+        self.platform = platform
+        self.arch = arch
+        if self.platform:
+            self.labels.append(platform)
+            self.name += "_" + platform
+        if self.arch:
+            self.labels.append(arch)
+            self.name += "_" + arch
 
     def pre_build_jobspecs(self):
         return []
@@ -154,9 +162,16 @@ class PythonPackage:
         # since the python package build does very little, we can use virtually
         # any image that has new-enough python, so reusing one of the images used
         # for artifact building seems natural.
+        dockerfile_dir = (
+            "tools/dockerfile/grpc_artifact_python_manylinux2014_x64"
+        )
+        if "musllinux_1_1" in self.platform and "aarch64" in self.arch:
+            dockerfile_dir = (
+                "tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64"
+            )
         return create_docker_jobspec(
             self.name,
-            "tools/dockerfile/grpc_artifact_python_manylinux2014_x64",
+            dockerfile_dir,
             "tools/run_tests/artifacts/build_package_python.sh",
             environ={"PYTHON": "/opt/python/cp39-cp39/bin/python"},
         )
@@ -176,7 +191,7 @@ class PHPPackage:
         del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         return create_docker_jobspec(
             self.name,
-            "tools/dockerfile/grpc_artifact_centos6_x64",
+            "tools/dockerfile/grpc_artifact_manylinux2014_x64",
             "tools/run_tests/artifacts/build_package_php.sh",
         )
 
@@ -189,5 +204,6 @@ def targets():
         CSharpPackage("windows"),
         RubyPackage(),
         PythonPackage(),
+        PythonPackage("musllinux_1_1", "aarch64"),
         PHPPackage(),
     ]

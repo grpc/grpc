@@ -100,7 +100,7 @@ TEST(TimeoutTest, DecodingSucceeds) {
 }
 
 void assert_decoding_fails(const char* s) {
-  EXPECT_EQ(absl::nullopt, ParseTimeout(Slice::FromCopiedString(s)))
+  EXPECT_EQ(std::nullopt, ParseTimeout(Slice::FromCopiedString(s)))
       << " s=" << s;
 }
 

@@ -73,6 +73,13 @@ TEST(PrioritizedRaceTest, PrioritizedCompletion2B) {
   EXPECT_EQ(second_polls, 1);
 }
 
+TEST(PrioritizedRaceTest, MoveOnlyPromise) {
+  auto r = PrioritizedRace(
+      [x = std::make_unique<int>(1)]() -> Poll<int> { return Pending{}; },
+      [y = std::make_unique<int>(2)]() -> Poll<int> { return Pending{}; });
+  EXPECT_EQ(r(), Poll<int>(Pending{}));
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

@@ -68,6 +68,8 @@ struct Parameters {
   bool allow_sync_server_api;
   // Whether to generate completion queue API.
   bool allow_cq_api;
+  // whether to add deprecated warning for services
+  bool allow_deprecated;
 };
 
 // Return the prologue of the generated header file.

@@ -23,14 +23,14 @@
 #include <stddef.h>
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
@@ -60,12 +60,12 @@ class XdsRouting final {
   };
 
   // Returns the index of the selected virtual host in the list.
-  static absl::optional<size_t> FindVirtualHostForDomain(
+  static std::optional<size_t> FindVirtualHostForDomain(
       const VirtualHostListIterator& vhost_iterator, absl::string_view domain);
 
   // Returns the index in route_list_iterator to use for a request with
   // the specified path and metadata, or nullopt if no route matches.
-  static absl::optional<size_t> GetRouteForRequest(
+  static std::optional<size_t> GetRouteForRequest(
       const RouteListIterator& route_list_iterator, absl::string_view path,
       grpc_metadata_batch* initial_metadata);
 
@@ -74,9 +74,9 @@ class XdsRouting final {
   static bool IsValidDomainPattern(absl::string_view domain_pattern);
 
   // Returns the metadata value(s) for the specified key.
-  // As special cases, binary headers return a value of absl::nullopt, and
+  // As special cases, binary headers return a value of std::nullopt, and
   // "content-type" header returns "application/grpc".
-  static absl::optional<absl::string_view> GetHeaderValue(
+  static std::optional<absl::string_view> GetHeaderValue(
       grpc_metadata_batch* initial_metadata, absl::string_view header_name,
       std::string* concatenated_value);
 

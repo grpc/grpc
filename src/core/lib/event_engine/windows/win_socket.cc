@@ -34,8 +34,7 @@
 #define GRPC_FIONBIO FIONBIO
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // ---- WinSocket ----
 
@@ -234,7 +233,17 @@ absl::Status PrepareSocket(SOCKET sock) {
   return absl::OkStatus();
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+absl::StatusOr<EventEngine::ResolvedAddress> SocketToAddress(SOCKET socket) {
+  char addr[EventEngine::ResolvedAddress::MAX_SIZE_BYTES];
+  int addr_len = sizeof(addr);
+  if (getsockname(socket, reinterpret_cast<sockaddr*>(addr), &addr_len) < 0) {
+    return GRPC_WSA_ERROR(WSAGetLastError(),
+                          "Failed to get local socket name using getsockname");
+  }
+  return EventEngine::ResolvedAddress(reinterpret_cast<sockaddr*>(addr),
+                                      addr_len);
+}
+
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

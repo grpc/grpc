@@ -18,9 +18,10 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -33,7 +34,8 @@ namespace {
 // Tests perAttemptRecvTimeout:
 // - 1 retry allowed for ABORTED status
 // - both attempts do not receive a response until after perAttemptRecvTimeout
-CORE_END2END_TEST(RetryTest, RetryPerAttemptRecvTimeoutOnLastAttempt) {
+CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeoutOnLastAttempt) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()
@@ -70,15 +72,14 @@ CORE_END2END_TEST(RetryTest, RetryPerAttemptRecvTimeoutOnLastAttempt) {
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   // Server gets a call but does not respond to the call.
-  absl::optional<IncomingCall> s0 = RequestCall(101);
+  std::optional<IncomingCall> s0 = RequestCall(101);
   Expect(101, true);
   Step();
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
   // initial attempt.
-  EXPECT_EQ(s0->GetInitialMetadata("grpc-previous-rpc-attempts"),
-            absl::nullopt);
+  EXPECT_EQ(s0->GetInitialMetadata("grpc-previous-rpc-attempts"), std::nullopt);
   // Server gets a second call, which it also does not respond to.
-  absl::optional<IncomingCall> s1 = RequestCall(201);
+  std::optional<IncomingCall> s1 = RequestCall(201);
   Expect(201, true);
   Step();
   // Now we can unref the first call.
@@ -89,7 +90,8 @@ CORE_END2END_TEST(RetryTest, RetryPerAttemptRecvTimeoutOnLastAttempt) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_CANCELLED);
-  EXPECT_EQ(server_status.message(), "retry perAttemptRecvTimeout exceeded");
+  EXPECT_THAT(server_status.message(),
+              ::testing::HasSubstr("retry perAttemptRecvTimeout exceeded"));
   EXPECT_EQ(s1->method(), "/service/method");
 }
 

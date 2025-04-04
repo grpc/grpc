@@ -29,7 +29,7 @@
 
 namespace {
 
-constexpr int kPrintfPointerFieldWidth = 2 + 2 * sizeof(void*);
+constexpr int kPrintfPointerFieldWidth = 2 + (2 * sizeof(void*));
 
 void DumpPCAndFrameSizeAndSymbol(void (*writerfn)(const char*, void*),
                                  void* writerfn_arg, void* pc,

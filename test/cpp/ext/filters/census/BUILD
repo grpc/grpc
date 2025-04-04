@@ -32,11 +32,10 @@ grpc_cc_library(
         "opencensus-tags",
         "opencensus-with-tag-map",
     ],
-    language = "C++",
     deps = [
         "//:grpc++",
         "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:test_lb_policies",
         "//test/cpp/end2end:test_service_impl",
@@ -58,17 +57,19 @@ grpc_cc_test(
         "opencensus-with-tag-map",
     ],
     flaky = True,
-    language = "C++",
     linkstatic = True,
     tags = [
         "census_test",
+        # Incompatible with internal stats engine.
+        "grpc:no-internal-poller",
+        "grpc:no-internal-test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
         "library",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
@@ -87,17 +88,18 @@ grpc_cc_test(
         "opencensus-with-tag-map",
     ],
     flaky = True,
-    language = "C++",
     linkstatic = True,
     tags = [
         "census_test",
+        # Incompatible with internal stats engine.
+        "grpc:no-internal-poller",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
         "library",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

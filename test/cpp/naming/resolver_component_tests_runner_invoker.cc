@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
         test_srcdir.value() +
         absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir) +
         std::string("/test/cpp/naming");
-    // Invoke bazel's executeable links to the .sh and .py scripts (don't use
+    // Invoke bazel's executable links to the .sh and .py scripts (don't use
     // the .sh and .py suffixes) to make
     // sure that we're using bazel's test environment.
     result = grpc::testing::InvokeResolverComponentTestsRunner(

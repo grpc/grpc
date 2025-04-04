@@ -494,7 +494,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       } else {
         break;
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case State::kPushedToPipe: {
       CHECK(push_.has_value());
       auto r_push = (*push_)();
@@ -824,7 +824,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       }
       CHECK(state_ == State::kPushedToPipe ||
             state_ == State::kCompletedWhilePushedToPipe);
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case State::kCompletedWhilePushedToPipe:
     case State::kPushedToPipe: {
       CHECK(push_.has_value());
@@ -852,7 +852,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
             state_ = State::kPulledFromPipe;
           }
         } else {
-          *intercepted_slice_buffer_ = absl::nullopt;
+          *intercepted_slice_buffer_ = std::nullopt;
           *intercepted_flags_ = 0;
           state_ = State::kCancelled;
           flusher->AddClosure(
@@ -871,7 +871,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
         break;
       }
     }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case State::kCompletedWhilePulledFromPipe:
     case State::kPulledFromPipe: {
       CHECK(push_.has_value());
@@ -926,8 +926,8 @@ struct ClientCallData::RecvInitialMetadata final {
   grpc_closure on_ready;
   grpc_metadata_batch* metadata = nullptr;
   PipeSender<ServerMetadataHandle>* server_initial_metadata_publisher = nullptr;
-  absl::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
-  absl::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
+  std::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
+  std::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
 
   static const char* StateString(State state) {
     switch (state) {
@@ -1038,7 +1038,7 @@ class ClientCallData::PollContext {
           repoll_ = true;  // ensure Push() gets polled.
           self_->recv_initial_metadata_->metadata_next_.emplace(
               self_->server_initial_metadata_pipe()->receiver.Next());
-          ABSL_FALLTHROUGH_INTENDED;
+          [[fallthrough]];
         case RecvInitialMetadata::kCompleteAndPushedToPipe: {
           CHECK(self_->recv_initial_metadata_->metadata_next_.has_value());
           Poll<NextResult<ServerMetadataHandle>> p =
@@ -1822,8 +1822,8 @@ struct ServerCallData::SendInitialMetadata {
   State state = kInitial;
   CapturedBatch batch;
   PipeSender<ServerMetadataHandle>* server_initial_metadata_publisher = nullptr;
-  absl::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
-  absl::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
+  std::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
+  std::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
 
   static const char* StateString(State state) {
     switch (state) {
@@ -2236,7 +2236,7 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
 }
 
 // Wrapper to make it look like we're calling the next filter as a promise.
-// All polls: await sending the trailing metadata, then foward it down the
+// All polls: await sending the trailing metadata, then forward it down the
 // stack.
 Poll<ServerMetadataHandle> ServerCallData::PollTrailingMetadata() {
   GRPC_TRACE_LOG(channel, INFO)

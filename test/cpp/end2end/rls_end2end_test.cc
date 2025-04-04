@@ -21,7 +21,6 @@
 //   fires; request is processed at that point
 // - find some deterministic way to exercise adaptive throttler code
 
-#include <gmock/gmock.h>
 #include <grpc/credentials.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
@@ -29,23 +28,24 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <gtest/gtest.h>
 
 #include <deque>
 #include <map>
+#include <optional>
 #include <thread>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/load_balancing/rls/rls.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
@@ -53,6 +53,7 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
@@ -61,6 +62,7 @@
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/counted_service.h"
@@ -106,12 +108,12 @@ class MyTestServiceImpl : public BackendService {
                     ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
     IncreaseRequestCount();
     auto client_metadata = context->client_metadata();
-    auto range = client_metadata.equal_range("x-google-rls-data");
+    auto [start, end] = client_metadata.equal_range("x-google-rls-data");
     {
       grpc::internal::MutexLock lock(&mu_);
-      for (auto it = range.first; it != range.second; ++it) {
-        rls_header_data_.insert(
-            std::string(it->second.begin(), it->second.length()));
+      for (auto it = start; it != end; ++it) {
+        auto& [_, value] = *it;
+        rls_header_data_.emplace(value.begin(), value.length());
       }
     }
     IncreaseResponseCount();
@@ -175,7 +177,7 @@ class RlsEnd2endTest : public ::testing::Test {
 
   static void TearDownTestSuite() {
     grpc_shutdown_blocking();
-    WaitForSingleOwner(
+    grpc_core::WaitForSingleOwner(
         grpc_event_engine::experimental::GetDefaultEventEngine());
     grpc_core::CoreConfiguration::Reset();
   }
@@ -256,8 +258,8 @@ class RlsEnd2endTest : public ::testing::Test {
 
     // Populates context.
     void SetupRpc(ClientContext* context) const {
-      for (const auto& item : metadata) {
-        context->AddMetadata(item.first, item.second);
+      for (const auto& [key, value] : metadata) {
+        context->AddMetadata(key, value);
       }
       if (timeout_ms != 0) {
         context->set_deadline(
@@ -1373,7 +1375,7 @@ TEST_F(RlsEnd2endTest, ConnectivityStateTransientFailure) {
                                     BuildRlsResponse({"invalid_target"}));
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "empty address list: no address in fixed_address_lb policy",
+      "empty address list (no address in fixed_address_lb policy)",
       RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
@@ -1543,10 +1545,10 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
       stats_plugin_->GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
-      absl::nullopt);
+      std::nullopt);
   EXPECT_EQ(stats_plugin_->GetUInt64CounterValue(
                 kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
-            absl::nullopt);
+            std::nullopt);
   stats_plugin_->TriggerCallbacks();
   EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
                   kMetricCacheEntries,
@@ -1578,7 +1580,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
       ::testing::Optional(1));
   EXPECT_EQ(stats_plugin_->GetUInt64CounterValue(
                 kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
-            absl::nullopt);
+            std::nullopt);
   stats_plugin_->TriggerCallbacks();
   EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
                   kMetricCacheEntries,

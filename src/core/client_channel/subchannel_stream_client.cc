@@ -130,7 +130,7 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
   const Duration timeout = retry_backoff_.NextAttemptDelay();
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     LOG(INFO) << tracer_ << " " << this
-              << ": SubchannelStreamClient health check call lost...";
+              << ": SubchannelStreamClient call lost...";
     if (timeout > Duration::Zero()) {
       LOG(INFO) << tracer_ << " " << this << ": ... will retry in "
                 << timeout.millis() << "ms.";
@@ -139,11 +139,10 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
     }
   }
   retry_timer_handle_ = event_engine_->RunAfter(
-      timeout, [self = Ref(DEBUG_LOCATION, "health_retry_timer")]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
+      timeout, [self = Ref(DEBUG_LOCATION, "retry_timer")]() mutable {
         ExecCtx exec_ctx;
         self->OnRetryTimer();
-        self.reset(DEBUG_LOCATION, "health_retry_timer");
+        self.reset(DEBUG_LOCATION, "retry_timer");
       });
 }
 
@@ -153,7 +152,7 @@ void SubchannelStreamClient::OnRetryTimer() {
       call_state_ == nullptr) {
     if (GPR_UNLIKELY(tracer_ != nullptr)) {
       LOG(INFO) << tracer_ << " " << this
-                << ": SubchannelStreamClient restarting health check call";
+                << ": SubchannelStreamClient restarting call";
     }
     StartCallLocked();
   }
@@ -165,9 +164,9 @@ void SubchannelStreamClient::OnRetryTimer() {
 //
 
 SubchannelStreamClient::CallState::CallState(
-    RefCountedPtr<SubchannelStreamClient> health_check_client,
+    RefCountedPtr<SubchannelStreamClient> subchannel_stream_client,
     grpc_pollset_set* interested_parties)
-    : subchannel_stream_client_(std::move(health_check_client)),
+    : subchannel_stream_client_(std::move(subchannel_stream_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(subchannel_stream_client_->call_allocator_->MakeArena()) {}
 
@@ -193,7 +192,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   SubchannelCall::Args args = {
       subchannel_stream_client_->connected_subchannel_,
       &pollent_,
-      Slice::FromStaticString("/grpc.health.v1.Health/Watch"),
       gpr_get_cycle_counter(),  // start_time
       Timestamp::InfFuture(),   // deadline
       arena_.get(),
@@ -300,7 +298,7 @@ void SubchannelStreamClient::CallState::AfterCallStackDestruction(
 void SubchannelStreamClient::CallState::OnCancelComplete(
     void* arg, grpc_error_handle /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
-  GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "health_cancel");
+  GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "cancel_batch");
   self->call_->Unref(DEBUG_LOCATION, "cancel");
 }
 
@@ -323,7 +321,7 @@ void SubchannelStreamClient::CallState::Cancel() {
     GRPC_CALL_COMBINER_START(
         &call_combiner_,
         GRPC_CLOSURE_CREATE(StartCancel, this, grpc_schedule_on_exec_ctx),
-        absl::OkStatus(), "health_cancel");
+        absl::OkStatus(), "cancel_batch");
   }
 }
 
@@ -407,18 +405,22 @@ void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
     LOG(INFO) << self->subchannel_stream_client_->tracer_ << " "
               << self->subchannel_stream_client_.get()
               << ": SubchannelStreamClient CallState " << self
-              << ": health watch failed with status " << status;
+              << ": call failed with status " << status;
   }
   // Clean up.
   self->recv_trailing_metadata_.Clear();
   // Report call end.
+  // Note: We hold a ref to the SubchannelStreamClient here to ensure
+  // that it lives long enough for us to release the mutex, since the
+  // call to CallEndedLocked() may release the last ref.
+  auto subchannel_stream_client = self->subchannel_stream_client_->Ref();
   MutexLock lock(&self->subchannel_stream_client_->mu_);
   if (self->subchannel_stream_client_->event_handler_ != nullptr) {
     self->subchannel_stream_client_->event_handler_
         ->RecvTrailingMetadataReadyLocked(self->subchannel_stream_client_.get(),
                                           status);
   }
-  // For status UNIMPLEMENTED, give up and assume always healthy.
+  // For status UNIMPLEMENTED, give up.
   self->CallEndedLocked(/*retry=*/status != GRPC_STATUS_UNIMPLEMENTED);
 }
 

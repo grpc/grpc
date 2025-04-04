@@ -39,6 +39,8 @@ cc_binary(
         ":route_guide_helper",
         "//:grpc++",
         "//examples/protos:route_guide",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
     ],
 )
 
@@ -53,6 +55,8 @@ cc_binary(
         ":route_guide_helper",
         "//:grpc++",
         "//examples/protos:route_guide",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
     ],
 )
 
@@ -67,6 +71,8 @@ cc_binary(
         ":route_guide_helper",
         "//:grpc++",
         "//examples/protos:route_guide",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
     ],
 )
 

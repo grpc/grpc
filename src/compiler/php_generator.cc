@@ -16,7 +16,7 @@
  *
  */
 
-#include <google/protobuf/compiler/php/php_generator.h>
+#include <google/protobuf/compiler/php/names.h>
 
 #include <map>
 
@@ -50,7 +50,7 @@ std::string PackageName(const FileDescriptor* file) {
   if (file->options().has_php_namespace()) {
     return file->options().php_namespace();
   } else {
-    return ConvertToPhpNamespace(file->package());
+    return ConvertToPhpNamespace(std::string(file->package()));
   }
 }
 

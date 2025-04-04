@@ -21,11 +21,11 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -47,10 +47,10 @@ class HttpClientFilter : public ImplementChannelFilter<HttpClientFilter> {
     void OnClientInitialMetadata(ClientMetadata& md, HttpClientFilter* filter);
     absl::Status OnServerInitialMetadata(ServerMetadata& md);
     absl::Status OnServerTrailingMetadata(ServerMetadata& md);
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
   };
 
  private:

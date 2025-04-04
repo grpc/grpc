@@ -27,7 +27,9 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -43,7 +45,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
@@ -94,7 +95,6 @@ class SubchannelCall final {
   struct Args {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_polling_entity* pollent;
-    Slice path;
     gpr_cycle_counter start_time;
     Timestamp deadline;
     Arena* arena;
@@ -307,10 +307,9 @@ class Subchannel final : public DualRefCounted<Subchannel> {
 
    private:
     Subchannel* subchannel_;
-    // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
-    // be a set instead of a map.
-    std::map<ConnectivityStateWatcherInterface*,
-             RefCountedPtr<ConnectivityStateWatcherInterface>>
+    absl::flat_hash_set<RefCountedPtr<ConnectivityStateWatcherInterface>,
+                        RefCountedPtrHash<ConnectivityStateWatcherInterface>,
+                        RefCountedPtrEq<ConnectivityStateWatcherInterface>>
         watchers_;
   };
 

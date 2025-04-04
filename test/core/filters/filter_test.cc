@@ -19,14 +19,14 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <queue>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/channel/call_finalization.h"
+#include "src/core/call/call_finalization.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
@@ -41,7 +41,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
 using grpc_event_engine::experimental::FuzzingEventEngine;
-using grpc_event_engine::experimental::GetDefaultEventEngine;
 
 namespace grpc_core {
 
@@ -83,7 +82,7 @@ class FilterTestBase::Call::Impl
   RefCountedPtr<Arena> arena_ = channel_->arena_factory->MakeArena();
   bool run_call_finalization_ = false;
   CallFinalization call_finalization_;
-  absl::optional<ArenaPromise<ServerMetadataHandle>> promise_;
+  std::optional<ArenaPromise<ServerMetadataHandle>> promise_;
   Poll<ServerMetadataHandle> poll_next_filter_result_;
   Pipe<ServerMetadataHandle> pipe_server_initial_metadata_{arena_.get()};
   Pipe<MessageHandle> pipe_server_to_client_messages_{arena_.get()};
@@ -91,19 +90,19 @@ class FilterTestBase::Call::Impl
   PipeSender<ServerMetadataHandle>* server_initial_metadata_sender_ = nullptr;
   PipeSender<MessageHandle>* server_to_client_messages_sender_ = nullptr;
   PipeReceiver<MessageHandle>* client_to_server_messages_receiver_ = nullptr;
-  absl::optional<PipeSender<ServerMetadataHandle>::PushType>
+  std::optional<PipeSender<ServerMetadataHandle>::PushType>
       push_server_initial_metadata_;
-  absl::optional<PipeReceiverNextType<ServerMetadataHandle>>
+  std::optional<PipeReceiverNextType<ServerMetadataHandle>>
       next_server_initial_metadata_;
-  absl::optional<PipeSender<MessageHandle>::PushType>
+  std::optional<PipeSender<MessageHandle>::PushType>
       push_server_to_client_messages_;
-  absl::optional<PipeReceiverNextType<MessageHandle>>
+  std::optional<PipeReceiverNextType<MessageHandle>>
       next_server_to_client_messages_;
-  absl::optional<PipeSender<MessageHandle>::PushType>
+  std::optional<PipeSender<MessageHandle>::PushType>
       push_client_to_server_messages_;
-  absl::optional<PipeReceiverNextType<MessageHandle>>
+  std::optional<PipeReceiverNextType<MessageHandle>>
       next_client_to_server_messages_;
-  absl::optional<ServerMetadataHandle> forward_server_initial_metadata_;
+  std::optional<ServerMetadataHandle> forward_server_initial_metadata_;
   std::queue<MessageHandle> forward_client_to_server_messages_;
   std::queue<MessageHandle> forward_server_to_client_messages_;
 };
@@ -115,7 +114,7 @@ FilterTestBase::Call::Impl::~Impl() {
 }
 
 void FilterTestBase::Call::Impl::Start(ClientMetadataHandle md) {
-  EXPECT_EQ(promise_, absl::nullopt);
+  EXPECT_EQ(promise_, std::nullopt);
   promise_ = channel_->filter->MakeCallPromise(
       CallArgs{std::move(md), ClientInitialMetadataOutstandingToken::Empty(),
                nullptr, &pipe_server_initial_metadata_.sender,
@@ -130,7 +129,7 @@ void FilterTestBase::Call::Impl::Start(ClientMetadataHandle md) {
         events().Started(call_, *args.client_initial_metadata);
         return [this]() { return PollNextFilter(); };
       });
-  EXPECT_NE(promise_, absl::nullopt);
+  EXPECT_NE(promise_, std::nullopt);
   ForceWakeup();
 }
 
@@ -409,15 +408,12 @@ void FilterTestBase::Call::FinishNextFilter(ServerMetadataHandle md) {
 // FilterTestBase
 
 FilterTestBase::FilterTestBase() {
-  grpc_event_engine::experimental::SetEventEngineFactory([]() {
-    FuzzingEventEngine::Options options;
-    options.max_delay_run_after = std::chrono::milliseconds(500);
-    options.max_delay_write = std::chrono::milliseconds(50);
-    return std::make_unique<FuzzingEventEngine>(
-        options, fuzzing_event_engine::Actions());
-  });
-  event_engine_ =
-      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+  FuzzingEventEngine::Options options;
+  options.max_delay_run_after = std::chrono::milliseconds(500);
+  options.max_delay_write = std::chrono::milliseconds(50);
+  event_engine_ = std::make_shared<FuzzingEventEngine>(
+      options, fuzzing_event_engine::Actions());
+  grpc_event_engine::experimental::SetDefaultEventEngine(event_engine_);
   grpc_timer_manager_set_start_threaded(false);
   grpc_init();
 }
@@ -425,6 +421,8 @@ FilterTestBase::FilterTestBase() {
 FilterTestBase::~FilterTestBase() {
   grpc_shutdown();
   event_engine_->UnsetGlobalHooks();
+  event_engine_.reset();
+  grpc_event_engine::experimental::ShutdownDefaultEventEngine();
 }
 
 void FilterTestBase::Step() {

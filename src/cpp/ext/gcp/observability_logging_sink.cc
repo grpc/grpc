@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <utility>
 
 #include "absl/log/log.h"
@@ -35,7 +36,6 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "google/api/monitored_resource.pb.h"
 #include "google/logging/v2/log_entry.pb.h"
 #include "google/logging/v2/logging.grpc.pb.h"
@@ -67,9 +67,9 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
   for (auto& server_rpc_event_config : logging_config.server_rpc_events) {
     server_configs_.emplace_back(server_rpc_event_config);
   }
-  absl::optional<std::string> authority_env =
+  std::optional<std::string> authority_env =
       grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
-  absl::optional<std::string> endpoint_env =
+  std::optional<std::string> endpoint_env =
       grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
   if (authority_env.has_value() && !authority_env->empty()) {
     authority_ = std::move(*endpoint_env);
@@ -289,7 +289,7 @@ void ObservabilityLoggingSink::Flush() {
     flush_triggered_ = false;
     if (stub_ == nullptr) {
       std::string endpoint;
-      absl::optional<std::string> endpoint_env =
+      std::optional<std::string> endpoint_env =
           grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
       if (endpoint_env.has_value() && !endpoint_env->empty()) {
         endpoint = std::move(*endpoint_env);

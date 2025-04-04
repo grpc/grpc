@@ -32,9 +32,7 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:parse",
     ],
-    deps = [
-        "//:gpr",
-    ],
+    deps = ["//:gpr"],
 )
 
 grpc_cc_library(
@@ -181,7 +179,7 @@ grpc_cc_library(
     external_deps = ["absl/log:log"],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/testing:metrics_proto",
+        "//src/proto/grpc/testing:metrics_cc_grpc",
     ],
 )
 
@@ -197,13 +195,13 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo.proto",
         "//src/proto/grpc/testing:echo_messages.proto",
         "//src/proto/grpc/testing:simple_messages.proto",
-        "//src/proto/grpc/testing/xds/v3:orca_load_report.proto",
     ],
     external_deps = [
         "absl/flags:flag",
         "gtest",
     ],
     tags = [
+        "grpc:internal-test-filter:-GrpcToolTest.CallCommandWithBadMetadata",
         "no_mac",
         "no_test_ios",
         "no_windows",
@@ -213,10 +211,9 @@ grpc_cc_test(
         ":grpc_cli_libs",
         ":test_util",
         "//:grpc++_reflection",
-        "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:echo_proto",
-        "//src/proto/grpc/testing:simple_messages_proto",
-        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//src/proto/grpc/testing:simple_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -294,7 +291,7 @@ grpc_cc_test(
     deps = [
         ":grpc_cli_libs",
         ":test_util",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -307,12 +304,15 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["no_test_ios"],
+    tags = [
+        "grpc:fails-internally",
+        "no_test_ios",
+    ],
     deps = [
         "//:grpc++_error_details",
-        "//src/proto/grpc/status:status_proto",
-        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
+        "@com_google_googleapis//google/rpc:status_cc_proto",
     ],
 )
 
@@ -325,7 +325,7 @@ grpc_cc_binary(
         "absl/flags:flag",
     ],
     visibility = [
-        "@grpc:cli",
+        "//bazel:cli",
     ],
     deps = [
         ":grpc++_proto_reflection_desc_db",
@@ -345,7 +345,6 @@ grpc_cc_binary(
         "absl/log:log",
         "absl/strings",
     ],
-    language = "c++",
     tags = [
         "no_windows",  # unistd.h
     ],
@@ -374,6 +373,9 @@ grpc_cc_test(
     ],
     flaky = True,
     tags = [
+        # TODO(b/166166195) The following file cannot pass internally
+        # because of include issues.
+        "grpc:broken-internally",
         "no_mac",  # cmake does not build channelz_sampler in Basic Tests C/C++ MacOS test
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
@@ -385,7 +387,7 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpcpp_channelz",
         "//src/proto/grpc/channelz:channelz_proto",
-        "//src/proto/grpc/testing:test_proto",
+        "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -446,7 +448,6 @@ grpc_cc_library(
         "get_grpc_test_runfile_dir.h",
     ],
     external_deps = [
-        "absl/types:optional",
     ],
     deps = [
         "//src/core:env",

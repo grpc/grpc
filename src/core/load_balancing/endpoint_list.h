@@ -22,18 +22,19 @@
 #include <stdlib.h>
 
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/work_serializer.h"
@@ -51,9 +52,9 @@ class MyEndpointList : public EndpointList {
  public:
   MyEndpointList(RefCountedPtr<MyLbPolicy> lb_policy,
                  EndpointAddressesIterator* endpoints,
-                 const ChannelArgs& args,
+                 const ChannelArgs& args, std::string resolution_note,
                  std::vector<std::string>* errors)
-      : EndpointList(std::move(lb_policy),
+      : EndpointList(std::move(lb_policy), std::move(resolution_note),
                      GRPC_TRACE_FLAG_ENABLED(my_tracer)
                          ? "MyEndpointList"
                          : nullptr) {
@@ -83,7 +84,7 @@ class MyEndpointList : public EndpointList {
 
    private:
     void OnStateUpdate(
-        absl::optional<grpc_connectivity_state> old_state,
+        std::optional<grpc_connectivity_state> old_state,
         grpc_connectivity_state new_state,
         const absl::Status& status) override {
       // ...handle connectivity state change...
@@ -110,7 +111,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     void ResetBackoffLocked();
     void ExitIdleLocked();
 
-    absl::optional<grpc_connectivity_state> connectivity_state() const {
+    std::optional<grpc_connectivity_state> connectivity_state() const {
       return connectivity_state_;
     }
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker() const {
@@ -132,7 +133,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     // down-casting in the caller.
     template <typename T>
     T* endpoint_list() const {
-      return static_cast<T*>(endpoint_list_.get());
+      return DownCast<T*>(endpoint_list_.get());
     }
 
     // Templated for convenience, to provide a short-hand for down-casting
@@ -150,9 +151,9 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     class Helper;
 
     // Called when the child policy reports a connectivity state update.
-    virtual void OnStateUpdate(
-        absl::optional<grpc_connectivity_state> old_state,
-        grpc_connectivity_state new_state, const absl::Status& status) = 0;
+    virtual void OnStateUpdate(std::optional<grpc_connectivity_state> old_state,
+                               grpc_connectivity_state new_state,
+                               const absl::Status& status) = 0;
 
     // Called to create a subchannel.  Subclasses may override.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
@@ -162,7 +163,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     RefCountedPtr<EndpointList> endpoint_list_;
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
-    absl::optional<grpc_connectivity_state> connectivity_state_;
+    std::optional<grpc_connectivity_state> connectivity_state_;
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_;
   };
 
@@ -181,12 +182,17 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
 
   void ResetBackoffLocked();
 
+  void ReportTransientFailure(absl::Status status);
+
  protected:
   // We use two-phase initialization here to ensure that the vtable is
   // initialized before we need to use it.  Subclass must invoke Init()
   // from inside its ctor.
-  EndpointList(RefCountedPtr<LoadBalancingPolicy> policy, const char* tracer)
-      : policy_(std::move(policy)), tracer_(tracer) {}
+  EndpointList(RefCountedPtr<LoadBalancingPolicy> policy,
+               std::string resolution_note, const char* tracer)
+      : policy_(std::move(policy)),
+        resolution_note_(std::move(resolution_note)),
+        tracer_(tracer) {}
 
   void Init(EndpointAddressesIterator* endpoints, const ChannelArgs& args,
             absl::FunctionRef<OrphanablePtr<Endpoint>(
@@ -198,7 +204,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   // in the caller.
   template <typename T>
   T* policy() const {
-    return static_cast<T*>(policy_.get());
+    return DownCast<T*>(policy_.get());
   }
 
   // Returns true if all endpoints have seen their initial connectivity
@@ -214,6 +220,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
       const = 0;
 
   RefCountedPtr<LoadBalancingPolicy> policy_;
+  std::string resolution_note_;
   const char* tracer_;
   std::vector<OrphanablePtr<Endpoint>> endpoints_;
   size_t num_endpoints_seen_initial_state_ = 0;

@@ -33,13 +33,13 @@
 #include "constants.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_observability {
@@ -141,29 +141,31 @@ void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendMessage(
-    const grpc_core::SliceBuffer& send_message) {
-  RecordAnnotation(
-      absl::StrFormat("Send message: %ld bytes", send_message.Length()));
+    const grpc_core::Message& send_message) {
+  RecordAnnotation(absl::StrFormat("Send message: %ld bytes",
+                                   send_message.payload()->Length()));
   ++sent_message_count_;
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
-    const grpc_core::SliceBuffer& send_compressed_message) {
-  RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
-                                   send_compressed_message.Length()));
+    const grpc_core::Message& send_compressed_message) {
+  RecordAnnotation(
+      absl::StrFormat("Send compressed message: %ld bytes",
+                      send_compressed_message.payload()->Length()));
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
-    const grpc_core::SliceBuffer& recv_message) {
-  RecordAnnotation(
-      absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
+    const grpc_core::Message& recv_message) {
+  RecordAnnotation(absl::StrFormat("Received message: %ld bytes",
+                                   recv_message.payload()->Length()));
   ++recv_message_count_;
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedDecompressedMessage(
-    const grpc_core::SliceBuffer& recv_decompressed_message) {
-  RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
-                                   recv_decompressed_message.Length()));
+    const grpc_core::Message& recv_decompressed_message) {
+  RecordAnnotation(
+      absl::StrFormat("Received decompressed message: %ld bytes",
+                      recv_decompressed_message.payload()->Length()));
 }
 
 void PythonOpenCensusServerCallTracer::RecordCancel(
@@ -259,7 +261,7 @@ void PythonOpenCensusServerCallTracer::RecordAnnotation(
   }
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface>
+std::shared_ptr<grpc_core::TcpCallTracer>
 PythonOpenCensusServerCallTracer::StartNewTcpTrace() {
   return nullptr;
 }

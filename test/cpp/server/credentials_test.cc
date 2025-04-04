@@ -20,11 +20,11 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_crl_provider.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 
 #include "absl/log/check.h"
+#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/tls_test_utils.h"
@@ -134,7 +134,8 @@ TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedRoot) {
   key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
   StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
 }
 
 TEST(CredentialsTest,
@@ -148,7 +149,8 @@ TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedRoot) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
                                           MALFORMED_CERT_PATH, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlChecking) {

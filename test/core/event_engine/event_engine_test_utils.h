@@ -45,20 +45,6 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
 // Returns a random message with bounded length.
 std::string GetNextSendMessage();
 
-// Waits until the use_count of the EventEngine shared_ptr has reached 1
-// and returns.
-// Callers must give up their ref, or this method will block forever.
-// Usage: WaitForSingleOwner(std::move(engine))
-void WaitForSingleOwner(std::shared_ptr<EventEngine> engine);
-
-// Waits until the use_count of the EventEngine shared_ptr has reached 1
-// and returns.
-// Callers must give up their ref, or this method will block forever.
-// This version will CRASH after the given timeout
-// Usage: WaitForSingleOwner(std::move(engine), 30s)
-void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
-                                   EventEngine::Duration timeout);
-
 // A helper method to exchange data between two endpoints. It is assumed
 // that both endpoints are connected. The data (specified as a string) is
 // written by the sender_endpoint and read by the receiver_endpoint. It
@@ -71,7 +57,7 @@ absl::Status SendValidatePayload(absl::string_view data,
 // A helper class to create clients/listeners and connections between them.
 // The clients and listeners can be created by the oracle EventEngine
 // or the EventEngine under test. The class provides handles into the
-// connections that are created. Inidividual tests can test expected behavior by
+// connections that are created. Individual tests can test expected behavior by
 // exchanging arbitrary data over these connections.
 class ConnectionManager {
  public:

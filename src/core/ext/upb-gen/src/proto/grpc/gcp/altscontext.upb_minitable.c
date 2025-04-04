@@ -15,7 +15,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal grpc_gcp_AltsContext_submsgs[2] = {
+static const upb_MiniTableSubInternal grpc_gcp_AltsContext__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__gcp__AltsContext__PeerAttributesEntry_msg_init_ptr},
 };
@@ -31,7 +31,7 @@ static const upb_MiniTableField grpc_gcp_AltsContext__fields[7] = {
 };
 
 const upb_MiniTable grpc__gcp__AltsContext_msg_init = {
-  &grpc_gcp_AltsContext_submsgs[0],
+  &grpc_gcp_AltsContext__submsgs[0],
   &grpc_gcp_AltsContext__fields[0],
   UPB_SIZE(56, 96), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED

@@ -26,11 +26,10 @@
 #include <utility>
 #include <vector>
 
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 bool IsForkEnabled() {
@@ -103,5 +102,4 @@ void ObjectGroupForkHandler::PostforkChild() {
   }
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

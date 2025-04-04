@@ -34,8 +34,7 @@ namespace {
 // server reads and streams responses. The client cancels the RPC to get an
 // error status. (Server sending a non-OK status is not considered an error
 // status.)
-CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponse) {
-  SKIP_IF_V3();
+CORE_END2END_TEST(CoreEnd2endTests, StreamingErrorResponse) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingMessage response_payload1_recv;
@@ -79,8 +78,7 @@ CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponse) {
   EXPECT_TRUE(client_close.was_cancelled());
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponseRequestStatusEarly) {
-  SKIP_IF_V3();
+CORE_END2END_TEST(CoreEnd2endTests, StreamingErrorResponseRequestStatusEarly) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingMessage response_payload1_recv;
@@ -116,9 +114,8 @@ CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponseRequestStatusEarly) {
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately) {
-  SKIP_IF_V3();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;

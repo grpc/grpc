@@ -24,7 +24,11 @@ namespace grpc_core {
 namespace experimental {
 
 // Configuration (scope) for a specific client channel to be used for stats
-// plugins.
+// plugins. For some components like XdsClient where the same XdsClient instance
+// can be shared across multiple channels that share the same target name but
+// have different default authority and channel arguments, the component uses
+// the configuration from the first channel that uses this XdsClient instance to
+// determine StatsPluginChannelScope.
 class StatsPluginChannelScope {
  public:
   StatsPluginChannelScope(

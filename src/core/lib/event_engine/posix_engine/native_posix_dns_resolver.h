@@ -26,8 +26,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // An asynchronous DNS resolver which uses the native platform's getaddrinfo
 // API. Only supports A/AAAA records.
@@ -49,8 +48,7 @@ class NativePosixDNSResolver : public EventEngine::DNSResolver {
   std::shared_ptr<EventEngine> event_engine_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_NATIVE_POSIX_DNS_RESOLVER_H

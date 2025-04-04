@@ -26,8 +26,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class WinSocket {
  public:
@@ -134,8 +133,10 @@ absl::Status PrepareSocket(SOCKET sock);
 // Set non block option for socket.
 absl::Status SetSocketNonBlock(SOCKET sock);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+// Get the local address of a socket.
+absl::StatusOr<EventEngine::ResolvedAddress> SocketToAddress(SOCKET sock);
+
+}  // namespace grpc_event_engine::experimental
 
 #endif
 

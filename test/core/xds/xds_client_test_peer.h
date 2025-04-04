@@ -32,12 +32,16 @@ class XdsClientTestPeer {
  public:
   explicit XdsClientTestPeer(XdsClient* xds_client) : xds_client_(xds_client) {}
 
-  void TestDumpClientConfig() {
+  std::string TestDumpClientConfig() {
     upb::Arena arena;
-    auto client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
+    auto* client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
     std::set<std::string> string_pool;
     MutexLock lock(xds_client_->mu());
     xds_client_->DumpClientConfig(&string_pool, arena.ptr(), client_config);
+    size_t output_length;
+    char* output = envoy_service_status_v3_ClientConfig_serialize(
+        client_config, arena.ptr(), &output_length);
+    return std::string(output, output_length);
   }
 
   struct ResourceCountLabels {

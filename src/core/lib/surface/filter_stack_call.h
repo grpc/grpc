@@ -42,6 +42,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -51,7 +52,6 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -131,7 +131,7 @@ class FilterStackCall final : public Call {
 
   static size_t InitialSizeEstimate() {
     return sizeof(FilterStackCall) +
-           sizeof(BatchControl) * kMaxConcurrentBatches;
+           (sizeof(BatchControl) * kMaxConcurrentBatches);
   }
 
   char* GetPeer() final;
@@ -300,7 +300,7 @@ class FilterStackCall final : public Call {
   grpc_call_final_info final_info_;
 
   SliceBuffer send_slice_buffer_;
-  absl::optional<SliceBuffer> receiving_slice_buffer_;
+  std::optional<SliceBuffer> receiving_slice_buffer_;
   uint32_t receiving_stream_flags_;
   uint32_t test_only_last_message_flags_ = 0;
   // Compression algorithm for *incoming* data

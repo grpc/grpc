@@ -23,15 +23,15 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "src/core/call/metadata.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_create.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
 #include "src/core/util/crash.h"
@@ -281,8 +281,7 @@ MakeInProcessTransportPair(const ChannelArgs& server_channel_args) {
   auto server_transport =
       MakeOrphanable<InprocServerTransport>(server_channel_args);
   auto client_transport = server_transport->MakeClientTransport();
-  return std::make_pair(std::move(client_transport),
-                        std::move(server_transport));
+  return std::pair(std::move(client_transport), std::move(server_transport));
 }
 
 }  // namespace grpc_core
@@ -290,7 +289,6 @@ MakeInProcessTransportPair(const ChannelArgs& server_channel_args) {
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                                          const grpc_channel_args* args,
                                          void* reserved) {
-  grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   const auto channel_args = grpc_core::CoreConfiguration::Get()
                                 .channel_args_preconditioning()

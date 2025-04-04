@@ -306,7 +306,7 @@ class CLanguage(object):
 
             self._cmake_configure_extra_args = list(
                 self.args.cmake_configure_extra_args
-            )
+            ) + ["-DCMAKE_CXX_STANDARD=17"]
             self._cmake_generator_windows = cmake_generator
             # required to pass as cmake "-A" configuration for VS builds (but not for Ninja)
             self._cmake_architecture_windows = (
@@ -560,22 +560,17 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            # This is to address Apple clang defaults C++98.
-            cmake_args = (
-                ["-DCMAKE_CXX_STANDARD=14"]
-                if platform_string() == "mac"
-                else []
-            )
-            return ("debian11", cmake_args)
+            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc8":
-            return ("gcc_8", [])
+            return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2":
-            return ("debian11", [])
+            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
             return (
                 "debian11_openssl102",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
         elif compiler == "gcc10.2_openssl111":
@@ -583,23 +578,37 @@ class CLanguage(object):
                 "debian11_openssl111",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
-        elif compiler == "gcc12":
-            return ("gcc_12", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc12_openssl309":
             return (
                 "debian12_openssl309",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
+        elif compiler == "gcc14":
+            return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
-            return ("alpine", [])
+            return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "clang7":
-            return ("clang_7", self._clang_cmake_configure_extra_args())
-        elif compiler == "clang18":
-            return ("clang_18", self._clang_cmake_configure_extra_args())
+            return (
+                "clang_7",
+                self._clang_cmake_configure_extra_args()
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
+            )
+        elif compiler == "clang19":
+            return (
+                "clang_19",
+                self._clang_cmake_configure_extra_args()
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
+            )
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -613,7 +622,7 @@ class CLanguage(object):
         return self.lang_suffix
 
 
-class Php7Language(object):
+class Php8Language(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -641,12 +650,12 @@ class Php7Language(object):
         return [["tools/run_tests/helper_scripts/post_tests_php.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/php7_debian11_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/php8_debian12_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
     def __str__(self):
-        return "php7"
+        return "php8"
 
 
 class PythonConfig(
@@ -801,13 +810,6 @@ class PythonLanguage(object):
 
         # TODO: Supported version range should be defined by a single
         # source of truth.
-        python38_config = _python_config_generator(
-            name="py38",
-            major="3",
-            minor="8",
-            bits=bits,
-            config_vars=config_vars,
-        )
         python39_config = _python_config_generator(
             name="py39",
             major="3",
@@ -852,12 +854,12 @@ class PythonLanguage(object):
 
         if args.compiler == "default":
             if os.name == "nt":
-                return (python38_config,)
+                return (python39_config,)
             elif os.uname()[0] == "Darwin":
                 # NOTE(rbellevi): Testing takes significantly longer on
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
-                return (python38_config,)
+                return (python39_config,)
             elif platform.machine() == "aarch64":
                 # Currently the python_debian11_default_arm64 docker image
                 # only has python3.9 installed (and that seems sufficient
@@ -866,11 +868,9 @@ class PythonLanguage(object):
             else:
                 # Default set tested on master. Test oldest and newest.
                 return (
-                    python38_config,
-                    python312_config,
+                    python39_config,
+                    python313_config,
                 )
-        elif args.compiler == "python3.8":
-            return (python38_config,)
         elif args.compiler == "python3.9":
             return (python39_config,)
         elif args.compiler == "python3.10":
@@ -886,10 +886,9 @@ class PythonLanguage(object):
         elif args.compiler == "pypy3":
             return (pypy32_config,)
         elif args.compiler == "python_alpine":
-            return (python310_config,)
+            return (python311_config,)
         elif args.compiler == "all_the_cpythons":
             return (
-                python38_config,
                 python39_config,
                 python310_config,
                 python311_config,
@@ -910,13 +909,46 @@ class RubyLanguage(object):
         _check_compiler(self.args.compiler, ["default"])
 
     def test_specs(self):
-        tests = [
-            self.config.job_spec(
-                ["tools/run_tests/helper_scripts/run_ruby.sh"],
-                timeout_seconds=10 * 60,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+        tests = []
+        for test in [
+            "src/ruby/spec/google_rpc_status_utils_spec.rb",
+            "src/ruby/spec/client_server_spec.rb",
+            "src/ruby/spec/errors_spec.rb",
+            "src/ruby/spec/pb/codegen/package_option_spec.rb",
+            "src/ruby/spec/pb/health/checker_spec.rb",
+            "src/ruby/spec/pb/duplicate/codegen_spec.rb",
+            "src/ruby/spec/server_spec.rb",
+            "src/ruby/spec/error_sanity_spec.rb",
+            "src/ruby/spec/channel_spec.rb",
+            "src/ruby/spec/user_agent_spec.rb",
+            "src/ruby/spec/call_credentials_spec.rb",
+            "src/ruby/spec/channel_credentials_spec.rb",
+            "src/ruby/spec/channel_connection_spec.rb",
+            "src/ruby/spec/compression_options_spec.rb",
+            "src/ruby/spec/time_consts_spec.rb",
+            "src/ruby/spec/server_credentials_spec.rb",
+            "src/ruby/spec/generic/server_interceptors_spec.rb",
+            "src/ruby/spec/generic/rpc_server_pool_spec.rb",
+            "src/ruby/spec/generic/client_stub_spec.rb",
+            "src/ruby/spec/generic/active_call_spec.rb",
+            "src/ruby/spec/generic/rpc_server_spec.rb",
+            "src/ruby/spec/generic/service_spec.rb",
+            "src/ruby/spec/generic/client_interceptors_spec.rb",
+            "src/ruby/spec/generic/rpc_desc_spec.rb",
+            "src/ruby/spec/generic/interceptor_registry_spec.rb",
+            "src/ruby/spec/debug_message_spec.rb",
+            "src/ruby/spec/logconfig_spec.rb",
+            "src/ruby/spec/call_spec.rb",
+            "src/ruby/spec/client_auth_spec.rb",
+        ]:
+            tests.append(
+                self.config.job_spec(
+                    ["rspec", test],
+                    shortname=test,
+                    timeout_seconds=20 * 60,
+                    environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+                )
             )
-        ]
         # TODO(apolcyn): re-enable the following tests after
         # https://bugs.ruby-lang.org/issues/15499 is fixed:
         # They previously worked on ruby 2.5 but needed to be disabled
@@ -1150,6 +1182,20 @@ class ObjCLanguage(object):
             )
         )
 
+        # TODO: re-enable after abseil fixes
+        # out.append(
+        #     self.config.job_spec(
+        #         ["src/objective-c/tests/build_one_example.sh"],
+        #         timeout_seconds=120 * 60,
+        #         shortname="ios-buildtest-example-switft-package",
+        #         cpu_cost=1e6,
+        #         environ={
+        #             "SCHEME": "gRPC-Package",
+        #             "EXAMPLE_PATH": ".",
+        #         },
+        #     )
+        # )
+
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
         # out.append(
@@ -1260,7 +1306,7 @@ with open("tools/run_tests/generated/configs.json") as f:
 _LANGUAGES = {
     "c++": CLanguage("cxx", "c++"),
     "c": CLanguage("c", "c"),
-    "php7": Php7Language(),
+    "php8": Php8Language(),
     "python": PythonLanguage(),
     "ruby": RubyLanguage(),
     "csharp": CSharpLanguage(),
@@ -1672,18 +1718,17 @@ argp.add_argument(
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
-        "gcc12",
         "gcc12_openssl309",
+        "gcc14",
         "gcc_musl",
         "clang7",
-        "clang18",
+        "clang19",
         # TODO: Automatically populate from supported version
-        "python3.7",
-        "python3.8",
         "python3.9",
         "python3.10",
         "python3.11",
         "python3.12",
+        "python3.13",
         "pypy",
         "pypy3",
         "python_alpine",

@@ -25,5 +25,6 @@ cat compile_commands.json | jq -r '.[].file' \
   | grep -E "(^include/|^src/core/|^src/cpp/|^test/core/|^test/cpp/)" \
   | grep -v -E "src/core/telemetry/stats_data" \
   | grep -v -E "/upb-gen/|/upbdefs-gen/" \
+  | grep -v  -E "(ports_undef.inc|ports_def.inc)" \
   | sort \
   | xargs tools/distrib/run_clang_tidy.py "$@"

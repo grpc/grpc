@@ -21,6 +21,7 @@
 
 #include <atomic>
 #include <map>
+#include <optional>
 #include <regex>
 #include <string>
 #include <utility>
@@ -33,7 +34,6 @@
 #include "absl/log/log_sink_registry.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/time.h"
@@ -72,6 +72,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   VerifyLogNoiseLogSink(const VerifyLogNoiseLogSink& other) = delete;
   VerifyLogNoiseLogSink& operator=(const VerifyLogNoiseLogSink& other) = delete;
 
+  void AllowNonErrorLogs(bool allow) {
+    allow_non_error_logs_.store(allow, std::memory_order_relaxed);
+  }
+
  private:
   bool IsVlogWithVerbosityMoreThan1(const absl::LogEntry& entry) const {
     return entry.log_severity() == absl::LogSeverity::kInfo &&
@@ -89,15 +93,30 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // We should be very conservative while adding new entries to this list,
     // because this has potential to cause massive log noise. Several users are
     // using INFO log level setting for production.
-    static const auto* const allowed_logs_by_module =
-        new std::map<absl::string_view, std::regex>(
-            {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
-             {"chaotic_good_server.cc",
-              std::regex("Failed to bind some addresses for.*")},
-             {"log.cc",
-              std::regex("Prefer WARNING or ERROR. However if you see this "
-                         "message in a debug environment or test environment "
-                         "it is safe to ignore this message.")}});
+    static const auto* const allowed_logs_by_module = new std::map<
+        absl::string_view, std::regex>(
+        {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
+         {"chaotic_good_server.cc",
+          std::regex("Failed to bind some addresses for.*")},
+         {"log.cc",
+          std::regex(
+              "Prefer WARNING or ERROR. However if you see this "
+              "message in a debug environment or test environment "
+              "it is safe to ignore this message.|Unknown log verbosity:.*")},
+         {"chttp2_server.cc",
+          std::regex(
+              "Only [0-9]+ addresses added out of total [0-9]+ resolved")},
+         {"trace.cc", std::regex("Unknown tracer:.*")},
+         {"config.cc", std::regex("gRPC experiments.*")},
+         // logs from fixtures are never a production issue
+         {"http_proxy_fixture.cc", std::regex(".*")},
+         {"http_connect_handshaker.cc",
+          std::regex("HTTP proxy handshake with .* failed:.*")}});
+
+    if (allow_non_error_logs_.load(std::memory_order_relaxed) &&
+        entry.log_severity() != absl::LogSeverity::kError) {
+      return;
+    }
 
     if (IsVlogWithVerbosityMoreThan1(entry)) {
       return;
@@ -121,7 +140,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // If we reach here means we have log noise. log_noise_absent_ will make the
     // test fail.
     log_noise_absent_ = false;
-    LOG(ERROR) << "Unwanted log at location : " << entry.source_filename()
+    LOG(ERROR) << "🛑 Unwanted log at location : " << entry.source_filename()
                << ":" << entry.source_line() << " " << entry.text_message();
   }
 
@@ -129,11 +148,12 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   int saved_absl_verbosity_;
   SavedTraceFlags saved_trace_flags_;
   bool log_noise_absent_;
+  std::atomic<bool> allow_non_error_logs_{false};
 };
 
 void SimpleRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
   c.NewBatch(1)
@@ -144,8 +164,8 @@ void SimpleRequest(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
@@ -160,7 +180,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
+CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
 // This test makes sure that we don't get log noise when making an rpc
 // especially when rpcs are successful.
 
@@ -171,9 +191,28 @@ CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
   }
 #endif
   VerifyLogNoiseLogSink nolog_verifier(absl::LogSeverityAtLeast::kInfo, 2);
+  // Allow info logs, but not error logs on the first request.
+  // This allows connection warnings to be printed, and potentially some
+  // initialization noise - we tolerate that - this test is about not spamming
+  // on the per-RPC path.
+  nolog_verifier.AllowNonErrorLogs(true);
+  SimpleRequest(*this);
+  nolog_verifier.AllowNonErrorLogs(false);
   for (int i = 0; i < 10; i++) {
     SimpleRequest(*this);
   }
+}
+
+TEST(Fuzzers, NoLoggingTestRegression1) {
+  NoLoggingTests_NoLoggingTest(
+      CoreTestConfigurationNamed("Chttp2FullstackCompression"),
+      ParseTestProto(R"pb(config_vars { verbosity: "\000" trace: "" })pb"));
+}
+
+TEST(Fuzzers, NoLoggingTestRegression2) {
+  NoLoggingTests_NoLoggingTest(
+      CoreTestConfigurationNamed("Chttp2Fullstack"),
+      ParseTestProto(R"pb(config_vars { trace: "\177 " })pb"));
 }
 
 }  // namespace grpc_core

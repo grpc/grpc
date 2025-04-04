@@ -515,8 +515,6 @@ void ServerBuilder::InternalAddPluginFactory(
 
 ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
   switch (id) {
-    case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
-      return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION, 1);
     default:
       LOG(ERROR) << "Workaround " << id << " does not exist or is obsolete.";
       return *this;

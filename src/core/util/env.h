@@ -21,14 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
-
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 
 // Gets the environment variable value with the specified name. */
-absl::optional<std::string> GetEnv(const char* name);
+std::optional<std::string> GetEnv(const char* name);
 
 // Sets the environment with the specified name to the specified value.
 void SetEnv(const char* name, const char* value);
@@ -40,7 +39,7 @@ inline void SetEnv(const char* name, const std::string& value) {
 void UnsetEnv(const char* name);
 
 template <typename T>
-void SetOrUnsetEnv(const char* name, const absl::optional<T>& value) {
+void SetOrUnsetEnv(const char* name, const std::optional<T>& value) {
   if (value.has_value()) {
     SetEnv(name, value.value());
   } else {

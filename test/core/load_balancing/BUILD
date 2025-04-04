@@ -15,10 +15,13 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
     "grpc_cc_test",
+    "grpc_internal_proto_library",
     "grpc_package",
 )
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/load_balancing")
 
@@ -33,7 +36,6 @@ grpc_cc_library(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:oob_backend_metric",
         "//src/core:client_channel_internal_header",
@@ -49,7 +51,6 @@ grpc_cc_test(
     name = "pick_first_test",
     srcs = ["pick_first_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -65,11 +66,49 @@ grpc_cc_test(
     ],
 )
 
+grpc_internal_proto_library(
+    name = "pick_first_fuzzer_proto",
+    srcs = [
+        "pick_first_fuzzer.proto",
+    ],
+    deps = [
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/test_util:fuzzing_channel_args_proto",
+        "@com_google_protobuf//:struct_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "pick_first_fuzzer_cc_proto",
+    deps = [
+        "pick_first_fuzzer_proto",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "pick_first_fuzzer",
+    srcs = ["pick_first_fuzzer.cc"],
+    external_deps = [
+        "absl/log:log",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        ":pick_first_fuzzer_cc_proto",
+        "//:grpc++_config_proto",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/test_util:fuzzing_channel_args",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "round_robin_test",
     srcs = ["round_robin_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -89,7 +128,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -110,7 +148,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -129,7 +166,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -149,7 +185,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -169,7 +204,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -188,7 +222,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -203,6 +236,7 @@ grpc_cc_benchmark(
         "absl/algorithm:container",
         "absl/log:check",
     ],
+    monitoring = HISTORY,
     uses_event_engine = False,
     deps = [
         "//src/core:no_destruct",
@@ -216,7 +250,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_test_ios",
     ],
@@ -236,7 +269,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -253,7 +285,6 @@ grpc_cc_test(
     name = "ring_hash_test",
     srcs = ["ring_hash_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "lb_unit_test",
     ],
@@ -264,6 +295,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_ring_hash",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -273,6 +305,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/strings",
     ],
+    monitoring = HISTORY,
     deps = [
         "//:config",
         "//:grpc",

@@ -17,7 +17,6 @@
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 
 #include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -30,6 +29,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "envoy/config/core/v3/address.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
@@ -38,6 +38,8 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/upb_utils.h"
@@ -70,6 +72,42 @@ Duration ParseDuration(const google_protobuf_Duration* proto_duration,
 }
 
 //
+// ParseXdsAddress()
+//
+
+std::optional<grpc_resolved_address> ParseXdsAddress(
+    const envoy_config_core_v3_Address* address, ValidationErrors* errors) {
+  if (address == nullptr) {
+    errors->AddError("field not present");
+    return std::nullopt;
+  }
+  ValidationErrors::ScopedField field(errors, ".socket_address");
+  const envoy_config_core_v3_SocketAddress* socket_address =
+      envoy_config_core_v3_Address_socket_address(address);
+  if (socket_address == nullptr) {
+    errors->AddError("field not present");
+    return std::nullopt;
+  }
+  std::string address_str = UpbStringToStdString(
+      envoy_config_core_v3_SocketAddress_address(socket_address));
+  uint32_t port;
+  {
+    ValidationErrors::ScopedField field(errors, ".port_value");
+    port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
+    if (GPR_UNLIKELY(port >> 16) != 0) {
+      errors->AddError("invalid port");
+      return std::nullopt;
+    }
+  }
+  auto addr = StringToSockaddr(address_str, port);
+  if (!addr.ok()) {
+    errors->AddError(addr.status().message());
+    return std::nullopt;
+  }
+  return *addr;
+}
+
+//
 // CommonTlsContextParse()
 //
 
@@ -99,7 +137,7 @@ CertificateProviderInstanceParse(
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
           certificate_provider_instance_proto));
   const auto& bootstrap =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
   if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
       bootstrap.certificate_providers().end()) {
     ValidationErrors::ScopedField field(errors, ".instance_name");
@@ -124,7 +162,7 @@ CertificateProviderPluginInstanceParse(
       envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_instance_name(
           certificate_provider_plugin_instance_proto));
   const auto& bootstrap =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
   if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
       bootstrap.certificate_providers().end()) {
     ValidationErrors::ScopedField field(errors, ".instance_name");
@@ -284,7 +322,7 @@ CommonTlsContext CommonTlsContextParse(
     // 'combined_validation_context'. Note that this way of fetching root
     // certificates is deprecated and will be removed in the future.
     // TODO(yashykt): Remove this once it's no longer needed.
-    if (!absl::holds_alternative<
+    if (!std::holds_alternative<
             CommonTlsContext::CertificateProviderPluginInstance>(
             common_tls_context.certificate_validation_context.ca_certs)) {
       const auto* validation_context_certificate_provider_instance =
@@ -299,22 +337,20 @@ CommonTlsContext CommonTlsContextParse(
                 errors);
       }
     }
-  } else {
-    auto* validation_context =
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
-            common_tls_context_proto);
-    if (validation_context != nullptr) {
-      ValidationErrors::ScopedField field(errors, ".validation_context");
-      common_tls_context.certificate_validation_context =
-          CertificateValidationContextParse(context, validation_context,
-                                            errors);
-    } else if (
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
-            common_tls_context_proto)) {
-      ValidationErrors::ScopedField field(
-          errors, ".validation_context_sds_secret_config");
-      errors->AddError("feature unsupported");
-    }
+  } else if (
+      auto* validation_context =
+          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
+              common_tls_context_proto);
+      validation_context != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".validation_context");
+    common_tls_context.certificate_validation_context =
+        CertificateValidationContextParse(context, validation_context, errors);
+  } else if (
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
+          common_tls_context_proto)) {
+    ValidationErrors::ScopedField field(
+        errors, ".validation_context_sds_secret_config");
+    errors->AddError("feature unsupported");
   }
   auto* tls_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_provider_instance(
@@ -405,12 +441,12 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
 // ExtractXdsExtension()
 //
 
-absl::optional<XdsExtension> ExtractXdsExtension(
+std::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Any* any, ValidationErrors* errors) {
   if (any == nullptr) {
     errors->AddError("field not present");
-    return absl::nullopt;
+    return std::nullopt;
   }
   XdsExtension extension;
   auto strip_type_prefix = [&]() {
@@ -428,7 +464,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
     return true;
   };
   extension.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  if (!strip_type_prefix()) return absl::nullopt;
+  if (!strip_type_prefix()) return std::nullopt;
   extension.validation_fields.emplace_back(
       errors, absl::StrCat(".value[", extension.type, "]"));
   absl::string_view any_value = UpbStringToAbsl(google_protobuf_Any_value(any));
@@ -438,11 +474,11 @@ absl::optional<XdsExtension> ExtractXdsExtension(
         any_value.data(), any_value.size(), context.arena);
     if (typed_struct == nullptr) {
       errors->AddError("could not parse");
-      return absl::nullopt;
+      return std::nullopt;
     }
     extension.type =
         UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
-    if (!strip_type_prefix()) return absl::nullopt;
+    if (!strip_type_prefix()) return std::nullopt;
     extension.validation_fields.emplace_back(
         errors, absl::StrCat(".value[", extension.type, "]"));
     auto* protobuf_struct = xds_type_v3_TypedStruct_value(typed_struct);
@@ -452,7 +488,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
       auto json = ParseProtobufStructToJson(context, protobuf_struct);
       if (!json.ok()) {
         errors->AddError(json.status().message());
-        return absl::nullopt;
+        return std::nullopt;
       }
       extension.value = std::move(*json);
     }

@@ -57,6 +57,7 @@ std::string XdsClusterResource::ToString() const {
         absl::StrCat("lrs_backend_metric_propagation=",
                      lrs_backend_metric_propagation->AsString()));
   }
+  if (use_http_connect) contents.push_back("use_http_connect=true");
   if (!common_tls_context.Empty()) {
     contents.push_back(
         absl::StrCat("common_tls_context=", common_tls_context.ToString()));

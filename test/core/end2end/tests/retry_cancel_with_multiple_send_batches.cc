@@ -21,16 +21,16 @@
 
 #include <memory>
 #include <new>
+#include <optional>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -77,7 +77,7 @@ void TestRetryCancelWithMultipleSendBatches(
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(3))
                .Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Start a batch containing send_initial_metadata.
   c.NewBatch(1).SendInitialMetadata({});
   // Start a batch containing send_message.
@@ -184,13 +184,17 @@ void RegisterFilter() {
   });
 }
 
-CORE_END2END_TEST(RetryTest, RetryCancelWithMultipleSendBatches) {
+CORE_END2END_TEST(RetryTests, RetryCancelWithMultipleSendBatches) {
+  SKIP_IF_V3();  // Need to convert filter
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<CancelCancellationMode>());
 }
 
-CORE_END2END_TEST(RetryTest, RetryDeadlineWithMultipleSendBatches) {
+CORE_END2END_TEST(RetryTests, RetryDeadlineWithMultipleSendBatches) {
+  SKIP_IF_V3();  // Need to convert filter
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<DeadlineCancellationMode>());

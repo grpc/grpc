@@ -386,9 +386,9 @@ void PrintMethodImplementations(Printer* printer,
     Printer printer(&output_stream, '$');
 
     map< ::std::string, ::std::string> vars = {
-        {"service_name", service->name()},
+        {"service_name", std::string(service->name())},
         {"service_class", ServiceClassName(service)},
-        {"package", service->file()->package()}};
+        {"package", std::string(service->file()->package())}};
 
     printer.Print(vars,
                   "@implementation $service_class$\n\n"

@@ -16,7 +16,6 @@
 //
 //
 
-#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include <memory>
@@ -69,17 +68,17 @@ void CancelAfterRoundTrip(CoreEnd2endTest& test,
   EXPECT_TRUE(client_close.was_cancelled());
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, CancelAfterRoundTrip) {
+CORE_END2END_TEST(CoreEnd2endTests, CancelAfterRoundTrip) {
   CancelAfterRoundTrip(*this, std::make_unique<CancelCancellationMode>(),
                        Duration::Seconds(5));
 }
 
-CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterRoundTrip) {
+CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterRoundTrip) {
   CancelAfterRoundTrip(*this, std::make_unique<DeadlineCancellationMode>(),
                        Duration::Seconds(5));
 }
 
-CORE_END2END_TEST(CoreClientChannelTest,
+CORE_END2END_TEST(CoreClientChannelTests,
                   DeadlineAfterRoundTripWithServiceConfig) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(

@@ -21,10 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
@@ -37,13 +37,13 @@ class ProxyMapperInterface {
   /// Determines the proxy name to resolve for \a server_uri.
   /// If no proxy is needed, returns nullopt.
   /// Otherwise, updates \a args and returns the name to resolve.
-  virtual absl::optional<std::string> MapName(absl::string_view server_uri,
-                                              ChannelArgs* args) = 0;
+  virtual std::optional<std::string> MapName(absl::string_view server_uri,
+                                             ChannelArgs* args) = 0;
 
   /// Determines the proxy address to use to contact \a address.
   /// If no proxy is needed, returns nullopt.
   /// Otherwise, updates \a args, and returns a new address.
-  virtual absl::optional<grpc_resolved_address> MapAddress(
+  virtual std::optional<grpc_resolved_address> MapAddress(
       const grpc_resolved_address& address, ChannelArgs* args) = 0;
 };
 

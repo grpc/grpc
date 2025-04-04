@@ -18,13 +18,14 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -32,7 +33,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_config_selector.h"
 #include "src/core/service_config/service_config.h"
@@ -71,12 +71,12 @@ class ServerConfigSelectorFilter final
    public:
     absl::Status OnClientInitialMetadata(ClientMetadata& md,
                                          ServerConfigSelectorFilter* filter);
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
   };
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
@@ -103,7 +103,7 @@ class ServerConfigSelectorFilter final
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
   Mutex mu_;
-  absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+  std::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
       config_selector_ ABSL_GUARDED_BY(mu_);
 };
 
@@ -158,13 +158,6 @@ absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
       std::move(call_config->service_config), call_config->method_configs);
   return absl::OkStatus();
 }
-
-const NoInterceptor ServerConfigSelectorFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnClientToServerMessage;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnServerToClientMessage;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnFinalize;
 
 }  // namespace
 

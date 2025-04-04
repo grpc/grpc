@@ -56,7 +56,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreams) {
+CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreams) {
   SKIP_IF_MINSTACK();
   InitServer(
       ChannelArgs()
@@ -153,7 +153,7 @@ CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreams) {
   Step();
 }
 
-CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
+CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnFirst) {
   SKIP_IF_MINSTACK();
   InitServer(
       ChannelArgs()
@@ -201,7 +201,7 @@ CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
   Step();
 }
 
-CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnSecond) {
+CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnSecond) {
   SKIP_IF_MINSTACK();
   InitServer(
       ChannelArgs()
@@ -247,6 +247,53 @@ CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnSecond) {
   Expect(302, true);
   Expect(102, true);
   Step();
+  EXPECT_EQ(server_status2.status(), GRPC_STATUS_DEADLINE_EXCEEDED);
+}
+
+CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsRejectOnClient) {
+  SKIP_IF_MINSTACK();
+  InitServer(
+      ChannelArgs()
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false));
+  InitClient(ChannelArgs()
+                 .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT, true)
+                 .Set(GRPC_ARG_ENABLE_RETRIES, false));
+  // perform a ping-pong to ensure that settings have had a chance to round
+  // trip
+  SimpleRequestBody(*this);
+  auto c1 = NewClientCall("/alpha").Timeout(Duration::Seconds(1000)).Create();
+  auto c2 = NewClientCall("/beta").Timeout(Duration::Seconds(3)).Create();
+  auto s1 = RequestCall(101);
+  c1.NewBatch(301).SendInitialMetadata({}).SendCloseFromClient();
+  IncomingMetadata server_initial_metadata1;
+  IncomingStatusOnClient server_status1;
+  c1.NewBatch(302)
+      .RecvStatusOnClient(server_status1)
+      .RecvInitialMetadata(server_initial_metadata1);
+  Expect(101, true);
+  Expect(301, true);
+  Step();
+  c2.NewBatch(401).SendInitialMetadata({}).SendCloseFromClient();
+  IncomingMetadata server_initial_metadata2;
+  IncomingStatusOnClient server_status2;
+  c2.NewBatch(402)
+      .RecvStatusOnClient(server_status2)
+      .RecvInitialMetadata(server_initial_metadata2);
+  // the second request fails
+  Expect(401, false);
+  Expect(402, true);
+  Step();
+  // now reply the first call
+  IncomingCloseOnServer client_close1;
+  s1.NewBatch(102)
+      .SendInitialMetadata({})
+      .RecvCloseOnServer(client_close1)
+      .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {});
+  Expect(302, true);
+  Expect(102, true);
+  Step();
+  EXPECT_EQ(server_status2.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
 }
 
 }  // namespace

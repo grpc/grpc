@@ -1,6 +1,3 @@
-
-//
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,11 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <google/protobuf/text_format.h>
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+
+#include <memory>
+#include <optional>
 #include <regex>
 #include <tuple>
 
@@ -26,19 +28,22 @@
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
-
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::FuzzingEventEngine;
+using grpc_event_engine::experimental::SetDefaultEventEngine;
 
 namespace grpc_core {
 
-bool g_is_fuzzing_core_e2e_tests = false;
+bool CoreEnd2endTest::core_configuration_reset_ = true;
 
 Slice RandomSlice(size_t length) {
   size_t i;
@@ -61,20 +66,60 @@ Slice RandomBinarySlice(size_t length) {
   return Slice::FromCopiedBuffer(output);
 }
 
-void CoreEnd2endTest::SetUp() {
-  CoreConfiguration::Reset();
+CoreEnd2endTest::CoreEnd2endTest(
+    const CoreTestConfiguration* config,
+    const core_end2end_test_fuzzer::Msg* fuzzing_args, absl::string_view suite_name)
+    : test_config_(config), fuzzing_(fuzzing_args != nullptr) {
+  if (fuzzing_args != nullptr) {
+    ConfigVars::Overrides overrides =
+        OverridesFromFuzzConfigVars(fuzzing_args->config_vars());
+    overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+    if (suite_name == "NoLoggingTests") overrides.trace = std::nullopt;
+    if (core_configuration_reset_) {
+      ConfigVars::SetOverrides(overrides);
+      TestOnlyReloadExperimentsFromConfigVariables();
+    }
+    FuzzingEventEngine::Options options;
+    options.max_delay_run_after = std::chrono::milliseconds(500);
+    options.max_delay_write = std::chrono::microseconds(5);
+    auto engine = std::make_shared<FuzzingEventEngine>(
+        options, fuzzing_args->event_engine_actions());
+    SetDefaultEventEngine(std::static_pointer_cast<EventEngine>(engine));
+    SetQuiesceEventEngine(
+        [](std::shared_ptr<grpc_event_engine::experimental::EventEngine>&& ee) {
+          static_cast<FuzzingEventEngine*>(ee.get())->TickUntilIdle();
+          ee.reset();
+        });
+    SetCqVerifierStepFn(
+        [engine = std::move(engine)](
+            grpc_event_engine::experimental::EventEngine::Duration max_step) {
+          ExecCtx exec_ctx;
+          engine->Tick(max_step);
+          grpc_timer_manager_tick();
+        });
+    SetPostGrpcInitFunc([]() {
+      grpc_timer_manager_set_threading(false);
+      ExecCtx exec_ctx;
+      Executor::SetThreadingAll(false);
+    });
+  } else {
+    ConfigVars::Overrides overrides;
+    overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+    ConfigVars::SetOverrides(overrides);
+  }
+  if (core_configuration_reset_) {
+    CoreConfiguration::Reset();
+  }
   initialized_ = false;
+  grpc_prewarm_os_for_tests();
 }
 
-void CoreEnd2endTest::TearDown() {
+CoreEnd2endTest::~CoreEnd2endTest() {
   const bool do_shutdown = fixture_ != nullptr;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee;
-// TODO(hork): locate the windows leak so we can enable end2end experiments.
-#ifndef GPR_WINDOWS
   if (grpc_is_initialized()) {
     ee = grpc_event_engine::experimental::GetDefaultEventEngine();
   }
-#endif
   ShutdownAndDestroyClient();
   ShutdownAndDestroyServer();
   cq_verifier_.reset();
@@ -108,8 +153,8 @@ void CoreEnd2endTest::TearDown() {
 }
 
 CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
-  if (auto* u = absl::get_if<UnregisteredCall>(&call_selector_)) {
-    absl::optional<Slice> host;
+  if (auto* u = std::get_if<UnregisteredCall>(&call_selector_)) {
+    std::optional<Slice> host;
     if (u->host.has_value()) host = Slice::FromCopiedString(*u->host);
     test_.ForceInitialized();
     return Call(
@@ -121,7 +166,7 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
   } else {
     return Call(grpc_channel_create_registered_call(
                     test_.client(), parent_call_, propagation_mask_, test_.cq(),
-                    absl::get<void*>(call_selector_), deadline_, nullptr),
+                    std::get<void*>(call_selector_), deadline_, nullptr),
                 &test_);
   }
 }
@@ -162,7 +207,7 @@ CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, void* method,
             GRPC_CALL_OK);
 }
 
-absl::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
+std::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
     absl::string_view key) const {
   return FindInMetadataArray(impl_->request_metadata, key);
 }
@@ -175,56 +220,10 @@ void CoreEnd2endTest::ForceInitialized() {
   }
 }
 
-void CoreEnd2endTestRegistry::RegisterTest(absl::string_view suite,
-                                           absl::string_view name,
-                                           MakeTestFn make_test,
-                                           SourceLocation) {
-  if (absl::StartsWith(name, "DISABLED_")) return;
-  auto& tests = tests_by_suite_[suite];
-  CHECK_EQ(tests.count(name), 0u);
-  tests[name] = std::move(make_test);
-}
-
-void CoreEnd2endTestRegistry::RegisterSuite(
-    absl::string_view suite, std::vector<const CoreTestConfiguration*> configs,
-    SourceLocation) {
-  CHECK_EQ(suites_.count(suite), 0u);
-  suites_[suite] = std::move(configs);
-}
-
-namespace {
-template <typename Map>
-std::vector<absl::string_view> KeysFrom(const Map& map) {
-  std::vector<absl::string_view> out;
-  out.reserve(map.size());
-  for (const auto& elem : map) {
-    out.push_back(elem.first);
-  }
-  return out;
-}
-}  // namespace
-
-std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
-  std::vector<Test> tests;
-  // Sort inputs to ensure outputs are deterministic
-  for (auto& suite_configs : suites_) {
-    std::sort(suite_configs.second.begin(), suite_configs.second.end(),
-              [](const auto* a, const auto* b) { return a->name < b->name; });
-  }
-  for (const auto& suite_configs : suites_) {
-    if (suite_configs.second.empty()) {
-      fprintf(
-          stderr, "%s\n",
-          absl::StrCat("Suite ", suite_configs.first, " has no tests").c_str());
-    }
-    for (const auto& test_factory : tests_by_suite_[suite_configs.first]) {
-      for (const auto* config : suite_configs.second) {
-        tests.push_back(Test{suite_configs.first, test_factory.first, config,
-                             test_factory.second});
-      }
-    }
-  }
-  return tests;
+core_end2end_test_fuzzer::Msg ParseTestProto(std::string text) {
+  core_end2end_test_fuzzer::Msg msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(text, &msg));
+  return msg;
 }
 
 }  // namespace grpc_core

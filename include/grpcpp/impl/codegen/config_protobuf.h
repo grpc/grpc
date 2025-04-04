@@ -21,7 +21,7 @@
 
 // IWYU pragma: private
 
-#define GRPC_OPEN_SOURCE_PROTO
+// #define GRPC_OPEN_SOURCE_PROTO
 
 #define GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
 
@@ -40,7 +40,7 @@
 #ifndef GRPC_CUSTOM_DESCRIPTOR
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
-#if GOOGLE_PROTOBUF_VERSION >= 4025000
+#if !defined(GOOGLE_PROTOBUF_VERSION) || GOOGLE_PROTOBUF_VERSION >= 4025000
 #define GRPC_PROTOBUF_EDITION_SUPPORT
 #endif
 #define GRPC_CUSTOM_DESCRIPTOR ::google::protobuf::Descriptor

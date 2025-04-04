@@ -21,7 +21,10 @@
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/transport/http2_errors.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/lib/slice/slice_buffer.h"
+
+using grpc_core::http2::Http2ErrorCode;
 
 namespace grpc_core {
 namespace {
@@ -137,7 +140,8 @@ TEST(Frame, Serialization) {
   EXPECT_EQ(Serialize(Http2ContinuationFrame{1, true,
                                              SliceBufferFromString("hello")}),
             ByteVec(0, 0, 5, 9, 4, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'));
-  EXPECT_EQ(Serialize(Http2RstStreamFrame{1, GRPC_HTTP2_CONNECT_ERROR}),
+  EXPECT_EQ(Serialize(Http2RstStreamFrame{
+                1, static_cast<uint32_t>(Http2ErrorCode::kConnectError)}),
             ByteVec(0, 0, 4, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0x0a));
   EXPECT_EQ(Serialize(Http2SettingsFrame{}),
             ByteVec(0, 0, 0, 4, 0, 0, 0, 0, 0));
@@ -156,15 +160,19 @@ TEST(Frame, Serialization) {
   EXPECT_EQ(Serialize(Http2PingFrame{true, 0x123456789abcdef0}),
             ByteVec(0, 0, 8, 6, 1, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x9a,
                     0xbc, 0xde, 0xf0));
-  EXPECT_EQ(Serialize(Http2GoawayFrame{0x12345678, GRPC_HTTP2_ENHANCE_YOUR_CALM,
-                                       Slice::FromCopiedString("hello")}),
-            ByteVec(0, 0, 13, 7, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0, 0, 0,
-                    0x0b, 'h', 'e', 'l', 'l', 'o'));
+  EXPECT_EQ(
+      Serialize(Http2GoawayFrame{
+          0x12345678, static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+          Slice::FromCopiedString("hello")}),
+      ByteVec(0, 0, 13, 7, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0, 0, 0, 0x0b,
+              'h', 'e', 'l', 'l', 'o'));
   EXPECT_EQ(Serialize(Http2WindowUpdateFrame{1, 0x12345678}),
             ByteVec(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12, 0x34, 0x56, 0x78));
+  EXPECT_EQ(Serialize(Http2SecurityFrame{SliceBufferFromString("hello")}),
+            ByteVec(0, 0, 5, 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'));
 }
 
-TEST(Frame, Parse) {
+TEST(Frame, ParseHttp2DataFrame) {
   EXPECT_EQ(
       ParseFrame(0, 0, 5, 0, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
       Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
@@ -172,6 +180,9 @@ TEST(Frame, Parse) {
       ParseFrame(0, 0, 4, 0, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
       Http2Frame(
           Http2DataFrame{0x98381822, true, SliceBufferFromString("kids")}));
+}
+
+TEST(Frame, ParseHttp2HeaderFrame) {
   EXPECT_EQ(ParseFrame(0, 0, 5, 1, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
             Http2Frame(Http2HeaderFrame{1, false, false,
                                         SliceBufferFromString("hello")}));
@@ -183,14 +194,24 @@ TEST(Frame, Parse) {
       ParseFrame(0, 0, 4, 1, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
       Http2Frame(Http2HeaderFrame{0x98381822, false, true,
                                   SliceBufferFromString("kids")}));
+}
+
+TEST(Frame, ParseHttp2ContinuationFrame) {
   EXPECT_EQ(ParseFrame(0, 0, 5, 9, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
             Http2Frame(Http2ContinuationFrame{1, false,
                                               SliceBufferFromString("hello")}));
   EXPECT_EQ(ParseFrame(0, 0, 5, 9, 4, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
             Http2Frame(Http2ContinuationFrame{1, true,
                                               SliceBufferFromString("hello")}));
+}
+
+TEST(Frame, ParseHttp2RstStreamFrame) {
   EXPECT_EQ(ParseFrame(0, 0, 4, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0x0a),
-            Http2Frame(Http2RstStreamFrame{1, GRPC_HTTP2_CONNECT_ERROR}));
+            Http2Frame(Http2RstStreamFrame{
+                1, static_cast<uint32_t>(Http2ErrorCode::kConnectError)}));
+}
+
+TEST(Frame, ParseHttp2SettingsFrame) {
   EXPECT_EQ(ParseFrame(0, 0, 0, 4, 0, 0, 0, 0, 0),
             Http2Frame(Http2SettingsFrame{}));
   EXPECT_EQ(
@@ -202,26 +223,44 @@ TEST(Frame, Parse) {
                 false, {{0x1234, 0x9abcdef0}, {0x4321, 0x12345678}}}));
   EXPECT_EQ(ParseFrame(0, 0, 0, 4, 1, 0, 0, 0, 0),
             Http2Frame(Http2SettingsFrame{true, {}}));
+}
+
+TEST(Frame, ParseHttp2PingFrame) {
   EXPECT_EQ(ParseFrame(0, 0, 8, 6, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x9a,
                        0xbc, 0xde, 0xf0),
             Http2Frame(Http2PingFrame{false, 0x123456789abcdef0}));
   EXPECT_EQ(ParseFrame(0, 0, 8, 6, 1, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x9a,
                        0xbc, 0xde, 0xf0),
             Http2Frame(Http2PingFrame{true, 0x123456789abcdef0}));
+}
+
+TEST(Frame, ParseHttp2GoawayFrame) {
   EXPECT_EQ(
       ParseFrame(0, 0, 13, 7, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0, 0, 0,
                  0x0b, 'h', 'e', 'l', 'l', 'o'),
-      Http2Frame(Http2GoawayFrame{0x12345678, GRPC_HTTP2_ENHANCE_YOUR_CALM,
-                                  Slice::FromCopiedString("hello")}));
+      Http2Frame(Http2GoawayFrame{
+          0x12345678, static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+          Slice::FromCopiedString("hello")}));
+}
+
+TEST(Frame, ParseHttp2WindowUpdateFrame) {
   EXPECT_EQ(ParseFrame(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12, 0x34, 0x56, 0x78),
             Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
 }
 
-TEST(Frame, ParsePadded) {
+TEST(Frame, ParseHttp2SecurityFrame) {
+  EXPECT_EQ(ParseFrame(0, 0, 5, 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'),
+            Http2Frame(Http2SecurityFrame{SliceBufferFromString("hello")}));
+}
+
+TEST(Frame, ParseHttp2DataFramePadded) {
   EXPECT_EQ(
       ParseFrame(0, 0, 9, 0, 8, 0, 0, 0, 1, 3, 'h', 'e', 'l', 'l', 'o', 1, 2,
                  3),
       Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
+}
+
+TEST(Frame, ParseHttp2HeaderFramePadded) {
   EXPECT_EQ(
       ParseFrame(0, 0, 8, 1, 8, 0, 0, 0, 1, 2, 'h', 'e', 'l', 'l', 'o', 1, 2),
       Http2Frame(
@@ -247,25 +286,36 @@ TEST(Frame, UnknownIgnored) {
       Http2Frame(Http2UnknownFrame{}));
 }
 
-TEST(Frame, ParseRejects) {
-  // 5 == PUSH_PROMISE
+TEST(Frame, ParseRejectsPushPromise) {
   EXPECT_THAT(
       ValidateFrame(0, 0, 10, 5, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
       StatusIs(absl::StatusCode::kInternal,
                "push promise not supported (and SETTINGS_ENABLE_PUSH "
                "explicitly disabled)."));
+}
+
+TEST(Frame, ParseRejectsDataFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 0, 0, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid stream id: {DATA: flags=0, "
                        "stream_id=0, length=0}"));
+}
+
+TEST(Frame, ParseRejectsHeaderFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 0, 1, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid stream id: {HEADER: flags=0, "
                        "stream_id=0, length=0}"));
+}
+
+TEST(Frame, ParseRejectsContinuationFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 0, 9, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid stream id: {CONTINUATION: flags=0, "
                        "stream_id=0, length=0}"));
+}
+
+TEST(Frame, ParseRejectsRstStreamFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 3, 3, 0, 0, 0, 0, 1, 100, 100, 100),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid rst stream payload: {RST_STREAM: flags=0, "
@@ -274,6 +324,9 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid stream id: {RST_STREAM: flags=0, "
                        "stream_id=0, length=4}"));
+}
+
+TEST(Frame, ParseRejectsSettingsFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 1, 4, 1, 0, 0, 0, 0, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings ack length: {SETTINGS: flags=1, "
@@ -312,6 +365,9 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid stream id: {SETTINGS: flags=0, "
                        "stream_id=1, length=0}"));
+}
+
+TEST(Frame, ParseRejectsPingFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 0, 6, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid ping payload: {PING: flags=0, "
@@ -320,15 +376,9 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid ping stream id: {PING: flags=0, "
                        "stream_id=1, length=8}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 8, 6, 2, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid ping flags: {PING: flags=2, "
-                       "stream_id=0, length=8}"));
-  EXPECT_THAT(
-      ValidateFrame(0, 0, 8, 6, 255, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-      StatusIs(absl::StatusCode::kInternal,
-               "invalid ping flags: {PING: flags=255, "
-               "stream_id=0, length=8}"));
+}
+
+TEST(Frame, ParseRejectsGoawayFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 0, 7, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid goaway payload: {GOAWAY: flags=0, "
@@ -365,15 +415,9 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid goaway stream id: {GOAWAY: flags=0, "
                        "stream_id=1, length=8}"));
-  EXPECT_THAT(ValidateFrame(0, 0, 8, 7, 1, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid goaway flags: {GOAWAY: flags=1, "
-                       "stream_id=0, length=8}"));
-  EXPECT_THAT(
-      ValidateFrame(0, 0, 8, 7, 255, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-      StatusIs(absl::StatusCode::kInternal,
-               "invalid goaway flags: {GOAWAY: flags=255, "
-               "stream_id=0, length=8}"));
+}
+
+TEST(Frame, ParseRejectsWindowUpdateFrame) {
   EXPECT_THAT(ValidateFrame(0, 0, 0, 8, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid window update payload: {WINDOW_UPDATE: "
@@ -398,6 +442,22 @@ TEST(Frame, ParseRejects) {
               StatusIs(absl::StatusCode::kInternal,
                        "invalid window update flags: {WINDOW_UPDATE: flags=1, "
                        "stream_id=0, length=4}"));
+}
+
+TEST(Frame, GrpcHeaderTest) {
+  constexpr uint8_t kFlags = 15;
+  constexpr uint32_t kLength = 1111111;
+
+  SliceBuffer payload;
+  EXPECT_EQ(payload.Length(), 0);
+
+  AppendGrpcHeaderToSliceBuffer(payload, kFlags, kLength);
+  EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
+
+  GrpcMessageHeader header = ExtractGrpcHeader(payload);
+  EXPECT_EQ(payload.Length(), 0);
+  EXPECT_EQ(header.flags, kFlags);
+  EXPECT_EQ(header.length, kLength);
 }
 
 }  // namespace

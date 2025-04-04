@@ -22,23 +22,59 @@
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/load_balancing/rls/rls.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
 
+using internal::ClientChannelGlobalParsedConfig;
+using internal::ClientChannelServiceConfigParser;
+
 class RlsConfigParsingTest : public ::testing::Test {
  public:
   static void SetUpTestSuite() { grpc_init(); }
 
   static void TearDownTestSuite() { grpc_shutdown_blocking(); }
+
+  static std::string KeyBuilderMapString(
+      const RlsLbConfig::KeyBuilderMap& key_builder_map) {
+    std::vector<std::string> parts;
+    parts.push_back("{");
+    for (const auto& [key, key_builder] : key_builder_map) {
+      parts.push_back(absl::StrCat("  \"", key, "\"={"));
+      parts.push_back("    header_keys=[");
+      for (const auto& [header_key, names] : key_builder.header_keys) {
+        parts.push_back(absl::StrCat("      \"", header_key, "\"=[",
+                                     absl::StrJoin(names, ", "), "]"));
+      }
+      parts.push_back("    ]");
+      parts.push_back(
+          absl::StrCat("    host_key=\"", key_builder.host_key, "\""));
+      parts.push_back(
+          absl::StrCat("    service_key=\"", key_builder.service_key, "\""));
+      parts.push_back(
+          absl::StrCat("    method_key=\"", key_builder.method_key, "\""));
+      parts.push_back("    constant_keys={");
+      for (const auto& [k, v] : key_builder.constant_keys) {
+        parts.push_back(absl::StrCat("      \"", k, "\"=\"", v, "\""));
+      }
+      parts.push_back("    }");
+      parts.push_back("  }");
+    }
+    parts.push_back("}");
+    return absl::StrJoin(parts, "\n");
+  }
 };
 
-TEST_F(RlsConfigParsingTest, ValidConfig) {
+TEST_F(RlsConfigParsingTest, MinimumValidConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
@@ -51,6 +87,85 @@ TEST_F(RlsConfigParsingTest, ValidConfig) {
       "            \"names\":[\n"
       "              {\"service\":\"foo\"}\n"
       "            ]\n"
+      "          }\n"
+      "        ]\n"
+      "      },\n"
+      "      \"childPolicy\":[\n"
+      "        {\"grpclb\":{}}\n"
+      "      ],\n"
+      "      \"childPolicyConfigTargetFieldName\":\"target\"\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  ASSERT_NE(*service_config, nullptr);
+  auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), RlsLbConfig::Name());
+  auto* rls_lb_config = DownCast<RlsLbConfig*>(lb_config.get());
+  EXPECT_THAT(
+      rls_lb_config->key_builder_map(),
+      ::testing::ElementsAre(::testing::Pair(
+          "/foo/",
+          ::testing::AllOf(
+              ::testing::Field(&RlsLbConfig::KeyBuilder::header_keys,
+                               ::testing::ElementsAre()),
+              ::testing::Field(&RlsLbConfig::KeyBuilder::host_key, ""),
+              ::testing::Field(&RlsLbConfig::KeyBuilder::service_key, ""),
+              ::testing::Field(&RlsLbConfig::KeyBuilder::method_key, ""),
+              ::testing::Field(&RlsLbConfig::KeyBuilder::constant_keys,
+                               ::testing::ElementsAre())))))
+      << KeyBuilderMapString(rls_lb_config->key_builder_map());
+  EXPECT_EQ(rls_lb_config->lookup_service(), "rls.example.com:80");
+  EXPECT_EQ(rls_lb_config->lookup_service_timeout(), Duration::Seconds(10));
+  EXPECT_EQ(rls_lb_config->max_age(), rls_lb_config->kMaxMaxAge);
+  EXPECT_EQ(rls_lb_config->stale_age(), rls_lb_config->kMaxMaxAge);
+  EXPECT_EQ(rls_lb_config->cache_size_bytes(), 1);
+  EXPECT_EQ(rls_lb_config->default_target(), "");
+  EXPECT_EQ(rls_lb_config->rls_channel_service_config(), "");
+  EXPECT_EQ(JsonDump(rls_lb_config->child_policy_config()),
+            "[{\"grpclb\":{\"target\":\"fake_target_field_value\"}}]");
+  EXPECT_EQ(rls_lb_config->child_policy_config_target_field_name(), "target");
+  EXPECT_EQ(rls_lb_config->default_child_policy_parsed_config(), nullptr);
+}
+
+TEST_F(RlsConfigParsingTest, WithOptionalFields) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"rls_experimental\":{\n"
+      "      \"routeLookupConfig\":{\n"
+      "        \"lookupService\":\"rls.example.com:80\",\n"
+      "        \"lookupServiceTimeout\":\"31s\",\n"
+      "        \"defaultTarget\":\"foobar\",\n"
+      "        \"cacheSizeBytes\":1,\n"
+      "        \"maxAge\":\"182s\",\n"
+      "        \"staleAge\":\"151s\",\n"
+      "        \"grpcKeybuilders\":[\n"
+      "          {\n"
+      "            \"names\":[\n"
+      "              {\"service\":\"foo\"},\n"
+      "              {\"service\":\"bar\", \"method\":\"baz\"}\n"
+      "            ],\n"
+      "            \"headers\":[{\n"
+      "              \"key\":\"k\",\n"
+      "              \"names\":[\"n1\",\"n2\"]\n"
+      "            }],\n"
+      "            \"extraKeys\":{\n"
+      "              \"host\":\"host\",\n"
+      "              \"service\":\"service\",\n"
+      "              \"method\":\"method\"\n"
+      "            },\n"
+      "            \"constantKeys\":{\n"
+      "              \"quux\":\"mumble\"\n"
+      "            }\n"
       "          }\n"
       "        ]\n"
       "      },\n"
@@ -68,7 +183,194 @@ TEST_F(RlsConfigParsingTest, ValidConfig) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_NE(*service_config, nullptr);
+  ASSERT_NE(*service_config, nullptr);
+  auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), RlsLbConfig::Name());
+  auto* rls_lb_config = DownCast<RlsLbConfig*>(lb_config.get());
+  EXPECT_THAT(
+      rls_lb_config->key_builder_map(),
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair(
+              "/foo/",
+              ::testing::AllOf(
+                  ::testing::Field(
+                      &RlsLbConfig::KeyBuilder::header_keys,
+                      ::testing::ElementsAre(::testing::Pair(
+                          "k", ::testing::ElementsAre("n1", "n2")))),
+                  ::testing::Field(&RlsLbConfig::KeyBuilder::host_key, "host"),
+                  ::testing::Field(&RlsLbConfig::KeyBuilder::service_key,
+                                   "service"),
+                  ::testing::Field(&RlsLbConfig::KeyBuilder::method_key,
+                                   "method"),
+                  ::testing::Field(&RlsLbConfig::KeyBuilder::constant_keys,
+                                   ::testing::ElementsAre(
+                                       ::testing::Pair("quux", "mumble"))))),
+          ::testing::Pair(
+              "/bar/baz",
+              ::testing::AllOf(
+                  ::testing::Field(
+                      &RlsLbConfig::KeyBuilder::header_keys,
+                      ::testing::ElementsAre(::testing::Pair(
+                          "k", ::testing::ElementsAre("n1", "n2")))),
+                  ::testing::Field(&RlsLbConfig::KeyBuilder::host_key, "host"),
+                  ::testing::Field(&RlsLbConfig::KeyBuilder::service_key,
+                                   "service"),
+                  ::testing::Field(&RlsLbConfig::KeyBuilder::method_key,
+                                   "method"),
+                  ::testing::Field(&RlsLbConfig::KeyBuilder::constant_keys,
+                                   ::testing::ElementsAre(
+                                       ::testing::Pair("quux", "mumble")))))))
+      << KeyBuilderMapString(rls_lb_config->key_builder_map());
+  EXPECT_EQ(rls_lb_config->lookup_service(), "rls.example.com:80");
+  EXPECT_EQ(rls_lb_config->lookup_service_timeout(), Duration::Seconds(31));
+  EXPECT_EQ(rls_lb_config->max_age(), Duration::Seconds(182));
+  EXPECT_EQ(rls_lb_config->stale_age(), Duration::Seconds(151));
+  EXPECT_EQ(rls_lb_config->cache_size_bytes(), 1);
+  EXPECT_EQ(rls_lb_config->default_target(), "foobar");
+  EXPECT_EQ(rls_lb_config->rls_channel_service_config(),
+            "{\"loadBalancingPolicy\":\"ROUND_ROBIN\"}");
+  EXPECT_EQ(JsonDump(rls_lb_config->child_policy_config()),
+            "[{\"grpclb\":{\"target\":\"foobar\"}}]");
+  EXPECT_EQ(rls_lb_config->child_policy_config_target_field_name(), "target");
+  ASSERT_NE(rls_lb_config->default_child_policy_parsed_config(), nullptr);
+  EXPECT_EQ(rls_lb_config->default_child_policy_parsed_config()->name(),
+            "grpclb");
+}
+
+TEST_F(RlsConfigParsingTest, ClampMaxAge) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"rls_experimental\":{\n"
+      "      \"routeLookupConfig\":{\n"
+      "        \"lookupService\":\"rls.example.com:80\",\n"
+      "        \"cacheSizeBytes\":1,\n"
+      "        \"maxAge\":\"301s\",\n"
+      "        \"grpcKeybuilders\":[\n"
+      "          {\n"
+      "            \"names\":[\n"
+      "              {\"service\":\"foo\"}\n"
+      "            ]\n"
+      "          }\n"
+      "        ]\n"
+      "      },\n"
+      "      \"childPolicy\":[\n"
+      "        {\"unknown\":{}},\n"  // Okay, since the next one exists.
+      "        {\"grpclb\":{}}\n"
+      "      ],\n"
+      "      \"childPolicyConfigTargetFieldName\":\"target\"\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  ASSERT_NE(*service_config, nullptr);
+  auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), RlsLbConfig::Name());
+  auto* rls_lb_config = DownCast<RlsLbConfig*>(lb_config.get());
+  EXPECT_EQ(rls_lb_config->max_age(), rls_lb_config->kMaxMaxAge);
+  EXPECT_EQ(rls_lb_config->stale_age(), rls_lb_config->kMaxMaxAge);
+}
+
+TEST_F(RlsConfigParsingTest, ClampStaleAgeToMaxAge) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"rls_experimental\":{\n"
+      "      \"routeLookupConfig\":{\n"
+      "        \"lookupService\":\"rls.example.com:80\",\n"
+      "        \"cacheSizeBytes\":1,\n"
+      "        \"maxAge\":\"182s\",\n"
+      "        \"staleAge\":\"200s\",\n"
+      "        \"grpcKeybuilders\":[\n"
+      "          {\n"
+      "            \"names\":[\n"
+      "              {\"service\":\"foo\"}\n"
+      "            ]\n"
+      "          }\n"
+      "        ]\n"
+      "      },\n"
+      "      \"childPolicy\":[\n"
+      "        {\"unknown\":{}},\n"  // Okay, since the next one exists.
+      "        {\"grpclb\":{}}\n"
+      "      ],\n"
+      "      \"childPolicyConfigTargetFieldName\":\"target\"\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  ASSERT_NE(*service_config, nullptr);
+  auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), RlsLbConfig::Name());
+  auto* rls_lb_config = DownCast<RlsLbConfig*>(lb_config.get());
+  EXPECT_EQ(rls_lb_config->max_age(), Duration::Seconds(182));
+  EXPECT_EQ(rls_lb_config->stale_age(), Duration::Seconds(182));
+}
+
+TEST_F(RlsConfigParsingTest, DoNotClampMaxAgeIfStaleAgeIsSet) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"rls_experimental\":{\n"
+      "      \"routeLookupConfig\":{\n"
+      "        \"lookupService\":\"rls.example.com:80\",\n"
+      "        \"cacheSizeBytes\":1,\n"
+      "        \"maxAge\":\"350s\",\n"
+      "        \"staleAge\":\"310s\",\n"
+      "        \"grpcKeybuilders\":[\n"
+      "          {\n"
+      "            \"names\":[\n"
+      "              {\"service\":\"foo\"}\n"
+      "            ]\n"
+      "          }\n"
+      "        ]\n"
+      "      },\n"
+      "      \"childPolicy\":[\n"
+      "        {\"unknown\":{}},\n"  // Okay, since the next one exists.
+      "        {\"grpclb\":{}}\n"
+      "      ],\n"
+      "      \"childPolicyConfigTargetFieldName\":\"target\"\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  ASSERT_NE(*service_config, nullptr);
+  auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), RlsLbConfig::Name());
+  auto* rls_lb_config = DownCast<RlsLbConfig*>(lb_config.get());
+  // Allow maxAge to exceed 300s if staleAge is set, but still clamp
+  // staleAge to 300s.
+  EXPECT_EQ(rls_lb_config->max_age(), Duration::Seconds(350));
+  EXPECT_EQ(rls_lb_config->stale_age(), Duration::Seconds(300));
 }
 
 //
@@ -274,6 +576,8 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
       "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"lookupService\":\"\",\n"
+      "        \"defaultTarget\":\"\",\n"
+      "        \"staleAge\":\"2s\",\n"
       "        \"cacheSizeBytes\":0\n"
       "      }\n"
       "    }\n"
@@ -290,9 +594,13 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
           "field:childPolicyConfigTargetFieldName error:field not present; "
           "field:routeLookupConfig.cacheSizeBytes error:"
           "must be greater than 0; "
+          "field:routeLookupConfig.defaultTarget "
+          "error:must be non-empty if set; "
           "field:routeLookupConfig.grpcKeybuilders error:field not present; "
           "field:routeLookupConfig.lookupService error:"
-          "must be valid gRPC target URI]"))
+          "must be valid gRPC target URI; "
+          "field:routeLookupConfig.maxAge error:"
+          "must be set if staleAge is set]"))
       << service_config.status();
 }
 
@@ -429,10 +737,12 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
       "              1,\n"
       "              {\n"
       "                \"key\":1,\n"
-      "                \"names\":1\n"
+      "                \"names\":1,\n"
+      "                \"requiredMatch\":1\n"
       "              },\n"
       "              {\n"
-      "                \"names\":[]\n"
+      "                \"names\":[],\n"
+      "                \"requiredMatch\":true\n"
       "              },\n"
       "              {\n"
       "                \"key\":\"\",\n"
@@ -440,7 +750,9 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
       "              }\n"
       "            ],\n"
       "            \"extraKeys\":{\n"
-      "              \"host\": \"\"\n"
+      "              \"host\": \"\",\n"
+      "              \"service\": \"\",\n"
+      "              \"method\": \"\"\n"
       "            },\n"
       "            \"constantKeys\":{\n"
       "              \"\":\"foo\"\n"
@@ -465,16 +777,24 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
           "error:key must be non-empty; "
           "field:routeLookupConfig.grpcKeybuilders[0].extraKeys.host "
           "error:must be non-empty if set; "
+          "field:routeLookupConfig.grpcKeybuilders[0].extraKeys.method "
+          "error:must be non-empty if set; "
+          "field:routeLookupConfig.grpcKeybuilders[0].extraKeys.service "
+          "error:must be non-empty if set; "
           "field:routeLookupConfig.grpcKeybuilders[0].headers[0] "
           "error:is not an object; "
           "field:routeLookupConfig.grpcKeybuilders[0].headers[1].key "
           "error:is not a string; "
           "field:routeLookupConfig.grpcKeybuilders[0].headers[1].names "
           "error:is not an array; "
+          "field:routeLookupConfig.grpcKeybuilders[0].headers[1].requiredMatch "
+          "error:is not a boolean; "
           "field:routeLookupConfig.grpcKeybuilders[0].headers[2].key "
           "error:field not present; "
           "field:routeLookupConfig.grpcKeybuilders[0].headers[2].names "
           "error:must be non-empty; "
+          "field:routeLookupConfig.grpcKeybuilders[0].headers[2].requiredMatch "
+          "error:must not be present; "
           "field:routeLookupConfig.grpcKeybuilders[0].headers[3].key "
           "error:must be non-empty; "
           "field:routeLookupConfig.grpcKeybuilders[0].headers[3].names[0] "
@@ -609,6 +929,73 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
           "field:routeLookupConfig.grpcKeybuilders[1] "
           "error:duplicate entry for \"/foo/bar\"; "
           "field:routeLookupConfig.lookupService error:field not present]"))
+      << service_config.status();
+}
+
+TEST_F(RlsConfigParsingTest, KeyBuilderDuplicateKeys) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"rls_experimental\":{\n"
+      "      \"routeLookupConfig\":{\n"
+      "        \"lookupService\":\"rls.example.com:80\",\n"
+      "        \"cacheSizeBytes\":1,\n"
+      "        \"grpcKeybuilders\":[\n"
+      "          {\n"
+      "            \"names\":[\n"
+      "              {\"service\":\"foo\"}\n"
+      "            ],\n"
+      "            \"headers\":[\n"
+      "              {\n"
+      "                \"key\":\"host\",\n"
+      "                \"names\":[\"n1\"]\n"
+      "              },\n"
+      "              {\n"
+      "                \"key\":\"service\",\n"
+      "                \"names\":[\"n1\"]\n"
+      "              },\n"
+      "              {\n"
+      "                \"key\":\"method\",\n"
+      "                \"names\":[\"n1\"]\n"
+      "              },\n"
+      "              {\n"
+      "                \"key\":\"constant\",\n"
+      "                \"names\":[\"n1\"]\n"
+      "              }\n"
+      "            ],\n"
+      "            \"extraKeys\":{\n"
+      "              \"host\":\"host\",\n"
+      "              \"service\":\"service\",\n"
+      "              \"method\":\"method\"\n"
+      "            },\n"
+      "            \"constantKeys\":{\n"
+      "              \"constant\":\"mumble\"\n"
+      "            }\n"
+      "          }\n"
+      "        ]\n"
+      "      },\n"
+      "      \"childPolicy\":[\n"
+      "        {\"grpclb\":{}}\n"
+      "      ],\n"
+      "      \"childPolicyConfigTargetFieldName\":\"target\"\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(
+      service_config.status().message(),
+      ::testing::HasSubstr(
+          "errors validating RLS LB policy config: ["
+          "field:routeLookupConfig.grpcKeybuilders[0].constantKeys["
+          "\"constant\"] error:duplicate key \"constant\"; "
+          "field:routeLookupConfig.grpcKeybuilders[0].extraKeys.host "
+          "error:duplicate key \"host\"; "
+          "field:routeLookupConfig.grpcKeybuilders[0].extraKeys.method "
+          "error:duplicate key \"method\"; "
+          "field:routeLookupConfig.grpcKeybuilders[0].extraKeys.service "
+          "error:duplicate key \"service\"]"))
       << service_config.status();
 }
 

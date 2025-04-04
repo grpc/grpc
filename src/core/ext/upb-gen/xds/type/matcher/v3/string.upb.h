@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_
-#define XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_
+#ifndef XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -317,4 +317,4 @@ UPB_INLINE struct xds_type_matcher_v3_StringMatcher* xds_type_matcher_v3_ListStr
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_ */

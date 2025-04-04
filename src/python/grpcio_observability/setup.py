@@ -41,7 +41,7 @@ import grpc_version
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
 CLASSIFIERS = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
@@ -100,7 +100,7 @@ def check_linker_need_libatomic():
     )
     cxx = shlex.split(os.environ.get("CXX", "c++"))
     cpp_test = subprocess.Popen(
-        cxx + ["-x", "c++", "-std=c++14", "-"],
+        cxx + ["-x", "c++", "-std=c++17", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -111,7 +111,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        cxx + ["-x", "c++", "-std=c++14", "-", "-latomic"],
+        cxx + ["-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -138,6 +138,21 @@ class BuildExt(build_ext.build_ext):
         return filename
 
 
+# When building extensions for macOS on a system running macOS 11.0 or newer,
+# make sure they target macOS 11.0 or newer to use C++17 stdlib properly.
+# This overrides the default behavior of distutils, which targets the macOS
+# version Python was built on. You can further customize the target macOS
+# version by setting the MACOSX_DEPLOYMENT_TARGET environment variable before
+# running setup.py.
+if sys.platform == "darwin":
+    if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
+        target_ver = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
+        if target_ver == "" or tuple(int(p) for p in target_ver.split(".")) < (
+            10,
+            14,
+        ):
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "11.0"
+
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
 # We use these environment variables to thus get around that without locking
@@ -148,7 +163,7 @@ class BuildExt(build_ext.build_ext):
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-    EXTRA_ENV_COMPILE_ARGS = "-std=c++14"
+    EXTRA_ENV_COMPILE_ARGS = "-std=c++17"
     if "win32" in sys.platform:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
@@ -162,6 +177,8 @@ if EXTRA_ENV_LINK_ARGS is None:
         EXTRA_ENV_LINK_ARGS += " -lpthread"
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += " -latomic"
+    if "linux" in sys.platform:
+        EXTRA_ENV_LINK_ARGS += " -static-libgcc"
 
 # This enables the standard link-time optimizer, which help us prevent some undefined symbol errors by
 # remove some unused symbols from .so file.

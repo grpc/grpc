@@ -21,25 +21,38 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/dump_args.h"
 #include "src/core/util/uri.h"
 
-bool squelch = true;
-bool leak_check = true;
+namespace grpc_core {
+namespace {
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  char* s = static_cast<char*>(gpr_malloc(size + 1));
-  memcpy(s, data, size);
-  s[size] = 0;
-
-  grpc_init();
-
-  {
-    grpc_core::ExecCtx exec_ctx;
-    (void)grpc_core::URI::Parse(s);
-    gpr_free(s);
-  }
-
-  grpc_shutdown();
-  return 0;
+void ParseRoundTrips(std::string buffer) {
+  auto uri = URI::Parse(buffer);
+  if (!uri.ok()) return;
+  auto buffer2 = uri->ToString();
+  auto uri2 = URI::Parse(buffer2);
+  CHECK_OK(uri2);
+  EXPECT_EQ(uri->ToString(), uri2->ToString())
+      << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
+  EXPECT_EQ(uri->scheme(), uri2->scheme())
+      << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
+  EXPECT_EQ(uri->authority(), uri2->authority())
+      << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
+  EXPECT_EQ(uri->path(), uri2->path())
+      << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
+  EXPECT_EQ(uri->query_parameter_pairs(), uri2->query_parameter_pairs())
+      << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
+  EXPECT_EQ(uri->fragment(), uri2->fragment())
+      << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
+  EXPECT_EQ(uri, uri2);
 }
+FUZZ_TEST(UriTest, ParseRoundTrips);
+
+TEST(UriTest, ParseRoundTripsRegression) { ParseRoundTrips("W:////\244"); }
+
+}  // namespace
+}  // namespace grpc_core

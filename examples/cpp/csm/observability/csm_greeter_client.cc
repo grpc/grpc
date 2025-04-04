@@ -25,11 +25,12 @@
 #include <condition_variable>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/types/optional.h"
+#include "absl/log/initialize.h"
 #include "examples/cpp/otel/util.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
@@ -45,6 +46,7 @@ absl::StatusOr<grpc::CsmObservability> InitializeObservability() {
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE pods
   opts.url = "0.0.0.0:9464";
+  opts.without_otel_scope = false;
   auto prometheus_exporter =
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =
@@ -63,6 +65,7 @@ absl::StatusOr<grpc::CsmObservability> InitializeObservability() {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Setup CSM observability
   auto observability = InitializeObservability();
   if (!observability.ok()) {

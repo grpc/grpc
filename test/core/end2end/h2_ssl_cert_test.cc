@@ -31,15 +31,15 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/util/time.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -264,6 +264,10 @@ INSTANTIATE_TEST_SUITE_P(H2SslCert, H2SslCertTest,
 
 }  // namespace testing
 }  // namespace grpc
+
+namespace grpc_core {
+std::vector<CoreTestConfiguration> End2endTestConfigs() { return {}; }
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   FILE* roots_file;

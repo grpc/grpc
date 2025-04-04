@@ -100,7 +100,7 @@ void BM_EventEngine_RunClosure(benchmark::State& state) {
   int cb_count = state.range(0);
   grpc_core::Notification* signal = new grpc_core::Notification();
   std::atomic_int count{0};
-  // Ignore leaks from this closure. For simplicty, this closure is not deleted
+  // Ignore leaks from this closure. For simplicity, this closure is not deleted
   // because the closure may still be executing after the EventEngine is
   // destroyed. This is because the default posix EventEngine's thread pool may
   // get destroyed separately from the EventEngine.

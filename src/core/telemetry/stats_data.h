@@ -196,6 +196,30 @@ class HistogramCollector_1800000_40 {
  private:
   std::atomic<uint64_t> buckets_[40]{};
 };
+class HistogramCollector_16777216_50;
+class Histogram_16777216_50 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 50; }
+  friend Histogram_16777216_50 operator-(const Histogram_16777216_50& left,
+                                         const Histogram_16777216_50& right);
+
+ private:
+  friend class HistogramCollector_16777216_50;
+  uint64_t buckets_[50]{};
+};
+class HistogramCollector_16777216_50 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_16777216_50::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void Collect(Histogram_16777216_50* result) const;
+
+ private:
+  std::atomic<uint64_t> buckets_[50]{};
+};
 struct GlobalStats {
   enum class Counter {
     kClientCallsCreated,
@@ -206,6 +230,7 @@ struct GlobalStats {
     kInsecureConnectionsCreated,
     kRqConnectionsDropped,
     kRqCallsDropped,
+    kRqCallsRejected,
     kSyscallWrite,
     kSyscallRead,
     kTcpReadAlloc8k,
@@ -246,6 +271,19 @@ struct GlobalStats {
     kHttp2SendMessageSize,
     kHttp2MetadataSize,
     kHttp2HpackEntryLifetime,
+    kHttp2HeaderTableSize,
+    kHttp2InitialWindowSize,
+    kHttp2MaxConcurrentStreams,
+    kHttp2MaxFrameSize,
+    kHttp2MaxHeaderListSize,
+    kHttp2PreferredReceiveCryptoMessageSize,
+    kHttp2StreamRemoteWindowUpdate,
+    kHttp2TransportRemoteWindowUpdate,
+    kHttp2TransportWindowUpdatePeriod,
+    kHttp2StreamWindowUpdatePeriod,
+    kHttp2WriteTargetSize,
+    kHttp2WriteDataFrameSize,
+    kHttp2ReadDataFrameSize,
     kWrrSubchannelListSize,
     kWrrSubchannelReadySize,
     kWorkSerializerRunTimeMs,
@@ -285,6 +323,7 @@ struct GlobalStats {
       uint64_t insecure_connections_created;
       uint64_t rq_connections_dropped;
       uint64_t rq_calls_dropped;
+      uint64_t rq_calls_rejected;
       uint64_t syscall_write;
       uint64_t syscall_read;
       uint64_t tcp_read_alloc_8k;
@@ -325,6 +364,19 @@ struct GlobalStats {
   Histogram_16777216_20 http2_send_message_size;
   Histogram_65536_26 http2_metadata_size;
   Histogram_1800000_40 http2_hpack_entry_lifetime;
+  Histogram_16777216_20 http2_header_table_size;
+  Histogram_16777216_50 http2_initial_window_size;
+  Histogram_16777216_20 http2_max_concurrent_streams;
+  Histogram_16777216_50 http2_max_frame_size;
+  Histogram_16777216_20 http2_max_header_list_size;
+  Histogram_16777216_20 http2_preferred_receive_crypto_message_size;
+  Histogram_16777216_20 http2_stream_remote_window_update;
+  Histogram_16777216_20 http2_transport_remote_window_update;
+  Histogram_100000_20 http2_transport_window_update_period;
+  Histogram_100000_20 http2_stream_window_update_period;
+  Histogram_16777216_50 http2_write_target_size;
+  Histogram_16777216_50 http2_write_data_frame_size;
+  Histogram_16777216_50 http2_read_data_frame_size;
   Histogram_10000_20 wrr_subchannel_list_size;
   Histogram_10000_20 wrr_subchannel_ready_size;
   Histogram_100000_20 work_serializer_run_time_ms;
@@ -381,6 +433,9 @@ class GlobalStatsCollector {
   }
   void IncrementRqCallsDropped() {
     data_.this_cpu().rq_calls_dropped.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementRqCallsRejected() {
+    data_.this_cpu().rq_calls_rejected.fetch_add(1, std::memory_order_relaxed);
   }
   void IncrementSyscallWrite() {
     data_.this_cpu().syscall_write.fetch_add(1, std::memory_order_relaxed);
@@ -501,6 +556,46 @@ class GlobalStatsCollector {
   void IncrementHttp2HpackEntryLifetime(int value) {
     data_.this_cpu().http2_hpack_entry_lifetime.Increment(value);
   }
+  void IncrementHttp2HeaderTableSize(int value) {
+    data_.this_cpu().http2_header_table_size.Increment(value);
+  }
+  void IncrementHttp2InitialWindowSize(int value) {
+    data_.this_cpu().http2_initial_window_size.Increment(value);
+  }
+  void IncrementHttp2MaxConcurrentStreams(int value) {
+    data_.this_cpu().http2_max_concurrent_streams.Increment(value);
+  }
+  void IncrementHttp2MaxFrameSize(int value) {
+    data_.this_cpu().http2_max_frame_size.Increment(value);
+  }
+  void IncrementHttp2MaxHeaderListSize(int value) {
+    data_.this_cpu().http2_max_header_list_size.Increment(value);
+  }
+  void IncrementHttp2PreferredReceiveCryptoMessageSize(int value) {
+    data_.this_cpu().http2_preferred_receive_crypto_message_size.Increment(
+        value);
+  }
+  void IncrementHttp2StreamRemoteWindowUpdate(int value) {
+    data_.this_cpu().http2_stream_remote_window_update.Increment(value);
+  }
+  void IncrementHttp2TransportRemoteWindowUpdate(int value) {
+    data_.this_cpu().http2_transport_remote_window_update.Increment(value);
+  }
+  void IncrementHttp2TransportWindowUpdatePeriod(int value) {
+    data_.this_cpu().http2_transport_window_update_period.Increment(value);
+  }
+  void IncrementHttp2StreamWindowUpdatePeriod(int value) {
+    data_.this_cpu().http2_stream_window_update_period.Increment(value);
+  }
+  void IncrementHttp2WriteTargetSize(int value) {
+    data_.this_cpu().http2_write_target_size.Increment(value);
+  }
+  void IncrementHttp2WriteDataFrameSize(int value) {
+    data_.this_cpu().http2_write_data_frame_size.Increment(value);
+  }
+  void IncrementHttp2ReadDataFrameSize(int value) {
+    data_.this_cpu().http2_read_data_frame_size.Increment(value);
+  }
   void IncrementWrrSubchannelListSize(int value) {
     data_.this_cpu().wrr_subchannel_list_size.Increment(value);
   }
@@ -573,6 +668,7 @@ class GlobalStatsCollector {
     std::atomic<uint64_t> insecure_connections_created{0};
     std::atomic<uint64_t> rq_connections_dropped{0};
     std::atomic<uint64_t> rq_calls_dropped{0};
+    std::atomic<uint64_t> rq_calls_rejected{0};
     std::atomic<uint64_t> syscall_write{0};
     std::atomic<uint64_t> syscall_read{0};
     std::atomic<uint64_t> tcp_read_alloc_8k{0};
@@ -610,6 +706,19 @@ class GlobalStatsCollector {
     HistogramCollector_16777216_20 http2_send_message_size;
     HistogramCollector_65536_26 http2_metadata_size;
     HistogramCollector_1800000_40 http2_hpack_entry_lifetime;
+    HistogramCollector_16777216_20 http2_header_table_size;
+    HistogramCollector_16777216_50 http2_initial_window_size;
+    HistogramCollector_16777216_20 http2_max_concurrent_streams;
+    HistogramCollector_16777216_50 http2_max_frame_size;
+    HistogramCollector_16777216_20 http2_max_header_list_size;
+    HistogramCollector_16777216_20 http2_preferred_receive_crypto_message_size;
+    HistogramCollector_16777216_20 http2_stream_remote_window_update;
+    HistogramCollector_16777216_20 http2_transport_remote_window_update;
+    HistogramCollector_100000_20 http2_transport_window_update_period;
+    HistogramCollector_100000_20 http2_stream_window_update_period;
+    HistogramCollector_16777216_50 http2_write_target_size;
+    HistogramCollector_16777216_50 http2_write_data_frame_size;
+    HistogramCollector_16777216_50 http2_read_data_frame_size;
     HistogramCollector_10000_20 wrr_subchannel_list_size;
     HistogramCollector_10000_20 wrr_subchannel_ready_size;
     HistogramCollector_100000_20 work_serializer_run_time_ms;

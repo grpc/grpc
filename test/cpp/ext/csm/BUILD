@@ -31,13 +31,14 @@ grpc_cc_test(
         "gtest",
         "otel/sdk/src/metrics",
     ],
-    language = "C++",
     tags = [
+        # TODO(b/406886630): Remove after fixing
+        "grpc:broken-internally",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     deps = [
         "//:grpc++",
-        "//:grpcpp_csm_observability",
-        "//:grpcpp_otel_plugin",
         "//src/cpp/ext/csm:csm_observability",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:grpc_test_util",
@@ -54,29 +55,16 @@ grpc_cc_test(
         "gtest",
         "otel/sdk/src/metrics",
     ],
-    language = "C++",
     tags = [
+        # TODO(b/406886630): Remove after fixing
+        "grpc:broken-internally",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     deps = [
         "//:grpc++",
         "//src/cpp/ext/csm:csm_observability",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/ext/otel:otel_test_library",
-    ],
-)
-
-grpc_cc_test(
-    name = "mesh_id_test",
-    srcs = [
-        "mesh_id_test.cc",
-    ],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:grpc++",
-        "//src/cpp/ext/csm:csm_observability",
-        "//test/core/test_util:grpc_test_util",
     ],
 )

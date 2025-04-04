@@ -159,11 +159,11 @@ void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
     return;
   }
   const LoaderInterface* element_loader = ElementLoader();
-  for (const auto& pair : json.object()) {
+  for (const auto& [key, value] : json.object()) {
     ValidationErrors::ScopedField field(errors,
-                                        absl::StrCat("[\"", pair.first, "\"]"));
-    void* element = Insert(pair.first, dst);
-    element_loader->LoadInto(pair.second, args, element, errors);
+                                        absl::StrCat("[\"", key, "\"]"));
+    void* element = Insert(key, dst);
+    element_loader->LoadInto(value, args, element, errors);
   }
 }
 

@@ -17,77 +17,107 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <utility>
+#include <variant>
 
 #include "absl/functional/any_invocable.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/match.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/wait_for_single_owner.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"  // IWYU pragma: keep
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
-std::atomic<absl::AnyInvocable<std::unique_ptr<EventEngine>()>*>
+// TODO(hork): delete the factory once all known users have migrated away
+std::atomic<absl::AnyInvocable<std::shared_ptr<EventEngine>()>*>
     g_event_engine_factory{nullptr};
 grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
-grpc_core::NoDestruct<std::weak_ptr<EventEngine>> g_event_engine;
+// Defaults to a null weak_ptr<>.  If it contains a shared_ptr<>, will always be
+// non-null.
+grpc_core::NoDestruct<
+    std::variant<std::weak_ptr<EventEngine>, std::shared_ptr<EventEngine>>>
+    g_default_event_engine ABSL_GUARDED_BY(*g_mu);
+
+// Returns nullptr if no engine is set.
+std::shared_ptr<EventEngine> InternalGetDefaultEventEngineIfAny()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*g_mu) {
+  return grpc_core::MatchMutable(
+      g_default_event_engine.get(),
+      [&](std::shared_ptr<EventEngine>* event_engine) { return *event_engine; },
+      [&](std::weak_ptr<EventEngine>* weak_ee) { return weak_ee->lock(); });
+}
+
 }  // namespace
 
 void SetEventEngineFactory(
-    absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory) {
+    absl::AnyInvocable<std::shared_ptr<EventEngine>()> factory) {
   delete g_event_engine_factory.exchange(
-      new absl::AnyInvocable<std::unique_ptr<EventEngine>()>(
+      new absl::AnyInvocable<std::shared_ptr<EventEngine>()>(
           std::move(factory)));
-  // Forget any previous EventEngines
+  // Forget any previous factory-created EventEngines
   grpc_core::MutexLock lock(&*g_mu);
-  g_event_engine->reset();
+  g_default_event_engine->emplace<std::weak_ptr<EventEngine>>();
 }
 
 void EventEngineFactoryReset() {
-  delete g_event_engine_factory.exchange(nullptr);
-  g_event_engine->reset();
-}
-
-std::unique_ptr<EventEngine> CreateEventEngineInner() {
-  if (auto* factory = g_event_engine_factory.load()) {
-    return (*factory)();
-  }
-  return DefaultEventEngineFactory();
-}
-
-std::unique_ptr<EventEngine> CreateEventEngine() {
-#ifdef GRPC_MAXIMIZE_THREADYNESS
-  return std::make_unique<ThreadyEventEngine>(CreateEventEngineInner());
-#else
-  return CreateEventEngineInner();
-#endif
-}
-
-std::shared_ptr<EventEngine> GetDefaultEventEngine(
-    grpc_core::SourceLocation location) {
   grpc_core::MutexLock lock(&*g_mu);
-  if (std::shared_ptr<EventEngine> engine = g_event_engine->lock()) {
-    GRPC_TRACE_LOG(event_engine, INFO)
-        << "Returning existing EventEngine::" << engine.get()
-        << ". use_count:" << engine.use_count() << ". Called from " << location;
-    return engine;
+  delete g_event_engine_factory.exchange(nullptr);
+  g_default_event_engine->emplace<std::weak_ptr<EventEngine>>();
+}
+
+std::shared_ptr<EventEngine> CreateEventEngine() {
+  std::shared_ptr<EventEngine> engine;
+  if (auto* factory = g_event_engine_factory.load()) {
+    engine = (*factory)();
+  } else {
+    engine = DefaultEventEngineFactory();
   }
-  std::shared_ptr<EventEngine> engine{CreateEventEngine()};
-  GRPC_TRACE_LOG(event_engine, INFO)
-      << "Created DefaultEventEngine::" << engine.get() << ". Called from "
-      << location;
-  *g_event_engine = engine;
+#ifdef GRPC_MAXIMIZE_THREADYNESS
+  return std::make_shared<ThreadyEventEngine>(std::move(engine));
+#endif
   return engine;
+}
+
+void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine) {
+  grpc_core::MutexLock lock(&*g_mu);
+  if (engine == nullptr) {
+    // If it's being set to null, switch back to a weak_ptr.
+    g_default_event_engine->emplace<std::weak_ptr<EventEngine>>();
+  } else {
+    *g_default_event_engine = std::move(engine);
+  }
+}
+
+std::shared_ptr<EventEngine> GetDefaultEventEngine() {
+  grpc_core::MutexLock lock(&*g_mu);
+  auto engine = InternalGetDefaultEventEngineIfAny();
+  if (engine != nullptr) return engine;
+  engine = CreateEventEngine();
+  g_default_event_engine->emplace<std::weak_ptr<EventEngine>>(engine);
+  return engine;
+}
+
+void ShutdownDefaultEventEngine() {
+  std::shared_ptr<EventEngine> tmp_engine;
+  {
+    grpc_core::MutexLock lock(&*g_mu);
+    tmp_engine = InternalGetDefaultEventEngineIfAny();
+    g_default_event_engine->emplace<std::weak_ptr<EventEngine>>();
+  }
+  if (tmp_engine != nullptr) {
+    grpc_core::WaitForSingleOwner(std::move(tmp_engine));
+  }
 }
 
 namespace {
@@ -104,5 +134,4 @@ void RegisterEventEngineChannelArgPreconditioning(
       grpc_event_engine::experimental::EnsureEventEngineInChannelArgs);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

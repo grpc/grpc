@@ -30,7 +30,7 @@
 #include "gtest/gtest.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/trace/exporter/span_exporter.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/cpp/client/client_stats_interceptor.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/context.h"

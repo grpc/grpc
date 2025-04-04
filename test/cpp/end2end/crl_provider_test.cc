@@ -29,7 +29,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <string>
@@ -41,6 +40,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
+#include "gtest/gtest.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/port.h"
@@ -140,7 +140,7 @@ void DoRpc(const std::string& server_addr,
   grpc::testing::EchoResponse response;
   request.set_message(kMessage);
   ClientContext context;
-  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/15));
   grpc::Status result = stub->Echo(&context, request, &response);
   if (expect_success) {
     EXPECT_TRUE(result.ok());

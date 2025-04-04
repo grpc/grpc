@@ -22,6 +22,7 @@
 #include <stdlib.h>
 
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -29,9 +30,8 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -178,6 +178,16 @@ void EndpointList::ResetBackoffLocked() {
   for (const auto& endpoint : endpoints_) {
     endpoint->ResetBackoffLocked();
   }
+}
+
+void EndpointList::ReportTransientFailure(absl::Status status) {
+  if (!resolution_note_.empty()) {
+    status = absl::Status(status.code(), absl::StrCat(status.message(), " (",
+                                                      resolution_note_, ")"));
+  }
+  channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+      MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
 }
 
 }  // namespace grpc_core

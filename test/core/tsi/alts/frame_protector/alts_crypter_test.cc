@@ -19,7 +19,6 @@
 #include "src/core/tsi/alts/frame_protector/alts_crypter.h"
 
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +26,7 @@
 #include <memory>
 
 #include "absl/types/span.h"
+#include "gtest/gtest.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 static void alts_crypter_test_random_seal_unseal(alts_crypter* server_seal,

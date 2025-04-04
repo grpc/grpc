@@ -14,11 +14,11 @@
 
 #include "src/core/util/table.h"
 
+#include <optional>
 #include <string>
 #include <tuple>
 #include <variant>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 namespace grpc_core {
@@ -145,7 +145,7 @@ TYPED_TEST_SUITE(TableSizeTest, SizeTests);
 
 template <typename... Ts>
 int sizeof_tuple_of_optionals(std::tuple<Ts...>*) {
-  return sizeof(std::tuple<absl::optional<Ts>...>);
+  return sizeof(std::tuple<std::optional<Ts>...>);
 }
 
 template <typename... Ts>

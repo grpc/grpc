@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_V3_CEL_PROTO_UPBDEFS_H_
-#define XDS_TYPE_V3_CEL_PROTO_UPBDEFS_H_
+#ifndef XDS_TYPE_V3_CEL_PROTO_UPB_H__UPBDEFS_H_
+#define XDS_TYPE_V3_CEL_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -35,4 +35,4 @@ UPB_INLINE const upb_MessageDef *xds_type_v3_CelExtractString_getmsgdef(upb_DefP
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_V3_CEL_PROTO_UPBDEFS_H_ */
+#endif  /* XDS_TYPE_V3_CEL_PROTO_UPB_H__UPBDEFS_H_ */

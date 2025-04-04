@@ -26,6 +26,7 @@
 namespace grpc_core {
 
 bool XdsFederationEnabled();
+bool XdsDataErrorHandlingEnabled();
 
 class XdsBootstrap {
  public:
@@ -41,12 +42,33 @@ class XdsBootstrap {
     virtual const Json::Object& metadata() const = 0;
   };
 
+  class XdsServerTarget {
+   public:
+    virtual ~XdsServerTarget() = default;
+    virtual const std::string& server_uri() const = 0;
+    // Returns a key to be used for uniquely identifying this XdsServerTarget.
+    virtual std::string Key() const = 0;
+    virtual bool Equals(const XdsServerTarget& other) const = 0;
+    friend bool operator==(const XdsServerTarget& a, const XdsServerTarget& b) {
+      return a.Equals(b);
+    }
+    friend bool operator!=(const XdsServerTarget& a, const XdsServerTarget& b) {
+      return !a.Equals(b);
+    }
+  };
+
   class XdsServer {
    public:
     virtual ~XdsServer() = default;
 
-    virtual const std::string& server_uri() const = 0;
+    virtual std::shared_ptr<const XdsServerTarget> target() const = 0;
+
+    // TODO(roth): Remove this method once the data error handling
+    // feature passes interop tests.
     virtual bool IgnoreResourceDeletion() const = 0;
+
+    virtual bool FailOnDataErrors() const = 0;
+    virtual bool ResourceTimerIsTransientFailure() const = 0;
 
     virtual bool Equals(const XdsServer& other) const = 0;
 

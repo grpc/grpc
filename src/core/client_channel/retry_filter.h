@@ -25,9 +25,9 @@
 #include <stddef.h>
 
 #include <new>
+#include <optional>
 
 #include "absl/log/check.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"

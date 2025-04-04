@@ -69,7 +69,7 @@ static fling_call calls[100001];
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 // A call is intentionally divided into two steps. First step is to initiate a
-// call (i.e send and recv metadata). A call is outstanding after we initated,
+// call (i.e send and recv metadata). A call is outstanding after we initiated,
 // so we can measure the call memory usage.
 static void init_ping_pong_request(int call_idx) {
   grpc_metadata_array_init(&calls[call_idx].initial_metadata_recv);
@@ -193,7 +193,7 @@ std::pair<MemStats, MemStats> run_test_loop(int iterations, int* call_idx) {
     init_ping_pong_request(*call_idx + i + 1);
   }
 
-  auto peak = std::make_pair(
+  auto peak = std::pair(
       // client
       MemStats::Snapshot(),
       // server

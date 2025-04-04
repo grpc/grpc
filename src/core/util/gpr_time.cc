@@ -18,7 +18,6 @@
 
 // Generic implementation of time calls.
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <limits.h>
@@ -26,7 +25,6 @@
 #include <string.h>
 
 #include "absl/log/check.h"
-#include "src/core/util/crash.h"
 
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
@@ -224,7 +222,7 @@ int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold) {
 int32_t gpr_time_to_millis(gpr_timespec t) {
   if (t.tv_sec >= 2147483) {
     if (t.tv_sec == 2147483 && t.tv_nsec < 648 * GPR_NS_PER_MS) {
-      return 2147483 * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS;
+      return (2147483 * GPR_MS_PER_SEC) + (t.tv_nsec / GPR_NS_PER_MS);
     }
     return 2147483647;
   } else if (t.tv_sec <= -2147483) {
@@ -232,13 +230,13 @@ int32_t gpr_time_to_millis(gpr_timespec t) {
     // care?)
     return -2147483647;
   } else {
-    return static_cast<int32_t>(t.tv_sec * GPR_MS_PER_SEC +
-                                t.tv_nsec / GPR_NS_PER_MS);
+    return static_cast<int32_t>((t.tv_sec * GPR_MS_PER_SEC) +
+                                (t.tv_nsec / GPR_NS_PER_MS));
   }
 }
 
 double gpr_timespec_to_micros(gpr_timespec t) {
-  return static_cast<double>(t.tv_sec) * GPR_US_PER_SEC + t.tv_nsec * 1e-3;
+  return (static_cast<double>(t.tv_sec) * GPR_US_PER_SEC) + (t.tv_nsec * 1e-3);
 }
 
 gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {

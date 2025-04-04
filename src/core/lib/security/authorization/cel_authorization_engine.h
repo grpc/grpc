@@ -35,7 +35,7 @@ namespace grpc_core {
 
 // CelAuthorizationEngine makes an AuthorizationDecision to ALLOW or DENY the
 // current action based on the condition fields in provided RBAC policies.
-// The engine may be constructed with one or two policies. If two polcies,
+// The engine may be constructed with one or two policies. If two policies,
 // the first policy is deny-if-matched and the second is allow-if-matched.
 // The engine returns UNDECIDED decision if it fails to find a match in any
 // policy. This engine ignores the principal and permission fields in RBAC

@@ -39,7 +39,7 @@
 // 1) Figure out how many cores are present on the test system
 // 2) Create 3 times that many threads
 // 3) Have each thread do some amount of work (basically want to
-//    gaurantee that all threads are running at once, and enough of them
+//    guarantee that all threads are running at once, and enough of them
 //    to run on all cores).
 // 4) Each thread checks what core it is running on, and marks that core
 //    as "used" in the test.

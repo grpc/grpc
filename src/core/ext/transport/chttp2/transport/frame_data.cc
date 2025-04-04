@@ -31,6 +31,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/stats.h"
 #include "src/core/util/status_helper.h"
 
 absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
@@ -75,6 +76,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 
   grpc_slice_buffer_move_first_no_ref(inbuf, write_bytes, outbuf);
 
+  grpc_core::global_stats().IncrementHttp2WriteDataFrameSize(write_bytes);
   call_tracer->RecordOutgoingBytes({header_size, 0, 0});
 }
 
@@ -84,13 +86,16 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
   grpc_slice_buffer* slices = &s->frame_storage;
   grpc_error_handle error;
 
-  if (slices->length < 5) {
-    if (min_progress_size != nullptr) *min_progress_size = 5 - slices->length;
+  if (slices->length < GRPC_HEADER_SIZE_IN_BYTES) {
+    if (min_progress_size != nullptr) {
+      *min_progress_size = GRPC_HEADER_SIZE_IN_BYTES - slices->length;
+    }
     return grpc_core::Pending{};
   }
 
-  uint8_t header[5];
-  grpc_slice_buffer_copy_first_into_buffer(slices, 5, header);
+  uint8_t header[GRPC_HEADER_SIZE_IN_BYTES];
+  grpc_slice_buffer_copy_first_into_buffer(slices, GRPC_HEADER_SIZE_IN_BYTES,
+                                           header);
 
   switch (header[0]) {
     case 0:
@@ -114,9 +119,9 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
                   (static_cast<uint32_t>(header[3]) << 8) |
                   static_cast<uint32_t>(header[4]);
 
-  if (slices->length < length + 5) {
+  if (slices->length < length + GRPC_HEADER_SIZE_IN_BYTES) {
     if (min_progress_size != nullptr) {
-      *min_progress_size = length + 5 - slices->length;
+      *min_progress_size = length + GRPC_HEADER_SIZE_IN_BYTES - slices->length;
     }
     return grpc_core::Pending{};
   }
@@ -124,8 +129,10 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
   if (min_progress_size != nullptr) *min_progress_size = 0;
 
   if (stream_out != nullptr) {
-    s->call_tracer_wrapper.RecordIncomingBytes({5, length, 0});
-    grpc_slice_buffer_move_first_into_buffer(slices, 5, header);
+    s->call_tracer_wrapper.RecordIncomingBytes(
+        {GRPC_HEADER_SIZE_IN_BYTES, length, 0});
+    grpc_slice_buffer_move_first_into_buffer(slices, GRPC_HEADER_SIZE_IN_BYTES,
+                                             header);
     grpc_slice_buffer_move_first(slices, length, stream_out->c_slice_buffer());
   }
 

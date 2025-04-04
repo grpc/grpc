@@ -20,6 +20,7 @@
 
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
 #include "test/core/test_util/test_config.h"
 
@@ -28,6 +29,7 @@ using ::grpc_event_engine::experimental::AbortingEventEngine;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::EventEngineFactoryReset;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::MockEventEngine;
 using ::grpc_event_engine::experimental::SetEventEngineFactory;
 
 class EventEngineFactoryTest : public testing::Test {
@@ -51,10 +53,10 @@ TEST_F(EventEngineFactoryTest, CustomFactoryIsUsed) {
 
 TEST_F(EventEngineFactoryTest, FactoryResetWorks) {
   int counter{0};
-  SetEventEngineFactory([&counter]() -> std::unique_ptr<EventEngine> {
+  SetEventEngineFactory([&counter]() {
     // this factory should only be used twice;
     EXPECT_LE(++counter, 2);
-    return std::make_unique<AbortingEventEngine>();
+    return std::make_shared<AbortingEventEngine>();
   });
   auto custom_ee = GetDefaultEventEngine();
   ASSERT_EQ(counter, 1);
@@ -65,6 +67,32 @@ TEST_F(EventEngineFactoryTest, FactoryResetWorks) {
   auto default_ee = GetDefaultEventEngine();
   ASSERT_NE(custom_ee, default_ee);
 }
+
+TEST_F(EventEngineFactoryTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
+  int create_count = 0;
+  grpc_event_engine::experimental::SetEventEngineFactory([&create_count] {
+    ++create_count;
+    return std::make_shared<MockEventEngine>();
+  });
+  std::shared_ptr<EventEngine> ee2;
+  ASSERT_EQ(0, create_count);
+  {
+    std::shared_ptr<EventEngine> ee1 = GetDefaultEventEngine();
+    ASSERT_EQ(1, create_count);
+    ee2 = GetDefaultEventEngine();
+    ASSERT_EQ(1, create_count);
+    // 3 instances: ee1, ee2, and the ee owned by the factory
+    ASSERT_EQ(ee2.use_count(), 2);
+  }
+  // Ensure the first shared_ptr did not delete the global
+  ASSERT_EQ(ee2.use_count(), 1);
+  // destroy the global engine via the last shared_ptr, and create a new one.
+  ee2.reset();
+  ee2 = GetDefaultEventEngine();
+  ASSERT_EQ(2, create_count);
+  ASSERT_EQ(ee2.use_count(), 1);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {

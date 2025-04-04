@@ -29,7 +29,9 @@ TEST(ValidationErrors, NoErrors) {
   EXPECT_EQ(errors.size(), 0);
   {
     ValidationErrors::ScopedField field(&errors, "foo");
-    { ValidationErrors::ScopedField field(&errors, ".bar"); }
+    {
+      ValidationErrors::ScopedField field(&errors, ".bar");
+    }
   }
   EXPECT_TRUE(errors.ok());
   EXPECT_EQ(errors.size(), 0);

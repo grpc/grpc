@@ -233,7 +233,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
     return;
   }
   if (recv_buffer == nullptr) {
-    LOG(ERROR)
+    VLOG(2)
         << "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()";
     handle_response_done(
         client, TSI_INTERNAL_ERROR,
@@ -298,7 +298,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
     if (details.size > 0) {
       error = absl::StrCat("Status ", code, " from handshaker service: ",
                            absl::string_view(details.data, details.size));
-      LOG(ERROR) << error;
+      LOG_EVERY_N_SEC(INFO, 1) << error;
     }
   }
   // TODO(apolcyn): consider short ciruiting handle_response_done and
@@ -744,7 +744,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
                 /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
                 /*cq=*/nullptr, interested_parties,
                 grpc_core::Slice::FromStaticString(ALTS_SERVICE_METHOD),
-                /*authority=*/absl::nullopt, grpc_core::Timestamp::InfFuture(),
+                /*authority=*/std::nullopt, grpc_core::Timestamp::InfFuture(),
                 /*registered_method=*/true);
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);
@@ -929,11 +929,11 @@ void alts_handshaker_client_destroy(alts_handshaker_client* c) {
 }
 
 size_t MaxNumberOfConcurrentHandshakes() {
-  size_t max_concurrent_handshakes = 40;
-  absl::optional<std::string> env_var_max_concurrent_handshakes =
+  size_t max_concurrent_handshakes = 100;
+  std::optional<std::string> env_var_max_concurrent_handshakes =
       grpc_core::GetEnv(kMaxConcurrentStreamsEnvironmentVariable);
   if (env_var_max_concurrent_handshakes.has_value()) {
-    size_t effective_max_concurrent_handshakes = 40;
+    size_t effective_max_concurrent_handshakes = 100;
     if (absl::SimpleAtoi(*env_var_max_concurrent_handshakes,
                          &effective_max_concurrent_handshakes)) {
       max_concurrent_handshakes = effective_max_concurrent_handshakes;

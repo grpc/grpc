@@ -35,8 +35,9 @@ grpc_cc_library(
         "otel/api",
         "otel/sdk/src/metrics",
     ],
-    language = "C++",
     tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     deps = [
         "//:grpc++",
@@ -57,13 +58,81 @@ grpc_cc_test(
         "otel/api",
         "otel/sdk/src/metrics",
     ],
-    language = "C++",
-    tags = [],
+    tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
     deps = [
         ":otel_test_library",
         "//:grpc++",
         "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/promise:test_context",
         "//test/core/test_util:grpc_test_util",
-        "//test/cpp/end2end:test_service_impl",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_text_map_carrier_test",
+    srcs = [
+        "grpc_text_map_carrier_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+        "otel/api",
+    ],
+    tags = [],
+    deps = [
+        "//:grpc++",
+        "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/promise:test_context",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_trace_bin_text_map_propagator_test",
+    srcs = [
+        "grpc_trace_bin_text_map_propagator_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+        "otel/api",
+    ],
+    tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/promise:test_context",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "otel_tracing_test",
+    srcs = [
+        "otel_tracing_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+        "otel/api",
+        "otel/exporters/memory:in_memory_span_exporter",
+        "otel/sdk/src/trace",
+    ],
+    tags = [
+        # Incompatible with internal tracing
+        "grpc:no-internal-poller",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
+    deps = [
+        ":otel_test_library",
+        "//:grpc++",
+        "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/promise:test_context",
+        "//test/core/test_util:fail_first_call_filter",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

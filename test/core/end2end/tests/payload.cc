@@ -67,7 +67,7 @@ void RequestResponseWithPayload(CoreEnd2endTest& test) {
   test.Step();
 
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), request_slice);
@@ -77,11 +77,11 @@ void RequestResponseWithPayload(CoreEnd2endTest& test) {
 
 // Client sends a request with payload, server reads then returns a response
 // payload and status.
-CORE_END2END_TEST(CoreLargeSendTest, RequestResponseWithPayload) {
+CORE_END2END_TEST(CoreLargeSendTests, RequestResponseWithPayload) {
   RequestResponseWithPayload(*this);
 }
 
-CORE_END2END_TEST(CoreLargeSendTest, RequestResponseWithPayload10Times) {
+CORE_END2END_TEST(CoreLargeSendTests, RequestResponseWithPayload10Times) {
   for (int i = 0; i < 10; i++) {
     RequestResponseWithPayload(*this);
   }

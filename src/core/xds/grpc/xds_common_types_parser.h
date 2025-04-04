@@ -17,12 +17,15 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_PARSER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_PARSER_H
 
-#include "absl/types/optional.h"
+#include <optional>
+
+#include "envoy/config/core/v3/base.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -39,17 +42,21 @@ inline bool ParseBoolValue(const google_protobuf_BoolValue* bool_value_proto,
   return google_protobuf_BoolValue_value(bool_value_proto);
 }
 
-inline absl::optional<uint64_t> ParseUInt64Value(
+inline std::optional<uint64_t> ParseUInt64Value(
     const google_protobuf_UInt64Value* proto) {
-  if (proto == nullptr) return absl::nullopt;
+  if (proto == nullptr) return std::nullopt;
   return google_protobuf_UInt64Value_value(proto);
 }
 
-inline absl::optional<uint32_t> ParseUInt32Value(
+inline std::optional<uint32_t> ParseUInt32Value(
     const google_protobuf_UInt32Value* proto) {
-  if (proto == nullptr) return absl::nullopt;
+  if (proto == nullptr) return std::nullopt;
   return google_protobuf_UInt32Value_value(proto);
 }
+
+// Returns the IP address in URI form.
+std::optional<grpc_resolved_address> ParseXdsAddress(
+    const envoy_config_core_v3_Address* address, ValidationErrors* errors);
 
 CommonTlsContext CommonTlsContextParse(
     const XdsResourceType::DecodeContext& context,
@@ -61,7 +68,7 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Struct* resource);
 
-absl::optional<XdsExtension> ExtractXdsExtension(
+std::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Any* any, ValidationErrors* errors);
 

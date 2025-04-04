@@ -174,7 +174,7 @@ def unary_stream_event(behavior):
     Args:
       behavior: The implementation of a unary-stream RPC method as a callable
         value that takes a request value, a stream.Consumer to which to pass the
-        the response values of the RPC, and an face.ServicerContext.
+        response values of the RPC, and an face.ServicerContext.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.

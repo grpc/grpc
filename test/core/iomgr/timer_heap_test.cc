@@ -19,11 +19,11 @@
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
@@ -52,7 +52,7 @@ static int contains(grpc_timer_heap* pq, grpc_timer* el) {
 static void check_valid(grpc_timer_heap* pq) {
   size_t i;
   for (i = 0; i < pq->timer_count; ++i) {
-    size_t left_child = 1u + 2u * i;
+    size_t left_child = 1u + (2u * i);
     size_t right_child = left_child + 1u;
     if (left_child < pq->timer_count) {
       ASSERT_LE(pq->timers[i]->deadline, pq->timers[left_child]->deadline);
@@ -232,7 +232,7 @@ static void shrink_test(void) {
   size_t expected_size;
 
   // A large random number to allow for multiple shrinkages, at least 512.
-  const size_t num_elements = static_cast<size_t>(rand()) % 2000 + 512;
+  const size_t num_elements = (static_cast<size_t>(rand()) % 2000) + 512;
 
   grpc_timer_heap_init(&pq);
 

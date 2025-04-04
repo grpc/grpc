@@ -126,7 +126,7 @@ Run from the grpc directory after cloning the repo with --recursive or updating 
 ```
 $ mkdir -p cmake/build
 $ cd cmake/build
-$ cmake ../..
+$ cmake -DCMAKE_CXX_STANDARD=17 ../..
 $ make
 ```
 
@@ -143,7 +143,7 @@ you will be able to browse and build the code.
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
 > cd .build
-> cmake .. -G "Visual Studio 17 2022"
+> cmake -G "Visual Studio 17 2022" -DCMAKE_CXX_STANDARD=17 ..
 > cmake --build . --config Release
 ```
 
@@ -159,7 +159,7 @@ installed to be able to compile the C/C++ sources.
 > md build
 > cd build
 > call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
-> cmake ..\.. -GNinja -DCMAKE_BUILD_TYPE=Release
+> cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ..\..
 > cmake --build .
 ```
 
@@ -173,6 +173,15 @@ That said, we don't actively prohibit building DLLs on windows (it can be enable
 at your own risk.
 - you've been warned that there are some important drawbacks and some things might not work at all or will be broken in interesting ways.
 - we don't have extensive testing for DLL builds in place (to avoid maintenance costs, increased test duration etc.) so regressions / build breakages might occur
+
+### Consistent standard C++ version
+
+To avoid build errors when building gRPC and its dependencies (especially from gRPC C++ 1.70 onwards),
+ensure all CMake builds use the same C++ standard (at least C++17).
+This is crucial because gRPC C++ 1.70 requires at least C++17, and Abseil, a gRPC dependency,
+provides different APIs based on the C++ version.
+For instance, `absl::string_view` is implemented differently before and after C++17.
+Using a consistent C++ version prevents inconsistencies and ensures compatibility across the project.
 
 ### Dependency management
 
@@ -217,6 +226,7 @@ how to install dependencies with cmake before proceeding to installing gRPC itse
 # NOTE: all of gRPC's dependencies need to be already installed
 $ cmake ../.. -DgRPC_INSTALL=ON                \
               -DCMAKE_BUILD_TYPE=Release       \
+              -DCMAKE_CXX_STANDARD=17          \
               -DgRPC_ABSL_PROVIDER=package     \
               -DgRPC_CARES_PROVIDER=package    \
               -DgRPC_PROTOBUF_PROVIDER=package \

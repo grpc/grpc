@@ -383,7 +383,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 
         try:
             _cyobservability.cyobservability_init(self._exporter)
-        # TODO(xuanwn): Use specific exceptons
+        # TODO(xuanwn): Use specific exceptions
         except Exception as e:  # pylint: disable=broad-except
             _LOGGER.exception("Initiate observability failed with: %s", e)
 

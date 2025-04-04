@@ -13,9 +13,6 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <numeric>
 #include <string>
 #include <vector>
@@ -23,24 +20,26 @@
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/call_tracer.h"
-#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "xds/data/orca/v3/orca_load_report.pb.h"
 
 namespace grpc {
 namespace testing {
 namespace {
 
 using ::envoy::config::cluster::v3::CircuitBreakers;
-using ::envoy::config::cluster::v3::RoutingPriority;
 using ::envoy::config::core::v3::HealthStatus;
+using ::envoy::config::core::v3::RoutingPriority;
 using ::envoy::type::v3::FractionalPercent;
 
 using ClientStats = LrsServiceImpl::ClientStats;
@@ -369,8 +368,9 @@ class CdsDeletionTest : public XdsEnd2endTest {
 INSTANTIATE_TEST_SUITE_P(XdsTest, CdsDeletionTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-// Tests that we go into TRANSIENT_FAILURE if the Cluster is deleted.
-TEST_P(CdsDeletionTest, ClusterDeleted) {
+// Tests that we go into TRANSIENT_FAILURE if the Cluster is deleted
+// by default.
+TEST_P(CdsDeletionTest, ClusterDeletedFailsByDefault) {
   InitClient();
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -380,21 +380,18 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
   // Unset CDS resource.
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   // Wait for RPCs to start failing.
-  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
-    if (result.status.ok()) return true;  // Keep going.
-    EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-    EXPECT_EQ(
-        absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
-        result.status.error_message());
-    return false;
-  });
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("CDS resource ", kDefaultClusterName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that we ignore Cluster deletions if configured to do so.
+// Tests that we ignore Cluster deletions if ignore_resource_deletions
+// is set.
 TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
   InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   CreateAndStartBackends(2);
@@ -428,6 +425,71 @@ TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
       BuildEdsResource(args, kNewEdsResourceName));
   // Wait for client to start using backend 1.
   WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+}
+
+// Tests that we ignore Cluster deletions by default if data error
+// handling is enabled.
+TEST_P(CdsDeletionTest,
+       ClusterDeletionIgnoredByDefaultWithDataErrorHandlingEnabled) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  InitClient();
+  CreateAndStartBackends(2);
+  // Bring up client pointing to backend 0 and wait for it to connect.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  // Make sure we ACKed the CDS update.
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Unset CDS resource and wait for client to ACK the update.
+  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
+  const auto deadline = absl::Now() + absl::Seconds(30);
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for CDS ACK";
+    response_state = balancer_->ads_service()->cds_response_state();
+    if (response_state.has_value()) break;
+  }
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Make sure we can still send RPCs.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Now recreate the CDS resource pointing to a new EDS resource that
+  // specified backend 1, and make sure the client uses it.
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  auto cluster = default_cluster_;
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  // Wait for client to start using backend 1.
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+}
+
+// Tests that we go into TRANSIENT_FAILURE if the Cluster is deleted
+// if data error handling is enabled and fail_on_data_errors is set.
+TEST_P(CdsDeletionTest,
+       ClusterDeletedFailsWithDataErrorHandlingEnabledWithFailOnDataErrors) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  InitClient(MakeBootstrapBuilder().SetFailOnDataErrors());
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // We need to wait for all backends to come online.
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Unset CDS resource.
+  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
+  // Wait for RPCs to start failing.
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("CDS resource ", kDefaultClusterName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"));
+  // Make sure we ACK'ed the update.
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 //
@@ -539,17 +601,11 @@ TEST_P(EdsTest, LocalityBecomesEmptyWithDeactivatedChildStateUpdate) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for RPCs to start failing.
   constexpr char kErrorMessage[] =
-      "no children in weighted_target policy: "
-      "EDS resource eds_service_name contains empty localities: "
+      "no children in weighted_target policy \\("
+      "EDS resource eds_service_name: contains empty localities: "
       "\\[\\{region=\"xds_default_locality_region\", "
-      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
-  SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult& result) {
-    if (result.status.ok()) return true;
-    EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-    EXPECT_THAT(result.status.error_message(),
-                ::testing::MatchesRegex(kErrorMessage));
-    return false;
-  });
+      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]\\)";
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Shut down backend.  This triggers a connectivity state update from the
   // deactivated child of the weighted_target policy.
   ShutdownAllBackends();
@@ -581,8 +637,8 @@ TEST_P(EdsTest, NoLocalities) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      "no children in weighted_target policy: EDS resource eds_service_name "
-      "contains no localities";
+      "no children in weighted_target policy "
+      "\\(EDS resource eds_service_name: contains no localities\\)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send EDS resource that has an endpoint.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -797,10 +853,10 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      "no children in weighted_target policy: "
-      "EDS resource eds_service_name contains empty localities: "
+      "no children in weighted_target policy \\("
+      "EDS resource eds_service_name: contains empty localities: "
       "\\[\\{region=\"xds_default_locality_region\", "
-      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
+      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]\\)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send EDS resource that has an endpoint.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -1007,7 +1063,7 @@ TEST_P(EdsTest, Drops) {
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double kDropRateForLbAndThrottle =
-      kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
+      kDropRateForLb + ((1 - kDropRateForLb) * kDropRateForThrottle);
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
@@ -1079,7 +1135,7 @@ TEST_P(EdsTest, DropConfigUpdate) {
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double kDropRateForLbAndThrottle =
-      kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
+      kDropRateForLb + ((1 - kDropRateForLb) * kDropRateForThrottle);
   const size_t kNumRpcsLbOnly =
       ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
   const size_t kNumRpcsBoth =
@@ -1687,15 +1743,14 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   size_t num_failed_rpcs = 0;
   std::map<std::string, ClientStats::LocalityStats::LoadMetric>
       named_metrics_total;
-  for (const auto& p : client_stats.locality_stats()) {
-    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
-    EXPECT_EQ(
-        p.second.total_issued_requests,
-        p.second.total_successful_requests + p.second.total_error_requests);
-    num_successful_rpcs += p.second.total_successful_requests;
-    num_failed_rpcs += p.second.total_error_requests;
-    for (const auto& s : p.second.load_metrics) {
-      named_metrics_total[s.first] += s.second;
+  for (const auto& [_, stats] : client_stats.locality_stats()) {
+    EXPECT_EQ(stats.total_requests_in_progress, 0U);
+    EXPECT_EQ(stats.total_issued_requests,
+              stats.total_successful_requests + stats.total_error_requests);
+    num_successful_rpcs += stats.total_successful_requests;
+    num_failed_rpcs += stats.total_error_requests;
+    for (const auto& [name, value] : stats.load_metrics) {
+      named_metrics_total[name] += value;
     }
   }
   EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
@@ -1801,18 +1856,17 @@ TEST_P(ClientLoadReportingTest, OrcaPropagation) {
   ClientStats::LocalityStats::LoadMetric application_utilization;
   std::map<std::string, ClientStats::LocalityStats::LoadMetric>
       named_metrics_total;
-  for (const auto& p : client_stats.locality_stats()) {
-    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
-    EXPECT_EQ(
-        p.second.total_issued_requests,
-        p.second.total_successful_requests + p.second.total_error_requests);
-    num_successful_rpcs += p.second.total_successful_requests;
-    num_failed_rpcs += p.second.total_error_requests;
-    cpu_utilization += p.second.cpu_utilization;
-    mem_utilization += p.second.mem_utilization;
-    application_utilization += p.second.application_utilization;
-    for (const auto& s : p.second.load_metrics) {
-      named_metrics_total[s.first] += s.second;
+  for (const auto& [_, stats] : client_stats.locality_stats()) {
+    EXPECT_EQ(stats.total_requests_in_progress, 0U);
+    EXPECT_EQ(stats.total_issued_requests,
+              stats.total_successful_requests + stats.total_error_requests);
+    num_successful_rpcs += stats.total_successful_requests;
+    num_failed_rpcs += stats.total_error_requests;
+    cpu_utilization += stats.cpu_utilization;
+    mem_utilization += stats.mem_utilization;
+    application_utilization += stats.application_utilization;
+    for (const auto& [name, value] : stats.load_metrics) {
+      named_metrics_total[name] += value;
     }
   }
   EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
@@ -1919,15 +1973,14 @@ TEST_P(ClientLoadReportingTest, OrcaPropagationNamedMetricsAll) {
   size_t num_failed_rpcs = 0;
   std::map<std::string, ClientStats::LocalityStats::LoadMetric>
       named_metrics_total;
-  for (const auto& p : client_stats.locality_stats()) {
-    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
-    EXPECT_EQ(
-        p.second.total_issued_requests,
-        p.second.total_successful_requests + p.second.total_error_requests);
-    num_successful_rpcs += p.second.total_successful_requests;
-    num_failed_rpcs += p.second.total_error_requests;
-    for (const auto& s : p.second.load_metrics) {
-      named_metrics_total[s.first] += s.second;
+  for (const auto& [_, stats] : client_stats.locality_stats()) {
+    EXPECT_EQ(stats.total_requests_in_progress, 0U);
+    EXPECT_EQ(stats.total_issued_requests,
+              stats.total_successful_requests + stats.total_error_requests);
+    num_successful_rpcs += stats.total_successful_requests;
+    num_failed_rpcs += stats.total_error_requests;
+    for (const auto& [name, value] : stats.load_metrics) {
+      named_metrics_total[name] += value;
     }
   }
   EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
@@ -2022,15 +2075,14 @@ TEST_P(ClientLoadReportingTest, OrcaPropagationNotConfigured) {
   size_t num_failed_rpcs = 0;
   std::map<std::string, ClientStats::LocalityStats::LoadMetric>
       named_metrics_total;
-  for (const auto& p : client_stats.locality_stats()) {
-    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
-    EXPECT_EQ(
-        p.second.total_issued_requests,
-        p.second.total_successful_requests + p.second.total_error_requests);
-    num_successful_rpcs += p.second.total_successful_requests;
-    num_failed_rpcs += p.second.total_error_requests;
-    for (const auto& s : p.second.load_metrics) {
-      named_metrics_total[s.first] += s.second;
+  for (const auto& [_, stats] : client_stats.locality_stats()) {
+    EXPECT_EQ(stats.total_requests_in_progress, 0U);
+    EXPECT_EQ(stats.total_issued_requests,
+              stats.total_successful_requests + stats.total_error_requests);
+    num_successful_rpcs += stats.total_successful_requests;
+    num_failed_rpcs += stats.total_error_requests;
+    for (const auto& [name, value] : stats.load_metrics) {
+      named_metrics_total[name] += value;
     }
   }
   EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
@@ -2340,7 +2392,7 @@ TEST_P(ClientLoadReportingTest, DropStats) {
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double kDropRateForLbAndThrottle =
-      kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
+      kDropRateForLb + ((1 - kDropRateForLb) * kDropRateForThrottle);
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
   // The ADS response contains two drop categories.

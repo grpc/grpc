@@ -19,7 +19,7 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/resolver/dns/c_ares/dns_resolver_ares.h"
 #include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"

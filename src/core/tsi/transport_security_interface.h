@@ -409,7 +409,7 @@ tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker* self,
 
 // TO BE DEPRECATED SOON.
 // Gets the result of the handshaker.
-// Returns TSI_OK if the hanshake completed successfully and there has been no
+// Returns TSI_OK if the handshake completed successfully and there has been no
 // errors. Returns TSI_HANDSHAKE_IN_PROGRESS if the handshaker is not done yet
 // but no error has been encountered so far. Otherwise the handshaker failed
 // with the returned error.
@@ -433,7 +433,7 @@ tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer);
 // is done. After this method has been called successfully, the only method
 // that can be called on this object is Destroy.
 // - max_output_protected_frame_size is an input/output parameter specifying the
-//   desired max output protected frame size as input and outputing the actual
+//   desired max output protected frame size as input and outputting the actual
 //   max output frame size as the output. Passing NULL is OK and will result in
 //   the implementation choosing the default maximum protected frame size. Note
 //   that this size only applies to outgoing frames (generated with

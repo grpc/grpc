@@ -14,18 +14,18 @@
 
 - name: test_experiment_1
   description: Test Experiment 1
-  expiry: 2023/08/01
+  expiry: 2023/08/30
   owner: blah@abc.com
   test_tags: [experiments_tag_test]
 - name: test_experiment_2
   description: Test Experiment 2
-  expiry: 2023/01/01
+  expiry: 2023/01/30
   owner: blah1@abc.com
 - name: test_experiment_3
   description: Test Experiment 3
-  expiry: 2024/01/01
+  expiry: 2024/01/30
   owner: blah2@abc.com
 - name: test_experiment_4
   description: Test Experiment 4
-  expiry: 2022/01/01
+  expiry: 2022/01/30
   owner: blah3@abc.com

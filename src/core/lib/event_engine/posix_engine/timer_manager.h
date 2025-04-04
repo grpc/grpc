@@ -24,10 +24,10 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
@@ -35,8 +35,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // Timer Manager tries to keep only one thread waiting for the next timeout at
 // all times, and thus effectively preventing the thundering herd problem.
@@ -99,10 +98,9 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   // actual timer implementation
   std::unique_ptr<TimerList> timer_list_;
   std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool_;
-  absl::optional<grpc_core::Notification> main_loop_exit_signal_;
+  std::optional<grpc_core::Notification> main_loop_exit_signal_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TIMER_MANAGER_H

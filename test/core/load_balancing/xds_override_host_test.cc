@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,7 +32,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -57,7 +57,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   static RefCountedPtr<const XdsConfig> MakeXdsConfig(
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
                                                                     "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt,
+      std::optional<Duration> connection_idle_timeout = std::nullopt,
       std::string cluster_name = "cluster_name") {
     auto cluster_resource = std::make_shared<XdsClusterResource>();
     for (const absl::string_view host_status : override_host_statuses) {
@@ -77,7 +77,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       absl::Span<const EndpointAddresses> endpoints,
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
                                                                     "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt,
+      std::optional<Duration> connection_idle_timeout = std::nullopt,
       std::string cluster_name = "cluster_name",
       std::string child_policy = "round_robin") {
     auto config = MakeConfig(Json::FromArray({Json::FromObject(
@@ -99,7 +99,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       absl::Span<const absl::string_view> addresses,
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
                                                                     "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt,
+      std::optional<Duration> connection_idle_timeout = std::nullopt,
       std::string cluster_name = "cluster_name",
       std::string child_policy = "round_robin") {
     return UpdateXdsOverrideHostPolicy(
@@ -129,7 +129,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
           addresses_and_statuses,
       absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
                                                                   "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt) {
+      std::optional<Duration> connection_idle_timeout = std::nullopt) {
     EndpointAddressesList endpoints;
     for (auto address_and_status : addresses_and_statuses) {
       endpoints.push_back(MakeAddressWithHealthStatus(
@@ -183,7 +183,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     }
     std::string expected_addresses_str = absl::StrJoin(expected_addresses, ",");
     for (size_t i = 0; i < 3; ++i) {
-      EXPECT_EQ(ExpectPickComplete(picker, {attribute},
+      EXPECT_EQ(ExpectPickComplete(picker, {attribute}, /*metadata=*/{},
                                    /*subchannel_call_tracker=*/nullptr,
                                    /*picked_subchannel=*/nullptr, location),
                 expected)
@@ -202,9 +202,10 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       SourceLocation location = SourceLocation()) {
     std::vector<std::string> actual_picks;
     for (size_t i = 0; i < expected.size(); ++i) {
-      auto address = ExpectPickComplete(
-          picker, {attribute}, /*subchannel_call_tracker=*/nullptr,
-          /*picked_subchannel=*/nullptr, location);
+      auto address =
+          ExpectPickComplete(picker, {attribute}, /*metadata=*/{},
+                             /*subchannel_call_tracker=*/nullptr,
+                             /*picked_subchannel=*/nullptr, location);
       ASSERT_TRUE(address.has_value())
           << location.file() << ":" << location.line();
       EXPECT_THAT(*address, ::testing::AnyOfArray(expected))
@@ -224,11 +225,13 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
 };
 
 TEST_F(XdsOverrideHostTest, DelegatesToChild) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   ExpectStartupWithRoundRobin(
       {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"});
 }
 
 TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   EXPECT_EQ(
       ApplyUpdate(
           BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}, nullptr),
@@ -237,6 +240,7 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
 }
 
 TEST_F(XdsOverrideHostTest, OverrideHost) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
@@ -248,6 +252,7 @@ TEST_F(XdsOverrideHostTest, OverrideHost) {
 }
 
 TEST_F(XdsOverrideHostTest, SubchannelNotFound) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
@@ -257,6 +262,7 @@ TEST_F(XdsOverrideHostTest, SubchannelNotFound) {
 }
 
 TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
@@ -284,6 +290,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
 
 TEST_F(XdsOverrideHostTest,
        OverrideIsQueuedInIdleOrConnectingAndFailedInTransientFailure) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
@@ -327,6 +334,7 @@ TEST_F(XdsOverrideHostTest,
 }
 
 TEST_F(XdsOverrideHostTest, DrainingState) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
@@ -360,6 +368,7 @@ TEST_F(XdsOverrideHostTest, DrainingState) {
 }
 
 TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
@@ -416,6 +425,7 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
 }
 
 TEST_F(XdsOverrideHostTest, DrainingToHealthy) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
@@ -444,6 +454,7 @@ TEST_F(XdsOverrideHostTest, DrainingToHealthy) {
 }
 
 TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto* address0_attribute = MakeOverrideHostAttribute(kAddresses[0]);
@@ -506,6 +517,7 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
 }
 
 TEST_F(XdsOverrideHostTest, MultipleAddressesPerEndpoint) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
@@ -542,6 +554,7 @@ TEST_F(XdsOverrideHostTest, MultipleAddressesPerEndpoint) {
 }
 
 TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
@@ -601,6 +614,7 @@ TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
 
 TEST_F(XdsOverrideHostTest,
        ChildPolicyUnrefsSubchannelNotUsedWithinIdleThreshold) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
@@ -631,6 +645,7 @@ TEST_F(XdsOverrideHostTest,
 }
 
 TEST_F(XdsOverrideHostTest, IdleTimer) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   std::vector<grpc_event_engine::experimental::EventEngine::Duration>
       timer_durations;
   fuzzing_ee_->SetRunAfterDurationCallback(

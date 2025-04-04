@@ -17,20 +17,16 @@
 #include <memory>
 
 #include "absl/random/random.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/build.h"
 
 namespace grpc_core {
-
-bool g_yodel_fuzzing;
-
 namespace yodel_detail {
-
-TestRegistry* TestRegistry::root_ = nullptr;
 
 ///////////////////////////////////////////////////////////////////////////////
 // ActionState
@@ -55,9 +51,9 @@ absl::string_view ActionState::StateString(State state) {
 }
 
 void ActionState::Set(State state, SourceLocation whence) {
-  LOG(INFO) << StateString(state) << " " << name() << " [" << step() << "] "
-            << file() << ":" << line() << " @ " << whence.file() << ":"
-            << whence.line();
+  LOG(INFO) << StateString(state) << " " << name() << " [" << step()
+            << "] t=" << Timestamp::Now() << " " << file() << ":" << line()
+            << " @ " << whence.file() << ":" << whence.line();
   state_ = state;
 }
 
@@ -70,49 +66,6 @@ bool ActionState::IsDone() {
     case kDone:
     case kCancelled:
       return true;
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// TestRegistry
-
-std::vector<TestRegistry::Test> TestRegistry::AllTests() {
-  std::vector<Test> tests;
-  for (auto* r = root_; r; r = r->next_) {
-    r->ContributeTests(tests);
-  }
-  std::vector<Test> out;
-  for (auto& test : tests) {
-    if (absl::StartsWith(test.name, "DISABLED_")) continue;
-    out.emplace_back(std::move(test));
-  }
-  std::stable_sort(out.begin(), out.end(), [](const Test& a, const Test& b) {
-    return std::make_tuple(a.file, a.line) < std::make_tuple(b.file, b.line);
-  });
-  return out;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// SimpleTestRegistry
-
-void SimpleTestRegistry::RegisterTest(
-    absl::string_view file, int line, absl::string_view test_type,
-    absl::string_view name,
-    absl::AnyInvocable<YodelTest*(const fuzzing_event_engine::Actions&,
-                                  absl::BitGenRef) const>
-        create) {
-  tests_.push_back({file, line, std::string(test_type), std::string(name),
-                    std::move(create)});
-}
-
-void SimpleTestRegistry::ContributeTests(std::vector<Test>& tests) {
-  for (const auto& test : tests_) {
-    tests.push_back(
-        {test.file, test.line, test.test_type, test.name,
-         [test = &test](const fuzzing_event_engine::Actions& actions,
-                        absl::BitGenRef rng) {
-           return test->make(actions, rng);
-         }});
   }
 }
 
@@ -132,9 +85,8 @@ class YodelTest::WatchDog {
       // For fuzzing, we'll wait for a year since the fuzzing EE allows delays
       // capped to one year for each RunAfter() call. This will prevent
       // pre-mature timeouts of some legitimate fuzzed inputs.
-      test_->state_->event_engine->RunAfter(
-          g_yodel_fuzzing ? Duration::Hours(24 * 365) : Duration::Minutes(5),
-          [this]() { test_->Timeout(); })};
+      test_->state_->event_engine->RunAfter(Duration::Hours(24 * 365),
+                                            [this]() { test_->Timeout(); })};
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -176,8 +128,7 @@ void YodelTest::RunTest() {
   Shutdown();
   state_->event_engine->TickUntilIdle();
   state_->event_engine->UnsetGlobalHooks();
-  grpc_event_engine::experimental::WaitForSingleOwner(
-      std::move(state_->event_engine));
+  WaitForSingleOwner(std::move(state_->event_engine));
   grpc_shutdown_blocking();
   if (!grpc_wait_until_shutdown(10)) {
     LOG(FATAL) << "Timeout in waiting for gRPC shutdown";
@@ -207,7 +158,8 @@ void YodelTest::WaitForAllPendingWork() {
 
 void YodelTest::Timeout() {
   std::vector<std::string> lines;
-  lines.emplace_back("Timeout waiting for pending actions to complete");
+  lines.emplace_back(absl::StrCat(
+      "Timeout waiting for pending actions to complete ", Timestamp::Now()));
   while (!pending_actions_.empty()) {
     auto action = std::move(pending_actions_.front());
     pending_actions_.pop();
@@ -339,7 +291,7 @@ std::string YodelTest::RandomMessage() {
     }
     return out;
   }()};
-  return RandomString(0, 1024 * 1024, *kChars);
+  return RandomString(0, max_random_message_size_, *kChars);
 }
 
 }  // namespace grpc_core

@@ -129,7 +129,7 @@ TEST(BinDecoderTest, MainTest) {
   EXPECT_SLICE_EQ("", base64_decode("ab"));
   EXPECT_SLICE_EQ("", base64_decode("abc"));
 
-  // Test illegal charactors in grpc_chttp2_base64_decode
+  // Test illegal characters in grpc_chttp2_base64_decode
   EXPECT_SLICE_EQ("", base64_decode("Zm:v"));
   EXPECT_SLICE_EQ("", base64_decode("Zm=v"));
 
@@ -139,7 +139,7 @@ TEST(BinDecoderTest, MainTest) {
   EXPECT_SLICE_EQ("", base64_decode_with_length("Zm8", 3));
   EXPECT_SLICE_EQ("", base64_decode_with_length("Zm9v", 4));
 
-  // Test illegal charactors in grpc_chttp2_base64_decode_with_length
+  // Test illegal characters in grpc_chttp2_base64_decode_with_length
   EXPECT_SLICE_EQ("", base64_decode_with_length("Zm:v", 3));
   EXPECT_SLICE_EQ("", base64_decode_with_length("Zm=v", 3));
 

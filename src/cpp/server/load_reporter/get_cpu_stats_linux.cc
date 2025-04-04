@@ -44,7 +44,7 @@ std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   fclose(fp);
   busy = user + nice + system;
   total = busy + idle;
-  return std::make_pair(busy, total);
+  return std::pair(busy, total);
 }
 
 }  // namespace load_reporter

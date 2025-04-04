@@ -13,9 +13,6 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -24,9 +21,11 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/proto/grpc/testing/xds/v3/listener.pb.h"
+#include "src/core/config/config_vars.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
@@ -309,7 +308,7 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
   const std::string expected_message2 = absl::StrFormat(
       kMessageFormat, backends_[1]->port(), backends_[0]->port());
   response_state = WaitForNack(
-      DEBUG_LOCATION, [&]() -> absl::optional<AdsServiceImpl::ResponseState> {
+      DEBUG_LOCATION, [&]() -> std::optional<AdsServiceImpl::ResponseState> {
         auto response = balancer_->ads_service()->lds_response_state();
         if (response.has_value() &&
             response->state == AdsServiceImpl::ResponseState::NACKED) {
@@ -320,7 +319,7 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
           LOG(INFO) << "non-matching NACK message: "
                     << response->error_message.c_str();
         }
-        return absl::nullopt;
+        return std::nullopt;
       });
   EXPECT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
 }
@@ -371,18 +370,20 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      absl::StrCat("empty address list: ", kServerName,
-                                   ": xDS listener resource does not exist"),
-                      RpcOptions().set_timeout_ms(4000));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
+      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      absl::StrCat("empty address list: ", kServerName,
-                                   ": xDS listener resource does not exist"),
-                      RpcOptions().set_timeout_ms(4000));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
+      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
@@ -407,17 +408,18 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-  EXPECT_THAT(status.error_message(),
-              absl::StrCat("empty address list: ", kNewServerName,
-                           ": xDS listener resource does not exist"));
+  EXPECT_EQ(status.error_message(),
+            absl::StrCat("empty address list (LDS resource ", kNewServerName,
+                         ": does not exist (node ID:xds_end2end_test))"));
 }
 
 TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
-                   ": xDS route configuration resource does not exist"),
+      absl::StrCat("empty address list \\(RDS resource ",
+                   kDefaultRouteConfigurationName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -426,8 +428,9 @@ TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
                                           kDefaultRouteConfigurationName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
-                   ": xDS route configuration resource does not exist"),
+      absl::StrCat("empty address list \\(RDS resource ",
+                   kDefaultRouteConfigurationName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -465,17 +468,18 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-  EXPECT_THAT(
+  EXPECT_EQ(
       status.error_message(),
-      absl::StrCat("empty address list: ", kNewRouteConfigName,
-                   ": xDS route configuration resource does not exist"));
+      absl::StrCat("empty address list (RDS resource ", kNewRouteConfigName,
+                   ": does not exist (node ID:xds_end2end_test))"));
 }
 
 TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
+      absl::StrCat("CDS resource ", kDefaultClusterName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -483,7 +487,8 @@ TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
+      absl::StrCat("CDS resource ", kDefaultClusterName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -502,16 +507,10 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
   balancer_->ads_service()->SetRdsResource(route_config);
   // New cluster times out.
   // May need to wait a bit for the change to propagate to the client.
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [&](const RpcResult& result) {
-        if (result.status.ok()) return true;  // Keep going.
-        EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ(
-            absl::StrCat("CDS resource ", kNewClusterName, " does not exist"),
-            result.status.error_message());
-        return false;
-      },
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("CDS resource ", kNewClusterName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"),
       /*timeout_ms=*/30000, RpcOptions().set_timeout_ms(4000));
 }
 
@@ -519,8 +518,8 @@ TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "no children in weighted_target policy: EDS resource eds_service_name "
-      "does not exist",
+      "no children in weighted_target policy \\(EDS resource "
+      "eds_service_name: does not exist \\(node ID:xds_end2end_test\\)\\)",
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -529,8 +528,8 @@ TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
   // by default.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "no children in weighted_target policy: EDS resource eds_service_name "
-      "does not exist",
+      "no children in weighted_target policy \\(EDS resource "
+      "eds_service_name: does not exist \\(node ID:xds_end2end_test\\)\\)",
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -555,16 +554,11 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   balancer_->ads_service()->SetRdsResource(route_config);
   // New EDS resource times out.
   // May need to wait a bit for the RDS change to propagate to the client.
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [](const RpcResult& result) {
-        if (result.status.ok()) return true;  // Keep going.
-        EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ(result.status.error_message(),
-                  "no children in weighted_target policy: EDS resource "
-                  "eds_service_name_does_not_exist does not exist");
-        return false;
-      },
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "no children in weighted_target policy \\("
+      "EDS resource eds_service_name_does_not_exist: "
+      "does not exist \\(node ID:xds_end2end_test\\)\\)",
       /*timeout_ms=*/30000,
       RpcOptions().set_rpc_method(METHOD_ECHO1).set_timeout_ms(4000));
 }
@@ -907,11 +901,11 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_EQ(status.error_message(),
-            absl::StrCat(
-                kNewRouteConfigName,
-                ": UNAVAILABLE: authority \"xds.unknown.com\" not present in "
-                "bootstrap config"));
+  EXPECT_EQ(
+      status.error_message(),
+      absl::StrCat("empty address list (RDS resource ", kNewRouteConfigName,
+                   ": authority \"xds.unknown.com\" not present in "
+                   "bootstrap config (node ID:xds_end2end_test))"));
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
@@ -958,9 +952,9 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(status.error_message(),
-            absl::StrCat(kNewClusterName,
+            absl::StrCat("CDS resource ", kNewClusterName,
                          ": authority \"xds.unknown.com\" not present in "
-                         "bootstrap config"));
+                         "bootstrap config (node ID:xds_end2end_test)"));
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
@@ -1017,10 +1011,10 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(
       status.error_message(),
-      "no children in weighted_target policy: EDS resource "
+      "no children in weighted_target policy (EDS resource "
       "xdstp://xds.unknown.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "edsservice_name: UNAVAILABLE: authority \"xds.unknown.com\" not "
-      "present in bootstrap config");
+      "edsservice_name: authority \"xds.unknown.com\" not "
+      "present in bootstrap config (node ID:xds_end2end_test))");
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
@@ -1115,10 +1109,23 @@ TEST_P(XdsFederationTest, FederationServer) {
 class XdsMetricsTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    stats_plugin_ = grpc_core::FakeStatsPluginBuilder()
-                        .UseDisabledByDefaultMetrics(true)
-                        .BuildAndRegister();
-    InitClient();
+    stats_plugin_ =
+        grpc_core::FakeStatsPluginBuilder()
+            .UseDisabledByDefaultMetrics(true)
+            .SetChannelFilter(
+                [](const grpc_core::experimental::StatsPluginChannelScope&
+                       scope) {
+                  return scope.target() == absl::StrCat("xds:", kServerName) &&
+                         scope.default_authority() == kServerName &&
+                         scope.experimental_args().GetString("test_only.arg") ==
+                             "test_only.value";
+                })
+            .BuildAndRegister();
+    ChannelArguments args;
+    args.SetString("test_only.arg", "test_only.value");
+    InitClient(/*builder=*/std::nullopt, /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
+               /*balancer_authority_override=*/"", /*args=*/&args);
   }
 
   std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
@@ -1261,7 +1268,7 @@ TEST_P(XdsMetricsTest, MetricValues) {
               ::testing::Optional(1));
   EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kMetricServerFailure,
                                                    {kTarget, kXdsServer}, {}),
-              absl::nullopt);
+              std::nullopt);
   for (absl::string_view type_url :
        {"envoy.config.listener.v3.Listener",
         "envoy.config.route.v3.RouteConfiguration",
@@ -1285,7 +1292,7 @@ TEST_P(XdsMetricsTest, MetricValues) {
               ::testing::Optional(1));
   EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kMetricServerFailure,
                                                    {"#server", kXdsServer}, {}),
-              absl::nullopt);
+              std::nullopt);
   for (absl::string_view type_url :
        {"envoy.config.listener.v3.Listener",
         "envoy.config.route.v3.RouteConfiguration"}) {
@@ -1452,7 +1459,8 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
   // Send kNumRpcsToDefaultBalancer RPCs to the current stub.
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsToDefaultBalancer);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsToDefaultBalancer,
+                 RpcOptions().set_wait_for_ready(true).set_timeout_ms(10000));
   // Create second channel to new target uri.
   auto channel2 =
       CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
@@ -1461,7 +1469,8 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   for (size_t i = 0; i < kNumRpcsToAuthorityBalancer; ++i) {
     ClientContext context;
     EchoRequest request;
-    RpcOptions().SetupRpc(&context, &request);
+    RpcOptions().set_wait_for_ready(true).set_timeout_ms(10000).SetupRpc(
+        &context, &request);
     EchoResponse response;
     grpc::Status status = stub2->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok()) << "code=" << status.error_code()

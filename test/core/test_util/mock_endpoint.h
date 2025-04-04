@@ -31,7 +31,7 @@ namespace experimental {
 
 // Internal controller object for mock endpoint operations.
 //
-// This helps avoid shared ownership issus. The endpoint itself may destroyed
+// This helps avoid shared ownership issues. The endpoint itself may destroyed
 // while a fuzzer is still attempting to use it (e.g., the transport is closed,
 // and a fuzzer still wants to schedule reads).
 class MockEndpointController

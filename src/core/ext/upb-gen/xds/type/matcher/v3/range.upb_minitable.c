@@ -17,7 +17,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal xds_type_matcher_v3_Int64RangeMatcher_submsgs[1] = {
+static const upb_MiniTableSubInternal xds_type_matcher_v3_Int64RangeMatcher__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init_ptr},
 };
 
@@ -26,7 +26,7 @@ static const upb_MiniTableField xds_type_matcher_v3_Int64RangeMatcher__fields[1]
 };
 
 const upb_MiniTable xds__type__matcher__v3__Int64RangeMatcher_msg_init = {
-  &xds_type_matcher_v3_Int64RangeMatcher_submsgs[0],
+  &xds_type_matcher_v3_Int64RangeMatcher__submsgs[0],
   &xds_type_matcher_v3_Int64RangeMatcher__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -39,7 +39,7 @@ const upb_MiniTable xds__type__matcher__v3__Int64RangeMatcher_msg_init = {
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Int64RangeMatcher_msg_init_ptr = &xds__type__matcher__v3__Int64RangeMatcher_msg_init;
-static const upb_MiniTableSubInternal xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_submsgs[2] = {
+static const upb_MiniTableSubInternal xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &xds__type__v3__Int64Range_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher__OnMatch_msg_init_ptr},
 };
@@ -50,7 +50,7 @@ static const upb_MiniTableField xds_type_matcher_v3_Int64RangeMatcher_RangeMatch
 };
 
 const upb_MiniTable xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init = {
-  &xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_submsgs[0],
+  &xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher__submsgs[0],
   &xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -63,7 +63,7 @@ const upb_MiniTable xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init_ptr = &xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init;
-static const upb_MiniTableSubInternal xds_type_matcher_v3_Int32RangeMatcher_submsgs[1] = {
+static const upb_MiniTableSubInternal xds_type_matcher_v3_Int32RangeMatcher__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init_ptr},
 };
 
@@ -72,7 +72,7 @@ static const upb_MiniTableField xds_type_matcher_v3_Int32RangeMatcher__fields[1]
 };
 
 const upb_MiniTable xds__type__matcher__v3__Int32RangeMatcher_msg_init = {
-  &xds_type_matcher_v3_Int32RangeMatcher_submsgs[0],
+  &xds_type_matcher_v3_Int32RangeMatcher__submsgs[0],
   &xds_type_matcher_v3_Int32RangeMatcher__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -85,7 +85,7 @@ const upb_MiniTable xds__type__matcher__v3__Int32RangeMatcher_msg_init = {
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Int32RangeMatcher_msg_init_ptr = &xds__type__matcher__v3__Int32RangeMatcher_msg_init;
-static const upb_MiniTableSubInternal xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_submsgs[2] = {
+static const upb_MiniTableSubInternal xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &xds__type__v3__Int32Range_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher__OnMatch_msg_init_ptr},
 };
@@ -96,7 +96,7 @@ static const upb_MiniTableField xds_type_matcher_v3_Int32RangeMatcher_RangeMatch
 };
 
 const upb_MiniTable xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init = {
-  &xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_submsgs[0],
+  &xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher__submsgs[0],
   &xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -109,7 +109,7 @@ const upb_MiniTable xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init_ptr = &xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init;
-static const upb_MiniTableSubInternal xds_type_matcher_v3_DoubleRangeMatcher_submsgs[1] = {
+static const upb_MiniTableSubInternal xds_type_matcher_v3_DoubleRangeMatcher__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__DoubleRangeMatcher__RangeMatcher_msg_init_ptr},
 };
 
@@ -118,7 +118,7 @@ static const upb_MiniTableField xds_type_matcher_v3_DoubleRangeMatcher__fields[1
 };
 
 const upb_MiniTable xds__type__matcher__v3__DoubleRangeMatcher_msg_init = {
-  &xds_type_matcher_v3_DoubleRangeMatcher_submsgs[0],
+  &xds_type_matcher_v3_DoubleRangeMatcher__submsgs[0],
   &xds_type_matcher_v3_DoubleRangeMatcher__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -131,7 +131,7 @@ const upb_MiniTable xds__type__matcher__v3__DoubleRangeMatcher_msg_init = {
 };
 
 const upb_MiniTable* xds__type__matcher__v3__DoubleRangeMatcher_msg_init_ptr = &xds__type__matcher__v3__DoubleRangeMatcher_msg_init;
-static const upb_MiniTableSubInternal xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_submsgs[2] = {
+static const upb_MiniTableSubInternal xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &xds__type__v3__DoubleRange_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher__OnMatch_msg_init_ptr},
 };
@@ -142,7 +142,7 @@ static const upb_MiniTableField xds_type_matcher_v3_DoubleRangeMatcher_RangeMatc
 };
 
 const upb_MiniTable xds__type__matcher__v3__DoubleRangeMatcher__RangeMatcher_msg_init = {
-  &xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_submsgs[0],
+  &xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher__submsgs[0],
   &xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED

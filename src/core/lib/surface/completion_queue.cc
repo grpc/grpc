@@ -17,18 +17,17 @@
 //
 #include "src/core/lib/surface/completion_queue.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <inttypes.h>
 #include <stdio.h>
 
 #include <algorithm>
 #include <atomic>
-#include <new>
 #include <string>
 #include <utility>
 #include <vector>
@@ -38,11 +37,9 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/telemetry/stats.h"
@@ -53,10 +50,6 @@
 #include "src/core/util/spinlock.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
-
-#ifdef GPR_WINDOWS
-#include "src/core/lib/experiments/experiments.h"
-#endif
 
 namespace {
 
@@ -73,7 +66,7 @@ struct plucker {
   void* tag;
 };
 struct cq_poller_vtable {
-  bool can_get_pollset;
+  bool (*can_get_pollset)();
   bool can_listen;
   size_t (*size)(void);
   void (*init)(grpc_pollset* pollset, gpr_mu** mu);
@@ -186,16 +179,83 @@ void non_polling_poller_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   }
 }
 
+bool non_polling_poller_can_never_get_pollset() { return false; }
+
+bool maybe_event_engine_poller_can_get_pollset() {
+  return !grpc_event_engine::experimental::UsePollsetAlternative();
+}
+
+// maybe_event_engine*: If iomgr isn't relied upon for polling, then we can use
+// the non-polling poller implementations below.
+size_t maybe_event_engine_poller_size(void) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    return non_polling_poller_size();
+  } else {
+    return grpc_pollset_size();
+  }
+}
+
+void maybe_event_engine_poller_init(grpc_pollset* pollset, gpr_mu** mu) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    non_polling_poller_init(pollset, mu);
+  } else {
+    grpc_pollset_init(pollset, mu);
+  }
+}
+
+void maybe_event_engine_poller_destroy(grpc_pollset* pollset) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    non_polling_poller_destroy(pollset);
+  } else {
+    grpc_pollset_destroy(pollset);
+  }
+}
+
+grpc_error_handle maybe_event_engine_pollset_work(
+    grpc_pollset* pollset, grpc_pollset_worker** worker,
+    grpc_core::Timestamp deadline) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    return non_polling_poller_work(pollset, worker, deadline);
+  } else {
+    return grpc_pollset_work(pollset, worker, deadline);
+  }
+}
+
+grpc_error_handle maybe_event_engine_poller_kick(
+    grpc_pollset* pollset, grpc_pollset_worker* specific_worker) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    return non_polling_poller_kick(pollset, specific_worker);
+  } else {
+    return grpc_pollset_kick(pollset, specific_worker);
+  }
+}
+
+void maybe_event_engine_poller_shutdown(grpc_pollset* pollset,
+                                        grpc_closure* closure) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    non_polling_poller_shutdown(pollset, closure);
+  } else {
+    grpc_pollset_shutdown(pollset, closure);
+  }
+}
+
+// TODO(hork): Once EE is the default everywhere, the only variations will be
+// the bool args controlling whether the poller can get a pollset and whether it
+// can listen.
 const cq_poller_vtable g_poller_vtable_by_poller_type[] = {
     // GRPC_CQ_DEFAULT_POLLING
-    {true, true, grpc_pollset_size, grpc_pollset_init, grpc_pollset_kick,
-     grpc_pollset_work, grpc_pollset_shutdown, grpc_pollset_destroy},
+    {maybe_event_engine_poller_can_get_pollset, true,
+     maybe_event_engine_poller_size, maybe_event_engine_poller_init,
+     maybe_event_engine_poller_kick, maybe_event_engine_pollset_work,
+     maybe_event_engine_poller_shutdown, maybe_event_engine_poller_destroy},
     // GRPC_CQ_NON_LISTENING
-    {true, false, grpc_pollset_size, grpc_pollset_init, grpc_pollset_kick,
-     grpc_pollset_work, grpc_pollset_shutdown, grpc_pollset_destroy},
+    {maybe_event_engine_poller_can_get_pollset, false,
+     maybe_event_engine_poller_size, maybe_event_engine_poller_init,
+     maybe_event_engine_poller_kick, maybe_event_engine_pollset_work,
+     maybe_event_engine_poller_shutdown, maybe_event_engine_poller_destroy},
     // GRPC_CQ_NON_POLLING
-    {false, false, non_polling_poller_size, non_polling_poller_init,
-     non_polling_poller_kick, non_polling_poller_work,
+    {non_polling_poller_can_never_get_pollset, false, non_polling_poller_size,
+     non_polling_poller_init, non_polling_poller_kick, non_polling_poller_work,
      non_polling_poller_shutdown, non_polling_poller_destroy},
 };
 
@@ -816,16 +876,12 @@ static void cq_end_op_for_pluck(
   }
 }
 
-static void functor_callback(void* arg, grpc_error_handle error) {
-  auto* functor = static_cast<grpc_completion_queue_functor*>(arg);
-  functor->functor_run(functor, error.ok());
-}
-
 // Complete an event on a completion queue of type GRPC_CQ_CALLBACK
 static void cq_end_op_for_callback(
     grpc_completion_queue* cq, void* tag, grpc_error_handle error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool internal) {
+  (void)internal;
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
 
   if (GRPC_TRACE_FLAG_ENABLED(api) ||
@@ -851,32 +907,11 @@ static void cq_end_op_for_callback(
   }
 
   auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
-  if (grpc_core::IsEventEngineApplicationCallbacksEnabled()) {
-    // Run the callback on EventEngine threads.
-    cqd->event_engine->Run(
-        [engine = cqd->event_engine, functor, ok = error.ok()]() {
-          grpc_core::ExecCtx exec_ctx;
-          (*functor->functor_run)(functor, ok);
-        });
-    return;
-  }
-  // If possible, schedule the callback onto an existing thread-local
-  // ApplicationCallbackExecCtx, which is a work queue. This is possible for:
-  // 1. The callback is internally-generated and there is an ACEC available
-  // 2. The callback is marked inlineable and there is an ACEC available
-  // 3. We are already running in a background poller thread (which always has
-  //    an ACEC available at the base of the stack).
-  if (((internal || functor->inlineable) &&
-       grpc_core::ApplicationCallbackExecCtx::Available()) ||
-      grpc_iomgr_is_any_background_poller_thread()) {
-    grpc_core::ApplicationCallbackExecCtx::Enqueue(functor, (error.ok()));
-    return;
-  }
-
-  // Schedule the callback on a closure if not internal or triggered
-  // from a background poller thread.
-  grpc_core::Executor::Run(
-      GRPC_CLOSURE_CREATE(functor_callback, functor, nullptr), error);
+  cqd->event_engine->Run(
+      [engine = cqd->event_engine, functor, ok = error.ok()]() {
+        grpc_core::ExecCtx exec_ctx;
+        (*functor->functor_run)(functor, ok);
+      });
 }
 
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
@@ -999,7 +1034,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       break;
     } else {
       // If c == NULL it means either the queue is empty OR in an transient
-      // inconsistent state. If it is the latter, we shold do a 0-timeout poll
+      // inconsistent state. If it is the latter, we should do a 0-timeout poll
       // so that the thread comes back quickly from poll to make a second
       // attempt at popping. Not doing this can potentially deadlock this
       // thread forever (if the deadline is infinity)
@@ -1347,23 +1382,10 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
 
-  if (grpc_core::IsEventEngineApplicationCallbacksEnabled()) {
-    cqd->event_engine->Run([engine = cqd->event_engine, callback]() {
-      grpc_core::ExecCtx exec_ctx;
-      callback->functor_run(callback, /*true=*/1);
-    });
-    return;
-  }
-  if (grpc_iomgr_is_any_background_poller_thread()) {
-    grpc_core::ApplicationCallbackExecCtx::Enqueue(callback, true);
-    return;
-  }
-
-  // Schedule the callback on a closure if not internal or triggered
-  // from a background poller thread.
-  grpc_core::Executor::Run(
-      GRPC_CLOSURE_CREATE(functor_callback, callback, nullptr),
-      absl::OkStatus());
+  cqd->event_engine->Run([engine = cqd->event_engine, callback]() {
+    grpc_core::ExecCtx exec_ctx;
+    callback->functor_run(callback, /*true=*/1);
+  });
 }
 
 static void cq_shutdown_callback(grpc_completion_queue* cq) {
@@ -1395,7 +1417,6 @@ static void cq_shutdown_callback(grpc_completion_queue* cq) {
 // Shutdown simply drops a ref that we reserved at creation time; if we drop
 // to zero here, then enter shutdown mode and wake up any waiters
 void grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_completion_queue_shutdown(cq=" << cq << ")";
@@ -1411,7 +1432,7 @@ void grpc_completion_queue_destroy(grpc_completion_queue* cq) {
 }
 
 grpc_pollset* grpc_cq_pollset(grpc_completion_queue* cq) {
-  return cq->poller_vtable->can_get_pollset ? POLLSET_FROM_CQ(cq) : nullptr;
+  return cq->poller_vtable->can_get_pollset() ? POLLSET_FROM_CQ(cq) : nullptr;
 }
 
 bool grpc_cq_can_listen(grpc_completion_queue* cq) {

@@ -18,9 +18,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <optional>
 
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 

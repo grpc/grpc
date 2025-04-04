@@ -17,8 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/json/json_args.h"
 

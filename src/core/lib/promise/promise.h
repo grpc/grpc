@@ -17,12 +17,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <type_traits>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -38,7 +37,7 @@ using Promise = absl::AnyInvocable<Poll<T>()>;
 // nothing.
 template <typename Promise>
 auto NowOrNever(Promise promise)
-    -> absl::optional<typename promise_detail::PromiseLike<Promise>::Result> {
+    -> std::optional<typename promise_detail::PromiseLike<Promise>::Result> {
   auto r = promise_detail::PromiseLike<Promise>(std::move(promise))();
   if (auto* p = r.value_if_ready()) {
     return std::move(*p);
@@ -71,8 +70,8 @@ class Immediate {
 
 // Return \a value immediately
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Immediate<T> Immediate(
-    T value) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Immediate<T>
+Immediate(T value) {
   return promise_detail::Immediate<T>(std::move(value));
 }
 
@@ -84,12 +83,12 @@ struct ImmediateOkStatus {
 };
 
 // Typecheck that a promise returns the expected return type.
-// usage: auto promise = WithResult<int>([]() { return 3; });
+// usage: auto promise = AssertResultType<int>([]() { return 3; });
 // NOTE: there are tests in promise_test.cc that are commented out because they
 // should fail to compile. When modifying this code these should be uncommented
 // and their miscompilation verified.
 template <typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto WithResult(F f) ->
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto AssertResultType(F f) ->
     typename std::enable_if<std::is_same<decltype(f()), Poll<T>>::value,
                             F>::type {
   return f;

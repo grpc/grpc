@@ -27,7 +27,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreEnd2endTest, TrailingMetadata) {
+CORE_END2END_TEST(CoreEnd2endTests, TrailingMetadata) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -58,7 +58,7 @@ CORE_END2END_TEST(CoreEnd2endTest, TrailingMetadata) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(client_message.payload(), "hello world");
   EXPECT_EQ(server_message.payload(), "hello you");
   EXPECT_EQ(s.GetInitialMetadata("key1"), "val1");

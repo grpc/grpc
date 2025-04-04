@@ -57,8 +57,7 @@
 //     For 2, 3 : See NotifyOn() function
 //     For 5,6,7: See SetShutdown() function
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 void LockfreeEvent::InitEvent() {
   // Perform an atomic store to start the state machine.
@@ -248,5 +247,4 @@ void LockfreeEvent::SetReady() {
   }
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

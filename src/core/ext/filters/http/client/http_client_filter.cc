@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,7 +36,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
@@ -50,11 +50,6 @@
 #include "src/core/util/latent_see.h"
 
 namespace grpc_core {
-
-const NoInterceptor HttpClientFilter::Call::OnServerToClientMessage;
-const NoInterceptor HttpClientFilter::Call::OnClientToServerMessage;
-const NoInterceptor HttpClientFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor HttpClientFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpClientFilter::kFilter =
     MakePromiseBasedFilter<HttpClientFilter, FilterEndpoint::kClient,

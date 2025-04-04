@@ -19,6 +19,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -27,7 +28,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upb.h"
@@ -210,8 +210,8 @@ void LrsClient::ClusterLocalityStats::AddCallFinished(
   if (backend_metrics == nullptr) return;
   MutexLock lock(&stats.backend_metrics_mu);
   if (!XdsOrcaLrsPropagationChangesEnabled()) {
-    for (const auto& m : backend_metrics->named_metrics) {
-      stats.backend_metrics[std::string(m.first)] += BackendMetric(1, m.second);
+    for (const auto& [name, value] : backend_metrics->named_metrics) {
+      stats.backend_metrics[std::string(name)] += BackendMetric(1, value);
     }
     return;
   }
@@ -231,12 +231,12 @@ void LrsClient::ClusterLocalityStats::AddCallFinished(
   if (backend_metric_propagation_->propagation_bits &
           BackendMetricPropagation::kNamedMetricsAll ||
       !backend_metric_propagation_->named_metric_keys.empty()) {
-    for (const auto& m : backend_metrics->named_metrics) {
+    for (const auto& [name, value] : backend_metrics->named_metrics) {
       if (backend_metric_propagation_->propagation_bits &
               BackendMetricPropagation::kNamedMetricsAll ||
-          backend_metric_propagation_->named_metric_keys.contains(m.first)) {
-        stats.backend_metrics[absl::StrCat("named_metrics.", m.first)] +=
-            BackendMetric(1, m.second);
+          backend_metric_propagation_->named_metric_keys.contains(name)) {
+        stats.backend_metrics[absl::StrCat("named_metrics.", name)] +=
+            BackendMetric(1, value);
       }
     }
   }
@@ -283,7 +283,7 @@ class LrsClient::LrsChannel::RetryableCall final
 
   // Retry state.
   BackOff backoff_;
-  absl::optional<EventEngine::TaskHandle> timer_handle_
+  std::optional<EventEngine::TaskHandle> timer_handle_
       ABSL_GUARDED_BY(&LrsClient::mu_);
 
   bool shutting_down_ = false;
@@ -348,7 +348,7 @@ class LrsClient::LrsChannel::LrsCall final
     // The owning LRS call.
     RefCountedPtr<LrsCall> lrs_call_;
 
-    absl::optional<EventEngine::TaskHandle> timer_handle_
+    std::optional<EventEngine::TaskHandle> timer_handle_
         ABSL_GUARDED_BY(&LrsClient::mu_);
   };
 
@@ -389,7 +389,7 @@ class LrsClient::LrsChannel::LrsCall final
 
 LrsClient::LrsChannel::LrsChannel(
     WeakRefCountedPtr<LrsClient> lrs_client,
-    std::shared_ptr<const XdsBootstrap::XdsServer> server)
+    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server)
     : DualRefCounted<LrsChannel>(GRPC_TRACE_FLAG_ENABLED(xds_client_refcount)
                                      ? "LrsChannel"
                                      : nullptr),
@@ -506,7 +506,6 @@ void LrsClient::LrsChannel::RetryableCall<T>::StartRetryTimerLocked() {
   timer_handle_ = lrs_channel()->lrs_client()->engine()->RunAfter(
       delay,
       [self = this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start")]() {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnRetryTimer();
       });
@@ -544,13 +543,12 @@ void LrsClient::LrsChannel::LrsCall::Timer::ScheduleNextReportLocked() {
       << lrs_call_->lrs_channel()->server_->server_uri()
       << ": scheduling next load report in "
       << lrs_call_->load_reporting_interval_;
-  timer_handle_ = lrs_client()->engine()->RunAfter(
-      lrs_call_->load_reporting_interval_,
-      [self = Ref(DEBUG_LOCATION, "timer")]() {
-        ApplicationCallbackExecCtx callback_exec_ctx;
-        ExecCtx exec_ctx;
-        self->OnNextReportTimer();
-      });
+  timer_handle_ =
+      lrs_client()->engine()->RunAfter(lrs_call_->load_reporting_interval_,
+                                       [self = Ref(DEBUG_LOCATION, "timer")]() {
+                                         ExecCtx exec_ctx;
+                                         self->OnNextReportTimer();
+                                       });
 }
 
 void LrsClient::LrsChannel::LrsCall::Timer::OnNextReportTimer() {
@@ -626,11 +624,9 @@ void LrsClient::LrsChannel::LrsCall::MaybeScheduleNextReportLocked() {
 
 bool LrsClient::LoadReportCountersAreZero(
     const ClusterLoadReportMap& snapshot) {
-  for (const auto& p : snapshot) {
-    const ClusterLoadReport& cluster_snapshot = p.second;
+  for (const auto& [_, cluster_snapshot] : snapshot) {
     if (!cluster_snapshot.dropped_requests.IsZero()) return false;
-    for (const auto& q : cluster_snapshot.locality_stats) {
-      const ClusterLocalityStats::Snapshot& locality_snapshot = q.second;
+    for (const auto& [_, locality_snapshot] : cluster_snapshot.locality_stats) {
       if (!locality_snapshot.IsZero()) return false;
     }
   }
@@ -789,13 +785,14 @@ void LrsClient::Orphaned() {
   // just clear the load reporting map, but we do want to clear the refs
   // we're holding to the LrsChannel objects, to make sure that
   // everything shuts down properly.
-  for (auto& p : load_report_map_) {
-    p.second.lrs_channel.reset(DEBUG_LOCATION, "LrsClient::Orphan()");
+  for (auto& [_, load_report_server] : load_report_map_) {
+    load_report_server.lrs_channel.reset(DEBUG_LOCATION, "LrsClient::Orphan()");
   }
 }
 
 RefCountedPtr<LrsClient::LrsChannel> LrsClient::GetOrCreateLrsChannelLocked(
-    std::shared_ptr<const XdsBootstrap::XdsServer> server, const char* reason) {
+    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
+    const char* reason) {
   std::string key = server->Key();
   auto it = lrs_channel_map_.find(key);
   if (it != lrs_channel_map_.end()) {
@@ -809,10 +806,10 @@ RefCountedPtr<LrsClient::LrsChannel> LrsClient::GetOrCreateLrsChannelLocked(
 }
 
 RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
-    std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
+    std::shared_ptr<const XdsBootstrap::XdsServerTarget> lrs_server,
     absl::string_view cluster_name, absl::string_view eds_service_name) {
   auto key =
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+      std::pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterDropStats> cluster_drop_stats;
   {
     MutexLock lock(&mu_);
@@ -822,14 +819,15 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
     // they have the same lifetime.
     auto server_it =
         load_report_map_.emplace(lrs_server->Key(), LoadReportServer()).first;
-    if (server_it->second.lrs_channel == nullptr) {
-      server_it->second.lrs_channel = GetOrCreateLrsChannelLocked(
+    auto& [server_key, server] = *server_it;
+    if (server.lrs_channel == nullptr) {
+      server.lrs_channel = GetOrCreateLrsChannelLocked(
           lrs_server, "load report map (drop stats)");
     }
-    auto load_report_it = server_it->second.load_report_map
-                              .emplace(std::move(key), LoadReportState())
-                              .first;
-    LoadReportState& load_report_state = load_report_it->second;
+    auto load_report_it =
+        server.load_report_map.emplace(std::move(key), LoadReportState()).first;
+    auto& [cluster_key, load_report_state] = *load_report_it;
+    auto& [cluster_name, eds_service_name] = cluster_key;
     if (load_report_state.drop_stats != nullptr) {
       cluster_drop_stats = load_report_state.drop_stats->RefIfNonZero();
     }
@@ -839,12 +837,11 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
             load_report_state.drop_stats->GetSnapshotAndReset();
       }
       cluster_drop_stats = MakeRefCounted<ClusterDropStats>(
-          Ref(DEBUG_LOCATION, "DropStats"), server_it->first /*lrs_server*/,
-          load_report_it->first.first /*cluster_name*/,
-          load_report_it->first.second /*eds_service_name*/);
+          Ref(DEBUG_LOCATION, "DropStats"), server_key, cluster_name,
+          eds_service_name);
       load_report_state.drop_stats = cluster_drop_stats.get();
     }
-    server_it->second.lrs_channel->MaybeStartLrsCall();
+    server.lrs_channel->MaybeStartLrsCall();
   }
   return cluster_drop_stats;
 }
@@ -856,9 +853,10 @@ void LrsClient::RemoveClusterDropStats(
   MutexLock lock(&mu_);
   auto server_it = load_report_map_.find(lrs_server_key);
   if (server_it == load_report_map_.end()) return;
-  auto load_report_it = server_it->second.load_report_map.find(
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
-  if (load_report_it == server_it->second.load_report_map.end()) return;
+  auto& server = server_it->second;
+  auto load_report_it = server.load_report_map.find(
+      std::pair(std::string(cluster_name), std::string(eds_service_name)));
+  if (load_report_it == server.load_report_map.end()) return;
   LoadReportState& load_report_state = load_report_it->second;
   if (load_report_state.drop_stats == cluster_drop_stats) {
     // Record final snapshot in deleted_drop_stats, which will be
@@ -871,12 +869,12 @@ void LrsClient::RemoveClusterDropStats(
 
 RefCountedPtr<LrsClient::ClusterLocalityStats>
 LrsClient::AddClusterLocalityStats(
-    std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
+    std::shared_ptr<const XdsBootstrap::XdsServerTarget> lrs_server,
     absl::string_view cluster_name, absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> locality,
     RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation) {
   auto key =
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name));
+      std::pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterLocalityStats> cluster_locality_stats;
   {
     MutexLock lock(&mu_);
@@ -886,14 +884,15 @@ LrsClient::AddClusterLocalityStats(
     // they have the same lifetime.
     auto server_it =
         load_report_map_.emplace(lrs_server->Key(), LoadReportServer()).first;
-    if (server_it->second.lrs_channel == nullptr) {
-      server_it->second.lrs_channel = GetOrCreateLrsChannelLocked(
+    auto& [server_key, server] = *server_it;
+    if (server.lrs_channel == nullptr) {
+      server.lrs_channel = GetOrCreateLrsChannelLocked(
           std::move(lrs_server), "load report map (locality stats)");
     }
-    auto load_report_it = server_it->second.load_report_map
-                              .emplace(std::move(key), LoadReportState())
-                              .first;
-    LoadReportState& load_report_state = load_report_it->second;
+    auto load_report_it =
+        server.load_report_map.emplace(std::move(key), LoadReportState()).first;
+    auto& [cluster_key, load_report_state] = *load_report_it;
+    auto& [cluster_name, eds_service_name] = cluster_key;
     LoadReportState::LocalityState& locality_state =
         load_report_state.locality_stats[locality];
     ClusterLocalityStats*& locality_stats =
@@ -907,13 +906,12 @@ LrsClient::AddClusterLocalityStats(
             locality_stats->GetSnapshotAndReset();
       }
       cluster_locality_stats = MakeRefCounted<ClusterLocalityStats>(
-          Ref(DEBUG_LOCATION, "LocalityStats"), server_it->first /*lrs_server*/,
-          load_report_it->first.first /*cluster_name*/,
-          load_report_it->first.second /*eds_service_name*/,
-          std::move(locality), std::move(backend_metric_propagation));
+          Ref(DEBUG_LOCATION, "LocalityStats"), server_key, cluster_name,
+          eds_service_name, std::move(locality),
+          std::move(backend_metric_propagation));
       locality_stats = cluster_locality_stats.get();
     }
-    server_it->second.lrs_channel->MaybeStartLrsCall();
+    server.lrs_channel->MaybeStartLrsCall();
   }
   return cluster_locality_stats;
 }
@@ -928,9 +926,10 @@ void LrsClient::RemoveClusterLocalityStats(
   MutexLock lock(&mu_);
   auto server_it = load_report_map_.find(lrs_server_key);
   if (server_it == load_report_map_.end()) return;
-  auto load_report_it = server_it->second.load_report_map.find(
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
-  if (load_report_it == server_it->second.load_report_map.end()) return;
+  auto& server = server_it->second;
+  auto load_report_it = server.load_report_map.find(
+      std::pair(std::string(cluster_name), std::string(eds_service_name)));
+  if (load_report_it == server.load_report_map.end()) return;
   LoadReportState& load_report_state = load_report_it->second;
   auto locality_it = load_report_state.locality_stats.find(locality);
   if (locality_it == load_report_state.locality_stats.end()) return;
@@ -950,13 +949,13 @@ void LrsClient::RemoveClusterLocalityStats(
 
 void LrsClient::ResetBackoff() {
   MutexLock lock(&mu_);
-  for (auto& p : lrs_channel_map_) {
-    p.second->ResetBackoff();
+  for (auto& [_, lrs_channel] : lrs_channel_map_) {
+    lrs_channel->ResetBackoff();
   }
 }
 
 LrsClient::ClusterLoadReportMap LrsClient::BuildLoadReportSnapshotLocked(
-    const XdsBootstrap::XdsServer& lrs_server, bool send_all_clusters,
+    const XdsBootstrap::XdsServerTarget& lrs_server, bool send_all_clusters,
     const std::set<std::string>& clusters) {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << this << "] start building load report";
@@ -967,8 +966,8 @@ LrsClient::ClusterLoadReportMap LrsClient::BuildLoadReportSnapshotLocked(
   for (auto load_report_it = load_report_map.begin();
        load_report_it != load_report_map.end();) {
     // Cluster key is cluster and EDS service name.
-    const auto& cluster_key = load_report_it->first;
-    LoadReportState& load_report = load_report_it->second;
+    auto& [cluster_key, load_report] = *load_report_it;
+    auto& [cluster_name, eds_service_name] = cluster_key;
     // If the CDS response for a cluster indicates to use LRS but the
     // LRS server does not say that it wants reports for this cluster,
     // then we'll have stats objects here whose data we're not going to
@@ -977,7 +976,7 @@ LrsClient::ClusterLoadReportMap LrsClient::BuildLoadReportSnapshotLocked(
     // asking for the data in the future, we don't incorrectly include
     // data from previous reporting intervals in that future report.
     const bool record_stats =
-        send_all_clusters || clusters.find(cluster_key.first) != clusters.end();
+        send_all_clusters || clusters.find(cluster_name) != clusters.end();
     ClusterLoadReport snapshot;
     // Aggregate drop stats.
     snapshot.dropped_requests = std::move(load_report.deleted_drop_stats);
@@ -985,28 +984,26 @@ LrsClient::ClusterLoadReportMap LrsClient::BuildLoadReportSnapshotLocked(
       snapshot.dropped_requests +=
           load_report.drop_stats->GetSnapshotAndReset();
       GRPC_TRACE_LOG(xds_client, INFO)
-          << "[lrs_client " << this << "] cluster=" << cluster_key.first
-          << " eds_service_name=" << cluster_key.second
+          << "[lrs_client " << this << "] cluster=" << cluster_name
+          << " eds_service_name=" << eds_service_name
           << " drop_stats=" << load_report.drop_stats;
     }
     // Aggregate locality stats.
     for (auto it = load_report.locality_stats.begin();
          it != load_report.locality_stats.end();) {
-      const RefCountedPtr<XdsLocalityName>& locality_name = it->first;
-      auto& locality_state = it->second;
+      auto& [locality_name, locality_state] = *it;
       ClusterLocalityStats::Snapshot& locality_snapshot =
           snapshot.locality_stats[locality_name];
       locality_snapshot = std::move(locality_state.deleted_locality_stats);
-      for (const auto& p : locality_state.propagation_stats) {
-        ClusterLocalityStats* locality_stats = p.second;
+      for (const auto& [propagation, locality_stats] :
+           locality_state.propagation_stats) {
         if (locality_stats != nullptr) {
           locality_snapshot += locality_stats->GetSnapshotAndReset();
           GRPC_TRACE_LOG(xds_client, INFO)
-              << "[lrs_client " << this
-              << "] cluster=" << cluster_key.first.c_str()
-              << " eds_service_name=" << cluster_key.second.c_str()
-              << " locality=" << locality_name->human_readable_string().c_str()
-              << " propagation=" << p.first->AsString()
+              << "[lrs_client " << this << "] cluster=" << cluster_name
+              << " eds_service_name=" << eds_service_name << " locality="
+              << locality_name->human_readable_string().as_string_view()
+              << " propagation=" << propagation->AsString()
               << " locality_stats=" << locality_stats;
         }
       }
@@ -1151,10 +1148,7 @@ void LocalityStatsPopulate(
       context, snapshot.application_utilization,
       envoy_config_endpoint_v3_UpstreamLocalityStats_mutable_application_utilization,
       output);
-  for (const auto& p : snapshot.backend_metrics) {
-    const std::string& metric_name = p.first;
-    const LrsClient::ClusterLocalityStats::BackendMetric& metric_value =
-        p.second;
+  for (const auto& [metric_name, metric_value] : snapshot.backend_metrics) {
     envoy_config_endpoint_v3_EndpointLoadMetricStats* load_metric =
         envoy_config_endpoint_v3_UpstreamLocalityStats_add_load_metric_stats(
             output, context.arena);
@@ -1176,10 +1170,8 @@ std::string LrsClient::CreateLrsRequest(
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
-  for (auto& p : cluster_load_report_map) {
-    const std::string& cluster_name = p.first.first;
-    const std::string& eds_service_name = p.first.second;
-    const ClusterLoadReport& load_report = p.second;
+  for (auto& [cluster_key, load_report] : cluster_load_report_map) {
+    const auto& [cluster_name, eds_service_name] = cluster_key;
     // Add cluster stats.
     envoy_config_endpoint_v3_ClusterStats* cluster_stats =
         envoy_service_load_stats_v3_LoadStatsRequest_add_cluster_stats(
@@ -1193,19 +1185,16 @@ std::string LrsClient::CreateLrsRequest(
           cluster_stats, StdStringToUpbString(eds_service_name));
     }
     // Add locality stats.
-    for (const auto& p : load_report.locality_stats) {
-      const XdsLocalityName& locality_name = *p.first;
-      const auto& snapshot = p.second;
+    for (const auto& [locality_name, snapshot] : load_report.locality_stats) {
       envoy_config_endpoint_v3_UpstreamLocalityStats* locality_stats =
           envoy_config_endpoint_v3_ClusterStats_add_upstream_locality_stats(
               cluster_stats, arena.ptr());
-      LocalityStatsPopulate(context, locality_stats, locality_name, snapshot);
+      LocalityStatsPopulate(context, locality_stats, *locality_name, snapshot);
     }
     // Add dropped requests.
     uint64_t total_dropped_requests = 0;
-    for (const auto& p : load_report.dropped_requests.categorized_drops) {
-      const std::string& category = p.first;
-      const uint64_t count = p.second;
+    for (const auto& [category, count] :
+         load_report.dropped_requests.categorized_drops) {
       envoy_config_endpoint_v3_ClusterStats_DroppedRequests* dropped_requests =
           envoy_config_endpoint_v3_ClusterStats_add_dropped_requests(
               cluster_stats, arena.ptr());

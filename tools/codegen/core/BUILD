@@ -28,8 +28,6 @@ grpc_cc_binary(
     external_deps = [
         "absl/strings",
         "absl/memory",
-        "absl/types:optional",
-        "absl/types:variant",
         "libcrypto",
     ],
     visibility = [
@@ -40,4 +38,9 @@ grpc_cc_binary(
         "//src/core:huffsyms",
         "//src/core:match",
     ],
+)
+
+grpc_cc_binary(
+    name = "gen_switch",
+    srcs = ["gen_switch.cc"],
 )

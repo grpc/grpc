@@ -27,7 +27,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreEnd2endTest, SimpleMetadata) {
+CORE_END2END_TEST(CoreEnd2endTests, SimpleMetadata) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -58,7 +58,7 @@ CORE_END2END_TEST(CoreEnd2endTest, SimpleMetadata) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(server_message.payload(), "hello you");
@@ -69,6 +69,12 @@ CORE_END2END_TEST(CoreEnd2endTest, SimpleMetadata) {
   EXPECT_EQ(server_initial_metadata.Get("key4"), "val4");
   EXPECT_EQ(server_status.GetTrailingMetadata("key5"), "val5");
   EXPECT_EQ(server_status.GetTrailingMetadata("key6"), "val6");
+}
+
+TEST(Fuzzers, CoreEnd2endTestsSimpleMetadataRegression1) {
+  CoreEnd2endTests_SimpleMetadata(
+      CoreTestConfigurationNamed("ChaoticGoodOneByteChunk"),
+      ParseTestProto(R"pb(config_vars { trace: "promise_primitives" })pb"));
 }
 
 }  // namespace

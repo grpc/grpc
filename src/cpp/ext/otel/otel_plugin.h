@@ -27,6 +27,7 @@
 
 #include <bitset>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -34,15 +35,16 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "opentelemetry/metrics/async_instruments.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/observer_result.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
+#include "opentelemetry/trace/tracer.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/util/down_cast.h"
 
 namespace grpc {
 namespace internal {
@@ -53,9 +55,9 @@ class LabelsIterable {
  public:
   virtual ~LabelsIterable() = default;
 
-  // Returns the key-value label at the current position or absl::nullopt if the
+  // Returns the key-value label at the current position or std::nullopt if the
   // iterator has reached the end.
-  virtual absl::optional<std::pair<absl::string_view, absl::string_view>>
+  virtual std::optional<std::pair<absl::string_view, absl::string_view>>
   Next() = 0;
 
   virtual size_t Size() const = 0;
@@ -168,6 +170,14 @@ class OpenTelemetryPluginBuilderImpl {
   // Records \a optional_label_key on all metrics that provide it.
   OpenTelemetryPluginBuilderImpl& AddOptionalLabel(
       absl::string_view optional_label_key);
+  // If `SetTracerProvider()` is not called, no traces are collected.
+  OpenTelemetryPluginBuilderImpl& SetTracerProvider(
+      std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider);
+  // Set one or multiple text map propagators for span context propagation,
+  // e.g. the community standard ones like W3C, etc.
+  OpenTelemetryPluginBuilderImpl& SetTextMapPropagator(
+      std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+          text_map_propagator);
   // Set scope filter to choose which channels are recorded by this plugin.
   // Server-side recording remains unaffected.
   OpenTelemetryPluginBuilderImpl& SetChannelScopeFilter(
@@ -195,6 +205,10 @@ class OpenTelemetryPluginBuilderImpl {
   std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
       plugin_options_;
   std::set<absl::string_view> optional_label_keys_;
+  std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider_;
+
+  std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+      text_map_propagator_;
   absl::AnyInvocable<bool(
       const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
       channel_scope_filter_;
@@ -218,6 +232,9 @@ class OpenTelemetryPluginImpl
       std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
           plugin_options,
       const std::set<absl::string_view>& optional_label_keys,
+      std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider,
+      std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+          text_map_propagator,
       absl::AnyInvocable<
           bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
           channel_scope_filter);
@@ -265,6 +282,11 @@ class OpenTelemetryPluginImpl
       return true;
     }
 
+    int Compare(const ActivePluginOptionsView& other) const {
+      return grpc_core::QsortCompare(active_mask_.to_ulong(),
+                                     other.active_mask_.to_ulong());
+    }
+
    private:
     explicit ActivePluginOptionsView(
         absl::FunctionRef<bool(const InternalOpenTelemetryPluginOption&)> func,
@@ -295,6 +317,13 @@ class OpenTelemetryPluginImpl
                   ? scope.target()
                   : "other") {}
 
+    int Compare(const ScopeConfig& other) const override {
+      const auto& o = grpc_core::DownCast<const ClientScopeConfig&>(other);
+      int r = grpc_core::QsortCompare(filtered_target_, o.filtered_target_);
+      if (r != 0) return r;
+      return active_plugin_options_view_.Compare(o.active_plugin_options_view_);
+    }
+
     const ActivePluginOptionsView& active_plugin_options_view() const {
       return active_plugin_options_view_;
     }
@@ -305,12 +334,18 @@ class OpenTelemetryPluginImpl
     ActivePluginOptionsView active_plugin_options_view_;
     std::string filtered_target_;
   };
+
   class ServerScopeConfig : public grpc_core::StatsPlugin::ScopeConfig {
    public:
     ServerScopeConfig(const OpenTelemetryPluginImpl* otel_plugin,
                       const grpc_core::ChannelArgs& args)
         : active_plugin_options_view_(
               ActivePluginOptionsView::MakeForServer(args, otel_plugin)) {}
+
+    int Compare(const ScopeConfig& other) const override {
+      const auto& o = grpc_core::DownCast<const ServerScopeConfig&>(other);
+      return active_plugin_options_view_.Compare(o.active_plugin_options_view_);
+    }
 
     const ActivePluginOptionsView& active_plugin_options_view() const {
       return active_plugin_options_view_;
@@ -384,10 +419,12 @@ class OpenTelemetryPluginImpl
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey key);
 
   // Returns the OptionalLabelKey form of \a key if \a key is recognized and
-  // is public, absl::nullopt otherwise.
-  static absl::optional<
+  // is public, std::nullopt otherwise.
+  static std::optional<
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
   OptionalLabelStringToKey(absl::string_view key);
+
+  static absl::string_view GetMethodFromPath(const grpc_core::Slice& path);
 
   // grpc::OpenTelemetryPlugin:
   void AddToChannelArguments(grpc::ChannelArguments* args) override;
@@ -487,13 +524,14 @@ class OpenTelemetryPluginImpl
   OptionalLabelsBitSet per_call_optional_label_bits_;
   // Instruments for non-per-call metrics.
   struct Disabled {};
-  using Instrument = absl::variant<
-      Disabled, std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
-      std::unique_ptr<opentelemetry::metrics::Counter<double>>,
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
-      std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
-      std::unique_ptr<CallbackGaugeState<int64_t>>,
-      std::unique_ptr<CallbackGaugeState<double>>>;
+  using Instrument =
+      std::variant<Disabled,
+                   std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
+                   std::unique_ptr<opentelemetry::metrics::Counter<double>>,
+                   std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
+                   std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
+                   std::unique_ptr<CallbackGaugeState<int64_t>>,
+                   std::unique_ptr<CallbackGaugeState<double>>>;
   struct InstrumentData {
     Instrument instrument;
     OptionalLabelsBitSet optional_labels_bits;
@@ -513,10 +551,40 @@ class OpenTelemetryPluginImpl
       generic_method_attribute_filter_;
   std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
       plugin_options_;
+  std::shared_ptr<opentelemetry::trace::TracerProvider> const tracer_provider_;
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> const tracer_;
+  std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator> const
+      text_map_propagator_;
   absl::AnyInvocable<bool(
       const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
       channel_scope_filter_;
 };
+
+class GrpcTextMapCarrier
+    : public opentelemetry::context::propagation::TextMapCarrier {
+ public:
+  explicit GrpcTextMapCarrier(grpc_metadata_batch* metadata)
+      : metadata_(metadata) {}
+
+  opentelemetry::nostd::string_view Get(
+      opentelemetry::nostd::string_view key) const noexcept override;
+
+  void Set(opentelemetry::nostd::string_view key,
+           opentelemetry::nostd::string_view value) noexcept override;
+
+ private:
+  grpc_metadata_batch* metadata_;
+};
+
+inline absl::string_view NoStdStringViewToAbslStringView(
+    opentelemetry::nostd::string_view string) {
+  return absl::string_view(string.data(), string.size());
+}
+
+inline opentelemetry::nostd::string_view AbslStringViewToNoStdStringView(
+    absl::string_view string) {
+  return opentelemetry::nostd::string_view(string.data(), string.size());
+}
 
 }  // namespace internal
 }  // namespace grpc

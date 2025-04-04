@@ -24,7 +24,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
+    tags = [
+        # b/117517566.
+        "grpc:no-internal-poller",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -41,7 +44,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
+    tags = [
+        # b/117517566.
+        "grpc:no-internal-poller",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -59,7 +65,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [

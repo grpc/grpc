@@ -21,8 +21,7 @@
 
 #include "src/core/lib/debug/trace.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // An interface to be implemented by EventEngines that wish to have managed fork
 // support. The child class must guarantee that those methods are thread-safe.
@@ -63,7 +62,6 @@ class ObjectGroupForkHandler {
   std::vector<std::weak_ptr<Forkable> > forkables_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_FORKABLE_H

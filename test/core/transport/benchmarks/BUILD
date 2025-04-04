@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -24,25 +24,27 @@ grpc_package(
 grpc_cc_benchmark(
     name = "bm_chaotic_good",
     srcs = ["bm_chaotic_good.cc"],
+    monitoring = HISTORY,
     deps = [
         "//:grpc",
         "//src/core:chaotic_good_client_transport",
         "//src/core:chaotic_good_server_transport",
         "//src/core:default_event_engine",
+        "//test/core/call:call_spine_benchmarks",
         "//test/core/test_util:passthrough_endpoint",
-        "//test/core/transport:call_spine_benchmarks",
     ],
 )
 
 grpc_cc_benchmark(
     name = "bm_inproc",
     srcs = ["bm_inproc.cc"],
+    monitoring = HISTORY,
     deps = [
         "//:grpc",
         "//src/core:chaotic_good_client_transport",
         "//src/core:chaotic_good_server_transport",
         "//src/core:default_event_engine",
+        "//test/core/call:call_spine_benchmarks",
         "//test/core/test_util:passthrough_endpoint",
-        "//test/core/transport:call_spine_benchmarks",
     ],
 )

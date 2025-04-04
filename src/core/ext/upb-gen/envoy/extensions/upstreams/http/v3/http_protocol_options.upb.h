@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_UPSTREAMS_HTTP_V3_HTTP_PROTOCOL_OPTIONS_PROTO_UPB_H_
-#define ENVOY_EXTENSIONS_UPSTREAMS_HTTP_V3_HTTP_PROTOCOL_OPTIONS_PROTO_UPB_H_
+#ifndef ENVOY_EXTENSIONS_UPSTREAMS_HTTP_V3_HTTP_PROTOCOL_OPTIONS_PROTO_UPB_H__UPB_H_
+#define ENVOY_EXTENSIONS_UPSTREAMS_HTTP_V3_HTTP_PROTOCOL_OPTIONS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -84,7 +84,7 @@ typedef enum {
   envoy_extensions_upstreams_http_v3_HttpProtocolOptions_upstream_protocol_options_NOT_SET = 0
 } envoy_extensions_upstreams_http_v3_HttpProtocolOptions_upstream_protocol_options_oneofcases;
 UPB_INLINE envoy_extensions_upstreams_http_v3_HttpProtocolOptions_upstream_protocol_options_oneofcases envoy_extensions_upstreams_http_v3_HttpProtocolOptions_upstream_protocol_options_case(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_extensions_upstreams_http_v3_HttpProtocolOptions_upstream_protocol_options_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
@@ -123,62 +123,62 @@ UPB_INLINE bool envoy_extensions_upstreams_http_v3_HttpProtocolOptions_has_upstr
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_clear_explicit_http_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_explicit_http_config(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
   const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* default_val = NULL;
   const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_upstreams_http_v3_HttpProtocolOptions_has_explicit_http_config(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_clear_use_downstream_protocol_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_use_downstream_protocol_config(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
   const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* default_val = NULL;
   const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__upstreams__http__v3__HttpProtocolOptions__UseDownstreamHttpConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_upstreams_http_v3_HttpProtocolOptions_has_use_downstream_protocol_config(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_clear_auto_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_auto_config(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
   const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* default_val = NULL;
   const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__upstreams__http__v3__HttpProtocolOptions__AutoHttpConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_upstreams_http_v3_HttpProtocolOptions_has_auto_config(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_clear_http_filters(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter* const* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_http_filters(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, size_t* size) {
-  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -190,7 +190,7 @@ UPB_INLINE const struct envoy_extensions_filters_network_http_connection_manager
   }
 }
 UPB_INLINE const upb_Array* _envoy_extensions_upstreams_http_v3_HttpProtocolOptions_http_filters_upb_array(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, size_t* size) {
-  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -199,7 +199,7 @@ UPB_INLINE const upb_Array* _envoy_extensions_upstreams_http_v3_HttpProtocolOpti
   return arr;
 }
 UPB_INLINE upb_Array* _envoy_extensions_upstreams_http_v3_HttpProtocolOptions_http_filters_mutable_upb_array(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -209,20 +209,20 @@ UPB_INLINE upb_Array* _envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ht
   return arr;
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_clear_header_validation_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 66, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 40), 66, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_header_validation_config(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
   const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
   const struct envoy_config_core_v3_TypedExtensionConfig* ret;
-  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 66, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 40), 66, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_upstreams_http_v3_HttpProtocolOptions_has_header_validation_config(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 66, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 40), 66, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
@@ -253,7 +253,7 @@ UPB_INLINE struct envoy_config_core_v3_UpstreamHttpProtocolOptions* envoy_extens
   return sub;
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_set_explicit_http_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions *msg, envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
@@ -266,7 +266,7 @@ UPB_INLINE struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_Explici
   return sub;
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_set_use_downstream_protocol_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions *msg, envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__upstreams__http__v3__HttpProtocolOptions__UseDownstreamHttpConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
@@ -279,7 +279,7 @@ UPB_INLINE struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDown
   return sub;
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_set_auto_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions *msg, envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__upstreams__http__v3__HttpProtocolOptions__AutoHttpConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
@@ -292,7 +292,7 @@ UPB_INLINE struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHtt
   return sub;
 }
 UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter** envoy_extensions_upstreams_http_v3_HttpProtocolOptions_mutable_http_filters(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, size_t* size) {
-  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {6, UPB_SIZE(20, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -304,12 +304,12 @@ UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_Ht
   }
 }
 UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter** envoy_extensions_upstreams_http_v3_HttpProtocolOptions_resize_http_filters(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {6, UPB_SIZE(20, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (struct envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter**)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
                                                    &field, size, arena);
 }
 UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_add_http_filters(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {6, UPB_SIZE(20, 32), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -324,7 +324,7 @@ UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_Ht
   return sub;
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_set_header_validation_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
-  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 66, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 40), 66, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
@@ -768,4 +768,4 @@ UPB_INLINE struct envoy_config_core_v3_AlternateProtocolsCacheOptions* envoy_ext
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_UPSTREAMS_HTTP_V3_HTTP_PROTOCOL_OPTIONS_PROTO_UPB_H_ */
+#endif  /* ENVOY_EXTENSIONS_UPSTREAMS_HTTP_V3_HTTP_PROTOCOL_OPTIONS_PROTO_UPB_H__UPB_H_ */

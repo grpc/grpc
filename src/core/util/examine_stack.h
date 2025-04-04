@@ -21,9 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
-
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -37,8 +36,8 @@ void SetCurrentStackTraceProvider(
     gpr_current_stack_trace_func current_stack_trace_provider);
 
 // Returns the current stack trace as a string via current_stack_trace_provider
-// If current_stack_trace_provider is not set, it returns absl::nullopt.
-absl::optional<std::string> GetCurrentStackTrace();
+// If current_stack_trace_provider is not set, it returns std::nullopt.
+std::optional<std::string> GetCurrentStackTrace();
 
 }  // namespace grpc_core
 

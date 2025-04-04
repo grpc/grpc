@@ -29,6 +29,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -43,13 +44,13 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
@@ -59,7 +60,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -69,9 +69,6 @@
 #include "src/core/util/uri.h"
 
 namespace grpc_core {
-
-const NoInterceptor ClientLoggingFilter::Call::OnFinalize;
-const NoInterceptor ServerLoggingFilter::Call::OnFinalize;
 
 namespace {
 
@@ -339,13 +336,13 @@ void CallData::SetCommonEntryFields(LoggingSink::Entry* entry, bool is_client,
 absl::StatusOr<std::unique_ptr<ClientLoggingFilter>>
 ClientLoggingFilter::Create(const ChannelArgs& args,
                             ChannelFilter::Args /*filter_args*/) {
-  absl::optional<absl::string_view> default_authority =
+  std::optional<absl::string_view> default_authority =
       args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (default_authority.has_value()) {
     return std::make_unique<ClientLoggingFilter>(
         std::string(default_authority.value()));
   }
-  absl::optional<std::string> server_uri =
+  std::optional<std::string> server_uri =
       args.GetOwnedString(GRPC_ARG_SERVER_URI);
   if (server_uri.has_value()) {
     return std::make_unique<ClientLoggingFilter>(

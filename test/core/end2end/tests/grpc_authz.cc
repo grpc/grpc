@@ -117,7 +117,7 @@ class InitWithTempFile {
   grpc_authorization_policy_provider* provider_;
 };
 
-CORE_END2END_TEST(SecureEnd2endTest, StaticInitAllowAuthorizedRequest) {
+CORE_END2END_TEST(SecureEnd2endTests, StaticInitAllowAuthorizedRequest) {
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -135,7 +135,7 @@ CORE_END2END_TEST(SecureEnd2endTest, StaticInitAllowAuthorizedRequest) {
   TestAllowAuthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, StaticInitDenyUnauthorizedRequest) {
+CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyUnauthorizedRequest) {
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -163,7 +163,7 @@ CORE_END2END_TEST(SecureEnd2endTest, StaticInitDenyUnauthorizedRequest) {
   TestDenyUnauthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, StaticInitDenyRequestNoMatchInPolicy) {
+CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyRequestNoMatchInPolicy) {
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -181,7 +181,7 @@ CORE_END2END_TEST(SecureEnd2endTest, StaticInitDenyRequestNoMatchInPolicy) {
   TestDenyUnauthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInitAllowAuthorizedRequest) {
+CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitAllowAuthorizedRequest) {
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -199,7 +199,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInitAllowAuthorizedRequest) {
   TestAllowAuthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInitDenyUnauthorizedRequest) {
+CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitDenyUnauthorizedRequest) {
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -227,7 +227,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInitDenyUnauthorizedRequest) {
   TestDenyUnauthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest,
+CORE_END2END_TEST(SecureEnd2endTests,
                   FileWatcherInitDenyRequestNoMatchInPolicy) {
   InitWithTempFile tmp_policy(*this,
                               "{"
@@ -246,7 +246,7 @@ CORE_END2END_TEST(SecureEnd2endTest,
   TestDenyUnauthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, FileWatcherValidPolicyReload) {
+CORE_END2END_TEST(SecureEnd2endTests, FileWatcherValidPolicyReload) {
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -300,7 +300,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherValidPolicyReload) {
   tmp_policy.provider()->SetCallbackForTesting(nullptr);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInvalidPolicySkipReload) {
+CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInvalidPolicySkipReload) {
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -325,14 +325,14 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInvalidPolicySkipReload) {
           on_reload_done.Notify();
         }
       });
-  // Replace exisiting policy in file with an invalid policy.
+  // Replace existing policy in file with an invalid policy.
   tmp_policy.file().RewriteFile("{}");
   on_reload_done.WaitForNotification();
   TestAllowAuthorizedRequest(*this);
   tmp_policy.provider()->SetCallbackForTesting(nullptr);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, FileWatcherRecoversFromFailure) {
+CORE_END2END_TEST(SecureEnd2endTests, FileWatcherRecoversFromFailure) {
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -357,7 +357,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherRecoversFromFailure) {
           on_first_reload_done.Notify();
         }
       });
-  // Replace exisiting policy in file with an invalid policy.
+  // Replace existing policy in file with an invalid policy.
   tmp_policy.file().RewriteFile("{}");
   on_first_reload_done.WaitForNotification();
   TestAllowAuthorizedRequest(*this);

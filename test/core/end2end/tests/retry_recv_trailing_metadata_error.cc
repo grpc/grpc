@@ -19,14 +19,14 @@
 
 #include <memory>
 #include <new>
+#include <optional>
 
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -121,7 +121,9 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
 // - 1 retry allowed for ABORTED status
 // - server returns ABORTED, but filter overwrites to INVALID_ARGUMENT,
 //   so no retry is done
-CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
+CORE_END2END_TEST(RetryTests, RetryRecvTrailingMetadataError) {
+  SKIP_IF_V3();  // Need to convert filter
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
         ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
@@ -148,7 +150,7 @@ CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
@@ -160,8 +162,8 @@ CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

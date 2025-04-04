@@ -6,12 +6,13 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_HEALTH_V1_HEALTH_PROTO_UPB_H_
-#define SRC_PROTO_GRPC_HEALTH_V1_HEALTH_PROTO_UPB_H_
+#ifndef SRC_PROTO_GRPC_HEALTH_V1_HEALTH_PROTO_UPB_H__UPB_H_
+#define SRC_PROTO_GRPC_HEALTH_V1_HEALTH_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
 #include "src/proto/grpc/health/v1/health.upb_minitable.h"
+
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -146,4 +147,4 @@ UPB_INLINE void grpc_health_v1_HealthCheckResponse_set_status(grpc_health_v1_Hea
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_HEALTH_V1_HEALTH_PROTO_UPB_H_ */
+#endif  /* SRC_PROTO_GRPC_HEALTH_V1_HEALTH_PROTO_UPB_H__UPB_H_ */

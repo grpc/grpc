@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import os
 import re
 from typing import AnyStr, Callable, Dict, Iterable, List, Optional, Union
@@ -79,6 +78,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             "CSM_CANONICAL_SERVICE_NAME", UNKNOWN_VALUE
         )
         workload_name_value = os.getenv("CSM_WORKLOAD_NAME", UNKNOWN_VALUE)
+        mesh_id = os.getenv("CSM_MESH_ID", UNKNOWN_VALUE)
 
         gcp_resource = GoogleCloudResourceDetector().detect()
         resource_type_value = get_resource_type(gcp_resource)
@@ -133,7 +133,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         self._additional_exchange_labels[
             "csm.workload_canonical_service"
         ] = canonical_service_value
-        self._additional_exchange_labels["csm.mesh_id"] = get_mesh_id()
+        self._additional_exchange_labels["csm.mesh_id"] = mesh_id
 
     def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
         return self._exchange_labels
@@ -207,7 +207,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
           target: Required. The target for the RPC.
 
         Returns:
-          True if this this plugin option is active on the channel, false otherwise.
+          True if this plugin option is active on the channel, false otherwise.
         """
         # CSM channels should have an "xds" scheme
         if not target.startswith("xds:"):
@@ -237,7 +237,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
           xds: Required. if this server is build for xds.
 
         Returns:
-          True if this this plugin option is active on the server, false otherwise.
+          True if this plugin option is active on the server, false otherwise.
         """
         return True
 
@@ -302,42 +302,3 @@ def get_resource_type(gcp_resource: Resource) -> str:
         return TYPE_GCE
     else:
         return gcp_resource_type
-
-
-# Returns the mesh ID by reading and parsing the bootstrap file. Returns "unknown"
-# if for some reason, mesh ID could not be figured out.
-def get_mesh_id() -> str:
-    config_contents = get_bootstrap_config_contents()
-
-    try:
-        config_json = json.loads(config_contents)
-        # The expected format of the Node ID is -
-        # projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
-        node_id_parts = config_json.get("node", {}).get("id", "").split("/")
-        if len(node_id_parts) == 6 and node_id_parts[3].startswith(
-            MESH_ID_PREFIX
-        ):
-            return node_id_parts[3][len(MESH_ID_PREFIX) :]
-    except json.decoder.JSONDecodeError:
-        return UNKNOWN_VALUE
-
-    return UNKNOWN_VALUE
-
-
-def get_bootstrap_config_contents() -> str:
-    """Get the contents of the bootstrap config from environment variable or file.
-
-    Returns:
-        The content from environment variable. Or empty str if no config was found.
-    """
-    contents_str = ""
-    for source in ("GRPC_XDS_BOOTSTRAP", "GRPC_XDS_BOOTSTRAP_CONFIG"):
-        config = os.getenv(source)
-        if config:
-            if os.path.isfile(config):  # Prioritize file over raw config
-                with open(config, "r") as f:
-                    contents_str = f.read()
-            else:
-                contents_str = config
-
-    return contents_str

@@ -71,6 +71,14 @@ argp.add_argument(
     default=[],
     help="Filter targets to build with AND semantics.",
 )
+argp.add_argument(
+    "-e",
+    "--exclude",
+    choices=sorted(_BUILD_MAP.keys()),
+    nargs="+",
+    default=[],
+    help="Target labels to exclude from building.",
+)
 argp.add_argument("-j", "--jobs", default=multiprocessing.cpu_count(), type=int)
 argp.add_argument(
     "-x",
@@ -105,6 +113,9 @@ for label in args.build:
 
 # Among targets selected by -b, filter out those that don't match the filter
 targets = [t for t in targets if all(f in t.labels for f in args.filter)]
+
+# Exclude target if it has ALL of the specified exclude labels.
+targets = [t for t in targets if not all(l in args.exclude for l in t.labels)]
 
 print("Will build %d targets:" % len(targets))
 for target in targets:

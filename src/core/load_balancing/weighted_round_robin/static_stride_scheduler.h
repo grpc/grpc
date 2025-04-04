@@ -21,10 +21,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 
 namespace grpc_core {
@@ -41,12 +41,12 @@ namespace grpc_core {
 class StaticStrideScheduler final {
  public:
   // Constructs and returns a new StaticStrideScheduler, or nullopt if all
-  // wieghts are zero or |weights| <= 1. All weights must be >=0.
+  // weights are zero or |weights| <= 1. All weights must be >=0.
   // `next_sequence_func` should return a rate monotonically increasing sequence
   // number, which may wrap. `float_weights` does not need to live beyond the
   // function. Caller is responsible for ensuring `next_sequence_func` remains
   // valid for all calls to `Pick()`.
-  static absl::optional<StaticStrideScheduler> Make(
+  static std::optional<StaticStrideScheduler> Make(
       absl::Span<const float> float_weights,
       absl::AnyInvocable<uint32_t()> next_sequence_func);
 

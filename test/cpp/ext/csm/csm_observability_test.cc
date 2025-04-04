@@ -41,7 +41,7 @@ TEST(CsmObservabilityBuilderTest, Basic) {
       absl::OkStatus());
 }
 
-TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
+TEST(CsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
   EXPECT_NE(google::cloud::otel::MakeResourceDetector(), nullptr);
 }
 

@@ -28,8 +28,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/util/json/json.h"
@@ -100,7 +100,9 @@ void RegisterDropPolicy(CoreConfiguration::Builder* builder) {
 // even when there is retry configuration in the service config.
 // - 1 retry allowed for UNAVAILABLE status
 // - first attempt returns UNAVAILABLE due to LB drop but does not retry
-CORE_END2END_TEST(RetryTest, RetryLbDrop) {
+CORE_END2END_TEST(RetryTests, RetryLbDrop) {
+  SKIP_IF_V3();  // Not working yet
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     RegisterTestPickArgsLoadBalancingPolicy(
         builder,

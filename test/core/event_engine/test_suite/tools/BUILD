@@ -27,6 +27,7 @@ grpc_cc_binary(
     external_deps = ["absl/log:check"],
     tags = [
         "bazel_only",
+        "grpc:event_engine_impl",
         "no_linux",
         "no_mac",
     ],
@@ -44,6 +45,7 @@ grpc_cc_binary(
     external_deps = ["absl/log:check"],
     tags = [
         "bazel_only",
+        "grpc:event_engine_impl",
         "no_windows",
     ],
     deps = [
@@ -64,7 +66,6 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",

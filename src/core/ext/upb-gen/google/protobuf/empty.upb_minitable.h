@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_MINITABLE_H_
-#define GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_MINITABLE_H_
+#ifndef GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H__UPB_MINITABLE_H_
+#define GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -29,4 +29,4 @@ extern const upb_MiniTableFile google_protobuf_empty_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_MINITABLE_H_ */
+#endif  /* GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H__UPB_MINITABLE_H_ */

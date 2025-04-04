@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include <functional>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -36,7 +37,11 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/call/call_destination.h"
+#include "src/core/call/call_spine.h"
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -50,13 +55,8 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_final_info.h"
-#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/message.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -68,6 +68,13 @@
 #define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
 
 #define GRPC_ARG_TRANSPORT "grpc.internal.transport"
+
+/** A comma separated list of supported transport protocols. If non-empty,
+ allows the client and server to attempt to negotiate transport protocols.
+ NOTE: This is an experimental feature. It is not fully implemented and is not
+ currently functional.
+ TODO(gtcooke94) - update with specific details when implementing. */
+#define GRPC_ARG_TRANSPORT_PROTOCOLS "grpc.internal.transport_protocols"
 
 namespace grpc_core {
 
@@ -364,7 +371,7 @@ struct grpc_transport_stream_op_batch_payload {
     // Will be set by the transport to point to the byte stream containing a
     // received message. Will be nullopt if trailing metadata is received
     // instead of a message.
-    absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
+    std::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
     uint32_t* flags = nullptr;
     // Was this recv_message failed for reasons other than a clean end-of-stream
     bool* call_failed_before_recv_message = nullptr;
@@ -413,12 +420,10 @@ typedef struct grpc_transport_op {
   grpc_core::ConnectivityStateWatcherInterface* stop_connectivity_watch =
       nullptr;
   /// should the transport be disconnected
-  /// Error contract: the transport that gets this op must cause
-  ///                disconnect_with_error to be unref'ed after processing it
   grpc_error_handle disconnect_with_error;
-  /// what should the goaway contain?
-  /// Error contract: the transport that gets this op must cause
-  ///                goaway_error to be unref'ed after processing it
+  /// Start a graceful goaway with the specified error message. (The error code
+  /// is ignored since graceful GOAWAYs use a NO_ERROR error code.) Use
+  /// disconnect_with_error if graceful shutdown is not needed.
   grpc_error_handle goaway_error;
   void (*set_accept_stream_fn)(void* user_data, grpc_core::Transport* transport,
                                const void* server_data) = nullptr;

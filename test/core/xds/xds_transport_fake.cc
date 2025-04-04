@@ -88,18 +88,19 @@ bool FakeXdsTransportFactory::FakeStreamingCall::HaveMessageFromClient() {
   return !from_client_messages_.empty();
 }
 
-absl::optional<std::string>
+std::optional<std::string>
 FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient() {
   while (true) {
-    event_engine_->Tick();
-    MutexLock lock(&mu_);
-    if (from_client_messages_.empty()) {
-      if (event_engine_->IsIdle()) return absl::nullopt;
-      continue;
+    {
+      MutexLock lock(&mu_);
+      if (!from_client_messages_.empty()) {
+        std::string payload = std::move(from_client_messages_.front());
+        from_client_messages_.pop_front();
+        return payload;
+      }
+      if (event_engine_->IsIdle()) return std::nullopt;
     }
-    std::string payload = std::move(from_client_messages_.front());
-    from_client_messages_.pop_front();
-    return payload;
+    event_engine_->Tick();
   }
 }
 
@@ -183,10 +184,12 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
 bool FakeXdsTransportFactory::FakeStreamingCall::WaitForReadsStarted(
     size_t expected) {
   while (true) {
+    {
+      MutexLock lock(&mu_);
+      if (reads_started_ == expected) return true;
+      if (event_engine_->IsIdle()) return false;
+    }
     event_engine_->Tick();
-    MutexLock lock(&mu_);
-    if (reads_started_ == expected) return true;
-    if (event_engine_->IsIdle()) return false;
   }
 }
 
@@ -236,11 +239,13 @@ void FakeXdsTransportFactory::FakeXdsTransport::Orphaned() {
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(const char* method) {
   while (true) {
+    {
+      MutexLock lock(&mu_);
+      auto it = active_calls_.find(method);
+      if (it != active_calls_.end() && it->second != nullptr) return it->second;
+      if (event_engine_->IsIdle()) return nullptr;
+    }
     event_engine_->Tick();
-    MutexLock lock(&mu_);
-    auto it = active_calls_.find(method);
-    if (it != active_calls_.end() && it->second != nullptr) return it->second;
-    if (event_engine_->IsIdle()) return nullptr;
   }
 }
 
@@ -284,8 +289,8 @@ constexpr char FakeXdsTransportFactory::kAdsMethod[];
 constexpr char FakeXdsTransportFactory::kLrsMethod[];
 
 RefCountedPtr<XdsTransportFactory::XdsTransport>
-FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server,
-                                      absl::Status* /*status*/) {
+FakeXdsTransportFactory::GetTransport(
+    const XdsBootstrap::XdsServerTarget& server, absl::Status* /*status*/) {
   std::string key = server.Key();
   MutexLock lock(&mu_);
   auto transport = GetTransportLocked(key);
@@ -299,7 +304,7 @@ FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server,
 }
 
 void FakeXdsTransportFactory::TriggerConnectionFailure(
-    const XdsBootstrap::XdsServer& server, absl::Status status) {
+    const XdsBootstrap::XdsServerTarget& server, absl::Status status) {
   auto transport = GetTransport(server);
   if (transport == nullptr) return;
   transport->TriggerConnectionFailure(std::move(status));
@@ -316,8 +321,8 @@ void FakeXdsTransportFactory::SetAbortOnUndrainedMessages(bool value) {
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
-FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
-                                       const char* method) {
+FakeXdsTransportFactory::WaitForStream(
+    const XdsBootstrap::XdsServerTarget& server, const char* method) {
   auto transport = GetTransport(server);
   if (transport == nullptr) return nullptr;
   return transport->WaitForStream(method);
@@ -326,7 +331,8 @@ FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
 void FakeXdsTransportFactory::Orphaned() { event_engine_.reset(); }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
-FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server) {
+FakeXdsTransportFactory::GetTransport(
+    const XdsBootstrap::XdsServerTarget& server) {
   std::string key = server.Key();
   MutexLock lock(&mu_);
   return GetTransportLocked(key);

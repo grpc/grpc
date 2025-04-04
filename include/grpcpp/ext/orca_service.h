@@ -17,20 +17,27 @@
 #ifndef GRPCPP_EXT_ORCA_SERVICE_H
 #define GRPCPP_EXT_ORCA_SERVICE_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
+#include <grpcpp/support/status.h>
 
-#include <map>
-#include <string>
+#include <cstdint>
+#include <optional>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 
 namespace grpc {
+
+namespace testing {
+class OrcaServiceTest;
+}  // namespace testing
+
 namespace experimental {
 
 // RPC service implementation for supplying out-of-band backend
@@ -54,7 +61,15 @@ class OrcaService : public Service {
               Options options);
 
  private:
+  class ReactorHook {
+   public:
+    virtual ~ReactorHook() = default;
+    virtual void OnFinish(grpc::Status status) = 0;
+    virtual void OnStartWrite(const ByteBuffer* response) = 0;
+  };
+
   class Reactor;
+  friend class testing::OrcaServiceTest;
 
   Slice GetOrCreateSerializedResponse();
 
@@ -62,9 +77,9 @@ class OrcaService : public Service {
   const absl::Duration min_report_duration_;
   grpc::internal::Mutex mu_;
   // Contains the last serialized metrics from server_metric_recorder_.
-  absl::optional<Slice> response_slice_ ABSL_GUARDED_BY(mu_);
+  std::optional<Slice> response_slice_ ABSL_GUARDED_BY(mu_);
   // The update sequence number of metrics serialized in response_slice_.
-  absl::optional<uint64_t> response_slice_seq_ ABSL_GUARDED_BY(mu_);
+  std::optional<uint64_t> response_slice_seq_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace experimental

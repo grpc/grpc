@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H_
-#define ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -45,7 +45,8 @@ typedef enum {
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_UNSPECIFIED = 0,
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_HTTP_DOWNSTREAM_CONNECTION_IDLE = 1,
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_HTTP_DOWNSTREAM_STREAM_IDLE = 2,
-  envoy_config_overload_v3_ScaleTimersOverloadActionConfig_TRANSPORT_SOCKET_CONNECT = 3
+  envoy_config_overload_v3_ScaleTimersOverloadActionConfig_TRANSPORT_SOCKET_CONNECT = 3,
+  envoy_config_overload_v3_ScaleTimersOverloadActionConfig_HTTP_DOWNSTREAM_CONNECTION_MAX = 4
 } envoy_config_overload_v3_ScaleTimersOverloadActionConfig_TimerType;
 
 
@@ -1251,4 +1252,4 @@ UPB_INLINE struct envoy_config_overload_v3_LoadShedPoint* envoy_config_overload_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H__UPB_H_ */

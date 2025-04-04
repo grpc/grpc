@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <cstdint>
 #include <cstring>
 #include <string>
 
@@ -46,8 +47,7 @@
 #include <unistd.h>      // IWYU pragma: keep
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
@@ -227,6 +227,27 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
   return socket;
 }
 
+bool IsSockAddrLinkLocal(const EventEngine::ResolvedAddress* resolved_addr) {
+  const sockaddr* addr = resolved_addr->address();
+  if (addr->sa_family == AF_INET) {
+    const sockaddr_in* addr4 = reinterpret_cast<const sockaddr_in*>(addr);
+    // Link-local IPv4 addresses are in the range 169.254.0.0/16
+    if ((addr4->sin_addr.s_addr & htonl(0xFFFF0000)) == htonl(0xA9FE0000)) {
+      return true;
+    }
+  } else if (addr->sa_family == AF_INET6) {
+    const sockaddr_in6* addr6 = reinterpret_cast<const sockaddr_in6*>(addr);
+    const uint8_t* addr_bytes = addr6->sin6_addr.s6_addr;
+
+    // Check the first 10 bits to make sure they are 1111 1110 10
+    if ((addr_bytes[0] == 0xfe) && ((addr_bytes[1] & 0xc0) == 0x80)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port) {
@@ -272,6 +293,10 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     addr = EventEngine::ResolvedAddress(ifa_it->ifa_addr, len);
     ResolvedAddressSetPort(addr, requested_port);
     std::string addr_str = *ResolvedAddressToString(addr);
+    if (IsSockAddrLinkLocal(&addr)) {
+      /* Exclude link-local addresses. */
+      continue;
+    }
     VLOG(2) << absl::StrFormat(
         "Adding local addr from interface %s flags 0x%x to server: %s",
         ifa_name, ifa_it->ifa_flags, addr_str.c_str());
@@ -390,5 +415,4 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
 
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

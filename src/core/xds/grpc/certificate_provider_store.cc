@@ -23,8 +23,8 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 
 namespace grpc_core {
 
@@ -103,13 +103,11 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
     if (result != nullptr) {
       certificate_providers_map_.insert({result->key(), result.get()});
     }
-  } else {
-    result =
-        it->second->RefIfNonZero().TakeAsSubclass<CertificateProviderWrapper>();
-    if (result == nullptr) {
-      result = CreateCertificateProviderLocked(key);
-      it->second = result.get();
-    }
+  } else if (result = it->second->RefIfNonZero()
+                          .TakeAsSubclass<CertificateProviderWrapper>();
+             result == nullptr) {
+    result = CreateCertificateProviderLocked(key);
+    it->second = result.get();
   }
   return result;
 }
@@ -117,26 +115,23 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
 RefCountedPtr<CertificateProviderStore::CertificateProviderWrapper>
 CertificateProviderStore::CreateCertificateProviderLocked(
     absl::string_view key) {
-  auto plugin_config_it = plugin_config_map_.find(std::string(key));
-  if (plugin_config_it == plugin_config_map_.end()) {
-    return nullptr;
-  }
+  auto it = plugin_config_map_.find(std::string(key));
+  if (it == plugin_config_map_.end()) return nullptr;
+  const auto& [name, definition] = *it;
   CertificateProviderFactory* factory =
       CoreConfiguration::Get()
           .certificate_provider_registry()
-          .LookupCertificateProviderFactory(
-              plugin_config_it->second.plugin_name);
+          .LookupCertificateProviderFactory(definition.plugin_name);
   if (factory == nullptr) {
     // This should never happen since an entry is only inserted in the
     // plugin_config_map_ if the corresponding factory was found when parsing
     // the xDS bootstrap file.
-    LOG(ERROR) << "Certificate provider factory "
-               << plugin_config_it->second.plugin_name << " not found";
+    LOG(ERROR) << "Certificate provider factory " << definition.plugin_name
+               << " not found";
     return nullptr;
   }
   return MakeRefCounted<CertificateProviderWrapper>(
-      factory->CreateCertificateProvider(plugin_config_it->second.config),
-      Ref(), plugin_config_it->first);
+      factory->CreateCertificateProvider(definition.config), Ref(), name);
 }
 
 void CertificateProviderStore::ReleaseCertificateProvider(

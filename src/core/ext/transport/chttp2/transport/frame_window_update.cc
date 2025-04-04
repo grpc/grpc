@@ -29,6 +29,8 @@
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_lists.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/util/time.h"
 
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_delta,
@@ -101,9 +103,17 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
 
     if (t->incoming_stream_id != 0) {
       if (s != nullptr) {
+        grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+        if (s->last_window_update_time != grpc_core::Timestamp::InfPast()) {
+          grpc_core::global_stats().IncrementHttp2StreamWindowUpdatePeriod(
+              (now - s->last_window_update_time).millis());
+        }
+        s->last_window_update_time = now;
         grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext(
             &s->flow_control)
             .RecvUpdate(received_update);
+        grpc_core::global_stats().IncrementHttp2StreamRemoteWindowUpdate(
+            received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
           grpc_chttp2_mark_stream_writable(t, s);
           grpc_chttp2_initiate_write(
@@ -113,6 +123,14 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
     } else {
       grpc_core::chttp2::TransportFlowControl::OutgoingUpdateContext upd(
           &t->flow_control);
+      grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+      if (t->last_window_update_time != grpc_core::Timestamp::InfPast()) {
+        grpc_core::global_stats().IncrementHttp2TransportWindowUpdatePeriod(
+            (now - t->last_window_update_time).millis());
+      }
+      t->last_window_update_time = now;
+      grpc_core::global_stats().IncrementHttp2TransportRemoteWindowUpdate(
+          received_update);
       upd.RecvUpdate(received_update);
       if (upd.Finish() == grpc_core::chttp2::StallEdge::kUnstalled) {
         grpc_chttp2_initiate_write(

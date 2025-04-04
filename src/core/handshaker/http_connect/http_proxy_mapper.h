@@ -21,13 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/proxy_mapper.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
@@ -38,10 +38,10 @@ class HttpProxyMapper final : public ProxyMapperInterface {
   static constexpr char const* kAddressProxyEnabledAddressesEnvVar =
       "GRPC_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES";
 
-  absl::optional<std::string> MapName(absl::string_view server_uri,
-                                      ChannelArgs* args) override;
+  std::optional<std::string> MapName(absl::string_view server_uri,
+                                     ChannelArgs* args) override;
 
-  absl::optional<grpc_resolved_address> MapAddress(
+  std::optional<grpc_resolved_address> MapAddress(
       const grpc_resolved_address& address, ChannelArgs* args) override;
 };
 

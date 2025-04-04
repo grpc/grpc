@@ -47,12 +47,12 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
-using grpc_event_engine::experimental::WaitForSingleOwner;
 
 namespace grpc_core {
 namespace channelz {
@@ -283,6 +283,39 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   ValidateChannel(channelz_channel, {0, 0, 0});
 }
 
+class TestDataSource final : public DataSource {
+ public:
+  using DataSource::DataSource;
+  void AddJson(Json::Object& object) override {
+    object["test"] = Json::FromString("yes");
+  }
+};
+
+TEST_P(ChannelzChannelTest, BasicDataSource) {
+  ExecCtx exec_ctx;
+  ChannelFixture channel(GetParam());
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
+  {
+    TestDataSource data_source(channelz_channel->Ref());
+    Json json = channelz_channel->RenderJson();
+    ASSERT_EQ(json.type(), Json::Type::kObject);
+    const Json::Object& object = json.object();
+    auto it = object.find("test");
+    ASSERT_NE(it, object.end());
+    ASSERT_EQ(it->second.type(), Json::Type::kString);
+    EXPECT_EQ(it->second.string(), "yes");
+  }
+  // Render again without the data source
+  {
+    Json json = channelz_channel->RenderJson();
+    ASSERT_EQ(json.type(), Json::Type::kObject);
+    const Json::Object& object = json.object();
+    auto it = object.find("test");
+    EXPECT_EQ(it, object.end());
+  }
+}
+
 TEST(ChannelzChannelTest, ChannelzDisabled) {
   ExecCtx exec_ctx;
   // explicitly disable channelz
@@ -472,9 +505,13 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   ExecCtx exec_ctx;
   ChannelFixture channel_with_uuid1;
-  { ServerFixture channel_with_uuid2; }
+  {
+    ServerFixture channel_with_uuid2;
+  }
   ChannelFixture channel_with_uuid3;
-  { ServerFixture server_with_uuid4; }
+  {
+    ServerFixture server_with_uuid4;
+  }
   ChannelFixture channel_with_uuid5;
   // Current state of list: [1, NULL, 3, NULL, 5]
   std::string json_str = ChannelzRegistry::GetTopChannels(2);

@@ -62,19 +62,19 @@ void PingPongStreaming(CoreEnd2endTest& test, int num_messages) {
   test.Step();
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, PingPongStreaming1) {
+CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming1) {
   PingPongStreaming(*this, 1);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, PingPongStreaming3) {
+CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming3) {
   PingPongStreaming(*this, 3);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, PingPongStreaming10) {
+CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming10) {
   PingPongStreaming(*this, 10);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, PingPongStreaming30) {
+CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming30) {
   PingPongStreaming(*this, 30);
 }
 }  // namespace grpc_core

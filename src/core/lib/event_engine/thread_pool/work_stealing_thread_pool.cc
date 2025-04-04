@@ -25,6 +25,7 @@
 #include <chrono>
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -32,7 +33,6 @@
 #include "absl/log/log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
@@ -101,8 +101,7 @@
 // backtrace will be printed for every running thread, and the process will
 // abort.
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 // TODO(ctiller): grpc_core::Timestamp, Duration have very specific contracts
@@ -116,7 +115,7 @@ namespace {
 constexpr auto kIdleThreadLimit = std::chrono::seconds(20);
 // Rate at which "Waiting for ..." logs should be printed while quiescing.
 constexpr size_t kBlockingQuiesceLogRateSeconds = 3;
-// Minumum time between thread creations.
+// Minimum time between thread creations.
 constexpr grpc_core::Duration kTimeBetweenThrottledThreadStarts =
     grpc_core::Duration::Seconds(1);
 // Minimum time a worker thread should sleep between checking for new work. Used
@@ -620,5 +619,4 @@ bool WorkStealingThreadPool::WorkSignal::WaitWithTimeout(
   return cv_.WaitWithTimeout(&mu_, absl::Milliseconds(time.millis()));
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

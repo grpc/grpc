@@ -58,6 +58,13 @@ struct Done<StatusFlag> {
   }
 };
 
+template <>
+struct Done<Success> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static StatusFlag Make(bool cancelled) {
+    return StatusFlag(!cancelled);
+  }
+};
+
 template <typename T, typename SfinaeVoid = void>
 struct NextValueTraits;
 
@@ -77,17 +84,17 @@ struct NextValueTraits<T, absl::void_t<typename T::value_type>> {
     return NextValueType::kEndOfStream;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value& MutableValue(T& t) {
-    return *t;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value&& TakeValue(T& t) {
+    return std::move(*t);
   }
 };
 
 template <typename T>
-struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
+struct NextValueTraits<ValueOrFailure<std::optional<T>>> {
   using Value = T;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(
-      const ValueOrFailure<absl::optional<T>>& t) {
+      const ValueOrFailure<std::optional<T>>& t) {
     if (t.ok()) {
       if (t.value().has_value()) return NextValueType::kValue;
       return NextValueType::kEndOfStream;
@@ -95,9 +102,9 @@ struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
     return NextValueType::kError;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value& MutableValue(
-      ValueOrFailure<absl::optional<T>>& t) {
-    return **t;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value&& TakeValue(
+      ValueOrFailure<std::optional<T>>& t) {
+    return std::move(**t);
   }
 };
 
@@ -111,10 +118,12 @@ class ForEach {
   using ActionFactory =
       promise_detail::RepeatedPromiseFactory<ReaderResultValue, Action>;
   using ActionPromise = typename ActionFactory::Promise;
+  using ActionResult =
+      typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
 
  public:
-  using Result =
-      typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
+  using Result = decltype(Done<ActionResult>::Make(false));
+
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader reader, Action action,
                                                DebugLocation whence = {})
       : reader_(std::move(reader)),
@@ -179,7 +188,7 @@ class ForEach {
               << DebugTag() << " PollReaderNext: got value";
           Destruct(&reader_next_);
           auto action = action_factory_.Make(
-              std::move(NextValueTraits<ReaderResult>::MutableValue(*p)));
+              NextValueTraits<ReaderResult>::TakeValue(*p));
           Construct(&in_action_, std::move(action), std::move(*p));
           reading_next_ = false;
           return PollAction();
@@ -229,7 +238,8 @@ class ForEach {
 
 /// For each item acquired by calling Reader::Next, run the promise Action.
 template <typename Reader, typename Action>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION for_each_detail::ForEach<Reader, Action>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline for_each_detail::ForEach<Reader,
+                                                                     Action>
 ForEach(Reader reader, Action action, DebugLocation whence = {}) {
   return for_each_detail::ForEach<Reader, Action>(std::move(reader),
                                                   std::move(action), whence);

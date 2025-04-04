@@ -30,7 +30,7 @@ namespace grpc_core {
 
 // Apply a (possibly async) mapping function to src, and output into dst.
 //
-// In psuedo-code:
+// In pseudo-code:
 // for each element in wait_for src.Next:
 //   x = wait_for filter_factory(element)
 //   wait_for dst.Push(x)

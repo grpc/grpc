@@ -24,6 +24,8 @@ namespace {
 
 void BM_PartyCreate(benchmark::State& state) {
   auto arena = SimpleArenaAllocator()->MakeArena();
+  arena->SetContext(
+      grpc_event_engine::experimental::GetDefaultEventEngine().get());
   for (auto _ : state) {
     Party::Make(arena);
   }
@@ -31,7 +33,10 @@ void BM_PartyCreate(benchmark::State& state) {
 BENCHMARK(BM_PartyCreate);
 
 void BM_AddParticipant(benchmark::State& state) {
-  auto party = Party::Make(SimpleArenaAllocator()->MakeArena());
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  arena->SetContext(
+      grpc_event_engine::experimental::GetDefaultEventEngine().get());
+  auto party = Party::Make(arena);
   for (auto _ : state) {
     party->Spawn("participant", []() { return Success{}; }, [](StatusFlag) {});
   }
@@ -39,7 +44,10 @@ void BM_AddParticipant(benchmark::State& state) {
 BENCHMARK(BM_AddParticipant);
 
 void BM_WakeupParticipant(benchmark::State& state) {
-  auto party = Party::Make(SimpleArenaAllocator()->MakeArena());
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  arena->SetContext(
+      grpc_event_engine::experimental::GetDefaultEventEngine().get());
+  auto party = Party::Make(arena);
   party->Spawn(
       "driver",
       [&state, w = IntraActivityWaiter()]() mutable -> Poll<StatusFlag> {

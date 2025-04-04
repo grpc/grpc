@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <chrono>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include "absl/log/log.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
+#include "src/core/config/config_vars.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -64,9 +64,9 @@ TEST_P(LdsTest, NotAnApiListener) {
   ServerHcmAccessor().Pack(hcm, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
   // RPCs should fail.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat(kServerName, ": UNAVAILABLE: not an API listener"));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      absl::StrCat("empty address list \\(LDS resource ",
+                                   kServerName, ": not an API listener\\)"));
   // We should have ACKed the LDS resource.
   const auto deadline =
       absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
@@ -89,8 +89,9 @@ class LdsDeletionTest : public XdsEnd2endTest {
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsDeletionTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-// Tests that we go into TRANSIENT_FAILURE if the Listener is deleted.
-TEST_P(LdsDeletionTest, ListenerDeleted) {
+// Tests that we go into TRANSIENT_FAILURE if the Listener is deleted
+// by default.
+TEST_P(LdsDeletionTest, ListenerDeletedFailsByDefault) {
   InitClient();
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -100,21 +101,17 @@ TEST_P(LdsDeletionTest, ListenerDeleted) {
   // Unset LDS resource.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   // Wait for RPCs to start failing.
-  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
-    if (result.status.ok()) return true;  // Keep going.
-    EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-    EXPECT_EQ(result.status.error_message(),
-              absl::StrCat("empty address list: ", kServerName,
-                           ": xDS listener resource does not exist"));
-    return false;
-  });
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that we ignore Listener deletions if configured to do so.
+// Tests that we ignore Listener deletions with ignore_resource_deletion.
 TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
   InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   CreateAndStartBackends(2);
@@ -159,6 +156,81 @@ TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
                                    new_route_config);
   // Wait for client to start using backend 1.
   WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+}
+
+// Tests that we ignore Listener deletions by default when data error
+// handling is enabled.
+TEST_P(LdsDeletionTest,
+       ListenerDeletionIgnoredByDefaultWhenDataErrorHandlingEnabled) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  InitClient();
+  CreateAndStartBackends(2);
+  // Bring up client pointing to backend 0 and wait for it to connect.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  // Make sure we ACKed the LDS update.
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Unset LDS resource and wait for client to ACK the update.
+  balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
+  const auto deadline =
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
+    response_state = balancer_->ads_service()->lds_response_state();
+    if (response_state.has_value()) break;
+    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
+  }
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Make sure we can still send RPCs.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Now recreate the LDS resource pointing to a different CDS and EDS
+  // resource, pointing to backend 1, and make sure the client uses it.
+  const char* kNewClusterName = "new_cluster_name";
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  auto cluster = default_cluster_;
+  cluster.set_name(kNewClusterName);
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Wait for client to start using backend 1.
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+}
+
+// Tests that we go into TRANSIENT_FAILURE if the Listener is deleted
+// when data error handling is enabled and fail_on_data_errors is set.
+TEST_P(LdsDeletionTest, ListenerDeletedFailsWithFailOnDataErrors) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  InitClient(MakeBootstrapBuilder().SetFailOnDataErrors());
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // We need to wait for all backends to come online.
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Unset LDS resource.
+  balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
+  // Wait for RPCs to start failing.
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"));
+  // Make sure we ACK'ed the update.
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 using LdsRdsInteractionTest = XdsEnd2endTest;
@@ -428,10 +500,12 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrCat(
+          "empty address list \\(",
+          (GetParam().enable_rds_testing() ? "RDS" : "LDS"), " resource ",
           (GetParam().enable_rds_testing() ? kDefaultRouteConfigurationName
                                            : kServerName),
-          ": UNAVAILABLE: could not find VirtualHost for ", kServerName,
-          " in RouteConfiguration"));
+          ": could not find VirtualHost for ", kServerName,
+          " in RouteConfiguration\\)"));
   // Do a bit of polling, to allow the ACK to get to the ADS server.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
   auto response_state = RouteConfigurationResponseState(balancer_.get());

@@ -20,12 +20,13 @@
 
 #include <grpc/support/alloc.h>
 
+#include <optional>
+
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/status_helper.h"
 #include "test/core/test_util/test_config.h"
@@ -100,7 +101,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   int* channel_data;
   int* call_data;
   grpc_core::ExecCtx exec_ctx;
-  grpc_slice path = grpc_slice_from_static_string("/service/method");
 
   channel_stack = static_cast<grpc_channel_stack*>(
       gpr_malloc(grpc_channel_stack_size(&filters, 1)));
@@ -122,7 +122,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_call_element_args args = {
       call_stack,                         // call_stack
       nullptr,                            // server_transport_data
-      path,                               // path
       gpr_get_cycle_counter(),            // start_time
       grpc_core::Timestamp::InfFuture(),  // deadline
       nullptr,                            // arena
@@ -144,8 +143,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   EXPECT_EQ(*channel_data, 2);
 
   GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
-
-  grpc_slice_unref(path);
 }
 
 int main(int argc, char** argv) {

@@ -22,8 +22,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class MemoryQuotaBasedMemoryAllocatorFactory : public MemoryAllocatorFactory {
  public:
@@ -39,7 +38,6 @@ class MemoryQuotaBasedMemoryAllocatorFactory : public MemoryAllocatorFactory {
   grpc_core::MemoryQuotaRefPtr memory_quota_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_MEMORY_ALLOCATOR_FACTORY_H

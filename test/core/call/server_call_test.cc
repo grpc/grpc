@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/surface/server_call.h"
+#include "src/core/call/server_call.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
@@ -84,7 +84,7 @@ class ServerCallTest : public YodelTest {
     return client_initial_metadata;
   }
 
-  absl::optional<std::string> GetClientInitialMetadata(absl::string_view key) {
+  std::optional<std::string> GetClientInitialMetadata(absl::string_view key) {
     CHECK_NE(call_.load(std::memory_order_acquire), nullptr);
     return FindInMetadataArray(publish_initial_metadata_, key);
   }

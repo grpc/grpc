@@ -25,8 +25,7 @@
 #include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "src/core/client_channel/connector.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -47,57 +46,51 @@
 
 namespace grpc_core {
 namespace chaotic_good {
-class ChaoticGoodConnector : public SubchannelConnector {
+class ChaoticGoodConnector final : public SubchannelConnector {
  public:
-  explicit ChaoticGoodConnector(
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
-  ~ChaoticGoodConnector() override;
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
-  void Shutdown(grpc_error_handle error) override {
+  void Shutdown(grpc_error_handle) override {
     ActivityPtr connect_activity;
     MutexLock lock(&mu_);
-    if (is_shutdown_) return;
     is_shutdown_ = true;
-    if (handshake_mgr_ != nullptr) {
-      handshake_mgr_->Shutdown(error);
-    }
     connect_activity = std::move(connect_activity_);
   };
 
  private:
-  static auto DataEndpointReadSettingsFrame(
-      RefCountedPtr<ChaoticGoodConnector> self);
-  static auto DataEndpointWriteSettingsFrame(
-      RefCountedPtr<ChaoticGoodConnector> self);
-  static auto ControlEndpointReadSettingsFrame(
-      RefCountedPtr<ChaoticGoodConnector> self);
-  static auto ControlEndpointWriteSettingsFrame(
-      RefCountedPtr<ChaoticGoodConnector> self);
-  static auto WaitForDataEndpointSetup(
-      RefCountedPtr<ChaoticGoodConnector> self);
-  void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
+  class ConnectionCreator final : public ClientConnectionFactory {
+   public:
+    ConnectionCreator(
+        grpc_event_engine::experimental::EventEngine::ResolvedAddress address,
+        const ChannelArgs& args)
+        : address_(address), args_(args) {}
+    PendingConnection Connect(absl::string_view id) override;
+    void Orphaned() override {};
 
-  RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
+   private:
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress address_;
+    ChannelArgs args_;
+  };
+
+  struct ResultNotifier {
+    ResultNotifier(const Args& args, Result* result, grpc_closure* notify)
+        : args(args),
+          config(args.channel_args),
+          result(result),
+          notify(notify) {}
+
+    Args args;
+    Config config;
+    Result* result;
+    grpc_closure* notify;
+
+    void Run(absl::Status status, DebugLocation location = {}) {
+      ExecCtx::Run(location, std::exchange(notify, nullptr), status);
+    }
+  };
+
   Mutex mu_;
-  Args args_;
-  Result* result_ ABSL_GUARDED_BY(mu_);
-  grpc_closure* notify_ ABSL_GUARDED_BY(mu_) = nullptr;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  absl::StatusOr<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
-      resolved_addr_;
-
-  PromiseEndpoint control_endpoint_;
-  PromiseEndpoint data_endpoint_;
   ActivityPtr connect_activity_ ABSL_GUARDED_BY(mu_);
-  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-      event_engine_;
-  RefCountedPtr<HandshakeManager> handshake_mgr_;
-  HPackCompressor hpack_compressor_;
-  HPackParser hpack_parser_;
-  absl::BitGen bitgen_;
-  InterActivityLatch<void> data_endpoint_ready_;
-  std::string connection_id_;
 };
 }  // namespace chaotic_good
 }  // namespace grpc_core

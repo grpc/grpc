@@ -284,6 +284,7 @@ template <typename Child, typename Impl = PolymorphicRefCount,
 class RefCounted : public Impl {
  public:
   using RefCountedChildType = Child;
+  using RefCountedUnrefBehaviorType = UnrefBehavior;
 
   // Not copyable nor movable.
   RefCounted(const RefCounted&) = delete;

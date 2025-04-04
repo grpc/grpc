@@ -27,13 +27,13 @@
 #include <cstring>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -70,6 +70,7 @@ class PromiseEndpoint {
   // `Write()` before the previous write finishes. Doing that results in
   // undefined behavior.
   auto Write(SliceBuffer data) {
+    GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Write");
     // Start write and assert previous write finishes.
     auto prev = write_state_->state.exchange(WriteState::kWriting,
                                              std::memory_order_relaxed);
@@ -87,7 +88,6 @@ class PromiseEndpoint {
       write_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
       completed = endpoint_->Write(
           [write_state = write_state_](absl::Status status) {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             write_state->Complete(std::move(status));
           },
@@ -132,6 +132,7 @@ class PromiseEndpoint {
   // `Read()` before the previous read finishes. Doing that results in
   // undefined behavior.
   auto Read(size_t num_bytes) {
+    GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Read");
     // Assert previous read finishes.
     CHECK(!read_state_->complete.load(std::memory_order_relaxed));
     // Should not have pending reads.
@@ -147,7 +148,6 @@ class PromiseEndpoint {
       read_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
       if (endpoint_->Read(
               [read_state = read_state_, num_bytes](absl::Status status) {
-                ApplicationCallbackExecCtx callback_exec_ctx;
                 ExecCtx exec_ctx;
                 read_state->Complete(std::move(status), num_bytes);
               },
@@ -257,6 +257,11 @@ class PromiseEndpoint {
   GetPeerAddress() const;
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetLocalAddress() const;
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+  GetEventEngineEndpoint() const {
+    return endpoint_;
+  }
 
  private:
   std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>

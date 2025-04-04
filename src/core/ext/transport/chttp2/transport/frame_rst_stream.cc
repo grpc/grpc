@@ -28,15 +28,17 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/status_helper.h"
+
+using grpc_core::http2::Http2ErrorCode;
 
 grpc_slice grpc_chttp2_rst_stream_create(
     uint32_t id, uint32_t code, grpc_core::CallTracerInterface* call_tracer) {
@@ -116,7 +118,8 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
         << "[chttp2 transport=" << t << " stream=" << s
         << "] received RST_STREAM(reason=" << reason << ")";
     grpc_error_handle error;
-    if (reason != GRPC_HTTP2_NO_ERROR || s->trailing_metadata_buffer.empty()) {
+    if (reason != static_cast<uint32_t>(Http2ErrorCode::kNoError) ||
+        s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(
           grpc_error_set_str(
               GRPC_ERROR_CREATE("RST_STREAM"),

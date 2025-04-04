@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:8.1-alpine3.15
+FROM php:8.1-alpine3.18
 
 RUN apk add autoconf g++ make zlib-dev git bash wget linux-headers
 

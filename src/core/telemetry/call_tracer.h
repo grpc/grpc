@@ -23,18 +23,19 @@
 #include <grpc/support/time.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/call/message.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_final_info.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/ref_counted_string.h"
 
@@ -95,19 +96,19 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
       grpc_metadata_batch* send_initial_metadata) = 0;
   virtual void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) = 0;
-  virtual void RecordSendMessage(const SliceBuffer& send_message) = 0;
+  virtual void RecordSendMessage(const Message& send_message) = 0;
   // Only invoked if message was actually compressed.
   virtual void RecordSendCompressedMessage(
-      const SliceBuffer& send_compressed_message) = 0;
+      const Message& send_compressed_message) = 0;
   // The `RecordReceivedInitialMetadata()` and `RecordReceivedMessage()`
   // methods should only be invoked when the metadata/message was
   // successfully received, i.e., without any error.
   virtual void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) = 0;
-  virtual void RecordReceivedMessage(const SliceBuffer& recv_message) = 0;
+  virtual void RecordReceivedMessage(const Message& recv_message) = 0;
   // Only invoked if message was actually decompressed.
   virtual void RecordReceivedDecompressedMessage(
-      const SliceBuffer& recv_decompressed_message) = 0;
+      const Message& recv_decompressed_message) = 0;
   virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
 
   struct TransportByteSize {
@@ -125,7 +126,7 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   // Traces a new TCP transport attempt for this call attempt. Note the TCP
   // transport may finish tracing and unref the TCP tracer before or after the
   // call completion in gRPC core. No TCP tracing when null is returned.
-  virtual std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() = 0;
+  virtual std::shared_ptr<TcpCallTracer> StartNewTcpTrace() = 0;
 };
 
 // Interface for a tracer that records activities on a call. Actual attempts for
@@ -212,7 +213,7 @@ class ServerCallTracerFactory {
   // instead of directly fetching it with `GetObject`.
   static ServerCallTracerFactory* Get(const ChannelArgs& channel_args);
 
-  // Registers a global ServerCallTracerFactory that wil be used by default if
+  // Registers a global ServerCallTracerFactory that will be used by default if
   // no corresponding channel arg was found. It is only valid to call this
   // before grpc_init(). It is the responsibility of the caller to maintain
   // this for the lifetime of the process.

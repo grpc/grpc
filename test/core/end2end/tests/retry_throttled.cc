@@ -20,8 +20,8 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -33,7 +33,8 @@ namespace {
 // Tests that we don't retry when throttled.
 // - 1 retry allowed for ABORTED status
 // - first attempt gets ABORTED but is over limit, so no retry is done
-CORE_END2END_TEST(RetryTest, RetryThrottled) {
+CORE_END2END_TEST(RetryTests, RetryThrottled) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
@@ -60,7 +61,7 @@ CORE_END2END_TEST(RetryTest, RetryThrottled) {
   InitClient(ChannelArgs());
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(30)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   IncomingMessage server_message;
@@ -74,8 +75,8 @@ CORE_END2END_TEST(RetryTest, RetryThrottled) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

@@ -25,8 +25,10 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/base/attributes.h"
 #include "absl/log/check.h"
@@ -35,9 +37,9 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "absl/types/variant.h"
+#include "src/core/call/metadata_info.h"
+#include "src/core/call/parsed_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
@@ -46,8 +48,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata_info.h"
-#include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -115,7 +115,7 @@ class HPackParser::Input {
 
   // Retrieve the current character, or nullopt if end of stream
   // Do not advance
-  absl::optional<uint8_t> peek() const {
+  std::optional<uint8_t> peek() const {
     if (end_of_stream()) {
       return {};
     }
@@ -124,17 +124,17 @@ class HPackParser::Input {
 
   // Retrieve and advance past the current character, or return nullopt if end
   // of stream
-  absl::optional<uint8_t> Next() {
+  std::optional<uint8_t> Next() {
     if (end_of_stream()) {
       UnexpectedEOF(/*min_progress_size=*/1);
-      return absl::optional<uint8_t>();
+      return std::optional<uint8_t>();
     }
     return *begin_++;
   }
 
   // Helper to parse a varint delta on top of value, return nullopt on failure
   // (setting error)
-  absl::optional<uint32_t> ParseVarint(uint32_t value) {
+  std::optional<uint32_t> ParseVarint(uint32_t value) {
     // TODO(ctiller): break out a variant of this when we know there are at
     // least 5 bytes in input_
     auto cur = Next();
@@ -190,7 +190,7 @@ class HPackParser::Input {
   }
 
   // Parse a string prefix
-  absl::optional<StringPrefix> ParseStringPrefix() {
+  std::optional<StringPrefix> ParseStringPrefix() {
     auto cur = Next();
     if (!cur.has_value()) {
       DCHECK(eof_error());
@@ -285,17 +285,17 @@ class HPackParser::Input {
 
  private:
   // Helper to set the error to out of range for ParseVarint
-  absl::optional<uint32_t> ParseVarintOutOfRange(uint32_t value,
-                                                 uint8_t last_byte) {
+  std::optional<uint32_t> ParseVarintOutOfRange(uint32_t value,
+                                                uint8_t last_byte) {
     SetErrorAndStopParsing(
         HpackParseResult::VarintOutOfRangeError(value, last_byte));
-    return absl::optional<uint32_t>();
+    return std::optional<uint32_t>();
   }
 
   // Helper to set the error in the case of a malicious encoding
-  absl::optional<uint32_t> ParseVarintMaliciousEncoding() {
+  std::optional<uint32_t> ParseVarintMaliciousEncoding() {
     SetErrorAndStopParsing(HpackParseResult::MaliciousVarintEncodingError());
-    return absl::optional<uint32_t>();
+    return std::optional<uint32_t>();
   }
 
   // If no error is set, set it to the given error (i.e. first error wins)
@@ -339,12 +339,12 @@ class HPackParser::Input {
 };
 
 absl::string_view HPackParser::String::string_view() const {
-  if (auto* p = absl::get_if<Slice>(&value_)) {
+  if (auto* p = std::get_if<Slice>(&value_)) {
     return p->as_string_view();
-  } else if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+  } else if (auto* p = std::get_if<absl::Span<const uint8_t>>(&value_)) {
     return absl::string_view(reinterpret_cast<const char*>(p->data()),
                              p->size());
-  } else if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
+  } else if (auto* p = std::get_if<std::vector<uint8_t>>(&value_)) {
     return absl::string_view(reinterpret_cast<const char*>(p->data()),
                              p->size());
   }
@@ -396,14 +396,14 @@ HPackParser::String::StringResult HPackParser::String::ParseUncompressed(
   }
 }
 
-absl::optional<std::vector<uint8_t>> HPackParser::String::Unbase64Loop(
+std::optional<std::vector<uint8_t>> HPackParser::String::Unbase64Loop(
     const uint8_t* cur, const uint8_t* end) {
   while (cur != end && end[-1] == '=') {
     --end;
   }
 
   std::vector<uint8_t> out;
-  out.reserve(3 * (end - cur) / 4 + 3);
+  out.reserve((3 * (end - cur) / 4) + 3);
 
   // Decode 4 bytes at a time while we can
   while (end - cur >= 4) {
@@ -478,14 +478,14 @@ absl::optional<std::vector<uint8_t>> HPackParser::String::Unbase64Loop(
 }
 
 HPackParser::String::StringResult HPackParser::String::Unbase64(String s) {
-  absl::optional<std::vector<uint8_t>> result;
-  if (auto* p = absl::get_if<Slice>(&s.value_)) {
+  std::optional<std::vector<uint8_t>> result;
+  if (auto* p = std::get_if<Slice>(&s.value_)) {
     result = Unbase64Loop(p->begin(), p->end());
   }
-  if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&s.value_)) {
+  if (auto* p = std::get_if<absl::Span<const uint8_t>>(&s.value_)) {
     result = Unbase64Loop(p->begin(), p->end());
   }
-  if (auto* p = absl::get_if<std::vector<uint8_t>>(&s.value_)) {
+  if (auto* p = std::get_if<std::vector<uint8_t>>(&s.value_)) {
     result = Unbase64Loop(p->data(), p->data() + p->size());
   }
   if (!result.has_value()) {
@@ -648,7 +648,7 @@ class HPackParser::Parser {
           // literal key
           return StartParseLiteralKey(true);
         }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case 5:
       case 6:
         // inline encoded key index
@@ -674,7 +674,7 @@ class HPackParser::Parser {
               HpackParseResult::IllegalHpackOpCode());
           return false;
         }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case 9:
       case 10:
       case 11:
@@ -756,7 +756,7 @@ class HPackParser::Parser {
     return true;
   }
 
-  bool FinishHeaderOmitFromTable(absl::optional<HPackTable::Memento> md) {
+  bool FinishHeaderOmitFromTable(std::optional<HPackTable::Memento> md) {
     // Allow higher code to just pass in failures ... simplifies things a bit.
     if (!md.has_value()) return false;
     FinishHeaderOmitFromTable(*md);
@@ -960,7 +960,7 @@ class HPackParser::Parser {
             : String::Parse(input_, state_.is_string_huff_compressed,
                             state_.string_length);
     absl::string_view key_string;
-    if (auto* s = absl::get_if<Slice>(&state_.key)) {
+    if (auto* s = std::get_if<Slice>(&state_.key)) {
       key_string = s->as_string_view();
       if (state_.field_error.ok()) {
         auto r = ValidateKey(key_string);
@@ -970,7 +970,7 @@ class HPackParser::Parser {
         }
       }
     } else {
-      const auto* memento = absl::get<const HPackTable::Memento*>(state_.key);
+      const auto* memento = std::get<const HPackTable::Memento*>(state_.key);
       key_string = memento->md.key();
       if (state_.field_error.ok() && memento->parse_status.get() != nullptr) {
         input_->SetErrorAndContinueParsing(*memento->parse_status);
@@ -1028,7 +1028,7 @@ class HPackParser::Parser {
   }
 
   // Emit an indexed field
-  bool FinishIndexed(absl::optional<uint32_t> index) {
+  bool FinishIndexed(std::optional<uint32_t> index) {
     state_.dynamic_table_updates_allowed = 0;
     if (!index.has_value()) return false;
     const auto* elem = state_.hpack_table.Lookup(*index);
@@ -1041,7 +1041,7 @@ class HPackParser::Parser {
   }
 
   // finish parsing a max table size change
-  bool FinishMaxTableSize(absl::optional<uint32_t> size) {
+  bool FinishMaxTableSize(std::optional<uint32_t> size) {
     if (!size.has_value()) return false;
     if (state_.dynamic_table_updates_allowed == 0) {
       input_->SetErrorAndStopParsing(
@@ -1072,11 +1072,11 @@ class HPackParser::Parser {
 };
 
 Slice HPackParser::String::Take() {
-  if (auto* p = absl::get_if<Slice>(&value_)) {
+  if (auto* p = std::get_if<Slice>(&value_)) {
     return p->Copy();
-  } else if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+  } else if (auto* p = std::get_if<absl::Span<const uint8_t>>(&value_)) {
     return Slice::FromCopiedBuffer(*p);
-  } else if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
+  } else if (auto* p = std::get_if<std::vector<uint8_t>>(&value_)) {
     return Slice::FromCopiedBuffer(*p);
   }
   GPR_UNREACHABLE_CODE(return Slice());
@@ -1138,7 +1138,8 @@ grpc_error_handle HPackParser::ParseInput(
       HandleMetadataSoftSizeLimitExceeded(&input);
     }
     global_stats().IncrementHttp2MetadataSize(state_.frame_length);
-    if (call_tracer != nullptr && metadata_buffer_ != nullptr) {
+    if (call_tracer != nullptr && call_tracer->IsSampled() &&
+        metadata_buffer_ != nullptr) {
       MetadataSizesAnnotation metadata_sizes_annotation(
           metadata_buffer_, state_.metadata_early_detection.soft_limit(),
           state_.metadata_early_detection.hard_limit());

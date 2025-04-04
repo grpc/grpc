@@ -29,8 +29,7 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class PollEventHandle;
 
@@ -91,7 +90,6 @@ class PollPoller : public PosixEventPoller,
 std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
                                            bool use_phony_poll);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_POLL_POSIX_H

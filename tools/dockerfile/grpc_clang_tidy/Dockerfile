@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:18-bookworm
+FROM silkeh/clang:19-bookworm
 
 # Install prerequisites for the clang-tidy script
 RUN apt-get update && apt-get install -y python3 jq git && apt-get clean

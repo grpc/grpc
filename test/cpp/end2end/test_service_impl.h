@@ -23,7 +23,6 @@
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
 #include <condition_variable>
 #include <memory>
@@ -33,6 +32,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
@@ -230,18 +230,16 @@ class TestMultipleServiceImpl : public RpcService {
     if (request->has_param() && request->param().echo_metadata_initially()) {
       const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
           context->client_metadata();
-      for (const auto& metadatum : client_metadata) {
-        context->AddInitialMetadata(ToString(metadatum.first),
-                                    ToString(metadatum.second));
+      for (const auto& [key, value] : client_metadata) {
+        context->AddInitialMetadata(ToString(key), ToString(value));
       }
     }
 
     if (request->has_param() && request->param().echo_metadata()) {
       const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
           context->client_metadata();
-      for (const auto& metadatum : client_metadata) {
-        context->AddTrailingMetadata(ToString(metadatum.first),
-                                     ToString(metadatum.second));
+      for (const auto& [key, value] : client_metadata) {
+        context->AddTrailingMetadata(ToString(key), ToString(value));
       }
       // Terminate rpc with error and debug info in trailer.
       if (request->param().debug_info().stack_entries_size() ||

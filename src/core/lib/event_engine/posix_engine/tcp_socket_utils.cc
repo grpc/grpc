@@ -21,10 +21,11 @@
 #include <grpc/support/port_platform.h>
 #include <limits.h>
 
+#include <optional>
+
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/util/time.h"
@@ -65,13 +66,12 @@
 #endif  // GPR_WINDOWS
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
 int AdjustValue(int default_value, int min_value, int max_value,
-                absl::optional<int> actual_value) {
+                std::optional<int> actual_value) {
   if (!actual_value.has_value() || *actual_value < min_value ||
       *actual_value > max_value) {
     return default_value;
@@ -149,17 +149,6 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 }  // namespace
-
-#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
-#ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
-
-bool SetSocketDualStack(int fd) {
-  const int off = 0;
-  return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
-}
-
-#endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
-#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   void* value;
@@ -922,5 +911,4 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

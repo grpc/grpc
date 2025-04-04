@@ -32,7 +32,6 @@
 #include <grpc/support/time.h>
 
 #include "absl/log/check.h"
-#include "src/core/util/crash.h"
 
 static struct timespec timespec_from_gpr(gpr_timespec gts) {
   struct timespec rv;

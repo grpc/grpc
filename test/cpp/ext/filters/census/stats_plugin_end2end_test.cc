@@ -704,7 +704,7 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeAnnotations) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  absl::SleepFor(absl::Milliseconds(1000 * grpc_test_slowdown_factor()));
   TestUtils::Flush();
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
@@ -830,7 +830,7 @@ TEST_F(StatsPluginEnd2EndTest, TestMetadataSizeAnnotations) {
   auto sent_span_data = GetSpanByName(
       recorded_spans,
       absl::StrCat(
-          grpc_core::IsCallTracerInTransportEnabled() ? "Attempt." : "Sent.",
+          grpc_core::IsCallTracerTransportFixEnabled() ? "Attempt." : "Sent.",
           client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(
@@ -876,7 +876,7 @@ TEST_F(StatsPluginEnd2EndTest, TestHttpAnnotations) {
   auto client_span_data = GetSpanByName(
       recorded_spans,
       absl::StrCat(
-          grpc_core::IsCallTracerInTransportEnabled() ? "Attempt." : "Sent.",
+          grpc_core::IsCallTracerTransportFixEnabled() ? "Attempt." : "Sent.",
           client_method_name_));
   ASSERT_NE(client_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(client_span_data,
@@ -1110,7 +1110,6 @@ TEST(StatsPluginDeclarationTest, Declarations) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_core::ForceEnableExperiment("trace_record_callops", true);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

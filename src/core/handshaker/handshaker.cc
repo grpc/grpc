@@ -53,7 +53,6 @@ void Handshaker::InvokeOnHandshakeDone(
     absl::Status status) {
   args->event_engine->Run([on_handshake_done = std::move(on_handshake_done),
                            status = std::move(status)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     on_handshake_done(std::move(status));
     // Destroy callback while ExecCtx is still in scope.
@@ -109,20 +108,11 @@ void HandshakeManager::DoHandshake(
       acceptor->pending_data != nullptr) {
     grpc_slice_buffer_swap(args_.read_buffer.c_slice_buffer(),
                            &(acceptor->pending_data->data.raw.slice_buffer));
-    // TODO(vigneshbabu): For connections accepted through event engine
-    // listeners, the ownership of the byte buffer received is transferred to
-    // this callback and it is thus this callback's duty to delete it.
-    // Make this hack default once event engine is rolled out.
-    if (grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
-            args_.endpoint.get())) {
-      grpc_byte_buffer_destroy(acceptor->pending_data);
-    }
   }
   // Start deadline timer, which owns a ref.
   const Duration time_to_deadline = deadline - Timestamp::Now();
   deadline_timer_handle_ =
       args_.event_engine->RunAfter(time_to_deadline, [self = Ref()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
         // HandshakeManager deletion might require an active ExecCtx.
@@ -175,7 +165,6 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
     if (!error.ok()) result = std::move(error);
     args_.event_engine->Run([on_handshake_done = std::move(on_handshake_done_),
                              result = std::move(result)]() mutable {
-      ApplicationCallbackExecCtx callback_exec_ctx;
       ExecCtx exec_ctx;
       on_handshake_done(std::move(result));
       // Destroy callback while ExecCtx is still in scope.

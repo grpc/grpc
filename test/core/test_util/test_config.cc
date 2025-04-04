@@ -55,6 +55,13 @@ static unsigned seed(void) { return static_cast<unsigned>(getpid()); }
 static unsigned seed(void) { return (unsigned)_getpid(); }
 #endif
 
+#ifdef GPR_WINDOWS
+// clang-format off
+#include <winsock2.h>
+#include <iphlpapi.h>
+// clang-format on
+#endif
+
 int64_t grpc_test_sanitizer_slowdown_factor() {
   int64_t sanitizer_multiplier = 1;
   if (BuiltUnderValgrind()) {
@@ -171,6 +178,23 @@ bool grpc_wait_until_shutdown(int64_t time_s) {
 void grpc_disable_all_absl_logs() {
   absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
   absl::SetVLogLevel("*grpc*/*", -1);
+}
+
+void grpc_prewarm_os_for_tests() {
+#ifdef GPR_WINDOWS
+  // On Windows RBE, c-ares' ares_init_options which internally calls
+  // GetAdaptersAddresses sometimes take >20s to return causing tests to
+  // timeout. This is a hack to prewarm the cache by calling that function
+  // during test setup.
+#define IPAA_INITIAL_BUF_SZ 15 * 1024
+  ULONG AddrFlags = 0;
+  ULONG Bufsz = IPAA_INITIAL_BUF_SZ;
+  ULONG ReqBufsz = IPAA_INITIAL_BUF_SZ;
+  IP_ADAPTER_ADDRESSES* ipaa;
+  ipaa = static_cast<IP_ADAPTER_ADDRESSES*>(malloc(Bufsz));
+  GetAdaptersAddresses(AF_UNSPEC, AddrFlags, NULL, ipaa, &ReqBufsz);
+  free(ipaa);
+#endif
 }
 
 namespace grpc {

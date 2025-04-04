@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -34,12 +35,11 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -107,6 +107,12 @@ void HttpConnectHandshaker::HandshakeFailedLocked(absl::Status error) {
     // own error.
     error = GRPC_ERROR_CREATE("Handshaker shutdown");
   }
+  absl::string_view peer_string = "[unknown]";
+  if (args_ != nullptr && args_->endpoint != nullptr) {
+    peer_string = grpc_endpoint_get_peer(args_->endpoint.get());
+  }
+  LOG_EVERY_N_SEC(ERROR, 60)
+      << "HTTP proxy handshake with " << peer_string << " failed: " << error;
   // Invoke callback.
   FinishLocked(std::move(error));
 }
@@ -124,7 +130,6 @@ void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg,
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   handshaker->args_->event_engine->Run(
       [handshaker, error = std::move(error)]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         handshaker->OnWriteDone(std::move(error));
       });
@@ -160,7 +165,6 @@ void HttpConnectHandshaker::OnReadDoneScheduler(void* arg,
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   handshaker->args_->event_engine->Run(
       [handshaker, error = std::move(error)]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         handshaker->OnReadDone(std::move(error));
       });
@@ -254,14 +258,14 @@ void HttpConnectHandshaker::DoHandshake(
     absl::AnyInvocable<void(absl::Status)> on_handshake_done) {
   // Check for HTTP CONNECT channel arg.
   // If not found, invoke on_handshake_done without doing anything.
-  absl::optional<absl::string_view> server_name =
+  std::optional<absl::string_view> server_name =
       args->args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER);
   if (!server_name.has_value()) {
     InvokeOnHandshakeDone(args, std::move(on_handshake_done), absl::OkStatus());
     return;
   }
   // Get headers from channel args.
-  absl::optional<absl::string_view> arg_header_string =
+  std::optional<absl::string_view> arg_header_string =
       args->args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS);
   grpc_http_header* headers = nullptr;
   size_t num_headers = 0;

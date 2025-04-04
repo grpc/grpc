@@ -71,7 +71,7 @@ TEST_INFRA_VERSION=$(git describe --tags "$(git rev-list --tags --max-count=1)")
 popd
 
 # PSM tests related ENV
-PSM_IMAGE_PREFIX=gcr.io/grpc-testing/e2etest/runtime
+PSM_IMAGE_PREFIX=us-docker.pkg.dev/grpc-testing/e2etest
 PSM_IMAGE_TAG=${TEST_INFRA_VERSION}
 
 # Build psm test configurations.

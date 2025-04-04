@@ -22,8 +22,7 @@
 #include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class EventFdWakeupFd : public WakeupFd {
  public:
@@ -38,7 +37,6 @@ class EventFdWakeupFd : public WakeupFd {
   absl::Status Init();
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_EVENTFD_H

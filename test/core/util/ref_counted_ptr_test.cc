@@ -139,7 +139,7 @@ TEST(RefCountedPtr, ResetFromNullToNull) {
   EXPECT_EQ(nullptr, foo.get());
 }
 
-TEST(RefCountedPtr, DerefernceOperators) {
+TEST(RefCountedPtr, DereferenceOperators) {
   RefCountedPtr<Foo> foo(new Foo());
   foo->value();
   Foo& foo_ref = *foo;
@@ -388,7 +388,7 @@ TEST(WeakRefCountedPtr, ResetFromNullToNull) {
   EXPECT_EQ(nullptr, bar.get());
 }
 
-TEST(WeakRefCountedPtr, DerefernceOperators) {
+TEST(WeakRefCountedPtr, DereferenceOperators) {
   RefCountedPtr<Bar> bar_strong(new Bar());
   WeakRefCountedPtr<Bar> bar = bar_strong->WeakRef();
   bar->value();

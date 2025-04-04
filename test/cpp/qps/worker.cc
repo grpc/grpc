@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "src/core/telemetry/stats.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/util/test_config.h"
@@ -67,6 +68,7 @@ int main(int argc, char** argv) {
   signal(SIGINT, sigint_handler);
 
   grpc::testing::RunServer();
-
+  LOG(ERROR) << "Global Stats:\n"
+             << StatsAsJson(grpc_core::global_stats().Collect().get());
   return 0;
 }

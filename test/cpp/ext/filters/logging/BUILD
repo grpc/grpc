@@ -28,12 +28,15 @@ grpc_cc_library(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
+    tags = [
+        # uses OSS specific libraries
+        "grpc:broken-internally",
+    ],
     deps = [
         "//:grpc++",
         "//src/core:logging_filter",
         "//src/cpp/ext/gcp:observability_logging_sink",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_config",
@@ -49,8 +52,9 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
+        # TODO(b/264692543): Re-enable after fixing
+        "grpc:broken-internally",
         "logging_test",
         "no_mac",  # TODO(yashykt): The default stack-sizes are not enough to run this test on MacOS
     ],
@@ -60,7 +64,7 @@ grpc_cc_test(
         "//src/core:dump_args",
         "//src/core:logging_filter",
         "//src/cpp/ext/gcp:observability_logging_sink",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_config",
@@ -76,8 +80,9 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
+        # TODO(b/264692543): Re-enable after fixing
+        "grpc:broken-internally",
         "logging_test",
         "no_mac",  # TODO(yashykt): The default stack-sizes are not enough to run this test on MacOS
     ],
@@ -86,7 +91,7 @@ grpc_cc_test(
         "//:grpc++",
         "//src/core:logging_filter",
         "//src/cpp/ext/gcp:observability_logging_sink",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/ext/filters/census:library",

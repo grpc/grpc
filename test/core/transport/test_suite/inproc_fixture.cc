@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/inproc/inproc_transport.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "test/core/transport/test_suite/transport_test.h"
 
 namespace grpc_core {

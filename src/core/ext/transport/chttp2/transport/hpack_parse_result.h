@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -26,9 +27,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -337,7 +337,7 @@ class HpackParseResult {
       IllegalTableSizeChange illegal_table_size_change;
     };
     std::string key;
-    mutable absl::optional<absl::Status> materialized_status;
+    mutable std::optional<absl::Status> materialized_status;
   };
 
   RefCountedPtr<HpackParseResultState> state_ = nullptr;

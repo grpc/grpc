@@ -4,17 +4,25 @@
 # Therefore, this option is disabled until gRPC works with bzlmod.
 common --enable_bzlmod=false
 
+# gRPC build will break under Bazel 8 because Bazel 8 disables workspace by default.
+# To prevent this, we've enabled workspace again until gRPC fully transitions to Bzlmod.
+common --enable_workspace=true
+
+# Bazel 8 needs this
+common --incompatible_disallow_empty_glob=false
+common --incompatible_disallow_struct_provider_syntax=false
+
 # for platform-appropriate cxxopts
 common --enable_platform_specific_config
 
-build:windows --cxxopt='/std:c++14'
-build:windows --host_cxxopt='/std:c++14'
-build:linux   --cxxopt='-std=c++14'
-build:linux   --host_cxxopt='-std=c++14'
-build:macos   --cxxopt='-std=c++14'
-build:macos   --host_cxxopt='-std=c++14'
-build:freebsd   --cxxopt='-std=c++14'
-build:freebsd   --host_cxxopt='-std=c++14'
+build:windows --cxxopt='/std:c++17'
+build:windows --host_cxxopt='/std:c++17'
+build:linux   --cxxopt='-std=c++17'
+build:linux   --host_cxxopt='-std=c++17'
+build:macos   --cxxopt='-std=c++17'
+build:macos   --host_cxxopt='-std=c++17'
+build:freebsd   --cxxopt='-std=c++17'
+build:freebsd   --host_cxxopt='-std=c++17'
 
 # TODO(veblush): Remove these once upb is upgraded to 25.x or later
 build:linux --copt=-Wno-typedef-redefinition
@@ -30,12 +38,9 @@ build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD
 build --host_copt=-DGRPC_BAZEL_BUILD
 build --action_env=GRPC_BAZEL_RUNTIME=1
-build --define=use_fast_cpp_protos=true
 
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
-
-build:latent_see --copt=-DGRPC_ENABLE_LATENT_SEE
 
 build:dbg --compilation_mode=dbg
 
@@ -74,6 +79,10 @@ build:fuzzer_asan --copt=-fno-omit-frame-pointer
 build:fuzzer_asan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:fuzzer_asan --copt=-DGRPC_ASAN
 build:fuzzer_asan --copt=-DADDRESS_SANITIZER  # used by absl
+# add a macro that can be used to determine that we're running under a fuzzer
+# allowing different code paths to be substituted under fuzzing (say, additional
+# checks)
+build:fuzzer_asan --copt=-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 build:fuzzer_asan --linkopt=-fsanitize=fuzzer,address
 build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:fuzzer_asan --action_env=LSAN_OPTIONS=suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
@@ -164,9 +173,9 @@ build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
 build:compdb --build_tag_filters=-nocompdb --features=-layering_check
 
 try-import %workspace%/tools/fuzztest.bazelrc
-build:fuzztest --cxxopt=-std=c++17
-
-build:fuzztest_test --cxxopt=-std=c++17
 
 # OpenTelemetry C++ needs this option to build with absl
 build --@io_opentelemetry_cpp//api:with_abseil
+
+# Bazel 7.4.1 needs this (https://github.com/bazelbuild/bazel/issues/24369)
+test --nozip_undeclared_test_outputs

@@ -21,27 +21,26 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <stdint.h>
-#include <string.h>
 
+#include <cstdint>
+#include <vector>
+
+#include "fuzztest/fuzztest.h"
 #include "src/core/lib/compression/message_compress.h"
 
-bool squelch = true;
+using fuzztest::Arbitrary;
+using fuzztest::ElementOf;
+using fuzztest::VectorOf;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (size < 1) return 0;
-
-  // Instead of rolling something complicated to convert a uint8_t to the enum,
-  // just bail out if it isn't trivially convertible.
-  if (data[0] >= GRPC_COMPRESS_ALGORITHMS_COUNT) return 0;
-  const auto compression_algorithm =
-      static_cast<grpc_compression_algorithm>(data[0]);
-
+void CheckDecompresses(grpc_compression_algorithm compression_algorithm,
+                       std::vector<uint8_t> buffer) {
   grpc_init();
   grpc_slice_buffer input_buffer;
   grpc_slice_buffer_init(&input_buffer);
-  grpc_slice_buffer_add(&input_buffer,
-                        grpc_slice_from_copied_buffer(
-                            reinterpret_cast<const char*>(data + 1), size - 1));
+  grpc_slice_buffer_add(
+      &input_buffer,
+      grpc_slice_from_copied_buffer(
+          reinterpret_cast<const char*>(buffer.data()), buffer.size()));
   grpc_slice_buffer output_buffer;
   grpc_slice_buffer_init(&output_buffer);
 
@@ -50,5 +49,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_slice_buffer_destroy(&input_buffer);
   grpc_slice_buffer_destroy(&output_buffer);
   grpc_shutdown();
-  return 0;
 }
+FUZZ_TEST(MyTestSuite, CheckDecompresses)
+    .WithDomains(ElementOf({GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE,
+                            GRPC_COMPRESS_GZIP}),
+                 VectorOf(Arbitrary<uint8_t>()).WithMinSize(1));

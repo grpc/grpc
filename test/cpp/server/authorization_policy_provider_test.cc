@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include <grpcpp/security/authorization_policy_provider.h>
-#include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 

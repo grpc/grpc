@@ -24,12 +24,13 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/base/attributes.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -42,15 +43,9 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/latent_see.h"
 
 namespace grpc_core {
-
-const NoInterceptor HttpServerFilter::Call::OnClientToServerMessage;
-const NoInterceptor HttpServerFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor HttpServerFilter::Call::OnServerToClientMessage;
-const NoInterceptor HttpServerFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,
@@ -87,7 +82,7 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
         if (filter->allow_put_requests_) {
           break;
         }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case HttpMethodMetadata::kInvalid:
       case HttpMethodMetadata::kGet:
         return MalformedRequest("Bad method header");
@@ -122,7 +117,7 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
   }
 
   if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    absl::optional<Slice> host = md.Take(HostMetadata());
+    std::optional<Slice> host = md.Take(HostMetadata());
     if (host.has_value()) {
       md.Set(HttpAuthorityMetadata(), std::move(*host));
     }

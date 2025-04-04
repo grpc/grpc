@@ -25,7 +25,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -37,29 +36,16 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "binder_resolver_test",
-    srcs = ["binder_resolver_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//src/core:grpc_resolver_binder",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "dns_resolver_test",
     srcs = ["dns_resolver_test.cc"],
     external_deps = [
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
+    tags = [
+        # authority based dns uri's not supported
+        "grpc:fails-internally",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -74,7 +60,9 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
+    tags = [
+        "grpc:broken-internally",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -91,7 +79,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -103,7 +90,6 @@ grpc_cc_test(
     name = "fake_resolver_test",
     srcs = ["fake_resolver_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -120,7 +106,6 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -33,7 +34,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -46,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
@@ -60,8 +62,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/bdp_estimator.h"
-#include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
@@ -73,6 +73,8 @@
 #include "src/core/util/useful.h"
 
 // IWYU pragma: no_include "src/core/util/orphanable.h"
+
+using grpc_core::http2::Http2ErrorCode;
 
 static void add_to_write_list(grpc_chttp2_write_cb** list,
                               grpc_chttp2_write_cb* cb) {
@@ -174,7 +176,6 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                 kInvalid) {
           t->delayed_ping_timer_handle = t->event_engine->RunAfter(
               too_soon.wait, [t = t->Ref()]() mutable {
-                grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
                 grpc_core::ExecCtx exec_ctx;
                 grpc_chttp2_retry_initiate_ping(std::move(t));
               });
@@ -253,6 +254,7 @@ class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
     grpc_core::global_stats().IncrementHttp2WritesBegun();
+    grpc_core::global_stats().IncrementHttp2WriteTargetSize(target_write_size_);
   }
 
   void FlushSettings() {
@@ -268,7 +270,6 @@ class WriteContext {
         // for implementations taking some more time about acking a setting.
         t_->settings_ack_watchdog = t_->event_engine->RunAfter(
             t_->settings_timeout, [t = t_->Ref()]() mutable {
-              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
               grpc_core::ExecCtx exec_ctx;
               grpc_chttp2_settings_timeout(std::move(t));
             });
@@ -474,11 +475,11 @@ class StreamWriteContext {
     grpc_chttp2_complete_closure_step(t_, &s_->send_initial_metadata_finished,
                                       absl::OkStatus(),
                                       "send_initial_metadata_finished");
-    if (!grpc_core::IsCallTracerInTransportEnabled()) {
-      if (s_->call_tracer) {
+    if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+      if (s_->parent_call_tracer != nullptr) {
         grpc_core::HttpAnnotation::WriteStats write_stats;
         write_stats.target_write_size = write_context_->target_write_size();
-        s_->call_tracer->RecordAnnotation(
+        s_->parent_call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(
                 grpc_core::HttpAnnotation::Type::kHeadWritten,
                 gpr_now(GPR_CLOCK_REALTIME))
@@ -486,13 +487,11 @@ class StreamWriteContext {
                 .Add(s_->flow_control.stats())
                 .Add(write_stats));
       }
-    } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
-      auto* call_tracer =
-          s_->arena->GetContext<grpc_core::CallTracerInterface>();
-      if (call_tracer != nullptr && call_tracer->IsSampled()) {
+    } else {
+      if (s_->call_tracer != nullptr && s_->call_tracer->IsSampled()) {
         grpc_core::HttpAnnotation::WriteStats write_stats;
         write_stats.target_write_size = write_context_->target_write_size();
-        call_tracer->RecordAnnotation(
+        s_->call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(
                 grpc_core::HttpAnnotation::Type::kHeadWritten,
                 gpr_now(GPR_CLOCK_REALTIME))
@@ -635,24 +634,23 @@ class StreamWriteContext {
     if (!t_->is_client && !s_->read_closed) {
       grpc_slice_buffer_add(
           t_->outbuf.c_slice_buffer(),
-          grpc_chttp2_rst_stream_create(s_->id, GRPC_HTTP2_NO_ERROR,
-                                        &s_->call_tracer_wrapper));
+          grpc_chttp2_rst_stream_create(
+              s_->id, static_cast<uint32_t>(Http2ErrorCode::kNoError),
+              &s_->call_tracer_wrapper));
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
-    if (!grpc_core::IsCallTracerInTransportEnabled()) {
-      if (s_->call_tracer) {
-        s_->call_tracer->RecordAnnotation(
+    if (!grpc_core::IsCallTracerTransportFixEnabled()) {
+      if (s_->parent_call_tracer != nullptr) {
+        s_->parent_call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
                                       gpr_now(GPR_CLOCK_REALTIME))
                 .Add(s_->t->flow_control.stats())
                 .Add(s_->flow_control.stats()));
       }
-    } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
-      auto* call_tracer =
-          s_->arena->GetContext<grpc_core::CallTracerInterface>();
-      if (call_tracer != nullptr && call_tracer->IsSampled()) {
-        call_tracer->RecordAnnotation(
+    } else {
+      if (s_->call_tracer != nullptr && s_->call_tracer->IsSampled()) {
+        s_->call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
                                       gpr_now(GPR_CLOCK_REALTIME))
                 .Add(s_->t->flow_control.stats())
@@ -703,10 +701,9 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             grpc_core::GrpcHttp2GetCopyContextFn();
         if (copy_context_fn != nullptr &&
             grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
-          t->context_list->emplace_back(copy_context_fn(s->arena),
-                                        outbuf_relative_start_pos,
-                                        num_stream_bytes, s->byte_counter,
-                                        s->write_counter - 1, s->tcp_tracer);
+          t->context_list->emplace_back(
+              copy_context_fn(s->arena), outbuf_relative_start_pos,
+              num_stream_bytes, s->byte_counter, s->write_counter - 1, nullptr);
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;
@@ -748,12 +745,11 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
     // Set ping timeout after finishing write so we don't measure our own send
     // time.
     const auto timeout = t->ping_timeout;
-    auto id = t->ping_callbacks.OnPingTimeout(
-        timeout, t->event_engine.get(), [t = t->Ref()] {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
-          grpc_chttp2_ping_timeout(t);
-        });
+    auto id = t->ping_callbacks.OnPingTimeout(timeout, t->event_engine.get(),
+                                              [t = t->Ref()] {
+                                                grpc_core::ExecCtx exec_ctx;
+                                                grpc_chttp2_ping_timeout(t);
+                                              });
     if (GRPC_TRACE_FLAG_ENABLED(http2_ping) && id.has_value()) {
       LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
                 << "]: Set ping timeout timer of " << timeout.ToString()
@@ -773,7 +769,6 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
       }
       t->keepalive_ping_timeout_handle =
           t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
             grpc_chttp2_keepalive_timeout(t);
           });

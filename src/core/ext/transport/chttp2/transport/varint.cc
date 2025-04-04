@@ -42,16 +42,16 @@ void VarintWriteTail(size_t tail_value, uint8_t* target, size_t tail_length) {
   switch (tail_length) {
     case 5:
       target[4] = static_cast<uint8_t>((tail_value >> 28) | 0x80);
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 4:
       target[3] = static_cast<uint8_t>((tail_value >> 21) | 0x80);
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 3:
       target[2] = static_cast<uint8_t>((tail_value >> 14) | 0x80);
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 2:
       target[1] = static_cast<uint8_t>((tail_value >> 7) | 0x80);
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 1:
       target[0] = static_cast<uint8_t>((tail_value) | 0x80);
   }

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <grpc/grpc.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <optional>
 #include <string>
 
-#include "src/core/lib/config/config_vars.h"
+#include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"

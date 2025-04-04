@@ -16,8 +16,7 @@
 
 #include "absl/strings/str_cat.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 const EventEngine::TaskHandle EventEngine::TaskHandle::kInvalid = {-1, -1};
 const EventEngine::ConnectionHandle EventEngine::ConnectionHandle::kInvalid = {
@@ -72,5 +71,4 @@ std::ostream& operator<<(std::ostream& out,
   return printout(out, handle);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

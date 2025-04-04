@@ -59,8 +59,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
       : watcher_(std::move(watcher)), state_(state), status_(status) {
     if (work_serializer != nullptr) {
       work_serializer->Run(
-          [this]() { SendNotification(this, absl::OkStatus()); },
-          DEBUG_LOCATION);
+          [this]() { SendNotification(this, absl::OkStatus()); });
     } else {
       GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
                         grpc_schedule_on_exec_ctx);
@@ -101,13 +100,13 @@ ConnectivityStateTracker::~ConnectivityStateTracker() {
   grpc_connectivity_state current_state =
       state_.load(std::memory_order_relaxed);
   if (current_state == GRPC_CHANNEL_SHUTDOWN) return;
-  for (const auto& p : watchers_) {
+  for (const auto& watcher : watchers_) {
     GRPC_TRACE_LOG(connectivity_state, INFO)
         << "ConnectivityStateTracker " << name_ << "[" << this
-        << "]: notifying watcher " << p.first << ": "
+        << "]: notifying watcher " << watcher.get() << ": "
         << ConnectivityStateName(current_state) << " -> "
         << ConnectivityStateName(GRPC_CHANNEL_SHUTDOWN);
-    p.second->Notify(GRPC_CHANNEL_SHUTDOWN, absl::Status());
+    watcher->Notify(GRPC_CHANNEL_SHUTDOWN, absl::Status());
   }
 }
 
@@ -130,7 +129,7 @@ void ConnectivityStateTracker::AddWatcher(
   // If we're in state SHUTDOWN, don't add the watcher, so that it will
   // be orphaned immediately.
   if (current_state != GRPC_CHANNEL_SHUTDOWN) {
-    watchers_.insert(std::make_pair(watcher.get(), std::move(watcher)));
+    watchers_.insert(std::move(watcher));
   }
 }
 
@@ -155,13 +154,13 @@ void ConnectivityStateTracker::SetState(grpc_connectivity_state state,
       << status.ToString() << ")";
   state_.store(state, std::memory_order_relaxed);
   status_ = status;
-  for (const auto& p : watchers_) {
+  for (const auto& watcher : watchers_) {
     GRPC_TRACE_LOG(connectivity_state, INFO)
         << "ConnectivityStateTracker " << name_ << "[" << this
-        << "]: notifying watcher " << p.first << ": "
+        << "]: notifying watcher " << watcher.get() << ": "
         << ConnectivityStateName(current_state) << " -> "
         << ConnectivityStateName(state);
-    p.second->Notify(state, status);
+    watcher->Notify(state, status);
   }
   // If the new state is SHUTDOWN, orphan all of the watchers.  This
   // avoids the need for the callers to explicitly cancel them.

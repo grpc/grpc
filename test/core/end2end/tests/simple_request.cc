@@ -21,11 +21,11 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/telemetry/stats.h"
@@ -48,7 +48,7 @@ void CheckPeer(std::string peer_name) {
 void SimpleRequestBody(CoreEnd2endTest& test) {
   auto before = global_stats().Collect();
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
@@ -59,9 +59,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
   CheckPeer(*s.GetPeer());
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   CheckPeer(*c.GetPeer());
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
@@ -73,19 +73,12 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   test.Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
   EXPECT_EQ(server_status.message(), "xyz");
-  // the following sanity check makes sure that the requested error string is
-  // correctly populated by the core. It looks for certain substrings that are
-  // not likely to change much. Some parts of the error, like time created,
-  // obviously are not checked.
   EXPECT_THAT(server_status.error_string(), HasSubstr("xyz"));
-  EXPECT_THAT(server_status.error_string(),
-              HasSubstr("Error received from peer"));
-  EXPECT_THAT(server_status.error_string(), HasSubstr("grpc_message"));
-  EXPECT_THAT(server_status.error_string(), HasSubstr("grpc_status"));
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   uint64_t expected_calls = 1;
-  if (test.GetParam()->feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
+  if (test.test_config()->feature_mask &
+      FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
     expected_calls *= 2;
   }
   auto after = global_stats().Collect();
@@ -96,9 +89,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
             expected_calls);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest) { SimpleRequestBody(*this); }
+CORE_END2END_TEST(CoreEnd2endTests, SimpleRequest) { SimpleRequestBody(*this); }
 
-CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest10) {
+CORE_END2END_TEST(CoreEnd2endTests, SimpleRequest10) {
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this);
   }

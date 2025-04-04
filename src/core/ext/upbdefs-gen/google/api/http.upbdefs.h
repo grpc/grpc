@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_API_HTTP_PROTO_UPBDEFS_H_
-#define GOOGLE_API_HTTP_PROTO_UPBDEFS_H_
+#ifndef GOOGLE_API_HTTP_PROTO_UPB_H__UPBDEFS_H_
+#define GOOGLE_API_HTTP_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -40,4 +40,4 @@ UPB_INLINE const upb_MessageDef *google_api_CustomHttpPattern_getmsgdef(upb_DefP
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_API_HTTP_PROTO_UPBDEFS_H_ */
+#endif  /* GOOGLE_API_HTTP_PROTO_UPB_H__UPBDEFS_H_ */

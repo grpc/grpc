@@ -36,8 +36,7 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/useful.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 namespace {
 
 absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
@@ -125,7 +124,6 @@ void NativePosixDNSResolver::LookupTXT(
   });
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS

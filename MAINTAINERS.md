@@ -9,7 +9,9 @@ for general contribution guidelines.
 
 ## Maintainers (in alphabetical order)
 <!-- go/keep-sorted start case=no -->
+
 - [a11r](https://github.com/a11r), Google LLC
+- [ac-patel](https://github.com/ac-patel), Google LLC
 - [apolcyn](https://github.com/apolcyn), Google LLC
 - [arjunroy](https://github.com/arjunroy), Google LLC
 - [ctiller](https://github.com/ctiller), Google LLC
@@ -28,11 +30,14 @@ for general contribution guidelines.
 - [matthewstevenson88](https://github.com/matthewstevenson88), Google LLC
 - [murgatroid99](https://github.com/murgatroid99), Google LLC
 - [nanahpang](https://github.com/nanahpang), Google LLC
+- [pawbhard](https://github.com/pawbhard), Google LLC
 - [pfreixes](https://github.com/pfreixes), Skyscanner Ltd
 - [ran-su](https://github.com/ran-su), Google LLC
+- [rishesh007](https://github.com/rishesh007), Google LLC
 - [sanjaypujare](https://github.com/sanjaypujare), Google LLC
 - [sastryvp](https://github.com/sastryvp), Google LLC
 - [sergiitk](https://github.com/sergiitk), Google LLC
+- [siddharthnohria](https://github.com/siddharthnohria), Google LLC
 - [soheilhy](https://github.com/soheilhy), Google LLC
 - [stanley-cheung](https://github.com/stanley-cheung), Google LLC
 - [thisisnotapril](https://github.com/thisisnotapril), Google LLC

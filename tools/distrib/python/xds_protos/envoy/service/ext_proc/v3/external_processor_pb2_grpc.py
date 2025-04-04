@@ -32,7 +32,6 @@ class ExternalProcessorStub(object):
     In other words, the process is a request/response conversation, but
     using a gRPC stream to make it easier for the server to
     maintain state.
-
     """
 
     def __init__(self, channel):
@@ -75,7 +74,6 @@ class ExternalProcessorServicer(object):
     In other words, the process is a request/response conversation, but
     using a gRPC stream to make it easier for the server to
     maintain state.
-
     """
 
     def Process(self, request_iterator, context):
@@ -130,7 +128,6 @@ class ExternalProcessor(object):
     In other words, the process is a request/response conversation, but
     using a gRPC stream to make it easier for the server to
     maintain state.
-
     """
 
     @staticmethod

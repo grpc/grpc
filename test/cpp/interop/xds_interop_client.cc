@@ -46,7 +46,7 @@
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -82,6 +82,8 @@ ABSL_FLAG(
     "If true, XdsCredentials are used, InsecureChannelCredentials otherwise");
 ABSL_FLAG(bool, enable_csm_observability, false,
           "Whether to enable CSM Observability");
+ABSL_FLAG(bool, log_rpc_start_and_end, false,
+          "Whether to log when RPCs start and end.");
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -156,13 +158,11 @@ class TestClient {
                                  ? config.timeout_sec
                                  : absl::GetFlag(FLAGS_rpc_timeout_sec));
     AsyncClientCall* call = new AsyncClientCall;
+    if (absl::GetFlag(FLAGS_log_rpc_start_and_end)) {
+      LOG(INFO) << "starting async unary call " << static_cast<void*>(call);
+    }
     for (const auto& data : config.metadata) {
       call->context.AddMetadata(data.first, data.second);
-      // TODO(@donnadionne): move deadline to separate proto.
-      if (data.first == "rpc-behavior" && data.second == "keep-open") {
-        deadline =
-            std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
-      }
     }
     SimpleRequest request;
     request.set_response_size(config.response_payload_size);
@@ -195,13 +195,11 @@ class TestClient {
                                  ? config.timeout_sec
                                  : absl::GetFlag(FLAGS_rpc_timeout_sec));
     AsyncClientCall* call = new AsyncClientCall;
+    if (absl::GetFlag(FLAGS_log_rpc_start_and_end)) {
+      LOG(INFO) << "starting async empty call " << static_cast<void*>(call);
+    }
     for (const auto& data : config.metadata) {
       call->context.AddMetadata(data.first, data.second);
-      // TODO(@donnadionne): move deadline to separate proto.
-      if (data.first == "rpc-behavior" && data.second == "keep-open") {
-        deadline =
-            std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
-      }
     }
     call->context.set_deadline(deadline);
     call->result.saved_request_id = saved_request_id;
@@ -219,6 +217,9 @@ class TestClient {
     while (cq_.Next(&got_tag, &ok)) {
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       CHECK(ok);
+      if (absl::GetFlag(FLAGS_log_rpc_start_and_end)) {
+        LOG(INFO) << "completed async call " << static_cast<void*>(call);
+      }
       {
         std::lock_guard<std::mutex> lock(stats_watchers_->mu);
         auto server_initial_metadata = call->context.GetServerInitialMetadata();
@@ -430,6 +431,7 @@ grpc::CsmObservability EnableCsmObservability() {
   // default was "localhost:9464" which causes connection issue across GKE
   // pods
   opts.url = "0.0.0.0:9464";
+  opts.without_otel_scope = false;
   auto prometheus_exporter =
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =

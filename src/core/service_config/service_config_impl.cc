@@ -19,14 +19,14 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/service_config/service_config_parser.h"
@@ -44,8 +44,8 @@ namespace {
 
 struct MethodConfig {
   struct Name {
-    absl::optional<std::string> service;
-    absl::optional<std::string> method;
+    std::optional<std::string> service;
+    std::optional<std::string> method;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader = JsonObjectLoader<Name>()

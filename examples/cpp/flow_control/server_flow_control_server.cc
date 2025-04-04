@@ -27,6 +27,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/strings/str_cat.h"
 
 #ifdef BAZEL_BUILD
@@ -75,7 +76,7 @@ class HelloReactor final
       absl::MutexLock lock(&mu_);
       std::cout << "Write #" << messages_to_send_ << " done (Ok: " << ok
                 << "): " << absl::Now() - *write_start_time_ << "\n";
-      write_start_time_ = absl::nullopt;
+      write_start_time_ = std::nullopt;
       more = ok && messages_to_send_ > 0;
     }
     if (more) {
@@ -91,7 +92,7 @@ class HelloReactor final
  private:
   helloworld::HelloReply res_;
   size_t messages_to_send_;
-  absl::optional<absl::Time> write_start_time_;
+  std::optional<absl::Time> write_start_time_;
   absl::Mutex mu_;
 };
 
@@ -115,6 +116,7 @@ class GreeterService final : public helloworld::Greeter::CallbackService {
 
 int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   std::string server_address =
       absl::StrCat("0.0.0.0:", absl::GetFlag(FLAGS_port));
   grpc::EnableDefaultHealthCheckService(true);

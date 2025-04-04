@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/surface/client_call.h"
+#include "src/core/call/client_call.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
 #include "absl/status/status.h"
+#include "src/core/call/metadata.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/util/debug_location.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
@@ -37,9 +37,9 @@ class ClientCallTest : public YodelTest {
   class CallOptions {
    public:
     Slice path() const { return path_.Copy(); }
-    absl::optional<Slice> authority() const {
-      return authority_.has_value() ? absl::optional<Slice>(authority_->Copy())
-                                    : absl::nullopt;
+    std::optional<Slice> authority() const {
+      return authority_.has_value() ? std::optional<Slice>(authority_->Copy())
+                                    : std::nullopt;
     }
     bool registered_method() const { return registered_method_; }
     Duration timeout() const { return timeout_; }
@@ -54,7 +54,7 @@ class ClientCallTest : public YodelTest {
 
    private:
     Slice path_ = Slice::FromCopiedString(kDefaultPath);
-    absl::optional<Slice> authority_;
+    std::optional<Slice> authority_;
     bool registered_method_ = false;
     Duration timeout_ = Duration::Infinity();
     grpc_compression_options compression_options_ = {
@@ -91,18 +91,14 @@ class ClientCallTest : public YodelTest {
     cq_verifier_->Expect(CqVerifier::tag(tag), std::move(result), whence);
   }
 
-  void TickThroughCqExpectations(
-      absl::optional<Duration> timeout = absl::nullopt,
-      SourceLocation whence = {}) {
+  void TickThroughCqExpectations(std::optional<Duration> timeout = std::nullopt,
+                                 SourceLocation whence = {}) {
     if (expectations_ == 0) {
       cq_verifier_->VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);
       return;
     }
     expectations_ = 0;
-    cq_verifier_->Verify(
-        timeout.value_or(g_yodel_fuzzing ? Duration::Minutes(5)
-                                         : Duration::Seconds(10)),
-        whence);
+    cq_verifier_->Verify(timeout.value_or(Duration::Minutes(5)), whence);
   }
 
   CallHandler& handler() {
@@ -151,7 +147,7 @@ class ClientCallTest : public YodelTest {
   grpc_call* call_ = nullptr;
   RefCountedPtr<TestCallDestination> destination_ =
       MakeRefCounted<TestCallDestination>(this);
-  absl::optional<CallHandler> handler_;
+  std::optional<CallHandler> handler_;
   std::unique_ptr<CqVerifier> cq_verifier_;
   int expectations_ = 0;
 };
@@ -216,9 +212,7 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterTimeout) {
   ExecCtx::Get()->InvalidateNow();
   auto now = Timestamp::Now();
   EXPECT_GE(now - start, Duration::Seconds(1)) << GRPC_DUMP_ARGS(now, start);
-  EXPECT_LE(now - start,
-            g_yodel_fuzzing ? Duration::Minutes(10) : Duration::Seconds(5))
-      << GRPC_DUMP_ARGS(now, start);
+  EXPECT_LE(now - start, Duration::Minutes(10)) << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
 }
 
@@ -252,6 +246,15 @@ CLIENT_CALL_TEST(NegativeDeadline) {
   EXPECT_LE(now - start, Duration::Milliseconds(100))
       << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
+}
+
+TEST(ClientCallTest, NoOpRegression1) {
+  NoOp(ParseTestProto(
+      R"pb(event_engine_actions {
+             assign_ports: 4294967285
+             connections { write_size: 1 write_size: 0 write_size: 2147483647 }
+           }
+      )pb"));
 }
 
 }  // namespace grpc_core

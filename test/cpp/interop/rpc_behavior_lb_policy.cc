@@ -114,7 +114,7 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
       auto pick_result = delegate_picker_->Pick(args);
       // Add metadata.
       auto* complete_pick =
-          absl::get_if<PickResult::Complete>(&pick_result.result);
+          std::get_if<PickResult::Complete>(&pick_result.result);
       if (complete_pick != nullptr) {
         complete_pick->metadata_mutations.Set(kRpcBehaviorMetadataKey,
                                               rpc_behavior_);

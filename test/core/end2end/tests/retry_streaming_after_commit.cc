@@ -20,8 +20,8 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -32,7 +32,8 @@ namespace {
 
 // Tests that we can continue to send/recv messages on a streaming call
 // after retries are committed.
-CORE_END2END_TEST(RetryTest, RetryStreamingAfterCommit) {
+CORE_END2END_TEST(RetryTests, RetryStreamingAfterCommit) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -52,7 +53,7 @@ CORE_END2END_TEST(RetryTest, RetryStreamingAfterCommit) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Client starts a batch for receiving initial metadata and a message.
   // This will commit retries.
   IncomingMessage server_message;
@@ -68,8 +69,8 @@ CORE_END2END_TEST(RetryTest, RetryStreamingAfterCommit) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Server receives a message.
   IncomingMessage client_message;
   s.NewBatch(102).RecvMessage(client_message);

@@ -18,11 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/status_util.h"
 
 namespace grpc_core {
 

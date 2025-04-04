@@ -74,6 +74,8 @@ class WaitSet final {
     }
   }
 
+  std::string ToString();
+
  private:
   // Handles to activities that need to be awoken.
   WakerSet pending_;

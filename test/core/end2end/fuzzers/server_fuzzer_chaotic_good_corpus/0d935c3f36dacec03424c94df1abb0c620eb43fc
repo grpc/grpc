@@ -1,5 +1,0 @@
-network_input {
-}
-config_vars {
-  trace: ""
-}

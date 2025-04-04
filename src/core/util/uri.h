@@ -76,7 +76,7 @@ class URI {
     return query_parameter_map_;
   }
   // A vector of key:value query parameter pairs, kept in order of appearance
-  // within the URI search string. Repeated keys are represented as separate
+  // within the URI string. Repeated keys are represented as separate
   // key:value elements.
   const std::vector<QueryParam>& query_parameter_pairs() const {
     return query_parameter_pairs_;
@@ -84,6 +84,17 @@ class URI {
   const std::string& fragment() const { return fragment_; }
 
   std::string ToString() const;
+
+  // Returns the encoded path and query params, such as would be used on
+  // the wire in an HTTP request.
+  std::string EncodedPathAndQueryParams() const;
+
+  bool operator==(const URI& other) const {
+    return scheme_ == other.scheme_ && authority_ == other.authority_ &&
+           path_ == other.path_ &&
+           query_parameter_pairs_ == other.query_parameter_pairs_ &&
+           fragment_ == other.fragment_;
+  }
 
  private:
   URI(std::string scheme, std::string authority, std::string path,

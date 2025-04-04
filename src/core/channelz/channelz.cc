@@ -62,6 +62,35 @@ std::string BaseNode::RenderJsonString() {
   return JsonDump(json);
 }
 
+void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
+  MutexLock lock(&data_sources_mu_);
+  for (DataSource* data_source : data_sources_) {
+    data_source->AddJson(json);
+  }
+}
+
+//
+// DataSource
+//
+
+DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {
+  MutexLock lock(&node_->data_sources_mu_);
+  node_->data_sources_.push_back(this);
+}
+
+DataSource::~DataSource() {
+  if (node_ != nullptr) ResetDataSource();
+}
+
+void DataSource::ResetDataSource() {
+  auto node = std::move(node_);
+  DCHECK(node != nullptr);
+  MutexLock lock(&node->data_sources_mu_);
+  node->data_sources_.erase(
+      std::remove(node->data_sources_.begin(), node->data_sources_.end(), this),
+      node->data_sources_.end());
+}
+
 //
 // CallCountingHelper
 //
@@ -210,6 +239,7 @@ Json ChannelNode::RenderJson() {
   // Template method. Child classes may override this to add their specific
   // functionality.
   PopulateChildRefs(&json);
+  PopulateJsonFromDataSources(json);
   return Json::FromObject(std::move(json));
 }
 
@@ -320,6 +350,7 @@ Json SubchannelNode::RenderJson() {
         }),
     });
   }
+  PopulateJsonFromDataSources(data);
   return Json::FromObject(object);
 }
 
@@ -334,7 +365,7 @@ ServerNode::~ServerNode() {}
 
 void ServerNode::AddChildSocket(RefCountedPtr<SocketNode> node) {
   MutexLock lock(&child_mu_);
-  child_sockets_.insert(std::make_pair(node->uuid(), std::move(node)));
+  child_sockets_.insert(std::pair(node->uuid(), std::move(node)));
 }
 
 void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
@@ -344,7 +375,7 @@ void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
 
 void ServerNode::AddChildListenSocket(RefCountedPtr<ListenSocketNode> node) {
   MutexLock lock(&child_mu_);
-  child_listen_sockets_.insert(std::make_pair(node->uuid(), std::move(node)));
+  child_listen_sockets_.insert(std::pair(node->uuid(), std::move(node)));
 }
 
 void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
@@ -410,6 +441,7 @@ Json ServerNode::RenderJson() {
       object["listenSocket"] = Json::FromArray(std::move(array));
     }
   }
+  PopulateJsonFromDataSources(object);
   return Json::FromObject(std::move(object));
 }
 
@@ -644,6 +676,7 @@ Json SocketNode::RenderJson() {
   }
   PopulateSocketAddressJson(&object, "remote", remote_.c_str());
   PopulateSocketAddressJson(&object, "local", local_.c_str());
+  PopulateJsonFromDataSources(data);
   return Json::FromObject(std::move(object));
 }
 
@@ -663,6 +696,7 @@ Json ListenSocketNode::RenderJson() {
               })},
   };
   PopulateSocketAddressJson(&object, "local", local_addr_.c_str());
+  PopulateJsonFromDataSources(object);
   return Json::FromObject(std::move(object));
 }
 

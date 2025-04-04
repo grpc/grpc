@@ -27,6 +27,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/orphanable.h"
@@ -132,10 +133,7 @@ class ConnectivityStateTracker {
   const char* name_;
   std::atomic<grpc_connectivity_state> state_{grpc_connectivity_state()};
   absl::Status status_;
-  // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
-  // be a set instead of a map.
-  std::map<ConnectivityStateWatcherInterface*,
-           OrphanablePtr<ConnectivityStateWatcherInterface>>
+  absl::flat_hash_set<OrphanablePtr<ConnectivityStateWatcherInterface>>
       watchers_;
 };
 

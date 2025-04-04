@@ -15,8 +15,8 @@ This example demonstrate the usage of Async interceptors and context propagation
 This example have the following steps:
 1. Generate RPC ID on client side and propagate to server using `metadata`.
     * `contextvars` can be used here if client and server is running in a same coroutine (or same thead for Sync).
-2. Server interceptor1 intercept the request, it checks `rpc_id_var` and decorate it with it's tag `Interceptor1`.
-3. Server interceptor2 intercept the request, it checks `rpc_id_var` and decorate it with it's tag `Interceptor2`.
+2. Server interceptor1 intercept the request, it checks `rpc_id_var` and decorate it with its tag `Interceptor1`.
+3. Server interceptor2 intercept the request, it checks `rpc_id_var` and decorate it with its tag `Interceptor2`.
 4. Server handler receives the request with `rpc_id_var` decorated by both interceptor1 and interceptor2.
 
 ## How to run this example

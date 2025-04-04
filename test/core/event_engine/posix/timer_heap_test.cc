@@ -50,7 +50,7 @@ std::vector<Timer> CreateTestElements(size_t num_elements) {
 void CheckValid(TimerHeap* pq) {
   const std::vector<Timer*>& timers = pq->TestOnlyGetTimers();
   for (size_t i = 0; i < timers.size(); ++i) {
-    size_t left_child = 1u + 2u * i;
+    size_t left_child = 1u + (2u * i);
     size_t right_child = left_child + 1u;
     if (left_child < timers.size()) {
       EXPECT_LE(timers[i]->deadline, timers[left_child]->deadline);

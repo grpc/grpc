@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <type_traits>
@@ -36,9 +37,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -190,7 +190,7 @@ class PriorityLb final : public LoadBalancingPolicy {
       void OnTimerLocked();
 
       RefCountedPtr<ChildPriority> child_priority_;
-      absl::optional<EventEngine::TaskHandle> timer_handle_;
+      std::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     class FailoverTimer final : public InternallyRefCounted<FailoverTimer> {
@@ -203,7 +203,7 @@ class PriorityLb final : public LoadBalancingPolicy {
       void OnTimerLocked();
 
       RefCountedPtr<ChildPriority> child_priority_;
-      absl::optional<EventEngine::TaskHandle> timer_handle_;
+      std::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     // Methods for dealing with the child policy.
@@ -318,7 +318,7 @@ void PriorityLb::ExitIdleLocked() {
 }
 
 void PriorityLb::ResetBackoffLocked() {
-  for (const auto& p : children_) p.second->ResetBackoffLocked();
+  for (const auto& [_, child] : children_) child->ResetBackoffLocked();
 }
 
 absl::Status PriorityLb::UpdateLocked(UpdateArgs args) {
@@ -334,9 +334,7 @@ absl::Status PriorityLb::UpdateLocked(UpdateArgs args) {
   // Check all existing children against the new config.
   update_in_progress_ = true;
   std::vector<std::string> errors;
-  for (const auto& p : children_) {
-    const std::string& child_name = p.first;
-    auto& child = p.second;
+  for (const auto& [child_name, child] : children_) {
     auto config_it = config_->children().find(child_name);
     if (config_it == config_->children().end()) {
       // Existing child not found in new config.  Deactivate it.
@@ -505,12 +503,10 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
           ->GetEventEngine()
           ->RunAfter(kChildRetentionInterval, [self = Ref(DEBUG_LOCATION,
                                                           "Timer")]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto self_ptr = self.get();
             self_ptr->child_priority_->priority_policy_->work_serializer()->Run(
-                [self = std::move(self)]() { self->OnTimerLocked(); },
-                DEBUG_LOCATION);
+                [self = std::move(self)]() { self->OnTimerLocked(); });
           });
 }
 
@@ -558,12 +554,11 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
           ->RunAfter(
               child_priority_->priority_policy_->child_failover_timeout_,
               [self = Ref(DEBUG_LOCATION, "Timer")]() mutable {
-                ApplicationCallbackExecCtx callback_exec_ctx;
                 ExecCtx exec_ctx;
                 auto self_ptr = self.get();
                 self_ptr->child_priority_->priority_policy_->work_serializer()
-                    ->Run([self = std::move(self)]() { self->OnTimerLocked(); },
-                          DEBUG_LOCATION);
+                    ->Run(
+                        [self = std::move(self)]() { self->OnTimerLocked(); });
               });
 }
 

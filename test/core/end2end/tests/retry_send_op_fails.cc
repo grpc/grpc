@@ -21,14 +21,14 @@
 
 #include <memory>
 #include <new>
+#include <optional>
 
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -128,7 +128,9 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
 //   all without ever going out on the wire
 // - second attempt returns ABORTED but does not retry, because only 2
 //   attempts are allowed
-CORE_END2END_TEST(RetryTest, RetrySendOpFails) {
+CORE_END2END_TEST(RetryTests, RetrySendOpFails) {
+  SKIP_IF_V3();  // Need to convert filter
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
         ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
@@ -155,7 +157,7 @@ CORE_END2END_TEST(RetryTest, RetrySendOpFails) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Start a batch containing send ops.
   c.NewBatch(1)
       .SendInitialMetadata({})

@@ -20,9 +20,9 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -36,7 +36,8 @@ namespace {
 // - 2 retries allowed for ABORTED status
 // - first attempt returns ABORTED
 // - second attempt returns OK
-CORE_END2END_TEST(RetryTest, RetrySendInitialMetadataRefs) {
+CORE_END2END_TEST(RetryTests, RetrySendInitialMetadataRefs) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -56,7 +57,7 @@ CORE_END2END_TEST(RetryTest, RetrySendInitialMetadataRefs) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   c.NewBatch(1)
       .SendInitialMetadata(
           {// First element is short enough for slices to be inlined.
@@ -80,9 +81,9 @@ CORE_END2END_TEST(RetryTest, RetrySendInitialMetadataRefs) {
   Step();
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
   // initial attempt.
-  EXPECT_EQ(s.GetInitialMetadata("grpc-previous-rpc-attempts"), absl::nullopt);
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_EQ(s.GetInitialMetadata("grpc-previous-rpc-attempts"), std::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
@@ -101,8 +102,8 @@ CORE_END2END_TEST(RetryTest, RetrySendInitialMetadataRefs) {
   EXPECT_EQ(
       s2.GetInitialMetadata(std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x')),
       std::string(GRPC_SLICE_INLINED_SIZE + 1, 'y'));
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMessage client_message;
   s2.NewBatch(202).RecvMessage(client_message);
   IncomingCloseOnServer client_close2;
@@ -116,7 +117,7 @@ CORE_END2END_TEST(RetryTest, RetrySendInitialMetadataRefs) {
   Expect(2, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_FALSE(client_close.was_cancelled());
 }

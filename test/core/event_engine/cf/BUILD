@@ -24,7 +24,6 @@ grpc_cc_library(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_linux",
         "no_windows",
@@ -49,7 +48,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_linux",
         "no_windows",

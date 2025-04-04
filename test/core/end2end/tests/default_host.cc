@@ -19,8 +19,8 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/util/time.h"
@@ -32,9 +32,9 @@ using testing::StartsWith;
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreClientChannelTest, DefaultHost) {
+CORE_END2END_TEST(CoreClientChannelTests, DefaultHost) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
@@ -45,8 +45,8 @@ CORE_END2END_TEST(CoreClientChannelTest, DefaultHost) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
@@ -58,8 +58,8 @@ CORE_END2END_TEST(CoreClientChannelTest, DefaultHost) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
   EXPECT_EQ(server_status.message(), "xyz");
   EXPECT_EQ(s.method(), "/foo");
-  if (GetParam()->overridden_call_host != nullptr) {
-    EXPECT_EQ(GetParam()->overridden_call_host, s.host());
+  if (test_config()->overridden_call_host != nullptr) {
+    EXPECT_EQ(test_config()->overridden_call_host, s.host());
   } else {
     EXPECT_THAT(s.host(),
                 AnyOf(StartsWith("localhost"), StartsWith("127.0.0.1"),

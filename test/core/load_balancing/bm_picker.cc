@@ -19,8 +19,8 @@
 
 #include "absl/strings/string_view.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -32,7 +32,9 @@
 namespace grpc_core {
 namespace {
 
-bool IsSlowBuild() { return BuiltUnderMsan() || BuiltUnderUbsan(); }
+bool IsSlowBuild() {
+  return BuiltUnderMsan() || BuiltUnderUbsan() || BuiltUnderTsan();
+}
 
 class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
  public:
@@ -60,28 +62,24 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
     {
       MutexLock lock(&mu_);
       picker_ = nullptr;
-      work_serializer_->Schedule(
-          [this, num_endpoints]() {
-            EndpointAddressesList addresses;
-            for (size_t i = 0; i < num_endpoints; i++) {
-              grpc_resolved_address addr;
-              int port = i % 65536;
-              int ip = i / 65536;
-              CHECK_LT(ip, 256);
-              CHECK(grpc_parse_uri(
-                  URI::Parse(absl::StrCat("ipv4:127.0.0.", ip, ":", port))
-                      .value(),
-                  &addr));
-              addresses.emplace_back(addr, ChannelArgs());
-            }
-            CHECK_OK(lb_policy_->UpdateLocked(LoadBalancingPolicy::UpdateArgs{
-                std::make_shared<EndpointAddressesListIterator>(
-                    std::move(addresses)),
-                config_, "", ChannelArgs()}));
-          },
-          DEBUG_LOCATION);
+      work_serializer_->Run([this, num_endpoints]() {
+        EndpointAddressesList addresses;
+        for (size_t i = 0; i < num_endpoints; i++) {
+          grpc_resolved_address addr;
+          int port = i % 65536;
+          int ip = i / 65536;
+          CHECK_LT(ip, 256);
+          CHECK(grpc_parse_uri(
+              URI::Parse(absl::StrCat("ipv4:127.0.0.", ip, ":", port)).value(),
+              &addr));
+          addresses.emplace_back(addr, ChannelArgs());
+        }
+        CHECK_OK(lb_policy_->UpdateLocked(LoadBalancingPolicy::UpdateArgs{
+            std::make_shared<EndpointAddressesListIterator>(
+                std::move(addresses)),
+            config_, "", ChannelArgs()}));
+      });
     }
-    work_serializer_->DrainQueue();
   }
 
  private:
@@ -129,15 +127,12 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
         std::shared_ptr<ConnectivityStateWatcherInterface> watcher) {
       {
         MutexLock lock(&helper_->mu_);
-        helper_->work_serializer_->Schedule(
-            [watcher]() {
-              watcher->OnConnectivityStateChange(GRPC_CHANNEL_READY,
-                                                 absl::OkStatus());
-            },
-            DEBUG_LOCATION);
+        helper_->work_serializer_->Run([watcher]() {
+          watcher->OnConnectivityStateChange(GRPC_CHANNEL_READY,
+                                             absl::OkStatus());
+        });
         helper_->connectivity_watchers_.insert(std::move(watcher));
       }
-      helper_->work_serializer_->DrainQueue();
     }
 
     BenchmarkHelper* helper_;
@@ -182,7 +177,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
 
     GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup()
         override {
-      return helper_->stats_plugin_group_;
+      return *helper_->stats_plugin_group_;
     }
 
     void AddTraceEvent(TraceSeverity severity,
@@ -212,12 +207,13 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
   absl::flat_hash_set<
       std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>>
       connectivity_watchers_ ABSL_GUARDED_BY(mu_);
-  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_ =
-      GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          experimental::StatsPluginChannelScope(
-              "foo", "foo",
-              grpc_event_engine::experimental::ChannelArgsEndpointConfig{
-                  ChannelArgs{}}));
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_ =
+          GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+              experimental::StatsPluginChannelScope(
+                  "foo", "foo",
+                  grpc_event_engine::experimental::ChannelArgsEndpointConfig{
+                      ChannelArgs{}}));
 };
 
 void BM_Pick(benchmark::State& state, BenchmarkHelper& helper) {

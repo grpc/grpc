@@ -24,24 +24,17 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/latent_see.h"
 
 namespace grpc_core {
-
-const NoInterceptor GrpcServerAuthzFilter::Call::OnServerInitialMetadata;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerMessage;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnServerToClientMessage;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnFinalize;
 
 GrpcServerAuthzFilter::GrpcServerAuthzFilter(
     RefCountedPtr<grpc_auth_context> auth_context, const ChannelArgs& args,

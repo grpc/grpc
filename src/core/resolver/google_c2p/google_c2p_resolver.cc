@@ -19,6 +19,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <random>
 #include <string>
 #include <type_traits>
@@ -30,12 +31,11 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/resolver_registry.h"
@@ -81,10 +81,10 @@ class GoogleCloud2ProdResolver final : public Resolver {
   bool shutdown_ = false;
 
   OrphanablePtr<GcpMetadataQuery> zone_query_;
-  absl::optional<std::string> zone_;
+  std::optional<std::string> zone_;
 
   OrphanablePtr<GcpMetadataQuery> ipv6_query_;
-  absl::optional<bool> supports_ipv6_;
+  std::optional<bool> supports_ipv6_;
 };
 
 //
@@ -126,7 +126,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     return;
   }
   // Maybe override metadata server name for testing
-  absl::optional<std::string> test_only_metadata_server_override =
+  std::optional<std::string> test_only_metadata_server_override =
       args.args.GetOwnedString(
           "grpc.testing.google_c2p_resolver_metadata_server_override");
   if (test_only_metadata_server_override.has_value() &&
@@ -156,12 +156,10 @@ void GoogleCloud2ProdResolver::StartLocked() {
       [resolver = RefAsSubclass<GoogleCloud2ProdResolver>()](
           std::string /* attribute */,
           absl::StatusOr<std::string> result) mutable {
-        resolver->work_serializer_->Run(
-            [resolver, result = std::move(result)]() mutable {
-              resolver->ZoneQueryDone(result.ok() ? std::move(result).value()
-                                                  : "");
-            },
-            DEBUG_LOCATION);
+        resolver->work_serializer_->Run([resolver,
+                                         result = std::move(result)]() mutable {
+          resolver->ZoneQueryDone(result.ok() ? std::move(result).value() : "");
+        });
       },
       Duration::Seconds(10));
   ipv6_query_ = MakeOrphanable<GcpMetadataQuery>(
@@ -177,8 +175,7 @@ void GoogleCloud2ProdResolver::StartLocked() {
               // servers in the wild, which can in some cases return 200
               // plus an empty result when they should have returned 404.
               resolver->IPv6QueryDone(result.ok() && !result->empty());
-            },
-            DEBUG_LOCATION);
+            });
       },
       Duration::Seconds(10));
 }

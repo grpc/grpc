@@ -60,6 +60,14 @@ class XdsMetadataMap {
 
   const XdsMetadataValue* Find(absl::string_view key) const;
 
+  template <typename T>
+  const T* FindType(absl::string_view key) const {
+    auto it = map_.find(key);
+    if (it == map_.end()) return nullptr;
+    if (it->second->type() != T::Type()) return nullptr;
+    return DownCast<const T*>(it->second.get());
+  }
+
   bool empty() const { return map_.empty(); }
   size_t size() const { return map_.size(); }
 
@@ -119,6 +127,30 @@ class XdsGcpAuthnAudienceMetadataValue : public XdsMetadataValue {
   }
 
   std::string url_;
+};
+
+// Concrete metadata value type for addresses.
+class XdsAddressMetadataValue : public XdsMetadataValue {
+ public:
+  explicit XdsAddressMetadataValue(std::string address)
+      : address_(std::move(address)) {}
+
+  static absl::string_view Type() { return "envoy.config.core.v3.Address"; }
+
+  absl::string_view type() const override { return Type(); }
+
+  const std::string& address() const { return address_; }
+
+  std::string ToString() const override {
+    return absl::StrCat(type(), "{address=\"", address_, "\"}");
+  }
+
+ private:
+  bool Equals(const XdsMetadataValue& other) const override {
+    return address_ == DownCast<const XdsAddressMetadataValue&>(other).address_;
+  }
+
+  std::string address_;
 };
 
 }  // namespace grpc_core

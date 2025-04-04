@@ -19,7 +19,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "test/core/transport/call_spine_benchmarks.h"
+#include "test/core/call/call_spine_benchmarks.h"
 
 namespace grpc_core {
 
@@ -121,12 +121,10 @@ class TestResolver final : public Resolver {
         work_serializer_(std::move(work_serializer)) {}
 
   void StartLocked() override {
-    work_serializer_->Run(
-        [self = RefAsSubclass<TestResolver>()] {
-          self->result_handler_->ReportResult(
-              self->MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
-        },
-        DEBUG_LOCATION);
+    work_serializer_->Run([self = RefAsSubclass<TestResolver>()] {
+      self->result_handler_->ReportResult(
+          self->MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
+    });
   }
   void ShutdownLocked() override {}
 

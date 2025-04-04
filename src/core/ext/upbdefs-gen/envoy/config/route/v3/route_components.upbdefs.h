@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPBDEFS_H_
-#define ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPBDEFS_H_
+#ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -244,6 +244,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_RequestH
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Action.RequestHeaders");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_QueryParameters_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Action.QueryParameters");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_RemoteAddress_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Action.RemoteAddress");
@@ -289,6 +294,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Override_Dynami
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Override.DynamicMetadata");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_HitsAddend_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.HitsAddend");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_HeaderMatcher_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.HeaderMatcher");
@@ -315,4 +325,4 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_FilterConfig_getmsgdef(up
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H__UPBDEFS_H_ */

@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_UTIL_HTTP_CLIENT_HTTPCLI_H
 #define GRPC_SRC_CORE_UTIL_HTTP_CLIENT_HTTPCLI_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
@@ -26,13 +27,13 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -42,7 +43,6 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/http_client/parser.h"
@@ -162,7 +162,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
               grpc_http_response* response, Timestamp deadline,
               const grpc_channel_args* channel_args, grpc_closure* on_done,
               grpc_polling_entity* pollent, const char* name,
-              absl::optional<std::function<bool()>> test_only_generate_response,
+              std::optional<std::function<bool()>> test_only_generate_response,
               RefCountedPtr<grpc_channel_credentials> channel_creds);
 
   ~HttpRequest() override;
@@ -225,13 +225,16 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
 
-  void DoHandshake(const grpc_resolved_address* addr)
+  void DoHandshake(
+      const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void OnResolved(
-      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
+      absl::StatusOr<std::vector<
+          grpc_event_engine::experimental::EventEngine::ResolvedAddress>>
+          addresses_or);
 
   const URI uri_;
   const grpc_slice request_text_;
@@ -247,21 +250,28 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   ResourceQuotaRefPtr resource_quota_;
   grpc_polling_entity* pollent_;
   grpc_pollset_set* pollset_set_;
-  const absl::optional<std::function<bool()>> test_only_generate_response_;
+  const std::optional<std::function<bool()>> test_only_generate_response_;
   Mutex mu_;
   RefCountedPtr<HandshakeManager> handshake_mgr_ ABSL_GUARDED_BY(mu_);
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
-  std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
+  std::vector<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
+      addresses_ ABSL_GUARDED_BY(mu_);
   size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;
   int have_read_byte_ ABSL_GUARDED_BY(mu_) = 0;
   grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = absl::OkStatus();
+  // TODO(yijiem): remove these once event_engine_dns_non_client_channel
+  // experiment is fully enabled.
+  bool use_event_engine_dns_resolver_;
   std::shared_ptr<DNSResolver> resolver_;
-  absl::optional<DNSResolver::TaskHandle> dns_request_handle_
+  std::optional<DNSResolver::TaskHandle> dns_request_handle_
       ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
+  absl::StatusOr<std::unique_ptr<
+      grpc_event_engine::experimental::EventEngine::DNSResolver>>
+      ee_resolver_;
 };
 
 }  // namespace grpc_core

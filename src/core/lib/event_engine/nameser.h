@@ -78,7 +78,7 @@ typedef enum __ns_type {
   ns_t_cert = 37,      // Certification record
   ns_t_a6 = 38,        // IPv6 address (deprecates AAAA)
   ns_t_dname = 39,     // Non-terminal DNAME (for IPv6)
-  ns_t_sink = 40,      // Kitchen sink (experimentatl)
+  ns_t_sink = 40,      // Kitchen sink (experimental)
   ns_t_opt = 41,       // EDNS0 option (meta-RR)
   ns_t_apl = 42,       // Address prefix list (RFC3123)
   ns_t_ds = 43,        // Delegation Signer (RFC4034)

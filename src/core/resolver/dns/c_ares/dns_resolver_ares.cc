@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -33,8 +34,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -58,8 +58,8 @@
 #include <address_sorting/address_sorting.h>
 
 #include "absl/strings/str_cat.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
@@ -162,7 +162,7 @@ class AresClientChannelDNSResolver final : public PollingResolver {
     static void OnHostnameResolved(void* arg, grpc_error_handle error);
     static void OnSRVResolved(void* arg, grpc_error_handle error);
     static void OnTXTResolved(void* arg, grpc_error_handle error);
-    absl::optional<Result> OnResolvedLocked(grpc_error_handle error)
+    std::optional<Result> OnResolvedLocked(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
 
     Mutex on_resolved_mu_;
@@ -198,12 +198,12 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(
     ResolverArgs args, Duration min_time_between_resolutions)
     : PollingResolver(std::move(args), min_time_between_resolutions,
                       BackOff::Options()
-                          .set_initial_backoff(Duration::Milliseconds(
-                              GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000))
+                          .set_initial_backoff(Duration::Seconds(
+                              GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS))
                           .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
                           .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-                          .set_max_backoff(Duration::Milliseconds(
-                              GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
+                          .set_max_backoff(Duration::Seconds(
+                              GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS)),
                       &cares_resolver_trace),
       request_service_config_(
           !channel_args()
@@ -232,7 +232,7 @@ OrphanablePtr<Orphanable> AresClientChannelDNSResolver::StartRequest() {
 void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
-  absl::optional<Result> result;
+  std::optional<Result> result;
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->hostname_request_.reset();
@@ -247,7 +247,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
 void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
-  absl::optional<Result> result;
+  std::optional<Result> result;
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->srv_request_.reset();
@@ -262,7 +262,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
 void AresClientChannelDNSResolver::AresRequestWrapper::OnTXTResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
-  absl::optional<Result> result;
+  std::optional<Result> result;
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->txt_request_.reset();
@@ -278,7 +278,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnTXTResolved(
 // callers must release the lock and call OnRequestComplete if a Result is
 // returned. This is because OnRequestComplete may Orphan the resolver, which
 // requires taking the lock.
-absl::optional<AresClientChannelDNSResolver::Result>
+std::optional<AresClientChannelDNSResolver::Result>
 AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_) {
   if (hostname_request_ != nullptr || srv_request_ != nullptr ||
@@ -289,7 +289,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
         << (hostname_request_ != nullptr ? "waiting" : "done")
         << ", srv: " << (srv_request_ != nullptr ? "waiting" : "done")
         << ", txt: " << (txt_request_ != nullptr ? "waiting" : "done") << ")";
-    return absl::nullopt;
+    return std::nullopt;
   }
   GRPC_TRACE_VLOG(cares_resolver, 2)
       << "(c-ares resolver) resolver:" << this << " OnResolved() proceeding";
@@ -330,11 +330,9 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     GRPC_TRACE_VLOG(cares_resolver, 2)
         << "(c-ares resolver) resolver:" << this
         << " dns resolution failed: " << StatusToString(error);
-    std::string error_message;
-    grpc_error_get_str(error, StatusStrProperty::kDescription, &error_message);
     absl::Status status = absl::UnavailableError(
         absl::StrCat("DNS resolution failed for ", resolver_->name_to_resolve(),
-                     ": ", error_message));
+                     ": ", error.message()));
     result.addresses = status;
     result.service_config = status;
   }

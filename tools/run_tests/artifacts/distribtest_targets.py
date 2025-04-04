@@ -279,15 +279,15 @@ class RubyDistribTest(object):
         return self.name
 
 
-class PHP7DistribTest(object):
-    """Tests PHP7 package"""
+class PHP8DistribTest(object):
+    """Tests PHP8 package"""
 
     def __init__(self, platform, arch, docker_suffix=None, presubmit=False):
-        self.name = "php7_%s_%s_%s" % (platform, arch, docker_suffix)
+        self.name = "php8_%s_%s_%s" % (platform, arch, docker_suffix)
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ["distribtest", "php", "php7", platform, arch]
+        self.labels = ["distribtest", "php", "php8", platform, arch]
         if presubmit:
             self.labels.append("presubmit")
         if docker_suffix:
@@ -302,7 +302,7 @@ class PHP7DistribTest(object):
         if self.platform == "linux":
             return create_docker_jobspec(
                 self.name,
-                "tools/dockerfile/distribtest/php7_%s_%s"
+                "tools/dockerfile/distribtest/php8_%s_%s"
                 % (self.docker_suffix, self.arch),
                 "test/distrib/php/run_distrib_test.sh",
                 copy_rel_path="test/distrib",
@@ -454,15 +454,16 @@ def targets():
         # Python
         PythonDistribTest("linux", "x64", "bullseye", presubmit=True),
         PythonDistribTest("linux", "x86", "bullseye", presubmit=True),
-        PythonDistribTest("linux", "x64", "fedora39"),
+        PythonDistribTest("linux", "x64", "fedora40"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
         PythonDistribTest("linux", "x64", "ubuntu2204"),
         PythonDistribTest(
-            "linux", "aarch64", "python38_buster", presubmit=True
+            "linux", "aarch64", "python39_buster", presubmit=True
         ),
+        PythonDistribTest("linux", "aarch64", "alpine"),
         PythonDistribTest(
-            "linux", "x64", "alpine3.7", source=True, presubmit=True
+            "linux", "x64", "alpine3.18", source=True, presubmit=True
         ),
         PythonDistribTest(
             "linux", "x64", "bullseye", source=True, presubmit=True
@@ -470,7 +471,7 @@ def targets():
         PythonDistribTest(
             "linux", "x86", "bullseye", source=True, presubmit=True
         ),
-        PythonDistribTest("linux", "x64", "fedora39", source=True),
+        PythonDistribTest("linux", "x64", "fedora40", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
         PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
         # Ruby
@@ -502,9 +503,12 @@ def targets():
             protobuf_version="3.25",
             presubmit=True,
         ),
+        RubyDistribTest(
+            "linux", "x64", "debian11", ruby_version="ruby_3_4", presubmit=True
+        ),
         RubyDistribTest("linux", "x64", "ubuntu2004"),
         RubyDistribTest("linux", "x64", "ubuntu2204", presubmit=True),
-        # PHP7
-        PHP7DistribTest("linux", "x64", "debian11", presubmit=True),
-        PHP7DistribTest("macos", "x64", presubmit=True),
+        # PHP8
+        PHP8DistribTest("linux", "x64", "debian12", presubmit=True),
+        PHP8DistribTest("macos", "x64", presubmit=True),
     ]

@@ -13,6 +13,7 @@
 # limitations under the License.
 """Generates and compiles C++ grpc stubs from proto_library rules."""
 
+load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:generate_cc.bzl", "generate_cc")
 load("//bazel:protobuf.bzl", "well_known_proto_libs")
@@ -24,7 +25,8 @@ def cc_grpc_library(
         proto_only = False,
         well_known_protos = False,
         generate_mocks = False,
-        use_external = False,
+        allow_deprecated = False,
+        use_external = False,  # @unused
         grpc_only = False,
         **kwargs):
     """Generates C++ grpc classes for services defined in a proto file.
@@ -55,6 +57,8 @@ def cc_grpc_library(
           (passed in srcs parameter) instead. False by default.
         generate_mocks (bool): when True, Google Mock code for client stub is
           generated. False by default.
+        allow_deprecated (bool): when True, Generated class will marked
+          deprecated if deprecated option is set in proto.
         use_external (bool): Not used.
         grpc_only (bool): if True, generate only grpc library, expecting
           protobuf messages library (cc_proto_library target) to be passed as
@@ -70,11 +74,11 @@ def cc_grpc_library(
     proto_targets = []
 
     if not grpc_only:
-        proto_target = "_" + name + "_only"
-        cc_proto_target = name if proto_only else "_" + name + "_cc_proto"
+        proto_target = name + "_only"
+        cc_proto_target = name if proto_only else name + "_cc_proto"
 
-        proto_deps = ["_" + dep + "_only" for dep in deps if dep.find(":") == -1]
-        proto_deps += [dep.split(":")[0] + ":" + "_" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1 and dep.find("com_google_googleapis") == -1]
+        proto_deps = [dep + "_only" for dep in deps if dep.find(":") == -1]
+        proto_deps += [dep.split(":")[0] + ":" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1 and dep.find("com_google_googleapis") == -1]
         proto_deps += [dep for dep in deps if dep.find("com_google_googleapis") != -1]
         if well_known_protos:
             proto_deps += well_known_proto_libs()
@@ -84,8 +88,7 @@ def cc_grpc_library(
             deps = proto_deps,
             **kwargs
         )
-
-        native.cc_proto_library(
+        cc_proto_library(
             name = cc_proto_target,
             deps = [":" + proto_target],
             **kwargs
@@ -102,9 +105,10 @@ def cc_grpc_library(
         generate_cc(
             name = codegen_grpc_target,
             srcs = proto_targets,
-            plugin = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
+            plugin = Label("//src/compiler:grpc_cpp_plugin"),
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
+            allow_deprecated = allow_deprecated,
             **kwargs
         )
 
@@ -114,6 +118,6 @@ def cc_grpc_library(
             hdrs = [":" + codegen_grpc_target],
             deps = deps +
                    extra_deps +
-                   ["@com_github_grpc_grpc//:grpc++_codegen_proto"],
+                   [Label("//:grpc++_codegen_proto")],
             **kwargs
         )

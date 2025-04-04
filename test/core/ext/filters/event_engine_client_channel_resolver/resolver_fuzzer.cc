@@ -28,6 +28,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "fuzztest/fuzztest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -39,23 +40,20 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
 #include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
 #include "test/core/test_util/test_config.h"
-
-bool squelch = true;
 
 namespace {
 
 using event_engine_client_channel_resolver::ExecutionStep;
 using event_engine_client_channel_resolver::TXTRecordType;
 using grpc_core::EventEngineClientChannelDNSResolverFactory;
-using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;
 using grpc_event_engine::experimental::URIToResolvedAddress;
 
@@ -64,7 +62,7 @@ constexpr char g_grpc_config_prefix[] = "grpc_config=";
 absl::Status ErrorToAbslStatus(
     const event_engine_client_channel_resolver::Error& error) {
   // clamp error.code() in (0, 16]
-  return absl::Status(static_cast<absl::StatusCode>(error.code() % 16 + 1),
+  return absl::Status(static_cast<absl::StatusCode>((error.code() % 16) + 1),
                       error.message());
 }
 
@@ -252,21 +250,13 @@ grpc_core::ResolverArgs ConstructResolverArgs(
   return resolver_args;
 }
 
-}  // namespace
-
-DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
-  if (squelch) {
-    grpc_disable_all_absl_logs();
-  }
+void Fuzz(const event_engine_client_channel_resolver::Msg& msg) {
   bool done_resolving = false;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_event_engine::experimental::SetEventEngineFactory([msg,
-                                                          &done_resolving]() {
-    return std::make_unique<FuzzingResolverEventEngine>(msg, &done_resolving);
-  });
-  auto engine = std::static_pointer_cast<FuzzingResolverEventEngine>(
-      grpc_event_engine::experimental::GetDefaultEventEngine());
+  auto engine =
+      std::make_shared<FuzzingResolverEventEngine>(msg, &done_resolving);
+  grpc_event_engine::experimental::SetDefaultEventEngine(engine);
   {
     // scoped to ensure the resolver is orphaned when done resolving.
     auto work_serializer = std::make_shared<grpc_core::WorkSerializer>(engine);
@@ -277,16 +267,23 @@ DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
             .Set(GRPC_INTERNAL_ARG_EVENT_ENGINE, engine),
         &done_resolving, work_serializer);
     auto resolver = resolver_factory.CreateResolver(std::move(resolver_args));
-    work_serializer->Run(
-        [resolver_ptr = resolver.get()]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-            *work_serializer) { resolver_ptr->StartLocked(); },
-        DEBUG_LOCATION);
+    work_serializer->Run([resolver_ptr = resolver.get()]()
+                             ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer) {
+                               resolver_ptr->StartLocked();
+                             });
     // wait for result (no need to check validity)
     while (!done_resolving) {
       engine->Tick();
     }
   }
+  grpc_event_engine::experimental::SetDefaultEventEngine(nullptr);
   // If orphaned early, callbacks may still need to run, which may keep the
   // resolver alive.
   while (engine.use_count() > 1) engine->Tick();
 }
+FUZZ_TEST(ResolverFuzzer, Fuzz)
+    .WithDomains(
+        ::fuzztest::Arbitrary<event_engine_client_channel_resolver::Msg>()
+            .WithProtobufField("config_vars", grpc_core::AnyConfigVars()));
+
+}  // namespace

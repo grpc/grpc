@@ -24,16 +24,16 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/status_helper.h"
@@ -82,7 +82,8 @@ const NoInterceptor TestFilter::Call::OnFinalize;
 const grpc_channel_filter TestFilter::kFilter =
     MakePromiseBasedFilter<TestFilter, FilterEndpoint::kServer>();
 
-CORE_END2END_TEST(CoreEnd2endTest, FilterCausesClose) {
+CORE_END2END_TEST(CoreEnd2endTests, FilterCausesClose) {
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterFilter<TestFilter>(GRPC_SERVER_CHANNEL);
   });

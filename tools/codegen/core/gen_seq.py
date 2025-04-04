@@ -109,15 +109,7 @@ tail${i}:
     Destruct(&${"prior."*(n-1-i)}next_factory);
 % endfor
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&${"prior."*(n-1)}current_promise,
-            other.${"prior."*(n-1)}current_promise);
-% for i in range(0,n-1):
-    Construct(&${"prior."*(n-1-i)}next_factory,
-              other.${"prior."*(n-1-i)}next_factory);
-% endfor
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept : state(other.state), whence(other.whence) {
     DCHECK(state == State::kState0);
@@ -133,11 +125,11 @@ tail${i}:
     switch (state) {
 % for i in range(0,n-1):
       case State::kState${i}: {
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: begin poll step ${i+1}/${n}";
         auto result = ${"prior."*(n-1-i)}current_promise();
         PromiseResult${i}* p = result.value_if_ready();
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: poll step ${i+1}/${n} gets "
                 << (p != nullptr
                     ? (PromiseResultTraits${i}::IsOk(*p)
@@ -154,14 +146,14 @@ tail${i}:
         Construct(&${"prior."*(n-2-i)}current_promise, std::move(next_promise));
         state = State::kState${i+1};
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
 % endfor
       default:
       case State::kState${n-1}: {
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: begin poll step ${n}/${n}";
         auto result = current_promise();
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: poll step ${n}/${n} gets "
                 << (result.ready()? "ready" : "pending");
         auto* p = result.value_if_ready();
