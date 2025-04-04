@@ -585,6 +585,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
     ],
+    visibility = ["//bazel:tsi_fake"],
     deps = [
         "//:gpr",
         "//:tsi_base",
