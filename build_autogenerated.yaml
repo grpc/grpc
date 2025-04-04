@@ -1768,7 +1768,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
-  - src/core/lib/event_engine/posix_engine/posix_interface.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -2886,7 +2887,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
-  - src/core/lib/event_engine/posix_engine/posix_interface.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -4810,7 +4812,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
-  - src/core/lib/event_engine/posix_engine/posix_interface.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -6801,7 +6804,8 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
-  - src/core/lib/event_engine/posix_engine/posix_interface.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -10960,7 +10964,8 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
-  - src/core/lib/event_engine/posix_engine/posix_interface.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
