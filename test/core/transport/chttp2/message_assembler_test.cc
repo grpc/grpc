@@ -302,7 +302,7 @@ TEST(GrpcMessageAssembler, IncompleteMessageHeader) {
 
 TEST(GrpcMessageAssembler, IncompleteMessagePayload) {
   SliceBuffer frame1;
-  const uint32_t length = kString1.size() + kString2.size() + kString3.size();
+  const uint32_t length = kString1.size() + 1;
   AppendHeaderAndPartialMessage(frame1, length, kString1);
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kString1.size());
 
