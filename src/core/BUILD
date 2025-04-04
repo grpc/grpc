@@ -9252,6 +9252,38 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "ping_promise",
+    srcs = [
+        "ext/transport/chttp2/transport/ping_promise.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/ping_promise.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/log",
+        "absl/status",
+        "absl/random",
+    ],
+    deps = [
+        "1999",
+        "if",
+        "latch",
+        "map",
+        "match",
+        "ping_abuse_policy",
+        "ping_callbacks",
+        "ping_rate_policy",
+        "poll",
+        "promise_factory",
+        "race",
+        "sleep",
+        "time",
+        "try_seq",
+        "//:promise",
+    ],
+)
 ### UPB Targets
 
 grpc_upb_proto_library(
