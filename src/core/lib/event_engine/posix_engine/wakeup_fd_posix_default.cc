@@ -34,9 +34,9 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> NotSupported(
 
 namespace {
 absl::StatusOr<std::unique_ptr<WakeupFd>> (*g_wakeup_fd_fn)(
-    EventEnginePosixInterface* fds) =
+    EventEnginePosixInterface* posix_interface) =
     []() -> absl::StatusOr<std::unique_ptr<WakeupFd>> (*)(
-             EventEnginePosixInterface* fds) {
+             EventEnginePosixInterface* posix_interface) {
 #ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
   if (EventFdWakeupFd::IsSupported()) {
     return &EventFdWakeupFd::CreateEventFdWakeupFd;
@@ -52,8 +52,8 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> (*g_wakeup_fd_fn)(
 bool SupportsWakeupFd() { return g_wakeup_fd_fn != NotSupported; }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd(
-    EventEnginePosixInterface* fds) {
-  return g_wakeup_fd_fn(fds);
+    EventEnginePosixInterface* posix_interface) {
+  return g_wakeup_fd_fn(posix_interface);
 }
 
 #else  // GRPC_POSIX_WAKEUP_FD

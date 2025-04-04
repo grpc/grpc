@@ -446,17 +446,18 @@ PosixErrorOr<int64_t> Int64Wrap(bool correct_gen, int fd, const Fn& fn,
 
 bool IsSocketReusePortSupported() {
   static bool kSupportSoReusePort = []() -> bool {
-    EventEnginePosixInterface fds;
-    auto s = fds.Socket(AF_INET, SOCK_STREAM, 0);
+    EventEnginePosixInterface posix_interface;
+    auto s = posix_interface.Socket(AF_INET, SOCK_STREAM, 0);
     if (!s.ok()) {
       // This might be an ipv6-only environment in which case
       // 'socket(AF_INET,..)' call would fail. Try creating IPv6 socket in
       // that case
-      s = fds.Socket(AF_INET6, SOCK_STREAM, 0);
+      s = posix_interface.Socket(AF_INET6, SOCK_STREAM, 0);
     }
     if (s.ok()) {
-      bool result = SetSocketReusePort(fds.GetFd(s.value()).value(), 1).ok();
-      fds.Close(s.value());
+      bool result =
+          SetSocketReusePort(posix_interface.GetFd(s.value()).value(), 1).ok();
+      posix_interface.Close(s.value());
       return result;
     } else {
       return false;

@@ -35,7 +35,7 @@ using ::grpc_event_engine::experimental::FileDescriptor;
 // Goal of this test is just to exercise that code path and also make sure
 // it doesn't mess up "errno", so that we get the right error message.
 TEST(LogTooManyOpenFilesTest, MainTest) {
-  EventEnginePosixInterface fds;
+  EventEnginePosixInterface posix_interface;
   const auto mock_socket_factory = [](int, int, int) {
     errno = EMFILE;
     return -1;
@@ -44,7 +44,7 @@ TEST(LogTooManyOpenFilesTest, MainTest) {
       "ipv4:127.0.0.1:80");
   ASSERT_TRUE(addr.ok());
   DSMode dsmode;
-  absl::StatusOr<FileDescriptor> result = fds.CreateDualStackSocket(
+  absl::StatusOr<FileDescriptor> result = posix_interface.CreateDualStackSocket(
       mock_socket_factory, *addr, SOCK_STREAM, AF_INET, dsmode);
   EXPECT_FALSE(result.ok());
   std::string emfile_message = grpc_core::StrError(EMFILE);

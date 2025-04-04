@@ -30,7 +30,7 @@ bool SupportsWakeupFd();
 
 // Create and return an initialized WakeupFd instance if supported.
 absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd(
-    EventEnginePosixInterface* fds);
+    EventEnginePosixInterface* posix_interface);
 
 }  // namespace grpc_event_engine::experimental
 

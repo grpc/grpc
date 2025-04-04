@@ -202,7 +202,7 @@ bool TracedBufferList::TracedBuffer::Finished(gpr_timespec ts) {
 }
 
 void TracedBufferList::AddNewEntry(int32_t seq_no,
-                                   EventEnginePosixInterface* fds,
+                                   EventEnginePosixInterface* posix_interface,
                                    const FileDescriptor& fd, void* arg) {
   TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
   // Store the current time as the sendmsg time.
@@ -210,7 +210,7 @@ void TracedBufferList::AddNewEntry(int32_t seq_no,
   new_elem->ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
   new_elem->ts_.sent_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
   new_elem->ts_.acked_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  if (GetSocketTcpInfo(&(new_elem->ts_.info), fds, fd).ok()) {
+  if (GetSocketTcpInfo(&(new_elem->ts_.info), posix_interface, fd).ok()) {
     ExtractOptStatsFromTcpInfo(&(new_elem->ts_.sendmsg_time.metrics),
                                &(new_elem->ts_.info));
   }

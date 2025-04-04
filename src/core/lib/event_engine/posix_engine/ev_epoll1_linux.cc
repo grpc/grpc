@@ -161,12 +161,12 @@ bool InitEpoll1PollerLinux() {
   if (!grpc_event_engine::experimental::SupportsWakeupFd()) {
     return false;
   }
-  EventEnginePosixInterface fds;
-  auto fd = fds.EpollCreateAndCloexec();
+  EventEnginePosixInterface posix_interface;
+  auto fd = posix_interface.EpollCreateAndCloexec();
   if (!fd.ok()) {
     return false;
   }
-  fds.Close(fd.value());
+  posix_interface.Close(fd.value());
   return true;
 }
 
@@ -182,20 +182,21 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
     HandleShutdownInternal(absl::Status(absl::StatusCode::kUnknown, reason),
                            is_release_fd);
   }
-  auto& fds = poller_->posix_interface_;
+  auto& posix_interface = poller_->posix_interface_;
   // If release_fd is not NULL, we should be relinquishing control of the file
   // descriptor fd->fd (but we still own the grpc_fd structure).
   if (is_release_fd) {
     if (!was_shutdown) {
-      auto result = fds.EpollCtlDel(poller_->g_epoll_set_.epfd, fd_);
+      auto result =
+          posix_interface.EpollCtlDel(poller_->g_epoll_set_.epfd, fd_);
       if (!result.ok()) {
         LOG(ERROR) << "OrphanHandle: epoll_ctl failed: " << result.StrError();
       }
     }
     *release_fd = fd_;
   } else {
-    fds.Shutdown(fd_, SHUT_RDWR);
-    fds.Close(fd_);
+    posix_interface.Shutdown(fd_, SHUT_RDWR);
+    posix_interface.Close(fd_);
   }
 
   {

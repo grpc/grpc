@@ -112,32 +112,36 @@ TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
       sock = socket(AF_INET6, SOCK_STREAM, 0);
     }
     EXPECT_GT(sock, 0);
-    EventEnginePosixInterface fds;
-    FileDescriptor wrapped = fds.Adopt(sock);
+    EventEnginePosixInterface posix_interface;
+    FileDescriptor wrapped = posix_interface.Adopt(sock);
     struct test_socket_mutator mutator;
     grpc_socket_mutator_init(&mutator.base, vtable);
 
     mutator.option_value = IPTOS_LOWDELAY;
     EXPECT_TRUE(
-        fds.SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                             reinterpret_cast<grpc_socket_mutator*>(&mutator))
+        posix_interface
+            .SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
+                              reinterpret_cast<grpc_socket_mutator*>(&mutator))
             .ok());
     mutator.option_value = IPTOS_THROUGHPUT;
     EXPECT_TRUE(
-        fds.SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                             reinterpret_cast<grpc_socket_mutator*>(&mutator))
+        posix_interface
+            .SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
+                              reinterpret_cast<grpc_socket_mutator*>(&mutator))
             .ok());
 
     mutator.option_value = IPTOS_RELIABILITY;
     EXPECT_TRUE(
-        fds.SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                             reinterpret_cast<grpc_socket_mutator*>(&mutator))
+        posix_interface
+            .SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
+                              reinterpret_cast<grpc_socket_mutator*>(&mutator))
             .ok());
 
     mutator.option_value = -1;
     EXPECT_FALSE(
-        fds.SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                             reinterpret_cast<grpc_socket_mutator*>(&mutator))
+        posix_interface
+            .SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
+                              reinterpret_cast<grpc_socket_mutator*>(&mutator))
             .ok());
     close(sock);
   };

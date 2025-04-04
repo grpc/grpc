@@ -27,18 +27,18 @@ namespace grpc_event_engine::experimental {
 
 class EventFdWakeupFd : public WakeupFd {
  public:
-  explicit EventFdWakeupFd(EventEnginePosixInterface* fds)
-      : WakeupFd(), fds_(fds) {}
+  explicit EventFdWakeupFd(EventEnginePosixInterface* posix_interface)
+      : WakeupFd(), posix_interface_(posix_interface) {}
   ~EventFdWakeupFd() override;
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
   static absl::StatusOr<std::unique_ptr<WakeupFd>> CreateEventFdWakeupFd(
-      EventEnginePosixInterface* fds);
+      EventEnginePosixInterface* posix_interface);
   static bool IsSupported();
 
  private:
   absl::Status Init();
-  EventEnginePosixInterface* fds_;
+  EventEnginePosixInterface* posix_interface_;
 };
 
 }  // namespace grpc_event_engine::experimental

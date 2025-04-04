@@ -38,7 +38,7 @@ namespace grpc_event_engine::experimental {
 #ifdef GRPC_LINUX_EVENTFD
 
 absl::Status EventFdWakeupFd::Init() {
-  auto read_fd = fds_->EventFd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  auto read_fd = posix_interface_->EventFd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (!read_fd.ok()) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("eventfd: ", grpc_core::StrError(errno)));
@@ -50,7 +50,7 @@ absl::Status EventFdWakeupFd::Init() {
 absl::Status EventFdWakeupFd::ConsumeWakeup() {
   PosixError err;
   do {
-    err = fds_->EventFdRead(ReadFd());
+    err = posix_interface_->EventFdRead(ReadFd());
   } while (err.IsPosixError(EINTR));
   if (!err.ok() && !err.IsPosixError(EAGAIN)) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -62,7 +62,7 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
 absl::Status EventFdWakeupFd::Wakeup() {
   PosixError err;
   do {
-    err = fds_->EventFdWrite(ReadFd());
+    err = posix_interface_->EventFdWrite(ReadFd());
   } while (err.IsPosixError(EINTR));
   if (!err.ok()) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -73,21 +73,23 @@ absl::Status EventFdWakeupFd::Wakeup() {
 
 EventFdWakeupFd::~EventFdWakeupFd() {
   if (ReadFd().ready()) {
-    fds_->Close(ReadFd());
+    posix_interface_->Close(ReadFd());
   }
 }
 
 bool EventFdWakeupFd::IsSupported() {
-  EventEnginePosixInterface fds;
-  EventFdWakeupFd event_fd_wakeup_fd(&fds);
+  EventEnginePosixInterface posix_interface;
+  EventFdWakeupFd event_fd_wakeup_fd(&posix_interface);
   return event_fd_wakeup_fd.Init().ok();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreateEventFdWakeupFd(EventEnginePosixInterface* fds) {
+EventFdWakeupFd::CreateEventFdWakeupFd(
+    EventEnginePosixInterface* posix_interface) {
   static bool kIsEventFdWakeupFdSupported = EventFdWakeupFd::IsSupported();
   if (kIsEventFdWakeupFdSupported) {
-    auto event_fd_wakeup_fd = std::make_unique<EventFdWakeupFd>(fds);
+    auto event_fd_wakeup_fd =
+        std::make_unique<EventFdWakeupFd>(posix_interface);
     auto status = event_fd_wakeup_fd->Init();
     if (status.ok()) {
       return std::unique_ptr<WakeupFd>(std::move(event_fd_wakeup_fd));
@@ -112,7 +114,8 @@ absl::Status EventFdWakeupFd::Wakeup() { grpc_core::Crash("unimplemented"); }
 bool EventFdWakeupFd::IsSupported() { return false; }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreateEventFdWakeupFd(EventEnginePosixInterface* fds) {
+EventFdWakeupFd::CreateEventFdWakeupFd(
+    EventEnginePosixInterface* posix_interface) {
   return absl::NotFoundError("Eventfd wakeup fd is not supported");
 }
 

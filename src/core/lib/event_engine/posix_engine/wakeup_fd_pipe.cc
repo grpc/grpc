@@ -38,7 +38,7 @@ namespace grpc_event_engine::experimental {
 #ifdef GRPC_POSIX_WAKEUP_FD
 
 absl::Status PipeWakeupFd::Init() {
-  auto pipe_ends = fds_->Pipe();
+  auto pipe_ends = posix_interface_->Pipe();
   if (!pipe_ends.ok()) return std::move(pipe_ends).status();
   SetWakeupFds(pipe_ends->first, pipe_ends->second);
   return absl::OkStatus();
@@ -47,7 +47,7 @@ absl::Status PipeWakeupFd::Init() {
 absl::Status PipeWakeupFd::ConsumeWakeup() {
   std::array<char, 128> buf;
   for (;;) {
-    auto r = fds_->Read(ReadFd(), absl::Span<char>(buf));
+    auto r = posix_interface_->Read(ReadFd(), absl::Span<char>(buf));
     if (r.ok()) {
       if (*r > 0) continue;
       if (*r == 0) return absl::OkStatus();
@@ -71,31 +71,32 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
 
 absl::Status PipeWakeupFd::Wakeup() {
   char c = 0;
-  while (fds_->Write(WriteFd(), absl::Span<char>(&c, 1)).IsPosixError(EINTR)) {
+  while (posix_interface_->Write(WriteFd(), absl::Span<char>(&c, 1))
+             .IsPosixError(EINTR)) {
   }
   return absl::OkStatus();
 }
 
 PipeWakeupFd::~PipeWakeupFd() {
   if (ReadFd().ready()) {
-    fds_->Close(ReadFd());
+    posix_interface_->Close(ReadFd());
   }
   if (WriteFd().ready()) {
-    fds_->Close(WriteFd());
+    posix_interface_->Close(WriteFd());
   }
 }
 
 bool PipeWakeupFd::IsSupported() {
-  EventEnginePosixInterface fds;
-  PipeWakeupFd pipe_wakeup_fd(&fds);
+  EventEnginePosixInterface posix_interface;
+  PipeWakeupFd pipe_wakeup_fd(&posix_interface);
   return pipe_wakeup_fd.Init().ok();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd(
-    EventEnginePosixInterface* fds) {
+    EventEnginePosixInterface* posix_interface) {
   static bool kIsPipeWakeupFdSupported = PipeWakeupFd::IsSupported();
   if (kIsPipeWakeupFdSupported) {
-    auto pipe_wakeup_fd = std::make_unique<PipeWakeupFd>(fds);
+    auto pipe_wakeup_fd = std::make_unique<PipeWakeupFd>(posix_interface);
     auto status = pipe_wakeup_fd->Init();
     if (status.ok()) {
       return std::unique_ptr<WakeupFd>(std::move(pipe_wakeup_fd));
@@ -118,7 +119,7 @@ absl::Status PipeWakeupFd::Wakeup() { grpc_core::Crash("unimplemented"); }
 bool PipeWakeupFd::IsSupported() { return false; }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd(
-    EventEnginePosixInterface* fds) {
+    EventEnginePosixInterface* posix_interface) {
   return absl::NotFoundError("Pipe wakeup fd is not supported");
 }
 
