@@ -96,19 +96,19 @@ class Http2Status {
     kGrpcError = 0x3,
   };
 
-  Http2Status(const absl::StatusCode code)
+  explicit Http2Status(const absl::StatusCode code)
       : http2_code_(Http2ErrorCode::kNoError),
         error_type_(Http2ErrorType::kOk),
         absl_code_(code) {}
 
-  Http2Status(const absl::StatusCode code, absl::string_view message)
+  explicit Http2Status(const absl::StatusCode code, absl::string_view message)
       : http2_code_(Http2ErrorCode::kNoError),
         error_type_(Http2ErrorType::kOk),
         absl_code_(code),
         message_(message) {}
 
-  Http2Status(const Http2ErrorCode code, const Http2ErrorType type,
-              absl::string_view message)
+  explicit Http2Status(const Http2ErrorCode code, const Http2ErrorType type,
+                       absl::string_view message)
       : http2_code_(code),
         error_type_(type),
         absl_code_(absl::StatusCode::kOk),
