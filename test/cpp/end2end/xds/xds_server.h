@@ -195,17 +195,12 @@ class AdsServiceImpl
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AdsServiceImpl::ads_mu_);
 
    private:
-    // A struct representing the client's subscription to all the resources.
-    using SubscriptionNameMap =
-        absl::flat_hash_map<std::string /*resource_name*/,
-                            bool /*new_subscription*/>;
-    using SubscriptionMap =
-        std::map<std::string /*type_url*/, SubscriptionNameMap>;
-
-    // Sent state for a given resource type.
-    struct SentState {
+    // State for a given resource type.
+    struct ResourceTypeState {
       int nonce = 0;
       int resource_type_version = 0;
+      absl::flat_hash_map<std::string /*resource_name*/,
+                          bool /*new_subscription*/> subscriptions;
     };
 
     void OnReadDone(bool ok) override;
@@ -221,20 +216,15 @@ class AdsServiceImpl
 
 // FIXME: use our own lock
 
-// FIXME: combine these two maps
-    // Resources that the client will be subscribed to keyed by resource type
-    // url.
-    SubscriptionMap subscription_map_;
-    // Sent state for each resource type.
-    std::map<std::string /*type_url*/, SentState> sent_state_map_;
-
-    DiscoveryRequest request_;
-    DiscoveryResponse response_;
-    bool seen_first_request_ = false;
-
+    std::map<std::string /*type_url*/, ResourceTypeState> type_state_map_
+        ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_);
+    bool seen_first_request_ ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_) = false;
     bool write_pending_ ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_) = false;
     std::set<std::string /*type_url*/> response_needed_
         ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_);
+
+    DiscoveryRequest request_;
+    DiscoveryResponse response_;
   };
 
   // A struct representing the current state for an individual resource.

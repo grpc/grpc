@@ -120,10 +120,10 @@ void AdsServiceImpl::Reactor::OnCancel() {
   // finished.
   {
     grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
-    for (auto& [type_url, subscription_name_map] : subscription_map_) {
+    for (auto& [type_url, type_state] : type_state_map_) {
       ResourceNameMap& resource_name_map =
           ads_service_impl_->resource_map_[type_url].resource_name_map;
-      for (auto& [resource_name, _] : subscription_name_map) {
+      for (auto& [resource_name, _] : type_state.subscriptions) {
         ResourceState& resource_state = resource_name_map[resource_name];
         resource_state.subscriptions.erase(this);
       }
@@ -148,7 +148,7 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
             << "]: reactor " << this << ": Received request for type "
             << request_.type_url() << " with content "
             << request_.DebugString();
-  SentState& sent_state = sent_state_map_[request_.type_url()];
+  auto& type_state = type_state_map_[request_.type_url()];
   // Check the nonce sent by the client, if any.
   // (This will be absent on the first request on a stream.)
   if (request_.response_nonce().empty()) {
@@ -187,7 +187,7 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
         .emplace_back(
             std::move(response_state));
     // Ignore requests with stale nonces.
-    if (client_nonce < sent_state.nonce) {
+    if (client_nonce < type_state.nonce) {
       request_.Clear();
       StartRead(&request_);
       return;
@@ -201,20 +201,19 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
     return;
   }
   // Look at all the resource names in the request.
-  auto& subscription_name_map = subscription_map_[request_.type_url()];
   auto& resource_type_state =
       ads_service_impl_->resource_map_[request_.type_url()];
   auto& resource_name_map = resource_type_state.resource_name_map;
   absl::flat_hash_set<absl::string_view> resources_to_unsubscribe;
-  for (const auto& [resource_name, _] : subscription_name_map) {
+  for (const auto& [resource_name, _] : type_state.subscriptions) {
     resources_to_unsubscribe.emplace(resource_name);
   }
   for (const std::string& resource_name : request_.resource_names()) {
     resources_to_unsubscribe.erase(resource_name);
     auto& resource_state = resource_name_map[resource_name];
     // Check if it's a new subscription.
-    if (!subscription_name_map.contains(resource_name)) {
-      subscription_name_map.emplace(resource_name, true);
+    if (!type_state.subscriptions.contains(resource_name)) {
+      type_state.subscriptions.emplace(resource_name, true);
       resource_state.subscriptions.emplace(this);
       LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
                 << "]: reactor " << this << ": subscribe to resource type " << request_.type_url()
@@ -234,7 +233,7 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
         !resource_state.resource.has_value()) {
       resource_name_map.erase(it);
     }
-    subscription_name_map.erase(resource_name);
+    type_state.subscriptions.erase(resource_name);
   }
   MaybeStartWrite(request_.type_url());
   request_.Clear();
@@ -251,15 +250,14 @@ void AdsServiceImpl::Reactor::MaybeStartWrite(
   }
   LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
             << "]: reactor " << this << ": Constructing response";
-  auto& subscription_name_map = subscription_map_[resource_type];
+  auto& type_state = type_state_map_[resource_type];
   auto& resource_type_state = ads_service_impl_->resource_map_[resource_type];
   auto& resource_name_map = resource_type_state.resource_name_map;
-  auto& sent_state = sent_state_map_[resource_type];
   bool resource_needed_update = false;
-  for (auto& [resource_name, new_subscription] : subscription_name_map) {
+  for (auto& [resource_name, new_subscription] : type_state.subscriptions) {
     auto& resource_state = resource_name_map[resource_name];
     bool needs_update = new_subscription ||
-                        (sent_state.resource_type_version <
+                        (type_state.resource_type_version <
                              resource_type_state.resource_type_version &&
                          resource_state.resource_type_version <=
                              resource_type_state.resource_type_version);
@@ -293,10 +291,10 @@ void AdsServiceImpl::Reactor::MaybeStartWrite(
     return;
   }
   response_.set_type_url(resource_type);
-  response_.set_nonce(std::to_string(++sent_state.nonce));
+  response_.set_nonce(std::to_string(++type_state.nonce));
   response_.set_version_info(
       std::to_string(resource_type_state.resource_type_version));
-  sent_state.resource_type_version = resource_type_state.resource_type_version;
+  type_state.resource_type_version = resource_type_state.resource_type_version;
   LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
             << "]: reactor " << this << ": sending response: " << response_.DebugString();
   write_pending_ = true;
