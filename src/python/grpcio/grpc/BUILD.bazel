@@ -102,6 +102,11 @@ py_library(
 )
 
 py_library(
+    name = "errors",
+    srcs = ["_errors.py"],
+)
+
+py_library(
     name = "grpcio",
     srcs = ["__init__.py"],
     data = [
@@ -117,6 +122,7 @@ py_library(
         ":auth",
         ":channel",
         ":compression",
+        ":errors",
         ":interceptor",
         ":plugin_wrapping",
         ":server",
