@@ -41,12 +41,9 @@ extern "C" {
  * Its value is an int from the \a grpc_compression_algorithm enum. */
 #define GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
   "grpc.default_compression_algorithm"
-/** Set the Default compression level for the channel.
- * Defaults to no compression: uses more bandwidth but requires less CPU.
- * High compression levels: reduce bandwidth usage but increases CPU load.
- * Effective for larger payloads where bandwidth is a concern.
- * Not beneficial for small messages due to compression overhead.
- * Its value is an int from the \a grpc_compression_level enum. */
+/** Set the default compression level for the channel.
+ * Valid values are defined by the enum type grpc_compression_level, defaults to
+ * GRPC_COMPRESS_LEVEL_NONE. */
 #define GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL "grpc.default_compression_level"
 /** Compression algorithms supported by the channel.
  * Its value is a bitset (an int). Bits correspond to algorithms in \a
