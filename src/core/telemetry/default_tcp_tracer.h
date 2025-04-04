@@ -20,8 +20,8 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-#include "third_party/grpc/src/core/telemetry/tcp_tracer.h"
-#include "third_party/grpc/src/core/util/sync.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

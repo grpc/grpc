@@ -14,8 +14,7 @@
 
 #include "src/core/telemetry/default_tcp_tracer.h"
 
-#include "third_party/grpc/src/core/telemetry/default_tcp_tracer.h"
-#include "third_party/grpc/src/core/util/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
