@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.72.0-dev")
-set(gRPC_CORE_VERSION     "46.0.0")
-set(gRPC_CORE_SOVERSION   "46")
+set(gRPC_CORE_VERSION     "47.0.0")
+set(gRPC_CORE_SOVERSION   "47")
 set(gRPC_CPP_VERSION      "1.72.0-dev")
 set(gRPC_CPP_SOVERSION    "1.72")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
@@ -2857,6 +2857,7 @@ add_library(grpc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
   src/core/telemetry/call_tracer.cc
+  src/core/telemetry/default_tcp_tracer.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
@@ -3605,6 +3606,7 @@ add_library(grpc_unsecure
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
   src/core/telemetry/call_tracer.cc
+  src/core/telemetry/default_tcp_tracer.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
