@@ -131,7 +131,7 @@ class DataEndpointsTest : public YodelTest {
 };
 
 chaotic_good::data_endpoints_detail::Clock* Time1Clock() {
-  class Clock : public chaotic_good::data_endpoints_detail::Clock {
+  class Clock final : public chaotic_good::data_endpoints_detail::Clock {
    public:
     uint64_t Now() override { return 1; }
   };
