@@ -239,7 +239,7 @@ TEST(GrpcMessageAssembler, IncompleteMessage1) {
   assembler.AppendNewDataFrame(frame1, end_stream);
   absl::StatusOr<MessageHandle> result1 = assembler.GenerateMessage();
   EXPECT_FALSE(result1.ok());
- }
+}
 
 TEST(GrpcMessageAssembler, IncompleteMessage2) {
   SliceBuffer frame1;
