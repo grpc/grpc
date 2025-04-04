@@ -23,6 +23,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <regex>
 
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
@@ -55,13 +56,11 @@ std::string GetDbFileContent(int argc, char** argv) {
 }
 
 // A simple parser for the json db file. It requires the db file to have the
-// exact form of [{"location": { "latitude": 123, "longitude": 456}, "name":
-// "the name can be empty" }, { ... } ... The spaces will be stripped.
+// exact form of [{"location":{"latitude":123,"longitude":456},"name":
+// "the name can be empty"},{ ... }...
 class Parser {
  public:
   explicit Parser(const std::string& db) : db_(db) {
-    // Remove all spaces.
-    db_.erase(std::remove_if(db_.begin(), db_.end(), isspace), db_.end());
     if (!Match("[")) {
       SetFailedAndReturnFalse();
     }
@@ -134,12 +133,33 @@ class Parser {
   const std::string name_ = "\"name\":";
 };
 
+/**
+ * * MinifyJson
+ * Minifies a JSON string by removing all whitespace characters outside of
+ * strings. This function is useful for reducing the size of JSON data,
+ * especially when transmitting or storing it.
+ *
+ * @param json The input JSON string to be minified.
+ * @return A minified version of the input JSON string.
+ *
+ * Example usage:
+ * std::string json = R"({"key": "value", "array": [1, 2, 3]})";
+ * std::string minified = MinifyJson(json);
+ * // minified will be: {"key":"value","array":[1,2,3]}
+ *
+ * @see https://en.wikipedia.org/wiki/JSON
+ * @see https://tools.ietf.org/html/rfc8259
+ * @see https://www.json.org/json-en.html
+ */
+std::string MinifyJson(const std::string& json) {
+  std::regex whitespaceOutsideQuotes(R"(\s+(?=(?:(?:[^"]*"){2})*[^"]*$))");
+  // Replace all matches with an empty string
+  return std::regex_replace(json, whitespaceOutsideQuotes, "");
+}
+
 void ParseDb(const std::string& db, std::vector<Feature>* feature_list) {
   feature_list->clear();
-  std::string db_content(db);
-  db_content.erase(
-      std::remove_if(db_content.begin(), db_content.end(), isspace),
-      db_content.end());
+  std::string db_content(MinifyJson(db));
 
   Parser parser(db_content);
   Feature feature;
