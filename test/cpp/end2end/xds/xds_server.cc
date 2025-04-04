@@ -187,11 +187,17 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
         .emplace_back(
             std::move(response_state));
     // Ignore requests with stale nonces.
-    if (client_nonce < sent_state.nonce) return;
+    if (client_nonce < sent_state.nonce) {
+      request_.Clear();
+      StartRead(&request_);
+      return;
+    }
   }
   // Ignore resource types as requested by tests.
   if (ads_service_impl_->resource_types_to_ignore_.find(request_.type_url()) !=
       ads_service_impl_->resource_types_to_ignore_.end()) {
+    request_.Clear();
+    StartRead(&request_);
     return;
   }
   // Look at all the resource names in the request.
