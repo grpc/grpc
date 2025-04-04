@@ -229,9 +229,28 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
 
 TEST(GrpcMessageAssembler, ThreeMessageInFourFrames) { CHECK(end_stream); }
 
-TEST(GrpcMessageAssembler, IncompleteMessage1) { CHECK(end_stream); }
+TEST(GrpcMessageAssembler, IncompleteMessage1) {
+  SliceBuffer frame1;
+  const uint32_t length = kString1.size() + kString2.size() + kString3.size();
+  AppendHeaderAndPartialMessage(frame1, length, kString1);
+  EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kString1.size());
 
-TEST(GrpcMessageAssembler, IncompleteMessage2) { CHECK(end_stream); }
+  GrpcMessageAssembler assembler;
+  assembler.AppendNewDataFrame(frame1, end_stream);
+  absl::StatusOr<MessageHandle> result1 = assembler.GenerateMessage();
+  EXPECT_FALSE(result1.ok());
+ }
+
+TEST(GrpcMessageAssembler, IncompleteMessage2) {
+  SliceBuffer frame1;
+  AppendGrpcHeaderToSliceBuffer(frame1, flags, 5);
+  frame1.RemoveLastNBytes(2);
+
+  GrpcMessageAssembler assembler;
+  assembler.AppendNewDataFrame(frame1, end_stream);
+  absl::StatusOr<MessageHandle> result1 = assembler.GenerateMessage();
+  EXPECT_FALSE(result1.ok());
+}
 
 }  // namespace testing
 }  // namespace http2
