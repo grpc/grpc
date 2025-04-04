@@ -30,12 +30,11 @@ class DefaultTcpTracer final : public grpc_core::TcpConnectionTracer {
   DefaultTcpTracer() = default;
   ~DefaultTcpTracer() override = default;
   // Records per-connection metrics.
-  void RecordConnectionMetrics(
-      grpc_core::TcpConnectionMetrics metrics) override;
+  void RecordConnectionMetrics(TcpConnectionMetrics metrics) override;
 
  private:
-  grpc_core::Mutex mu_;
-  grpc_core::TcpConnectionMetrics connection_metrics_ ABSL_GUARDED_BY(mu_);
+  Mutex mu_;
+  TcpConnectionMetrics connection_metrics_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
