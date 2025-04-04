@@ -1619,7 +1619,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   ExecCtx exec_ctx;
   auto& args = server_->channel_args();
   auto* supports_fd = QueryExtension<EventEngineSupportsFdExtension>(
-      /*engine=*/args.GetObjectRef<EventEngine>().get());
+      args.GetObjectRef<EventEngine>().get());
   if (supports_fd == nullptr) {
     return absl::UnimplementedError(
         "The server's EventEngine does not support adding endpoints from "

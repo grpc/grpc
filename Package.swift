@@ -1302,6 +1302,7 @@ let package = Package(
         "src/core/lib/event_engine/default_event_engine_factory.h",
         "src/core/lib/event_engine/event_engine.cc",
         "src/core/lib/event_engine/event_engine_context.h",
+        "src/core/lib/event_engine/extensions/blocking_dns.h",
         "src/core/lib/event_engine/extensions/can_track_errors.h",
         "src/core/lib/event_engine/extensions/chaotic_good_extension.h",
         "src/core/lib/event_engine/extensions/iomgr_compatible.h",
