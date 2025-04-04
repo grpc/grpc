@@ -36,58 +36,103 @@ namespace testing {
 
 using ::testing::TestWithParam;
 
-struct SpiffeIdFailureTestCase {
-  std::string test_name;
-  std::string spiffe_id;
-  std::string status_contains;
-};
-
-using SpiffeIdFailureTest = TestWithParam<SpiffeIdFailureTestCase>;
-
-TEST_P(SpiffeIdFailureTest, SpiffeIdTestFailure) {
-  const SpiffeIdFailureTestCase& test_case = GetParam();
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString(test_case.spiffe_id);
-  EXPECT_EQ(spiffe_id.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(spiffe_id.status().message(),
-              ::testing::HasSubstr(test_case.status_contains));
+TEST(SpiffeId, EmptyFails) {
+  EXPECT_EQ(
+      SpiffeId::FromString("").status(),
+      absl::InvalidArgumentError("SPIFFE ID cannot be parsed from empty URI"));
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    SpifeIdTestFailureSuiteInstantiation, SpiffeIdFailureTest,
-    ::testing::ValuesIn<SpiffeIdFailureTestCase>({
-        {"Empty", "", "empty URI"},
-        {"TooLong", std::string(2049, 'a'),
-         "maximum allowed for SPIFFE ID is 2048"},
-        {"ContainsHashtag", "ab#de", "cannot contain query fragments"},
-        {"ContainsQuestionMark", "ab?de", "cannot contain query parameters"},
+TEST(SpiffeId, TooLongFails) {
+  EXPECT_EQ(SpiffeId::FromString(std::string(2049, 'a')).status(),
+            absl::InvalidArgumentError(
+                "URI length is 2049, maximum allowed for SPIFFE ID is 2048"));
+}
 
-        {"DoesNotStartWithSpiffe", "www://foo/bar",
-         "must start with spiffe://"},
-        {"EndsWithSlash", "spiffe://foo/bar/", "cannot end with a /"},
-        {"NoTrustDomain", "spiffe://", "cannot end with a /"},
-        {"NoTrustDomainWithPath", "spiffe:///path",
-         "The trust domain cannot be empty"},
-        {"TrustDomainTooLong", absl::StrCat("spiffe://", std::string(256, 'a')),
-         "Trust domain maximum length is 255 characters"},
-        {"TrustDomainInvalidCharacter1", "spiffe://bad@domain",
-         "contains invalid character @"},
-        {"TrustDomainInvalidCharacter2", "spiffe://BadDomain",
-         "contains invalid character B"},
-        {"PathContainsRelativeModifier1", "spiffe://example/path/./foo",
-         ". or .."},
-        {"PathContainsRelativeModifier2", "spiffe://example/path/../foo",
-         ". or .."},
-        {"PathSegmentBadCharacter", "spiffe://example/path/foo.bar/foo@bar",
-         "invalid character @"},
-        {"ContainsNonASCIITrustDomain", "spiffe://µ/path",
-         "cannot contain non-ascii characters"},
-        {"ContainsNonASCIIPath", "spiffe://foo.bar/µ",
-         "cannot contain non-ascii characters"},
-    }),
-    [](const ::testing::TestParamInfo<SpiffeIdFailureTest::ParamType>& info) {
-      return info.param.test_name;
-    });
+TEST(SpiffeId, ContainsHashtagFails) {
+  EXPECT_EQ(
+      SpiffeId::FromString("ab#de").status(),
+      absl::InvalidArgumentError("SPIFFE ID cannot contain query fragments"));
+}
+
+TEST(SpiffeId, ContainsQuestionMarkFails) {
+  EXPECT_EQ(
+      SpiffeId::FromString("ab?de").status(),
+      absl::InvalidArgumentError("SPIFFE ID cannot contain query parameters"));
+}
+
+TEST(SpiffeId, DoesNotStartWithSpiffeFails) {
+  EXPECT_EQ(SpiffeId::FromString("www://foo/bar").status(),
+            absl::InvalidArgumentError("SPIFFE ID must start with spiffe://"));
+}
+
+TEST(SpiffeId, EndWithSlashFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://foo/bar/").status(),
+            absl::InvalidArgumentError("SPIFFE ID cannot end with a /"));
+}
+
+TEST(SpiffeId, NoTrustDomainFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://").status(),
+            absl::InvalidArgumentError("SPIFFE ID cannot end with a /"));
+}
+
+TEST(SpiffeId, NoTrustDomainWithPathFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe:///path").status(),
+            absl::InvalidArgumentError("The trust domain cannot be empty"));
+}
+
+TEST(SpiffeId, TrustDomainTooLongFails) {
+  EXPECT_EQ(
+      SpiffeId::FromString(absl::StrCat("spiffe://", std::string(256, 'a')))
+          .status(),
+      absl::InvalidArgumentError(
+          "Trust domain maximum length is 255 characters"));
+}
+
+TEST(SpiffeId, TrustDomainInvalidCharacterFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://bad@domain").status(),
+            absl::InvalidArgumentError(
+                "Trust domain contains invalid character @. MUST contain only "
+                "lowercase letters, numbers, dots, dashes, and underscores"));
+}
+
+TEST(SpiffeId, TrustDomainInvalidCharacterUppercaseFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://BadDdomain").status(),
+            absl::InvalidArgumentError(
+                "Trust domain contains invalid character B. MUST contain only "
+                "lowercase letters, numbers, dots, dashes, and underscores"));
+}
+
+TEST(SpiffeId, PathContainsRelativeModifier1Fails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://example/path/./foo").status(),
+            absl::InvalidArgumentError(
+                "Path segment cannot be a relative modifier (. or ..)"));
+}
+
+TEST(SpiffeId, PathContainsRelativeModifier2Fails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://example/path/../foo").status(),
+            absl::InvalidArgumentError(
+                "Path segment cannot be a relative modifier (. or ..)"));
+}
+
+TEST(SpiffeId, PathSegmentBadCharacterFails) {
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://example/path/foo.bar/foo@bar").status(),
+      absl::InvalidArgumentError(
+          "Path segment contains invalid character @. MUST contain only "
+          "letters, numbers, dots, dashes, and underscores"));
+}
+
+TEST(SpiffeId, ContainsNonASCIITrustDomainFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://µ/path").status(),
+            absl::InvalidArgumentError(
+                "SPIFFE ID URI cannot contain non-ascii characters"));
+}
+
+TEST(SpiffeId, ContainsNonASCIIPathFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://foo.bar/µ").status(),
+            absl::InvalidArgumentError(
+                "SPIFFE ID URI cannot contain non-ascii characters"));
+}
 
 struct SpiffeIdSuccessTestCase {
   std::string spiffe_id;

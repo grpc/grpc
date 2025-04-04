@@ -54,8 +54,8 @@ absl::Status DoInitialUriValidation(absl::string_view uri) {
   }
   for (char ch : uri) {
     if (!absl::ascii_isascii(ch)) {
-      return absl::InvalidArgumentError(absl::StrFormat(
-          "SPIFFE ID URI cannot contain non-ascii characters. Found %c", ch));
+      return absl::InvalidArgumentError(
+          absl::StrFormat("SPIFFE ID URI cannot contain non-ascii characters"));
     }
   }
   return absl::OkStatus();
