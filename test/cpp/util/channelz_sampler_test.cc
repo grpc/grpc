@@ -142,11 +142,8 @@ TEST(ChannelzSamplerTest, SimpleTest) {
        "--output_json=" + output_json});
   int status = test_driver->Join();
   if (WIFEXITED(status)) {
-    if (WEXITSTATUS(status)) {
-      LOG(ERROR) << "Channelz sampler test test-runner exited with code "
-                 << WEXITSTATUS(status);
-      CHECK(0);  // log the line number of the assertion failure
-    }
+    ASSERT_EQ(WEXITSTATUS(status), 0)
+        << "Channelz sampler test test-runner exited with code";
   } else if (WIFSIGNALED(status)) {
     LOG(ERROR) << "Channelz sampler test test-runner ended from signal "
                << WTERMSIG(status);

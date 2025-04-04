@@ -15,6 +15,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -53,7 +54,6 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
@@ -67,7 +67,6 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/orphanable.h"
@@ -107,9 +106,9 @@ absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
 constexpr EventEngine::Duration kAresBackupPollAlarmDuration =
     std::chrono::seconds(1);
 
-bool IsIpv6LoopbackAvailable() {
+bool AresIsIpv6LoopbackAvailable() {
 #ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
-  return PosixSocketWrapper::IsIpv6LoopbackAvailable();
+  return IsIpv6LoopbackAvailable();
 #elif defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   // TODO(yijiem): implement this for Windows
   return true;
@@ -189,46 +188,82 @@ struct HostnameQueryArg : public QueryArg {
   std::vector<EventEngine::ResolvedAddress> result;
 };
 
-}  // namespace
-
-absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
-AresResolver::CreateAresResolver(
-    absl::string_view dns_server,
-    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    std::shared_ptr<EventEngine> event_engine) {
+absl::Status InitAresChannel(
+    ares_channel* channel, absl::string_view dns_server,
+    const std::unique_ptr<GrpcPolledFdFactory>& polled_fd_factory) {
   ares_options opts = {};
   opts.flags |= ARES_FLAG_STAYOPEN;
   if (g_event_engine_grpc_ares_test_only_force_tcp) {
     opts.flags |= ARES_FLAG_USEVC;
   }
-  ares_channel channel;
-  int status = ares_init_options(&channel, &opts, ARES_OPT_FLAGS);
+  int status = ares_init_options(channel, &opts, ARES_OPT_FLAGS);
   if (status != ARES_SUCCESS) {
     LOG(ERROR) << "ares_init_options failed, status: " << status;
     return AresStatusToAbslStatus(
         status,
         absl::StrCat("Failed to init c-ares channel: ", ares_strerror(status)));
   }
-  event_engine_grpc_ares_test_only_inject_config(&channel);
-  polled_fd_factory->ConfigureAresChannelLocked(channel);
+  event_engine_grpc_ares_test_only_inject_config(channel);
+  polled_fd_factory->ConfigureAresChannelLocked(*channel);
   if (!dns_server.empty()) {
-    absl::Status status = SetRequestDNSServer(dns_server, &channel);
+    absl::Status status = SetRequestDNSServer(dns_server, channel);
     if (!status.ok()) {
       return status;
     }
   }
-  return grpc_core::MakeOrphanable<AresResolver>(
-      std::move(polled_fd_factory), std::move(event_engine), channel);
+  return absl::OkStatus();
+}
+
+}  // namespace
+
+// AresResolver::ReinitHandle
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+
+AresResolver::ReinitHandle::ReinitHandle(AresResolver* resolver)
+    : resolver_(resolver) {}
+
+void AresResolver::ReinitHandle::OnResolverGone() {
+  grpc_core::MutexLock lock(&mutex_);
+  resolver_ = nullptr;
+}
+
+void AresResolver::ReinitHandle::Reinit() {
+  grpc_core::MutexLock lock(&mutex_);
+  if (resolver_ != nullptr) {
+    resolver_->Reinitialize();
+  }
+}
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+
+// AresResolver
+
+absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
+AresResolver::CreateAresResolver(
+    absl::string_view dns_server,
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    std::shared_ptr<EventEngine> event_engine) {
+  ares_channel channel;
+  absl::Status status =
+      InitAresChannel(&channel, dns_server, polled_fd_factory);
+  if (!status.ok()) {
+    return status;
+  }
+  return grpc_core::MakeOrphanable<AresResolver>(std::move(polled_fd_factory),
+                                                 std::move(event_engine),
+                                                 channel, dns_server);
 }
 
 AresResolver::AresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    std::shared_ptr<EventEngine> event_engine, ares_channel channel)
+    std::shared_ptr<EventEngine> event_engine, ares_channel channel,
+    absl::string_view dns_server)
     : RefCountedDNSResolverInterface(
           GRPC_TRACE_FLAG_ENABLED(cares_resolver) ? "AresResolver" : nullptr),
       channel_(channel),
       polled_fd_factory_(std::move(polled_fd_factory)),
-      event_engine_(std::move(event_engine)) {
+      event_engine_(std::move(event_engine)),
+      dns_server_(dns_server) {
   polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
 }
 
@@ -239,6 +274,16 @@ AresResolver::~AresResolver() {
 }
 
 void AresResolver::Orphan() {
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  // Do this before locking &mutex_ - ensures there will be no deadlock if
+  // resolver is being orphaned during fork.
+  {
+    grpc_core::MutexLock handle_lock(&reinit_handle_mu_);
+    if (reinit_handle_ != nullptr) {
+      reinit_handle_->OnResolverGone();
+    }
+  }
+#endif
   {
     grpc_core::MutexLock lock(&mutex_);
     shutting_down_ = true;
@@ -321,7 +366,7 @@ void AresResolver::LookupHostname(
   grpc_core::MutexLock lock(&mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
-  if (IsIpv6LoopbackAvailable()) {
+  if (AresIsIpv6LoopbackAvailable()) {
     // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
     // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
     // ::1).
@@ -808,6 +853,51 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
         callback(std::move(result));
       });
 }
+
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+
+std::weak_ptr<AresResolver::ReinitHandle> AresResolver::GetReinitHandle() {
+  grpc_core::MutexLock lock(&reinit_handle_mu_);
+  if (reinit_handle_ == nullptr) {
+    reinit_handle_ = std::make_shared<ReinitHandle>(this);
+  }
+  return reinit_handle_;
+}
+
+void AresResolver::Reinitialize() {
+  auto self = RefIfNonZero();
+  if (self == nullptr) {
+    return;
+  }
+  // Let the callbacks know
+  // TODO (eostroukhov): Should it be merged with Orphan? Current differences:
+  //  - Does not make is_shutdown = true
+  //  - Different log message
+  grpc_core::MutexLock lock(&mutex_);
+  if (ares_backup_poll_alarm_handle_.has_value()) {
+    event_engine_->Cancel(*ares_backup_poll_alarm_handle_);
+    ares_backup_poll_alarm_handle_.reset();
+  }
+  for (const auto& fd_node : fd_node_list_) {
+    if (!fd_node->already_shutdown) {
+      GRPC_TRACE_LOG(cares_resolver, INFO)
+          << "(EventEngine c-ares resolver) resolver: " << this
+          << " shutdown fd: " << fd_node->polled_fd->GetName();
+      CHECK(fd_node->polled_fd->ShutdownLocked(
+          absl::CancelledError("AresResolver::Reinitialize")));
+      fd_node->already_shutdown = true;
+    }
+  }
+  CheckSocketsLocked();
+  ares_destroy(channel_);
+  callback_map_.clear();
+  channel_ = nullptr;
+
+  absl::Status status = InitAresChannel(&channel_, "", polled_fd_factory_);
+  CHECK_OK(status);
+}
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 }  // namespace grpc_event_engine::experimental
 

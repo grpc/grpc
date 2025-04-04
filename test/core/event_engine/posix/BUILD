@@ -268,3 +268,56 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "file_descriptor_collection_test",
+    srcs = ["file_descriptor_collection_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//src/core:posix_event_engine_posix_interface",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "poller_fork_test",
+    srcs = ["poller_fork_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        ":posix_engine_test_utils",
+        "//:grpc++",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ares_resolver_test",
+    srcs = ["ares_resolver_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//:gpr_platform",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
