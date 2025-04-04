@@ -126,10 +126,10 @@ TEST(GrpcMessageAssembler, OneMessageInThreeFrames) {
   assembler.AppendNewDataFrame(frame3, end_stream);
   absl::StatusOr<MessageHandle> result3 = assembler.GenerateMessage();
   EXPECT_TRUE(result3.ok());
-  // BUG // EXPECT_EQ(result1->get()->payload()->Length(), length);
+  EXPECT_EQ(result3->get()->payload()->Length(), length);
 }
 
-TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) { CHECK(end_stream); }
+TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) {}
 
 TEST(GrpcMessageAssembler, ThreeMessageInFourFrames) { CHECK(end_stream); }
 

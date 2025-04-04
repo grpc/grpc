@@ -60,6 +60,8 @@ class GrpcMessageAssembler {
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
+    LOG(INFO) << " GenerateMessage 2 " << message_buffer_.Length() << " "
+              << (header.length + kGrpcHeaderSizeInBytes);
     if (message_buffer_.Length() >= header.length + kGrpcHeaderSizeInBytes) {
       SliceBuffer discard;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
@@ -73,6 +75,7 @@ class GrpcMessageAssembler {
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(header.length, temp);
       MessageHandle grpc_message = Arena::MakePooled<Message>();
       grpc_message->payload()->Append(temp);
+      LOG(INFO) << " GenerateMessage Return ";
       return grpc_message;
     }
     return ReturnNullOrError();
@@ -81,8 +84,10 @@ class GrpcMessageAssembler {
  private:
   absl::StatusOr<MessageHandle> ReturnNullOrError() {
     if (is_end_stream_ && message_buffer_.Length() > 0) {
+      LOG(INFO) << " GenerateMessage Incomplete ";
       return absl::InternalError("Incomplete gRPC frame received");
     }
+    LOG(INFO) << " GenerateMessage nullptr ";
     return nullptr;
   }
   bool is_end_stream_ = false;
