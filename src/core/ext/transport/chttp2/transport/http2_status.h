@@ -167,6 +167,7 @@ class Http2Status {
 
 template <typename T>
 class Http2StatusOr {
+ public:
   bool ok() const { return std::holds_alternative<T>(status_or_); }
 
   T get() { return std::get<T>(status_or_); }
