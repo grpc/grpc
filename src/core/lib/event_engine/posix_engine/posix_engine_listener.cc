@@ -15,7 +15,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 

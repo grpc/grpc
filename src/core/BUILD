@@ -2080,13 +2080,43 @@ grpc_cc_library(
 grpc_cc_library(
     name = "posix_event_engine_posix_interface",
     srcs = [
-        "lib/event_engine/posix_engine/file_descriptor_collection.cc",
         "lib/event_engine/posix_engine/posix_interface_posix.cc",
         "lib/event_engine/posix_engine/posix_interface_windows.cc",
     ],
     hdrs = [
-        "lib/event_engine/posix_engine/file_descriptor_collection.h",
         "lib/event_engine/posix_engine/posix_interface.h",
+    ],
+    external_deps = [
+        "absl/cleanup",
+        "absl/functional:any_invocable",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "event_engine_tcp_socket_utils",
+        "experiments",
+        "iomgr_port",
+        "posix_event_engine_file_descriptor_collection",
+        "posix_event_engine_tcp_socket_utils",
+        "status_helper",
+        "strerror",
+        "sync",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_file_descriptor_collection",
+    srcs = [
+        "lib/event_engine/posix_engine/file_descriptor_collection.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/posix_engine/file_descriptor_collection.h",
     ],
     external_deps = [
         "absl/cleanup",
