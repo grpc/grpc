@@ -3127,6 +3127,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "histogram_view",
+        "no_destruct",
         "per_cpu",
         "//:gpr_platform",
     ],
