@@ -198,13 +198,15 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         name = name + "_universal",
         binary = name + "_native",
     )
+
+    # In order to avoid warnings from Bazel, names of the rule and its output file must differ.
     native.genrule(
         name = name,
         srcs = select({
             "@platforms//os:macos": [name + "_universal"],
             "//conditions:default": [name + "_native"],
         }),
-        outs = [name],
+        outs = [name + "_binary"],
         cmd = "cp $< $@",
         executable = True,
     )
