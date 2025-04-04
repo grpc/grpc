@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_STATUS_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_STATUS_H
 
+#include <varaint>
+
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -168,7 +170,7 @@ class Http2Status {
 template <typename T>
 class Http2StatusOr {
  public:
-  bool ok() const { return std::holds_alternative<T>(status_or_); }
+  bool ok() const { return !std::holds_alternative<Http2Status>(status_or_); }
 
   T get() { return std::get<T>(status_or_); }
 
