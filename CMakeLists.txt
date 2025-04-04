@@ -2858,6 +2858,7 @@ add_library(grpc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
   src/core/telemetry/call_tracer.cc
+  src/core/telemetry/default_tcp_tracer.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
@@ -3606,6 +3607,7 @@ add_library(grpc_unsecure
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
   src/core/telemetry/call_tracer.cc
+  src/core/telemetry/default_tcp_tracer.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc

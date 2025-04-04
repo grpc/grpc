@@ -1229,6 +1229,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
+        "absl/container:inlined_vector",
     ],
     deps = [
         "exec_ctx",
@@ -4673,6 +4674,7 @@ grpc_cc_library(
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:connectivity_state",
+        "//src/core:default_tcp_tracer",
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:event_engine_extensions",

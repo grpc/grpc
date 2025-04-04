@@ -7201,6 +7201,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "default_tcp_tracer",
+    srcs = [
+        "telemetry/default_tcp_tracer.cc",
+    ],
+    hdrs = [
+        "telemetry/default_tcp_tracer.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log",
+        "absl/time",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "channel_args_endpoint_config",
+        "metrics",
+        "sync",
+        "//:gpr",
+        "//:tcp_tracer",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_config",
     srcs = [
         "resolver/xds/xds_config.cc",
@@ -8027,6 +8051,7 @@ grpc_cc_library(
     deps = [
         "1999",
         "chaotic_good_pending_connection",
+        "default_tcp_tracer",
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
@@ -8482,6 +8507,7 @@ grpc_cc_library(
     deps = [
         "1999",
         "chaotic_good_legacy_pending_connection",
+        "default_tcp_tracer",
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
