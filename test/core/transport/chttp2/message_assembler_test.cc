@@ -158,8 +158,6 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) {
   EXPECT_EQ(result4->get(), nullptr);
 }
 
-TEST(GrpcMessageAssembler, ThreeMessageInFourFrames) { CHECK(end_stream); }
-
 TEST(GrpcMessageAssembler, ThreeEmptyMessagesInOneFrame) {
   SliceBuffer frame1;
   AppendEmptyMessage(frame1);
@@ -214,6 +212,10 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
   EXPECT_TRUE(result4.ok());
   EXPECT_EQ(result4->get(), nullptr);
 }
+
+TEST(GrpcMessageAssembler, ThreeMessageInFourFrames) { CHECK(end_stream); }
+
+SliceBuffer Generate4GBPayload() { SliceBuffer payload; }
 
 TEST(GrpcMessageAssembler, One4GBMessage) { CHECK(end_stream); }
 
