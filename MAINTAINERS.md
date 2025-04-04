@@ -12,6 +12,7 @@ for general contribution guidelines.
 
 - [a11r](https://github.com/a11r), Google LLC
 - [ac-patel](https://github.com/ac-patel), Google LLC
+- [anniefrchz](https://github.com/anniefrchz), Google LLC
 - [apolcyn](https://github.com/apolcyn), Google LLC
 - [arjunroy](https://github.com/arjunroy), Google LLC
 - [ctiller](https://github.com/ctiller), Google LLC
