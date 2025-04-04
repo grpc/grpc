@@ -102,7 +102,7 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
     return result.status();
   }
   socket.sock = *result;
-  if (socket.dsmode == DSMODE_IPV4 &&
+  if (socket.dsmode == EventEnginePosixInterface::DSMODE_IPV4 &&
       ResolvedAddressIsV4Mapped(addr, &addr4_copy)) {
     socket.addr = addr4_copy;
   } else {
@@ -240,7 +240,8 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     listener_sockets.Append(*v6_sock);
     requested_port = v6_sock->port;
     assigned_port = v6_sock->port;
-    if (v6_sock->dsmode == DSMODE_DUALSTACK || v6_sock->dsmode == DSMODE_IPV4) {
+    if (v6_sock->dsmode == EventEnginePosixInterface::DSMODE_DUALSTACK ||
+        v6_sock->dsmode == EventEnginePosixInterface::DSMODE_IPV4) {
       return v6_sock->port;
     }
   }

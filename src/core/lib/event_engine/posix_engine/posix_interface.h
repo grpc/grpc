@@ -33,15 +33,33 @@ namespace grpc_event_engine::experimental {
 
 class EventEnginePosixInterface {
  public:
+  // An enum to keep track of IPv4/IPv6 socket modes.
+  //
+  // Currently, this information is only used when a socket is first created,
+  // but in the future we may wish to store it alongside the fd.  This would let
+  // calls like sendto() know which family to use without asking the kernel
+  // first.
+  enum DSMode {
+    // Uninitialized, or a non-IP socket.
+    DSMODE_NONE,
+    // AF_INET only.
+    DSMODE_IPV4,
+    // AF_INET6 only, because IPV6_V6ONLY could not be cleared.
+    DSMODE_IPV6,
+    // AF_INET6, which also supports ::ffff-mapped IPv4 addresses.
+    DSMODE_DUALSTACK
+  };
+
   EventEnginePosixInterface() = default;
   EventEnginePosixInterface(const EventEnginePosixInterface& other) = delete;
   EventEnginePosixInterface(EventEnginePosixInterface&& other) = delete;
 
-  // ---- Generation ----
+  // ---- Fork generation management ----
   // Advances the internal generation counter, potentially invalidating old
   // descriptors.
   void AdvanceGeneration();
   int generation() const { return descriptors_.generation(); }
+
   // ---- File Descriptor Management ----
   // Adopts an existing POSIX file descriptor, returning a managed
   // FileDescriptor object.

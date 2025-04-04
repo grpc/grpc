@@ -368,7 +368,7 @@ bool SetSocketDualStack(int fd) {
 absl::StatusOr<int> InternalCreateDualStackSocket(
     std::function<int(int, int, int)> socket_factory,
     const experimental::EventEngine::ResolvedAddress& addr, int type,
-    int protocol, DSMode& dsmode) {
+    int protocol, EventEnginePosixInterface::DSMode& dsmode) {
   const sockaddr* sock_addr = addr.address();
   int family = sock_addr->sa_family;
   int newfd;
@@ -381,7 +381,7 @@ absl::StatusOr<int> InternalCreateDualStackSocket(
     }
     // Check if we've got a valid dualstack socket.
     if (newfd > 0 && SetSocketDualStack(newfd)) {
-      dsmode = DSMode::DSMODE_DUALSTACK;
+      dsmode = EventEnginePosixInterface::DSMode::DSMODE_DUALSTACK;
       return newfd;
     }
     // If this isn't an IPv4 address, then return whatever we've
@@ -390,7 +390,7 @@ absl::StatusOr<int> InternalCreateDualStackSocket(
       if (newfd < 0) {
         return ErrorForFd(newfd, addr);
       }
-      dsmode = DSMode::DSMODE_IPV6;
+      dsmode = EventEnginePosixInterface::DSMode::DSMODE_IPV6;
       return newfd;
     }
     // Fall back to AF_INET.
@@ -399,7 +399,8 @@ absl::StatusOr<int> InternalCreateDualStackSocket(
     }
     family = AF_INET;
   }
-  dsmode = family == AF_INET ? DSMode::DSMODE_IPV4 : DSMode::DSMODE_NONE;
+  dsmode = family == AF_INET ? EventEnginePosixInterface::DSMode::DSMODE_IPV4
+                             : EventEnginePosixInterface::DSMode::DSMODE_NONE;
   newfd = CreateSocket(socket_factory, family, type, protocol);
   if (newfd < 0) {
     return ErrorForFd(newfd, addr);
@@ -501,7 +502,7 @@ absl::StatusOr<EventEnginePosixInterface::PosixSocketCreateResult>
 EventEnginePosixInterface::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& target_addr) {
-  DSMode dsmode;
+  EventEnginePosixInterface::DSMode dsmode;
   EventEngine::ResolvedAddress mapped_target_addr;
 
   // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
