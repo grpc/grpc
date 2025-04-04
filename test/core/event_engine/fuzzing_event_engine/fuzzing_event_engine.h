@@ -44,6 +44,7 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/port.h"
 
@@ -322,15 +323,6 @@ class FuzzingEventEngine : public EventEngine {
   // evaluate whether we want to continue supporting ThreadedFuzzingEventEngine
   // at all.
   virtual void OnClockIncremented(Duration) {}
-
-  // We need everything EventEngine to do reasonable timer steps -- without it
-  // we need to do a bunch of evil to make sure both timer systems are ticking
-  // each step.
-  static bool IsSaneTimerEnvironment() {
-    return grpc_core::IsEventEngineClientEnabled() &&
-           grpc_core::IsEventEngineListenerEnabled() &&
-           grpc_core::IsEventEngineDnsEnabled();
-  }
 
   // For the next connection being built, query the list of fuzzer selected
   // write size limits.

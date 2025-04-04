@@ -112,9 +112,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
 
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();
-    if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled() ||
-        !IsEventEngineDnsEnabled() ||
-        !IsEventEngineDnsNonClientChannelEnabled()) {
+    if (!grpc_event_engine::experimental::IsSaneTimerEnvironment()) {
       GTEST_SKIP() << "Needs most EventEngine experiments enabled";
     }
     SetExpectedTimerDuration(std::chrono::seconds(1));
