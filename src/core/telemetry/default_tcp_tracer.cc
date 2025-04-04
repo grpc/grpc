@@ -18,8 +18,7 @@
 
 namespace grpc_core {
 
-void DefaultTcpTracer::RecordConnectionMetrics(
-    grpc_core::TcpConnectionMetrics metrics) {
+void DefaultTcpTracer::RecordConnectionMetrics(TcpConnectionMetrics metrics) {
   MutexLock lock(&mu_);
   connection_metrics_ = metrics;
 }
