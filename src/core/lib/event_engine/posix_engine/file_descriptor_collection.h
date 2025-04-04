@@ -15,7 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_FILE_DESCRIPTOR_COLLECTION_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_FILE_DESCRIPTOR_COLLECTION_H
 
-#include <atomic>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -186,6 +185,10 @@ class FileDescriptor {
 // to ensure FDs created before a fork are not used after the fork.
 class FileDescriptorCollection {
  public:
+  explicit FileDescriptorCollection(int generation) : generation_(generation) {}
+  FileDescriptorCollection(FileDescriptorCollection&& other) noexcept;
+  FileDescriptorCollection& operator=(
+      FileDescriptorCollection&& other) noexcept;
   // Adds a raw file descriptor `fd` to the collection and associates it
   // with the current generation. Simply constructs a new FileDescriptor
   // instance without adding to a collection if fork is disabled.
@@ -195,27 +198,19 @@ class FileDescriptorCollection {
   // If fork support is enabled, fd is only removed if its generation matches
   // the current collection generation. Returns true if the fd was removed.
   bool Remove(const FileDescriptor& fd);
-  // Advances the collection's generation number, clears the internal list of
-  // tracked file descriptors, and returns the set of fds that were being
-  // tracked under the previous generation. This should be called after a fork
-  // in the child process.
-  std::unordered_set<int> AdvanceGeneration();
+  // Returns all file descriptors and empties the collection
+  std::unordered_set<int> Clear();
 
   // Returns the current generation number of the collection.
-  int generation() const {
-#if GRPC_ENABLE_FORK_SUPPORT
-    return current_generation_.load(std::memory_order_relaxed);
-#else   // GRPC_ENABLE_FORK_SUPPORT
-    return 0;
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-  }
+  int generation() const { return generation_; }
 
  private:
 #if GRPC_ENABLE_FORK_SUPPORT
   grpc_core::Mutex mu_;
   std::unordered_set<int> file_descriptors_ ABSL_GUARDED_BY(mu_);
-  std::atomic_int current_generation_{1};
 #endif  // GRPC_ENABLE_FORK_SUPPORT
+  // Never changed outside of ctor, no need to synchronize
+  int generation_;
 };
 
 }  // namespace grpc_event_engine::experimental

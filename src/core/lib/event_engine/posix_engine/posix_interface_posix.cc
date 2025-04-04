@@ -470,7 +470,9 @@ void EventEnginePosixInterface::AdvanceGeneration() {
     grpc_core::Crash(
         "Fork support is disabled but AdvanceGeneration was called");
   }
-  for (int fd : descriptors_.AdvanceGeneration()) {
+  FileDescriptorCollection descriptors(std::move(descriptors_));
+  descriptors = FileDescriptorCollection(descriptors.generation() + 1);
+  for (int fd : descriptors_.Clear()) {
     if (fd > 0) {
       close(fd);
     }

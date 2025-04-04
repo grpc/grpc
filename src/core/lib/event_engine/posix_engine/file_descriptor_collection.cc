@@ -14,7 +14,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 
-#include <atomic>
 #include <unordered_set>
 
 #include "src/core/lib/experiments/experiments.h"
@@ -24,32 +23,61 @@ namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
 
+FileDescriptorCollection::FileDescriptorCollection(
+    FileDescriptorCollection&& other) noexcept
+    : generation_(other.generation_) {
+  grpc_core::MutexLock lock(&other.mu_);
+  file_descriptors_ = std::move(other.file_descriptors_);
+}
+
+FileDescriptorCollection& FileDescriptorCollection::operator=(
+    FileDescriptorCollection&& other) noexcept {
+  generation_ = other.generation_;
+  grpc_core::MutexLock self_lock(&mu_);
+  grpc_core::MutexLock other_lock(&other.mu_);
+  file_descriptors_ = std::move(other.file_descriptors_);
+  return *this;
+}
+
 FileDescriptor FileDescriptorCollection::Add(int fd) {
-  grpc_core::MutexLock lock(&mu_);
-  file_descriptors_.emplace(fd);
-  return FileDescriptor(fd,
-                        current_generation_.load(std::memory_order_relaxed));
+  if (grpc_core::IsEventEngineForkEnabled()) {
+    grpc_core::MutexLock lock(&mu_);
+    file_descriptors_.emplace(fd);
+  }
+  return FileDescriptor(fd, generation_);
 }
 
 bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
   if (!grpc_core::IsEventEngineForkEnabled()) {
     return true;
   }
-  if (fd.generation() == current_generation_.load(std::memory_order_relaxed)) {
+  if (fd.generation() == generation_) {
     grpc_core::MutexLock lock(&mu_);
     return file_descriptors_.erase(fd.fd_) == 1;
   }
   return false;
 }
 
-std::unordered_set<int> FileDescriptorCollection::AdvanceGeneration() {
+std::unordered_set<int> FileDescriptorCollection::Clear() {
   grpc_core::MutexLock lock(&mu_);
-  std::unordered_set<int> result = std::move(file_descriptors_);
-  ++current_generation_;
-  return result;
+  std::unordered_set<int> file_descriptors = std::move(file_descriptors_);
+  // Should not be necessary, but standard is not clear if move would empty
+  // the collection
+  file_descriptors_.clear();
+  return file_descriptors;
 }
 
 #else  // GRPC_ENABLE_FORK_SUPPORT
+
+FileDescriptorCollection::FileDescriptorCollection(
+    FileDescriptorCollection&& other) noexcept
+    : generation_(other.generation_) {}
+
+FileDescriptorCollection& FileDescriptorCollection::operator=(
+    FileDescriptorCollection&& other) noexcept {
+  generation_ = other.generation_;
+  return *this;
+}
 
 FileDescriptor FileDescriptorCollection::Add(int fd) {
   return FileDescriptor(fd, 0);
@@ -57,11 +85,7 @@ FileDescriptor FileDescriptorCollection::Add(int fd) {
 
 bool FileDescriptorCollection::Remove(const FileDescriptor& fd) { return true; }
 
-std::unordered_set<int> FileDescriptorCollection::AdvanceGeneration() {
-  grpc_core::Crash(
-      "FileDescriptorCollection::AdvanceGeneration called when gRPC was "
-      "compiled without fork support");
-}
+std::unordered_set<int> FileDescriptorCollection::Clear() { return {}; }
 
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 

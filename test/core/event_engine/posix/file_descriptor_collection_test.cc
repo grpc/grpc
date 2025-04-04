@@ -16,13 +16,11 @@
 
 #include <grpc/grpc.h>
 
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/experiments/experiments.h"
 
 namespace grpc_event_engine::experimental {
 
-namespace {
 bool ForkEnabled() {
 #ifndef GRPC_ENABLE_FORK_SUPPORT
   return false;
@@ -31,39 +29,8 @@ bool ForkEnabled() {
 #endif
 }
 
-}  // namespace
-
-TEST(FileDescriptorCollectionTest, AdvanceGeneration) {
-  if (!ForkEnabled()) {
-    GTEST_SKIP() << "Fork is not enabled";
-  }
-  FileDescriptorCollection collection;
-  EXPECT_EQ(collection.generation(), 1);
-  EXPECT_EQ(collection.Add(5).generation(), 1);
-  EXPECT_EQ(collection.Add(8).generation(), 1);
-  EXPECT_THAT(collection.AdvanceGeneration(),
-              ::testing::UnorderedElementsAre(5, 8));
-  // 8 will still be removed because it is a different 8
-  EXPECT_EQ(collection.Add(8).generation(), 2);
-  EXPECT_THAT(collection.AdvanceGeneration(),
-              ::testing::UnorderedElementsAre(8));
-  // Test remove affects the list of fds
-  EXPECT_EQ(collection.Add(5).generation(), 3);
-  EXPECT_EQ(collection.Add(8).generation(), 3);
-  collection.Remove(FileDescriptor(8, 3));
-  EXPECT_EQ(collection.Add(10).generation(), 3);
-  // Wrong generation should not be removed
-  collection.Remove(FileDescriptor(10, 1));
-  EXPECT_THAT(collection.AdvanceGeneration(),
-              ::testing::UnorderedElementsAre(5, 10));
-}
-
-TEST(FileDescriptorCollectionTest, Remove) {
-  if (!ForkEnabled()) {
-    GTEST_SKIP() << "Fork is not enabled";
-  }
-  FileDescriptorCollection collection;
-  collection.AdvanceGeneration();
+TEST(FileDescriptorCollectionTest, RemoveHonorsGeneration) {
+  FileDescriptorCollection collection(2);
   collection.Add(7);
   // Untracked
   EXPECT_EQ(collection.Remove(FileDescriptor(6, 2)), !ForkEnabled());

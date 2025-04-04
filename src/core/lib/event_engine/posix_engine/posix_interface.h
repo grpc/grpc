@@ -50,7 +50,7 @@ class EventEnginePosixInterface {
     DSMODE_DUALSTACK
   };
 
-  EventEnginePosixInterface() = default;
+  EventEnginePosixInterface() : descriptors_(1) {}
   EventEnginePosixInterface(const EventEnginePosixInterface& other) = delete;
   EventEnginePosixInterface(EventEnginePosixInterface&& other) = delete;
 
