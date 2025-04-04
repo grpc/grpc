@@ -196,7 +196,7 @@ void FuzzingEventEngine::Tick(Duration max_time) {
                 exponential_gate_time_increment_ / 1000;
           }
           incr = std::max(incr, std::chrono::duration_cast<Duration>(
-                                    std::chrono::milliseconds(1)));
+                                    std::chrono::nanoseconds(1)));
           now_ += incr;
           CHECK_GE(now_.time_since_epoch().count(), 0);
           ++current_tick_;
