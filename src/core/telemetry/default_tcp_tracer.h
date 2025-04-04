@@ -25,7 +25,7 @@
 
 namespace grpc_core {
 
-class DefaultTcpTracer final : public grpc_core::TcpConnectionTracer {
+class DefaultTcpTracer final : public TcpConnectionTracer {
  public:
   DefaultTcpTracer() = default;
   ~DefaultTcpTracer() override = default;
