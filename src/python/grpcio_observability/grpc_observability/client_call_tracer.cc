@@ -210,7 +210,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   ++recv_message_count_;
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface> PythonOpenCensusCallTracer::
+std::shared_ptr<grpc_core::TcpCallTracer> PythonOpenCensusCallTracer::
     PythonOpenCensusCallAttemptTracer::StartNewTcpTrace() {
   return nullptr;
 }

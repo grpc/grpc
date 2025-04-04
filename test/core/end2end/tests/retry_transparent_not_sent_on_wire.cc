@@ -129,6 +129,7 @@ grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
 // Tests transparent retries when the call was never sent out on the wire.
 CORE_END2END_TEST(RetryTests, RetryTransparentNotSentOnWire) {
   SKIP_IF_V3();  // Need to convert filter
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
         ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
@@ -178,7 +179,7 @@ CORE_END2END_TEST(RetryTests, RetryTransparentNotSentOnWire) {
   Expect(2, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), "foo");

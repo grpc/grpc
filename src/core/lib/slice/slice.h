@@ -432,6 +432,12 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
   static Slice FromExternalString(absl::string_view str) {
     return FromStaticString(str);
   }
+
+  static Slice ZeroContentsWithLength(size_t length) {
+    grpc_slice backing = grpc_slice_malloc(length);
+    memset(GRPC_SLICE_START_PTR(backing), 0, length);
+    return Slice(backing);
+  }
 };
 
 }  // namespace grpc_core

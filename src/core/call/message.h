@@ -47,6 +47,10 @@ class Message {
   SliceBuffer* payload() { return &payload_; }
   const SliceBuffer* payload() const { return &payload_; }
 
+  Arena::PoolPtr<Message> Clone() const {
+    return Arena::MakePooled<Message>(payload_.Copy(), flags_);
+  }
+
   std::string DebugString() const;
 
   template <typename Sink>

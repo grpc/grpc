@@ -26,7 +26,7 @@
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/lib/transport/http2_errors.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -47,7 +47,7 @@ class Http2Settings {
 
   void Diff(bool is_first_send, const Http2Settings& old,
             absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) const;
-  GRPC_MUST_USE_RESULT grpc_http2_error_code Apply(uint16_t key,
+  GRPC_MUST_USE_RESULT http2::Http2ErrorCode Apply(uint16_t key,
                                                    uint32_t value);
   uint32_t header_table_size() const { return header_table_size_; }
   uint32_t max_concurrent_streams() const { return max_concurrent_streams_; }

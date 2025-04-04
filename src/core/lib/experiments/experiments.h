@@ -64,10 +64,13 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
+inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
+inline bool IsErrorFlattenEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
+inline bool IsEventEngineForkEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
@@ -81,7 +84,9 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
+inline bool IsPollsetAlternativeEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
+inline bool IsPosixEeSkipGrpcInitEnabled() { return true; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -90,6 +95,7 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -104,12 +110,15 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
+inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
+inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
+inline bool IsEventEngineForkEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
@@ -124,7 +133,9 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
+inline bool IsPollsetAlternativeEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
+inline bool IsPosixEeSkipGrpcInitEnabled() { return true; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -133,6 +144,7 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -147,12 +159,15 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
+inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
+inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
+inline bool IsEventEngineForkEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
@@ -167,7 +182,9 @@ inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
+inline bool IsPollsetAlternativeEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
+inline bool IsPosixEeSkipGrpcInitEnabled() { return true; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -176,6 +193,7 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -190,9 +208,11 @@ enum ExperimentIds {
   kExperimentIdCallTracerTransportFix,
   kExperimentIdCallv3ClientAuthFilter,
   kExperimentIdChaoticGoodFramingLayer,
+  kExperimentIdErrorFlatten,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineDnsNonClientChannel,
+  kExperimentIdEventEngineFork,
   kExperimentIdEventEngineListener,
   kExperimentIdEventEngineCallbackCq,
   kExperimentIdEventEngineForAllOtherEndpoints,
@@ -202,6 +222,7 @@ enum ExperimentIds {
   kExperimentIdMaxPingsWoDataThrottle,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
+  kExperimentIdPollsetAlternative,
   kExperimentIdPosixEeSkipGrpcInit,
   kExperimentIdPromiseBasedHttp2ClientTransport,
   kExperimentIdPromiseBasedHttp2ServerTransport,
@@ -210,6 +231,7 @@ enum ExperimentIds {
   kExperimentIdRqFastReject,
   kExperimentIdRstStreamFix,
   kExperimentIdScheduleCancellationOverWrite,
+  kExperimentIdServerGlobalCallbacksOwnership,
   kExperimentIdServerListener,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
@@ -236,6 +258,10 @@ inline bool IsCallv3ClientAuthFilterEnabled() {
 inline bool IsChaoticGoodFramingLayerEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodFramingLayer>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
+inline bool IsErrorFlattenEnabled() {
+  return IsExperimentEnabled<kExperimentIdErrorFlatten>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineClient>();
@@ -247,6 +273,10 @@ inline bool IsEventEngineDnsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
 inline bool IsEventEngineDnsNonClientChannelEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineDnsNonClientChannel>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FORK
+inline bool IsEventEngineForkEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEngineFork>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() {
@@ -284,6 +314,10 @@ inline bool IsMonitoringExperimentEnabled() {
 inline bool IsMultipingEnabled() {
   return IsExperimentEnabled<kExperimentIdMultiping>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_POLLSET_ALTERNATIVE
+inline bool IsPollsetAlternativeEnabled() {
+  return IsExperimentEnabled<kExperimentIdPollsetAlternative>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
 inline bool IsPosixEeSkipGrpcInitEnabled() {
   return IsExperimentEnabled<kExperimentIdPosixEeSkipGrpcInit>();
@@ -315,6 +349,10 @@ inline bool IsRstStreamFixEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
   return IsExperimentEnabled<kExperimentIdScheduleCancellationOverWrite>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
+inline bool IsServerGlobalCallbacksOwnershipEnabled() {
+  return IsExperimentEnabled<kExperimentIdServerGlobalCallbacksOwnership>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() {

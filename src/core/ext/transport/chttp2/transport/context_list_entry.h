@@ -42,7 +42,7 @@ class ContextListEntry {
   ContextListEntry(void* context, int64_t outbuf_offset,
                    int64_t num_traced_bytes, size_t byte_offset,
                    size_t stream_index,
-                   std::shared_ptr<TcpTracerInterface> tcp_tracer)
+                   std::shared_ptr<TcpCallTracer> tcp_tracer)
       : trace_context_(context),
         outbuf_offset_(outbuf_offset),
         num_traced_bytes_in_chunk_(num_traced_bytes),
@@ -57,7 +57,7 @@ class ContextListEntry {
   int64_t NumTracedBytesInChunk() { return num_traced_bytes_in_chunk_; }
   size_t ByteOffsetInStream() { return byte_offset_in_stream_; }
   size_t StreamIndex() { return stream_index_; }
-  std::shared_ptr<TcpTracerInterface> ReleaseTcpTracer() {
+  std::shared_ptr<TcpCallTracer> ReleaseTcpTracer() {
     return std::move(tcp_tracer_);
   }
 
@@ -72,7 +72,7 @@ class ContextListEntry {
   // Index of the current chunk in the RPC stream.
   // Set to zero for the first chunk of the RPC stream.
   size_t stream_index_;
-  std::shared_ptr<TcpTracerInterface> tcp_tracer_;
+  std::shared_ptr<TcpCallTracer> tcp_tracer_;
 };
 
 /// A list of RPC Contexts
