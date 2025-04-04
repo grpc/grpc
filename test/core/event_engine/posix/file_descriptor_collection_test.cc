@@ -59,6 +59,9 @@ TEST(FileDescriptorCollectionTest, AdvanceGeneration) {
 }
 
 TEST(FileDescriptorCollectionTest, Remove) {
+  if (!ForkEnabled()) {
+    GTEST_SKIP() << "Fork is not enabled";
+  }
   FileDescriptorCollection collection;
   collection.AdvanceGeneration();
   collection.Add(7);
