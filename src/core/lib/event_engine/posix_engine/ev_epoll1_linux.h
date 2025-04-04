@@ -112,7 +112,9 @@ class Epoll1Poller : public PosixEventPoller {
   EpollSet g_epoll_set_;
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
   std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
+#if GRPC_ENABLE_FORK_SUPPORT
   std::unordered_set<EventHandle*> fork_handles_set_ ABSL_GUARDED_BY(mu_);
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_;
 };

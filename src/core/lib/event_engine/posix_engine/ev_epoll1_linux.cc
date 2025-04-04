@@ -212,7 +212,9 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
   pending_error_.store(false, std::memory_order_release);
   {
     grpc_core::MutexLock lock(&poller_->mu_);
+#ifdef GRPC_ENABLE_FORK_SUPPORT
     poller_->fork_handles_set_.erase(this);
+#endif  // GRPC_ENABLE_FORK_SUPPORT
     poller_->free_epoll1_handles_list_.push_back(this);
   }
   if (on_done != nullptr) {
@@ -291,7 +293,9 @@ EventHandle* Epoll1Poller::CreateHandle(FileDescriptor fd,
       free_epoll1_handles_list_.pop_front();
       new_handle->ReInit(fd);
     }
+#ifdef GRPC_ENABLE_FORK_SUPPORT
     fork_handles_set_.emplace(new_handle);
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   }
   // Use the least significant bit of ev.data.ptr to store track_err. We expect
   // the addresses to be word aligned. We need to store track_err to avoid
@@ -454,6 +458,7 @@ void Epoll1Poller::Kick() {
 }
 
 void Epoll1Poller::AdvanceGeneration() {
+#ifdef GRPC_ENABLE_FORK_SUPPORT
   posix_interface_.AdvanceGeneration();
   {
     grpc_core::MutexLock lock(&mu_);
@@ -468,6 +473,9 @@ void Epoll1Poller::AdvanceGeneration() {
       << "Post-fork grpc epoll fd: " << g_epoll_set_.epfd;
   g_epoll_set_.num_events = 0;
   g_epoll_set_.cursor = 0;
+#else   // GRPC_ENABLE_FORK_SUPPORT
+  grpc_core::Crash("gRPC was compiled without fork support");
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 }
 
 void Epoll1Poller::ResetKickState() {

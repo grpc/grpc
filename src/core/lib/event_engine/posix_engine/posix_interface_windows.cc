@@ -183,25 +183,10 @@ int EventEnginePosixInterface::ConfigureSocket(const FileDescriptor& fd,
       "EventEnginePosixInterface::ConfigureSocket");
 }
 
-std::optional<int> EventEnginePosixInterface::GetFdForPolling(
-    const FileDescriptor& fd) {
+std::optional<int> EventEnginePosixInterface::GetFd(const FileDescriptor& fd) {
   grpc_core::Crash(
       "unimplemented on this platform: "
-      "EventEnginePosixInterface::GetFdForPolling");
-}
-
-PosixError EventEnginePosixInterface::EpollCtlDel(const FileDescriptor& epfd,
-                                                  const FileDescriptor& fd) {
-  grpc_core::Crash(
-      "unimplemented on this platform: EventEnginePosixInterface::EpollCtlDel");
-}
-
-PosixError EventEnginePosixInterface::EpollCtlAdd(const FileDescriptor& epfd,
-                                                  bool writable,
-                                                  const FileDescriptor& fd,
-                                                  void* data) {
-  grpc_core::Crash(
-      "unimplemented on this platform: EventEnginePosixInterface::EpollCtlAdd");
+      "EventEnginePosixInterface::GetFd");
 }
 
 absl::StatusOr<EventEngine::ResolvedAddress>
