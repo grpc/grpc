@@ -27,6 +27,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -34,19 +35,64 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
+constexpr absl::string_view kHelloWorldString = "Hello World!";
+
+constexpr absl::string_view kStringOne = "One Hello World!";
+constexpr absl::string_view kStringTwo = "Two Hello World!";
+constexpr absl::string_view kStringThree = "Three Hello World!";
+
+void AppendEmptyMessage(SliceBuffer& payload) {
+  AppendGrpcHeaderToSliceBuffer(payload, 0, 0);
+}
+
+void AppendMessage(SliceBuffer& payload, absl::string_view str) {
+  AppendGrpcHeaderToSliceBuffer(payload, 0, str.size());
+  payload.Append(Slice::FromCopiedString(str));
+}
+
 TEST(GrpcMessageAssembler, ObjectCreation) { GrpcMessageAssembler assembler; }
 
 TEST(GrpcMessageAssembler, OneEmptyMessageInOneFrame) {
-  GrpcMessageAssembler assembler;
   SliceBuffer one_message;
+  AppendEmptyMessage(one_message);
+  // An empty message has the gRPC header
+  EXPECT_EQ(one_message.Length(), kGrpcHeaderSizeInBytes);
+
+  GrpcMessageAssembler assembler;
   assembler.AppendNewDataFrame(one_message, true);
-  absl::StatusOr<MessageHandle> result = assembler.GenerateMessage();
-  // Validate value
+  // AppendNewDataFrame must empty the original buffer
+  EXPECT_EQ(one_message.Length(), 0);
+  absl::StatusOr<MessageHandle> result1 = assembler.GenerateMessage();
+  if (result1.ok()) {
+    EXPECT_EQ(result1->get()->payload()->Length(), 0);
+  }
+  absl::StatusOr<MessageHandle> result2 = assembler.GenerateMessage();
+  if (result2.ok()) {
+    EXPECT_EQ(result2->get(), nullptr);
+  }
 }
 
-TEST(GrpcMessageAssembler, OneMessageInOneFrame) {}
+TEST(GrpcMessageAssembler, OneMessageInOneFrame) {
+  SliceBuffer one_message;
+  AppendMessage(one_message, kHelloWorldString);
+  EXPECT_EQ(one_message.Length(),
+            kGrpcHeaderSizeInBytes + kHelloWorldString.size());
 
-TEST(GrpcMessageAssembler, OneMessageInThreeFrames) { CHECK(true); }
+  GrpcMessageAssembler assembler;
+  assembler.AppendNewDataFrame(one_message, true);
+  // AppendNewDataFrame must empty the original buffer
+  EXPECT_EQ(one_message.Length(), 0);
+  absl::StatusOr<MessageHandle> result1 = assembler.GenerateMessage();
+  if (result1.ok()) {
+    EXPECT_EQ(result1->get()->payload()->Length(), kHelloWorldString.size());
+  }
+  absl::StatusOr<MessageHandle> result2 = assembler.GenerateMessage();
+  if (result2.ok()) {
+    EXPECT_EQ(result2->get(), nullptr);
+  }
+}
+
+TEST(GrpcMessageAssembler, OneMessageInThreeFrames) {}
 
 TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) { CHECK(true); }
 
