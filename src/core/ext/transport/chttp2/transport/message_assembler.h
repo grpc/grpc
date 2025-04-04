@@ -55,7 +55,7 @@ class GrpcMessageAssembler {
 
   // We expect the caller to run GenerateMessage in a loop till it returns
   // nullptr or error.
-  absl::StatusOr<MessageHandle> GenerateMessage() {
+  absl::StatusOr<MessageHandle> ExtractMessage() {
     if (message_buffer_.Length() < kGrpcHeaderSizeInBytes) {
       return ReturnNullOrError();
     }
