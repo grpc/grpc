@@ -44,6 +44,11 @@ exports_files(
     visibility = ["//:__subpackages__"],
 )
 
+config_setting(
+    name = "maximize_threadyness",
+    values = {"define": "GRPC_MAXIMIZE_THREADYNESS=1"},
+)
+
 grpc_cc_library(
     name = "channel_fwd",
     hdrs = [
@@ -696,6 +701,10 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/party.h",
     ],
+    defines = select({
+        ":maximize_threadyness": ["GRPC_MAXIMIZE_THREADYNESS"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/log",
@@ -2910,6 +2919,10 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/default_event_engine.h",
     ],
+    defines = select({
+        ":maximize_threadyness": ["GRPC_MAXIMIZE_THREADYNESS"],
+        "//conditions:default": [],
+    }),
     external_deps = ["absl/functional:any_invocable"],
     visibility = [
         "//bazel:alt_grpc_base_legacy",
