@@ -174,6 +174,10 @@ class Http2StatusOr {
 
   Http2Status status() { return std::get<Http2Status>(status_or_); }
 
+  Http2StatusOr(Http2Status status) : status_or_(status) {}
+  Http2StatusOr(T value) : status_or_(value) {}
+
+  // TODO(tjagtap):[PH2][P1]:Implement for move
  private:
   std::variant<Http2Status, T> status_or_;
 };
