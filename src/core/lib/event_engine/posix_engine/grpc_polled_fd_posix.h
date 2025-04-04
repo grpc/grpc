@@ -135,10 +135,10 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
             ->poller_->posix_interface();
     auto socket = posix_interface.Socket(af, type, protocol);
     if (socket.ok()) {
-      return socket->fd();
-    } else {
-      return -1;
+      auto fd = posix_interface.GetFd(socket.value());
+      return fd.value_or(-1);
     }
+    return -1;
   }
 
   /// Overridden connect API for c-ares

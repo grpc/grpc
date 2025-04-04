@@ -2081,7 +2081,8 @@ grpc_cc_library(
     name = "posix_event_engine_posix_interface",
     srcs = [
         "lib/event_engine/posix_engine/file_descriptor_collection.cc",
-        "lib/event_engine/posix_engine/posix_interface.cc",
+        "lib/event_engine/posix_engine/posix_interface_posix.cc",
+        "lib/event_engine/posix_engine/posix_interface_windows.cc",
     ],
     hdrs = [
         "lib/event_engine/posix_engine/file_descriptor_collection.h",

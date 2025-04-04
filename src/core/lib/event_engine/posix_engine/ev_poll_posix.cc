@@ -561,7 +561,7 @@ Poller::WorkResult PollPoller::Work(
     }
 
     pfd_count = 1;
-    auto wakeup_fd = posix_interface_.GetFdForPolling(wakeup_fd_->ReadFd());
+    auto wakeup_fd = posix_interface_.GetFd(wakeup_fd_->ReadFd());
     CHECK(wakeup_fd.has_value()) << "Wrong wakeup FD generation";
     pfds[0].fd = *wakeup_fd;
     pfds[0].events = POLLIN;
@@ -576,8 +576,7 @@ Poller::WorkResult PollPoller::Work(
         // from poll handle list for the poller under the poller lock.
         CHECK(!head->IsOrphaned());
         if (!head->IsPollhup()) {
-          if (auto file_descriptor =
-                  posix_interface_.GetFdForPolling(head->WrappedFd());
+          if (auto file_descriptor = posix_interface_.GetFd(head->WrappedFd());
               file_descriptor.has_value()) {
             pfds[pfd_count].fd = *file_descriptor;
             watchers[pfd_count] = head;

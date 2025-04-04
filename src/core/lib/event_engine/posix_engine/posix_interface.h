@@ -37,87 +37,26 @@ class EventEnginePosixInterface {
   EventEnginePosixInterface(const EventEnginePosixInterface& other) = delete;
   EventEnginePosixInterface(EventEnginePosixInterface&& other) = delete;
 
+  // ---- Generation ----
+  // Advances the internal generation counter, potentially invalidating old
+  // descriptors.
   void AdvanceGeneration();
-
-  std::optional<int> GetFdForPolling(const FileDescriptor& fd);
-
-  static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
-                                             bool is_client);
-
-  PosixErrorOr<FileDescriptor> Accept(const FileDescriptor& sockfd,
-                                      struct sockaddr* addr,
-                                      socklen_t* addrlen);
-  PosixErrorOr<FileDescriptor> Accept4(const FileDescriptor& sockfd,
-                                       EventEngine::ResolvedAddress& addr,
-                                       int nonblock, int cloexec);
-  PosixErrorOr<FileDescriptor> EventFd(int initval, int flags);
-  PosixErrorOr<FileDescriptor> Socket(int domain, int type, int protocol);
-  absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>> Pipe();
-  PosixErrorOr<FileDescriptor> EpollCreateAndCloexec();
-
-  // Creates a new socket for connecting to (or listening on) an address.
-  //
-  // If addr is AF_INET6, this creates an IPv6 socket first.  If that fails,
-  // and addr is within ::ffff:0.0.0.0/96, then it automatically falls back
-  // to an IPv4 socket.
-  //
-  // If addr is AF_INET, AF_UNIX, or anything else, then this is similar to
-  // calling socket() directly.
-  //
-  // Returns an PosixSocketWrapper on success, otherwise returns a not-OK
-  // absl::Status
-  //
-  // The dsmode output indicates which address family was actually created.
-  absl::StatusOr<FileDescriptor> CreateDualStackSocket(
-      std::function<int(int, int, int)> socket_factory,
-      const experimental::EventEngine::ResolvedAddress& addr, int type,
-      int protocol, DSMode& dsmode);
-
+  int generation() const { return descriptors_.generation(); }
+  // ---- File Descriptor Management ----
+  // Adopts an existing POSIX file descriptor, returning a managed
+  // FileDescriptor object.
   FileDescriptor Adopt(int fd);
-
   void Close(const FileDescriptor& fd);
+  // Retrieves the raw POSIX file descriptor, if valid for the current
+  // generation.
+  std::optional<int> GetFd(
+      const FileDescriptor& fd);  // Corrected: Added parameter
 
-  // Posix
-  PosixError Connect(const FileDescriptor& sockfd, const struct sockaddr* addr,
-                     socklen_t addrlen);
-  PosixError GetSockOpt(const FileDescriptor& fd, int level, int optname,
-                        void* optval, void* optlen);
-  PosixError Ioctl(const FileDescriptor& fd, int op, void* arg);
-  PosixErrorOr<int64_t> Read(const FileDescriptor& fd, absl::Span<char> buffer);
-  PosixErrorOr<int64_t> RecvMsg(const FileDescriptor& fd,
-                                struct msghdr* message, int flags);
-  PosixErrorOr<int64_t> SetSockOpt(const FileDescriptor& fd, int level,
-                                   int optname, uint32_t optval);
-  PosixErrorOr<int64_t> SendMsg(const FileDescriptor& fd,
-                                const struct msghdr* message, int flags);
-  PosixError Shutdown(const FileDescriptor& fd, int how);
-  PosixErrorOr<int64_t> Write(const FileDescriptor& fd,
-                              absl::Span<char> buffer);
-
-  // Epoll
-  PosixError EpollCtlAdd(const FileDescriptor& epfd, bool writable,
-                         const FileDescriptor& fd, void* data);
-  PosixError EpollCtlDel(const FileDescriptor& epfd, const FileDescriptor& fd);
-
-  // Return LocalAddress as EventEngine::ResolvedAddress
-  absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(
-      const FileDescriptor& fd);
-  // Return LocalAddress as string
-  absl::StatusOr<std::string> LocalAddressString(const FileDescriptor& fd);
-  // Return PeerAddress as EventEngine::ResolvedAddress
-  absl::StatusOr<EventEngine::ResolvedAddress> PeerAddress(
-      const FileDescriptor& fd);
-  // Return PeerAddress as string
-  absl::StatusOr<std::string> PeerAddressString(const FileDescriptor& fd);
-  // Tries to set SO_NOSIGPIPE if available on this platform.
-  // If SO_NO_SIGPIPE is not available, returns not OK status.
-  absl::Status SetSocketNoSigpipeIfPossible(const FileDescriptor& fd);
-
+  // ---- Socket/FD Creation Factories ----
   struct PosixSocketCreateResult {
     FileDescriptor sock;
     EventEngine::ResolvedAddress mapped_target_addr;
   };
-
   // Return a PosixSocketCreateResult which manages a configured, unbound,
   // unconnected TCP client fd.
   //  options: may contain custom tcp settings for the fd.
@@ -133,33 +72,99 @@ class EventEnginePosixInterface {
   absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
       const PosixTcpOptions& options,
       const EventEngine::ResolvedAddress& target_addr);
+  // Creates a new socket for connecting to (or listening on) an address.
+  //
+  // If addr is AF_INET6, this creates an IPv6 socket first.  If that fails,
+  // and addr is within ::ffff:0.0.0.0/96, then it automatically falls back
+  // to an IPv4 socket.
+  //
+  // If addr is AF_INET, AF_UNIX, or anything else, then this is similar to
+  // calling socket() directly.
+  //
+  // Returns an FileDescriptor on success, otherwise returns a not-OK
+  // absl::Status
+  //
+  // The dsmode output indicates which address family was actually created.
+  absl::StatusOr<FileDescriptor> CreateDualStackSocket(
+      std::function<int(int, int, int)> socket_factory,
+      const experimental::EventEngine::ResolvedAddress& addr, int type,
+      int protocol, DSMode& dsmode);
+  PosixErrorOr<FileDescriptor> EpollCreateAndCloexec();
+  PosixErrorOr<FileDescriptor> EventFd(int initval, int flags);
+  absl::StatusOr<std::pair<FileDescriptor, FileDescriptor>> Pipe();
+  PosixErrorOr<FileDescriptor> Socket(int domain, int type, int protocol);
 
-  // Extracts the first socket mutator from config if any and applies on the fd.
+  // ---- Socket Operations (General POSIX) ----
+  PosixErrorOr<FileDescriptor> Accept(const FileDescriptor& sockfd,
+                                      struct sockaddr* addr,
+                                      socklen_t* addrlen);
+  PosixErrorOr<FileDescriptor> Accept4(const FileDescriptor& sockfd,
+                                       EventEngine::ResolvedAddress& addr,
+                                       int nonblock, int cloexec);
+  PosixError Connect(const FileDescriptor& sockfd, const struct sockaddr* addr,
+                     socklen_t addrlen);
+  PosixErrorOr<int64_t> Read(const FileDescriptor& fd, absl::Span<char> buffer);
+  PosixErrorOr<int64_t> RecvMsg(const FileDescriptor& fd,
+                                struct msghdr* message, int flags);
+  PosixErrorOr<int64_t> SendMsg(const FileDescriptor& fd,
+                                const struct msghdr* message, int flags);
+  PosixError Shutdown(const FileDescriptor& fd, int how);
+  PosixErrorOr<int64_t> Write(const FileDescriptor& fd,
+                              absl::Span<char> buffer);
+
+  // ---- Socket Configuration & Querying ----
+  // Applies socket mutator options defined within PosixTcpOptions to a file
+  // descriptor.
   absl::Status ApplySocketMutatorInOptions(const FileDescriptor& fd,
                                            grpc_fd_usage usage,
                                            const PosixTcpOptions& options);
-
-  // Tries to set the socket using a grpc_socket_mutator
-  absl::Status SetSocketMutator(const FileDescriptor& fd, grpc_fd_usage usage,
-                                grpc_socket_mutator* mutator);
-
+  // Configures the default TCP_USER_TIMEOUT socket option for future sockets
+  // (static).
+  static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
+                                             bool is_client);
+  // Applies standard configuration to a socket based on its type.
+  int ConfigureSocket(const FileDescriptor& fd, int type);
+  // Gets a socket option value (getsockopt wrapper).
+  PosixError GetSockOpt(const FileDescriptor& fd, int level, int optname,
+                        void* optval, void* optlen);
+  // Finds and returns an unused network port.
+  absl::StatusOr<int> GetUnusedPort();
+  // Performs an ioctl operation on a file descriptor.
+  PosixError Ioctl(const FileDescriptor& fd, int op, void* arg);
+  // Retrieves the local address of a socket as an EventEngine::ResolvedAddress.
+  absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(
+      const FileDescriptor& fd);
+  // Retrieves the local address of a socket as a string.
+  absl::StatusOr<std::string> LocalAddressString(const FileDescriptor& fd);
+  // Retrieves the peer address of a connected socket as an
+  // EventEngine::ResolvedAddress.
+  absl::StatusOr<EventEngine::ResolvedAddress> PeerAddress(
+      const FileDescriptor& fd);
+  // Retrieves the peer address of a connected socket as a string.
+  absl::StatusOr<std::string> PeerAddressString(const FileDescriptor& fd);
+  // Prepares a listener socket with specified options and address binding.
   absl::StatusOr<EventEngine::ResolvedAddress> PrepareListenerSocket(
       const FileDescriptor& fd, const PosixTcpOptions& options,
       const EventEngine::ResolvedAddress& address);
+  // Applies a grpc_socket_mutator function to configure a socket.
+  absl::Status SetSocketMutator(const FileDescriptor& fd, grpc_fd_usage usage,
+                                grpc_socket_mutator* mutator);
+  // Tries to set the SO_NOSIGPIPE option on a socket if the platform supports
+  // it.
+  absl::Status SetSocketNoSigpipeIfPossible(const FileDescriptor& fd);
+  // Sets a socket option value (setsockopt wrapper).
+  PosixErrorOr<int64_t> SetSockOpt(const FileDescriptor& fd, int level,
+                                   int optname, uint32_t optval);
 
-  int ConfigureSocket(const FileDescriptor& fd, int type);
-
-  absl::StatusOr<int> GetUnusedPort();
+  // Epoll
+#ifdef GRPC_LINUX_EPOLL
+  PosixError EpollCtlAdd(const FileDescriptor& epfd, bool writable,
+                         const FileDescriptor& fd, void* data);
+  PosixError EpollCtlDel(const FileDescriptor& epfd, const FileDescriptor& fd);
+#endif  // GRPC_LINUX_EPOLL
 
   PosixError EventFdRead(const FileDescriptor& fd);
   PosixError EventFdWrite(const FileDescriptor& fd);
-  int generation() const {
-#if GRPC_ENABLE_FORK_SUPPORT
-    return descriptors_.generation();
-#else   // GRPC_ENABLE_FORK_SUPPORT
-    return 0;
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-  }
 
  private:
   static bool IsEventEngineForkEnabled() {
@@ -173,69 +178,13 @@ class EventEnginePosixInterface {
   absl::Status PrepareTcpClientSocket(int fd,
                                       const EventEngine::ResolvedAddress& addr,
                                       const PosixTcpOptions& options);
-
   PosixError PosixResultWrap(
       const FileDescriptor& wrapped,
       const absl::AnyInvocable<int(int) const>& fn) const;
+  bool IsCorrectGeneration(const FileDescriptor& fd) const;
+  PosixErrorOr<FileDescriptor> RegisterPosixResult(int result);
 
-  // Need parameter R for portability, ssize_t is neither available everywhere
-  // nor is the same cardinality
-  template <typename R, typename Fn>
-  R RunIfCorrectGeneration(const FileDescriptor& fd, const Fn& fn,
-                           R&& r) const {
-    if (IsCorrectGeneration(fd)) {
-      return std::invoke(fn, fd.fd_);
-    }
-    return std::forward<R>(r);
-  }
-
-  template <typename... Args>
-  PosixErrorOr<int64_t> PosixResultWrap(const FileDescriptor& fd,
-                                        int (*fn)(int, Args...),
-                                        Args&&... args) const {
-    if (!IsCorrectGeneration(fd)) {
-      return PosixErrorOr<int64_t>(PosixError::WrongGeneration());
-    }
-    int64_t result = std::invoke(fn, fd.fd(), std::forward<Args>(args)...);
-    if (result < 0) {
-      return PosixErrorOr<int64_t>(PosixError::Error(errno));
-    }
-    return PosixErrorOr<int64_t>(result);
-  }
-
-  // Templated Fn to make it easier to compile on all platforms.
-  template <typename Fn, typename... Args>
-  PosixErrorOr<int64_t> Int64Wrap(const FileDescriptor& fd, const Fn& fn,
-                                  Args&&... args) const {
-    if (!IsCorrectGeneration(fd)) {
-      return PosixErrorOr<int64_t>(PosixError::WrongGeneration());
-    }
-    auto result = std::invoke(fn, fd.fd(), std::forward<Args>(args)...);
-    if (result < 0) {
-      return PosixErrorOr<int64_t>(PosixError::Error(errno));
-    }
-    return PosixErrorOr<int64_t>(result);
-  }
-
-  bool IsCorrectGeneration(const FileDescriptor& fd) const {
-#ifdef GRPC_ENABLE_FORK_SUPPORT
-    if (IsEventEngineForkEnabled()) {
-      return descriptors_.generation() == fd.generation();
-    }
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-    return true;
-  }
-
-  PosixErrorOr<FileDescriptor> RegisterPosixResult(int result) {
-    if (result >= 0) {
-      return PosixErrorOr<FileDescriptor>(Adopt(result));
-    }
-    return PosixErrorOr<FileDescriptor>(PosixError::Error(errno));
-  }
-
-#if GRPC_ENABLE_FORK_SUPPORT
   FileDescriptorCollection descriptors_;
-#endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
 }  // namespace grpc_event_engine::experimental

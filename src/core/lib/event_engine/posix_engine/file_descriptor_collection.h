@@ -153,7 +153,6 @@ class FileDescriptor {
 
   bool ready() const { return fd_ >= 0; }
   int fd() const { return fd_; }
-
   constexpr static FileDescriptor Invalid() { return FileDescriptor(-1, 0); }
 
 #if GRPC_ENABLE_FORK_SUPPORT
@@ -204,13 +203,19 @@ class FileDescriptorCollection {
 
   // Returns the current generation number of the collection.
   int generation() const {
+#if GRPC_ENABLE_FORK_SUPPORT
     return current_generation_.load(std::memory_order_relaxed);
+#else   // GRPC_ENABLE_FORK_SUPPORT
+    return 0;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   }
 
  private:
+#if GRPC_ENABLE_FORK_SUPPORT
   grpc_core::Mutex mu_;
   std::unordered_set<int> file_descriptors_ ABSL_GUARDED_BY(mu_);
   std::atomic_int current_generation_{1};
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
 }  // namespace grpc_event_engine::experimental

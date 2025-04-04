@@ -18,20 +18,11 @@
 #include <unordered_set>
 
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
 
 namespace grpc_event_engine::experimental {
 
-namespace {
-
-bool IsForkEnabled() {
 #ifdef GRPC_ENABLE_FORK_SUPPORT
-  return grpc_core::IsEventEngineForkEnabled();
-#else
-  return false;
-#endif
-}
-
-}  // namespace
 
 FileDescriptor FileDescriptorCollection::Add(int fd) {
   grpc_core::MutexLock lock(&mu_);
@@ -41,7 +32,7 @@ FileDescriptor FileDescriptorCollection::Add(int fd) {
 }
 
 bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
-  if (!IsForkEnabled()) {
+  if (!grpc_core::IsEventEngineForkEnabled()) {
     return true;
   }
   if (fd.generation() == current_generation_.load(std::memory_order_relaxed)) {
@@ -57,5 +48,21 @@ std::unordered_set<int> FileDescriptorCollection::AdvanceGeneration() {
   ++current_generation_;
   return result;
 }
+
+#else  // GRPC_ENABLE_FORK_SUPPORT
+
+FileDescriptor FileDescriptorCollection::Add(int fd) {
+  return FileDescriptor(fd, 0);
+}
+
+bool FileDescriptorCollection::Remove(const FileDescriptor& fd) { return true; }
+
+std::unordered_set<int> FileDescriptorCollection::AdvanceGeneration() {
+  grpc_core::Crash(
+      "FileDescriptorCollection::AdvanceGeneration called when gRPC was "
+      "compiled without fork support");
+}
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 }  // namespace grpc_event_engine::experimental
