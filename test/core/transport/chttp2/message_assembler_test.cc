@@ -80,7 +80,7 @@ void AppendPartialMessage(SliceBuffer& payload, absl::string_view str) {
   payload.Append(Slice::FromCopiedString(str));
 }
 
-TEST(GrpcMessageAssembler, AppendNewDataFrameEmpty) {
+TEST(GrpcMessageAssembler, MustMakeEmpty) {
   SliceBuffer http2_frame_payload;
   AppendHeaderAndMessage(http2_frame_payload, kStr1024);
   EXPECT_EQ(http2_frame_payload.Length(),
