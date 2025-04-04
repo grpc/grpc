@@ -35,7 +35,7 @@ _DUMMY_BOOTSTRAP_FILE = """
       \"server_uri\": \"fake:///xds_server\",
       \"channel_creds\": [
         {
-          \"type\": \"fake\"
+          \"type\": \"insecure\"
         }
       ],
       \"server_features\": [\"xds_v3\"]

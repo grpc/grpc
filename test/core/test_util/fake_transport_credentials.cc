@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2018 gRPC authors.
+// Copyright 2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/credentials/transport/fake/fake_security_connector.h"
+#include "test/core/test_util/fake_transport_credentials.h"
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -36,7 +37,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "src/core/credentials/transport/fake/fake_credentials.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/channel_creds_registry.h"
+#include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
@@ -50,7 +54,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/transport/auth_context.h"
-#include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -58,8 +61,65 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
+#include "test/core/test_util/fake_transport_security.h"
 
 namespace {
+
+//
+// fake_check_peer() -- shared by channel and server security connectors
+//
+
+void fake_check_peer(tsi_peer peer,
+                     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                     grpc_closure* on_peer_checked) {
+  const char* prop_name;
+  grpc_error_handle error;
+  *auth_context = nullptr;
+  if (peer.property_count != 2) {
+    error = GRPC_ERROR_CREATE("Fake peers should only have 2 properties.");
+    goto end;
+  }
+  prop_name = peer.properties[0].name;
+  if (prop_name == nullptr ||
+      strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY) != 0) {
+    error = GRPC_ERROR_CREATE(
+        absl::StrCat("Unexpected property in fake peer: ",
+                     prop_name == nullptr ? "<EMPTY>" : prop_name));
+    goto end;
+  }
+  if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
+              peer.properties[0].value.length) != 0) {
+    error = GRPC_ERROR_CREATE("Invalid value for cert type property.");
+    goto end;
+  }
+  prop_name = peer.properties[1].name;
+  if (prop_name == nullptr ||
+      strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
+    error = GRPC_ERROR_CREATE(
+        absl::StrCat("Unexpected property in fake peer: ",
+                     prop_name == nullptr ? "<EMPTY>" : prop_name));
+    goto end;
+  }
+  if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,
+              peer.properties[1].value.length) != 0) {
+    error = GRPC_ERROR_CREATE("Invalid value for security level property.");
+    goto end;
+  }
+  *auth_context = grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context_add_cstring_property(
+      auth_context->get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME, "fake");
+  grpc_auth_context_add_cstring_property(
+      auth_context->get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+      TSI_FAKE_SECURITY_LEVEL);
+end:
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+  tsi_peer_destruct(&peer);
+}
+
+//
+// grpc_fake_channel_security_connector
+//
+
 class grpc_fake_channel_security_connector final
     : public grpc_channel_security_connector {
  public:
@@ -80,10 +140,13 @@ class grpc_fake_channel_security_connector final
 
   ~grpc_fake_channel_security_connector() override { gpr_free(target_); }
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                  grpc_closure* on_peer_checked) override;
+                  grpc_closure* on_peer_checked) override {
+    fake_check_peer(peer, auth_context, on_peer_checked);
+    fake_secure_name_check();
+  }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error_handle /*error*/) override {}
@@ -205,63 +268,23 @@ class grpc_fake_channel_security_connector final
   std::optional<std::string> target_name_override_;
 };
 
-void fake_check_peer(grpc_security_connector* /*sc*/, tsi_peer peer,
-                     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                     grpc_closure* on_peer_checked) {
-  const char* prop_name;
-  grpc_error_handle error;
-  *auth_context = nullptr;
-  if (peer.property_count != 2) {
-    error = GRPC_ERROR_CREATE("Fake peers should only have 2 properties.");
-    goto end;
-  }
-  prop_name = peer.properties[0].name;
-  if (prop_name == nullptr ||
-      strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY) != 0) {
-    error = GRPC_ERROR_CREATE(
-        absl::StrCat("Unexpected property in fake peer: ",
-                     prop_name == nullptr ? "<EMPTY>" : prop_name));
-    goto end;
-  }
-  if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
-              peer.properties[0].value.length) != 0) {
-    error = GRPC_ERROR_CREATE("Invalid value for cert type property.");
-    goto end;
-  }
-  prop_name = peer.properties[1].name;
-  if (prop_name == nullptr ||
-      strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
-    error = GRPC_ERROR_CREATE(
-        absl::StrCat("Unexpected property in fake peer: ",
-                     prop_name == nullptr ? "<EMPTY>" : prop_name));
-    goto end;
-  }
-  if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,
-              peer.properties[1].value.length) != 0) {
-    error = GRPC_ERROR_CREATE("Invalid value for security level property.");
-    goto end;
-  }
+}  // namespace
 
-  *auth_context = grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
-  grpc_auth_context_add_cstring_property(
-      auth_context->get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-      GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
-  grpc_auth_context_add_cstring_property(
-      auth_context->get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
-      TSI_FAKE_SECURITY_LEVEL);
-end:
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
-  tsi_peer_destruct(&peer);
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_fake_channel_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char* target, const grpc_core::ChannelArgs& args) {
+  return grpc_core::MakeRefCounted<grpc_fake_channel_security_connector>(
+      std::move(channel_creds), std::move(request_metadata_creds), target,
+      args);
 }
 
-void grpc_fake_channel_security_connector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
-    const grpc_core::ChannelArgs& /*args*/,
-    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-    grpc_closure* on_peer_checked) {
-  fake_check_peer(this, peer, auth_context, on_peer_checked);
-  fake_secure_name_check();
-}
+//
+// grpc_fake_server_security_connector
+//
+
+namespace {
 
 class grpc_fake_server_security_connector
     : public grpc_server_security_connector {
@@ -276,7 +299,7 @@ class grpc_fake_server_security_connector
                   const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
-    fake_check_peer(this, peer, auth_context, on_peer_checked);
+    fake_check_peer(peer, auth_context, on_peer_checked);
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
@@ -294,21 +317,98 @@ class grpc_fake_server_security_connector
         static_cast<const grpc_server_security_connector*>(other));
   }
 };
+
 }  // namespace
 
+//
+// grpc_fake_channel_credentials
+//
+
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
-grpc_fake_channel_security_connector_create(
-    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const char* target, const grpc_core::ChannelArgs& args) {
-  return grpc_core::MakeRefCounted<grpc_fake_channel_security_connector>(
-      std::move(channel_creds), std::move(request_metadata_creds), target,
-      args);
+grpc_fake_channel_credentials::create_security_connector(
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+    const char* target, grpc_core::ChannelArgs* args) {
+  return grpc_fake_channel_security_connector_create(
+      this->Ref(), std::move(call_creds), target, *args);
 }
 
-grpc_core::RefCountedPtr<grpc_server_security_connector>
-grpc_fake_server_security_connector_create(
-    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
-  return grpc_core::MakeRefCounted<grpc_fake_server_security_connector>(
-      std::move(server_creds));
+grpc_core::UniqueTypeName grpc_fake_channel_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+  return kFactory.Create();
 }
+
+int grpc_fake_channel_credentials::cmp_impl(
+    const grpc_channel_credentials* other) const {
+  // TODO(yashykt): Check if we can do something better here
+  return grpc_core::QsortCompare(
+      static_cast<const grpc_channel_credentials*>(this), other);
+}
+
+grpc_channel_credentials* grpc_fake_transport_security_credentials_create() {
+  return new grpc_fake_channel_credentials();
+}
+
+//
+// grpc_fake_server_credentials
+//
+
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_fake_server_credentials::create_security_connector(
+    const grpc_core::ChannelArgs& /*args*/) {
+  return grpc_core::MakeRefCounted<grpc_fake_server_security_connector>(
+      this->Ref());
+}
+
+grpc_core::UniqueTypeName grpc_fake_server_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+  return kFactory.Create();
+}
+
+grpc_server_credentials*
+grpc_fake_transport_security_server_credentials_create() {
+  return new grpc_fake_server_credentials();
+}
+
+//
+// channel creds registration
+//
+
+namespace grpc_core {
+
+namespace {
+
+class FakeChannelCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view type() const override { return Type(); }
+  RefCountedPtr<ChannelCredsConfig> ParseConfig(
+      const Json& /*config*/, const JsonArgs& /*args*/,
+      ValidationErrors* /*errors*/) const override {
+    return MakeRefCounted<Config>();
+  }
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      RefCountedPtr<ChannelCredsConfig> /*config*/) const override {
+    return RefCountedPtr<grpc_channel_credentials>(
+        grpc_fake_transport_security_credentials_create());
+  }
+
+ private:
+  class Config : public ChannelCredsConfig {
+   public:
+    absl::string_view type() const override { return Type(); }
+    bool Equals(const ChannelCredsConfig&) const override { return true; }
+    std::string ToString() const override { return "{}"; }
+  };
+
+  static absl::string_view Type() { return "fake"; }
+};
+
+}  // namespace
+
+void RegisterFakeChannelCredentialsBuilder() {
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    builder->channel_creds_registry()->RegisterChannelCredsFactory(
+        std::make_unique<FakeChannelCredsFactory>());
+  });
+}
+
+}  // namespace grpc_core

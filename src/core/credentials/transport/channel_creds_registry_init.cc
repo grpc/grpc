@@ -32,7 +32,6 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
-#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/google_default/google_default_credentials.h"  // IWYU pragma: keep
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
@@ -206,31 +205,6 @@ class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
   static absl::string_view Type() { return "insecure"; }
 };
 
-class FakeChannelCredsFactory : public ChannelCredsFactory<> {
- public:
-  absl::string_view type() const override { return Type(); }
-  RefCountedPtr<ChannelCredsConfig> ParseConfig(
-      const Json& /*config*/, const JsonArgs& /*args*/,
-      ValidationErrors* /*errors*/) const override {
-    return MakeRefCounted<Config>();
-  }
-  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      RefCountedPtr<ChannelCredsConfig> /*config*/) const override {
-    return RefCountedPtr<grpc_channel_credentials>(
-        grpc_fake_transport_security_credentials_create());
-  }
-
- private:
-  class Config : public ChannelCredsConfig {
-   public:
-    absl::string_view type() const override { return Type(); }
-    bool Equals(const ChannelCredsConfig&) const override { return true; }
-    std::string ToString() const override { return "{}"; }
-  };
-
-  static absl::string_view Type() { return "fake"; }
-};
-
 void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder) {
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
       std::make_unique<GoogleDefaultChannelCredsFactory>());
@@ -238,8 +212,6 @@ void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder) {
       std::make_unique<TlsChannelCredsFactory>());
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
       std::make_unique<InsecureChannelCredsFactory>());
-  builder->channel_creds_registry()->RegisterChannelCredsFactory(
-      std::make_unique<FakeChannelCredsFactory>());
 }
 
 }  // namespace grpc_core

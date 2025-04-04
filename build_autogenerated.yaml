@@ -256,8 +256,6 @@ libs:
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/composite/composite_channel_credentials.h
-  - src/core/credentials/transport/fake/fake_credentials.h
-  - src/core/credentials/transport/fake/fake_security_connector.h
   - src/core/credentials/transport/google_default/google_default_credentials.h
   - src/core/credentials/transport/insecure/insecure_credentials.h
   - src/core/credentials/transport/insecure/insecure_security_connector.h
@@ -1141,7 +1139,6 @@ libs:
   - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
   - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
   - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
-  - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
   - src/core/tsi/ssl/key_logging/ssl_key_logging.h
   - src/core/tsi/ssl/session_cache/ssl_session.h
@@ -1324,8 +1321,6 @@ libs:
   - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   - src/core/credentials/transport/channel_creds_registry_init.cc
   - src/core/credentials/transport/composite/composite_channel_credentials.cc
-  - src/core/credentials/transport/fake/fake_credentials.cc
-  - src/core/credentials/transport/fake/fake_security_connector.cc
   - src/core/credentials/transport/google_default/credentials_generic.cc
   - src/core/credentials/transport/google_default/google_default_credentials.cc
   - src/core/credentials/transport/insecure/insecure_credentials.cc
@@ -2006,7 +2001,6 @@ libs:
   - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
   - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
   - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/ssl/key_logging/ssl_key_logging.cc
   - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -2307,8 +2301,6 @@ libs:
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/composite/composite_channel_credentials.h
-  - src/core/credentials/transport/fake/fake_credentials.h
-  - src/core/credentials/transport/fake/fake_security_connector.h
   - src/core/credentials/transport/insecure/insecure_credentials.h
   - src/core/credentials/transport/insecure/insecure_security_connector.h
   - src/core/credentials/transport/security_connector.h
@@ -2690,7 +2682,6 @@ libs:
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
-  - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
@@ -2804,8 +2795,6 @@ libs:
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   - src/core/credentials/transport/composite/composite_channel_credentials.cc
-  - src/core/credentials/transport/fake/fake_credentials.cc
-  - src/core/credentials/transport/fake/fake_security_connector.cc
   - src/core/credentials/transport/insecure/insecure_credentials.cc
   - src/core/credentials/transport/insecure/insecure_security_connector.cc
   - src/core/credentials/transport/security_connector.cc
@@ -3125,7 +3114,6 @@ libs:
   - src/core/telemetry/stats_data.cc
   - src/core/transport/auth_context.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
@@ -4046,6 +4034,8 @@ libs:
   headers:
   - src/core/util/subprocess.h
   - test/core/end2end/data/ssl_test_data.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/credentials.h
@@ -4059,6 +4049,8 @@ libs:
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
@@ -5203,6 +5195,8 @@ targets:
   language: c++
   headers:
   - src/core/util/subprocess.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/credentials.h
   - test/cpp/util/string_ref_helper.h
@@ -5210,12 +5204,15 @@ targets:
   src:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/cpp/naming/address_sorting_test.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
   deps:
   - gtest
+  - grpc
   - grpc++_unsecure
   - grpc_test_util_unsecure
   - grpc++_test_config
@@ -5989,12 +5986,16 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/test_call_creds.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/credentials/call/call_credentials_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
@@ -7316,9 +7317,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   src:
   - test/core/credentials/transport/channel_creds_registry_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   deps:
   - gtest
   - grpc_test_util
@@ -7667,11 +7672,15 @@ targets:
   headers:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_auth_filter_test.cc
   - test/core/filters/filter_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   deps:
   - gtest
   - protobuf
@@ -7912,9 +7921,13 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/test_call_creds.h
   src:
   - test/core/credentials/transport/composite/composite_credentials_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
@@ -8294,6 +8307,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8334,6 +8349,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -8412,6 +8429,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8540,6 +8559,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -8618,6 +8639,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8658,6 +8681,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -8732,6 +8757,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8772,6 +8799,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -8846,6 +8875,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8974,6 +9005,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9048,6 +9081,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9176,6 +9211,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9250,6 +9287,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9290,6 +9329,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9364,6 +9405,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9492,6 +9535,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9566,6 +9611,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9606,6 +9653,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9680,6 +9729,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9808,6 +9859,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -10171,8 +10224,10 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/fake_transport_security.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/test_util/fake_transport_security.cc
   - test/core/tsi/fake_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
@@ -11706,6 +11761,8 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/test_call_creds.h
   src:
@@ -11746,6 +11803,8 @@ targets:
   - test/core/end2end/h2_ssl_cert_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   deps:
@@ -12142,9 +12201,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   src:
   - test/core/credentials/transport/insecure/insecure_credentials_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14709,9 +14772,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   src:
   - test/core/surface/secure_channel_create_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14722,9 +14789,11 @@ targets:
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
+  - test/core/test_util/fake_transport_security.h
   src:
   - test/core/handshake/secure_endpoint_test.cc
   - test/core/iomgr/endpoint_tests.cc
+  - test/core/test_util/fake_transport_security.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14859,9 +14928,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   src:
   - test/core/surface/server_chttp2_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14983,9 +15056,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   src:
   - test/core/surface/server_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16025,8 +16102,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/fake_transport_security.h
   src:
+  - test/core/test_util/fake_transport_security.cc
   - test/core/tsi/transport_security_test.cc
   deps:
   - gtest
@@ -17421,9 +17500,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/fake_transport_credentials.h
+  - test/core/test_util/fake_transport_security.h
   src:
   - test/core/credentials/transport/xds/xds_credentials_test.cc
+  - test/core/test_util/fake_transport_credentials.cc
+  - test/core/test_util/fake_transport_security.cc
   deps:
   - gtest
   - grpc_test_util

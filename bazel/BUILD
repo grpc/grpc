@@ -214,3 +214,9 @@ package_group(
     packages = [
     ],
 )
+
+package_group(
+    name = "tsi_fake",
+    packages = [
+    ],
+)

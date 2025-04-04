@@ -1244,6 +1244,7 @@ int main(int argc, char** argv) {
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
+  grpc_core::RegisterFakeChannelCredentialsBuilder();
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

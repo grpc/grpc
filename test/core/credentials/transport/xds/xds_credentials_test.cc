@@ -21,7 +21,7 @@
 #include <grpc/grpc.h>
 
 #include "gtest/gtest.h"
-#include "src/core/credentials/transport/fake/fake_credentials.h"
+#include "test/core/test_util/fake_transport_credentials.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

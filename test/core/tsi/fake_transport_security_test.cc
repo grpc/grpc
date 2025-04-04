@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/tsi/fake_transport_security.h"
+#include "test/core/test_util/fake_transport_security.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

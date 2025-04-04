@@ -572,3 +572,47 @@ grpc_cc_library(
         "//:grpc",
     ],
 )
+
+grpc_cc_library(
+    name = "tsi_fake_credentials",
+    srcs = [
+        "fake_transport_security.cc",
+    ],
+    hdrs = [
+        "fake_transport_security.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
+    visibility = ["//bazel:tsi_fake"],
+    deps = [
+        "//:gpr",
+        "//:tsi_base",
+        "//src/core:dump_args",
+        "//src/core:slice",
+        "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "fake_transport_credentials",
+    srcs = [
+        "fake_transport_credentials.cc",
+    ],
+    hdrs = [
+        "fake_transport_credentials.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "tsi_fake_credentials",
+        "//:grpc",
+    ],
+)

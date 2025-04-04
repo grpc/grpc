@@ -27,7 +27,6 @@
 #include "gtest/gtest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/call_credentials.h"
-#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/filter/auth/auth_filters.h"
@@ -41,6 +40,7 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 #include "test/core/filters/filter_test.h"
+#include "test/core/test_util/fake_transport_credentials.h"
 
 // TODO(roth): Need to add a lot more tests here.  I created this file
 // as part of adding a feature, and I added tests only for the feature I

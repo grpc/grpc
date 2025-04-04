@@ -42,10 +42,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 
-// --- Constants. ---
-
-#define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
-
 // --- grpc_channel_credentials. ---
 
 #define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.internal.channel_credentials"
@@ -178,5 +174,9 @@ grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c);
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg);
 grpc_server_credentials* grpc_find_server_credentials_in_args(
     const grpc_channel_args* args);
+
+// Channel arg for fake transport security.  For testing only.
+#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
+  "grpc.fake_security.expected_targets"
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TRANSPORT_CREDENTIALS_H

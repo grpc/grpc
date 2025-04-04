@@ -28,10 +28,10 @@
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/tsi/fake_transport_security.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
+#include "test/core/test_util/fake_transport_security.h"
 #include "test/core/test_util/test_config.h"
 
 static gpr_mu* g_mu;

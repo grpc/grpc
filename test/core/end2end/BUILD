@@ -192,6 +192,7 @@ grpc_cc_library(
             "//test/core/call:batch_builder",
             "//test/core/event_engine:event_engine_test_utils",
             "//test/core/event_engine/fuzzing_event_engine",
+            "//test/core/test_util:fake_transport_credentials",
             "//test/core/test_util:fuzz_config_vars",
             "//test/core/test_util:grpc_test_util",
             "//test/core/test_util:test_call_creds",

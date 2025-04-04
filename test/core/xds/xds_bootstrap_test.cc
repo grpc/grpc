@@ -88,7 +88,7 @@ TEST(XdsBootstrapTest, Basic) {
       "      \"server_uri\": \"fake:///lb1\","
       "      \"channel_creds\": ["
       "        {"
-      "          \"type\": \"fake\","
+      "          \"type\": \"insecure\","
       "          \"ignore\": 0"
       "        }"
       "      ],"
@@ -105,7 +105,7 @@ TEST(XdsBootstrapTest, Basic) {
       "          \"server_uri\": \"fake:///xds_server\","
       "          \"channel_creds\": ["
       "            {"
-      "              \"type\": \"fake\""
+      "              \"type\": \"insecure\""
       "            }"
       "          ],"
       "          \"server_features\": ["
@@ -124,7 +124,7 @@ TEST(XdsBootstrapTest, Basic) {
       "          \"server_uri\": \"fake:///xds_server3\","
       "          \"channel_creds\": ["
       "            {"
-      "              \"type\": \"fake\""
+      "              \"type\": \"insecure\""
       "            }"
       "          ],"
       "          \"server_features\": ["
@@ -158,7 +158,7 @@ TEST(XdsBootstrapTest, Basic) {
   auto bootstrap = std::move(*bootstrap_or);
   EXPECT_THAT(bootstrap->servers(),
               ::testing::ElementsAre(
-                  EqXdsServer("fake:///lb1", "fake", false, false, false)));
+                  EqXdsServer("fake:///lb1", "insecure", false, false, false)));
   EXPECT_EQ(bootstrap->authorities().size(), 2);
   auto* authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example.com"));
@@ -167,8 +167,8 @@ TEST(XdsBootstrapTest, Basic) {
             "xdstp://xds.example.com/envoy.config.listener.v3.Listener/grpc/"
             "server/%s");
   EXPECT_THAT(authority->servers(),
-              ::testing::ElementsAre(EqXdsServer("fake:///xds_server", "fake",
-                                                 true, false, false)));
+              ::testing::ElementsAre(EqXdsServer(
+                  "fake:///xds_server", "insecure", true, false, false)));
   authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example2.com"));
   ASSERT_NE(authority, nullptr);
@@ -176,8 +176,8 @@ TEST(XdsBootstrapTest, Basic) {
             "xdstp://xds.example2.com/envoy.config.listener.v3.Listener/grpc/"
             "server/%s");
   EXPECT_THAT(authority->servers(),
-              ::testing::ElementsAre(EqXdsServer("fake:///xds_server3", "fake",
-                                                 false, true, true)));
+              ::testing::ElementsAre(EqXdsServer(
+                  "fake:///xds_server3", "insecure", false, true, true)));
   ASSERT_NE(bootstrap->node(), nullptr);
   EXPECT_EQ(bootstrap->node()->id(), "foo");
   EXPECT_EQ(bootstrap->node()->cluster(), "bar");
@@ -201,25 +201,6 @@ TEST(XdsBootstrapTest, Basic) {
 }
 
 TEST(XdsBootstrapTest, ValidWithoutNode) {
-  const char* json_str =
-      "{"
-      "  \"xds_servers\": ["
-      "    {"
-      "      \"server_uri\": \"fake:///lb\","
-      "      \"channel_creds\": [{\"type\": \"fake\"}]"
-      "    }"
-      "  ]"
-      "}";
-  auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
-  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
-  auto bootstrap = std::move(*bootstrap_or);
-  EXPECT_THAT(bootstrap->servers(),
-              ::testing::ElementsAre(
-                  EqXdsServer("fake:///lb", "fake", false, false, false)));
-  EXPECT_EQ(bootstrap->node(), nullptr);
-}
-
-TEST(XdsBootstrapTest, InsecureCreds) {
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -314,15 +295,15 @@ TEST(XdsBootstrapTest, MultipleCreds) {
       "    {"
       "      \"server_uri\": \"fake:///lb\","
       "      \"channel_creds\": [{\"type\": \"unknown\"}, {\"type\": "
-      "\"fake\"}, {\"type\": \"insecure\"}]"
+      "\"google_default\"}, {\"type\": \"insecure\"}]"
       "    }"
       "  ]"
       "}";
   auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
   EXPECT_THAT((*bootstrap)->servers(),
-              ::testing::ElementsAre(
-                  EqXdsServer("fake:///lb", "fake", false, false, false)));
+              ::testing::ElementsAre(EqXdsServer("fake:///lb", "google_default",
+                                                 false, false, false)));
   EXPECT_EQ((*bootstrap)->node(), nullptr);
 }
 
@@ -469,7 +450,7 @@ TEST(XdsBootstrapTest, CertificateProvidersElementWrongType) {
       "  \"xds_servers\": ["
       "    {"
       "      \"server_uri\": \"fake:///lb\","
-      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
       "    }"
       "  ],"
       "  \"certificate_providers\": {"
@@ -489,7 +470,7 @@ TEST(XdsBootstrapTest, CertificateProvidersPluginNameWrongType) {
       "  \"xds_servers\": ["
       "    {"
       "      \"server_uri\": \"fake:///lb\","
-      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
       "    }"
       "  ],"
       "  \"certificate_providers\": {"
@@ -512,7 +493,7 @@ TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
       "  \"xds_servers\": ["
       "    {"
       "      \"server_uri\": \"fake:///lb\","
-      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
       "    }"
       "  ],"
       "  \"certificate_providers\": {"
@@ -535,7 +516,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
       "  \"xds_servers\": ["
       "    {"
       "      \"server_uri\": \"fake:///lb\","
-      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
       "    }"
       "  ],"
       "  \"authorities\": {"
@@ -548,7 +529,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
       "          \"server_uri\": \"fake:///xds_server\","
       "          \"channel_creds\": ["
       "            {"
-      "              \"type\": \"fake\""
+      "              \"type\": \"insecure\""
       "            }"
       "          ],"
       "          \"server_features\": [\"xds_v3\"]"
@@ -572,7 +553,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
       "  \"xds_servers\": ["
       "    {"
       "      \"server_uri\": \"fake:///lb\","
-      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
       "    }"
       "  ],"
       "  \"authorities\": {"
@@ -642,7 +623,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
       "  \"xds_servers\": ["
       "    {"
       "      \"server_uri\": \"fake:///lb\","
-      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
       "    }"
       "  ],"
       "  \"certificate_providers\": {"
@@ -668,7 +649,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
       "  \"xds_servers\": ["
       "    {"
       "      \"server_uri\": \"fake:///lb\","
-      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
       "    }"
       "  ],"
       "  \"certificate_providers\": {"
@@ -698,7 +679,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
       "  \"xds_servers\": ["
       "    {"
       "      \"server_uri\": \"fake:///lb\","
-      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
       "    }"
       "  ],"
       "  \"certificate_providers\": {"
@@ -727,7 +708,7 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
       "      \"server_uri\": \"fake:///lb1\","
       "      \"channel_creds\": ["
       "        {"
-      "          \"type\": \"fake\","
+      "          \"type\": \"insecure\","
       "          \"ignore\": 0"
       "        }"
       "      ],"
@@ -737,7 +718,7 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
       "      \"server_uri\": \"fake:///lb2\","
       "      \"channel_creds\": ["
       "        {"
-      "          \"type\": \"fake\","
+      "          \"type\": \"insecure\","
       "          \"ignore\": 0"
       "        }"
       "      ],"
@@ -754,7 +735,7 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
       "          \"server_uri\": \"fake:///xds_server\","
       "          \"channel_creds\": ["
       "            {"
-      "              \"type\": \"fake\""
+      "              \"type\": \"insecure\""
       "            }"
       "          ],"
       "          \"server_features\": [\"xds_v3\"]"
@@ -763,7 +744,7 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
       "          \"server_uri\": \"fake:///xds_server2\","
       "          \"channel_creds\": ["
       "            {"
-      "              \"type\": \"fake\""
+      "              \"type\": \"insecure\""
       "            }"
       "          ],"
       "          \"server_features\": [\"xds_v3\"]"
@@ -794,16 +775,16 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
   auto bootstrap = std::move(*bootstrap_or);
   EXPECT_THAT(bootstrap->servers(),
               ::testing::ElementsAre(
-                  EqXdsServer("fake:///lb1", "fake", false, false, false),
-                  EqXdsServer("fake:///lb2", "fake", false, false, false)));
+                  EqXdsServer("fake:///lb1", "insecure", false, false, false),
+                  EqXdsServer("fake:///lb2", "insecure", false, false, false)));
   auto* authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example.com"));
   ASSERT_NE(authority, nullptr);
   EXPECT_THAT(
       authority->servers(),
       ::testing::ElementsAre(
-          EqXdsServer("fake:///xds_server", "fake", false, false, false),
-          EqXdsServer("fake:///xds_server2", "fake", false, false, false)));
+          EqXdsServer("fake:///xds_server", "insecure", false, false, false),
+          EqXdsServer("fake:///xds_server2", "insecure", false, false, false)));
 }
 
 }  // namespace

@@ -28,11 +28,11 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-#include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
+#include "test/core/test_util/fake_transport_security.h"
 #include "test/core/test_util/test_config.h"
 
 typedef struct {

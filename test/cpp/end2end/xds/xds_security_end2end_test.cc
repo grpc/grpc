@@ -54,7 +54,6 @@
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/config/core_configuration.h"
-#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
@@ -68,6 +67,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/audit_logging_utils.h"
+#include "test/core/test_util/fake_transport_credentials.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
@@ -2639,6 +2639,7 @@ int main(int argc, char** argv) {
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
+  grpc_core::RegisterFakeChannelCredentialsBuilder();
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_1;
   grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_2;

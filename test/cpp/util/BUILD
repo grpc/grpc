@@ -84,6 +84,7 @@ grpc_cc_library(
         "//:grpc++",
         "//:subprocess",
         "//test/core/end2end:ssl_test_data",
+        "//test/core/test_util:fake_transport_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -118,6 +119,7 @@ grpc_cc_library(
     deps = [
         "//:grpc++_unsecure",
         "//:subprocess",
+        "//test/core/test_util:fake_transport_credentials",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
