@@ -35,82 +35,117 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
-constexpr absl::string_view kHelloWorldString = "Hello World!";
+constexpr bool not_end_stream = false;
+constexpr bool end_stream = true;
+constexpr bool flags = 0;
+constexpr absl::string_view kHelloWorld = "Hello World!";
 
-constexpr absl::string_view kStringOne = "One Hello World!";
-constexpr absl::string_view kStringTwo = "Two Hello World!";
-constexpr absl::string_view kStringThree = "Three Hello World!";
+constexpr absl::string_view kString1 = "One Hello World!";
+constexpr absl::string_view kString2 = "Two Hello World!";
+constexpr absl::string_view kString3 = "Three Hello World!";
 
 void AppendEmptyMessage(SliceBuffer& payload) {
-  AppendGrpcHeaderToSliceBuffer(payload, 0, 0);
+  AppendGrpcHeaderToSliceBuffer(payload, flags, 0);
 }
 
-void AppendMessage(SliceBuffer& payload, absl::string_view str) {
-  AppendGrpcHeaderToSliceBuffer(payload, 0, str.size());
+void AppendHeaderAndMessage(SliceBuffer& payload, absl::string_view str) {
+  AppendGrpcHeaderToSliceBuffer(payload, flags, str.size());
+  payload.Append(Slice::FromCopiedString(str));
+}
+
+void AppendHeaderAndPartialMessage(SliceBuffer& payload, const uint32_t length,
+                                   absl::string_view str) {
+  AppendGrpcHeaderToSliceBuffer(payload, flags, length);
+  payload.Append(Slice::FromCopiedString(str));
+}
+
+void AppendPartialMessage(SliceBuffer& payload, absl::string_view str) {
   payload.Append(Slice::FromCopiedString(str));
 }
 
 TEST(GrpcMessageAssembler, ObjectCreation) { GrpcMessageAssembler assembler; }
 
 TEST(GrpcMessageAssembler, OneEmptyMessageInOneFrame) {
-  SliceBuffer one_message;
-  AppendEmptyMessage(one_message);
+  SliceBuffer http2_frame_payload;
+  AppendEmptyMessage(http2_frame_payload);
   // An empty message has the gRPC header
-  EXPECT_EQ(one_message.Length(), kGrpcHeaderSizeInBytes);
+  EXPECT_EQ(http2_frame_payload.Length(), kGrpcHeaderSizeInBytes);
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(one_message, true);
+  assembler.AppendNewDataFrame(http2_frame_payload, end_stream);
   // AppendNewDataFrame must empty the original buffer
-  EXPECT_EQ(one_message.Length(), 0);
+  EXPECT_EQ(http2_frame_payload.Length(), 0);
   absl::StatusOr<MessageHandle> result1 = assembler.GenerateMessage();
-  if (result1.ok()) {
-    EXPECT_EQ(result1->get()->payload()->Length(), 0);
-  }
+  EXPECT_TRUE(result1.ok());
+  EXPECT_EQ(result1->get()->payload()->Length(), 0);
+
   absl::StatusOr<MessageHandle> result2 = assembler.GenerateMessage();
-  if (result2.ok()) {
-    EXPECT_EQ(result2->get(), nullptr);
-  }
+  EXPECT_TRUE(result2.ok());
+  EXPECT_EQ(result2->get(), nullptr);
 }
 
 TEST(GrpcMessageAssembler, OneMessageInOneFrame) {
-  SliceBuffer one_message;
-  AppendMessage(one_message, kHelloWorldString);
-  EXPECT_EQ(one_message.Length(),
-            kGrpcHeaderSizeInBytes + kHelloWorldString.size());
+  SliceBuffer http2_frame_payload;
+  AppendHeaderAndMessage(http2_frame_payload, kHelloWorld);
+  EXPECT_EQ(http2_frame_payload.Length(),
+            kGrpcHeaderSizeInBytes + kHelloWorld.size());
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(one_message, true);
+  assembler.AppendNewDataFrame(http2_frame_payload, end_stream);
   // AppendNewDataFrame must empty the original buffer
-  EXPECT_EQ(one_message.Length(), 0);
+  EXPECT_EQ(http2_frame_payload.Length(), 0);
   absl::StatusOr<MessageHandle> result1 = assembler.GenerateMessage();
-  if (result1.ok()) {
-    EXPECT_EQ(result1->get()->payload()->Length(), kHelloWorldString.size());
-  }
+  EXPECT_TRUE(result1.ok());
+  EXPECT_EQ(result1->get()->payload()->Length(), kHelloWorld.size());
   absl::StatusOr<MessageHandle> result2 = assembler.GenerateMessage();
-  if (result2.ok()) {
-    EXPECT_EQ(result2->get(), nullptr);
-  }
+  EXPECT_TRUE(result2.ok());
+  EXPECT_EQ(result2->get(), nullptr);
 }
 
-TEST(GrpcMessageAssembler, OneMessageInThreeFrames) {}
+TEST(GrpcMessageAssembler, OneMessageInThreeFrames) {
+  SliceBuffer frame1;
+  const uint32_t length = kString1.size() + kString2.size() + kString3.size();
+  AppendHeaderAndPartialMessage(frame1, length, kString1);
+  EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kString1.size());
+  SliceBuffer frame2;
+  AppendPartialMessage(frame2, kString2);
+  SliceBuffer frame3;
+  AppendPartialMessage(frame3, kString3);
 
-TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) { CHECK(true); }
+  GrpcMessageAssembler assembler;
+  assembler.AppendNewDataFrame(frame1, not_end_stream);
+  absl::StatusOr<MessageHandle> result1 = assembler.GenerateMessage();
+  EXPECT_TRUE(result1.ok());
+  EXPECT_EQ(result1->get(), nullptr);
 
-TEST(GrpcMessageAssembler, ThreeMessageInFourFrames) { CHECK(true); }
+  assembler.AppendNewDataFrame(frame2, not_end_stream);
+  absl::StatusOr<MessageHandle> result2 = assembler.GenerateMessage();
+  EXPECT_TRUE(result2.ok());
+  EXPECT_EQ(result2->get(), nullptr);
 
-TEST(GrpcMessageAssembler, ThreeEmptyMessagesInOneFrame) { CHECK(true); }
+  assembler.AppendNewDataFrame(frame3, end_stream);
+  absl::StatusOr<MessageHandle> result3 = assembler.GenerateMessage();
+  EXPECT_TRUE(result3.ok());
+  // BUG // EXPECT_EQ(result1->get()->payload()->Length(), length);
+}
+
+TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) { CHECK(end_stream); }
+
+TEST(GrpcMessageAssembler, ThreeMessageInFourFrames) { CHECK(end_stream); }
+
+TEST(GrpcMessageAssembler, ThreeEmptyMessagesInOneFrame) { CHECK(end_stream); }
 
 TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
-  CHECK(true);
+  CHECK(end_stream);
 }
 
-TEST(GrpcMessageAssembler, One2GBMessage) { CHECK(true); }
+TEST(GrpcMessageAssembler, One2GBMessage) { CHECK(end_stream); }
 
-TEST(GrpcMessageAssembler, One4GBMessage) { CHECK(true); }
+TEST(GrpcMessageAssembler, One4GBMessage) { CHECK(end_stream); }
 
-TEST(GrpcMessageAssembler, IncompleteMessage1) { CHECK(true); }
+TEST(GrpcMessageAssembler, IncompleteMessage1) { CHECK(end_stream); }
 
-TEST(GrpcMessageAssembler, IncompleteMessage2) { CHECK(true); }
+TEST(GrpcMessageAssembler, IncompleteMessage2) { CHECK(end_stream); }
 
 }  // namespace testing
 }  // namespace http2
