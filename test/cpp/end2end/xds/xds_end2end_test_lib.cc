@@ -858,9 +858,10 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "(Failed to connect to remote host: )?"
       "(Timeout occurred: )?"
       // Parenthetical wrappers
-      "((Secure read failed|"
+      "( ?\\(*("
+      "Secure read failed|"
       "Handshake read failed|"
-      "Delayed close due to in-progress write) \\()?"
+      "Delayed close due to in-progress write|"
       // Syscall
       "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
       // strerror() output or other message
@@ -873,7 +874,7 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       // errno value
       "( \\([0-9]+\\))?"
       // close paren from wrappers above
-      "\\)?",
+      ")\\)*)+",
       // xDS node ID
       has_resolution_note ? " \\(xDS node ID:xds_end2end_test\\)" : "");
 }
