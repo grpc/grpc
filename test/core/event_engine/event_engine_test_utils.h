@@ -220,7 +220,7 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
 // We need everything EventEngine to do reasonable timer steps -- without it
 // we need to do a bunch of evil to make sure both timer systems are ticking
 // each step.
-static bool IsSaneTimerEnvironment() {
+bool IsSaneTimerEnvironment() {
   return grpc_core::IsEventEngineClientEnabled() &&
          grpc_core::IsEventEngineListenerEnabled() &&
          grpc_core::IsEventEngineDnsEnabled() &&
