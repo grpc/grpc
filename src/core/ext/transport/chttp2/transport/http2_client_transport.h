@@ -147,7 +147,7 @@ class Http2ClientTransport final : public ClientTransport {
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
   auto CallOutboundLoop(
-      CallHandler call_handler, const uint32_t stream_id,
+      CallHandler call_handler, uint32_t stream_id,
       std::tuple<InterActivityMutex<uint32_t>::Lock, ClientMetadataHandle>
           lock_metadata);
 
@@ -169,6 +169,12 @@ class Http2ClientTransport final : public ClientTransport {
     TransportSendQeueue send_queue;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
+  uint32_t GetNextStreamId(
+      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock) {
+    const uint32_t stream_id = *next_stream_id_lock;
+    (*next_stream_id_lock) += 2;
+    return stream_id;
+  }
 
   MpscReceiver<Http2Frame> outgoing_frames_;
 
@@ -178,13 +184,11 @@ class Http2ClientTransport final : public ClientTransport {
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
-  uint32_t next_stream_id_ ABSL_GUARDED_BY(transport_mutex_) = 1;
-
   // Mutex to preserve the order of headers being sent out for new streams.
   InterActivityMutex<uint32_t> stream_mutex_;
   HPackCompressor encoder_;
 
-  uint32_t MakeStream(CallHandler call_handler);
+  bool MakeStream(CallHandler call_handler, uint32_t stream_id);
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 };
 

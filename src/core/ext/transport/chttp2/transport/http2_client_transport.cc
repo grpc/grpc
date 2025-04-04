@@ -354,7 +354,9 @@ auto Http2ClientTransport::OnWriteLoopEnded() {
 Http2ClientTransport::Http2ClientTransport(
     PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine)
-    : endpoint_(std::move(endpoint)), outgoing_frames_(kMpscSize) {
+    : endpoint_(std::move(endpoint)),
+      outgoing_frames_(kMpscSize),
+      stream_mutex_(/*Initial Stream Id*/ 1) {
   // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
   // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
 
@@ -394,7 +396,8 @@ RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
   return it->second;
 }
 
-uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
+bool Http2ClientTransport::MakeStream(CallHandler call_handler,
+                                      const uint32_t stream_id) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   // TODO(tjagtap) : [PH2][P0] Validate implementation.
 
@@ -403,8 +406,6 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
   // needs to be synchronous and hence InterActivityMutex might not be an option
   // to protect the stream_list_.
   MutexLock lock(&transport_mutex_);
-  const uint32_t stream_id = next_stream_id_;
-  next_stream_id_ += 2;
   const bool on_done_added =
       call_handler.OnDone([self = RefAsSubclass<Http2ClientTransport>(),
                            stream_id](bool cancelled) {
@@ -417,10 +418,10 @@ uint32_t Http2ClientTransport::MakeStream(CallHandler call_handler) {
         MutexLock lock(&self->transport_mutex_);
         self->stream_list_.erase(stream_id);
       });
-  if (!on_done_added) return 0;
+  if (!on_done_added) return false;
   stream_list_.emplace(stream_id,
                        MakeRefCounted<Stream>(std::move(call_handler)));
-  return stream_id;
+  return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -448,22 +449,21 @@ auto Http2ClientTransport::CallOutboundLoop(
     return self->EnqueueOutgoingFrame(std::move(frame));
   };
 
+  auto& metadata = std::get<1>(lock_metadata);
+  SliceBuffer buf;
+  encoder_.EncodeRawHeaders(*metadata.get(), buf);
+  Http2Frame frame = Http2HeaderFrame{stream_id, /*end_headers*/ true,
+                                      /*end_stream*/ false, std::move(buf)};
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
       TrySeq(
-          []() { return absl::OkStatus(); },
-          [/* Locked stream_mutex */ lock_metadata = std::move(lock_metadata),
-           self = RefAsSubclass<Http2ClientTransport>(), stream_id]() {
-            auto& metadata = std::get<1>(lock_metadata);
-            SliceBuffer buf;
-            self->encoder_.EncodeRawHeaders(*metadata.get(), buf);
-            Http2Frame frame =
-                Http2HeaderFrame{stream_id, /*end_headers*/ true,
-                                 /*end_stream*/ false, std::move(buf)};
-            return self->EnqueueOutgoingFrame(std::move(frame));
-            /* Unlock the stream_mutex_ */
+          EnqueueOutgoingFrame(std::move(frame)),
+          [call_handler, send_message,
+           lock_metadata = std::move(lock_metadata)]() {
+            // The lock will be released once the promise is constructed from
+            // this factory. ForEach will be polled after the lock is released.
+            return ForEach(MessagesFrom(call_handler), send_message);
           },
-          ForEach(MessagesFrom(call_handler), send_message),
           // TODO(akshitpatel): [PH2][P2][RISK] : Need to check if it is okay to
           // send half close when the call is cancelled.
           [self = RefAsSubclass<Http2ClientTransport>(), stream_id]() mutable {
@@ -497,9 +497,9 @@ void Http2ClientTransport::StartCall(CallHandler call_handler) {
            call_handler](auto args /* Locked stream_mutex */) mutable {
             // TODO (akshitpatel) : [PH2][P2] :
             // Check for max concurrent streams.
-            const uint32_t stream_id = self->MakeStream(call_handler);
+            const uint32_t stream_id = self->GetNextStreamId(std::get<0>(args));
             return If(
-                stream_id != 0,
+                self->MakeStream(call_handler, stream_id),
                 [self, call_handler, stream_id,
                  args = std::move(args)]() mutable {
                   return Map(self->CallOutboundLoop(call_handler, stream_id,
