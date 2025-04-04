@@ -34,6 +34,7 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/util/json/json.h"
@@ -67,6 +68,7 @@ namespace channelz {
 
 class SocketNode;
 class ListenSocketNode;
+class DataSource;
 
 namespace testing {
 class CallCountingHelperPeer;
@@ -104,12 +106,39 @@ class BaseNode : public RefCounted<BaseNode> {
   intptr_t uuid() const { return uuid_; }
   const std::string& name() const { return name_; }
 
+ protected:
+  void PopulateJsonFromDataSources(Json::Object& json);
+
  private:
   // to allow the ChannelzRegistry to set uuid_ under its lock.
   friend class ChannelzRegistry;
+  // allow data source to register/unregister itself
+  friend class DataSource;
   const EntityType type_;
   intptr_t uuid_;
   std::string name_;
+  Mutex data_sources_mu_;
+  absl::InlinedVector<DataSource*, 3> data_sources_
+      ABSL_GUARDED_BY(data_sources_mu_);
+};
+
+class DataSource {
+ public:
+  explicit DataSource(RefCountedPtr<BaseNode> node);
+
+  // Add any relevant json fragments to the output.
+  // This method must not cause the DataSource to be deleted, or else there will
+  // be a deadlock.
+  virtual void AddJson(Json::Object& output) = 0;
+
+ protected:
+  ~DataSource();
+  RefCountedPtr<BaseNode> channelz_node() { return node_; }
+
+  void ResetDataSource();
+
+ private:
+  RefCountedPtr<BaseNode> node_;
 };
 
 // This class is a helper class for channelz entities that deal with Channels,
