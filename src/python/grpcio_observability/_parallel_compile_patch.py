@@ -83,4 +83,3 @@ def monkeypatch_compile_maybe():
         import distutils.ccompiler  # pylint: disable=wrong-import-position
 
         distutils.ccompiler.CCompiler.compile = _parallel_compile
-
