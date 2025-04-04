@@ -199,7 +199,7 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         binary = name + "_native",
     )
     native.genrule(
-        name = name,
+        name = name + "_select",
         srcs = select({
             "@platforms//os:macos": [name + "_universal"],
             "//conditions:default": [name + "_native"],

@@ -192,6 +192,7 @@ _generate_cc = rule(
         ),
         "plugin": attr.label(
             executable = True,
+            allow_single_file = True,
             providers = ["files_to_run"],
             cfg = "exec",
         ),

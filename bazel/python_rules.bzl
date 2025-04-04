@@ -287,6 +287,7 @@ _generate_pb2_grpc_src = rule(
         "strip_prefixes": attr.string_list(),
         "_grpc_plugin": attr.label(
             executable = True,
+            allow_single_file = True,
             providers = ["files_to_run"],
             cfg = "exec",
             default = Label("//src/compiler:grpc_python_plugin"),

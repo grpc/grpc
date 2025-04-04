@@ -165,6 +165,7 @@ generate_objc = rule(
         "plugin": attr.label(
             default = Label("//src/compiler:grpc_objective_c_plugin"),
             executable = True,
+            allow_single_file = True,
             providers = ["files_to_run"],
             cfg = "exec",
         ),
