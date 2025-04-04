@@ -35,6 +35,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:native_posix_dns_resolver",
         "//src/core:time",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
     ],
 )
