@@ -20,7 +20,6 @@
 // Stubs for compiling on non-POSIX platforms (e.g., Windows)
 #ifndef GRPC_POSIX_SOCKET
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
-
 #include "src/core/util/crash.h"
 
 namespace grpc_event_engine::experimental {
