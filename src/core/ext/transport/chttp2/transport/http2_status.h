@@ -19,7 +19,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_STATUS_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_STATUS_H
 
-#include <varaint>
+#include <cstdint>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
