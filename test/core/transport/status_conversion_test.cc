@@ -26,6 +26,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/test_util/test_config.h"
 
+using grpc_core::http2::Http2ErrorCode;
+
 #define GRPC_STATUS_TO_HTTP2_ERROR(a, b) \
   ASSERT_EQ(grpc_status_to_http2_error(a), (b))
 #define HTTP2_ERROR_TO_GRPC_STATUS(a, deadline, b)                \
@@ -40,32 +42,38 @@
   ASSERT_EQ(grpc_http2_status_to_grpc_status(a), (b))
 
 TEST(StatusConversionTest, TestGrpcStatusToHttp2Error) {
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OK, GRPC_HTTP2_NO_ERROR);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_CANCELLED, GRPC_HTTP2_CANCEL);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNKNOWN, GRPC_HTTP2_INTERNAL_ERROR);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OK, Http2ErrorCode::kNoError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_CANCELLED, Http2ErrorCode::kCancel);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNKNOWN,
+                             Http2ErrorCode::kInternalError);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_INVALID_ARGUMENT,
-                             GRPC_HTTP2_INTERNAL_ERROR);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DEADLINE_EXCEEDED, GRPC_HTTP2_CANCEL);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_NOT_FOUND, GRPC_HTTP2_INTERNAL_ERROR);
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DEADLINE_EXCEEDED,
+                             Http2ErrorCode::kCancel);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_NOT_FOUND,
+                             Http2ErrorCode::kInternalError);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_ALREADY_EXISTS,
-                             GRPC_HTTP2_INTERNAL_ERROR);
+                             Http2ErrorCode::kInternalError);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_PERMISSION_DENIED,
-                             GRPC_HTTP2_INADEQUATE_SECURITY);
+                             Http2ErrorCode::kInadequateSecurity);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNAUTHENTICATED,
-                             GRPC_HTTP2_INTERNAL_ERROR);
+                             Http2ErrorCode::kInternalError);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_RESOURCE_EXHAUSTED,
-                             GRPC_HTTP2_ENHANCE_YOUR_CALM);
+                             Http2ErrorCode::kEnhanceYourCalm);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_FAILED_PRECONDITION,
-                             GRPC_HTTP2_INTERNAL_ERROR);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_ABORTED, GRPC_HTTP2_INTERNAL_ERROR);
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_ABORTED,
+                             Http2ErrorCode::kInternalError);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OUT_OF_RANGE,
-                             GRPC_HTTP2_INTERNAL_ERROR);
+                             Http2ErrorCode::kInternalError);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNIMPLEMENTED,
-                             GRPC_HTTP2_INTERNAL_ERROR);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_INTERNAL, GRPC_HTTP2_INTERNAL_ERROR);
+                             Http2ErrorCode::kInternalError);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_INTERNAL,
+                             Http2ErrorCode::kInternalError);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNAVAILABLE,
-                             GRPC_HTTP2_REFUSED_STREAM);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DATA_LOSS, GRPC_HTTP2_INTERNAL_ERROR);
+                             Http2ErrorCode::kRefusedStream);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DATA_LOSS,
+                             Http2ErrorCode::kInternalError);
 }
 
 TEST(StatusConversionTest, TestGrpcStatusToHttp2Status) {
@@ -91,65 +99,65 @@ TEST(StatusConversionTest, TestGrpcStatusToHttp2Status) {
 TEST(StatusConversionTest, TestHttp2ErrorToGrpcStatus) {
   const grpc_core::Timestamp before_deadline =
       grpc_core::Timestamp::InfFuture();
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_NO_ERROR, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kNoError, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_PROTOCOL_ERROR, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kProtocolError, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INTERNAL_ERROR, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kInternalError, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FLOW_CONTROL_ERROR, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kFlowControlError, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_SETTINGS_TIMEOUT, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kSettingsTimeout, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_STREAM_CLOSED, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kStreamClosed, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FRAME_SIZE_ERROR, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kFrameSizeError, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_REFUSED_STREAM, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kRefusedStream, before_deadline,
                              GRPC_STATUS_UNAVAILABLE);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_CANCEL, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kCancel, before_deadline,
                              GRPC_STATUS_CANCELLED);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_COMPRESSION_ERROR, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kCompressionError, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_CONNECT_ERROR, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kConnectError, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_ENHANCE_YOUR_CALM, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kEnhanceYourCalm, before_deadline,
                              GRPC_STATUS_RESOURCE_EXHAUSTED);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INADEQUATE_SECURITY, before_deadline,
-                             GRPC_STATUS_PERMISSION_DENIED);
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kInadequateSecurity,
+                             before_deadline, GRPC_STATUS_PERMISSION_DENIED);
 
   const grpc_core::Timestamp after_deadline;
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_NO_ERROR, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kNoError, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_PROTOCOL_ERROR, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kProtocolError, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INTERNAL_ERROR, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kInternalError, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FLOW_CONTROL_ERROR, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kFlowControlError, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_SETTINGS_TIMEOUT, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kSettingsTimeout, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_STREAM_CLOSED, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kStreamClosed, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FRAME_SIZE_ERROR, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kFrameSizeError, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_REFUSED_STREAM, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kRefusedStream, after_deadline,
                              GRPC_STATUS_UNAVAILABLE);
   // We only have millisecond granularity in our timing code. This sleeps for 5
   // millis to ensure that the status conversion code will pick up the fact
   // that the deadline has expired.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(5, GPR_TIMESPAN)));
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_CANCEL, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kCancel, after_deadline,
                              GRPC_STATUS_DEADLINE_EXCEEDED);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_COMPRESSION_ERROR, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kCompressionError, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_CONNECT_ERROR, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kConnectError, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_ENHANCE_YOUR_CALM, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kEnhanceYourCalm, after_deadline,
                              GRPC_STATUS_RESOURCE_EXHAUSTED);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INADEQUATE_SECURITY, after_deadline,
-                             GRPC_STATUS_PERMISSION_DENIED);
+  HTTP2_ERROR_TO_GRPC_STATUS(Http2ErrorCode::kInadequateSecurity,
+                             after_deadline, GRPC_STATUS_PERMISSION_DENIED);
 }
 
 TEST(StatusConversionTest, TestHttp2StatusToGrpcStatus) {
