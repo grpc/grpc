@@ -41,17 +41,19 @@ TEST(TcpFrameHeader, SimpleSerialize) {
   EXPECT_EQ(Serialize(TcpFrameHeader{
                 {FrameType::kCancel, 0x01020304, 0x05060708}, 1}),
             std::vector<uint8_t>({
-                1, 0, 0xff, 0,           // type, payload_connection_id
-                0x04, 0x03, 0x02, 0x01,  // stream_id
-                0x08, 0x07, 0x06, 0x05,  // payload_length
+                0xff, 0x01,                          // type
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // payload_tag
+                0x04, 0x03, 0x02, 0x01,              // stream_id
+                0x08, 0x07, 0x06, 0x05,              // payload_length
             }));
 }
 
 TEST(TcpFrameHeader, SimpleDeserialize) {
   EXPECT_EQ(Deserialize(std::vector<uint8_t>({
-                1, 0, 0xff, 0,           // type, payload_connection_id
-                0x04, 0x03, 0x02, 0x01,  // stream_id
-                0x08, 0x07, 0x06, 0x05,  // payload_length
+                0xff, 0x01,                          // type
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // payload_tag
+                0x04, 0x03, 0x02, 0x01,              // stream_id
+                0x08, 0x07, 0x06, 0x05,              // payload_length
             })),
             absl::StatusOr<TcpFrameHeader>(TcpFrameHeader{
                 {FrameType::kCancel, 0x01020304, 0x05060708}, 1}));

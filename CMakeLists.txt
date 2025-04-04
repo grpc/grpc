@@ -10474,6 +10474,7 @@ add_executable(chaotic_good_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/util/seq_bit_set.cc
   src/cpp/ext/chaotic_good.cc
   test/cpp/ext/chaotic_good_test.cc
 )
@@ -12810,6 +12811,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good_legacy/server_transport.cc
     src/core/lib/promise/wait_set.cc
     src/core/lib/transport/promise_endpoint.cc
+    src/core/util/seq_bit_set.cc
     test/core/call/batch_builder.cc
     test/core/end2end/cq_verifier.cc
     test/core/end2end/end2end_chaotic_good_config.cc
@@ -12910,6 +12912,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good_legacy/server_transport.cc
     src/core/lib/promise/wait_set.cc
     src/core/lib/transport/promise_endpoint.cc
+    src/core/util/seq_bit_set.cc
     test/core/call/batch_builder.cc
     test/core/end2end/cq_verifier.cc
     test/core/end2end/end2end_chaotic_good_config.cc
@@ -13097,6 +13100,7 @@ add_executable(end2end_http2_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_http2_config.cc
@@ -13195,6 +13199,7 @@ add_executable(end2end_http2_security_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_http2_security_config.cc
@@ -13293,6 +13298,7 @@ add_executable(end2end_http2_security_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_http2_security_config.cc
@@ -13479,6 +13485,7 @@ add_executable(end2end_http2_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_http2_config.cc
@@ -13665,6 +13672,7 @@ add_executable(end2end_inproc_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_inproc_config.cc
@@ -13763,6 +13771,7 @@ add_executable(end2end_inproc_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_inproc_config.cc
@@ -13949,6 +13958,7 @@ add_executable(end2end_posix_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_posix_config.cc
@@ -14047,6 +14057,7 @@ add_executable(end2end_posix_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_posix_config.cc
@@ -17791,6 +17802,7 @@ add_executable(h2_ssl_cert_test
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/lib/promise/wait_set.cc
   src/core/lib/transport/promise_endpoint.cc
+  src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/data/client_certs.cc
