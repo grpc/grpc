@@ -34,8 +34,6 @@
 namespace grpc_core {
 namespace testing {
 
-using ::testing::TestWithParam;
-
 TEST(SpiffeId, EmptyFails) {
   EXPECT_EQ(
       SpiffeId::FromString("").status(),
@@ -134,51 +132,141 @@ TEST(SpiffeId, ContainsNonASCIIPathFails) {
                 "SPIFFE ID URI cannot contain non-ascii characters"));
 }
 
-struct SpiffeIdSuccessTestCase {
-  std::string spiffe_id;
-  std::string trust_domain;
-  std::string path;
-};
-
-using SpiffeIdSuccessTest = TestWithParam<SpiffeIdSuccessTestCase>;
-
-TEST_P(SpiffeIdSuccessTest, SpiffeIdTestSuccess) {
-  const SpiffeIdSuccessTestCase& test_case = GetParam();
+TEST(SpiffeId, NoPathSuccess) {
   absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString(test_case.spiffe_id);
+      SpiffeId::FromString("spiffe://example.com");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), test_case.trust_domain);
-  EXPECT_EQ(spiffe_id->path(), test_case.path);
+  EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
+  EXPECT_EQ(spiffe_id->path(), "");
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    SpifeIdTestSuccessSuiteInstantiation, SpiffeIdSuccessTest,
-    ::testing::ValuesIn<SpiffeIdSuccessTestCase>({
-        {"spiffe://example.com", "example.com", ""},
-        {"spiffe://example.com/us", "example.com", "/us"},
-        {"sPiffe://example.com/us", "example.com", "/us"},
-        {"SPIFFE://example.com/us", "example.com", "/us"},
-        {"Spiffe://example.com/us", "example.com", "/us"},
-        {"spiffe://example.com/country/us/state/FL/city/Miami", "example.com",
-         "/country/us/state/FL/city/Miami"},
-        {"spiffe://trust-domain-name/path", "trust-domain-name", "/path"},
-        {"spiffe://staging.example.com/payments/mysql", "staging.example.com",
-         "/payments/mysql"},
-        {"spiffe://staging.example.com/payments/web-fe", "staging.example.com",
-         "/payments/web-fe"},
-        {"spiffe://k8s-west.example.com/ns/staging/sa/default",
-         "k8s-west.example.com", "/ns/staging/sa/default"},
-        {"spiffe://example.com/9eebccd2-12bf-40a6-b262-65fe0487d453",
-         "example.com", "/9eebccd2-12bf-40a6-b262-65fe0487d453"},
-        {"spiffe://trustdomain/.a..", "trustdomain", "/.a.."},
-        {"spiffe://trustdomain/...", "trustdomain", "/..."},
-        {"spiffe://trustdomain/abcdefghijklmnopqrstuvwxyz", "trustdomain",
-         "/abcdefghijklmnopqrstuvwxyz"},
-        {"spiffe://trustdomain/abc0123.-_", "trustdomain", "/abc0123.-_"},
-        {"spiffe://trustdomain/0123456789", "trustdomain", "/0123456789"},
-        {"spiffe://trustdomain0123456789/path", "trustdomain0123456789",
-         "/path"},
-    }));
+TEST(SpiffeId, BasicSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://example.com/us");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
+  EXPECT_EQ(spiffe_id->path(), "/us");
+}
+
+TEST(SpiffeId, WeirdCapitalizationSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("sPiffe://example.com/us");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
+  EXPECT_EQ(spiffe_id->path(), "/us");
+}
+
+TEST(SpiffeId, AllSpiffeCapitalizedSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("SPIFFE://example.com/us");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
+  EXPECT_EQ(spiffe_id->path(), "/us");
+}
+
+TEST(SpiffeId, FirstSpiffeCapitalizedSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("Spiffe://example.com/us");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
+  EXPECT_EQ(spiffe_id->path(), "/us");
+}
+
+TEST(SpiffeId, LongPathSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id = SpiffeId::FromString(
+      "spiffe://example.com/country/us/state/FL/city/Miami");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
+  EXPECT_EQ(spiffe_id->path(), "/country/us/state/FL/city/Miami");
+}
+
+TEST(SpiffeId, TrustDomainDashesSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://trust-domain-name/path");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "trust-domain-name");
+  EXPECT_EQ(spiffe_id->path(), "/path");
+}
+
+TEST(SpiffeId, DotsInTrustDomainSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://staging.example.com/payments/mysql");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "staging.example.com");
+  EXPECT_EQ(spiffe_id->path(), "/payments/mysql");
+}
+
+TEST(SpiffeId, DashesInPathSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://staging.example.com/payments/web-fe");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "staging.example.com");
+  EXPECT_EQ(spiffe_id->path(), "/payments/web-fe");
+}
+
+TEST(SpiffeId, K8sAddressSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id = SpiffeId::FromString(
+      "spiffe://k8s-west.example.com/ns/staging/sa/default");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "k8s-west.example.com");
+  EXPECT_EQ(spiffe_id->path(), "/ns/staging/sa/default");
+}
+
+TEST(SpiffeId, PathIsIDSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id = SpiffeId::FromString(
+      "spiffe://example.com/9eebccd2-12bf-40a6-b262-65fe0487d453");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
+  EXPECT_EQ(spiffe_id->path(), "/9eebccd2-12bf-40a6-b262-65fe0487d453");
+}
+
+TEST(SpiffeId, NonRelativePathDotsSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://trustdomain/.a..");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
+  EXPECT_EQ(spiffe_id->path(), "/.a..");
+}
+
+TEST(SpiffeId, TripleDotsSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://trustdomain/...");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
+  EXPECT_EQ(spiffe_id->path(), "/...");
+}
+
+TEST(SpiffeId, AllLowercaseCharactersSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://trustdomain/abcdefghijklmnopqrstuvwxyz");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
+  EXPECT_EQ(spiffe_id->path(), "/abcdefghijklmnopqrstuvwxyz");
+}
+
+TEST(SpiffeId, MixOfCharactersPathSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://trustdomain/abc0123.-_");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
+  EXPECT_EQ(spiffe_id->path(), "/abc0123.-_");
+}
+
+TEST(SpiffeId, AllNumbersPathSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://trustdomain/0123456789");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
+  EXPECT_EQ(spiffe_id->path(), "/0123456789");
+}
+
+TEST(SpiffeId, NumbersTrustDomainSuccess) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://trustdomain0123456789/path");
+  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
+  EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain0123456789");
+  EXPECT_EQ(spiffe_id->path(), "/path");
+}
 
 }  // namespace testing
 }  // namespace grpc_core
