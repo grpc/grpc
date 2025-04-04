@@ -155,6 +155,8 @@ void ExpandVersion(nlohmann::json& config) {
     }
   }
   settings["version"]["php"] = php_version;
+  settings["php_version"] = nlohmann::json::object();
+  settings["php_version"]["php_current_version"] = "8.1";
 }
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {
