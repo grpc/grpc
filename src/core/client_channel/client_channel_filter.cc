@@ -980,7 +980,7 @@ class ClientChannelFilter::ClientChannelControlHelper final
   }
 
   GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup() override {
-    return *chand_->owning_stack_->stats_plugin_group;
+    return **chand_->owning_stack_->stats_plugin_group;
   }
 
   void AddTraceEvent(TraceSeverity severity, absl::string_view message) override

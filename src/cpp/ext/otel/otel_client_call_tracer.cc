@@ -289,7 +289,7 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
   // Not implemented
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface> OpenTelemetryPluginImpl::
+std::shared_ptr<grpc_core::TcpCallTracer> OpenTelemetryPluginImpl::
     ClientCallTracer::CallAttemptTracer::StartNewTcpTrace() {
   // No TCP trace.
   return nullptr;

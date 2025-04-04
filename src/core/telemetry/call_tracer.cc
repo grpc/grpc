@@ -169,7 +169,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
         tracer->RecordAnnotation(annotation);
       }
     }
-    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override {
       return nullptr;
     }
     void SetOptionalLabel(OptionalLabelKey key,
@@ -313,9 +313,7 @@ class DelegatingServerCallTracer : public ServerCallTracer {
       tracer->RecordAnnotation(annotation);
     }
   }
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }
   bool IsSampled() override { return tracers_[0]->IsSampled(); }

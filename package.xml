@@ -383,6 +383,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_status.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
@@ -1644,7 +1645,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />
@@ -1767,6 +1767,8 @@
     <file baseinstalldir="/" name="src/core/service_config/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/call_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/call_tracer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/default_tcp_tracer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/default_tcp_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/histogram_view.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/histogram_view.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/metrics.cc" role="src" />
