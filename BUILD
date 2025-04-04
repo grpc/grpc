@@ -4674,6 +4674,7 @@ grpc_cc_library(
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:connectivity_state",
+        "//src/core:default_tcp_tracer",
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:event_engine_extensions",

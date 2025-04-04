@@ -28,6 +28,7 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/telemetry/default_tcp_tracer.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -261,7 +262,9 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
                     grpc_event_engine::experimental::TcpTraceExtension>(
                     endpoint->GetEventEngineEndpoint().get());
-                if (epte != nullptr) epte->InitializeAndReturnTcpTracer();
+                if (epte != nullptr) {
+                  epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>());
+                }
               }
               auto read_party = Party::Make(std::move(arena));
               read_party->Spawn(

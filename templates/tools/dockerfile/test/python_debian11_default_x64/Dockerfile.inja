@@ -1,0 +1,42 @@
+# Copyright 2018 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+FROM debian:11
+
+{% include "../../apt_get_basic.include" %}
+{% include "../../run_tests_addons.include" %}
+
+{% include "../../compile_python_310.include" %}
+{% include "../../compile_python_311.include" %}
+{% include "../../compile_python_312.include" %}
+{% include "../../compile_python_313.include" %}
+
+# Python test coverage requires libsqlite3, and it have
+# to be installed before Python.
+RUN apt-get update && apt-get install -y libsqlite3-dev
+
+# 3.9 is the default python3 version on debian11
+RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
+
+# for Python test coverage reporting
+RUN python3.9 -m pip install coverage
+
+# six is required by the run_tests.py test harness
+RUN python3.9 -m pip install six
+
+{% include "../../gcp_api_libraries.include" %}
+
+{% include "../../cmake.include" %}
+{% include "../../ccache.include" %}
+
