@@ -232,7 +232,7 @@ TEST(ProxyForAddressTest, UserInfo) {
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
             "test.google.com:443");
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS),
-            "Proxy-Authorization:Basic dXNlcm5hbWU6cGFzc3dvcmQ==");
+            "Proxy-Authorization:Basic dXNlcm5hbWU6cGFzc3dvcmQ=");
 }
 
 TEST(ProxyForAddressTest, PctEncodedUserInfo) {
@@ -243,7 +243,7 @@ TEST(ProxyForAddressTest, PctEncodedUserInfo) {
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
             "test.google.com:443");
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS),
-            "Proxy-Authorization:Basic dXNlcm5AbWU6cGFzc3dvcmQ==");
+            "Proxy-Authorization:Basic dXNlcm5AbWU6cGFzc3dvcmQ=");
 }
 
 class IncludedAddressesTest
