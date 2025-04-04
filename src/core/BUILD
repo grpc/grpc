@@ -2820,7 +2820,7 @@ grpc_cc_library(
     deps = [
         "experiments",
         "iomgr_port",
-        "//:gpr_platform",
+        "//:gpr",
     ],
 )
 

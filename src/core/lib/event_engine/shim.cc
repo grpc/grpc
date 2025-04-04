@@ -18,6 +18,7 @@
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -25,6 +26,8 @@ bool UseEventEngineClient() {
 #if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
   return false;
 #endif
+  grpc_core::Crash(
+      "Hypothesis disproven: iOS depends on the experiment system");
   return grpc_core::IsEventEngineClientEnabled();
 }
 

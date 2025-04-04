@@ -278,7 +278,7 @@
 #define GPR_CPU_IPHONE 1
 #define GRPC_CFSTREAM 1
 #ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
-#define GRPC_IOS_EVENT_ENGINE_CLIENT 1
+#define GRPC_IOS_EVENT_ENGINE_CLIENT 0
 #endif /* GRPC_IOS_EVENT_ENGINE_CLIENT */
 /* the c-ares resolver isn't safe to enable on iOS */
 #define GRPC_ARES 0
