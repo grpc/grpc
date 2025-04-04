@@ -162,30 +162,36 @@ void Executor::SetThreading(bool threading) {
     gpr_spinlock_lock(&adding_thread_lock_);
     gpr_spinlock_unlock(&adding_thread_lock_);
 
+    // It's possible that multiple invocation of SetThreading race with each other (eg.
+    // during pre-fork if grpc_shutdown was also called). Because threads cannot be joined
+    // multiple times, we ensure that `num_threads_` is still equal to the expected
+    // number we read at the beginning of the function and atomically set it to 0. That way,
+    // only one of the multiple invocations will join the threads and perform the cleanup.
     curr_num_threads = gpr_atm_no_barrier_load(&num_threads_);
-    for (gpr_atm i = 0; i < curr_num_threads; i++) {
-      thd_state_[i].thd.Join();
-      GRPC_TRACE_LOG(executor, INFO)
-          << "EXECUTOR (" << name_ << ") Thread " << i + 1 << " of "
-          << curr_num_threads << " joined";
+    if (gpr_atm_no_barrier_cas(&num_threads_, curr_num_threads, 0)) {
+      for (gpr_atm i = 0; i < curr_num_threads; i++) {
+        thd_state_[i].thd.Join();
+        GRPC_TRACE_LOG(executor, INFO)
+            << "EXECUTOR (" << name_ << ") Thread " << i + 1 << " of "
+            << curr_num_threads << " joined";
+      }
+
+      for (size_t i = 0; i < max_threads_; i++) {
+        gpr_mu_destroy(&thd_state_[i].mu);
+        gpr_cv_destroy(&thd_state_[i].cv);
+        RunClosures(thd_state_[i].name, thd_state_[i].elems);
+      }
+
+      gpr_free(thd_state_);
+
+      // grpc_iomgr_shutdown_background_closure() will close all the registered
+      // fds in the background poller, and wait for all pending closures to
+      // finish. Thus, never call Executor::SetThreading(false) in the middle of
+      // an application.
+      // TODO(guantaol): create another method to finish all the pending closures
+      // registered in the background poller by Executor.
+      grpc_iomgr_platform_shutdown_background_closure();
     }
-
-    gpr_atm_rel_store(&num_threads_, 0);
-    for (size_t i = 0; i < max_threads_; i++) {
-      gpr_mu_destroy(&thd_state_[i].mu);
-      gpr_cv_destroy(&thd_state_[i].cv);
-      RunClosures(thd_state_[i].name, thd_state_[i].elems);
-    }
-
-    gpr_free(thd_state_);
-
-    // grpc_iomgr_shutdown_background_closure() will close all the registered
-    // fds in the background poller, and wait for all pending closures to
-    // finish. Thus, never call Executor::SetThreading(false) in the middle of
-    // an application.
-    // TODO(guantaol): create another method to finish all the pending closures
-    // registered in the background poller by Executor.
-    grpc_iomgr_platform_shutdown_background_closure();
   }
 
   GRPC_TRACE_LOG(executor, INFO)
@@ -338,8 +344,11 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
     }
 
     if (try_new_thread && gpr_spinlock_trylock(&adding_thread_lock_)) {
+      // We re-acquire the thread state lock to verify it is not shutting down
+      // as we may have raced with `SetThreading(false)` call.
+      gpr_mu_lock(&ts->mu);
       cur_thread_count = static_cast<size_t>(gpr_atm_acq_load(&num_threads_));
-      if (cur_thread_count < max_threads_) {
+      if (!ts->shutdown && cur_thread_count < max_threads_) {
         // Increment num_threads (safe to do a store instead of a cas because we
         // always increment num_threads under the 'adding_thread_lock')
         gpr_atm_rel_store(&num_threads_, cur_thread_count + 1);
@@ -348,6 +357,7 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
             Thread(name_, &Executor::ThreadMain, &thd_state_[cur_thread_count]);
         thd_state_[cur_thread_count].thd.Start();
       }
+      gpr_mu_unlock(&ts->mu);
       gpr_spinlock_unlock(&adding_thread_lock_);
     }
   } while (retry_push);
