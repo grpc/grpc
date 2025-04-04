@@ -121,7 +121,7 @@ void AdsServiceImpl::Reactor::OnCancel() {
   {
     grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
     for (auto& [type_url, type_state] : type_state_map_) {
-      ResourceNameMap& resource_name_map =
+      auto& resource_name_map =
           ads_service_impl_->resource_map_[type_url].resource_name_map;
       for (auto& [resource_name, _] : type_state.subscriptions) {
         ResourceState& resource_state = resource_name_map[resource_name];

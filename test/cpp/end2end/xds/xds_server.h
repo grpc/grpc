@@ -196,7 +196,7 @@ class AdsServiceImpl
 
    private:
     // State for a given resource type.
-    struct ResourceTypeState {
+    struct TypeState {
       int nonce = 0;
       int resource_type_version = 0;
       absl::flat_hash_map<std::string /*resource_name*/,
@@ -216,7 +216,7 @@ class AdsServiceImpl
 
 // FIXME: use our own lock
 
-    std::map<std::string /*type_url*/, ResourceTypeState> type_state_map_
+    std::map<std::string /*type_url*/, TypeState> type_state_map_
         ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_);
     bool seen_first_request_ ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_) = false;
     bool write_pending_ ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_) = false;
@@ -238,12 +238,10 @@ class AdsServiceImpl
   };
 
   // The current state for all individual resources of a given type.
-  using ResourceNameMap =
-      absl::flat_hash_map<std::string /*resource_name*/, ResourceState>;
-
   struct ResourceTypeState {
     int resource_type_version = 0;
-    ResourceNameMap resource_name_map;
+    absl::flat_hash_map<std::string /*resource_name*/, ResourceState>
+        resource_name_map;
   };
 
   using ResourceMap = std::map<std::string /*type_url*/, ResourceTypeState>;
@@ -268,20 +266,27 @@ class AdsServiceImpl
   std::string debug_label_;
 
   grpc_core::Mutex ads_mu_;
-// FIXME: combine various maps
-  std::map<std::string /*type_url*/, std::deque<ResponseState>>
-      resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
-  std::set<std::string /*resource_type*/> resource_types_to_ignore_
-      ABSL_GUARDED_BY(ads_mu_);
-  std::function<void(absl::string_view, int)> check_version_callback_
-      ABSL_GUARDED_BY(ads_mu_);
-  // An instance data member containing the current state of all resources.
-  // Note that an entry will exist whenever either of the following is true:
+
+  // The current state of all resources.  Note that an entry will exist
+  // whenever either of the following is true:
   // - The resource exists (i.e., has been created by SetResource() and has not
   //   yet been destroyed by UnsetResource()).
   // - There is at least one subscription for the resource.
   ResourceMap resource_map_ ABSL_GUARDED_BY(ads_mu_);
+
+  // Queue of response states for each resource type.
+  std::map<std::string /*type_url*/, std::deque<ResponseState>>
+      resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
+
+  // Resource types to ignore requests for, as configured by tests.
+  std::set<std::string /*type_url*/> resource_types_to_ignore_
+      ABSL_GUARDED_BY(ads_mu_);
+  // Callback to check version in requests, as configured by tests.
+  std::function<void(absl::string_view, int)> check_version_callback_
+      ABSL_GUARDED_BY(ads_mu_);
+  // Close ADS streams with this status, as configured by tests.
   std::optional<Status> forced_ads_failure_ ABSL_GUARDED_BY(ads_mu_);
+  // Wrap resources in a Resource proto wrapper, as configured by tests.
   bool wrap_resources_ ABSL_GUARDED_BY(ads_mu_) = false;
 
   grpc_core::Mutex clients_mu_;
