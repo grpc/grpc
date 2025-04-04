@@ -38,6 +38,7 @@ namespace testing {
 constexpr bool not_end_stream = false;
 constexpr bool end_stream = true;
 constexpr bool flags = 0;
+
 constexpr absl::string_view kHelloWorld = "Hello World!";
 
 constexpr absl::string_view kString1 = "One Hello World!";
@@ -187,10 +188,32 @@ TEST(GrpcMessageAssembler, ThreeEmptyMessagesInOneFrame) {
 }
 
 TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
-  CHECK(end_stream);
-}
+  SliceBuffer frame1;
+  const uint32_t length = kString1.size() + kString3.size();
+  AppendHeaderAndMessage(frame1, kString1);
+  AppendEmptyMessage(frame1);
+  AppendHeaderAndMessage(frame1, kString3);
+  EXPECT_EQ(frame1.Length(), length + (3 * kGrpcHeaderSizeInBytes));
 
-TEST(GrpcMessageAssembler, One2GBMessage) { CHECK(end_stream); }
+  GrpcMessageAssembler assembler;
+  assembler.AppendNewDataFrame(frame1, end_stream);
+
+  absl::StatusOr<MessageHandle> result1 = assembler.GenerateMessage();
+  EXPECT_TRUE(result1.ok());
+  EXPECT_EQ(result1->get()->payload()->Length(), kString1.size());
+
+  absl::StatusOr<MessageHandle> result2 = assembler.GenerateMessage();
+  EXPECT_TRUE(result2.ok());
+  EXPECT_EQ(result2->get()->payload()->Length(), 0);
+
+  absl::StatusOr<MessageHandle> result3 = assembler.GenerateMessage();
+  EXPECT_TRUE(result3.ok());
+  EXPECT_EQ(result3->get()->payload()->Length(), kString3.size());
+
+  absl::StatusOr<MessageHandle> result4 = assembler.GenerateMessage();
+  EXPECT_TRUE(result4.ok());
+  EXPECT_EQ(result4->get(), nullptr);
+}
 
 TEST(GrpcMessageAssembler, One4GBMessage) { CHECK(end_stream); }
 
