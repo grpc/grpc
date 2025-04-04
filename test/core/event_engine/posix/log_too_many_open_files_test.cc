@@ -27,7 +27,7 @@
 #include "test/core/test_util/test_config.h"
 
 using DSMode =
-    ::grpc_event_engine::experimental::EventEnginePosixInterface::DSMode;
+    grpc_event_engine::experimental::EventEnginePosixInterface::DSMode;
 using ::grpc_event_engine::experimental::EventEnginePosixInterface;
 using ::grpc_event_engine::experimental::FileDescriptor;
 
