@@ -55,7 +55,7 @@ constexpr absl::string_view kStr1024 =
 
 constexpr bool not_end_stream = false;
 constexpr bool end_stream = true;
-constexpr bool flags = 0;
+constexpr uint8_t flags = 0;
 
 constexpr absl::string_view kString1 = "One Hello World!";
 constexpr absl::string_view kString2 = "Two Hello World!";
