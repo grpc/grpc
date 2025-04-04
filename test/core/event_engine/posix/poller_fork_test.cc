@@ -37,11 +37,9 @@
 #include <optional>
 #include <queue>
 #include <string>
-#include <thread>
 #include <utility>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
 #include "absl/functional/any_invocable.h"
@@ -73,10 +71,6 @@ std::string GetBacktrace() {
   }
   return absl::StrJoin(bt, "\n");
 }
-
-namespace {
-
-thread_local bool is_in_scheduler = false;
 
 MATCHER(IsOk, "is ok") { return arg.ok(); }
 
@@ -197,7 +191,6 @@ class PollerForkTest : public ::testing::Test {
  public:
   void SetUp() override {
     ee_ = GetDefaultEventEngine();
-    // absl::StrSplit(grpc_core::ConfigVars::Get().PollStrategy(), ',')
     // Setup listener and establish socket connection, confirm they work
     auto listener_and_address = SetupListener(
         [&](auto endpoint, MemoryAllocator /* memory */) {
@@ -324,8 +317,6 @@ class PollerForkTest : public ::testing::Test {
   EventEngine::ResolvedAddress address_;
 };
 
-}  // namespace
-
 TEST_F(PollerForkTest, ListenerInParent) {
   // Connect before "fork"
   RawPosixClient client(address_);
@@ -403,119 +394,6 @@ TEST_F(PollerForkTest, ListenerInChild) {
   ASSERT_FALSE(endpoint->Write(write_status.Setter(), &write_buffer, nullptr));
   EXPECT_THAT(read_status.AwaitStatus(), StatusIs(absl::StatusCode::kInternal));
   EXPECT_THAT(write_status.AwaitStatus(), ::testing::Not(IsOk()));
-}
-
-class TestScheduler {
- public:
-  static std::shared_ptr<TestScheduler> Start() {
-    auto scheduler = std::make_shared<TestScheduler>();
-    scheduler->Start(scheduler);
-    return scheduler;
-  }
-
-  ~TestScheduler() {
-    {
-      grpc_core::MutexLock lock(&mu_);
-      done_ = true;
-      cond_.SignalAll();
-    }
-    if (background_thread_.joinable()) {
-      background_thread_.join();
-    }
-  }
-
-  void Schedule(absl::AnyInvocable<void() const> op)
-      ABSL_NO_THREAD_SAFETY_ANALYSIS {
-    if (is_in_scheduler) {
-      pending_.push(std::move(op));
-    } else {
-      grpc_core::MutexLock lock(&mu_);
-      pending_.push(std::move(op));
-    }
-    cond_.SignalAll();
-  }
-
- private:
-  void Start(std::shared_ptr<TestScheduler> scheduler) {
-    background_thread_ = std::thread(
-        [scheduler = std::move(scheduler)]() { scheduler->EventQueue(); });
-  }
-
-  void EventQueue() {
-    is_in_scheduler = true;
-    absl::Cleanup reset_is_in_scheduler = []() { is_in_scheduler = false; };
-    grpc_core::MutexLock lock(&mu_);
-    while (!done_) {
-      while (!pending_.empty()) {
-        pending_.front()();
-        pending_.pop();
-      }
-      cond_.Wait(&mu_);
-    }
-  }
-
-  std::thread background_thread_;
-  grpc_core::Mutex mu_;
-  grpc_core::CondVar cond_;
-  std::queue<absl::AnyInvocable<void() const>> pending_ ABSL_GUARDED_BY(&mu_);
-  bool done_ ABSL_GUARDED_BY(&mu_) = false;
-};
-
-class PollCycle {
- public:
-  explicit PollCycle(std::shared_ptr<TestScheduler> scheduler,
-                     absl::AnyInvocable<void() const> op)
-      : scheduler_(std::move(scheduler)), op_(std::move(op)), is_scheduled_(1) {
-    scheduler_->Schedule([this]() { Op(); });
-  }
-
-  ~PollCycle() {
-    grpc_core::MutexLock lock(&mu_);
-    done_ = true;
-    while (is_scheduled_ > 0) {
-      cond_.Wait(&mu_);
-    }
-  }
-
- private:
-  void Op() {
-    grpc_core::MutexLock lock(&mu_);
-    --is_scheduled_;
-    CHECK_EQ(is_scheduled_, 0);
-    op_();
-    if (!done_) {
-      scheduler_->Schedule([this]() { Op(); });
-      ++is_scheduled_;
-    }
-    cond_.SignalAll();
-  }
-
-  std::shared_ptr<TestScheduler> scheduler_;
-  absl::AnyInvocable<void() const> op_;
-  grpc_core::Mutex mu_;
-  bool done_ ABSL_GUARDED_BY(&mu_) = false;
-  int is_scheduled_ ABSL_GUARDED_BY(&mu_) = 0;
-  grpc_core::CondVar cond_;
-};
-
-TEST(ExperimentalAsyncPollTest, AsyncPollTest) {
-  auto scheduler = TestScheduler::Start();
-  grpc_core::Mutex op_mu;
-  grpc_core::CondVar cond;
-  int runs = 0;
-
-  auto cycle = std::make_unique<PollCycle>(scheduler, [&]() {
-    grpc_core::MutexLock lock(&op_mu);
-    runs++;
-    cond.SignalAll();
-  });
-  {
-    grpc_core::MutexLock lock(&op_mu);
-    while (runs < 5) {
-      cond.Wait(&op_mu);
-    }
-  }
-  cycle.reset();
 }
 
 #else  // GRPC_ENABLE_FORK_SUPPORT

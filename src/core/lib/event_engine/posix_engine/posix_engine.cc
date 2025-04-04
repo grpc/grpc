@@ -656,7 +656,7 @@ PosixEventEngine::PosixEventEngine()
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-class ForkSupport {
+class PosixEventEngine::ForkSupport {
  public:
   ThreadPool* executor() const {
     grpc_core::Crash("Not implemented");

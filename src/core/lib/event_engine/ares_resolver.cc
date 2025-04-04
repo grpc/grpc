@@ -888,10 +888,11 @@ void AresResolver::Reinitialize() {
       fd_node->already_shutdown = true;
     }
   }
+  CheckSocketsLocked();
   ares_destroy(channel_);
-  fd_node_list_.clear();
   callback_map_.clear();
   channel_ = nullptr;
+
   absl::Status status = InitAresChannel(&channel_, "", polled_fd_factory_);
   CHECK_OK(status);
 }
