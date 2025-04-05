@@ -20,6 +20,8 @@
 #include <algorithm>
 
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/event_engine/extensions/blocking_dns.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 
@@ -41,6 +43,12 @@ grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
 absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
 LookupHostnameBlocking(EventEngine::DNSResolver* dns_resolver,
                        absl::string_view name, absl::string_view default_port) {
+  auto* blocking_resolver =
+      QueryExtension<ResolverSupportsBlockingLookups>(dns_resolver);
+  if (blocking_resolver != nullptr) {
+    return blocking_resolver->LookupHostnameBlocking(name, default_port);
+  }
+
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results;
   grpc_core::Notification done;
   dns_resolver->LookupHostname(

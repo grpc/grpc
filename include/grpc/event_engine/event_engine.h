@@ -334,7 +334,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// when the object is destroyed and all pending callbacks will be called
   /// shortly. If cancellation races with request completion, implementations
   /// may choose to either cancel or satisfy the request.
-  class DNSResolver {
+  class DNSResolver : public Extensible {
    public:
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
