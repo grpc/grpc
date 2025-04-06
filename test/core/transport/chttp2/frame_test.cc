@@ -184,7 +184,7 @@ TEST(Frame, ParseHttp2DataFrame) {
                        /* Type (1 octet) */ 0,
                        /* Unused Flags (1 octet) */ 1,
                        /* Stream Identifier (31 bits) */ 0x98, 0x38, 0x18, 0x22,
-                       'k', 'i', 'd', 's'),
+                       /* Data */ 'k', 'i', 'd', 's'),
             Http2Frame(Http2DataFrame{0x98381822, true,
                                       SliceBufferFromString("kids")}));
 }
@@ -194,21 +194,21 @@ TEST(Frame, ParseHttp2HeaderFrame) {
                        /* Type (1 octet) */ 1,
                        /* Unused Flags (1 octet) */ 0,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                       /* */ 'h', 'e', 'l', 'l', 'o'),
+                       /* Field Block Fragment */ 'h', 'e', 'l', 'l', 'o'),
             Http2Frame(Http2HeaderFrame{1, false, false,
                                         SliceBufferFromString("hello")}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) = */ 0, 0, 4,
                        /* Type (1 octet) */ 1,
                        /* Unused Flags (1 octet) */ 4,
                        /* Stream Identifier (31 bits) */ 0x98, 0x38, 0x18, 0x22,
-                       'k', 'i', 'd', 's'),
+                       /* Field Block Fragment */ 'k', 'i', 'd', 's'),
             Http2Frame(Http2HeaderFrame{0x98381822, true, false,
                                         SliceBufferFromString("kids")}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) = */ 0, 0, 4,
                        /* Type (1 octet) */ 1,
                        /* Unused Flags (1 octet) */ 1,
                        /* Stream Identifier (31 bits) */ 0x98, 0x38, 0x18, 0x22,
-                       'k', 'i', 'd', 's'),
+                       /* Field Block Fragment */ 'k', 'i', 'd', 's'),
             Http2Frame(Http2HeaderFrame{0x98381822, false, true,
                                         SliceBufferFromString("kids")}));
 }
@@ -218,14 +218,14 @@ TEST(Frame, ParseHttp2ContinuationFrame) {
                        /* Type (1 octet) */ 9,
                        /* Unused Flags (1 octet) */ 0,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                       /* */ 'h', 'e', 'l', 'l', 'o'),
+                       /* Field Block Fragment */ 'h', 'e', 'l', 'l', 'o'),
             Http2Frame(Http2ContinuationFrame{1, false,
                                               SliceBufferFromString("hello")}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 5,
                        /* Type (1 octet) */ 9,
                        /* Unused Flags (1 octet) */ 4,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                       /* */ 'h', 'e', 'l', 'l', 'o'),
+                       /* Field Block Fragment */ 'h', 'e', 'l', 'l', 'o'),
             Http2Frame(Http2ContinuationFrame{1, true,
                                               SliceBufferFromString("hello")}));
 }
@@ -235,7 +235,7 @@ TEST(Frame, ParseHttp2RstStreamFrame) {
                        /* Type (1 octet) */ 3,
                        /* Unused Flags (1 octet) */ 0,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                       /* */ 0, 0, 0, 0x0a),
+                       /* Error Code (4 octets) */ 0, 0, 0, 0x0a),
             Http2Frame(Http2RstStreamFrame{
                 1, static_cast<uint32_t>(Http2ErrorCode::kConnectError)}));
 }
@@ -250,14 +250,17 @@ TEST(Frame, ParseHttp2SettingsFrame) {
                        /* Type (1 octet) */ 4,
                        /* Unused Flags (1 octet) */ 0,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                       /* */ 0x12, 0x34, 0x9a, 0xbc, 0xde, 0xf0),
+                       /* Setting (6 octets each) */ 0x12, 0x34, 0x9a, 0xbc,
+                       0xde, 0xf0),
             Http2Frame(Http2SettingsFrame{false, {{0x1234, 0x9abcdef0}}}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 12,
                        /* Type (1 octet) */ 4,
                        /* Unused Flags (1 octet) */ 0,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                       /* */ 0x12, 0x34, 0x9a, 0xbc, 0xde, 0xf0, 0x43, 0x21,
-                       0x12, 0x34, 0x56, 0x78),
+                       /* Setting (6 octets each) */ 0x12, 0x34, 0x9a, 0xbc,
+                       0xde, 0xf0,
+                       /* Setting (6 octets each) */ 0x43, 0x21, 0x12, 0x34,
+                       0x56, 0x78),
             Http2Frame(Http2SettingsFrame{
                 false, {{0x1234, 0x9abcdef0}, {0x4321, 0x12345678}}}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 0,
@@ -272,13 +275,15 @@ TEST(Frame, ParseHttp2PingFrame) {
                        /* Type (1 octet) */ 6,
                        /* Unused Flags (1 octet) */ 0,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                       /* */ 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0),
+                       /* Opaque Data (8 octets) */ 0x12, 0x34, 0x56, 0x78,
+                       0x9a, 0xbc, 0xde, 0xf0),
             Http2Frame(Http2PingFrame{false, 0x123456789abcdef0}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 8,
                        /* Type (1 octet) */ 6,
                        /* Unused Flags (1 octet) */ 1,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                       /* */ 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0),
+                       /* Opaque Data (8 octets) */ 0x12, 0x34, 0x56, 0x78,
+                       0x9a, 0xbc, 0xde, 0xf0),
             Http2Frame(Http2PingFrame{true, 0x123456789abcdef0}));
 }
 
@@ -288,20 +293,22 @@ TEST(Frame, ParseHttp2GoawayFrame) {
                  /* Type (1 octet) */ 7,
                  /* Unused Flags (1 octet) */ 0,
                  /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                 /* */ 0x12, 0x34, 0x56, 0x78, 0, 0, 0, 0x0b, 'h', 'e', 'l',
-                 'l', 'o'),
+                 /* Last-Stream-ID (31 bits) */ 0x12, 0x34, 0x56, 0x78,
+                 /* Error Code (4 octets) */ 0, 0, 0, 0x0b,
+                 /* Additional Debug Data */ 'h', 'e', 'l', 'l', 'o'),
       Http2Frame(Http2GoawayFrame{
           0x12345678, static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
           Slice::FromCopiedString("hello")}));
 }
 
 TEST(Frame, ParseHttp2WindowUpdateFrame) {
-  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 4,
-                       /* Type (1 octet) */ 8,
-                       /* Unused Flags (1 octet) */ 0,
-                       /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                       /* */ 0x12, 0x34, 0x56, 0x78),
-            Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
+  EXPECT_EQ(
+      ParseFrame(/* Length (3 octets) */ 0, 0, 4,
+                 /* Type (1 octet) */ 8,
+                 /* Unused Flags (1 octet) */ 0,
+                 /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
+                 /* Window Size Increment (31 bits) */ 0x12, 0x34, 0x56, 0x78),
+      Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
 }
 
 TEST(Frame, ParseHttp2SecurityFrame) {
@@ -309,7 +316,7 @@ TEST(Frame, ParseHttp2SecurityFrame) {
                        /* Type (1 octet) */ 200,
                        /* Unused Flags (1 octet) */ 0,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                       /* */ 'h', 'e', 'l', 'l', 'o'),
+                       /* Payload */ 'h', 'e', 'l', 'l', 'o'),
             Http2Frame(Http2SecurityFrame{SliceBufferFromString("hello")}));
 }
 
@@ -328,7 +335,9 @@ TEST(Frame, ParseHttp2HeaderFramePadded) {
                        /* Type (1 octet) */ 1,
                        /* Unused Flags (1 octet) */ 8,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                       /* */ 2, 'h', 'e', 'l', 'l', 'o', 1, 2),
+                       /* Pad Length (1 octet) */ 2,
+                       /* Field Block Fragment */ 'h', 'e', 'l', 'l', 'o',
+                       /* Padding*/ 1, 2),
             Http2Frame(Http2HeaderFrame{1, false, false,
                                         SliceBufferFromString("hello")}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 10,
@@ -446,7 +455,7 @@ TEST(Frame, ParseRejectsSettingsFrame) {
                             /* Type (1 octet) */ 4,
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* */ 1, 1),
+                            /* Setting */ 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
                        "stream_id=0, length=2} -- settings must be multiples "
@@ -455,7 +464,7 @@ TEST(Frame, ParseRejectsSettingsFrame) {
                             /* Type (1 octet) */ 4,
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* */ 1, 1, 1),
+                            /* Setting */ 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
                        "stream_id=0, length=3} -- settings must be multiples "
@@ -464,7 +473,7 @@ TEST(Frame, ParseRejectsSettingsFrame) {
                             /* Type (1 octet) */ 4,
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* */ 1, 1, 1, 1),
+                            /* Setting */ 1, 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
                        "stream_id=0, length=4} -- settings must be multiples "
@@ -473,7 +482,7 @@ TEST(Frame, ParseRejectsSettingsFrame) {
                             /* Type (1 octet) */ 4,
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* */ 1, 1, 1, 1, 1),
+                            /* Setting */ 1, 1, 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
                        "stream_id=0, length=5} -- settings must be multiples "
@@ -482,7 +491,7 @@ TEST(Frame, ParseRejectsSettingsFrame) {
                             /* Type (1 octet) */ 4,
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* */ 1, 1, 1, 1, 1, 1, 1),
+                            /* Setting */ 1, 1, 1, 1, 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid settings payload: {SETTINGS: flags=0, "
                        "stream_id=0, length=7} -- settings must be multiples "
