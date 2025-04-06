@@ -25,12 +25,14 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <mutex>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
+#include "channelz.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -39,6 +41,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/string.h"
+#include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
 
@@ -67,6 +70,39 @@ void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
   for (DataSource* data_source : data_sources_) {
     data_source->AddJson(json);
   }
+}
+
+void BaseNode::RunZTrace(
+    absl::string_view name, Timestamp deadline,
+    std::map<std::string, std::string> args,
+    absl::AnyInvocable<void(absl::StatusOr<Json> output)> callback) {
+  auto fail = [&callback](absl::Status status) {
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+        [callback = std::move(callback), status = std::move(status)]() mutable {
+          callback(status);
+        });
+  };
+  std::unique_ptr<ZTrace> ztrace;
+  {
+    MutexLock lock(&data_sources_mu_);
+    for (auto* data_source : data_sources_) {
+      if (auto found_ztrace = data_source->GetZTrace(name);
+          found_ztrace != nullptr) {
+        if (ztrace == nullptr) {
+          ztrace = std::move(found_ztrace);
+        } else {
+          fail(absl::InternalError(
+              absl::StrCat("Ambiguous ztrace handler: ", name)));
+          return;
+        }
+      }
+    }
+  }
+  if (ztrace == nullptr) {
+    fail(absl::NotFoundError(absl::StrCat("ztrace not found: ", name)));
+    return;
+  }
+  ztrace->Run(deadline, std::move(args), std::move(callback));
 }
 
 //
