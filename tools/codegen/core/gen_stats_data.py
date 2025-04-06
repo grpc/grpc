@@ -23,5 +23,5 @@ with open("src/core/telemetry/stats_data.yaml") as f:
     attrs = yaml.safe_load(f.read())
 
 stats_generator = utils.StatsDataGenerator(attrs)
-stats_generator.gen_stats_data_hdr("", "stats_data.h")
-stats_generator.gen_stats_data_src("stats_data.cc")
+stats_generator.gen_stats_data_hdr("", "src/core/telemetry/stats_data.h")
+stats_generator.gen_stats_data_src("src/core/telemetry/stats_data.cc")

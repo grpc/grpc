@@ -122,9 +122,15 @@ void AddPhpConfig(nlohmann::json& config) {
   config["php_config_m4"]["dirs"] = dirs;
 }
 
-void ExpandVersion(nlohmann::json& config) {
-  auto& settings = config["settings"];
-  std::string version_string = settings["version"];
+struct Version {
+  int major;
+  int minor;
+  int patch;
+  std::optional<std::string> tag;
+};
+
+Version ExpandOneVersion(nlohmann::json& settings, const std::string& which) {
+  std::string version_string = settings[which];
   std::optional<std::string> tag;
   if (version_string.find("-") != std::string::npos) {
     tag = version_string.substr(version_string.find("-") + 1);
@@ -136,25 +142,50 @@ void ExpandVersion(nlohmann::json& config) {
   CHECK(absl::SimpleAtoi(version_parts[0], &major));
   CHECK(absl::SimpleAtoi(version_parts[1], &minor));
   CHECK(absl::SimpleAtoi(version_parts[2], &patch));
-  settings["version"] = nlohmann::json::object();
-  settings["version"]["string"] = version_string;
-  settings["version"]["major"] = major;
-  settings["version"]["minor"] = minor;
-  settings["version"]["patch"] = patch;
-  if (tag) {
-    settings["version"]["tag"] = *tag;
-  }
-  std::string php_version = absl::StrCat(major, ".", minor, ".", patch);
+  settings[which] = nlohmann::json::object();
+  settings[which]["string"] = version_string;
+  settings[which]["major"] = major;
+  settings[which]["minor"] = minor;
+  settings[which]["patch"] = patch;
   if (tag.has_value()) {
-    if (tag == "dev") {
+    settings[which]["tag"] = *tag;
+    settings[which]["string"] = absl::StrCat(version_string, "-", *tag);
+  }
+  return Version{major, minor, patch, tag};
+}
+
+void ExpandVersion(nlohmann::json& config) {
+  auto& settings = config["settings"];
+  auto version = ExpandOneVersion(settings, "version");
+  std::string php_version =
+      absl::StrCat(version.major, ".", version.minor, ".", version.patch);
+  if (version.tag.has_value()) {
+    if (version.tag == "dev") {
       php_version += "dev";
-    } else if (tag->size() >= 3 && tag->substr(0, 3) == "pre") {
-      php_version += "RC" + tag->substr(3);
+    } else if (version.tag->size() >= 3 && version.tag->substr(0, 3) == "pre") {
+      php_version += "RC" + version.tag->substr(3);
     } else {
-      LOG(FATAL) << "Unknown tag: " << *tag;
+      LOG(FATAL) << "Unknown tag: " << *version.tag;
+    }
+  }
+  std::string pep440 =
+      absl::StrCat(version.major, ".", version.minor, ".", version.patch);
+  if (version.tag.has_value()) {
+    if (*version.tag == "dev") {
+      pep440 += ".dev0";
+    } else if (absl::StartsWith(*version.tag, "pre")) {
+      pep440 += absl::StrCat("rc", version.tag->substr(3));
+    } else {
+      LOG(FATAL) << "Don\'t know how to translate version tag " << *version.tag
+                 << " to pep440";
     }
   }
   settings["version"]["php"] = php_version;
+  ExpandOneVersion(settings, "core_version");
+  settings["php_version"] = nlohmann::json::object();
+  settings["php_version"]["php_current_version"] = "8.1";
+  settings["python_version"] = nlohmann::json::object();
+  settings["python_version"]["pep440"] = pep440;
 }
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {
