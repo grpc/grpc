@@ -180,10 +180,13 @@ TEST(Frame, ParseHttp2DataFrame) {
                  /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
                  /* Data */ 'h', 'e', 'l', 'l', 'o'),
       Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
-  EXPECT_EQ(
-      ParseFrame(0, 0, 4, 0, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
-      Http2Frame(
-          Http2DataFrame{0x98381822, true, SliceBufferFromString("kids")}));
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) = */ 0, 0, 4,
+                       /* Type (1 octet) */ 0,
+                       /* Unused Flags (1 octet) */ 1,
+                       /* Stream Identifier (31 bits) */ 0x98, 0x38, 0x18, 0x22,
+                       'k', 'i', 'd', 's'),
+            Http2Frame(Http2DataFrame{0x98381822, true,
+                                      SliceBufferFromString("kids")}));
 }
 
 TEST(Frame, ParseHttp2HeaderFrame) {
@@ -194,14 +197,20 @@ TEST(Frame, ParseHttp2HeaderFrame) {
                        /* */ 'h', 'e', 'l', 'l', 'o'),
             Http2Frame(Http2HeaderFrame{1, false, false,
                                         SliceBufferFromString("hello")}));
-  EXPECT_EQ(
-      ParseFrame(0, 0, 4, 1, 4, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
-      Http2Frame(Http2HeaderFrame{0x98381822, true, false,
-                                  SliceBufferFromString("kids")}));
-  EXPECT_EQ(
-      ParseFrame(0, 0, 4, 1, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
-      Http2Frame(Http2HeaderFrame{0x98381822, false, true,
-                                  SliceBufferFromString("kids")}));
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) = */ 0, 0, 4,
+                       /* Type (1 octet) */ 1,
+                       /* Unused Flags (1 octet) */ 4,
+                       /* Stream Identifier (31 bits) */ 0x98, 0x38, 0x18, 0x22,
+                       'k', 'i', 'd', 's'),
+            Http2Frame(Http2HeaderFrame{0x98381822, true, false,
+                                        SliceBufferFromString("kids")}));
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) = */ 0, 0, 4,
+                       /* Type (1 octet) */ 1,
+                       /* Unused Flags (1 octet) */ 1,
+                       /* Stream Identifier (31 bits) */ 0x98, 0x38, 0x18, 0x22,
+                       'k', 'i', 'd', 's'),
+            Http2Frame(Http2HeaderFrame{0x98381822, false, true,
+                                        SliceBufferFromString("kids")}));
 }
 
 TEST(Frame, ParseHttp2ContinuationFrame) {
