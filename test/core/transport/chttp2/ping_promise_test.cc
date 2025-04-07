@@ -18,6 +18,8 @@
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 
 #include "absl/log/log.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
@@ -27,8 +29,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/call/yodel/yodel_test.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 namespace grpc_core {
 
@@ -132,16 +132,14 @@ PING_SYSTEM_TEST(TestPingRequest) {
   EXPECT_EQ(ping_system.CountPingInflight(), 0);
   EXPECT_FALSE(ping_system.PingRequested());
 
-  party->Spawn(
-      "PingRequest",
-      ping_system.RequestPing([&execution_order]() {
-        LOG(INFO) << "Ping requested. Waiting for ack.";
-        execution_order.append("2");
-      }),
-      [&on_done](auto) {
-        LOG(INFO) << "Got a Ping Ack";
-        on_done.Call(absl::OkStatus());
-      });
+  party->Spawn("PingRequest", ping_system.RequestPing([&execution_order]() {
+    LOG(INFO) << "Ping requested. Waiting for ack.";
+    execution_order.append("2");
+  }),
+               [&on_done](auto) {
+                 LOG(INFO) << "Got a Ping Ack";
+                 on_done.Call(absl::OkStatus());
+               });
 
   EXPECT_TRUE(ping_system.PingRequested());
   execution_order.append("1");
@@ -183,16 +181,14 @@ PING_SYSTEM_TEST(TestPingUnrelatedAck) {
   EXPECT_EQ(ping_system.CountPingInflight(), 0);
   EXPECT_FALSE(ping_system.PingRequested());
 
-  party->Spawn(
-      "PingRequest",
-      ping_system.RequestPing([&execution_order]() {
-        LOG(INFO) << "Ping requested. Waiting for ack.";
-        execution_order.append("2");
-      }),
-      [&on_done](auto) {
-        LOG(INFO) << "Got a Ping Ack";
-        on_done.Call(absl::OkStatus());
-      });
+  party->Spawn("PingRequest", ping_system.RequestPing([&execution_order]() {
+    LOG(INFO) << "Ping requested. Waiting for ack.";
+    execution_order.append("2");
+  }),
+               [&on_done](auto) {
+                 LOG(INFO) << "Got a Ping Ack";
+                 on_done.Call(absl::OkStatus());
+               });
 
   EXPECT_TRUE(ping_system.PingRequested());
   execution_order.append("1");
