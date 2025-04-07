@@ -26,6 +26,7 @@ option java_multiple_files = true;
 option java_outer_classname = "HandshakerProto";
 option java_package = "io.grpc.alts.internal";
 
+
 enum HandshakeProtocol {
   // Default value.
   HANDSHAKE_PROTOCOL_UNSPECIFIED = 0;
@@ -242,5 +243,7 @@ service HandshakerService {
   // messages with next. Each time client sends a request, the handshaker
   // service expects to respond. Client does not have to wait for service's
   // response before sending next request.
-  rpc DoHandshake(stream HandshakerReq) returns (stream HandshakerResp) {}
+  rpc DoHandshake(stream HandshakerReq)
+      returns (stream HandshakerResp) {
+  }
 }
