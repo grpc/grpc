@@ -57,6 +57,9 @@ message Identity {
     // Hostname of a connection endpoint.
     string hostname = 2;
   }
+
+  // Additional attributes of the identity.
+  map<string, string> attributes = 3;
 }
 
 message StartClientHandshakeReq {
@@ -95,6 +98,19 @@ message StartClientHandshakeReq {
 
   // (Optional) RPC protocol versions supported by the client.
   RpcProtocolVersions rpc_versions = 9;
+
+  // (Optional) Maximum frame size supported by the client.
+  uint32 max_frame_size = 10;
+
+  // (Optional) An access token created by GKE MDS only intended for use in
+  // Direct Path connections. The access token that should be used to
+  // authenticate to the peer. The access token MUST be strongly bound to the
+  // ALTS credentials used to establish the connection that the token is sent
+  // over.
+  string access_token = 11 [(datapol.semantic_type) = ST_ACCOUNT_CREDENTIAL];
+
+  // (Optional) Ordered transport protocol preferences supported by the client.
+  TransportProtocolPreferences transport_protocol_preferences = 12;
 }
 
 message ServerHandshakeParameters {
@@ -105,6 +121,12 @@ message ServerHandshakeParameters {
   // (Optional) A list of local identities supported by the server, if
   // specified. Otherwise, the handshaker chooses a default local identity.
   repeated Identity local_identities = 2;
+
+  // An identity token created by GKE MDS only intended for use in Direct Path
+  // connections. The identity token should be used to authenticate to the peer.
+  // It MUST be strongly bound to the ALTS credentials used to establish the
+  // connection that the token is sent over.
+  string token = 3 [features.field_presence = EXPLICIT];
 }
 
 message StartServerHandshakeReq {
@@ -133,6 +155,12 @@ message StartServerHandshakeReq {
 
   // (Optional) RPC protocol versions supported by the server.
   RpcProtocolVersions rpc_versions = 6;
+
+  // (Optional) Maximum frame size supported by the server.
+  uint32 max_frame_size = 7;
+
+  // (Optional) Transport protocol preferences supported by the server.
+  TransportProtocolPreferences transport_protocol_preferences = 8;
 }
 
 message NextHandshakeMessageReq {
@@ -140,6 +168,11 @@ message NextHandshakeMessageReq {
   // that the peer's out_frames are split into multiple NextHandshakerMessageReq
   // messages.
   bytes in_bytes = 1;
+
+  // Number of milliseconds between when the application send the last handshake
+  // message to the peer and when the application received the current handshake
+  // message (in the in_bytes field) from the peer.
+  uint32 network_latency_ms = 2;
 }
 
 message HandshakerReq {
@@ -180,6 +213,12 @@ message HandshakerResult {
 
   // The RPC protocol versions supported by the peer.
   RpcProtocolVersions peer_rpc_versions = 7;
+
+  // The maximum frame size of the peer.
+  uint32 max_frame_size = 8;
+
+  // (Optional) The transport protocol negotiated for this connection.
+  NegotiatedTransportProtocol transport_protocol = 9;
 }
 
 message HandshakerStatus {
@@ -218,7 +257,5 @@ service HandshakerService {
   // messages with next. Each time client sends a request, the handshaker
   // service expects to respond. Client does not have to wait for service's
   // response before sending next request.
-  rpc DoHandshake(stream HandshakerReq)
-      returns (stream HandshakerResp) {
-  }
+  rpc DoHandshake(stream HandshakerReq) returns (stream HandshakerResp) {}
 }
