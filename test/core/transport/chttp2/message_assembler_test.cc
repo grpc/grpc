@@ -309,7 +309,7 @@ TEST(GrpcMessageAssembler, IncompleteMessageHeader) {
 
   assembler.AppendNewDataFrame(frame2, end_stream);
   absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
-  EXPECT_FALSE(result2.ok());
+  EXPECT_TRUE(result2.ok());
   EXPECT_EQ(result2->get()->payload()->Length(), kStr1024.size());
 
   absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
