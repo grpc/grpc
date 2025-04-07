@@ -64,17 +64,6 @@ class Http2ClientTransport final : public ClientTransport {
   // TODO(tjagtap) : [PH2][P3] Move the definitions to the header for better
   // inlining. For now definitions are in the cc file to
   // reduce cognitive load in the header.
-  auto EnqueueOutgoingFrame(Http2Frame frame) {
-    return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame)),
-        [](StatusFlag status) {
-          HTTP2_CLIENT_DLOG
-              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
-          return (status.ok()) ? absl::OkStatus()
-                               : absl::InternalError("Failed to enqueue frame");
-        }));
-  }
-
  public:
   Http2ClientTransport(
       PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
@@ -102,7 +91,14 @@ class Http2ClientTransport final : public ClientTransport {
   void AbortWithError();
 
   auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
-    return EnqueueOutgoingFrame(std::move(frame));
+    return AssertResultType<absl::Status>(Map(
+        outgoing_frames_.MakeSender().Send(std::move(frame)),
+        [](StatusFlag status) {
+          HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
+          return (status.ok()) ? absl::OkStatus()
+                               : absl::InternalError("Failed to enqueue frame");
+        }));
   }
 
  private:
@@ -150,6 +146,18 @@ class Http2ClientTransport final : public ClientTransport {
       CallHandler call_handler, uint32_t stream_id,
       std::tuple<InterActivityMutex<uint32_t>::Lock, ClientMetadataHandle>
           lock_metadata);
+
+  // Returns a promise to enqueue a frame to MPSC
+  auto EnqueueOutgoingFrame(Http2Frame frame) {
+    return AssertResultType<absl::Status>(Map(
+        outgoing_frames_.MakeSender().Send(std::move(frame)),
+        [](StatusFlag status) {
+          HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
+          return (status.ok()) ? absl::OkStatus()
+                               : absl::InternalError("Failed to enqueue frame");
+        }));
+  }
 
   RefCountedPtr<Party> general_party_;
 
