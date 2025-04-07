@@ -25,14 +25,13 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
-#include <mutex>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-#include "channelz.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"

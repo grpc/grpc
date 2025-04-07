@@ -3240,7 +3240,10 @@ grpc_cc_library(
         "util/single_set_ptr.h",
     ],
     external_deps = ["absl/log:check"],
-    deps = ["//:gpr", "//:ref_counted_ptr"],
+    deps = [
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
 )
 
 grpc_cc_library(
@@ -9303,15 +9306,15 @@ grpc_cc_library(
 grpc_cc_library(
     name = "ztrace_collector",
     hdrs = ["channelz/ztrace_collector.h"],
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
     deps = [
-        "//:channelz",
         "single_set_ptr",
         "sync",
-        "time"
+        "time",
+        "//:channelz",
     ],
-    external_deps= [
-        "absl/container:flat_hash_set"
-    ]
 )
 
 ### UPB Targets

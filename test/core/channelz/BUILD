@@ -78,13 +78,13 @@ grpc_cc_test(
 grpc_cc_test(
     name = "ztrace_collector_test",
     srcs = ["ztrace_collector_test.cc"],
-    deps = [
-        "//src/core:ztrace_collector",
-        "//src/core:notification",
-        "//:grpc",
-    ],
-    external_deps= [
+    external_deps = [
         "gtest",
         "gtest_main",
-    ]
+    ],
+    deps = [
+        "//:grpc",
+        "//src/core:notification",
+        "//src/core:ztrace_collector",
+    ],
 )

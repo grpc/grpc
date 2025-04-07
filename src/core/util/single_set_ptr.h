@@ -21,7 +21,6 @@
 #include <memory>
 
 #include "absl/log/check.h"
-#include "ref_counted_ptr.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {

@@ -410,9 +410,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//src/core:notification",
         "//src/core:ref_counted",
         "//src/core:single_set_ptr",
-        "//src/core:notification",
     ],
 )
 
