@@ -287,14 +287,14 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
 class TestZTrace final : public ZTrace {
  public:
   void Run(Timestamp deadline, std::map<std::string, std::string> args,
-           absl::AnyInvocable<void(absl::StatusOr<Json>)> callback) override {
-    grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
-        Duration::Milliseconds(100),
-        [callback = std::move(callback)]() mutable {
-          Json::Object object;
-          object["test"] = Json::FromString("yes");
-          callback(Json::FromObject(std::move(object)));
-        });
+           std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+           absl::AnyInvocable<void(Json)> callback) override {
+    engine->RunAfter(Duration::Milliseconds(100),
+                     [callback = std::move(callback)]() mutable {
+                       Json::Object object;
+                       object["test"] = Json::FromString("yes");
+                       callback(Json::FromObject(std::move(object)));
+                     });
   }
 };
 
@@ -343,13 +343,12 @@ TEST_P(ChannelzChannelTest, ZTrace) {
   TestDataSource data_source(channelz_channel->Ref());
   Notification done;
   std::string json_text;
-  channelz_channel->RunZTrace("test_ztrace",
-                              Timestamp::Now() + Duration::Milliseconds(300),
-                              {}, [&](absl::StatusOr<Json> json) {
-                                ASSERT_TRUE(json.ok()) << json.status();
-                                json_text = JsonDump(*json);
-                                done.Notify();
-                              });
+  channelz_channel->RunZTrace(
+      "test_ztrace", Timestamp::Now() + Duration::Milliseconds(300), {},
+      grpc_event_engine::experimental::GetDefaultEventEngine(), [&](Json json) {
+        json_text = JsonDump(json);
+        done.Notify();
+      });
   done.WaitForNotification();
   EXPECT_EQ(json_text, "{\"test\":\"yes\"}");
 }

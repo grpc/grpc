@@ -76,11 +76,13 @@ void BaseNode::RunZTrace(
     absl::string_view name, Timestamp deadline,
     std::map<std::string, std::string> args,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    absl::AnyInvocable<void(absl::StatusOr<Json> output)> callback) {
+    absl::AnyInvocable<void(Json)> callback) {
   auto fail = [&callback, event_engine](absl::Status status) {
     event_engine->Run(
         [callback = std::move(callback), status = std::move(status)]() mutable {
-          callback(status);
+          Json::Object object;
+          object["status"] = Json::FromString(status.ToString());
+          callback(Json::FromObject(std::move(object)));
         });
   };
   std::unique_ptr<ZTrace> ztrace;

@@ -108,12 +108,11 @@ class BaseNode : public RefCounted<BaseNode> {
   intptr_t uuid() const { return uuid_; }
   const std::string& name() const { return name_; }
 
-  void RunZTrace(
-      absl::string_view name, Timestamp deadline,
-      std::map<std::string, std::string> args,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      absl::AnyInvocable<void(absl::StatusOr<Json> output)> callback);
+  void RunZTrace(absl::string_view name, Timestamp deadline,
+                 std::map<std::string, std::string> args,
+                 std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                     event_engine,
+                 absl::AnyInvocable<void(Json output)> callback);
 
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
