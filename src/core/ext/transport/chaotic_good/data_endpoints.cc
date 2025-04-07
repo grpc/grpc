@@ -246,7 +246,9 @@ auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
 Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                    RefCountedPtr<InputQueue> input_queues,
                    PendingConnection pending_connection, bool enable_tracing,
-                   grpc_event_engine::experimental::EventEngine* event_engine) {
+                   grpc_event_engine::experimental::EventEngine* event_engine,
+                   std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+                       stats_plugin_group) {
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   arena->SetContext(event_engine);
   party_ = Party::Make(arena);
@@ -255,12 +257,14 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
       [id, enable_tracing, output_buffers = std::move(output_buffers),
        input_queues = std::move(input_queues),
        pending_connection = std::move(pending_connection),
-       arena = std::move(arena)]() mutable {
+       arena = std::move(arena),
+       stats_plugin_group = std::move(stats_plugin_group)]() mutable {
         return TrySeq(
             pending_connection.Await(),
             [id, enable_tracing, output_buffers = std::move(output_buffers),
-             input_queues = std::move(input_queues),
-             arena = std::move(arena)](PromiseEndpoint ep) mutable {
+             input_queues = std::move(input_queues), arena = std::move(arena),
+             stats_plugin_group =
+                 std::move(stats_plugin_group)](PromiseEndpoint ep) mutable {
               GRPC_TRACE_LOG(chaotic_good, INFO)
                   << "CHAOTIC_GOOD: data endpoint " << id << " to "
                   << grpc_event_engine::experimental::ResolvedAddressToString(
@@ -277,7 +281,8 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                     grpc_event_engine::experimental::TcpTraceExtension>(
                     endpoint->GetEventEngineEndpoint().get());
                 if (epte != nullptr) {
-                  epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>());
+                  epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
+                      std::move(stats_plugin_group)));
                 }
               }
               auto read_party = Party::Make(std::move(arena));
@@ -303,6 +308,8 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
 DataEndpoints::DataEndpoints(
     std::vector<PendingConnection> endpoints_vec,
     grpc_event_engine::experimental::EventEngine* event_engine,
+    std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group,
     bool enable_tracing, data_endpoints_detail::Clock* clock)
     : output_buffers_(
           MakeRefCounted<data_endpoints_detail::OutputBuffers>(clock)),
@@ -311,7 +318,7 @@ DataEndpoints::DataEndpoints(
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(i, output_buffers_, input_queues_,
                             std::move(endpoints_vec[i]), enable_tracing,
-                            event_engine);
+                            event_engine, stats_plugin_group);
   }
 }
 

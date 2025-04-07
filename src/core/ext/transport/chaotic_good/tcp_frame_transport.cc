@@ -78,10 +78,12 @@ std::string TcpFrameHeader::ToString() const {
 TcpFrameTransport::TcpFrameTransport(
     Options options, PromiseEndpoint control_endpoint,
     std::vector<PendingConnection> pending_data_endpoints,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group)
     : control_endpoint_(std::move(control_endpoint), event_engine.get()),
       data_endpoints_(std::move(pending_data_endpoints), event_engine.get(),
-                      options.enable_tracing),
+                      std::move(stats_plugin_group), options.enable_tracing),
       options_(options) {}
 
 auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
