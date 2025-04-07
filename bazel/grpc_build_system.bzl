@@ -251,7 +251,7 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
             "@platforms//os:macos": [name + "_universal"],
             "//conditions:default": [name + "_native"],
         }),
-        outs = [name],
+        outs = [name + "_binary"],
         cmd = "cp $< $@",
         executable = True,
     )
