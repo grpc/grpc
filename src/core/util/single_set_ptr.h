@@ -96,6 +96,7 @@ class SingleSetRefCountedPtr {
     if (p == nullptr) p = Set(MakeRefCounted<T>());
     return p->Ref();
   }
+  T* Get() const { return p_.Get(); }
 
   T* operator->() const {
     T* p = Get();
@@ -110,7 +111,6 @@ class SingleSetRefCountedPtr {
     void operator()(T* p) { p->Unref(); }
   };
 
-  T* Get() const { return p_.Get(); }
   T* Set(RefCountedPtr<T> p) { return p_.Set(p.release()); }
 
   SingleSetPtr<T, UnrefDeleter> p_;

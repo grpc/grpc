@@ -22,32 +22,41 @@
 #include "absl/container/flat_hash_set.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/single_set_ptr.h"
+#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
 namespace grpc_core::channelz {
 
 namespace ztrace_collector_detail {
+
 template <typename T>
-void AppendResults(const std::vector<std::pair<gpr_cycle_counter, T>>& data,
-                   Json::Array& results) {
+using Collection = std::deque<std::pair<gpr_cycle_counter, T>>;
+
+template <typename T>
+void AppendResults(const Collection<T>& data, Json::Array& results) {
   for (const auto& value : data) {
     Json::Object object;
     object["timestamp"] = Json::FromString(
-        gpr_format_timespec(gpr_cycle_counter_to_time(data.first)));
-    data.second.RenderJson(object);
+        gpr_format_timespec(gpr_cycle_counter_to_time(value.first)));
+    value.second.RenderJson(object);
     results.emplace_back(Json::FromObject(std::move(object)));
   }
 }
+
 }  // namespace ztrace_collector_detail
 
 template <typename Config, typename... Data>
 class ZTraceCollector {
  public:
-  template <typename F>
-  void Append(F producer) {
+  template <typename X>
+  void Append(X producer_or_value) {
     if (!impl_.is_set()) return;
-    AppendValue(producer());
+    if constexpr (std::is_invocable_v<X>) {
+      AppendValue(producer_or_value());
+    } else {
+      AppendValue(std::move(producer_or_value));
+    }
   }
 
   std::unique_ptr<ZTrace> MakeZTrace() {
@@ -55,36 +64,36 @@ class ZTraceCollector {
   }
 
  private:
+  template <typename T>
+  using Collection = ztrace_collector_detail::Collection<T>;
+
   struct Instance : public RefCounted<Instance> {
     Instance(std::map<std::string, std::string> args,
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                  event_engine,
-             absl::AnyInvocable<void(absl::StatusOr<Json> output)> done)
+             absl::AnyInvocable<void(Json)> done)
         : config(std::move(args)),
           event_engine(std::move(event_engine)),
           done(std::move(done)) {}
     void Finish(absl::Status status) {
-      if (status.ok()) {
-        event_engine->Run([data = std::move(data),
-                           done = std::move(done)]() mutable {
-          Json::Array results;
-          (ztrace_collector_detail::AppendResults(
-               std::get<std::vector<std::pair<gpr_cycle_counter, Data>>>(data),
-               results),
-           ...);
-          done(Json::FromArray(std::move(results)));
-        });
-      } else {
-        event_engine->Run([status = std::move(status), data = std::move(data),
-                           done = std::move(done)]() mutable { done(status); });
-      }
+      event_engine->Run([data = std::move(data), done = std::move(done),
+                         status = std::move(status)]() mutable {
+        Json::Array entries;
+        (ztrace_collector_detail::AppendResults(
+             std::get<Collection<Data>>(data), entries),
+         ...);
+        Json::Object result;
+        result["entries"] = Json::FromArray(entries);
+        result["status"] = Json::FromString(status.ToString());
+        done(Json::FromObject(std::move(result)));
+      });
     }
     Config config;
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
     grpc_event_engine::experimental::EventEngine::TaskHandle task_handle{
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid};
-    std::tuple<std::vector<std::pair<gpr_cycle_counter, Data>...>> data;
-    absl::AnyInvocable<void(absl::StatusOr<Json> output)> done;
+    std::tuple<Collection<Data>...> data;
+    absl::AnyInvocable<void(Json)> done;
   };
   struct Impl : public RefCounted<Impl> {
     Mutex mu;
@@ -92,17 +101,18 @@ class ZTraceCollector {
   };
   class ZTraceImpl final : public ZTrace {
    public:
-    explicit ZTraceImpl(RefCountedPtr<Impl> impl);
+    explicit ZTraceImpl(RefCountedPtr<Impl> impl) : impl_(std::move(impl)) {}
 
     void Run(Timestamp deadline, std::map<std::string, std::string> args,
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                  event_engine,
-             absl::AnyInvocable<void(absl::StatusOr<Json> output)> callback) {
-      auto instance = MakeRefCounted<Instance>(
-          std::move(args), std::move(event_engine), std::move(callback));
-      MutexLock lock(&impl_->mu);
-      instance->task_handle =
-          event_engine->RunAfter(deadline, [instance, impl = impl_]() {
+             absl::AnyInvocable<void(Json)> callback) {
+      auto instance = MakeRefCounted<Instance>(std::move(args), event_engine,
+                                               std::move(callback));
+      auto impl = std::move(impl_);
+      MutexLock lock(&impl->mu);
+      instance->task_handle = event_engine->RunAfter(
+          deadline - Timestamp::Now(), [instance, impl]() {
             bool finish;
             {
               MutexLock lock(&impl->mu);
@@ -110,7 +120,7 @@ class ZTraceCollector {
             }
             if (finish) instance->Finish(absl::DeadlineExceededError(""));
           });
-      impl_->instances.insert(instance);
+      impl->instances.insert(instance);
     }
 
    private:
@@ -121,21 +131,36 @@ class ZTraceCollector {
   void AppendValue(T&& data) {
     auto value = std::pair(gpr_get_cycle_counter(), std::forward<T>(data));
     auto* impl = impl_.Get();
-    std::vector<RefCountedPtr<Instance>> finished;
     {
       MutexLock lock(&impl->mu);
-      for (auto& instance : impl->instances) {
-        std::get<std::vector<T>>(instance.data).push_back(data);
-        if (instance.config.Finishes(instance.data)) {
-          finished.push_back(instance);
+      switch (impl->instances.size()) {
+        case 0:
+          return;
+        case 1: {
+          auto& instances = impl->instances;
+          auto& instance = *instances.begin();
+          const bool finishes = instance->config.Finishes(value.second);
+          std::get<Collection<T>>(instance->data).push_back(std::move(value));
+          if (finishes) {
+            instance->Finish(absl::OkStatus());
+            instances.clear();
+          }
+        } break;
+        default: {
+          std::vector<RefCountedPtr<Instance>> finished;
+          for (auto& instance : impl->instances) {
+            const bool finishes = instance->config.Finishes(value.second);
+            std::get<Collection<T>>(instance->data).push_back(value);
+            if (finishes) {
+              finished.push_back(instance);
+            }
+          }
+          for (const auto& instance : finished) {
+            instance->Finish(absl::OkStatus());
+            impl->instances.erase(instance);
+          }
         }
       }
-      for (const auto& instance : finished) {
-        impl->instances.erase(instance);
-      }
-    }
-    for (const auto& instance : finished) {
-      instance->Finish(std::move(data));
     }
   }
 

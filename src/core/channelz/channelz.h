@@ -137,7 +137,7 @@ class ZTrace {
   virtual void Run(Timestamp deadline, std::map<std::string, std::string> args,
                    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                        event_engine,
-                   absl::AnyInvocable<void(absl::StatusOr<Json> output)>) = 0;
+                   absl::AnyInvocable<void(Json)>) = 0;
 };
 
 class DataSource {
