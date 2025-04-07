@@ -7591,7 +7591,7 @@ grpc_cc_library(
         "channel_args",
         "check_class_size",
         "grpc_promise_endpoint",
-        "header_assembler"
+        "header_assembler",
         "http2_settings",
         "http2_status",
         "http2_transport",
