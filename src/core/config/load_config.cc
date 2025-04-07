@@ -72,7 +72,8 @@ std::string LoadConfig(const absl::Flag<std::vector<std::string>>& flag,
   if (override.has_value()) return *override;
   auto from_flag = absl::GetFlag(flag);
   if (!from_flag.empty()) return absl::StrJoin(from_flag, ",");
-  return LoadConfigFromEnv(environment_variable, default_value);
+  //return LoadConfigFromEnv(environment_variable, default_value);
+  return default_value;
 }
 
 }  // namespace grpc_core
