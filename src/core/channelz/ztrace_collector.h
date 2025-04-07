@@ -46,6 +46,26 @@ void AppendResults(const Collection<T>& data, Json::Array& results) {
 
 }  // namespace ztrace_collector_detail
 
+// Generic collector infrastructure for ztrace queries.
+// Abstracts away most of the ztrace requirements in an efficient manner,
+// allowing system authors to concentrate on emitting useful data.
+// If no trace is performed, overhead is one pointer and one relaxed atomic read
+// per trace event.
+//
+// Two kinds of objects are required:
+// 1. A `Config`
+//    - This type should be constructible with a std::map<std::string,
+//    std::string>
+//      and provides overall query configuration - the map can be used to pull
+//      predicates from the calling system.
+//    - Needs a `bool Finishes(T)` method for each Data type (see 2).
+//      This allows the config to terminate a query in the event of reaching
+//      some configured predicate.
+// 2. N `Data` types
+//    - One for each kind of data captured in the trace
+//    - Allows avoiding e.g. variant<> data types; these are inefficient
+//      in this context because they force every recorded entry to use the
+//      same number of bytes whilst pending.
 template <typename Config, typename... Data>
 class ZTraceCollector {
  public:
