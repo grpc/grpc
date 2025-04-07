@@ -133,24 +133,8 @@ class Parser {
   const std::string name_ = "\"name\":";
 };
 
-/**
- * * MinifyJson
- * Minifies a JSON string by removing all whitespace characters outside of
- * strings. This function is useful for reducing the size of JSON data,
- * especially when transmitting or storing it.
- *
- * @param json The input JSON string to be minified.
- * @return A minified version of the input JSON string.
- *
- * Example usage:
- * std::string json = R"({"key": "value", "array": [1, 2, 3]})";
- * std::string minified = MinifyJson(json);
- * // minified will be: {"key":"value","array":[1,2,3]}
- *
- * @see https://en.wikipedia.org/wiki/JSON
- * @see https://tools.ietf.org/html/rfc8259
- * @see https://www.json.org/json-en.html
- */
+// Minifies a JSON string by removing all whitespace characters outside of 
+// strings.
 std::string MinifyJson(const std::string& json) {
   std::regex whitespaceOutsideQuotes(R"(\s+(?=(?:(?:[^"]*"){2})*[^"]*$))");
   // Replace all matches with an empty string
