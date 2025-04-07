@@ -86,10 +86,17 @@ TEST(SpiffeId, TrustDomainTooLongFails) {
           "Trust domain maximum length is 255 characters"));
 }
 
-TEST(SpiffeId, TrustDomainInvalidCharacterFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://bad@domain").status(),
+TEST(SpiffeId, TrustDomainWithUserInfoFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://domain@userinfo").status(),
             absl::InvalidArgumentError(
                 "Trust domain contains invalid character @. MUST contain only "
+                "lowercase letters, numbers, dots, dashes, and underscores"));
+}
+
+TEST(SpiffeId, TrustDomainInvalidCharacterFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://foo$bar").status(),
+            absl::InvalidArgumentError(
+                "Trust domain contains invalid character $. MUST contain only "
                 "lowercase letters, numbers, dots, dashes, and underscores"));
 }
 

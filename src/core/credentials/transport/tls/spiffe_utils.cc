@@ -111,25 +111,24 @@ absl::Status ValidatePath(absl::string_view path) {
     return absl::OkStatus();
   }
   for (absl::string_view segment : absl::StrSplit(path, '/')) {
-    if (absl::Status status = ValidatePathSegment(segment); !status.ok()) {
-      return status;
-    }
+    GRPC_RETURN_IF_ERROR(ValidatePathSegment(segment));
   }
   return absl::OkStatus();
 }
 
 }  // namespace
 
-absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view uri) {
-  GRPC_RETURN_IF_ERROR(DoInitialUriValidation(uri));
-  if (!absl::StartsWithIgnoreCase(uri, kSpiffePrefix)) {
+absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
+  GRPC_RETURN_IF_ERROR(DoInitialUriValidation(input));
+  if (!absl::StartsWithIgnoreCase(input, kSpiffePrefix)) {
     return absl::InvalidArgumentError("SPIFFE ID must start with spiffe://");
   }
-  if (absl::EndsWith(uri, /*suffix=*/"/")) {
+  if (absl::EndsWith(input, /*suffix=*/"/")) {
     return absl::InvalidArgumentError("SPIFFE ID cannot end with a /");
   }
   // The input definitely starts with spiffe://
-  absl::string_view trust_domain_and_path = uri.substr(kSpiffePrefix.length());
+  absl::string_view trust_domain_and_path =
+      input.substr(kSpiffePrefix.length());
   absl::string_view trust_domain;
   absl::string_view path;
   if (absl::StartsWith(trust_domain_and_path, "/")) {

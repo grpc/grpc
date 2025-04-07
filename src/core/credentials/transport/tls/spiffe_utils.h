@@ -30,9 +30,9 @@ namespace grpc_core {
 // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#the-spiffe-identity-and-verifiable-identity-document
 class SpiffeId {
  public:
-  // Build a SPIFFE ID from a string. Returns a bad status if the input cannot
-  // be parsed to a valid SPIFFE ID.
-  static absl::StatusOr<SpiffeId> FromString(absl::string_view uri);
+  // Parses the input string as a SPIFFE ID, and returns an error status if the
+  // input string is not a valid SPIFFE ID.
+  static absl::StatusOr<SpiffeId> FromString(absl::string_view input);
   // Returns the trust domain of the SPIFFE ID
   absl::string_view trust_domain() { return trust_domain_; }
   // Returns the path of the SPIFFE ID
