@@ -293,8 +293,7 @@ TEST(Frame, ParseHttp2GoawayFrame) {
                  /* Type (1 octet) */ 7,
                  /* Unused Flags (1 octet) */ 0,
                  /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                 /* Reserved (1 bit)
-                    Last-Stream-ID (31 bits) */
+                 /* Reserved (1 bit) Last-Stream-ID (31 bits) */
                  0x12, 0x34, 0x56, 0x78,
                  /* Error Code (4 octets) */ 0, 0, 0, 0x0b,
                  /* Additional Debug Data */ 'h', 'e', 'l', 'l', 'o'),
@@ -308,8 +307,7 @@ TEST(Frame, ParseHttp2WindowUpdateFrame) {
                        /* Type (1 octet) */ 8,
                        /* Unused Flags (1 octet) */ 0,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                       /* Reserved (1 bit)
-                          Window Size Increment (31 bits) */
+                       /* Reserved (1 bit) Window Size Increment (31 bits) */
                        0x12, 0x34, 0x56, 0x78),
             Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
 }
