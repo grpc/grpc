@@ -7706,6 +7706,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "message_assembler",
+    hdrs = [
+        "ext/transport/chttp2/transport/header_assembler.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+        ":slice",
+        ":slice_buffer",
+        "//:chttp2_frame",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2_alpn",
     srcs = [
         "ext/transport/chttp2/alpn/alpn.cc",
