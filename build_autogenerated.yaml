@@ -7435,6 +7435,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -7462,6 +7463,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - src/cpp/ext/chaotic_good.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -7484,6 +7486,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - src/cpp/ext/chaotic_good.cc
   - test/cpp/ext/chaotic_good_test.cc
   deps:
@@ -8249,6 +8252,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -8276,6 +8280,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8321,6 +8326,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_chaotic_good_config.cc
@@ -8367,6 +8373,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -8394,6 +8401,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8439,6 +8447,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_chaotic_good_config.cc
@@ -8573,6 +8582,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -8600,6 +8610,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8645,6 +8656,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_config.cc
@@ -8687,6 +8699,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -8714,6 +8727,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8759,6 +8773,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_security_config.cc
@@ -8801,6 +8816,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -8828,6 +8844,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8873,6 +8890,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_security_config.cc
@@ -9003,6 +9021,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -9030,6 +9049,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9075,6 +9095,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_config.cc
@@ -9205,6 +9226,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -9232,6 +9254,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9277,6 +9300,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_inproc_config.cc
@@ -9319,6 +9343,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -9346,6 +9371,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9391,6 +9417,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_inproc_config.cc
@@ -9521,6 +9548,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -9548,6 +9576,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9593,6 +9622,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_posix_config.cc
@@ -9635,6 +9665,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -9662,6 +9693,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9707,6 +9739,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_posix_config.cc
@@ -11662,6 +11695,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -11689,6 +11723,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
@@ -11732,6 +11767,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc

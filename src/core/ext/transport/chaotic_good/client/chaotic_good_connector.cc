@@ -183,7 +183,7 @@ class SettingsHandshake : public RefCounted<SettingsHandshake> {
           return TcpFrameHeader::Parse(frame_header.data());
         },
         [this](TcpFrameHeader frame_header) {
-          if (frame_header.payload_connection_id != 0) {
+          if (frame_header.payload_tag != 0) {
             return absl::InternalError("Unexpected connection id in frame");
           }
           server_header_ = frame_header.header;

@@ -66,6 +66,21 @@ grpc_fuzz_test(
 )
 
 grpc_fuzz_test(
+    name = "serialize_little_endian_test",
+    srcs = ["serialize_little_endian_test.cc"],
+    external_deps = [
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        "//:grpc",
+        "//src/core:chaotic_good_serialize_little_endian",
+    ],
+)
+
+grpc_fuzz_test(
     name = "tcp_frame_transport_test",
     srcs = ["tcp_frame_transport_test.cc"],
     external_deps = [

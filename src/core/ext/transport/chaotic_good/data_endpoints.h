@@ -16,42 +16,128 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_DATA_ENDPOINTS_H
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/seq_bit_set.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
 namespace data_endpoints_detail {
 
+struct DataFrameHeader {
+  enum { kFrameHeaderSize = 20 };
+  uint64_t payload_tag;
+  uint64_t send_timestamp;
+  uint32_t payload_length;
+
+  // Parses a frame header from a buffer of kFrameHeaderSize bytes. All
+  // kFrameHeaderSize bytes are consumed.
+  static absl::StatusOr<DataFrameHeader> Parse(const uint8_t* data);
+  // Serializes a frame header into a buffer of kFrameHeaderSize bytes.
+  void Serialize(uint8_t* data) const;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const DataFrameHeader& frame) {
+    sink.Append(absl::StrCat("DataFrameHeader{payload_tag:", frame.payload_tag,
+                             ",send_timestamp:", frame.send_timestamp,
+                             ",payload_length:", frame.payload_length, "}"));
+  }
+};
+
+class Clock {
+ public:
+  virtual uint64_t Now() = 0;
+
+ protected:
+  ~Clock() = default;
+};
+
+class SendRate {
+ public:
+  explicit SendRate(
+      double initial_rate = 1.25 /*10 gigabits/sec in bytes/nanosec*/)
+      : current_rate_(initial_rate) {}
+  void StartSend(uint64_t current_time, uint64_t send_size) {
+    CHECK_NE(current_time, 0u);
+    send_start_time_ = current_time;
+    send_size_ = send_size;
+  }
+  void MaybeCompleteSend(uint64_t current_time) {
+    if (send_start_time_ == 0) return;
+    if (current_time > send_start_time_) {
+      const double rate = static_cast<double>(send_size_) /
+                          static_cast<double>(current_time - send_start_time_);
+      current_rate_ = 0.9 * current_rate_ + 0.1 * rate;
+    }
+    send_start_time_ = 0;
+  }
+  double DeliveryTime(uint64_t current_time, size_t bytes) {
+    // start time relative to the current time for this send
+    double start_time = 0.0;
+    if (send_start_time_ != 0) {
+      // Use integer subtraction to avoid rounding errors, getting everything
+      // with a zero base of 'now' to maximize precision.
+      // Since we have uint64_ts and want a signed double result we need to
+      // care about argument ordering to get a valid result.
+      const double send_start_time_relative_to_now =
+          current_time > send_start_time_
+              ? -static_cast<double>(current_time - send_start_time_)
+              : static_cast<double>(send_start_time_ - current_time);
+      const double predicted_end_time =
+          send_start_time_relative_to_now + current_rate_ * send_size_;
+      if (predicted_end_time > start_time) start_time = predicted_end_time;
+    }
+    return start_time + bytes / current_rate_;
+  }
+
+ private:
+  uint64_t send_start_time_ = 0;
+  uint64_t send_size_ = 0;
+  double current_rate_;  // bytes per nanosecond
+};
+
 // Buffered writes for one data endpoint
 class OutputBuffer {
  public:
-  bool Accept(SliceBuffer& buffer);
+  std::optional<double> DeliveryTime(uint64_t current_time, size_t bytes);
+  SliceBuffer& pending() { return pending_; }
   Waker TakeWaker() { return std::move(flush_waker_); }
   void SetWaker() {
     flush_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
   }
   bool HavePending() const { return pending_.Length() > 0; }
-  SliceBuffer TakePending() { return std::move(pending_); }
+  SliceBuffer TakePendingAndStartWrite(uint64_t current_time) {
+    send_rate_.StartSend(current_time, pending_.Length());
+    return std::move(pending_);
+  }
+  void MaybeCompleteSend(uint64_t current_time) {
+    send_rate_.MaybeCompleteSend(current_time);
+  }
 
  private:
   Waker flush_waker_;
-  size_t pending_max_ = 1024 * 1024;
+  size_t pending_max_ = 64 * 1024 * 1024;
   SliceBuffer pending_;
+  SendRate send_rate_;
 };
 
 // The set of output buffers for all connected data endpoints
 class OutputBuffers : public RefCounted<OutputBuffers> {
  public:
-  auto Write(SliceBuffer output_buffer) {
-    return [output_buffer = std::move(output_buffer), this]() mutable {
-      return PollWrite(output_buffer);
+  explicit OutputBuffers(Clock* clock) : clock_(clock) {}
+
+  auto Write(uint64_t payload_tag, SliceBuffer output_buffer) {
+    return [payload_tag, send_time = clock_->Now(),
+            output_buffer = std::move(output_buffer), this]() mutable {
+      return PollWrite(payload_tag, send_time, output_buffer);
     };
   }
 
@@ -66,16 +152,18 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
   }
 
  private:
-  Poll<uint32_t> PollWrite(SliceBuffer& output_buffer);
+  Poll<Empty> PollWrite(uint64_t payload_tag, uint64_t send_time,
+                        SliceBuffer& output_buffer);
   Poll<SliceBuffer> PollNext(uint32_t connection_id);
 
   Mutex mu_;
   std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
   std::atomic<uint32_t> ready_endpoints_{0};
+  Clock* const clock_;
 };
 
-class InputQueues : public RefCounted<InputQueues> {
+class InputQueue : public RefCounted<InputQueue> {
  public:
   // One outstanding read.
   // ReadTickets get filed by read requests, and all tickets are fullfilled
@@ -86,91 +174,74 @@ class InputQueues : public RefCounted<InputQueues> {
   // cause data corruption for other calls.
   class ReadTicket {
    public:
-    ReadTicket(absl::StatusOr<uint64_t> ticket,
-               RefCountedPtr<InputQueues> input_queues)
-        : ticket_(std::move(ticket)), input_queues_(std::move(input_queues)) {}
+    ReadTicket(ValueOrFailure<uint64_t> payload_tag,
+               RefCountedPtr<InputQueue> input_queues)
+        : payload_tag_(payload_tag), input_queues_(std::move(input_queues)) {}
 
     ReadTicket(const ReadTicket&) = delete;
     ReadTicket& operator=(const ReadTicket&) = delete;
     ReadTicket(ReadTicket&& other) noexcept
-        : ticket_(std::move(other.ticket_)),
+        : payload_tag_(std::exchange(other.payload_tag_, 0)),
           input_queues_(std::move(other.input_queues_)) {}
     ReadTicket& operator=(ReadTicket&& other) noexcept {
-      ticket_ = std::move(other.ticket_);
+      payload_tag_ = std::exchange(other.payload_tag_, 0);
       input_queues_ = std::move(other.input_queues_);
       return *this;
     }
 
     ~ReadTicket() {
-      if (input_queues_ != nullptr && ticket_.ok()) {
-        input_queues_->CancelTicket(*ticket_);
+      if (input_queues_ != nullptr && payload_tag_.ok() && *payload_tag_ != 0) {
+        input_queues_->Cancel(*payload_tag_);
       }
     }
 
     auto Await() {
       return If(
-          ticket_.ok(),
-          [&]() {
-            return
-                [ticket = *ticket_, input_queues = std::move(input_queues_)]() {
-                  return input_queues->PollRead(ticket);
-                };
+          payload_tag_.ok(),
+          [this]() {
+            return [input_queues = input_queues_,
+                    payload_tag = std::exchange(*payload_tag_, 0)]() {
+              return input_queues->PollRead(payload_tag);
+            };
           },
-          [&]() {
-            return Immediate(absl::StatusOr<SliceBuffer>(ticket_.status()));
+          []() {
+            return []() -> absl::StatusOr<SliceBuffer> {
+              return absl::InternalError("Duplicate read of tagged payload");
+            };
           });
     }
 
    private:
-    absl::StatusOr<uint64_t> ticket_;
-    RefCountedPtr<InputQueues> input_queues_;
+    ValueOrFailure<uint64_t> payload_tag_;
+    RefCountedPtr<InputQueue> input_queues_;
   };
 
-  struct ReadRequest {
-    size_t length;
-    uint64_t ticket;
-
-    template <typename Sink>
-    friend void AbslStringify(Sink& sink, const ReadRequest& req) {
-      sink.Append(absl::StrCat("read#", req.ticket, ":", req.length, "b"));
-    }
-  };
-
-  explicit InputQueues();
-
-  ReadTicket Read(uint32_t connection_id, size_t length) {
-    return ReadTicket(CreateTicket(connection_id, length), Ref());
+  InputQueue() {
+    read_requested_.Set(0);
+    read_completed_.Set(0);
   }
 
-  auto Next(uint32_t connection_id) {
-    return [this, connection_id]() { return PollNext(connection_id); };
-  }
-
-  void CompleteRead(uint64_t ticket, absl::StatusOr<SliceBuffer> buffer);
-
-  void CancelTicket(uint64_t ticket);
-
-  void AddEndpoint(uint32_t connection_id);
+  ReadTicket Read(uint64_t payload_tag);
+  void CompleteRead(uint64_t payload_tag, absl::StatusOr<SliceBuffer> buffer);
+  void Cancel(uint64_t payload_tag);
 
  private:
-  using ReadState = std::variant<absl::StatusOr<SliceBuffer>, Waker>;
+  struct Cancelled {};
 
-  absl::StatusOr<uint64_t> CreateTicket(uint32_t connection_id, size_t length);
-  Poll<absl::StatusOr<SliceBuffer>> PollRead(uint64_t ticket);
-  Poll<std::vector<ReadRequest>> PollNext(uint32_t connection_id);
+  Poll<absl::StatusOr<SliceBuffer>> PollRead(uint64_t payload_tag);
 
   Mutex mu_;
-  uint64_t next_ticket_id_ ABSL_GUARDED_BY(mu_) = 0;
-  std::vector<std::vector<ReadRequest>> read_requests_ ABSL_GUARDED_BY(mu_);
-  std::vector<Waker> read_request_waker_;
-  absl::flat_hash_map<uint64_t, ReadState> outstanding_reads_
+  SeqBitSet read_requested_ ABSL_GUARDED_BY(mu_);
+  SeqBitSet read_completed_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<uint64_t, Waker> read_wakers_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<uint64_t, absl::StatusOr<SliceBuffer>> read_buffers_
       ABSL_GUARDED_BY(mu_);
 };
 
 class Endpoint final {
  public:
   Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
-           RefCountedPtr<InputQueues> input_queues,
+           RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
            grpc_event_engine::experimental::EventEngine* event_engine);
 
@@ -178,7 +249,7 @@ class Endpoint final {
   static auto WriteLoop(uint32_t id,
                         RefCountedPtr<OutputBuffers> output_buffers,
                         std::shared_ptr<PromiseEndpoint> endpoint);
-  static auto ReadLoop(uint32_t id, RefCountedPtr<InputQueues> input_queues,
+  static auto ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
                        std::shared_ptr<PromiseEndpoint> endpoint);
 
   RefCountedPtr<Party> party_;
@@ -189,12 +260,13 @@ class Endpoint final {
 // Collection of data connections.
 class DataEndpoints {
  public:
-  using ReadTicket = data_endpoints_detail::InputQueues::ReadTicket;
+  using ReadTicket = data_endpoints_detail::InputQueue::ReadTicket;
 
   explicit DataEndpoints(
       std::vector<PendingConnection> endpoints,
       grpc_event_engine::experimental::EventEngine* event_engine,
-      bool enable_tracing);
+      bool enable_tracing,
+      data_endpoints_detail::Clock* clock = DefaultClock());
 
   // Try to queue output_buffer against a data endpoint.
   // Returns a promise that resolves to the data endpoint connection id
@@ -202,19 +274,28 @@ class DataEndpoints {
   // Connection ids returned by this class are 0 based (which is different
   // to how chaotic good communicates them on the wire - those are 1 based
   // to allow for the control channel identification)
-  auto Write(SliceBuffer output_buffer) {
-    return output_buffers_->Write(std::move(output_buffer));
+  auto Write(uint64_t tag, SliceBuffer output_buffer) {
+    return output_buffers_->Write(tag, std::move(output_buffer));
   }
 
-  ReadTicket Read(uint32_t connection_id, uint32_t length) {
-    return input_queues_->Read(connection_id, length);
-  }
+  ReadTicket Read(uint64_t tag) { return input_queues_->Read(tag); }
 
   bool empty() const { return output_buffers_->ReadyEndpoints() == 0; }
 
  private:
+  static data_endpoints_detail::Clock* DefaultClock() {
+    class ClockImpl final : public data_endpoints_detail::Clock {
+     public:
+      uint64_t Now() override {
+        return std::chrono::steady_clock::now().time_since_epoch().count();
+      }
+    };
+    static ClockImpl clock;
+    return &clock;
+  }
+
   RefCountedPtr<data_endpoints_detail::OutputBuffers> output_buffers_;
-  RefCountedPtr<data_endpoints_detail::InputQueues> input_queues_;
+  RefCountedPtr<data_endpoints_detail::InputQueue> input_queues_;
   Mutex mu_;
   std::vector<data_endpoints_detail::Endpoint> endpoints_ ABSL_GUARDED_BY(mu_);
 };
