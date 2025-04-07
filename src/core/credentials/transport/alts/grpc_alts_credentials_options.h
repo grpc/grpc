@@ -32,15 +32,22 @@ typedef struct grpc_alts_credentials_options_vtable {
   void (*destruct)(grpc_alts_credentials_options* options);
 } grpc_alts_credentials_options_vtable;
 
-struct grpc_alts_credentials_options {
-  const struct grpc_alts_credentials_options_vtable* vtable;
-  grpc_gcp_rpc_protocol_versions rpc_versions;
-};
-
 typedef struct target_service_account {
   struct target_service_account* next;
   char* data;
 } target_service_account;
+
+typedef struct transport_protocol_preferences {
+  struct transport_protocol_preferences* next;
+  char* data;
+} transport_protocol_preferences;
+
+struct grpc_alts_credentials_options {
+  const struct grpc_alts_credentials_options_vtable* vtable;
+  grpc_gcp_rpc_protocol_versions rpc_versions;
+  transport_protocol_preferences* transport_protocol_preferences_head;
+  transport_protocol_preferences* transport_protocol_preferences_last;
+};
 
 ///
 /// Main struct for ALTS client credentials options. The options contain a
@@ -70,5 +77,9 @@ typedef struct grpc_alts_credentials_server_options {
 ///
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options);
+
+bool grpc_gcp_transport_protocol_preference_copy(
+    const grpc_alts_credentials_options* src,
+    grpc_alts_credentials_options* dst);
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H
