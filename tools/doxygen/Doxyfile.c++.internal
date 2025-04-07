@@ -1368,6 +1368,7 @@ src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser_table.h \
 src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
+src/core/ext/transport/chttp2/transport/http2_status.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
@@ -2629,7 +2630,6 @@ src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.cc \
 src/core/lib/transport/error_utils.h \
-src/core/lib/transport/http2_errors.h \
 src/core/lib/transport/status_conversion.cc \
 src/core/lib/transport/status_conversion.h \
 src/core/lib/transport/timeout_encoding.cc \
@@ -2752,6 +2752,8 @@ src/core/service_config/service_config_parser.cc \
 src/core/service_config/service_config_parser.h \
 src/core/telemetry/call_tracer.cc \
 src/core/telemetry/call_tracer.h \
+src/core/telemetry/default_tcp_tracer.cc \
+src/core/telemetry/default_tcp_tracer.h \
 src/core/telemetry/histogram_view.cc \
 src/core/telemetry/histogram_view.h \
 src/core/telemetry/metrics.cc \
