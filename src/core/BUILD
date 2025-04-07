@@ -7591,6 +7591,7 @@ grpc_cc_library(
         "channel_args",
         "check_class_size",
         "grpc_promise_endpoint",
+        "header_assembler"
         "http2_settings",
         "http2_status",
         "http2_transport",
@@ -7706,7 +7707,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "message_assembler",
+    name = "header_assembler",
     hdrs = [
         "ext/transport/chttp2/transport/header_assembler.h",
     ],
