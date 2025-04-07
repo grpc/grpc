@@ -49,18 +49,6 @@ typedef struct target_service_account {
   char* data;
 } target_service_account;
 
-typedef struct transport_protocol_preferences {
-  struct transport_protocol_preferences* next;
-  char* data;
-} transport_protocol_preferences;
-
-struct grpc_alts_credentials_options {
-  const struct grpc_alts_credentials_options_vtable* vtable;
-  grpc_gcp_rpc_protocol_versions rpc_versions;
-  transport_protocol_preferences* transport_protocol_preferences_head;
-  transport_protocol_preferences* transport_protocol_preferences_last;
-};
-
 ///
 /// Main struct for ALTS client credentials options. The options contain a
 /// a list of target service accounts (if specified) used for secure naming
