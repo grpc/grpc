@@ -75,9 +75,10 @@ void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
 void BaseNode::RunZTrace(
     absl::string_view name, Timestamp deadline,
     std::map<std::string, std::string> args,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
     absl::AnyInvocable<void(absl::StatusOr<Json> output)> callback) {
-  auto fail = [&callback](absl::Status status) {
-    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+  auto fail = [&callback, event_engine](absl::Status status) {
+    event_engine->Run(
         [callback = std::move(callback), status = std::move(status)]() mutable {
           callback(status);
         });
@@ -102,7 +103,7 @@ void BaseNode::RunZTrace(
     fail(absl::NotFoundError(absl::StrCat("ztrace not found: ", name)));
     return;
   }
-  ztrace->Run(deadline, std::move(args), std::move(callback));
+  ztrace->Run(deadline, std::move(args), event_engine, std::move(callback));
 }
 
 //

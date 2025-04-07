@@ -21,6 +21,8 @@
 #include <memory>
 
 #include "absl/log/check.h"
+#include "ref_counted_ptr.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -61,10 +63,7 @@ class SingleSetPtr {
   // Clear the pointer.
   void Reset() { Delete(p_.exchange(nullptr, std::memory_order_acq_rel)); }
 
-  bool is_set() const {
-    T* p = Get();
-    return p != nullptr;
-  }
+  bool is_set() const { return p_.load(std::memory_order_relaxed) != nullptr; }
 
   T* Get() const { return p_.load(std::memory_order_acquire); }
 
@@ -82,6 +81,39 @@ class SingleSetPtr {
     Deleter()(p);
   }
   std::atomic<T*> p_{nullptr};
+};
+
+template <class T>
+class SingleSetRefCountedPtr {
+ public:
+  SingleSetRefCountedPtr() = default;
+  explicit SingleSetRefCountedPtr(RefCountedPtr<T> p) : p_{p.Release()} {}
+
+  bool is_set() const { return p_.is_set(); }
+
+  RefCountedPtr<T> GetOrCreate() {
+    T* p = Get();
+    if (p == nullptr) p = Set(MakeRefCounted<T>());
+    return p->Ref();
+  }
+
+  T* operator->() const {
+    T* p = Get();
+    DCHECK_NE(p, nullptr);
+    return p;
+  }
+
+  T& operator*() const { return *Get(); }
+
+ private:
+  struct UnrefDeleter {
+    void operator()(T* p) { p->Unref(); }
+  };
+
+  T* Get() const { return p_.Get(); }
+  T* Set(RefCountedPtr<T> p) { return p_.Set(p.release()); }
+
+  SingleSetPtr<T, UnrefDeleter> p_;
 };
 
 }  // namespace grpc_core

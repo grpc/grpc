@@ -74,3 +74,15 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "ztrace_collector_test",
+    srcs = ["ztrace_collector_test.cc"],
+    deps = [
+        "//src/core:ztrace_collector",
+    ],
+    external_deps= [
+        "gtest",
+        "gtest_main",
+    ]
+)
