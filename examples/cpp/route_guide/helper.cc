@@ -20,10 +20,10 @@
 #include <cctype>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <regex>
 
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
@@ -133,7 +133,7 @@ class Parser {
   const std::string name_ = "\"name\":";
 };
 
-// Minifies a JSON string by removing all whitespace characters outside of 
+// Minifies a JSON string by removing all whitespace characters outside of
 // strings.
 std::string MinifyJson(const std::string& json) {
   std::regex whitespaceOutsideQuotes(R"(\s+(?=(?:(?:[^"]*"){2})*[^"]*$))");
