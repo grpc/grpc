@@ -63,6 +63,32 @@ TEST(SpiffeId, DoesNotStartWithSpiffeFails) {
             absl::InvalidArgumentError("SPIFFE ID must start with spiffe://"));
 }
 
+TEST(SpiffeId, ShortSchemePrefixFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe:/foo/bar/").status(),
+            absl::InvalidArgumentError("SPIFFE ID must start with spiffe://"));
+}
+
+TEST(SpiffeId, SchemeInvalidCharacterFails) {
+  EXPECT_EQ(SpiffeId::FromString("ſPiffe://trustdomain/path").status(),
+            absl::InvalidArgumentError(
+                "SPIFFE ID URI cannot contain non-ascii characters"));
+}
+
+TEST(SpiffeId, SchemePrefixAndTrustDomainMissingFails) {
+  EXPECT_EQ(SpiffeId::FromString("://").status(),
+            absl::InvalidArgumentError("SPIFFE ID must start with spiffe://"));
+}
+
+TEST(SpiffeId, SchemeMissingSuffixFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe").status(),
+            absl::InvalidArgumentError("SPIFFE ID must start with spiffe://"));
+}
+
+TEST(SpiffeId, SchemeMissingPrefix) {
+  EXPECT_EQ(SpiffeId::FromString("piffe://foo/bar/").status(),
+            absl::InvalidArgumentError("SPIFFE ID must start with spiffe://"));
+}
+
 TEST(SpiffeId, EndWithSlashFails) {
   EXPECT_EQ(SpiffeId::FromString("spiffe://foo/bar/").status(),
             absl::InvalidArgumentError("SPIFFE ID cannot end with a /"));
@@ -133,8 +159,67 @@ TEST(SpiffeId, ContainsNonASCIITrustDomainFails) {
                 "SPIFFE ID URI cannot contain non-ascii characters"));
 }
 
-TEST(SpiffeId, ContainsNonASCIIPathFails) {
+TEST(SpiffeId, TrustDomainContainsNonASCIIFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://fooµbar/path").status(),
+            absl::InvalidArgumentError(
+                "SPIFFE ID URI cannot contain non-ascii characters"));
+}
+
+TEST(SpiffeId, TrustDomainPercentEncodingFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://foo%21bar/path").status(),
+            absl::InvalidArgumentError(
+                "Trust domain contains invalid character %. MUST contain only "
+                "lowercase letters, numbers, dots, dashes, and underscores"));
+}
+
+TEST(SpiffeId, TrustDomainTrailingSlashFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://foo/").status(),
+            absl::InvalidArgumentError("SPIFFE ID cannot end with a /"));
+}
+
+TEST(SpiffeId, PortInTrustDomainFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://foo:1234/path").status(),
+            absl::InvalidArgumentError(
+                "Trust domain contains invalid character :. MUST contain only "
+                "lowercase letters, numbers, dots, dashes, and underscores"));
+}
+
+TEST(SpiffeId, PathQueryParameterFails) {
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://foo/bar?query").status(),
+      absl::InvalidArgumentError("SPIFFE ID cannot contain query parameters"));
+}
+
+TEST(SpiffeId, EscapedCharacterInPathFails) {
+  absl::StatusOr<SpiffeId> spiffe_id =
+      SpiffeId::FromString("spiffe://foo/p\ath");
+  ASSERT_FALSE(spiffe_id.ok());
+  // Attempting to hard-code the escaped character is odd, just check the
+  // substring
+  EXPECT_THAT(spiffe_id.status().message(),
+              ::testing::HasSubstr("Path segment contains invalid character"));
+}
+
+TEST(SpiffeId, FragmentInPathFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://foo/pa^h").status(),
+            absl::InvalidArgumentError(
+                "Path segment contains invalid character ^. MUST contain only "
+                "letters, numbers, dots, dashes, and underscores"));
+}
+
+TEST(SpiffeId, MultipleSlashesInPathFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://foo/bar//baz").status(),
+            absl::InvalidArgumentError("Path segment cannot be empty"));
+}
+
+TEST(SpiffeId, NonASCIIPathFails) {
   EXPECT_EQ(SpiffeId::FromString("spiffe://foo.bar/µ").status(),
+            absl::InvalidArgumentError(
+                "SPIFFE ID URI cannot contain non-ascii characters"));
+}
+
+TEST(SpiffeId, ContainsNonASCIIPathFails) {
+  EXPECT_EQ(SpiffeId::FromString("spiffe://foo.bar/fooµbar").status(),
             absl::InvalidArgumentError(
                 "SPIFFE ID URI cannot contain non-ascii characters"));
 }
