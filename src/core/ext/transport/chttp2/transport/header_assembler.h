@@ -29,11 +29,7 @@
 namespace grpc_core {
 namespace http2 {
 
-class HeaderAssembler {
- public:
- private:
-  bool stream_id_;
-};
+class HeaderAssembler {};
 
 }  // namespace http2
 }  // namespace grpc_core
