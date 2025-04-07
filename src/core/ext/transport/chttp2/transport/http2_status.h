@@ -20,6 +20,7 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_STATUS_H
 
 #include <cstdint>
+#include <string>
 #include <variant>
 
 #include "absl/log/check.h"
@@ -105,14 +106,14 @@ class Http2Status {
       : http2_code_(Http2ErrorCode::kNoError),
         error_type_(Http2ErrorType::kOk),
         absl_code_(code),
-        message_(message) {}
+        message_(std::string(message)) {}
 
   explicit Http2Status(const Http2ErrorCode code, const Http2ErrorType type,
                        absl::string_view message)
       : http2_code_(code),
         error_type_(type),
         absl_code_(absl::StatusCode::kOk),
-        message_(message) {
+        message_(std::string(message)) {
     DCHECK((http2_code_ == Http2ErrorCode::kNoError &&
             error_type_ == Http2ErrorType::kOk) ||
            (http2_code_ > Http2ErrorCode::kNoError &&
@@ -165,7 +166,7 @@ class Http2Status {
   Http2ErrorType error_type_;
   absl::StatusCode absl_code_;
 
-  absl::string_view message_;
+  std::string message_;
 };
 
 }  // namespace http2
