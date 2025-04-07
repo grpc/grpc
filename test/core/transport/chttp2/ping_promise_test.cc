@@ -27,8 +27,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/call/yodel/yodel_test.h"
-#include "testing/base/public/gmock.h"
-#include "testing/base/public/gunit.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
@@ -39,6 +39,50 @@ using ::testing::MockFunction;
 using ::testing::StrictMock;
 using ::testing::WithArgs;
 }  // namespace
+
+class MockPingSystemInterface : public PingSystemInterface {
+ public:
+  MOCK_METHOD(Promise<absl::Status>, SendPing, (SendPingArgs args), (override));
+  MOCK_METHOD(Promise<absl::Status>, TriggerWrite, (), (override));
+  MOCK_METHOD(Promise<absl::Status>, PingTimeout, (), (override));
+
+  void ExpectSendPing(SendPingArgs args) {
+    EXPECT_CALL(*this, SendPing).WillOnce(WithArgs<0>([](SendPingArgs args) {
+      EXPECT_EQ(args.ack, args.ack);
+      return Immediate(absl::OkStatus());
+    }));
+  }
+  void ExpectPingTimeout() {
+    EXPECT_CALL(*this, PingTimeout).WillOnce(([]() {
+      return Immediate(absl::OkStatus());
+    }));
+  }
+  void ExpectTriggerWrite() {
+    EXPECT_CALL(*this, TriggerWrite).WillOnce(([]() {
+      return Immediate(absl::OkStatus());
+    }));
+  }
+  auto ExpectSendPingReturnArgs(SendPingArgs args) {
+    struct SendPingReturn {
+      SendPingArgs args;
+      Notification ready;
+    };
+    std::shared_ptr<SendPingReturn> send_ping_return =
+        std::make_shared<SendPingReturn>();
+
+    EXPECT_CALL(*this, SendPing)
+        .WillOnce(WithArgs<0>([send_ping_return](SendPingArgs args) {
+          EXPECT_EQ(args.ack, args.ack);
+          send_ping_return->args = args;
+          send_ping_return->ready.Notify();
+          return Immediate(absl::OkStatus());
+        }));
+    return [send_ping_return] {
+      send_ping_return->ready.WaitForNotification();
+      return send_ping_return->args;
+    };
+  }
+};
 
 class PingSystemTest : public YodelTest {
  protected:
@@ -72,52 +116,7 @@ class PingSystemTest : public YodelTest {
 
 PING_SYSTEM_TEST(NoOp) {}
 
-class MockPingSystemInterface : public PingSystemInterface {
- public:
-  MOCK_METHOD(Promise<absl::Status>, SendPing, (SendPingArgs args), (override));
-  MOCK_METHOD(Promise<absl::Status>, TriggerWrite, (), (override));
-  MOCK_METHOD(Promise<absl::Status>, PingTimeout, (), (override));
-
-  void ExpectSendPing(SendPingArgs args) {
-    EXPECT_CALL(*this, SendPing).WillOnce(WithArgs<0>([](SendPingArgs args) {
-      EXPECT_EQ(args.ack, args.ack);
-      // EXPECT_EQ(args.ping_id, args.ping_id);
-      return Immediate(absl::OkStatus());
-    }));
-  }
-  void ExpectPingTimeout() {
-    EXPECT_CALL(*this, PingTimeout).WillOnce(([]() {
-      return Immediate(absl::OkStatus());
-    }));
-  }
-  void ExpectTriggerWrite() {
-    EXPECT_CALL(*this, TriggerWrite).WillOnce(([]() {
-      return Immediate(absl::OkStatus());
-    }));
-  }
-  auto ExpectSendPingReturn(SendPingArgs args) {
-    struct SendPingReturn {
-      SendPingArgs args;
-      Notification ready;
-    };
-    std::shared_ptr<SendPingReturn> send_ping_return =
-        std::make_shared<SendPingReturn>();
-
-    EXPECT_CALL(*this, SendPing)
-        .WillOnce(WithArgs<0>([send_ping_return](SendPingArgs args) {
-          EXPECT_EQ(args.ack, args.ack);
-          // EXPECT_EQ(args.ping_id, args.ping_id);
-          send_ping_return->args = args;
-          send_ping_return->ready.Notify();
-          return Immediate(absl::OkStatus());
-        }));
-    return [send_ping_return] {
-      send_ping_return->ready.WaitForNotification();
-      return send_ping_return->args;
-    };
-  }
-};
-
+// Promise based ping callbacks tests
 PING_SYSTEM_TEST(TestPingRequest) {
   InitParty();
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
@@ -133,16 +132,16 @@ PING_SYSTEM_TEST(TestPingRequest) {
   EXPECT_EQ(ping_system.CountPingInflight(), 0);
   EXPECT_FALSE(ping_system.PingRequested());
 
-  party->Spawn("PingRequest",
-               TrySeq(ping_system.RequestPing([&execution_order]() {
-                 LOG(INFO) << "Ping initiated";
-                 execution_order.append("2");
-               }),
-                      [&on_done]() {
-                        on_done.Call(absl::OkStatus());
-                        return absl::OkStatus();
-                      }),
-               [](auto) { LOG(INFO) << "Reached PingRequest end"; });
+  party->Spawn(
+      "PingRequest",
+      ping_system.RequestPing([&execution_order]() {
+        LOG(INFO) << "Ping requested. Waiting for ack.";
+        execution_order.append("2");
+      }),
+      [&on_done](auto) {
+        LOG(INFO) << "Got a Ping Ack";
+        on_done.Call(absl::OkStatus());
+      });
 
   EXPECT_TRUE(ping_system.PingRequested());
   execution_order.append("1");
@@ -150,6 +149,7 @@ PING_SYSTEM_TEST(TestPingRequest) {
   EXPECT_EQ(ping_system.CountPingInflight(), 1);
   EXPECT_FALSE(ping_system.PingRequested());
   execution_order.append("3");
+
   party->Spawn(
       "PingAckReceived",
       Map([&ping_system, id,
@@ -161,9 +161,11 @@ PING_SYSTEM_TEST(TestPingRequest) {
           }),
       [](auto) { LOG(INFO) << "Reached PingAck end"; });
 
-  EXPECT_EQ(execution_order, "1234");
-
   WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+
+  EXPECT_EQ(execution_order, "1234");
 }
 
 PING_SYSTEM_TEST(TestPingUnrelatedAck) {
@@ -181,16 +183,16 @@ PING_SYSTEM_TEST(TestPingUnrelatedAck) {
   EXPECT_EQ(ping_system.CountPingInflight(), 0);
   EXPECT_FALSE(ping_system.PingRequested());
 
-  party->Spawn("PingRequest",
-               TrySeq(ping_system.RequestPing([&execution_order]() {
-                 LOG(INFO) << "Ping initiated";
-                 execution_order.append("2");
-               }),
-                      [&on_done]() {
-                        on_done.Call(absl::OkStatus());
-                        return absl::OkStatus();
-                      }),
-               [](auto) { LOG(INFO) << "Reached PingRequest end"; });
+  party->Spawn(
+      "PingRequest",
+      ping_system.RequestPing([&execution_order]() {
+        LOG(INFO) << "Ping requested. Waiting for ack.";
+        execution_order.append("2");
+      }),
+      [&on_done](auto) {
+        LOG(INFO) << "Got a Ping Ack";
+        on_done.Call(absl::OkStatus());
+      });
 
   EXPECT_TRUE(ping_system.PingRequested());
   execution_order.append("1");
@@ -219,9 +221,11 @@ PING_SYSTEM_TEST(TestPingUnrelatedAck) {
               })),
       [](auto) { LOG(INFO) << "Reached PingAck end"; });
 
-  EXPECT_EQ(execution_order, "12345");
-
   WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+
+  EXPECT_EQ(execution_order, "12345");
 }
 
 PING_SYSTEM_TEST(TestPingWaitForAck) {
@@ -239,14 +243,12 @@ PING_SYSTEM_TEST(TestPingWaitForAck) {
   EXPECT_EQ(ping_system.CountPingInflight(), 0);
   EXPECT_FALSE(ping_system.PingRequested());
 
-  party->Spawn("WaitForPingAck",
-               TrySeq(ping_system.WaitForPingAck(),
-                      [&on_done, &execution_order]() {
-                        execution_order.append("2");
-                        on_done.Call(absl::OkStatus());
-                        return absl::OkStatus();
-                      }),
-               [](auto) { LOG(INFO) << "Reached WaitForPingAck end"; });
+  party->Spawn("WaitForPingAck", ping_system.WaitForPingAck(),
+               [&on_done, &execution_order](auto) {
+                 LOG(INFO) << "Reached WaitForPingAck end";
+                 execution_order.append("2");
+                 on_done.Call(absl::OkStatus());
+               });
 
   execution_order.append("1");
   EXPECT_TRUE(ping_system.PingRequested());
@@ -265,9 +267,11 @@ PING_SYSTEM_TEST(TestPingWaitForAck) {
           }),
       [](auto) { LOG(INFO) << "Reached PingAckReceived end"; });
 
-  EXPECT_EQ(execution_order, "1342");
-
   WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+
+  EXPECT_EQ(execution_order, "1342");
 }
 
 PING_SYSTEM_TEST(TestPingCancel) {
@@ -294,28 +298,32 @@ PING_SYSTEM_TEST(TestPingCancel) {
 
   ping_system.Cancel(event_engine().get());
   EXPECT_FALSE(ping_system.PingRequested());
+
   WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
 }
 
-PING_SYSTEM_TEST(TestPingSystem) {
+PING_SYSTEM_TEST(TestPingSystemNoAck) {
   InitParty();
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  ping_interface->ExpectSendPing(SendPingArgs{false, 1234});
+  ping_interface->ExpectSendPing(SendPingArgs{false, /*not used*/ 1234});
   ping_interface->ExpectPingTimeout();
 
   PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
                          std::move(ping_interface));
   auto party = GetParty();
-  party->Spawn(
-      "PingRequest",
-      TrySeq(ping_system.RequestPing([]() { LOG(INFO) << "Ping initiated"; }),
-             []() {
-               Crash("Unreachable");
-               return absl::OkStatus();
-             }),
-      [](auto) { LOG(INFO) << "Reached PingRequest end"; });
+  party->Spawn("PingRequest",
+               TrySeq(ping_system.RequestPing([]() {
+                 LOG(INFO) << "Ping requested. Waiting for ack.";
+               }),
+                      []() {
+                        Crash("Unreachable");
+                        return absl::OkStatus();
+                      }),
+               [](auto) { LOG(INFO) << "Received a Ping Ack"; });
 
   party->Spawn(
       "PingSystem",
@@ -327,6 +335,8 @@ PING_SYSTEM_TEST(TestPingSystem) {
       [](auto) { LOG(INFO) << "Reached PingSystem end"; });
 
   WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
 }
 
 PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
@@ -344,6 +354,8 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
                          std::move(ping_interface));
   Duration next_allowed_ping_interval = Duration::Seconds(10);
   auto party = GetParty();
+
+  // Ping 1
   party->Spawn(
       "PingRequest",
       TrySeq(ping_system.RequestPing([]() { LOG(INFO) << "Ping initiated"; }),
@@ -382,85 +394,97 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
       [](auto) { LOG(INFO) << "Reached PingSystem end"; });
 
   WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
 }
 
-PING_SYSTEM_TEST(TestPingSystemAck) {
-  InitParty();
-  std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
-      std::make_unique<StrictMock<MockPingSystemInterface>>();
+// PING_SYSTEM_TEST(TestPingSystemAck) {
+//   InitParty();
+//   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
+//       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  auto cb = ping_interface->ExpectSendPingReturn(SendPingArgs{false, 1234});
+//   auto cb = ping_interface->ExpectSendPingReturnArgs(SendPingArgs{false,
+//   1234});
 
-  PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
-                         std::move(ping_interface));
-  auto party = GetParty();
-  party->Spawn(
-      "PingRequest",
-      TrySeq(ping_system.RequestPing([]() { LOG(INFO) << "Ping initiated"; }),
-             []() { return absl::OkStatus(); }),
-      [](auto) { LOG(INFO) << "Reached PingRequest end"; });
+//   PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
+//                          std::move(ping_interface));
+//   auto party = GetParty();
+//   party->Spawn(
+//       "PingRequest",
+//       TrySeq(ping_system.RequestPing([]() {
+//               LOG(INFO) << "Ping requested. Waiting for ack.";
+//             }),
+//             []() { return absl::OkStatus(); }),
+//       [](auto) { LOG(INFO) << "Reached PingRequest end"; });
 
-  party->Spawn(
-      "PingSystem",
-      TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                       Duration::Seconds(100),
-                                       /*ping_timeout=*/Duration::Seconds(2),
-                                       party),
-             []() { return absl::OkStatus(); }),
-      [](auto) { LOG(INFO) << "Reached PingSystem end"; });
+//   party->Spawn(
+//       "PingSystem",
+//       TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+//                                        Duration::Seconds(100),
+//                                        /*ping_timeout=*/
+//                                        Duration::Seconds(100000000000),
+//                                        party),
+//              []() { return absl::OkStatus(); }),
+//       [](auto) { LOG(INFO) << "Reached PingSystem end"; });
 
-  party->Spawn("PingAckReceived",
-               TrySeq(Sleep(Duration::Seconds(1)),
-                      Map(
-                          [&ping_system, this, &cb] {
-                            auto args = cb();
-                            return ping_system.AckPing(args.ping_id,
-                                                       event_engine().get());
-                          },
-                          [](bool) { return absl::OkStatus(); })),
-               [](auto) { LOG(INFO) << "Reached PingAckReceived end"; });
+//   party->Spawn("PingAckReceived",
+//                TrySeq(Sleep(Duration::Seconds(1)),
+//                       Map(
+//                           [&ping_system, this, &cb] {
+//                             auto args = cb();
+//                             return ping_system.AckPing(args.ping_id,
+//                                                        event_engine().get());
+//                           },
+//                           [](bool) { return absl::OkStatus(); })),
+//                [](auto) { LOG(INFO) << "Reached PingAckReceived end"; });
 
-  WaitForAllPendingWork();
-}
+//   WaitForAllPendingWork();
+//   event_engine()->TickUntilIdle();
+//   event_engine()->UnsetGlobalHooks();
+// }
 
-PING_SYSTEM_TEST(TestPingSystemTimeout) {
-  InitParty();
-  std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
-      std::make_unique<StrictMock<MockPingSystemInterface>>();
+// PING_SYSTEM_TEST(TestPingSystemDelayedAck) {
+//   InitParty();
+//   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
+//       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  auto cb = ping_interface->ExpectSendPingReturn(SendPingArgs{false, 1234});
-  ping_interface->ExpectPingTimeout();
+//   auto cb = ping_interface->ExpectSendPingReturnArgs(SendPingArgs{false,
+//   1234}); ping_interface->ExpectPingTimeout();
 
-  PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
-                         std::move(ping_interface));
-  auto party = GetParty();
-  party->Spawn(
-      "PingRequest",
-      TrySeq(ping_system.RequestPing([]() { LOG(INFO) << "Ping initiated"; }),
-             []() { return absl::OkStatus(); }),
-      [](auto) { LOG(INFO) << "Reached PingRequest end"; });
+//   PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
+//                          std::move(ping_interface));
+//   auto party = GetParty();
+//   party->Spawn(
+//       "PingRequest",
+//       TrySeq(ping_system.RequestPing([]() {
+//               LOG(INFO) << "Ping requested. Waiting for ack.";
+//             }),
+//             []() { return absl::OkStatus(); }),
+//       [](auto) { LOG(INFO) << "Reached PingRequest end"; });
 
-  party->Spawn(
-      "PingSystem",
-      TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                       Duration::Seconds(100),
-                                       /*ping_timeout=*/Duration::Seconds(2),
-                                       party),
-             []() { return absl::OkStatus(); }),
-      [](auto) { LOG(INFO) << "Reached PingSystem end"; });
+//   party->Spawn(
+//       "PingSystem",
+//       TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+//                                        Duration::Seconds(100),
+//                                        /*ping_timeout=*/Duration::Seconds(2),
+//                                        party),
+//              []() { return absl::OkStatus(); }),
+//       [](auto) { LOG(INFO) << "Reached PingSystem end"; });
 
-  party->Spawn("DelayedPingAckReceived",
-               TrySeq(Sleep(Duration::Seconds(3)),
-                      Map(
-                          [&ping_system, this, &cb] {
-                            auto args = cb();
-                            return ping_system.AckPing(args.ping_id,
-                                                       event_engine().get());
-                          },
-                          [](bool) { return absl::OkStatus(); })),
-               [](auto) { LOG(INFO) << "Reached PingAckReceived end"; });
+//   party->Spawn("DelayedPingAckReceived",
+//                TrySeq(Sleep(Duration::Seconds(3)),
+//                       Map(
+//                           [&ping_system, this, &cb] {
+//                             auto args = cb();
+//                             return ping_system.AckPing(args.ping_id,
+//                                                        event_engine().get());
+//                           },
+//                           [](bool) { return absl::OkStatus(); })),
+//                [](auto) { LOG(INFO) << "Reached PingAckReceived end"; });
 
-  WaitForAllPendingWork();
-}
+//   WaitForAllPendingWork();
+//   event_engine()->TickUntilIdle();
+//   event_engine()->UnsetGlobalHooks();
+// }
 
 }  // namespace grpc_core

@@ -110,14 +110,13 @@ void PingSystem::SpawnTimeout(Duration ping_timeout, Party* party) {
   party->Spawn(
       "PingTimeout",
       [this, ping_timeout]() {
-        return Race(Map(ping_callbacks_.WaitForPingAck(),
-                        [](absl::Status status) {
-                          LOG(INFO) << "Ping ack received";
-                          return status;
-                        }),
-                    TrySeq(Sleep(ping_timeout), [this]() mutable {
-                      return ping_interface_->PingTimeout();
-                    }));
+        return Race(
+            TrySeq(Sleep(ping_timeout),
+                   [this]() mutable { return ping_interface_->PingTimeout(); }),
+            Map(ping_callbacks_.WaitForPingAck(), [](absl::Status status) {
+              LOG(INFO) << "Ping ack received";
+              return status;
+            }));
       },
       [](auto) { LOG(INFO) << "Timeout ended"; });
 }
