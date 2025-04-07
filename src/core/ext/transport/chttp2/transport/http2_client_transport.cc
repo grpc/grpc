@@ -356,7 +356,7 @@ Http2ClientTransport::Http2ClientTransport(
     std::shared_ptr<EventEngine> event_engine)
     : endpoint_(std::move(endpoint)),
       outgoing_frames_(kMpscSize),
-      stream_mutex_(/*Initial Stream Id*/ 1) {
+      stream_id_mutex_(/*Initial Stream Id*/ 1) {
   // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
   // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
 
@@ -402,9 +402,9 @@ bool Http2ClientTransport::MakeStream(CallHandler call_handler,
   // TODO(tjagtap) : [PH2][P0] Validate implementation.
 
   // TODO(akshitpatel) : [PH2][P1] : Probably do not need this lock. This
-  // function is always called under the stream_mutex_. The issue is the OnDone
-  // needs to be synchronous and hence InterActivityMutex might not be an option
-  // to protect the stream_list_.
+  // function is always called under the stream_id_mutex_. The issue is the
+  // OnDone needs to be synchronous and hence InterActivityMutex might not be an
+  // option to protect the stream_list_.
   MutexLock lock(&transport_mutex_);
   const bool on_done_added =
       call_handler.OnDone([self = RefAsSubclass<Http2ClientTransport>(),
@@ -429,8 +429,8 @@ bool Http2ClientTransport::MakeStream(CallHandler call_handler,
 
 auto Http2ClientTransport::CallOutboundLoop(
     CallHandler call_handler, const uint32_t stream_id,
-    std::tuple<InterActivityMutex<uint32_t>::Lock, ClientMetadataHandle>
-        lock_metadata /* Locked stream_mutex */) {
+    InterActivityMutex<uint32_t>::Lock lock /* Locked stream_id_mutex */,
+    ClientMetadataHandle metadata) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop";
 
   // Convert a message to a Http2DataFrame and send the frame out.
@@ -449,7 +449,6 @@ auto Http2ClientTransport::CallOutboundLoop(
     return self->EnqueueOutgoingFrame(std::move(frame));
   };
 
-  auto& metadata = std::get<1>(lock_metadata);
   SliceBuffer buf;
   encoder_.EncodeRawHeaders(*metadata.get(), buf);
   Http2Frame frame = Http2HeaderFrame{stream_id, /*end_headers*/ true,
@@ -458,8 +457,7 @@ auto Http2ClientTransport::CallOutboundLoop(
       "Ph2CallOutboundLoop",
       TrySeq(
           EnqueueOutgoingFrame(std::move(frame)),
-          [call_handler, send_message,
-           lock_metadata = std::move(lock_metadata)]() {
+          [call_handler, send_message, lock = std::move(lock)]() {
             // The lock will be released once the promise is constructed from
             // this factory. ForEach will be polled after the lock is released.
             return ForEach(MessagesFrom(call_handler), send_message);
@@ -490,21 +488,24 @@ void Http2ClientTransport::StartCall(CallHandler call_handler) {
           call_handler.PullClientInitialMetadata(),
           [self = RefAsSubclass<Http2ClientTransport>()](
               ClientMetadataHandle metadata) {
-            // Lock the stream_mutex_
-            return Staple(self->stream_mutex_.Acquire(), std::move(metadata));
+            // Lock the stream_id_mutex_
+            return Staple(self->stream_id_mutex_.Acquire(),
+                          std::move(metadata));
           },
           [self = RefAsSubclass<Http2ClientTransport>(),
-           call_handler](auto args /* Locked stream_mutex */) mutable {
+           call_handler](auto args /* Locked stream_id_mutex */) mutable {
             // TODO (akshitpatel) : [PH2][P2] :
             // Check for max concurrent streams.
-            const uint32_t stream_id = self->GetNextStreamId(std::get<0>(args));
+            const uint32_t stream_id = self->NextStreamId(std::get<0>(args));
             return If(
                 self->MakeStream(call_handler, stream_id),
                 [self, call_handler, stream_id,
                  args = std::move(args)]() mutable {
-                  return Map(self->CallOutboundLoop(call_handler, stream_id,
-                                                    std::move(args)),
-                             [](absl::Status status) { return status; });
+                  return Map(
+                      self->CallOutboundLoop(call_handler, stream_id,
+                                             std::move(std::get<0>(args)),
+                                             std::move(std::get<1>(args))),
+                      [](absl::Status status) { return status; });
                 },
                 []() { return absl::InternalError("Failed to make stream"); });
           }));
