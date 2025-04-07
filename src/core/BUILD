@@ -612,6 +612,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "seq_bit_set",
+    srcs = ["util/seq_bit_set.cc"],
+    hdrs = ["util/seq_bit_set.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+)
+
+grpc_cc_library(
     name = "no_destruct",
     public_hdrs = ["util/no_destruct.h"],
     deps = [
@@ -2798,6 +2807,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
+        "event_engine_common",
         "iomgr_port",
         "resolved_address",
         "status_helper",
@@ -7594,6 +7604,7 @@ grpc_cc_library(
         "channel_args",
         "check_class_size",
         "grpc_promise_endpoint",
+        "header_assembler",
         "http2_settings",
         "http2_status",
         "http2_transport",
@@ -7704,6 +7715,24 @@ grpc_cc_library(
         "//:hpack_encoder",
         "//:hpack_parser",
         "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "header_assembler",
+    hdrs = [
+        "ext/transport/chttp2/transport/header_assembler.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+        "message",
+        ":slice",
+        ":slice_buffer",
+        "//:chttp2_frame",
         "//:ref_counted_ptr",
     ],
 )
@@ -8050,6 +8079,7 @@ grpc_cc_library(
     deps = [
         "1999",
         "chaotic_good_pending_connection",
+        "chaotic_good_serialize_little_endian",
         "default_tcp_tracer",
         "event_engine_context",
         "event_engine_extensions",
@@ -8058,7 +8088,9 @@ grpc_cc_library(
         "grpc_promise_endpoint",
         "loop",
         "seq",
+        "seq_bit_set",
         "slice_buffer",
+        "status_flag",
         "try_seq",
         "//:promise",
     ],
@@ -8088,6 +8120,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_serialize_little_endian",
+    hdrs = [
+        "ext/transport/chaotic_good/serialize_little_endian.h",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_tcp_frame_transport",
     srcs = [
         "ext/transport/chaotic_good/tcp_frame_transport.cc",
@@ -8101,9 +8140,11 @@ grpc_cc_library(
         "chaotic_good_frame_header",
         "chaotic_good_frame_transport",
         "chaotic_good_pending_connection",
+        "chaotic_good_serialize_little_endian",
         "event_engine_tcp_socket_utils",
         "if",
         "inter_activity_latch",
+        "join",
         "loop",
         "race",
         "seq",

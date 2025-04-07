@@ -801,3 +801,14 @@ grpc_fuzz_test(
     ],
     deps = ["//src/core:useful"],
 )
+
+grpc_fuzz_test(
+    name = "seq_bit_set_test",
+    srcs = ["seq_bit_set_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:seq_bit_set"],
+)
