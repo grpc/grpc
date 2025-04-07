@@ -60,11 +60,9 @@ class PingSystem {
     // the ping ack.
     Promise<absl::Status> WaitForPingAck();
 
-    // Cancells all the callbacks for the inflight pings. This function does not
+    // Cancels all the callbacks for the inflight pings. This function does not
     // cancel the promises that are waiting on the ping ack.
     void Cancel(grpc_event_engine::experimental::EventEngine* event_engine) {
-      // TODO(akshitpatel) : [PH2][P0] : Discuss if we can explore passing event
-      // engine as a nullptr.
       ping_callbacks_.CancelAll(event_engine);
     }
     uint64_t StartPing() { return ping_callbacks_.StartPing(bitgen_); }

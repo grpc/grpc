@@ -20,7 +20,6 @@
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -113,10 +112,7 @@ void PingSystem::SpawnTimeout(Duration ping_timeout, Party* party) {
         return Race(
             TrySeq(Sleep(ping_timeout),
                    [this]() mutable { return ping_interface_->PingTimeout(); }),
-            Map(ping_callbacks_.WaitForPingAck(), [](absl::Status status) {
-              LOG(INFO) << "Ping ack received";
-              return status;
-            }));
+            ping_callbacks_.WaitForPingAck());
       },
       [](auto) { LOG(INFO) << "Timeout ended"; });
 }
@@ -127,12 +123,12 @@ Promise<absl::Status> PingSystem::MaybeSendPing(
       NeedToPing(next_allowed_ping_interval, party),
       [this, ping_timeout, party]() mutable {
         const uint64_t ping_id = ping_callbacks_.StartPing();
-        SentPing();
         return TrySeq(ping_interface_->SendPing(SendPingArgs{false, ping_id}),
                       [this, ping_timeout, party]() {
                         // TODO(akshitpatel) : [PH2][P0] : Fix logs
                         LOG(INFO) << "Http2ClientTransport Ping request sent";
                         SpawnTimeout(ping_timeout, party);
+                        SentPing();
                         return absl::OkStatus();
                       });
       },

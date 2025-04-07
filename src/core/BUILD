@@ -9261,7 +9261,6 @@ grpc_cc_library(
         "ext/transport/chttp2/transport/ping_promise.h",
     ],
     external_deps = [
-        "absl/functional:any_invocable",
         "absl/log",
         "absl/status",
         "absl/random",
@@ -9275,8 +9274,6 @@ grpc_cc_library(
         "ping_abuse_policy",
         "ping_callbacks",
         "ping_rate_policy",
-        "poll",
-        "promise_factory",
         "race",
         "sleep",
         "time",
