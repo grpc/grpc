@@ -82,17 +82,17 @@ class ZTraceCollector {
     Config config;
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
     grpc_event_engine::experimental::EventEngine::TaskHandle task_handle{
-        grpc_event_engine::experimental::EventEngine::kInvalidTaskHandle};
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid};
     std::tuple<std::vector<std::pair<gpr_cycle_counter, Data>...>> data;
     absl::AnyInvocable<void(absl::StatusOr<Json> output)> done;
   };
   struct Impl : public RefCounted<Impl> {
     Mutex mu;
-    absl::flat_hash_set<RefCountedPtr<Instance>> instances ABSL_GUARDED_BY(mu_);
+    absl::flat_hash_set<RefCountedPtr<Instance>> instances ABSL_GUARDED_BY(mu);
   };
   class ZTraceImpl final : public ZTrace {
    public:
-    explicit ZTraceImpl(RefCountedPtr<T> impl);
+    explicit ZTraceImpl(RefCountedPtr<Impl> impl);
 
     void Run(Timestamp deadline, std::map<std::string, std::string> args,
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
@@ -106,7 +106,7 @@ class ZTraceCollector {
             bool finish;
             {
               MutexLock lock(&impl->mu);
-              finish = impl_->instances.erase(instance);
+              finish = impl->instances.erase(instance);
             }
             if (finish) instance->Finish(absl::DeadlineExceededError(""));
           });
@@ -139,7 +139,7 @@ class ZTraceCollector {
     }
   }
 
-  SingleSetRefCountedPointer<Impl> impl_;
+  SingleSetRefCountedPtr<Impl> impl_;
 };
 
 }  // namespace grpc_core::channelz
