@@ -49,12 +49,11 @@ Promise<absl::Status> PingSystem::PingPromiseCallbacks::WaitForPingAck() {
 }
 
 // Ping System implementation
-PingSystem::PingSystem(const ChannelArgs& channel_args, bool is_client,
+PingSystem::PingSystem(const ChannelArgs& channel_args,
                        std::unique_ptr<PingSystemInterface> ping_interface)
     : ping_callbacks_(),
       ping_abuse_policy_(channel_args),
       ping_rate_policy_(channel_args, /*is_client=*/true),
-      is_client_(is_client),
       ping_interface_(std::move(ping_interface)) {}
 
 void PingSystem::TriggerDelayedPing(Duration wait, Party* party) {

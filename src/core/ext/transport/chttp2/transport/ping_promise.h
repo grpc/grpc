@@ -79,7 +79,6 @@ class PingSystem {
   Chttp2PingAbusePolicy ping_abuse_policy_;
   Chttp2PingRatePolicy ping_rate_policy_;
   bool delayed_ping_spawned_ = false;
-  bool is_client_;
   std::unique_ptr<PingSystemInterface> ping_interface_;
 
   void TriggerDelayedPing(Duration wait, Party* party);
@@ -89,7 +88,7 @@ class PingSystem {
   void SentPing() { ping_rate_policy_.SentPing(); }
 
  public:
-  PingSystem(const ChannelArgs& channel_args, bool is_client,
+  PingSystem(const ChannelArgs& channel_args,
              std::unique_ptr<PingSystemInterface> ping_interface);
 
   Promise<absl::Status> MaybeSendPing(Duration next_allowed_ping_interval,
@@ -103,8 +102,8 @@ class PingSystem {
     return ping_abuse_policy_.ReceivedOnePing(transport_idle);
   }
 
-  void ResetPingClock() {
-    if (!is_client_) {
+  void ResetPingClock(bool is_client) {
+    if (!is_client) {
       ping_abuse_policy_.ResetPingStrikes();
     }
     ping_rate_policy_.ResetPingsBeforeDataRequired();

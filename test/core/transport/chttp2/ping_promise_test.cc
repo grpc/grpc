@@ -122,8 +122,7 @@ PING_SYSTEM_TEST(TestPingRequest) {
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
-                         std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
   std::string execution_order;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
 
@@ -171,8 +170,7 @@ PING_SYSTEM_TEST(TestPingUnrelatedAck) {
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
-                         std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
   std::string execution_order;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
 
@@ -229,8 +227,7 @@ PING_SYSTEM_TEST(TestPingWaitForAck) {
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
-                         std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
   std::string execution_order;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
 
@@ -275,8 +272,7 @@ PING_SYSTEM_TEST(TestPingCancel) {
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
-                         std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
 
   auto party = GetParty();
   EXPECT_EQ(ping_system.CountPingInflight(), 0);
@@ -308,8 +304,7 @@ PING_SYSTEM_TEST(TestPingSystemNoAck) {
   ping_interface->ExpectSendPing(SendPingArgs{false, /*not used*/ 1234});
   ping_interface->ExpectPingTimeout();
 
-  PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
-                         std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
   auto party = GetParty();
   party->Spawn("PingRequest",
                TrySeq(ping_system.RequestPing([]() {
@@ -346,8 +341,7 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
   // Delayed ping
   ping_interface->ExpectTriggerWrite();
 
-  PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
-                         std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
   Duration next_allowed_ping_interval = Duration::Seconds(10);
   auto party = GetParty();
 
@@ -402,7 +396,7 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
 //   auto cb = ping_interface->ExpectSendPingReturnArgs(SendPingArgs{false,
 //   1234});
 
-//   PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
+//   PingSystem ping_system(GetChannelArgs(),
 //                          std::move(ping_interface));
 //   auto party = GetParty();
 //   party->Spawn(
@@ -447,7 +441,7 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
 //   auto cb = ping_interface->ExpectSendPingReturnArgs(SendPingArgs{false,
 //   1234}); ping_interface->ExpectPingTimeout();
 
-//   PingSystem ping_system(GetChannelArgs(), /*is_client=*/true,
+//   PingSystem ping_system(GetChannelArgs(),
 //                          std::move(ping_interface));
 //   auto party = GetParty();
 //   party->Spawn(
