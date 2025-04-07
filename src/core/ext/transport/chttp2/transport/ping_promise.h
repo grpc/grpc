@@ -84,7 +84,7 @@ class PingSystem {
 
   void TriggerDelayedPing(Duration wait, Party* party);
   bool NeedToPing(Duration next_allowed_ping_interval, Party* party);
-  void SpawnTimeout(Duration ping_timeout, Party* party);
+  void SpawnTimeout(Duration ping_timeout, uint64_t ping_id, Party* party);
 
   void SentPing() { ping_rate_policy_.SentPing(); }
 

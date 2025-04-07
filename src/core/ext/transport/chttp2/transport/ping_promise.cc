@@ -63,58 +63,83 @@ void PingSystem::TriggerDelayedPing(Duration wait, Party* party) {
     return;
   }
   delayed_ping_spawned_ = true;
-  LOG(INFO) << "Triggering delayed ping with wait: " << wait;
   party->Spawn(
       "DelayedPing",
       [this, wait]() mutable {
+        LOG(INFO) << "Scheduling delayed ping after wait=" << wait;
         return TrySeq(Sleep(wait), [this]() mutable {
           return ping_interface_->TriggerWrite();
         });
       },
-      [this](auto) {
-        // TODO(akshitpatel) : [PH2][P1] : Fix logs
-        LOG(INFO) << "Triggered delayed ping";
-        delayed_ping_spawned_ = false;
-      });
+      [this](auto) { delayed_ping_spawned_ = false; });
 }
 
 bool PingSystem::NeedToPing(Duration next_allowed_ping_interval, Party* party) {
   bool send_ping_now = false;
   if (!ping_callbacks_.PingRequested()) {
-    LOG(INFO) << "Need to ping returning: " << send_ping_now;
     return send_ping_now;
   }
 
   Match(
       ping_rate_policy_.RequestSendPing(next_allowed_ping_interval,
                                         ping_callbacks_.CountPingInflight()),
-      [&send_ping_now](grpc_core::Chttp2PingRatePolicy::SendGranted) {
+      [&send_ping_now, this](grpc_core::Chttp2PingRatePolicy::SendGranted) {
         send_ping_now = true;
         // TODO(akshitpatel) : [PH2][P1] : Update some keepalive flags.
-        // TODO(akshitpatel) : [PH2][P1] : Logs and Traces
+        // TODO(akshitpatel) : [PH2][P1] : Traces
+        if (GRPC_TRACE_FLAG_ENABLED(http) ||
+            GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
+            GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
+            GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
+          LOG(INFO) << "CLIENT" << "[" << "PH2"
+                    << "]: Ping sent" << ping_rate_policy_.GetDebugString();
+        }
       },
-      [](grpc_core::Chttp2PingRatePolicy::TooManyRecentPings) {
-        // TODO(akshitpatel) : [PH2][P1] : Logs and Traces
+      [this](grpc_core::Chttp2PingRatePolicy::TooManyRecentPings) {
+        // TODO(akshitpatel) : [PH2][P1] : Traces
+        if (GRPC_TRACE_FLAG_ENABLED(http) ||
+            GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
+            GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
+            GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
+          LOG(INFO) << "CLIENT" << "[" << "PH2"
+                    << "]: Ping delayed too many recent pings: "
+                    << ping_rate_policy_.GetDebugString();
+        }
       },
       [this, party](grpc_core::Chttp2PingRatePolicy::TooSoon too_soon) mutable {
-        // TODO(akshitpatel) : [PH2][P1] : Logs and Traces
+        // TODO(akshitpatel) : [PH2][P1] : Traces
+        if (GRPC_TRACE_FLAG_ENABLED(http) ||
+            GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
+            GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
+            GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
+          LOG(INFO) << "CLIENT" << "[" << "PH2"
+                    << "]: Ping delayed not enough time elapsed since last "
+                       "ping. Last ping:"
+                    << too_soon.last_ping
+                    << ", minimum wait:" << too_soon.next_allowed_ping_interval
+                    << ", need to wait:" << too_soon.wait;
+        }
         TriggerDelayedPing(too_soon.wait, party);
       });
 
-  LOG(INFO) << "Need to ping returning2: " << send_ping_now;
   return send_ping_now;
 }
 
-void PingSystem::SpawnTimeout(Duration ping_timeout, Party* party) {
+void PingSystem::SpawnTimeout(Duration ping_timeout, const uint64_t ping_id,
+                              Party* party) {
   party->Spawn(
       "PingTimeout",
-      [this, ping_timeout]() {
-        return Race(
-            TrySeq(Sleep(ping_timeout),
-                   [this]() mutable { return ping_interface_->PingTimeout(); }),
-            ping_callbacks_.WaitForPingAck());
+      [this, ping_timeout, ping_id]() {
+        return Race(TrySeq(Sleep(ping_timeout),
+                           [this, ping_id]() mutable {
+                             LOG(INFO)
+                                 << " Ping ack not received for id=" << ping_id
+                                 << ". Ping timeout triggered.";
+                             return ping_interface_->PingTimeout();
+                           }),
+                    ping_callbacks_.WaitForPingAck());
       },
-      [](auto) { LOG(INFO) << "Timeout ended"; });
+      [](auto) {});
 }
 
 Promise<absl::Status> PingSystem::MaybeSendPing(
@@ -124,10 +149,9 @@ Promise<absl::Status> PingSystem::MaybeSendPing(
       [this, ping_timeout, party]() mutable {
         const uint64_t ping_id = ping_callbacks_.StartPing();
         return TrySeq(ping_interface_->SendPing(SendPingArgs{false, ping_id}),
-                      [this, ping_timeout, party]() {
-                        // TODO(akshitpatel) : [PH2][P0] : Fix logs
-                        LOG(INFO) << "Http2ClientTransport Ping request sent";
-                        SpawnTimeout(ping_timeout, party);
+                      [this, ping_timeout, ping_id, party]() {
+                        LOG(INFO) << "Ping Sent";
+                        SpawnTimeout(ping_timeout, ping_id, party);
                         SentPing();
                         return absl::OkStatus();
                       });
