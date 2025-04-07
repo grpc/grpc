@@ -317,6 +317,12 @@ CORE_END2END_TEST(Http2SingleHopTests, ServerMaxConcurrentStreams) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT, true)
                  .Set(GRPC_ARG_ENABLE_RETRIES, false));
+
+  auto end_time = Timestamp::Now() + Duration::Seconds(2);
+  while (Timestamp::Now() < end_time) {
+    SimpleRequestBody(*this);
+  }
+
   // perform a ping-pong to ensure that settings have had a chance to round
   // trip
   SimpleRequestBody(*this);

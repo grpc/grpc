@@ -9,22 +9,19 @@ namespace grpc_core {
 
 void StreamQuota::SetMaxOutstandingStreams(
     uint32_t new_max_outstanding_streams) {
-  for (auto& limiter : limiters_) {
-    limiter.max_outstanding_requests.store(new_max_outstanding_streams,
-                                           std::memory_order_relaxed);
-  }
+  limiter_.max_outstanding_requests.store(new_max_outstanding_streams,
+                                          std::memory_order_relaxed);
 }
 
 uint32_t StreamQuota::GetPerConnectionMaxConcurrentRequests(
     uint32_t current_open_requests) {
-  Limiter& limiter = limiters_.this_cpu();
   Statistics& stats = stats_.this_cpu();
-  limiter.periodic_update.Tick(
-      [this, &limiter](Duration) { UpdatePerConnectionLimits(limiter); });
+  limiter_.periodic_update.Tick(
+      [this](Duration) { UpdatePerConnectionLimits(); });
   const uint64_t allowed_requests_per_channel =
-      limiter.allowed_requests_per_channel.load(std::memory_order_relaxed);
+      limiter_.allowed_requests_per_channel.load(std::memory_order_relaxed);
   const uint64_t target_mean_requests_per_channel =
-      limiter.target_mean_requests_per_channel.load(std::memory_order_relaxed);
+      limiter_.target_mean_requests_per_channel.load(std::memory_order_relaxed);
   if (allowed_requests_per_channel == 0) {
     // If there are open requests on this channel, but we're past capacity
     // try to lower the number of requests here. This should slowly force
@@ -51,7 +48,7 @@ uint32_t StreamQuota::GetPerConnectionMaxConcurrentRequests(
   }
 }
 
-void StreamQuota::UpdatePerConnectionLimits(Limiter& limiter) {
+void StreamQuota::UpdatePerConnectionLimits() {
   int64_t outstanding_requests = 0;
   int64_t open_channels = 0;
   for (auto& stats : stats_) {
@@ -62,22 +59,20 @@ void StreamQuota::UpdatePerConnectionLimits(Limiter& limiter) {
   open_channels = std::max<int64_t>(1, open_channels);
   outstanding_requests = std::max<int64_t>(0, outstanding_requests);
   const int64_t max_outstanding_requests =
-      limiter.max_outstanding_requests.load(std::memory_order_relaxed);
+      limiter_.max_outstanding_requests.load(std::memory_order_relaxed);
   const int64_t allowed_requests_per_channel =
       (max_outstanding_requests - outstanding_requests) / open_channels;
   const uint64_t target_mean_requests_per_channel =
       max_outstanding_requests / open_channels;
-  limiter.allowed_requests_per_channel.store(
+  limiter_.allowed_requests_per_channel.store(
       std::max<int64_t>(0, allowed_requests_per_channel),
       std::memory_order_relaxed);
-  limiter.target_mean_requests_per_channel.store(
+  limiter_.target_mean_requests_per_channel.store(
       target_mean_requests_per_channel, std::memory_order_relaxed);
 }
 
 void StreamQuota::UpdatePerConnectionLimitsForAllTestOnly() {
-  for (auto& limiter : limiters_) {
-    UpdatePerConnectionLimits(limiter);
-  }
+  UpdatePerConnectionLimits();
 }
 
 }  // namespace grpc_core

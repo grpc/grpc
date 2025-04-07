@@ -68,9 +68,9 @@ class StreamQuota : public RefCounted<StreamQuota> {
     std::atomic<uint64_t> max_outstanding_requests{
         std::numeric_limits<uint32_t>::max()};
   };
-  PerCpu<Limiter> limiters_{PerCpuOptions()};
+  Limiter limiter_;
 
-  void UpdatePerConnectionLimits(Limiter& limiter);
+  void UpdatePerConnectionLimits();
 };
 
 using StreamQuotaRefPtr = RefCountedPtr<StreamQuota>;
