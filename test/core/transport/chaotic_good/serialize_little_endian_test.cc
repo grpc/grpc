@@ -12,24 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/core/ext/transport/chaotic_good/serialize_little_endian.h"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <cstdint>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
-#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 
-using grpc_core::chaotic_good::TcpFrameHeader;
-using HeaderBuffer = std::array<uint8_t, TcpFrameHeader::kFrameHeaderSize>;
+namespace grpc_core::chaotic_good {
 
-void RoundTrips(HeaderBuffer buffer) {
-  auto r = TcpFrameHeader::Parse(buffer.data());
-  if (!r.ok()) return;
-  HeaderBuffer reserialized;
-  r->Serialize(reserialized.data());
-  EXPECT_EQ(buffer, reserialized) << r->ToString();
+void RoundTrips32(uint32_t x) {
+  uint8_t buffer[4];
+  WriteLittleEndianUint32(x, buffer);
+  uint32_t y = ReadLittleEndianUint32(buffer);
+  EXPECT_EQ(x, y);
 }
-FUZZ_TEST(FrameHeaderTest, RoundTrips);
+FUZZ_TEST(SerializeLittleEndianTest, RoundTrips32);
+
+void RoundTrips64(uint64_t x) {
+  uint8_t buffer[8];
+  WriteLittleEndianUint64(x, buffer);
+  uint64_t y = ReadLittleEndianUint64(buffer);
+  EXPECT_EQ(x, y);
+}
+FUZZ_TEST(SerializeLittleEndianTest, RoundTrips64);
+
+}  // namespace grpc_core::chaotic_good
