@@ -206,7 +206,6 @@ if sys.version_info >= (3, 5, 0):
         _maybe_install_proto_finders()
 
 
-
 def entrypoint() -> None:
     proto_include = _get_resource_file_name("grpc_tools", "_proto")
     sys.exit(main(sys.argv + ["-I{}".format(proto_include)]))
