@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.72.0-dev'
+  version = '1.73.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -1206,6 +1206,7 @@ Pod::Spec.new do |s|
                       'src/core/service_config/service_config_impl.h',
                       'src/core/service_config/service_config_parser.h',
                       'src/core/telemetry/call_tracer.h',
+                      'src/core/telemetry/default_tcp_tracer.h',
                       'src/core/telemetry/histogram_view.h',
                       'src/core/telemetry/metrics.h',
                       'src/core/telemetry/stats.h',
@@ -2516,6 +2517,7 @@ Pod::Spec.new do |s|
                               'src/core/service_config/service_config_impl.h',
                               'src/core/service_config/service_config_parser.h',
                               'src/core/telemetry/call_tracer.h',
+                              'src/core/telemetry/default_tcp_tracer.h',
                               'src/core/telemetry/histogram_view.h',
                               'src/core/telemetry/metrics.h',
                               'src/core/telemetry/stats.h',

@@ -30,6 +30,6 @@ void RoundTrips(HeaderBuffer buffer) {
   if (!r.ok()) return;
   HeaderBuffer reserialized;
   r->Serialize(reserialized.data());
-  EXPECT_EQ(buffer, reserialized);
+  EXPECT_EQ(buffer, reserialized) << r->ToString();
 }
 FUZZ_TEST(FrameHeaderTest, RoundTrips);

@@ -102,6 +102,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/default_tcp_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/bitset.h"
@@ -639,7 +640,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
         grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
             ep.get()));
     if (epte != nullptr) {
-      epte->InitializeAndReturnTcpTracer();
+      epte->SetTcpTracer(std::make_shared<grpc_core::DefaultTcpTracer>(
+          channel_args.GetObjectRef<
+              grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>()));
     }
   }
 
