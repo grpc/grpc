@@ -25,6 +25,7 @@ void StreamQuota::SetMaxOutstandingStreams(
     uint32_t new_max_outstanding_streams) {
   limiter_.max_outstanding_requests.store(new_max_outstanding_streams,
                                           std::memory_order_relaxed);
+  UpdatePerConnectionLimits();
 }
 
 uint32_t StreamQuota::GetPerConnectionMaxConcurrentRequests(
