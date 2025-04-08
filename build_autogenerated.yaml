@@ -20556,6 +20556,10 @@ targets:
   deps:
   - gtest
   - grpc
+  platforms:
+  - linux
+  - posix
+  - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
   hash: cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f

@@ -82,6 +82,9 @@ grpc_cc_test(
         "gtest",
         "gtest_main",
     ],
+    tags = [
+        "no_windows",
+    ],
     deps = [
         "//:grpc",
         "//src/core:notification",
