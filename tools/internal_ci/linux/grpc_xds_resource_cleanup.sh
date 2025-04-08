@@ -147,7 +147,7 @@ main() {
     "cleanup_cluster_lb_secondary"
     "cleanup_cluster_security"
     "cleanup_cluster_url_map"
-    "cleanup_cluster_gamma",
+    "cleanup_cluster_gamma"
     "cleanup_cluster_dualstack"
   )
   for job_name in "${cleanup_jobs[@]}"; do
