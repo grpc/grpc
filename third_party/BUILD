@@ -1,3 +1,5 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
 exports_files([
     "gtest.BUILD",
     "zlib.BUILD",
@@ -16,15 +18,32 @@ exports_files([
 
 package(default_visibility = ["//:__subpackages__"])
 
+bool_flag(
+    name = "use_openssl",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "use_openssl_setting",
+    flag_values = {":use_openssl": "true"},
+)
+
 alias(
     name = "libssl",
-    actual = "@boringssl//:ssl",
+    actual = select({
+        ":use_openssl_setting": "@openssl//:ssl",
+        "//conditions:default": "@boringssl//:ssl",
+    }),
     tags = ["manual"],
 )
 
 alias(
     name = "libcrypto",
-    actual = "@boringssl//:crypto",
+    actual = select({
+        ":use_openssl_setting": "@openssl//:crypto",
+        "//conditions:default": "@boringssl//:crypto",
+    }),
     tags = ["manual"],
 )
 
