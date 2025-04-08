@@ -7668,10 +7668,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_auth_filter_test.cc
   - test/core/filters/filter_test.cc
@@ -7685,10 +7687,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_authority_filter_test.cc
   - test/core/filters/filter_test.cc
@@ -10816,10 +10820,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/filter_test.cc
   - test/core/filters/filter_test_test.cc
@@ -11206,9 +11212,11 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_unittest.cc
   deps:
@@ -11220,10 +11228,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/filter_test.cc
   - test/core/filters/gcp_authentication_filter_test.cc
@@ -12085,6 +12095,7 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
@@ -12096,6 +12107,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chttp2/http2_client_transport_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
@@ -12119,6 +12131,7 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
@@ -12128,6 +12141,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chttp2/http2_server_transport_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
