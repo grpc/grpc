@@ -2200,8 +2200,6 @@ add_library(grpc
   src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/credentials/transport/channel_creds_registry_init.cc
   src/core/credentials/transport/composite/composite_channel_credentials.cc
-  src/core/credentials/transport/fake/fake_credentials.cc
-  src/core/credentials/transport/fake/fake_security_connector.cc
   src/core/credentials/transport/google_default/credentials_generic.cc
   src/core/credentials/transport/google_default/google_default_credentials.cc
   src/core/credentials/transport/insecure/insecure_credentials.cc
@@ -2882,7 +2880,6 @@ add_library(grpc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/key_logging/ssl_key_logging.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -3292,8 +3289,6 @@ add_library(grpc_unsecure
   src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/credentials/transport/composite/composite_channel_credentials.cc
-  src/core/credentials/transport/fake/fake_credentials.cc
-  src/core/credentials/transport/fake/fake_security_connector.cc
   src/core/credentials/transport/insecure/insecure_credentials.cc
   src/core/credentials/transport/insecure/insecure_security_connector.cc
   src/core/credentials/transport/security_connector.cc
@@ -3613,7 +3608,6 @@ add_library(grpc_unsecure
   src/core/telemetry/stats_data.cc
   src/core/transport/auth_context.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
@@ -5123,6 +5117,8 @@ add_library(grpc++_test_util
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/cpp/util/byte_buffer_proto_helper.cc
   test/cpp/util/create_test_channel.cc
   test/cpp/util/string_ref_helper.cc
@@ -6343,6 +6339,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(address_sorting_test_unsecure
     src/core/util/subprocess_posix.cc
     src/core/util/subprocess_windows.cc
+    test/core/test_util/fake_transport_credentials.cc
+    test/core/test_util/fake_transport_security.cc
     test/cpp/naming/address_sorting_test.cc
     test/cpp/util/byte_buffer_proto_helper.cc
     test/cpp/util/string_ref_helper.cc
@@ -6381,6 +6379,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(address_sorting_test_unsecure
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    grpc
     grpc++_unsecure
     grpc_test_util_unsecure
     grpc++_test_config
@@ -8897,6 +8896,8 @@ add_executable(call_credentials_test
   test/core/credentials/call/call_credentials_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/test_call_creds.cc
 )
 if(WIN32 AND MSVC)
@@ -10063,6 +10064,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(channel_creds_registry_test
   test/core/credentials/transport/channel_creds_registry_test.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10817,6 +10820,8 @@ add_executable(client_auth_filter_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/client_auth_filter_test.cc
   test/core/filters/filter_test.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -11626,6 +11631,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(composite_credentials_test
   test/core/credentials/transport/composite/composite_credentials_test.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/test_call_creds.cc
 )
 if(WIN32 AND MSVC)
@@ -12825,6 +12832,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
+    test/core/test_util/fake_transport_credentials.cc
+    test/core/test_util/fake_transport_security.cc
     test/core/test_util/fuzz_config_vars.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
@@ -13014,6 +13023,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
+    test/core/test_util/fake_transport_credentials.cc
+    test/core/test_util/fake_transport_security.cc
     test/core/test_util/fuzz_config_vars.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
@@ -13114,6 +13125,8 @@ add_executable(end2end_http2_no_logging_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13213,6 +13226,8 @@ add_executable(end2end_http2_security_no_logging_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13400,6 +13415,8 @@ add_executable(end2end_http2_security_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13587,6 +13604,8 @@ add_executable(end2end_http2_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13686,6 +13705,8 @@ add_executable(end2end_inproc_no_logging_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13873,6 +13894,8 @@ add_executable(end2end_inproc_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -13972,6 +13995,8 @@ add_executable(end2end_posix_no_logging_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -14159,6 +14184,8 @@ add_executable(end2end_posix_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -15113,6 +15140,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(fake_transport_security_test
+  test/core/test_util/fake_transport_security.cc
   test/core/tsi/fake_transport_security_test.cc
   test/core/tsi/transport_security_test_lib.cc
 )
@@ -17817,6 +17845,8 @@ add_executable(h2_ssl_cert_test
   test/core/end2end/h2_ssl_cert_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
   test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_call_creds.cc
 )
@@ -19105,6 +19135,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(insecure_credentials_test
   test/core/credentials/transport/insecure/insecure_credentials_test.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -25424,6 +25456,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(secure_channel_create_test
   test/core/surface/secure_channel_create_test.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -25467,6 +25501,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(secure_endpoint_test
   test/core/handshake/secure_endpoint_test.cc
   test/core/iomgr/endpoint_tests.cc
+  test/core/test_util/fake_transport_security.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -25919,6 +25954,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(server_chttp2_test
   test/core/surface/server_chttp2_test.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -26365,6 +26402,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(server_test
   test/core/surface/server_test.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29707,6 +29746,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(transport_security_test
+  test/core/test_util/fake_transport_security.cc
   test/core/tsi/transport_security_test.cc
 )
 if(WIN32 AND MSVC)
@@ -34339,6 +34379,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(xds_credentials_test
   test/core/credentials/transport/xds/xds_credentials_test.cc
+  test/core/test_util/fake_transport_credentials.cc
+  test/core/test_util/fake_transport_security.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

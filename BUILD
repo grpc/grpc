@@ -674,7 +674,6 @@ grpc_cc_library(
         "//src/core:forkable",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_external_account_credentials",
-        "//src/core:grpc_fake_credentials",
         "//src/core:grpc_google_default_credentials",
         "//src/core:grpc_iam_credentials",
         "//src/core:grpc_insecure_credentials",
@@ -2255,7 +2254,6 @@ grpc_cc_library(
         "gpr",
         "tsi_alts_frame_protector",
         "tsi_base",
-        "tsi_fake_credentials",
         "//src/core:tsi_local_credentials",
         "//src/core:useful",
     ],
@@ -3877,30 +3875,6 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:unique_type_name",
-        "//src/core:useful",
-    ],
-)
-
-grpc_cc_library(
-    name = "tsi_fake_credentials",
-    srcs = [
-        "//src/core:tsi/fake_transport_security.cc",
-    ],
-    hdrs = [
-        "//src/core:tsi/fake_transport_security.h",
-    ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
-    visibility = [
-        "//visibility:public",
-    ],
-    deps = [
-        "gpr",
-        "tsi_base",
-        "//src/core:dump_args",
-        "//src/core:slice",
         "//src/core:useful",
     ],
 )

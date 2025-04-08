@@ -48,7 +48,6 @@
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
 #include "src/core/credentials/call/oauth2/oauth2_credentials.h"
 #include "src/core/credentials/transport/composite/composite_channel_credentials.h"
-#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/google_default/google_default_credentials.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/transport_credentials.h"
@@ -77,6 +76,7 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/test_util/fake_transport_credentials.h"
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 

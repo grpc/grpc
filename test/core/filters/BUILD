@@ -92,9 +92,9 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:arena_promise",
         "//src/core:channel_args",
-        "//src/core:grpc_fake_credentials",
         "//src/core:unique_type_name",
         "//src/core:useful",
+        "//test/core/test_util:fake_transport_credentials",
     ],
 )
 
