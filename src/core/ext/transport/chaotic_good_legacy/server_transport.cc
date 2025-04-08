@@ -46,6 +46,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -343,7 +344,9 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
       message_chunker_(config.MakeMessageChunker()) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), config.TakePendingDataEndpoints(),
-      event_engine_, config.MakeTransportOptions(), false);
+      event_engine_,
+      args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>(),
+      config.MakeTransportOptions(), false);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
