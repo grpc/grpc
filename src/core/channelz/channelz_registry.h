@@ -157,8 +157,8 @@ class ChannelzRegistry final {
         }
       }
     }
-    return std::make_tuple(std::move(top_level_channels),
-                           node_after_pagination_limit == nullptr);
+    return std::tuple(std::move(top_level_channels),
+                      node_after_pagination_limit == nullptr);
   }
 
   void InternalLogAllEntities();
