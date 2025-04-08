@@ -640,7 +640,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
         grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
             ep.get()));
     if (epte != nullptr) {
-      epte->SetTcpTracer(std::make_shared<grpc_core::DefaultTcpTracer>());
+      epte->SetTcpTracer(std::make_shared<grpc_core::DefaultTcpTracer>(
+          channel_args.GetObjectRef<
+              grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>()));
     }
   }
 
