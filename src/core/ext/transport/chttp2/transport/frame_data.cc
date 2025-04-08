@@ -75,7 +75,8 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
   *p++ = static_cast<uint8_t>(id);
   grpc_slice_buffer_add(outbuf, hdr);
 
-  ztrace_collector->Append(H2DataTrace<false>{id, is_eof, write_bytes});
+  ztrace_collector->Append(
+      grpc_core::H2DataTrace<false>{id, is_eof != 0, write_bytes});
 
   grpc_slice_buffer_move_first_no_ref(inbuf, write_bytes, outbuf);
 
@@ -152,9 +153,9 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
   grpc_chttp2_maybe_complete_recv_message(t, s);
 
   if (is_last && s->received_last_frame) {
-    t->http2_ztrace_collector_detail.Append(H2DataTrace<true>{
+    t->http2_ztrace_collector.Append(grpc_core::H2DataTrace<true>{
         t->incoming_stream_id,
-        (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM),
+        (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0,
         t->incoming_frame_size});
     grpc_chttp2_mark_stream_closed(
         t, s, true, false,

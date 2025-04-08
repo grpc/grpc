@@ -9375,6 +9375,7 @@ grpc_cc_library(
     ],
     deps = [
         "ztrace_collector",
+        "//:chttp2_frame",
     ],
 )
 

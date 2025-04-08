@@ -48,7 +48,7 @@ grpc_slice grpc_chttp2_rst_stream_create(
   if (call_tracer != nullptr) {
     call_tracer->RecordOutgoingBytes({frame_size, 0, 0});
   }
-  ztrace_collector->Append(H2RstStreamTrace<false>{id, code});
+  ztrace_collector->Append(grpc_core::H2RstStreamTrace<false>{id, code});
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
   // Frame size.
@@ -117,7 +117,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
                       ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |
                       ((static_cast<uint32_t>(p->reason_bytes[3])));
     t->http2_ztrace_collector.Append(
-        gprc_core::H2RstStreamTrace<true>{t->incoming_stream_id, reason});
+        grpc_core::H2RstStreamTrace<true>{t->incoming_stream_id, reason});
     GRPC_TRACE_LOG(http, INFO)
         << "[chttp2 transport=" << t << " stream=" << s
         << "] received RST_STREAM(reason=" << reason << ")";

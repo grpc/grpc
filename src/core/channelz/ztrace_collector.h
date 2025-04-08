@@ -44,6 +44,16 @@ void AppendResults(const Collection<T>& data, Json::Array& results) {
   }
 }
 
+template <typename Needle, typename... Haystack>
+constexpr bool kIsElement = false;
+
+template <typename Needle, typename... Haystack>
+constexpr bool kIsElement<Needle, Needle, Haystack...> = true;
+
+template <typename Needle, typename H, typename... Haystack>
+constexpr bool kIsElement<Needle, H, Haystack...> =
+    kIsElement<Needle, Haystack...>;
+
 }  // namespace ztrace_collector_detail
 
 // Generic collector infrastructure for ztrace queries.
@@ -72,10 +82,10 @@ class ZTraceCollector {
   template <typename X>
   void Append(X producer_or_value) {
     if (!impl_.is_set()) return;
-    if constexpr (std::is_invocable_v<X>) {
-      AppendValue(producer_or_value());
-    } else {
+    if constexpr (ztrace_collector_detail::kIsElement<X, Data...>) {
       AppendValue(std::move(producer_or_value));
+    } else {
+      AppendValue(producer_or_value());
     }
   }
 

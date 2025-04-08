@@ -96,7 +96,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
 
   if (parser->is_ack) {
     t->http2_ztrace_collector.Append(
-        gprc_core::H2SettingsTrace<true>{true, {}});
+        grpc_core::H2SettingsTrace<true>{true, {}});
     return absl::OkStatus();
   }
 
@@ -121,7 +121,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             grpc_core::global_stats()
                 .IncrementHttp2PreferredReceiveCryptoMessageSize(
                     target_settings->preferred_receive_crypto_message_size());
-            t->http2_ztrace_collector.Append([t]() {
+            t->http2_ztrace_collector.Append([parser]() {
               grpc_core::H2SettingsTrace<true> settings{false, {}};
               // TODO(ctiller): produce actual wire settings here, not a
               // diff. Likely this needs to wait for PH2 where we separate
@@ -134,7 +134,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
               return settings;
             });
             t->http2_ztrace_collector.Append(
-                grpc_core::H2SettingsTrace<false>(true, {}););
+                []() { return grpc_core::H2SettingsTrace<false>{true, {}}; });
             *parser->target_settings = *parser->incoming_settings;
             t->num_pending_induced_frames++;
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
@@ -215,7 +215,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         if (error != Http2ErrorCode::kNoError) {
           grpc_chttp2_goaway_append(
               t->last_new_stream_id, static_cast<uint32_t>(error),
-              grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf);
+              grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf,
+              &t->http2_ztrace_collector);
           return GRPC_ERROR_CREATE(absl::StrFormat(
               "invalid value %u passed for %s", parser->value,
               grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));

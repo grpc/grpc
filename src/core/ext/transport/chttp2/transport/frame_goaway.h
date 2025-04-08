@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/error.h"
 

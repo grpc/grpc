@@ -1091,8 +1091,8 @@ static void write_action(grpc_chttp2_transport* t) {
       << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
       << t->outbuf.Length() << " bytes";
   t->write_size_policy.BeginWrite(t->outbuf.Length());
-  t->http2_ztrace_collector.Append(
-      grpc_core::H2BeginEndpointWrite{t->outbuf.Length()});
+  t->http2_ztrace_collector.Append(grpc_core::H2BeginEndpointWrite{
+      static_cast<uint32_t>(t->outbuf.Length())});
   grpc_endpoint_write(t->ep.get(), t->outbuf.c_slice_buffer(),
                       grpc_core::InitTransportClosure<write_action_end>(
                           t->Ref(), &t->write_action_end_locked),
@@ -1924,7 +1924,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     // Graceful GOAWAYs require a NO_ERROR error code
     grpc_chttp2_goaway_append(
         (1u << 31) - 1, 0 /*NO_ERROR*/,
-        grpc_core::Slice::FromCopiedString(message_).TakeCSlice(), &t->qbuf);
+        grpc_core::Slice::FromCopiedString(message_).TakeCSlice(), &t->qbuf,
+        &t->http2_ztrace_collector);
     t->keepalive_timeout =
         std::min(t->keepalive_timeout, grpc_core::Duration::Seconds(20));
     t->ping_timeout =
@@ -1958,7 +1959,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     t_->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED;
     grpc_chttp2_goaway_append(
         t_->last_new_stream_id, 0 /*NO_ERROR*/,
-        grpc_core::Slice::FromCopiedString(message_).TakeCSlice(), &t_->qbuf);
+        grpc_core::Slice::FromCopiedString(message_).TakeCSlice(), &t_->qbuf,
+        &t_->http2_ztrace_collector);
     grpc_chttp2_initiate_write(t_.get(),
                                GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
   }
@@ -2004,9 +2006,10 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
             << ": Sending goaway last_new_stream_id=" << t->last_new_stream_id
             << " err=" << grpc_core::StatusToString(error);
     t->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED;
-    grpc_chttp2_goaway_append(
-        t->last_new_stream_id, static_cast<uint32_t>(http_error),
-        grpc_slice_from_cpp_string(std::move(message)), &t->qbuf);
+    grpc_chttp2_goaway_append(t->last_new_stream_id,
+                              static_cast<uint32_t>(http_error),
+                              grpc_slice_from_cpp_string(std::move(message)),
+                              &t->qbuf, &t->http2_ztrace_collector);
   } else {
     // Final GOAWAY has already been sent.
   }

@@ -4531,6 +4531,7 @@ grpc_cc_library(
         "grpc_trace",
         "//src/core:hpack_constants",
         "//src/core:hpack_encoder_table",
+        "//src/core:http2_ztrace_collector",
         "//src/core:metadata_batch",
         "//src/core:metadata_compression_traits",
         "//src/core:slice",

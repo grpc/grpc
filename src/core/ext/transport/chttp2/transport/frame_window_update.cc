@@ -102,7 +102,7 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
     }
     CHECK(is_last);
 
-    t->http2_ztrace_collector.Append(gprc_core::H2WindowUpdateTrace<true>{
+    t->http2_ztrace_collector.Append(grpc_core::H2WindowUpdateTrace<true>{
         t->incoming_stream_id, received_update});
 
     if (t->incoming_stream_id != 0) {

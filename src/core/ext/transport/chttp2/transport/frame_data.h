@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include "absl/status/status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/poll.h"

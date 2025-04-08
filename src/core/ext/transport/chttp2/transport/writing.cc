@@ -128,7 +128,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         t->ping_rate_policy.SentPing();
         const uint64_t id = t->ping_callbacks.StartPing(t->bitgen);
         t->http2_ztrace_collector.Append(
-            gprc_core::H2PingTrace<false>{false, id});
+            grpc_core::H2PingTrace<false>{false, id});
         grpc_slice_buffer_add(t->outbuf.c_slice_buffer(),
                               grpc_chttp2_ping_create(false, id));
         t->keepalive_incoming_data_wanted = true;
@@ -264,7 +264,7 @@ class WriteContext {
     auto update = t_->settings.MaybeSendUpdate();
     if (update.has_value()) {
       t_->http2_ztrace_collector.Append([&update]() {
-        return grpc_core::H2SettingsTrace<false>{false, update.settings};
+        return grpc_core::H2SettingsTrace<false>{false, update->settings};
       });
       grpc_core::Http2Frame frame(std::move(*update));
       Serialize(absl::Span<grpc_core::Http2Frame>(&frame, 1), t_->outbuf);
@@ -311,8 +311,8 @@ class WriteContext {
     // delayed by crypto operations.
     target_write_size_ = 0;
     for (size_t i = 0; i < t_->ping_ack_count; i++) {
-      t->http2_ztrace_collector.Append(
-          gprc_core::H2PingTrace<false>{true, t_->ping_acks[i]});
+      t_->http2_ztrace_collector.Append(
+          grpc_core::H2PingTrace<false>{true, t_->ping_acks[i]});
       grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
                             grpc_chttp2_ping_create(true, t_->ping_acks[i]));
     }
@@ -415,6 +415,7 @@ class DataSendContext {
                      s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
                             is_last_frame_, &s_->call_tracer_wrapper,
+                            &t_->http2_ztrace_collector,
                             t_->outbuf.c_slice_buffer());
     sfc_upd_.SentData(send_bytes);
     s_->sending_bytes += send_bytes;
@@ -473,7 +474,7 @@ class StreamWriteContext {
               t_->settings.peer()
                   .allow_true_binary_metadata(),     // use_true_binary_metadata
               t_->settings.peer().max_frame_size(),  // max_frame_size
-              &s_->call_tracer_wrapper},
+              &s_->call_tracer_wrapper, &t_->http2_ztrace_collector},
           *s_->send_initial_metadata, t_->outbuf.c_slice_buffer());
       grpc_chttp2_reset_ping_clock(t_);
       write_context_->IncInitialMetadataWrites();
@@ -540,14 +541,14 @@ class StreamWriteContext {
 
     if (!data_send_context.AnyOutgoing()) {
       if (t_->flow_control.remote_window() <= 0) {
-        t->http2_ztrace_collector.Append(grpc_core::H2FlowControlStall{
+        t_->http2_ztrace_collector.Append(grpc_core::H2FlowControlStall{
             t_->flow_control.remote_window(),
             data_send_context.stream_remote_window(), s_->id});
         grpc_core::global_stats().IncrementHttp2TransportStalls();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
-        t->http2_ztrace_collector.Append(grpc_core::H2FlowControlStall{
+        t_->http2_ztrace_collector.Append(grpc_core::H2FlowControlStall{
             t_->flow_control.remote_window(),
             data_send_context.stream_remote_window(), s_->id});
         grpc_core::global_stats().IncrementHttp2StreamStalls();
@@ -584,12 +585,14 @@ class StreamWriteContext {
     if (s_->send_trailing_metadata->empty()) {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
                               &s_->call_tracer_wrapper,
+                              &t_->http2_ztrace_collector,
                               t_->outbuf.c_slice_buffer());
     } else {
       t_->hpack_compressor.EncodeHeaders(
           grpc_core::HPackCompressor::EncodeHeaderOptions{
               s_->id, true, t_->settings.peer().allow_true_binary_metadata(),
-              t_->settings.peer().max_frame_size(), &s_->call_tracer_wrapper},
+              t_->settings.peer().max_frame_size(), &s_->call_tracer_wrapper,
+              &t_->http2_ztrace_collector},
           *s_->send_trailing_metadata, t_->outbuf.c_slice_buffer());
     }
     write_context_->IncTrailingMetadataWrites();
@@ -691,8 +694,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   int64_t outbuf_relative_start_pos = 0;
   WriteContext ctx(t);
 
-  t->http2_ztrace_collector.Append(
-      grpc_core::H2BeginWriteCycle{ctx.target_write_size()});
+  t->http2_ztrace_collector.Append(grpc_core::H2BeginWriteCycle{
+      static_cast<uint32_t>(ctx.target_write_size())});
 
   ctx.FlushSettings();
   ctx.FlushPingAcks();
