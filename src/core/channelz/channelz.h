@@ -151,7 +151,7 @@ class DataSource {
   virtual void AddJson(Json::Object& output) = 0;
 
   // If this data source exports some ztrace, return it here.
-  virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view name) {
+  virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
     return nullptr;
   }
 
