@@ -23,6 +23,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/metrics.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -172,7 +173,9 @@ class Endpoint final {
   Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueues> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
-           grpc_event_engine::experimental::EventEngine* event_engine);
+           grpc_event_engine::experimental::EventEngine* event_engine,
+           std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+               stats_plugin_group);
 
  private:
   static auto WriteLoop(uint32_t id,
@@ -194,6 +197,8 @@ class DataEndpoints {
   explicit DataEndpoints(
       std::vector<PendingConnection> endpoints,
       grpc_event_engine::experimental::EventEngine* event_engine,
+      std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+          stats_plugin_group,
       bool enable_tracing);
 
   // Try to queue output_buffer against a data endpoint.

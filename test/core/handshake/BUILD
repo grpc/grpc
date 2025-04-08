@@ -21,6 +21,7 @@ licenses(["notice"])
 
 grpc_cc_library(
     name = "test_handshake",
+    testonly = True,
     srcs = ["test_handshake.cc"],
     hdrs = ["test_handshake.h"],
     deps = [

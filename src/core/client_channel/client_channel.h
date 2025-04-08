@@ -170,6 +170,9 @@ class ClientChannel : public Channel {
       ConfigSelector& config_selector,
       ClientMetadata& client_initial_metadata) const;
 
+  const std::string default_authority_;
+  const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
   const ChannelArgs channel_args_;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
@@ -177,9 +180,7 @@ class ClientChannel : public Channel {
   const size_t service_config_parser_index_;
   const RefCountedPtr<ServiceConfig> default_service_config_;
   ClientChannelFactory* const client_channel_factory_;
-  const std::string default_authority_;
   channelz::ChannelNode* const channelz_node_;
-  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
 
   //
   // Idleness state.
