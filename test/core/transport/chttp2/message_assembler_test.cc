@@ -173,15 +173,24 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) {
 
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
-  EXPECT_EQ(result1->get()->payload()->Length(), kString1.size());
+  SliceBuffer* payload1 = result1->get()->payload();
+  EXPECT_EQ(payload1->Length(), kString1.size());
+  EXPECT_STREQ(payload1->JoinIntoString().c_str(),
+               std::string(kString1).c_str());
 
   absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
   EXPECT_TRUE(result2.ok());
-  EXPECT_EQ(result2->get()->payload()->Length(), kString2.size());
+  SliceBuffer* payload2 = result2->get()->payload();
+  EXPECT_EQ(payload2->Length(), kString2.size());
+  EXPECT_STREQ(payload2->JoinIntoString().c_str(),
+               std::string(kString2).c_str());
 
   absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
   EXPECT_TRUE(result3.ok());
-  EXPECT_EQ(result3->get()->payload()->Length(), kString3.size());
+  SliceBuffer* payload3 = result3->get()->payload();
+  EXPECT_EQ(payload3->Length(), kString3.size());
+  EXPECT_STREQ(payload3->JoinIntoString().c_str(),
+               std::string(kString3).c_str());
 
   absl::StatusOr<MessageHandle> result4 = assembler.ExtractMessage();
   EXPECT_TRUE(result4.ok());
@@ -228,7 +237,10 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
 
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
-  EXPECT_EQ(result1->get()->payload()->Length(), kString1.size());
+  SliceBuffer* payload1 = result1->get()->payload();
+  EXPECT_EQ(payload1->Length(), kString1.size());
+  EXPECT_STREQ(payload1->JoinIntoString().c_str(),
+               std::string(kString1).c_str());
 
   absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
   EXPECT_TRUE(result2.ok());
@@ -236,7 +248,10 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
 
   absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
   EXPECT_TRUE(result3.ok());
-  EXPECT_EQ(result3->get()->payload()->Length(), kString3.size());
+  SliceBuffer* payload3 = result3->get()->payload();
+  EXPECT_EQ(payload3->Length(), kString3.size());
+  EXPECT_STREQ(payload3->JoinIntoString().c_str(),
+               std::string(kString3).c_str());
 
   absl::StatusOr<MessageHandle> result4 = assembler.ExtractMessage();
   EXPECT_TRUE(result4.ok());
