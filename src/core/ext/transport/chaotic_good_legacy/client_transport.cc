@@ -46,6 +46,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -218,7 +219,9 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
       args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), config.TakePendingDataEndpoints(),
-      event_engine, config.MakeTransportOptions(), config.tracing_enabled());
+      event_engine,
+      args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>(),
+      config.MakeTransportOptions(), config.tracing_enabled());
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());

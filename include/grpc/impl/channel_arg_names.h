@@ -51,11 +51,13 @@
  * server will close the connection. Int valued, milliseconds. INT_MAX means
  * unlimited. Defaults to INT_MAX. */
 #define GRPC_ARG_MAX_CONNECTION_IDLE_MS "grpc.max_connection_idle_ms"
-/** Maximum time that a channel may exist. Int valued, milliseconds.
- * INT_MAX means unlimited. Defaults to INT_MAX. */
+/** Maximum amount of time in milliseconds that a connection may exist before it
+ * will be gracefully shut down. Refer
+ * https://github.com/grpc/proposal/blob/master/A9-server-side-conn-mgt.md for
+ * more details. Int valued, defaults to INT_MAX (disabled). */
 #define GRPC_ARG_MAX_CONNECTION_AGE_MS "grpc.max_connection_age_ms"
-/** Grace period after the channel reaches its max age. Int valued,
-   milliseconds. INT_MAX means unlimited. Defaults to INT_MAX. */
+/** Grace period in milliseconds after connection reaches its max age for
+ * outstanding RPCs to complete. Int valued, defaults to INT_MAX (disabled). */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
 /** Timeout after the last RPC finishes on the client channel at which the
  * channel goes back into IDLE state. Int valued, milliseconds. INT_MAX means

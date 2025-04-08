@@ -20,6 +20,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/sync.h"
 
@@ -27,7 +28,8 @@ namespace grpc_core {
 
 class DefaultTcpTracer final : public TcpConnectionTracer {
  public:
-  DefaultTcpTracer() = default;
+  explicit DefaultTcpTracer(
+      std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>) {}
   ~DefaultTcpTracer() override = default;
   // Records per-connection metrics.
   void RecordConnectionMetrics(TcpConnectionMetrics metrics) override;
