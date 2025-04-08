@@ -86,6 +86,14 @@ cleanup::job::cleanup_cluster_gamma() {
 }
 
 #######################################
+# The Dualstack cluster is used by the dualstack test suites.
+#######################################
+cleanup::job::cleanup_cluster_dualstack() {
+  cleanup::activate_cluster GKE_CLUSTER_DUALSTACK
+  cleanup::run_clean "$1" --mode=k8s
+}
+
+#######################################
 # Set common variables for the cleanup script.
 # Globals:
 #   TEST_DRIVER_FLAGFILE: Relative path to test driver flagfile
@@ -140,6 +148,7 @@ main() {
     "cleanup_cluster_security"
     "cleanup_cluster_url_map"
     "cleanup_cluster_gamma"
+    "cleanup_cluster_dualstack"
   )
   for job_name in "${cleanup_jobs[@]}"; do
     echo "-------------------- Starting job ${job_name} --------------------"
