@@ -73,7 +73,9 @@ class TcpFrameTransport final : public FrameTransport {
       Options options, PromiseEndpoint control_endpoint,
       std::vector<PendingConnection> pending_data_endpoints,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+          event_engine,
+      std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+          stats_plugin_group);
 
   void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
              RefCountedPtr<FrameTransportSink> sink) override;

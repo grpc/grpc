@@ -25,6 +25,7 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/seq_bit_set.h"
 
 namespace grpc_core {
@@ -243,7 +244,9 @@ class Endpoint final {
   Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
-           grpc_event_engine::experimental::EventEngine* event_engine);
+           grpc_event_engine::experimental::EventEngine* event_engine,
+           std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+               stats_plugin_group);
 
  private:
   static auto WriteLoop(uint32_t id,
@@ -265,6 +268,8 @@ class DataEndpoints {
   explicit DataEndpoints(
       std::vector<PendingConnection> endpoints,
       grpc_event_engine::experimental::EventEngine* event_engine,
+      std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+          stats_plugin_group,
       bool enable_tracing,
       data_endpoints_detail::Clock* clock = DefaultClock());
 

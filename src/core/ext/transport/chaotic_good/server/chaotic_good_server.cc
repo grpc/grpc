@@ -64,6 +64,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
@@ -378,7 +379,9 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             config.MakeTcpFrameTransportOptions(),
             std::move(self->connection_->endpoint_),
             config.TakePendingDataEndpoints(),
-            self->connection_->args().GetObjectRef<EventEngine>());
+            self->connection_->args().GetObjectRef<EventEngine>(),
+            self->connection_->args()
+                .GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>());
         return self->connection_->listener_->server_->SetupTransport(
             new ChaoticGoodServerTransport(self->connection_->args(),
                                            std::move(frame_transport),

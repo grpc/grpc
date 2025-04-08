@@ -205,6 +205,7 @@ version = "1.73.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
+    "include/grpc/support/atm.h",
     "include/grpc/support/atm_gcc_atomic.h",
     "include/grpc/support/atm_gcc_sync.h",
     "include/grpc/support/atm_windows.h",

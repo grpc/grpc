@@ -12080,6 +12080,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/inter_activity_mutex.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
@@ -15398,17 +15399,6 @@ targets:
   - gtest
   - absl/types:span
   - gpr
-  uses_polling: false
-- name: stats_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/telemetry/stats_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
   uses_polling: false
 - name: status_conversion_test
   gtest: true
