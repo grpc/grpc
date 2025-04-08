@@ -55,6 +55,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
@@ -520,6 +521,12 @@ static grpc_error_handle init_header_skip_frame_parser(
 
 static grpc_error_handle init_non_header_skip_frame_parser(
     grpc_chttp2_transport* t) {
+  t->http2_ztrace_collector.Append(gprc_core::H2UnknownFrameTrace{
+      t->incoming_frame_type,
+      t->incoming_frame_flags,
+      t->incoming_stream_id,
+      t->incoming_frame_size,
+  });
   t->parser =
       grpc_chttp2_transport::Parser{"skip_parser", skip_parser, nullptr};
   return absl::OkStatus();
@@ -537,6 +544,9 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
 static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   // Update BDP accounting since we have received a data frame.
   grpc_core::BdpEstimator* bdp_est = t->flow_control.bdp_estimator();
+  t->http2_ztrace_collector.Append(gprc_core::H2DataTrace<true>{
+      t->incoming_stream_id, (t->flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0,
+      t->incoming_frame_size});
   grpc_core::global_stats().IncrementHttp2ReadDataFrameSize(
       t->incoming_frame_size);
   if (bdp_est) {
@@ -983,6 +993,14 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
     return error;
   }
   if (is_last) {
+    t->http2_ztrace_collector.Append([]() {
+      return gprc_core::H2HeaderTrace<true>{
+          t->incoming_stream_id,
+          (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_HEADERS) != 0,
+          (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0,
+          t->incoming_frame_type == GRPC_CHTTP2_FRAME_CONTINUATION,
+          t->incoming_frame_size};
+    });
     // need to check for null stream: this can occur if we receive an invalid
     // stream id on a header
     if (s != nullptr) {

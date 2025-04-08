@@ -9367,6 +9367,17 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "http2_ztrace_collector",
+    hdrs = ["ext/transport/chttp2/transport/http2_ztrace_collector.h"],
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
+    deps = [
+        "ztrace_collector",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(

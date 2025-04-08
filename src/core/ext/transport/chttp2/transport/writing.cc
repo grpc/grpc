@@ -34,6 +34,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -126,6 +127,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
       [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
         t->ping_rate_policy.SentPing();
         const uint64_t id = t->ping_callbacks.StartPing(t->bitgen);
+        t->http2_ztrace_collector.Append(
+            gprc_core::H2PingTrace<false>{false, id});
         grpc_slice_buffer_add(t->outbuf.c_slice_buffer(),
                               grpc_chttp2_ping_create(false, id));
         t->keepalive_incoming_data_wanted = true;
@@ -260,6 +263,9 @@ class WriteContext {
   void FlushSettings() {
     auto update = t_->settings.MaybeSendUpdate();
     if (update.has_value()) {
+      t_->http2_ztrace_collector.Append([&update]() {
+        return grpc_core::H2SettingsTrace<false>{false, update.settings};
+      });
       grpc_core::Http2Frame frame(std::move(*update));
       Serialize(absl::Span<grpc_core::Http2Frame>(&frame, 1), t_->outbuf);
       if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
@@ -290,6 +296,8 @@ class WriteContext {
     uint32_t transport_announce = t_->flow_control.MaybeSendUpdate(
         t_->outbuf.c_slice_buffer()->count > 0);
     if (transport_announce) {
+      t_->http2_ztrace_collector.Append(
+          grpc_core::H2WindowUpdateTrace<false>{0, transport_announce});
       grpc_slice_buffer_add(
           t_->outbuf.c_slice_buffer(),
           grpc_chttp2_window_update_create(0, transport_announce, nullptr));
@@ -303,6 +311,8 @@ class WriteContext {
     // delayed by crypto operations.
     target_write_size_ = 0;
     for (size_t i = 0; i < t_->ping_ack_count; i++) {
+      t->http2_ztrace_collector.Append(
+          gprc_core::H2PingTrace<false>{true, t_->ping_acks[i]});
       grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
                             grpc_chttp2_ping_create(true, t_->ping_acks[i]));
     }
@@ -509,6 +519,8 @@ class StreamWriteContext {
     const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
     if (stream_announce == 0) return;
 
+    t_->http2_ztrace_collector.Append(
+        grpc_core::H2WindowUpdateTrace<false>{s_->id, stream_announce});
     grpc_slice_buffer_add(
         t_->outbuf.c_slice_buffer(),
         grpc_chttp2_window_update_create(s_->id, stream_announce,
@@ -528,10 +540,16 @@ class StreamWriteContext {
 
     if (!data_send_context.AnyOutgoing()) {
       if (t_->flow_control.remote_window() <= 0) {
+        t->http2_ztrace_collector.Append(grpc_core::H2FlowControlStall{
+            t_->flow_control.remote_window(),
+            data_send_context.stream_remote_window(), s_->id});
         grpc_core::global_stats().IncrementHttp2TransportStalls();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
+        t->http2_ztrace_collector.Append(grpc_core::H2FlowControlStall{
+            t_->flow_control.remote_window(),
+            data_send_context.stream_remote_window(), s_->id});
         grpc_core::global_stats().IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
@@ -672,6 +690,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
   int64_t outbuf_relative_start_pos = 0;
   WriteContext ctx(t);
+
+  t->http2_ztrace_collector.Append(
+      grpc_core::H2BeginWriteCycle{ctx.target_write_size()});
+
   ctx.FlushSettings();
   ctx.FlushPingAcks();
   ctx.FlushQueuedBuffers();
@@ -734,6 +756,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
   grpc_chttp2_stream* s;
 
   t->write_flow.End();
+  t->http2_ztrace_collector.Append(grpc_core::H2EndWriteCycle{});
 
   if (t->channelz_socket != nullptr) {
     t->channelz_socket->RecordMessagesSent(t->num_messages_in_next_write);

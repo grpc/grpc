@@ -353,6 +353,7 @@ class HPackCompressor {
     bool use_true_binary_metadata;
     size_t max_frame_size;
     CallTracerInterface* call_tracer;
+    Http2ZtraceCollector* ztrace_collector;
   };
 
   template <typename HeaderSet>

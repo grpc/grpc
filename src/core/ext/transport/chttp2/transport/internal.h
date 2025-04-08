@@ -52,6 +52,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
@@ -562,6 +563,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       grpc_core::Timestamp::InfPast();
 
   grpc_core::Http2StatsCollector http2_stats;
+  grpc_core::Http2ZTraceCollector http2_ztrace_collector;
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };

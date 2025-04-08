@@ -25,6 +25,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -100,6 +101,9 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
           absl::StrCat("invalid window update bytes: ", p->amount));
     }
     CHECK(is_last);
+
+    t->http2_ztrace_collector.Append(gprc_core::H2WindowUpdateTrace<true>{
+        t->incoming_stream_id, received_update});
 
     if (t->incoming_stream_id != 0) {
       if (s != nullptr) {

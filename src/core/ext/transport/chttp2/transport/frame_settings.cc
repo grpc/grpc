@@ -28,6 +28,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
@@ -94,6 +95,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);
 
   if (parser->is_ack) {
+    t->http2_ztrace_collector.Append(
+        gprc_core::H2SettingsTrace<true>{true, {}});
     return absl::OkStatus();
   }
 
@@ -118,6 +121,20 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             grpc_core::global_stats()
                 .IncrementHttp2PreferredReceiveCryptoMessageSize(
                     target_settings->preferred_receive_crypto_message_size());
+            t->http2_ztrace_collector.Append([t]() {
+              grpc_core::H2SettingsTrace<true> settings{false, {}};
+              // TODO(ctiller): produce actual wire settings here, not a
+              // diff. Likely this needs to wait for PH2 where we separate
+              // the parse loop from the application loop.
+              parser->incoming_settings->Diff(
+                  false, *parser->target_settings,
+                  [&settings](uint16_t key, uint32_t value) {
+                    settings.settings.push_back({key, value});
+                  });
+              return settings;
+            });
+            t->http2_ztrace_collector.Append(
+                grpc_core::H2SettingsTrace<false>(true, {}););
             *parser->target_settings = *parser->incoming_settings;
             t->num_pending_induced_frames++;
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
