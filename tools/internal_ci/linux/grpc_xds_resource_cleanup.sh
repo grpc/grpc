@@ -90,7 +90,12 @@ cleanup::job::cleanup_cluster_gamma() {
 #######################################
 cleanup::job::cleanup_cluster_dualstack() {
   cleanup::activate_cluster GKE_CLUSTER_DUALSTACK
-  cleanup::run_clean "$1" --mode=k8s
+  cleanup::run_clean "$1" \
+    --mode=k8s \
+    --enable_dualstack \
+    --noenable_workload_identity \
+    --network=dualstack  \
+    --compute_api_version=v1beta # TODO remove when ipAddressSelectionPolicy is available in compute v1
 }
 
 #######################################
