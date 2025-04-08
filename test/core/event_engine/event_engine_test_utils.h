@@ -217,6 +217,11 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
   EventEngine::ResolvedAddress local_;
 };
 
+// We need everything EventEngine to do reasonable timer steps -- without it
+// we need to do a bunch of evil to make sure both timer systems are ticking
+// each step.
+bool IsSaneTimerEnvironment();
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
