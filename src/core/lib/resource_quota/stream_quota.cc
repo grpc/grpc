@@ -37,6 +37,7 @@ uint32_t StreamQuota::GetPerConnectionMaxConcurrentRequests(
       limiter_.allowed_requests_per_channel.load(std::memory_order_relaxed);
   const uint64_t target_mean_requests_per_channel =
       limiter_.target_mean_requests_per_channel.load(std::memory_order_relaxed);
+
   if (allowed_requests_per_channel == 0) {
     // If there are open requests on this channel, but we're past capacity
     // try to lower the number of requests here. This should slowly force
@@ -46,7 +47,7 @@ uint32_t StreamQuota::GetPerConnectionMaxConcurrentRequests(
   }
 
   // If there is only one channel, we can allow the target mean.
-  if (stats.open_channels.load(std::memory_order_relaxed) == 1) {
+  if (stats.open_channels.load(std::memory_order_relaxed) <= 1) {
     return target_mean_requests_per_channel;
   }
 
