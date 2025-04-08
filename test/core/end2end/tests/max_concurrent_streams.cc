@@ -318,9 +318,12 @@ CORE_END2END_TEST(Http2SingleHopTests, ServerMaxConcurrentStreams) {
                  .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT, true)
                  .Set(GRPC_ARG_ENABLE_RETRIES, false));
 
-  // perform a ping-pong to ensure that settings have had a chance to round
-  // trip
-  SimpleRequestBody(*this);
+  // perform a few ping-pongs to ensure that server settings have reached the
+  // client.
+  for (int i = 0; i < 10; ++i) {
+    SimpleRequestBody(*this);
+  }
+
   auto c1 = NewClientCall("/alpha").Timeout(Duration::Seconds(1000)).Create();
   auto c2 = NewClientCall("/beta").Timeout(Duration::Seconds(3)).Create();
   auto s1 = RequestCall(101);
