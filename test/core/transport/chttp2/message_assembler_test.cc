@@ -80,7 +80,7 @@ void AppendPartialMessage(SliceBuffer& payload, absl::string_view str) {
   payload.Append(Slice::FromCopiedString(str));
 }
 
-TEST(GrpcMessageAssembler, MustMakeEmpty) {
+TEST(GrpcMessageAssembler, MustMakeSliceBufferEmpty) {
   SliceBuffer frame1;
   AppendHeaderAndMessage(frame1, kStr1024);
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kStr1024.size());
@@ -119,7 +119,10 @@ TEST(GrpcMessageAssembler, OneMessageInOneFrame) {
 
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
-  EXPECT_EQ(result1->get()->payload()->Length(), kStr1024.size());
+  SliceBuffer* payload1 = result1->get()->payload();
+  EXPECT_EQ(payload1->Length(), kStr1024.size());
+  EXPECT_STREQ(payload1->JoinIntoString().c_str(),
+               std::string(kStr1024).c_str());
 
   absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
   EXPECT_TRUE(result2.ok());

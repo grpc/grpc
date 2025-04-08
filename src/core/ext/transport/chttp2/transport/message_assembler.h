@@ -53,8 +53,9 @@ class GrpcMessageAssembler {
     DCHECK_EQ(payload.Length(), 0u);
   }
 
-  // We expect the caller to run GenerateMessage in a loop till it returns
-  // nullptr or error.
+  // Returns a valid MessageHandle if it has a complete message.
+  // Returns a nullptr if it does not have a complete message.
+  // Returns an error if an incomplete message is received and the stream ends.
   absl::StatusOr<MessageHandle> ExtractMessage() {
     if (message_buffer_.Length() < kGrpcHeaderSizeInBytes) {
       return ReturnNullOrError();
