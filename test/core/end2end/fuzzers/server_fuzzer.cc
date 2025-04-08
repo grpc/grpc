@@ -141,17 +141,13 @@ void Chttp2(fuzzer_input::Msg msg) {
     auto* creds = grpc_insecure_server_credentials_create();
     Notification done_adding_port;
     engine->Run([&]() {
-      LOG(ERROR) << "[DO NOT SUBMIT] adding port";
       grpc_server_add_http2_port(
           server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
-      LOG(ERROR) << "[DO NOT SUBMIT] signaling done adding port";
       done_adding_port.Notify();
     });
-    do {
-      LOG(ERROR) << "[DO NOT SUBMIT] ticking";
+    while (!done_adding_port.HasBeenNotified()) {
       engine->Tick(Duration::Seconds(1));
-    } while (!done_adding_port.HasBeenNotified());
-    LOG(ERROR) << "[DO NOT SUBMIT] done ticking";
+    };
     grpc_server_credentials_release(creds);
   });
 }
@@ -163,8 +159,15 @@ void Chttp2FakeSec(fuzzer_input::Msg msg) {
   RunServerFuzzer(msg, [](FuzzingEventEngine* engine, grpc_server* server,
                           int port_num, const ChannelArgs&) {
     auto* creds = grpc_fake_transport_security_server_credentials_create();
-    grpc_server_add_http2_port(
-        server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
+    Notification done_adding_port;
+    engine->Run([&]() {
+      grpc_server_add_http2_port(
+          server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
+      done_adding_port.Notify();
+    });
+    while (!done_adding_port.HasBeenNotified()) {
+      engine->Tick(Duration::Seconds(1));
+    }
     grpc_server_credentials_release(creds);
   });
 }

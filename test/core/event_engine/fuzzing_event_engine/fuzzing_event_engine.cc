@@ -640,7 +640,6 @@ class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
   LookupHostnameBlocking(absl::string_view name,
                          absl::string_view /* default_port */) override {
-    absl::SleepFor(absl::Seconds(1));
     return GetHostnameResponse(name);
   }
 
