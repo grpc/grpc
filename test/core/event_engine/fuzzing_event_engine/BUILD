@@ -23,6 +23,7 @@ grpc_package(
 
 grpc_cc_library(
     name = "fuzzing_event_engine",
+    testonly = True,
     srcs = ["fuzzing_event_engine.cc"],
     hdrs = ["fuzzing_event_engine.h"],
     external_deps = [

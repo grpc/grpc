@@ -227,6 +227,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "event_engine_test_utils",
+    testonly = True,
     srcs = ["event_engine_test_utils.cc"],
     hdrs = ["event_engine_test_utils.h"],
     external_deps = [

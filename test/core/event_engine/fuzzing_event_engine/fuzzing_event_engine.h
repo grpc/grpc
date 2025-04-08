@@ -44,7 +44,6 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
-#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/port.h"
 
