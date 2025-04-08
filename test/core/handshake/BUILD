@@ -45,6 +45,7 @@ grpc_fuzz_test(
     ],
     deps = [
         "test_handshake",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
         "//test/core/test_util:fuzzing_channel_args",
         "//test/core/test_util:fuzzing_channel_args_cc_proto",
