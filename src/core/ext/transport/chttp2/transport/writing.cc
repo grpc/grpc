@@ -47,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
@@ -61,7 +62,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/bdp_estimator.h"
-#include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
@@ -73,6 +73,8 @@
 #include "src/core/util/useful.h"
 
 // IWYU pragma: no_include "src/core/util/orphanable.h"
+
+using grpc_core::http2::Http2ErrorCode;
 
 static void add_to_write_list(grpc_chttp2_write_cb** list,
                               grpc_chttp2_write_cb* cb) {
@@ -251,7 +253,8 @@ namespace {
 class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
-    grpc_core::global_stats().IncrementHttp2WritesBegun();
+    t->http2_stats.IncrementHttp2WritesBegun();
+    t->http2_stats.IncrementHttp2WriteTargetSize(target_write_size_);
   }
 
   void FlushSettings() {
@@ -485,11 +488,10 @@ class StreamWriteContext {
                 .Add(write_stats));
       }
     } else {
-      auto* call_tracer = s_->CallTracer();
-      if (call_tracer != nullptr && call_tracer->IsSampled()) {
+      if (s_->call_tracer != nullptr && s_->call_tracer->IsSampled()) {
         grpc_core::HttpAnnotation::WriteStats write_stats;
         write_stats.target_write_size = write_context_->target_write_size();
-        call_tracer->RecordAnnotation(
+        s_->call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(
                 grpc_core::HttpAnnotation::Type::kHeadWritten,
                 gpr_now(GPR_CLOCK_REALTIME))
@@ -632,8 +634,9 @@ class StreamWriteContext {
     if (!t_->is_client && !s_->read_closed) {
       grpc_slice_buffer_add(
           t_->outbuf.c_slice_buffer(),
-          grpc_chttp2_rst_stream_create(s_->id, GRPC_HTTP2_NO_ERROR,
-                                        &s_->call_tracer_wrapper));
+          grpc_chttp2_rst_stream_create(
+              s_->id, static_cast<uint32_t>(Http2ErrorCode::kNoError),
+              &s_->call_tracer_wrapper));
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
@@ -646,9 +649,8 @@ class StreamWriteContext {
                 .Add(s_->flow_control.stats()));
       }
     } else {
-      auto* call_tracer = s_->CallTracer();
-      if (call_tracer != nullptr && call_tracer->IsSampled()) {
-        call_tracer->RecordAnnotation(
+      if (s_->call_tracer != nullptr && s_->call_tracer->IsSampled()) {
+        s_->call_tracer->RecordAnnotation(
             grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
                                       gpr_now(GPR_CLOCK_REALTIME))
                 .Add(s_->t->flow_control.stats())

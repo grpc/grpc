@@ -64,7 +64,8 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
+inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -97,6 +98,7 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -111,7 +113,8 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
+inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -144,6 +147,7 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -158,7 +162,8 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
 inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsChaoticGoodFramingLayerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
+inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -191,6 +196,7 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -228,6 +234,7 @@ enum ExperimentIds {
   kExperimentIdRqFastReject,
   kExperimentIdRstStreamFix,
   kExperimentIdScheduleCancellationOverWrite,
+  kExperimentIdServerGlobalCallbacksOwnership,
   kExperimentIdServerListener,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
@@ -345,6 +352,10 @@ inline bool IsRstStreamFixEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
   return IsExperimentEnabled<kExperimentIdScheduleCancellationOverWrite>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
+inline bool IsServerGlobalCallbacksOwnershipEnabled() {
+  return IsExperimentEnabled<kExperimentIdServerGlobalCallbacksOwnership>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() {

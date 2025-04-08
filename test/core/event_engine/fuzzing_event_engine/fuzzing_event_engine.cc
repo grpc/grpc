@@ -29,6 +29,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/extensions/blocking_dns.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/telemetry/stats.h"
@@ -582,6 +583,18 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
   return ConnectionHandle{{task_handle.keys[0], task_handle.keys[1]}};
 }
 
+std::pair<std::unique_ptr<EventEngine::Endpoint>,
+          std::unique_ptr<EventEngine::Endpoint>>
+FuzzingEventEngine::CreateEndpointPair() {
+  grpc_core::MutexLock lock(&*mu_);
+  auto middle =
+      std::make_shared<EndpointMiddle>(g_fuzzing_event_engine->AllocatePort(),
+                                       g_fuzzing_event_engine->AllocatePort());
+  auto ep1 = std::make_unique<FuzzingEndpoint>(middle, 0);
+  auto ep2 = std::make_unique<FuzzingEndpoint>(middle, 1);
+  return {std::move(ep1), std::move(ep2)};
+}
+
 bool FuzzingEventEngine::CancelConnect(ConnectionHandle connection_handle) {
   return Cancel(
       TaskHandle{{connection_handle.keys[0], connection_handle.keys[1]}});
@@ -589,9 +602,78 @@ bool FuzzingEventEngine::CancelConnect(ConnectionHandle connection_handle) {
 
 bool FuzzingEventEngine::IsWorkerThread() { abort(); }
 
+namespace {
+
+class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
+                                              ResolverSupportsBlockingLookups> {
+ public:
+  explicit FuzzerDNSResolver(std::shared_ptr<EventEngine> engine)
+      : engine_(std::move(engine)) {}
+
+  void LookupHostname(LookupHostnameCallback on_resolve, absl::string_view name,
+                      absl::string_view /* default_port */) override {
+    GetDefaultEventEngine()->RunAfter(
+        grpc_core::Duration::Seconds(1),
+        [name = std::string(name), cb = std::move(on_resolve)]() mutable {
+          cb(GetHostnameResponse(name));
+        });
+  }
+
+  void LookupSRV(LookupSRVCallback on_resolve,
+                 absl::string_view /* name */) override {
+    engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
+      on_resolve(absl::UnimplementedError(
+          "The Fuzzing DNS resolver does not support looking up SRV records"));
+    });
+  };
+
+  void LookupTXT(LookupTXTCallback on_resolve,
+                 absl::string_view /* name */) override {
+    // Not supported
+    engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
+      on_resolve(absl::UnimplementedError(
+          "The Fuzing DNS resolver does not support looking up TXT records"));
+    });
+  };
+
+  // Blocking resolution
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+  LookupHostnameBlocking(absl::string_view name,
+                         absl::string_view /* default_port */) override {
+    return GetHostnameResponse(name);
+  }
+
+  absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
+  LookupSRVBlocking(absl::string_view /* name */) override {
+    return absl::UnimplementedError(
+        "The Fuzing DNS resolver does not support looking up TXT records");
+  }
+
+  absl::StatusOr<std::vector<std::string>> LookupTXTBlocking(
+      absl::string_view /* name */) override {
+    return absl::UnimplementedError(
+        "The Fuzing DNS resolver does not support looking up TXT records");
+  }
+
+ private:
+  static absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+  GetHostnameResponse(absl::string_view name) {
+    if (name == "server") {
+      return {{EventEngine::ResolvedAddress()}};
+    }
+    return absl::UnknownError("Resolution failed");
+  }
+
+  std::shared_ptr<EventEngine> engine_;
+};
+}  // namespace
+
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
 #if defined(GRPC_POSIX_SOCKET_TCP)
+  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+    return std::make_unique<FuzzerDNSResolver>(shared_from_this());
+  }
   return std::make_unique<NativePosixDNSResolver>(shared_from_this());
 #else
   grpc_core::Crash("FuzzingEventEngine::GetDNSResolver Not implemented");

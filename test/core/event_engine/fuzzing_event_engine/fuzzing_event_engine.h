@@ -40,6 +40,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
@@ -125,6 +126,9 @@ class FuzzingEventEngine : public EventEngine {
   Duration max_delay_write() const {
     return max_delay_[static_cast<int>(RunType::kWrite)];
   }
+
+  std::pair<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>
+  CreateEndpointPair();
 
  private:
   class IoToken {
