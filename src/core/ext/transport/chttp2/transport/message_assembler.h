@@ -69,10 +69,9 @@ class GrpcMessageAssembler {
       // Bounds: Max len of a valid gRPC message is 4 GB in gRPC C++. 2GB for
       // other stacks. Since 4 bytes can hold length of 4GB, we dont check
       // bounds.
-      SliceBuffer temp;
-      message_buffer_.MoveFirstNBytesIntoSliceBuffer(header.length, temp);
       MessageHandle grpc_message = Arena::MakePooled<Message>();
-      grpc_message->payload()->Append(temp);
+      message_buffer_.MoveFirstNBytesIntoSliceBuffer(
+          header.length, *(grpc_message->payload()));
       return grpc_message;
     }
     return ReturnNullOrError();
