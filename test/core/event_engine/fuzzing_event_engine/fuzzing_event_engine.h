@@ -324,15 +324,6 @@ class FuzzingEventEngine : public EventEngine {
   // at all.
   virtual void OnClockIncremented(Duration) {}
 
-  // We need everything EventEngine to do reasonable timer steps -- without it
-  // we need to do a bunch of evil to make sure both timer systems are ticking
-  // each step.
-  static bool IsSaneTimerEnvironment() {
-    return grpc_core::IsEventEngineClientEnabled() &&
-           grpc_core::IsEventEngineListenerEnabled() &&
-           grpc_core::IsEventEngineDnsEnabled();
-  }
-
   // For the next connection being built, query the list of fuzzer selected
   // write size limits.
   std::queue<size_t> WriteSizesForConnection()
