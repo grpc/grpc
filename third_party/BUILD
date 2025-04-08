@@ -19,20 +19,20 @@ exports_files([
 package(default_visibility = ["//:__subpackages__"])
 
 bool_flag(
-    name = "use_openssl",
+    name = "grpc_use_openssl",
     build_setting_default = False,
     visibility = ["//visibility:public"],
 )
 
 config_setting(
-    name = "use_openssl_setting",
-    flag_values = {":use_openssl": "true"},
+    name = "grpc_use_openssl_setting",
+    flag_values = {":grpc_use_openssl": "true"},
 )
 
 alias(
     name = "libssl",
     actual = select({
-        ":use_openssl_setting": "@openssl//:ssl",
+        ":grpc_use_openssl_setting": "@openssl//:ssl",
         "//conditions:default": "@boringssl//:ssl",
     }),
     tags = ["manual"],
@@ -41,7 +41,7 @@ alias(
 alias(
     name = "libcrypto",
     actual = select({
-        ":use_openssl_setting": "@openssl//:crypto",
+        ":grpc_use_openssl_setting": "@openssl//:crypto",
         "//conditions:default": "@boringssl//:crypto",
     }),
     tags = ["manual"],
