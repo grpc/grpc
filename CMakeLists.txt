@@ -716,6 +716,10 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/reflection/v1alpha/reflection.proto src/proto/grpc/reflection/v1alpha/reflection.proto
 )
+
+# This enables CMake to build the project without requiring submodules
+# in the third_party directory as long as test builds are disabled.
+if (gRPC_BUILD_TESTS)
 protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/benchmark_service.proto src/proto/grpc/testing/benchmark_service.proto
 )
@@ -788,10 +792,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/tsi/alts/fake_handshaker/transport_security_common.proto test/core/tsi/alts/fake_handshaker/transport_security_common.proto
 )
-
-# This enables CMake to build the project without requiring submodules
-# in the third_party directory as long as test builds are disabled.
-if (gRPC_BUILD_TESTS)
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/admin/v3/certs.proto envoy/admin/v3/certs.proto
 )
