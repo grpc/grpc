@@ -73,6 +73,8 @@ class GrpcMessageAssembler {
       MessageHandle grpc_message = Arena::MakePooled<Message>();
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(
           header.length, *(grpc_message->payload()));
+      uint32_t& flag = grpc_message->mutable_flags();
+      flag = header.flags;
       return grpc_message;
     }
     return ReturnNullOrError();

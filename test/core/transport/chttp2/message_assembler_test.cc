@@ -55,24 +55,27 @@ constexpr absl::string_view kStr1024 =
 
 constexpr bool not_end_stream = false;
 constexpr bool end_stream = true;
-constexpr uint8_t flags = 0;
+
+constexpr uint8_t kFlags0 = 0;
+constexpr uint8_t kFlags5 = 5;
 
 constexpr absl::string_view kString1 = "One Hello World!";
 constexpr absl::string_view kString2 = "Two Hello World!";
 constexpr absl::string_view kString3 = "Three Hello World!";
 
 void AppendEmptyMessage(SliceBuffer& payload) {
-  AppendGrpcHeaderToSliceBuffer(payload, flags, 0);
+  AppendGrpcHeaderToSliceBuffer(payload, kFlags0, 0);
 }
 
 void AppendHeaderAndMessage(SliceBuffer& payload, absl::string_view str) {
-  AppendGrpcHeaderToSliceBuffer(payload, flags, str.size());
+  AppendGrpcHeaderToSliceBuffer(payload, kFlags0, str.size());
   payload.Append(Slice::FromCopiedString(str));
 }
 
-void AppendHeaderAndPartialMessage(SliceBuffer& payload, const uint32_t length,
+void AppendHeaderAndPartialMessage(SliceBuffer& payload, const uint8_t flag,
+                                   const uint32_t length,
                                    absl::string_view str) {
-  AppendGrpcHeaderToSliceBuffer(payload, flags, length);
+  AppendGrpcHeaderToSliceBuffer(payload, flag, length);
   payload.Append(Slice::FromCopiedString(str));
 }
 
@@ -132,7 +135,7 @@ TEST(GrpcMessageAssembler, OneMessageInOneFrame) {
 TEST(GrpcMessageAssembler, OneMessageInThreeFrames) {
   SliceBuffer frame1;
   const uint32_t length = kString1.size() + kString2.size() + kString3.size();
-  AppendHeaderAndPartialMessage(frame1, length, kString1);
+  AppendHeaderAndPartialMessage(frame1, kFlags0, length, kString1);
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kString1.size());
   SliceBuffer frame2;
   AppendPartialMessage(frame2, kString2);
@@ -154,6 +157,7 @@ TEST(GrpcMessageAssembler, OneMessageInThreeFrames) {
   absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
   EXPECT_TRUE(result3.ok());
   EXPECT_EQ(result3->get()->payload()->Length(), length);
+  EXPECT_EQ(result3->get()->flags(), kFlags0);
 
   absl::StatusOr<MessageHandle> result4 = assembler.ExtractMessage();
   EXPECT_TRUE(result4.ok());
@@ -261,11 +265,13 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
 TEST(GrpcMessageAssembler, FourMessageInThreeFrames) {
   SliceBuffer frame1;
   AppendHeaderAndMessage(frame1, kStr1024);  // Message 1 complete
-  AppendHeaderAndPartialMessage(frame1, (2 * kStr1024.size()), kStr1024);
+  AppendHeaderAndPartialMessage(frame1, kFlags0, (2 * kStr1024.size()),
+                                kStr1024);
 
   SliceBuffer frame2;
   AppendPartialMessage(frame2, kStr1024);  // Message 2 complete
-  AppendHeaderAndPartialMessage(frame2, (2 * kStr1024.size()), kStr1024);
+  AppendHeaderAndPartialMessage(frame2, kFlags5, (2 * kStr1024.size()),
+                                kStr1024);
 
   SliceBuffer frame3;
   AppendPartialMessage(frame3, kStr1024);    // Message 3 complete
@@ -287,6 +293,7 @@ TEST(GrpcMessageAssembler, FourMessageInThreeFrames) {
   absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
   EXPECT_TRUE(result2.ok());
   EXPECT_EQ(result2->get()->payload()->Length(), 2 * kStr1024.size());
+  EXPECT_EQ(result2->get()->flags(), kFlags0);
 
   absl::StatusOr<MessageHandle> result22 = assembler.ExtractMessage();
   EXPECT_TRUE(result22.ok());
@@ -297,6 +304,7 @@ TEST(GrpcMessageAssembler, FourMessageInThreeFrames) {
   absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
   EXPECT_TRUE(result3.ok());
   EXPECT_EQ(result3->get()->payload()->Length(), 2 * kStr1024.size());
+  EXPECT_EQ(result3->get()->flags(), kFlags5);
 
   absl::StatusOr<MessageHandle> result4 = assembler.ExtractMessage();
   EXPECT_TRUE(result4.ok());
@@ -309,7 +317,7 @@ TEST(GrpcMessageAssembler, FourMessageInThreeFrames) {
 
 TEST(GrpcMessageAssembler, IncompleteMessageHeader) {
   SliceBuffer frame1;
-  AppendGrpcHeaderToSliceBuffer(frame1, flags, kStr1024.size());
+  AppendGrpcHeaderToSliceBuffer(frame1, kFlags0, kStr1024.size());
   frame1.RemoveLastNBytes(1);
 
   GrpcMessageAssembler assembler;
@@ -319,7 +327,7 @@ TEST(GrpcMessageAssembler, IncompleteMessageHeader) {
   EXPECT_EQ(result1->get(), nullptr);
 
   SliceBuffer frame2;
-  AppendGrpcHeaderToSliceBuffer(frame2, flags, kStr1024.size());
+  AppendGrpcHeaderToSliceBuffer(frame2, kFlags0, kStr1024.size());
   SliceBuffer discard;
   frame2.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes - 1, discard);
   discard.Clear();
@@ -329,6 +337,7 @@ TEST(GrpcMessageAssembler, IncompleteMessageHeader) {
   absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
   EXPECT_TRUE(result2.ok());
   EXPECT_EQ(result2->get()->payload()->Length(), kStr1024.size());
+  EXPECT_EQ(result2->get()->flags(), kFlags0);
 
   absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
   EXPECT_TRUE(result3.ok());
@@ -337,7 +346,7 @@ TEST(GrpcMessageAssembler, IncompleteMessageHeader) {
 
 TEST(GrpcMessageAssembler, ErrorIncompleteMessageHeader) {
   SliceBuffer frame1;
-  AppendGrpcHeaderToSliceBuffer(frame1, flags, kStr1024.size());
+  AppendGrpcHeaderToSliceBuffer(frame1, kFlags0, kStr1024.size());
   frame1.RemoveLastNBytes(1);
 
   GrpcMessageAssembler assembler;
@@ -349,7 +358,7 @@ TEST(GrpcMessageAssembler, ErrorIncompleteMessageHeader) {
 TEST(GrpcMessageAssembler, ErrorIncompleteMessagePayload) {
   SliceBuffer frame1;
   const uint32_t length = kString1.size() + 1;
-  AppendHeaderAndPartialMessage(frame1, length, kString1);
+  AppendHeaderAndPartialMessage(frame1, kFlags0, length, kString1);
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kString1.size());
 
   GrpcMessageAssembler assembler;
