@@ -45,6 +45,7 @@
 #include "src/core/server/server.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/wait_for_single_owner.h"
@@ -283,11 +284,29 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   ValidateChannel(channelz_channel, {0, 0, 0});
 }
 
+class TestZTrace final : public ZTrace {
+ public:
+  void Run(Timestamp deadline, std::map<std::string, std::string> args,
+           std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+           absl::AnyInvocable<void(Json)> callback) override {
+    engine->RunAfter(Duration::Milliseconds(100),
+                     [callback = std::move(callback)]() mutable {
+                       Json::Object object;
+                       object["test"] = Json::FromString("yes");
+                       callback(Json::FromObject(std::move(object)));
+                     });
+  }
+};
+
 class TestDataSource final : public DataSource {
  public:
   using DataSource::DataSource;
   void AddJson(Json::Object& object) override {
     object["test"] = Json::FromString("yes");
+  }
+  std::unique_ptr<ZTrace> GetZTrace(absl::string_view name) override {
+    if (name == "test_ztrace") return std::make_unique<TestZTrace>();
+    return DataSource::GetZTrace(name);
   }
 };
 
@@ -314,6 +333,24 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     auto it = object.find("test");
     EXPECT_EQ(it, object.end());
   }
+}
+
+TEST_P(ChannelzChannelTest, ZTrace) {
+  ExecCtx exec_ctx;
+  ChannelFixture channel(GetParam());
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
+  TestDataSource data_source(channelz_channel->Ref());
+  Notification done;
+  std::string json_text;
+  channelz_channel->RunZTrace(
+      "test_ztrace", Timestamp::Now() + Duration::Milliseconds(300), {},
+      grpc_event_engine::experimental::GetDefaultEventEngine(), [&](Json json) {
+        json_text = JsonDump(json);
+        done.Notify();
+      });
+  done.WaitForNotification();
+  EXPECT_EQ(json_text, "{\"test\":\"yes\"}");
 }
 
 TEST(ChannelzChannelTest, ChannelzDisabled) {
