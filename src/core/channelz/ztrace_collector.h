@@ -126,7 +126,7 @@ class ZTraceCollector {
     void Run(Timestamp deadline, std::map<std::string, std::string> args,
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                  event_engine,
-             absl::AnyInvocable<void(Json)> callback) {
+             absl::AnyInvocable<void(Json)> callback) override {
       auto instance = MakeRefCounted<Instance>(std::move(args), event_engine,
                                                std::move(callback));
       auto impl = std::move(impl_);
@@ -189,4 +189,4 @@ class ZTraceCollector {
 
 }  // namespace grpc_core::channelz
 
-#endif
+#endif  // GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H

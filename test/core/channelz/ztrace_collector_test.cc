@@ -27,7 +27,7 @@ struct TestData {
 
 class TestConfig {
  public:
-  TestConfig(std::map<std::string, std::string> args) {
+  explicit TestConfig(std::map<std::string, std::string> args) {
     EXPECT_EQ(args.size(), 1);
     EXPECT_EQ(args["test_arg"], "test_value");
   }
