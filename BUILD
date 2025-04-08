@@ -4685,6 +4685,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:http2_settings",
         "//src/core:http2_status",
+        "//src/core:http2_ztrace_collector",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
@@ -4709,7 +4710,6 @@ grpc_cc_library(
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
-        "//src/core:http2_ztrace_collector",
     ],
 )
 
