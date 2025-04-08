@@ -58,6 +58,13 @@ class TestConfigurator {
     return *this;
   }
 
+  TestConfigurator& ServerDefaultCompressionLevel(
+      grpc_compression_level level) {
+    server_args_ =
+        server_args_.Set(GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL, level);
+    return *this;
+  }
+
   TestConfigurator& ServerDefaultAlgorithm(
       grpc_compression_algorithm algorithm) {
     server_args_ =
@@ -431,6 +438,15 @@ CORE_END2END_TEST(
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
       .DecompressInApp()
       .RequestWithPayload(0, {{"grpc-internal-encoding-request", "identity"}});
+}
+
+CORE_END2END_TEST(Http2SingleHopTests,
+                  RequestWithDefaultHighLevelDecompressInCore) {
+  TestConfigurator(*this)
+      .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_HIGH)
+      .DecompressInApp()
+      .ExpectedAlgorithmFromServer(GRPC_COMPRESS_DEFLATE)
+      .RequestWithPayload(0, {});
 }
 
 }  // namespace
