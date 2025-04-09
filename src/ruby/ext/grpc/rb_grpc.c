@@ -354,6 +354,13 @@ void grpc_ruby_init() {
                     "prev g_grpc_ruby_init_count:", g_grpc_ruby_init_count++);
 }
 
+// Wrapper around grpc_ruby_init that can be exposed to Ruby
+// in order to force initialization on the current thread.
+static VALUE grpc_rb_init_threads(VALUE self) {
+  grpc_ruby_init();
+  return Qnil;
+}
+
 // fork APIs, useable on linux with env var: GRPC_ENABLE_FORK_SUPPORT=1
 //
 // Must be called once and only once before forking. Must be called on the
@@ -484,6 +491,7 @@ void Init_grpc_c() {
   Init_grpc_time_consts();
   Init_grpc_compression_options();
   // define fork APIs
+  rb_define_module_function(grpc_rb_mGRPC, "init_threads", grpc_rb_init_threads, 0);
   rb_define_module_function(grpc_rb_mGRPC, "prefork", grpc_rb_prefork, 0);
   rb_define_module_function(grpc_rb_mGRPC, "postfork_child",
                             grpc_rb_postfork_child, 0);
