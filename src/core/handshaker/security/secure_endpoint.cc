@@ -679,7 +679,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       ReadArgs args;
       args.read_hint_bytes = frame_protector_.min_progress_size();
       return wrapped_ep_->Read(
-                 [impl = Ref()](absl::Status status) {
+                 [impl = Ref()](absl::Status status) mutable {
                    {
                      grpc_core::MutexLock lock(
                          impl->frame_protector_.read_mu());
@@ -690,7 +690,9 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                      status =
                          impl->frame_protector_.Unprotect(std::move(status));
                    }
-                   std::move(impl->on_read_)(status);
+                   auto on_read = std::move(impl->on_read_);
+                   impl.reset();
+                   on_read(status);
                  },
                  frame_protector_.source_buffer(), &args) &&
              MaybeFinishReadImmediately();
@@ -715,12 +717,13 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         return false;
       }
       on_write_ = std::move(on_writable);
-      wrapped_ep_->Write(
-          [impl = Ref()](absl::Status status) {
-            std::move(impl->on_write_)(status);
+      return wrapped_ep_->Write(
+          [impl = Ref()](absl::Status status) mutable {
+            auto on_write = std::move(impl->on_write_);
+            impl.reset();
+            on_write(status);
           },
           frame_protector_.output_buffer(), args);
-      return true;
     }
 
     const EventEngine::ResolvedAddress& GetPeerAddress() const {
@@ -747,7 +750,9 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       auto status = frame_protector_.Unprotect(absl::OkStatus());
       if (status.ok()) return true;
       event_engine_->Run([impl = Ref(), status = std::move(status)]() mutable {
-        std::move(impl->on_read_)(std::move(status));
+        auto on_read = std::move(impl->on_read_);
+        impl.reset();
+        on_read(status);
       });
       return false;
     }
