@@ -54,6 +54,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     Duration /* timeout */, grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   engine_->Run([on_done = std::move(on_done), name, default_port]() {
+    ExecCtx exec_ctx;
     auto result = GetDNSResolver()->LookupHostnameBlocking(name, default_port);
     on_done(std::move(result));
   });
@@ -141,7 +142,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up SRV records"));
   });
-  return {-1, -1};
+  return kNullHandle;
 };
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
@@ -155,7 +156,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up TXT records"));
   });
-  return {-1, -1};
+  return kNullHandle;
 };
 
 bool NativeDNSResolver::Cancel(TaskHandle /*handle*/) { return false; }
