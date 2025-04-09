@@ -40,6 +40,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/string.h"
+#include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
 
@@ -68,6 +69,42 @@ void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
   for (DataSource* data_source : data_sources_) {
     data_source->AddJson(json);
   }
+}
+
+void BaseNode::RunZTrace(
+    absl::string_view name, Timestamp deadline,
+    std::map<std::string, std::string> args,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    absl::AnyInvocable<void(Json)> callback) {
+  auto fail = [&callback, event_engine](absl::Status status) {
+    event_engine->Run(
+        [callback = std::move(callback), status = std::move(status)]() mutable {
+          Json::Object object;
+          object["status"] = Json::FromString(status.ToString());
+          callback(Json::FromObject(std::move(object)));
+        });
+  };
+  std::unique_ptr<ZTrace> ztrace;
+  {
+    MutexLock lock(&data_sources_mu_);
+    for (auto* data_source : data_sources_) {
+      if (auto found_ztrace = data_source->GetZTrace(name);
+          found_ztrace != nullptr) {
+        if (ztrace == nullptr) {
+          ztrace = std::move(found_ztrace);
+        } else {
+          fail(absl::InternalError(
+              absl::StrCat("Ambiguous ztrace handler: ", name)));
+          return;
+        }
+      }
+    }
+  }
+  if (ztrace == nullptr) {
+    fail(absl::NotFoundError(absl::StrCat("ztrace not found: ", name)));
+    return;
+  }
+  ztrace->Run(deadline, std::move(args), event_engine, std::move(callback));
 }
 
 //

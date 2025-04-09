@@ -74,3 +74,20 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "ztrace_collector_test",
+    srcs = ["ztrace_collector_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    deps = [
+        "//:grpc",
+        "//src/core:notification",
+        "//src/core:ztrace_collector",
+    ],
+)
