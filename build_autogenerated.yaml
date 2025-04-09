@@ -3241,7 +3241,20 @@ libs:
   - third_party/googletest/googletest/src/gtest-test-part.cc
   - third_party/googletest/googletest/src/gtest-typed-test.cc
   - third_party/googletest/googletest/src/gtest.cc
-  deps: []
+  deps:
+  - re2
+  - absl/container:flat_hash_set
+  - absl/debugging:failure_signal_handler
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
+  - absl/flags:flag
+  - absl/flags:parse
+  - absl/flags:reflection
+  - absl/flags:usage
+  - absl/strings:strings
+  - absl/types:any
+  - absl/types:optional
+  - absl/types:variant
 - name: re2
   build: all
   language: c
@@ -5107,7 +5120,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -5817,7 +5829,6 @@ targets:
   - gtest
   - absl/log:check
   - absl/numeric:bits
-  - absl/strings:strings
   uses_polling: false
 - name: blackboard_test
   gtest: true
@@ -6079,7 +6090,6 @@ targets:
   - absl/base:config
   - absl/base:no_destructor
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -6724,7 +6734,6 @@ targets:
   - absl/base:config
   - absl/base:no_destructor
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -6851,7 +6860,6 @@ targets:
   - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7561,7 +7569,6 @@ targets:
   - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8162,7 +8169,6 @@ targets:
   - absl/functional:any_invocable
   - absl/log:check
   - absl/strings:str_format
-  - absl/strings:strings
   uses_polling: false
 - name: duplicate_header_bad_client_test
   gtest: true
@@ -10745,7 +10751,6 @@ targets:
   - absl/base:config
   - absl/base:no_destructor
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -10903,7 +10908,6 @@ targets:
   - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11019,7 +11023,6 @@ targets:
   - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11911,7 +11914,6 @@ targets:
   - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -12219,7 +12221,6 @@ targets:
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:str_format
-  - absl/strings:strings
   uses_polling: false
 - name: init_test
   gtest: true
@@ -12442,7 +12443,6 @@ targets:
   - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -12908,7 +12908,6 @@ targets:
   - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -12938,7 +12937,6 @@ targets:
   - absl/meta:type_traits
   - absl/status:status
   - absl/strings:str_format
-  - absl/strings:strings
   uses_polling: false
 - name: match_test
   gtest: true
@@ -13153,7 +13151,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -13281,7 +13278,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -13363,7 +13359,6 @@ targets:
   - test/core/test_util/osa_distance_test.cc
   deps:
   - gtest
-  - absl/strings:strings
 - name: otel_plugin_test
   gtest: true
   build: plugin_test
@@ -13748,7 +13743,6 @@ targets:
   - gtest
   - absl/log:check
   - absl/strings:str_format
-  - absl/strings:strings
   uses_polling: false
 - name: port_sharing_end2end_test
   gtest: true
@@ -14058,7 +14052,6 @@ targets:
   - absl/log:check
   - absl/meta:type_traits
   - absl/strings:str_format
-  - absl/strings:strings
   uses_polling: false
 - name: promise_endpoint_test
   gtest: true
@@ -14092,7 +14085,6 @@ targets:
   - absl/log:check
   - absl/meta:type_traits
   - absl/strings:str_format
-  - absl/strings:strings
   uses_polling: false
 - name: promise_map_test
   gtest: true
@@ -14116,7 +14108,6 @@ targets:
   - absl/status:status
   - absl/status:statusor
   - absl/strings:str_format
-  - absl/strings:strings
   uses_polling: false
 - name: promise_mutex_test
   gtest: true
@@ -14188,7 +14179,6 @@ targets:
   - absl/meta:type_traits
   - absl/status:status
   - absl/strings:str_format
-  - absl/strings:strings
   uses_polling: false
 - name: proto_buffer_reader_test
   gtest: true
@@ -14350,7 +14340,6 @@ targets:
   - gtest
   - absl/log:check
   - absl/strings:str_format
-  - absl/strings:strings
   uses_polling: false
 - name: random_early_detection_test
   gtest: true
@@ -14605,7 +14594,6 @@ targets:
   - absl/base:config
   - absl/base:no_destructor
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -14622,7 +14610,6 @@ targets:
   - test/core/iomgr/resolve_address_posix_test.cc
   deps:
   - gtest
-  - absl/flags:parse
   - grpc_test_util
   args:
   - --resolver=ares
@@ -14652,7 +14639,6 @@ targets:
   - test/core/iomgr/resolve_address_posix_test.cc
   deps:
   - gtest
-  - absl/flags:parse
   - grpc_test_util
   args:
   - --resolver=native
@@ -15399,7 +15385,6 @@ targets:
   - absl/log:check
   - absl/status:status
   - absl/status:statusor
-  - absl/strings:strings
   uses_polling: false
 - name: status_helper_test
   gtest: true
@@ -15557,7 +15542,6 @@ targets:
   - absl/log:check
   - absl/meta:type_traits
   - absl/numeric:bits
-  - absl/strings:strings
   - absl/utility:utility
   uses_polling: false
 - name: tcp_client_posix_test
@@ -15645,7 +15629,6 @@ targets:
   - absl/log:log
   - absl/random:random
   - absl/status:status
-  - absl/strings:strings
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -15725,7 +15708,6 @@ targets:
   deps:
   - gtest
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/hash:hash
   - absl/status:statusor
   - absl/utility:utility
@@ -16253,7 +16235,6 @@ targets:
   - absl/log:check
   - absl/numeric:bits
   - absl/strings:str_format
-  - absl/strings:strings
   uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true
@@ -16291,7 +16272,6 @@ targets:
   - gtest
   - absl/log:check
   - absl/numeric:bits
-  - absl/strings:strings
   uses_polling: false
 - name: uuid_v4_test
   gtest: true
