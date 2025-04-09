@@ -20,8 +20,12 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+
+#include <vector>
 
 #include "absl/log/log.h"
+#include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options) {
@@ -32,6 +36,33 @@ grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
   // An error occurred.
   LOG(ERROR) << "Invalid arguments to grpc_alts_credentials_options_copy()";
   return nullptr;
+}
+
+void grpc_alts_credentials_options_add_transport_protocol_preference(
+    grpc_alts_credentials_options* options, const char* transport_protocol) {
+  if (options == nullptr || transport_protocol == nullptr) {
+    LOG(ERROR) << "Invalid nullptr arguments to "
+                  "grpc_alts_credentials_client_options_add_transport_protocol_"
+                  "preference()";
+    return;
+  }
+  options->transport_protocol_preferences.push_back(transport_protocol);
+}
+
+bool grpc_gcp_transport_protocol_preference_copy(
+    const grpc_alts_credentials_options* src,
+    grpc_alts_credentials_options* dst) {
+  if ((src == nullptr && dst != nullptr) ||
+      (src != nullptr && dst == nullptr)) {
+    LOG(ERROR) << "Invalid arguments to "
+                  "grpc_gcp_transport_protocol_preference_copy().";
+    return false;
+  }
+
+  std::copy(src->transport_protocol_preferences.begin(),
+            src->transport_protocol_preferences.end(),
+            std::back_inserter(dst->transport_protocol_preferences));
+  return true;
 }
 
 void grpc_alts_credentials_options_destroy(
