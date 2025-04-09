@@ -162,7 +162,7 @@ PING_SYSTEM_TEST(TestPingRequest) {
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 
-  EXPECT_EQ(execution_order, "1234");
+  EXPECT_STREQ(execution_order.c_str(), "1234");
 }
 
 PING_SYSTEM_TEST(TestPingUnrelatedAck) {
@@ -219,7 +219,7 @@ PING_SYSTEM_TEST(TestPingUnrelatedAck) {
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 
-  EXPECT_EQ(execution_order, "12345");
+  EXPECT_STREQ(execution_order.c_str(), "12345");
 }
 
 PING_SYSTEM_TEST(TestPingWaitForAck) {
@@ -264,7 +264,7 @@ PING_SYSTEM_TEST(TestPingWaitForAck) {
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 
-  EXPECT_EQ(execution_order, "1342");
+  EXPECT_STREQ(execution_order.c_str(), "1342");
 }
 
 PING_SYSTEM_TEST(TestPingCancel) {
@@ -342,7 +342,6 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
   ping_interface->ExpectTriggerWrite();
 
   PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
-  Duration next_allowed_ping_interval = Duration::Seconds(10);
   auto party = GetParty();
 
   // Ping 1
@@ -358,7 +357,7 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
   party->Spawn(
       "PingSystem",
       TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                       next_allowed_ping_interval,
+                                       Duration::Hours(1),
                                        /*ping_timeout=*/Duration::Seconds(100),
                                        party),
              []() { return absl::OkStatus(); }),
@@ -377,7 +376,7 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
   party->Spawn(
       "PingSystem2",
       TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                       next_allowed_ping_interval,
+                                       Duration::Hours(1),
                                        /*ping_timeout=*/Duration::Seconds(100),
                                        party),
              []() { return absl::OkStatus(); }),
