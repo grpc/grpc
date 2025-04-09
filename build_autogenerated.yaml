@@ -5110,6 +5110,36 @@ targets:
   - linux
   - posix
   - mac
+- name: http2_status_test
+  build: test
+  language: c
+  headers:
+  - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/glob.h
+  src:
+  - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/glob.cc
+  - test/core/transport/chttp2/http2_status_test.cc
+  deps:
+  - absl/container:flat_hash_map
+  - absl/hash:hash
+  - absl/status:statusor
+  - absl/types:span
+  - gpr
 - name: multiple_server_queues_test
   build: test
   language: c
