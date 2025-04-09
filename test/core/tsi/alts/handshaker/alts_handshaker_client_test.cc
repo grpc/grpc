@@ -38,6 +38,9 @@
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME "bigtable.google.api.com"
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1 "A@google.com"
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2 "B@google.com"
+#define ALTS_HANDSHAKER_CLIENT_SERVER_TRANSPORT_PROTOCOL "foo"
+#define ALTS_HANDSHAKER_SERVER_TRANSPORT_PROTOCOL "bar"
+#define ALTS_HANDSHAKER_CLIENT_TRANSPORT_PROTOCOL "baz"
 #define ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE (64 * 1024)
 
 const char kMaxConcurrentStreamsEnvironmentVariable[] =
@@ -66,6 +69,32 @@ typedef struct alts_handshaker_client_test_config {
   alts_handshaker_client* server;
   grpc_slice out_frame;
 } alts_handshaker_client_test_config;
+
+static void validate_transport_protocols(
+    const grpc_gcp_TransportProtocolPreferences* protocol_preferences,
+    bool is_server) {
+  ASSERT_NE(protocol_preferences, nullptr);
+  size_t transport_protocol_count;
+  const upb_StringView* transport_protocols =
+      grpc_gcp_TransportProtocolPreferences_transport_protocol(
+          protocol_preferences, &transport_protocol_count);
+
+  ASSERT_EQ(transport_protocol_count, 2);
+
+  if (is_server) {
+    EXPECT_TRUE(upb_StringView_IsEqual(
+        transport_protocols[0],
+        upb_StringView_FromString(ALTS_HANDSHAKER_SERVER_TRANSPORT_PROTOCOL)));
+  } else {
+    EXPECT_TRUE(upb_StringView_IsEqual(
+        transport_protocols[0],
+        upb_StringView_FromString(ALTS_HANDSHAKER_CLIENT_TRANSPORT_PROTOCOL)));
+  }
+  EXPECT_TRUE(upb_StringView_IsEqual(
+      transport_protocols[1],
+      upb_StringView_FromString(
+          ALTS_HANDSHAKER_CLIENT_SERVER_TRANSPORT_PROTOCOL)));
+}
 
 static void validate_rpc_protocol_versions(
     const grpc_gcp_RpcProtocolVersions* versions) {
@@ -213,6 +242,28 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
   return GRPC_CALL_OK;
 }
 
+static grpc_call_error check_client_start_success_with_negotiation(
+    grpc_call* /*call*/, const grpc_op* op, size_t nops,
+    grpc_closure* closure) {
+  // RECV_STATUS ops are asserted to always succeed
+  if (is_recv_status_op(op, nops)) {
+    return GRPC_CALL_OK;
+  }
+  upb::Arena arena;
+  alts_handshaker_client* client =
+      static_cast<alts_handshaker_client*>(closure->cb_arg);
+  EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
+  grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
+      alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
+  const grpc_gcp_StartClientHandshakeReq* client_start =
+      grpc_gcp_HandshakerReq_client_start(req);
+  validate_transport_protocols(
+      grpc_gcp_StartClientHandshakeReq_transport_protocol_preferences(
+          client_start),
+      false /* is_server */);
+  return check_client_start_success(nullptr, op, nops, closure);
+}
+
 ///
 /// A mock grpc_caller used to check correct execution of server_start
 /// operation. It checks if the server_start handshaker request is populated
@@ -257,6 +308,28 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
             ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
   EXPECT_TRUE(validate_op(client, op, nops, true /* is_start */));
   return GRPC_CALL_OK;
+}
+
+static grpc_call_error check_server_start_success_with_negotiation(
+    grpc_call* /*call*/, const grpc_op* op, size_t nops,
+    grpc_closure* closure) {
+  // RECV_STATUS ops are asserted to always succeed
+  if (is_recv_status_op(op, nops)) {
+    return GRPC_CALL_OK;
+  }
+  upb::Arena arena;
+  alts_handshaker_client* client =
+      static_cast<alts_handshaker_client*>(closure->cb_arg);
+  EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
+  grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
+      alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
+  const grpc_gcp_StartServerHandshakeReq* server_start =
+      grpc_gcp_HandshakerReq_server_start(req);
+  validate_transport_protocols(
+      grpc_gcp_StartServerHandshakeReq_transport_protocol_preferences(
+          server_start),
+      true /* is_server */);
+  return check_server_start_success(nullptr, op, nops, closure);
 }
 
 ///
@@ -307,7 +380,14 @@ static grpc_alts_credentials_options* create_credentials_options(
         options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1);
     grpc_alts_credentials_client_options_add_target_service_account(
         options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2);
+    grpc_alts_credentials_options_add_transport_protocol_preference(
+        options, ALTS_HANDSHAKER_CLIENT_TRANSPORT_PROTOCOL);
+  } else {
+    grpc_alts_credentials_options_add_transport_protocol_preference(
+        options, ALTS_HANDSHAKER_SERVER_TRANSPORT_PROTOCOL);
   }
+  grpc_alts_credentials_options_add_transport_protocol_preference(
+      options, ALTS_HANDSHAKER_CLIENT_SERVER_TRANSPORT_PROTOCOL);
   grpc_gcp_rpc_protocol_versions* versions = &options->rpc_versions;
   EXPECT_TRUE(grpc_gcp_rpc_protocol_versions_set_max(
       versions, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
@@ -420,6 +500,58 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
   // Check server_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->server, check_server_start_success);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(
+        alts_handshaker_client_start_server(config->server, &config->out_frame),
+        TSI_OK);
+  }
+  // Check client next success.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
+                                                     check_next_success);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(config->client, &config->out_frame),
+              TSI_OK);
+  }
+  // Check server next success.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->server,
+                                                     check_next_success);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(config->server, &config->out_frame),
+              TSI_OK);
+  }
+  // Cleanup.
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        config->client, GRPC_STATUS_OK, absl::OkStatus());
+    alts_handshaker_client_on_status_received_for_testing(
+        config->server, GRPC_STATUS_OK, absl::OkStatus());
+  }
+  destroy_config(config);
+}
+
+TEST(AltsHandshakerClientTest,
+     ScheduleRequestSuccessWithProtocolNegotiationTest) {
+  // Initialization.
+  alts_handshaker_client_test_config* config = create_config();
+  // Check client_start success.
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->client, check_client_start_success_with_negotiation);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);
+  }
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(nullptr, &config->out_frame),
+              TSI_INVALID_ARGUMENT);
+  }
+  // Check server_start success.
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->server, check_server_start_success_with_negotiation);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(

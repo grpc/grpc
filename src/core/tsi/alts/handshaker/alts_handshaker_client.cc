@@ -537,6 +537,15 @@ static grpc_byte_buffer* get_serialized_start_client(
   }
   grpc_gcp_StartClientHandshakeReq_set_max_frame_size(
       start_client, static_cast<uint32_t>(client->max_frame_size));
+  grpc_gcp_TransportProtocolPreferences* preferences =
+      grpc_gcp_StartClientHandshakeReq_mutable_transport_protocol_preferences(
+          start_client, arena.ptr());
+  for (auto transport_protocol :
+       client->options->transport_protocol_preferences) {
+    grpc_gcp_TransportProtocolPreferences_add_transport_protocol(
+        preferences, upb_StringView_FromString(transport_protocol),
+        arena.ptr());
+  }
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 
@@ -595,6 +604,15 @@ static grpc_byte_buffer* get_serialized_start_server(
       server_version, arena.ptr(), &client->options->rpc_versions);
   grpc_gcp_StartServerHandshakeReq_set_max_frame_size(
       start_server, static_cast<uint32_t>(client->max_frame_size));
+  grpc_gcp_TransportProtocolPreferences* preferences =
+      grpc_gcp_StartServerHandshakeReq_mutable_transport_protocol_preferences(
+          start_server, arena.ptr());
+  for (auto transport_protocol :
+       client->options->transport_protocol_preferences) {
+    grpc_gcp_TransportProtocolPreferences_add_transport_protocol(
+        preferences, upb_StringView_FromString(transport_protocol),
+        arena.ptr());
+  }
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 
