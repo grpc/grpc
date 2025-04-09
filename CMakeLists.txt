@@ -3833,19 +3833,6 @@ target_include_directories(gtest
 )
 target_link_libraries(gtest
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  ${_gRPC_RE2_LIBRARIES}
-  absl::flat_hash_set
-  absl::failure_signal_handler
-  absl::stacktrace
-  absl::symbolize
-  absl::flags
-  absl::flags_parse
-  absl::flags_reflection
-  absl::flags_usage
-  absl::strings
-  absl::any
-  absl::optional
-  absl::variant
 )
 
 
@@ -6285,6 +6272,7 @@ target_link_libraries(activity_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -8658,6 +8646,7 @@ target_link_libraries(bitset_test
   gtest
   absl::check
   absl::bits
+  absl::strings
 )
 
 
@@ -9024,6 +9013,7 @@ target_link_libraries(call_filters_test
   absl::config
   absl::no_destructor
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::inlined_vector
   absl::function_ref
   absl::hash
@@ -9452,6 +9442,7 @@ target_link_libraries(call_utils_test
   absl::config
   absl::no_destructor
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::inlined_vector
   absl::function_ref
   absl::hash
@@ -9581,6 +9572,7 @@ target_link_libraries(cancel_callback_test
   upb_wire_lib
   absl::config
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -10715,6 +10707,7 @@ target_link_libraries(chunked_vector_test
   upb_wire_lib
   absl::config
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -12729,6 +12722,7 @@ target_link_libraries(dump_args_test
   absl::any_invocable
   absl::check
   absl::str_format
+  absl::strings
 )
 
 
@@ -15521,6 +15515,7 @@ target_link_libraries(filter_fusion_test
   absl::config
   absl::no_destructor
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::inlined_vector
   absl::function_ref
   absl::hash
@@ -15734,6 +15729,7 @@ target_link_libraries(flow_control_test
   upb_wire_lib
   absl::config
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -15812,6 +15808,7 @@ target_link_libraries(for_each_test
   upb_wire_lib
   absl::config
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -18154,6 +18151,7 @@ target_link_libraries(header_assembler_test
   upb_wire_lib
   absl::config
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -19021,6 +19019,7 @@ target_link_libraries(if_test
   absl::type_traits
   absl::statusor
   absl::str_format
+  absl::strings
 )
 
 
@@ -19402,6 +19401,7 @@ target_link_libraries(interceptor_list_test
   upb_wire_lib
   absl::config
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -20423,6 +20423,7 @@ target_link_libraries(map_pipe_test
   upb_wire_lib
   absl::config
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -20465,6 +20466,7 @@ target_link_libraries(match_promise_test
   absl::type_traits
   absl::status
   absl::str_format
+  absl::strings
 )
 
 
@@ -21148,6 +21150,7 @@ target_link_libraries(mpsc_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -21479,6 +21482,7 @@ target_link_libraries(observable_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -21720,6 +21724,7 @@ target_include_directories(osa_distance_test
 target_link_libraries(osa_distance_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::strings
 )
 
 
@@ -22721,6 +22726,7 @@ target_link_libraries(poll_test
   gtest
   absl::check
   absl::str_format
+  absl::strings
 )
 
 
@@ -23666,6 +23672,7 @@ target_link_libraries(prioritized_race_test
   absl::check
   absl::type_traits
   absl::str_format
+  absl::strings
 )
 
 
@@ -23746,6 +23753,7 @@ target_link_libraries(promise_factory_test
   absl::check
   absl::type_traits
   absl::str_format
+  absl::strings
 )
 
 
@@ -23785,6 +23793,7 @@ target_link_libraries(promise_map_test
   absl::status
   absl::statusor
   absl::str_format
+  absl::strings
 )
 
 
@@ -23876,6 +23885,7 @@ target_link_libraries(promise_test
   absl::type_traits
   absl::status
   absl::str_format
+  absl::strings
 )
 
 
@@ -24316,6 +24326,7 @@ target_link_libraries(race_test
   gtest
   absl::check
   absl::str_format
+  absl::strings
 )
 
 
@@ -24737,6 +24748,7 @@ target_link_libraries(request_buffer_test
   absl::config
   absl::no_destructor
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::inlined_vector
   absl::function_ref
   absl::hash
@@ -24786,6 +24798,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(resolve_address_using_ares_resolver_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::flags_parse
     grpc_test_util
   )
 
@@ -24874,6 +24887,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(resolve_address_using_native_resolver_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::flags_parse
     grpc_test_util
   )
 
@@ -27328,6 +27342,7 @@ target_link_libraries(status_flag_test
   absl::check
   absl::status
   absl::statusor
+  absl::strings
 )
 
 
@@ -27868,6 +27883,7 @@ target_link_libraries(table_test
   absl::check
   absl::type_traits
   absl::bits
+  absl::strings
   absl::utility
 )
 
@@ -28126,6 +28142,7 @@ target_link_libraries(tdigest_test
   absl::log
   absl::random_random
   absl::status
+  absl::strings
   ${_gRPC_BENCHMARK_LIBRARIES}
 )
 
@@ -28308,6 +28325,7 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::hash
   absl::statusor
   absl::utility
@@ -29961,6 +29979,7 @@ target_link_libraries(unique_type_name_test
   absl::check
   absl::bits
   absl::str_format
+  absl::strings
 )
 
 
@@ -30081,6 +30100,7 @@ target_link_libraries(useful_test
   gtest
   absl::check
   absl::bits
+  absl::strings
 )
 
 
