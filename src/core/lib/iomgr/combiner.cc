@@ -27,7 +27,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/mpscq.h"
@@ -189,7 +188,7 @@ bool grpc_combiner_continue_exec_ctx() {
   // as soon as possible
   if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish()) {
     // this execution context wants to move on: schedule remaining work to be
-    // picked up on the executor
+    // picked up on the EventEngine
     queue_offload(lock);
     return true;
   }
@@ -245,7 +244,7 @@ bool grpc_combiner_continue_exec_ctx() {
 // Define a macro to ease readability of the following switch statement.
 #define OLD_STATE_WAS(orphaned, elem_count) \
   (((orphaned) ? 0 : STATE_UNORPHANED) |    \
-   ((elem_count) * STATE_ELEM_COUNT_LOW_BIT))
+   ((elem_count)*STATE_ELEM_COUNT_LOW_BIT))
   // Depending on what the previous state was, we need to perform different
   // actions.
   switch (old_state) {

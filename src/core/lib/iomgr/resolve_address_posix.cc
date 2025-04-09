@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
@@ -27,56 +29,32 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include <memory>
+
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolve_address_posix.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/host_port.h"
-#include "src/core/util/string.h"
-#include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
-namespace {
 
-class NativeDNSRequest {
- public:
-  NativeDNSRequest(
-      absl::string_view name, absl::string_view default_port,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done)
-      : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
-    GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
-    Executor::Run(&request_closure_, absl::OkStatus(), ExecutorType::RESOLVER);
+grpc_event_engine::experimental::EventEngine* NativeDNSResolver::engine() {
+  auto engine_ptr = engine_ptr_.load(std::memory_order_relaxed);
+  if (engine_ptr == nullptr) {
+    auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+    grpc_event_engine::experimental::EventEngine* expected = nullptr;
+    if (engine_ptr_.compare_exchange_strong(expected, engine.get(),
+                                            std::memory_order_acq_rel,
+                                            std::memory_order_acq_rel)) {
+      engine_ = std::move(engine);
+      return engine_.get();
+    }
   }
-
- private:
-  // Callback to be passed to grpc Executor to asynch-ify
-  // LookupHostnameBlocking
-  static void DoRequestThread(void* rp, grpc_error_handle /*error*/) {
-    NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
-    auto result =
-        GetDNSResolver()->LookupHostnameBlocking(r->name_, r->default_port_);
-    // running inline is safe since we've already been scheduled on the executor
-    r->on_done_(std::move(result));
-    delete r;
-  }
-
-  const std::string name_;
-  const std::string default_port_;
-  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-      on_done_;
-  grpc_closure request_closure_;
-};
-
-}  // namespace
+  return engine_ptr;
+}
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -84,8 +62,11 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     absl::string_view name, absl::string_view default_port,
     Duration /* timeout */, grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  // self-deleting class
-  new NativeDNSRequest(name, default_port, std::move(on_done));
+  engine()->Run([on_done = std::move(on_done), name, default_port]() {
+    ExecCtx exec_ctx;
+    auto result = GetDNSResolver()->LookupHostnameBlocking(name, default_port);
+    on_done(std::move(result));
+  });
   return kNullHandle;
 }
 
@@ -165,12 +146,12 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     absl::string_view /* name */, Duration /* timeout */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([on_resolved] {
+  engine()->Run([on_resolved] {
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up SRV records"));
   });
-  return {-1, -1};
+  return kNullHandle;
 };
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
@@ -179,12 +160,12 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported
-  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([on_resolved] {
+  engine()->Run([on_resolved] {
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up TXT records"));
   });
-  return {-1, -1};
+  return kNullHandle;
 };
 
 bool NativeDNSResolver::Cancel(TaskHandle /*handle*/) { return false; }
