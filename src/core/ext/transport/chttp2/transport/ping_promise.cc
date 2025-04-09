@@ -65,7 +65,7 @@ void PingSystem::TriggerDelayedPing(Duration wait, Party* party) {
   party->Spawn(
       "DelayedPing",
       [this, wait]() mutable {
-        LOG(INFO) << "Scheduling delayed ping after wait=" << wait;
+        VLOG(2) << "Scheduling delayed ping after wait=" << wait;
         return TrySeq(Sleep(wait), [this]() mutable {
           return ping_interface_->TriggerWrite();
         });
@@ -131,7 +131,7 @@ void PingSystem::SpawnTimeout(Duration ping_timeout, const uint64_t ping_id,
       [this, ping_timeout, ping_id]() {
         return Race(TrySeq(Sleep(ping_timeout),
                            [this, ping_id]() mutable {
-                             LOG(INFO)
+                             VLOG(2)
                                  << " Ping ack not received for id=" << ping_id
                                  << ". Ping timeout triggered.";
                              return ping_interface_->PingTimeout();
@@ -149,7 +149,7 @@ Promise<absl::Status> PingSystem::MaybeSendPing(
         const uint64_t ping_id = ping_callbacks_.StartPing();
         return TrySeq(ping_interface_->SendPing(SendPingArgs{false, ping_id}),
                       [this, ping_timeout, ping_id, party]() {
-                        LOG(INFO) << "Ping Sent";
+                        VLOG(2) << "Ping Sent with id: " << ping_id;
                         SpawnTimeout(ping_timeout, ping_id, party);
                         SentPing();
                         return absl::OkStatus();
