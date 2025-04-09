@@ -649,6 +649,10 @@ class SecureEndpoint final : public EventEngine::Endpoint {
     return impl_->GetLocalAddress();
   }
 
+  void* QueryExtension(absl::string_view id) override {
+    return impl_->QueryExtension(id);
+  }
+
  private:
   class Impl : public grpc_core::RefCounted<Impl> {
    public:
@@ -726,6 +730,10 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
     const EventEngine::ResolvedAddress& GetLocalAddress() const {
       return wrapped_ep_->GetLocalAddress();
+    }
+
+    void* QueryExtension(absl::string_view id) {
+      return wrapped_ep_->QueryExtension(id);
     }
 
     void Shutdown() {
