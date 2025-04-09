@@ -161,7 +161,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     f.client_ep = grpc_secure_endpoint_create(
                       fake_read_protector, fake_read_zero_copy_protector,
                       grpc_core::OrphanablePtr<grpc_endpoint>(tcp.client),
-                      nullptr, &args, 0)
+                      nullptr, 0, grpc_core::ChannelArgs::FromC(args))
                       .release();
   } else {
     unsigned i;
@@ -204,11 +204,12 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     encrypted_leftover = grpc_slice_from_copied_buffer(
         reinterpret_cast<const char*>(encrypted_buffer),
         total_buffer_size - buffer_size);
-    f.client_ep = grpc_secure_endpoint_create(
-                      fake_read_protector, fake_read_zero_copy_protector,
-                      grpc_core::OrphanablePtr<grpc_endpoint>(tcp.client),
-                      &encrypted_leftover, &args, 1)
-                      .release();
+    f.client_ep =
+        grpc_secure_endpoint_create(
+            fake_read_protector, fake_read_zero_copy_protector,
+            grpc_core::OrphanablePtr<grpc_endpoint>(tcp.client),
+            &encrypted_leftover, 1, grpc_core::ChannelArgs::FromC(args))
+            .release();
     grpc_slice_unref(encrypted_leftover);
     gpr_free(encrypted_buffer);
   }
@@ -216,7 +217,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   f.server_ep = grpc_secure_endpoint_create(
                     fake_write_protector, fake_write_zero_copy_protector,
                     grpc_core::OrphanablePtr<grpc_endpoint>(tcp.server),
-                    nullptr, &args, 0)
+                    nullptr, 0, grpc_core::ChannelArgs::FromC(args))
                     .release();
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
