@@ -32,7 +32,7 @@ namespace Grpc;
  */
 class Status
 {
-    public static function status(int $code, string $details, array $metadata = null): array
+    public static function status(int $code, string $details, ?array $metadata = null): array
     {
         $status = [
             'code' => $code,
@@ -44,7 +44,7 @@ class Status
         return $status;
     }
 
-    public static function ok(array $metadata = null): array
+    public static function ok(?array $metadata = null): array
     {
         return Status::status(STATUS_OK, 'OK', $metadata);
     }
