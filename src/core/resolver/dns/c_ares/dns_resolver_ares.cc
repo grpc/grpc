@@ -738,7 +738,6 @@ void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
 void grpc_resolver_dns_ares_init() {
   if (grpc_core::ShouldUseAresDnsResolver(
           grpc_core::ConfigVars::Get().DnsResolver())) {
-    address_sorting_init();
     grpc_error_handle error = grpc_ares_init();
     if (!error.ok()) {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
@@ -751,7 +750,6 @@ void grpc_resolver_dns_ares_init() {
 void grpc_resolver_dns_ares_shutdown() {
   if (grpc_core::ShouldUseAresDnsResolver(
           grpc_core::ConfigVars::Get().DnsResolver())) {
-    address_sorting_shutdown();
     grpc_ares_cleanup();
   }
 }

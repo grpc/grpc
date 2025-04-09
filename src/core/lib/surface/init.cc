@@ -123,21 +123,20 @@ void grpc_init(void) {
       g_shutting_down_cv->SignalAll();
     }
     grpc_iomgr_init();
-    if (grpc_core::IsEventEngineDnsEnabled()) {
-      address_sorting_init();
+    // Initialize DNS Resolver
+    address_sorting_init();
+    if (!grpc_core::IsEventEngineDnsEnabled() ||
+        !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+      // Some functionality still relies on the iomgr resolver
+      grpc_resolver_dns_ares_init();
+    }
+    if (grpc_core::IsEventEngineDnsEnabled() ||
+        grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+      // Some functionality relies on the EE resolver.
       auto status = AresInit();
       if (!status.ok()) {
         VLOG(2) << "AresInit failed: " << status.message();
-      } else if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
-        GRPC_TRACE_LOG(event_engine, INFO)
-            << "iomgr DNS Ares resolver is not being initialized since the "
-               "event_engine_dns_non_client_channel experiment is enabled.";
-      } else {
-        // TODO(yijiem): remove this once we remove the iomgr dns system.
-        grpc_resolver_dns_ares_reset_dns_resolver();
       }
-    } else {
-      grpc_resolver_dns_ares_init();
     }
     grpc_iomgr_start();
   }
@@ -151,11 +150,16 @@ void grpc_shutdown_internal_locked(void)
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-    if (grpc_core::IsEventEngineDnsEnabled()) {
-      address_sorting_shutdown();
-      AresShutdown();
-    } else {
+    address_sorting_shutdown();
+    if (!grpc_core::IsEventEngineDnsEnabled() ||
+        !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+      // Some functionality still relies on the iomgr resolver
       grpc_resolver_dns_ares_shutdown();
+    }
+    if (grpc_core::IsEventEngineDnsEnabled() ||
+        grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+      // Some functionality relies on the EE resolver.
+      AresShutdown();
     }
     grpc_iomgr_shutdown();
   }

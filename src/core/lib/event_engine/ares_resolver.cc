@@ -831,29 +831,30 @@ bool ShouldUseAresDnsResolver() {
 }
 
 absl::Status AresInit() {
+#ifdef GPR_WINDOWS
   if (ShouldUseAresDnsResolver()) {
     // ares_library_init and ares_library_cleanup are currently no-op except
     // under Windows. Calling them may cause race conditions when other parts of
     // the binary calls these functions concurrently.
-#ifdef GPR_WINDOWS
     int status = ares_library_init(ARES_LIB_INIT_ALL);
     if (status != ARES_SUCCESS) {
       return GRPC_ERROR_CREATE(
           absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
     }
-#endif  // GPR_WINDOWS
   }
+#endif  // GPR_WINDOWS
   return absl::OkStatus();
 }
+
 void AresShutdown() {
+#ifdef GPR_WINDOWS
   if (ShouldUseAresDnsResolver()) {
     // ares_library_init and ares_library_cleanup are currently no-op except
     // under Windows. Calling them may cause race conditions when other parts of
     // the binary calls these functions concurrently.
-#ifdef GPR_WINDOWS
     ares_library_cleanup();
-#endif  // GPR_WINDOWS
   }
+#endif  // GPR_WINDOWS
 }
 
 #else  // GRPC_ARES == 1
