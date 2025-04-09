@@ -225,7 +225,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       // into frames of the specified max_frame_size. gRPC may use this
       // argument to dynamically control the max sizes of frames sent to a
       // receiver in response to high receiver memory pressure.
-      int64_t max_frame_size;
+      int64_t max_frame_size = 1024 * 1024;
     };
     /// Writes data out on the connection.
     ///

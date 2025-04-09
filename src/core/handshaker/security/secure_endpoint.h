@@ -24,6 +24,7 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/util/orphanable.h"
@@ -35,7 +36,7 @@ grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
     struct tsi_frame_protector* protector,
     struct tsi_zero_copy_grpc_protector* zero_copy_protector,
     grpc_core::OrphanablePtr<grpc_endpoint> to_wrap,
-    grpc_slice* leftover_slices, const grpc_channel_args* channel_args,
-    size_t leftover_nslices);
+    grpc_slice* leftover_slices, size_t leftover_nslices,
+    const grpc_core::ChannelArgs& channel_args);
 
 #endif  // GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURE_ENDPOINT_H
