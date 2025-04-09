@@ -82,7 +82,7 @@ bool PingSystem::NeedToPing(Duration next_allowed_ping_interval, Party* party) {
   Match(
       ping_rate_policy_.RequestSendPing(next_allowed_ping_interval,
                                         ping_callbacks_.CountPingInflight()),
-      [&send_ping_now, this](grpc_core::Chttp2PingRatePolicy::SendGranted) {
+      [&send_ping_now, this](Chttp2PingRatePolicy::SendGranted) {
         send_ping_now = true;
         // TODO(akshitpatel) : [PH2][P1] : Update some keepalive flags.
         // TODO(akshitpatel) : [PH2][P1] : Traces
@@ -94,7 +94,7 @@ bool PingSystem::NeedToPing(Duration next_allowed_ping_interval, Party* party) {
                     << "]: Ping sent" << ping_rate_policy_.GetDebugString();
         }
       },
-      [this](grpc_core::Chttp2PingRatePolicy::TooManyRecentPings) {
+      [this](Chttp2PingRatePolicy::TooManyRecentPings) {
         // TODO(akshitpatel) : [PH2][P1] : Traces
         if (GRPC_TRACE_FLAG_ENABLED(http) ||
             GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
@@ -105,7 +105,7 @@ bool PingSystem::NeedToPing(Duration next_allowed_ping_interval, Party* party) {
                     << ping_rate_policy_.GetDebugString();
         }
       },
-      [this, party](grpc_core::Chttp2PingRatePolicy::TooSoon too_soon) mutable {
+      [this, party](Chttp2PingRatePolicy::TooSoon too_soon) mutable {
         // TODO(akshitpatel) : [PH2][P1] : Traces
         if (GRPC_TRACE_FLAG_ENABLED(http) ||
             GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
