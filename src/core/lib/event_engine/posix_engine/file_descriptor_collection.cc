@@ -83,7 +83,9 @@ FileDescriptor FileDescriptorCollection::Add(int fd) {
   return FileDescriptor(fd, 0);
 }
 
-bool FileDescriptorCollection::Remove(const FileDescriptor& fd) { return true; }
+bool FileDescriptorCollection::Remove(const FileDescriptor& /* fd */) {
+  return true;
+}
 
 std::unordered_set<int> FileDescriptorCollection::Clear() { return {}; }
 

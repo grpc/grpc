@@ -144,7 +144,9 @@ class PosixEventEngine::ForkSupport {
       grpc_core::MutexLock lock(&mu_);
       for (const auto& cb : resolver_handles_) {
         auto locked = cb.lock();
-        locked->Reinit();
+        if (locked != nullptr) {
+          locked->Reinit();
+        }
       }
     }
 #endif
