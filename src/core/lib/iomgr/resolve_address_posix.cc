@@ -40,8 +40,7 @@
 
 namespace grpc_core {
 
-NativeDNSResolver::NativeDNSResolver()
-    : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+NativeDNSResolver::NativeDNSResolver() {
   if (IsEventEngineDnsNonClientChannelEnabled() && IsEventEngineDnsEnabled()) {
     Crash("The iomgr native resolver should not be used.");
   }
@@ -53,7 +52,9 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     absl::string_view name, absl::string_view default_port,
     Duration /* timeout */, grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  engine_->Run([on_done = std::move(on_done), name, default_port]() {
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  engine->Run([on_done = std::move(on_done), engine = std::move(engine), name,
+               default_port]() {
     ExecCtx exec_ctx;
     auto result = GetDNSResolver()->LookupHostnameBlocking(name, default_port);
     on_done(std::move(result));
@@ -137,7 +138,8 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     absl::string_view /* name */, Duration /* timeout */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  engine_->Run([on_resolved] {
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  engine->Run([engine = std::move(engine), on_resolved] {
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up SRV records"));
@@ -151,7 +153,8 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported
-  engine_->Run([on_resolved] {
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  engine->Run([engine = std::move(engine), on_resolved] {
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up TXT records"));

@@ -48,7 +48,11 @@
 namespace grpc_core {
 
 NativeDNSResolver::NativeDNSResolver()
-    : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+    : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+  if (IsEventEngineDnsNonClientChannelEnabled() && IsEventEngineDnsEnabled()) {
+    Crash("The iomgr native resolver should not be used.");
+  }
+}
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -56,7 +60,9 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     absl::string_view name, absl::string_view default_port,
     Duration /* timeout */, grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  engine_->Run([on_resolved = std::move(on_resolved), name, default_port]() {
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  engine->Run([on_resolved = std::move(on_resolved), engine = std::move(engine),
+               name, default_port]() {
     ExecCtx exec_ctx;
     auto result = GetDNSResolver()->LookupHostnameBlocking(name, default_port);
     on_resolved(std::move(result));

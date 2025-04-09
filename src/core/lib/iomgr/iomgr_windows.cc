@@ -63,7 +63,11 @@ static void iomgr_platform_init(void) {
   grpc_iocp_init();
   grpc_pollset_global_init();
   grpc_wsa_socket_flags_init();
-  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::NativeDNSResolver>());
+  if (!grpc_core::IsEventEngineDnsEnabled() ||
+      !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+    grpc_core::ResetDNSResolver(
+        std::make_unique<grpc_core::NativeDNSResolver>());
+  }
 }
 
 static void iomgr_platform_flush(void) { grpc_iocp_flush(); }
