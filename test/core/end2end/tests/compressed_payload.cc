@@ -449,5 +449,32 @@ CORE_END2END_TEST(Http2SingleHopTests,
       .RequestWithPayload(0, {});
 }
 
+CORE_END2END_TEST(Http2SingleHopTests,
+                  RequestWithDefaultMediumLevelDecompressInCore) {
+  TestConfigurator(*this)
+      .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_MED)
+      .DecompressInApp()
+      .ExpectedAlgorithmFromServer(GRPC_COMPRESS_DEFLATE)
+      .RequestWithPayload(0, {});
+}
+
+CORE_END2END_TEST(Http2SingleHopTests,
+                  RequestWithDefaultLowLevelDecompressInCore) {
+  TestConfigurator(*this)
+      .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_LOW)
+      .DecompressInApp()
+      .ExpectedAlgorithmFromServer(GRPC_COMPRESS_GZIP)
+      .RequestWithPayload(0, {});
+}
+
+CORE_END2END_TEST(Http2SingleHopTests,
+                  RequestWithDefaultNoneLevelDecompressInCore) {
+  TestConfigurator(*this)
+      .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_NONE)
+      .DecompressInApp()
+      .ExpectedAlgorithmFromServer(GRPC_COMPRESS_NONE)
+      .RequestWithPayload(0, {});
+}
+
 }  // namespace
 }  // namespace grpc_core
