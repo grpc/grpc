@@ -89,18 +89,18 @@ class FrameProtector : public RefCounted<FrameProtector> {
       read_staging_buffer_ = grpc_empty_slice();
       write_staging_buffer_ = grpc_empty_slice();
     } else {
-      read_staging_buffer_ = memory_owner_.MakeSlice(
-          grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
-      write_staging_buffer_ = memory_owner_.MakeSlice(
-          grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+      read_staging_buffer_ =
+          memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
+      write_staging_buffer_ =
+          memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
     }
   }
 
-  ~FrameProtector() {
+  ~FrameProtector() override {
     tsi_frame_protector_destroy(protector_);
     tsi_zero_copy_grpc_protector_destroy(zero_copy_protector_);
-    grpc_core::CSliceUnref(read_staging_buffer_);
-    grpc_core::CSliceUnref(write_staging_buffer_);
+    CSliceUnref(read_staging_buffer_);
+    CSliceUnref(write_staging_buffer_);
   }
 
   Mutex* read_mu() ABSL_LOCK_RETURNED(read_mu_) { return &read_mu_; }
@@ -109,8 +109,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
   void MaybePostReclaimer() {
     if (!has_posted_reclaimer_.exchange(true, std::memory_order_relaxed)) {
       memory_owner_.PostReclaimer(
-          grpc_core::ReclamationPass::kBenign,
-          [self = Ref()](std::optional<grpc_core::ReclamationSweep> sweep) {
+          ReclamationPass::kBenign,
+          [self = Ref()](std::optional<ReclamationSweep> sweep) {
             if (sweep.has_value()) {
               GRPC_TRACE_LOG(resource_quota, INFO)
                   << "secure endpoint: benign reclamation to free memory";
@@ -127,8 +127,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
                                                grpc_empty_slice());
               self->write_mu_.Unlock();
 
-              grpc_core::CSliceUnref(temp_read_slice);
-              grpc_core::CSliceUnref(temp_write_slice);
+              CSliceUnref(temp_read_slice);
+              CSliceUnref(temp_write_slice);
               self->has_posted_reclaimer_.store(false,
                                                 std::memory_order_relaxed);
             }
@@ -140,7 +140,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
     grpc_slice_buffer_add_indexed(read_buffer_, read_staging_buffer_);
     read_staging_buffer_ =
-        memory_owner_.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+        memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
     *cur = GRPC_SLICE_START_PTR(read_staging_buffer_);
     *end = GRPC_SLICE_END_PTR(read_staging_buffer_);
   }
@@ -272,7 +272,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
     output_buffer_.AppendIndexed(
         grpc_event_engine::experimental::Slice(write_staging_buffer_));
     write_staging_buffer_ =
-        memory_owner_.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+        memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
     *cur = GRPC_SLICE_START_PTR(write_staging_buffer_);
     *end = GRPC_SLICE_END_PTR(write_staging_buffer_);
     MaybePostReclaimer();
@@ -393,8 +393,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
   grpc_slice read_staging_buffer_ ABSL_GUARDED_BY(read_mu_);
   grpc_slice write_staging_buffer_ ABSL_GUARDED_BY(write_mu_);
   grpc_event_engine::experimental::SliceBuffer output_buffer_;
-  grpc_core::MemoryOwner memory_owner_;
-  grpc_core::MemoryAllocator::Reservation self_reservation_;
+  MemoryOwner memory_owner_;
+  MemoryAllocator::Reservation self_reservation_;
   std::atomic<bool> has_posted_reclaimer_{false};
   int min_progress_size_ = 1;
   SliceBuffer protector_staging_buffer_;
@@ -630,7 +630,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
             std::move(wrapped_ep), protector, zero_copy_protector,
             leftover_slices, leftover_nslices, channel_args)) {}
 
-  ~SecureEndpoint() { impl_->Shutdown(); }
+  ~SecureEndpoint() override { impl_->Shutdown(); }
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* in_args) override {
