@@ -64,7 +64,13 @@ class Http2Settings {
   bool allow_security_frame() const { return allow_security_frame_; }
 
   void SetHeaderTableSize(uint32_t x) { header_table_size_ = x; }
-  void SetMaxConcurrentStreams(uint32_t x) { max_concurrent_streams_ = x; }
+  void SetMaxConcurrentStreams(uint32_t x) {
+    initial_max_concurrent_streams_ = x;
+    max_concurrent_streams_ = x;
+  }
+  void UpdateMaxConcurrentStreams(uint32_t x) {
+    max_concurrent_streams_ = std::min(x, initial_max_concurrent_streams_);
+  }
   void SetInitialWindowSize(uint32_t x) {
     initial_window_size_ = std::min(x, max_initial_window_size());
   }
@@ -134,6 +140,7 @@ class Http2Settings {
 
  private:
   uint32_t header_table_size_ = 4096;
+  uint32_t initial_max_concurrent_streams_ = 4294967295u;
   uint32_t max_concurrent_streams_ = 4294967295u;
   uint32_t initial_window_size_ = 65535u;
   uint32_t max_frame_size_ = 16384u;

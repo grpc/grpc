@@ -57,6 +57,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/connection_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -711,6 +712,8 @@ class Server : public ServerInterface,
 
   // The last time we printed a shutdown progress message.
   gpr_timespec last_shutdown_message_time_;
+
+  StreamQuotaRefPtr stream_quota_;
 };
 
 }  // namespace grpc_core
