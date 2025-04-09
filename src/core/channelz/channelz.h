@@ -43,6 +43,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 
@@ -70,6 +71,7 @@ namespace channelz {
 class SocketNode;
 class ListenSocketNode;
 class DataSource;
+class ZTrace;
 
 namespace testing {
 class CallCountingHelperPeer;
@@ -108,6 +110,12 @@ class BaseNode : public RefCounted<BaseNode> {
   intptr_t uuid() const { return uuid_; }
   const std::string& name() const { return name_; }
 
+  void RunZTrace(absl::string_view name, Timestamp deadline,
+                 std::map<std::string, std::string> args,
+                 std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                     event_engine,
+                 absl::AnyInvocable<void(Json output)> callback);
+
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
 
@@ -124,6 +132,15 @@ class BaseNode : public RefCounted<BaseNode> {
       ABSL_GUARDED_BY(data_sources_mu_);
 };
 
+class ZTrace {
+ public:
+  virtual ~ZTrace() = default;
+  virtual void Run(Timestamp deadline, std::map<std::string, std::string> args,
+                   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                       event_engine,
+                   absl::AnyInvocable<void(Json)>) = 0;
+};
+
 class DataSource {
  public:
   explicit DataSource(RefCountedPtr<BaseNode> node);
@@ -132,6 +149,11 @@ class DataSource {
   // This method must not cause the DataSource to be deleted, or else there will
   // be a deadlock.
   virtual void AddJson(Json::Object& output) = 0;
+
+  // If this data source exports some ztrace, return it here.
+  virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
+    return nullptr;
+  }
 
  protected:
   ~DataSource();

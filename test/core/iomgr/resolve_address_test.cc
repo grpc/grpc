@@ -164,6 +164,19 @@ class ResolveAddressTest : public ::testing::Test {
 
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
+ protected:
+  void SetUp() override {
+    if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+      GTEST_SKIP()
+          << "Skipping all legacy ResolveAddress tests. The "
+             "event_engine_for_all_other_endpoints experiment is enabled, so "
+             "the grpc_core::GetDNSResolver() API is not in use. Further, the "
+             "experiment replaces iomgr grpc_fds with minimal implementations. "
+             "The legacy resolvers use the grpc_fd APIs directly, so these "
+             "tests would fail.";
+    }
+  }
+
  private:
   static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
