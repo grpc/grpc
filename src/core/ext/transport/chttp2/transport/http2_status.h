@@ -55,28 +55,32 @@ class Http2Status {
   static Http2Status Ok() { return Http2Status(absl::StatusCode::kOk); }
 
   static Http2Status ConnectionError(const Http2ErrorCode error_code,
-                                     absl::string_view message) {
+                                     std::string message) {
     return Http2Status(error_code, Http2ErrorType::kConnectionError, message);
   }
 
-  static Http2Status FrameSizeConnectionError(absl::string_view message) {
+  static Http2Status FrameSizeConnectionError(std::string message) {
     return Http2Status(Http2ErrorCode::kFrameSizeError,
                        Http2ErrorType::kConnectionError, message);
   }
 
-  static Http2Status ProtocolConnectionError(absl::string_view message) {
+  static Http2Status ProtocolConnectionError(std::string message) {
     return Http2Status(Http2ErrorCode::kProtocolError,
                        Http2ErrorType::kConnectionError, message);
   }
 
   static Http2Status StreamError(const Http2ErrorCode error_code,
-                                 absl::string_view message) {
+                                 std::string message) {
     return Http2Status(error_code, Http2ErrorType::kStreamError, message);
   }
 
   static Http2Status GrpcError(const Http2ErrorCode error_code,
-                               absl::string_view message) {
+                               std::string message) {
     return Http2Status(error_code, Http2ErrorType::kGrpcError, message);
+  }
+
+  static Http2Status AbslError(const absl::StatusCode code) {
+    return Http2Status(code);
   }
 
   absl::Status absl_status() const {
@@ -102,18 +106,18 @@ class Http2Status {
         error_type_(Http2ErrorType::kOk),
         absl_code_(code) {}
 
-  explicit Http2Status(const absl::StatusCode code, absl::string_view message)
+  explicit Http2Status(const absl::StatusCode code, std::string& message)
       : http2_code_(Http2ErrorCode::kNoError),
         error_type_(Http2ErrorType::kOk),
         absl_code_(code),
-        message_(std::string(message)) {}
+        message_(std::move(message)) {}
 
   explicit Http2Status(const Http2ErrorCode code, const Http2ErrorType type,
-                       absl::string_view message)
+                       std::string& message)
       : http2_code_(code),
         error_type_(type),
         absl_code_(absl::StatusCode::kOk),
-        message_(std::string(message)) {
+        message_(std::move(message)) {
     DCHECK((http2_code_ == Http2ErrorCode::kNoError &&
             error_type_ == Http2ErrorType::kOk) ||
            (http2_code_ > Http2ErrorCode::kNoError &&
