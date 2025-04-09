@@ -3253,7 +3253,10 @@ grpc_cc_library(
         "util/single_set_ptr.h",
     ],
     external_deps = ["absl/log:check"],
-    deps = ["//:gpr"],
+    deps = [
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
 )
 
 grpc_cc_library(
@@ -9374,6 +9377,21 @@ grpc_cc_library(
     ],
     deps = [
         "status_helper",
+    ],
+)
+
+grpc_cc_library(
+    name = "ztrace_collector",
+    hdrs = ["channelz/ztrace_collector.h"],
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
+    deps = [
+        "single_set_ptr",
+        "sync",
+        "time",
+        "//:channelz",
+        "//:gpr",
     ],
 )
 

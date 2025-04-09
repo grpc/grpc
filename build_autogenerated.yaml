@@ -15236,11 +15236,18 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/util/atomic_utils.h
+  - src/core/util/down_cast.h
+  - src/core/util/notification.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
   - src/core/util/single_set_ptr.h
   src:
   - test/core/util/single_set_ptr_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: sleep_test
@@ -20554,6 +20561,22 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: ztrace_collector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/channelz/ztrace_collector.h
+  src:
+  - test/core/channelz/ztrace_collector_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - grpc
   platforms:
   - linux
   - posix
