@@ -767,10 +767,12 @@ grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
         protector, zero_copy_protector, std::move(to_wrap), leftover_slices,
         channel_args.ToC().get(), leftover_nslices);
   }
-  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-      event_engine_endpoint = grpc_event_engine::experimental::
-          grpc_take_wrapped_event_engine_endpoint(to_wrap.get());
-  if (event_engine_endpoint != nullptr) {
+  if (grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+          to_wrap.get()) != nullptr) {
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        event_engine_endpoint = grpc_event_engine::experimental::
+            grpc_take_wrapped_event_engine_endpoint(to_wrap.release());
+    CHECK(event_engine_endpoint != nullptr);
     return grpc_core::OrphanablePtr<grpc_endpoint>(
         grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
             std::make_unique<grpc_event_engine::experimental::SecureEndpoint>(
