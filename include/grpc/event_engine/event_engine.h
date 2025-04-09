@@ -186,7 +186,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       // the endpoint read operation as complete. gRPC may use this argument
       // to minimize the number of endpoint read API calls over the lifetime
       // of a connection.
-      int64_t read_hint_bytes;
+      int64_t read_hint_bytes = 1;
     };
     /// Reads data from the Endpoint.
     ///

@@ -63,84 +63,261 @@
 static void on_read(void* user_data, grpc_error_handle error);
 static void on_write(void* user_data, grpc_error_handle error);
 
+namespace grpc_core {
+namespace {
+class FrameProtector : public RefCounted<FrameProtector> {
+ public:
+  FrameProtector(tsi_frame_protector* protector,
+                 tsi_zero_copy_grpc_protector* zero_copy_protector,
+                 grpc_slice* leftover_slices, size_t leftover_nslices,
+                 const ChannelArgs& args)
+      : protector_(protector),
+        zero_copy_protector_(zero_copy_protector),
+        memory_owner_(args.GetObject<ResourceQuota>()
+                          ->memory_quota()
+                          ->CreateMemoryOwner()),
+        self_reservation_(memory_owner_.MakeReservation(sizeof(*this))) {
+    if (leftover_nslices > 0) {
+      leftover_bytes_ = std::make_unique<SliceBuffer>();
+      for (size_t i = 0; i < leftover_nslices; i++) {
+        leftover_bytes_->Append(Slice(leftover_slices[i]));
+      }
+    }
+    if (zero_copy_protector_ != nullptr) {
+      read_staging_buffer_ = grpc_empty_slice();
+      write_staging_buffer_ = grpc_empty_slice();
+    } else {
+      read_staging_buffer_ = memory_owner_.MakeSlice(
+          grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+      write_staging_buffer_ = memory_owner_.MakeSlice(
+          grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+    }
+  }
+
+  ~FrameProtector() {
+    tsi_frame_protector_destroy(protector_);
+    tsi_zero_copy_grpc_protector_destroy(zero_copy_protector_);
+    grpc_core::CSliceUnref(read_staging_buffer_);
+    grpc_core::CSliceUnref(write_staging_buffer_);
+  }
+
+  void MaybePostReclaimer() {
+    if (!has_posted_reclaimer_.exchange(true, std::memory_order_relaxed)) {
+      memory_owner_.PostReclaimer(
+          grpc_core::ReclamationPass::kBenign,
+          [self = Ref()](std::optional<grpc_core::ReclamationSweep> sweep) {
+            if (sweep.has_value()) {
+              GRPC_TRACE_LOG(resource_quota, INFO)
+                  << "secure endpoint: benign reclamation to free memory";
+              grpc_slice temp_read_slice;
+              grpc_slice temp_write_slice;
+
+              self->read_mu_.Lock();
+              temp_read_slice =
+                  std::exchange(self->read_staging_buffer_, grpc_empty_slice());
+              self->read_mu_.Unlock();
+
+              self->write_mu_.Lock();
+              temp_write_slice = std::exchange(self->write_staging_buffer_,
+                                               grpc_empty_slice());
+              self->write_mu_.Unlock();
+
+              grpc_core::CSliceUnref(temp_read_slice);
+              grpc_core::CSliceUnref(temp_write_slice);
+              self->has_posted_reclaimer_.store(false,
+                                                std::memory_order_relaxed);
+            }
+          });
+    }
+  }
+
+  void FlushReadStagingBuffer(uint8_t** cur, uint8_t** end)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
+    grpc_slice_buffer_add_indexed(read_buffer_, read_staging_buffer_);
+    read_staging_buffer_ =
+        memory_owner_.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+    *cur = GRPC_SLICE_START_PTR(read_staging_buffer_);
+    *end = GRPC_SLICE_END_PTR(read_staging_buffer_);
+  }
+
+  void FinishRead(bool ok) {
+    if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint) && ABSL_VLOG_IS_ON(2)) {
+      size_t i;
+      for (i = 0; i < read_buffer_->count; i++) {
+        char* data = grpc_dump_slice(read_buffer_->slices[i],
+                                     GPR_DUMP_HEX | GPR_DUMP_ASCII);
+        VLOG(2) << "READ " << this << ": " << data;
+        gpr_free(data);
+      }
+    }
+    // TODO(yangg) experiment with moving this block after read_cb to see if it
+    // helps latency
+    source_buffer_.Clear();
+    if (!ok) grpc_slice_buffer_reset_and_unref(read_buffer_);
+    read_buffer_ = nullptr;
+  }
+
+  absl::Status Unprotect(absl::Status read_status) {
+    bool keep_looping = false;
+    tsi_result result = TSI_OK;
+
+    grpc_core::MutexLock l(&read_mu_);
+
+#if 0
+    // If we were shut down after this callback was scheduled with OK
+    // status but before it was invoked, we need to treat that as an error.
+    if (ep->wrapped_ep == nullptr && error.ok()) {
+      error = absl::CancelledError("secure endpoint shutdown");
+    }
+#endif
+
+    uint8_t* cur = GRPC_SLICE_START_PTR(read_staging_buffer_);
+    uint8_t* end = GRPC_SLICE_END_PTR(read_staging_buffer_);
+
+    if (!read_status.ok()) {
+      grpc_slice_buffer_reset_and_unref(read_buffer_);
+    } else if (zero_copy_protector_ != nullptr) {
+      // Use zero-copy grpc protector to unprotect.
+      int min_progress_size = 1;
+      // Get the size of the last frame which is not yet fully decrypted.
+      // This estimated frame size is stored in ep->min_progress_size which is
+      // passed to the TCP layer to indicate the minimum number of
+      // bytes that need to be read to make meaningful progress. This would
+      // avoid reading of small slices from the network.
+      // TODO(vigneshbabu): Set min_progress_size in the regular
+      // (non-zero-copy) frame protector code path as well.
+      result = tsi_zero_copy_grpc_protector_unprotect(
+          zero_copy_protector_, source_buffer_.c_slice_buffer(), read_buffer_,
+          &min_progress_size);
+      min_progress_size = std::max(1, min_progress_size);
+      min_progress_size_ = result != TSI_OK ? 1 : min_progress_size;
+    } else {
+      // Use frame protector to unprotect.
+      // TODO(yangg) check error, maybe bail out early
+      for (size_t i = 0; i < source_buffer_.Count(); i++) {
+        grpc_slice encrypted = source_buffer_.c_slice_at(i);
+        uint8_t* message_bytes = GRPC_SLICE_START_PTR(encrypted);
+        size_t message_size = GRPC_SLICE_LENGTH(encrypted);
+
+        while (message_size > 0 || keep_looping) {
+          size_t unprotected_buffer_size_written =
+              static_cast<size_t>(end - cur);
+          size_t processed_message_size = message_size;
+          protector_mu_.Lock();
+          result = tsi_frame_protector_unprotect(
+              protector_, message_bytes, &processed_message_size, cur,
+              &unprotected_buffer_size_written);
+          protector_mu_.Unlock();
+          if (result != TSI_OK) {
+            LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
+            break;
+          }
+          message_bytes += processed_message_size;
+          message_size -= processed_message_size;
+          cur += unprotected_buffer_size_written;
+
+          if (cur == end) {
+            FlushReadStagingBuffer(&cur, &end);
+            // Force to enter the loop again to extract buffered bytes in
+            // protector. The bytes could be buffered because of running out
+            // of staging_buffer. If this happens at the end of all slices,
+            // doing another unprotect avoids leaving data in the protector.
+            keep_looping = true;
+          } else if (unprotected_buffer_size_written > 0) {
+            keep_looping = true;
+          } else {
+            keep_looping = false;
+          }
+        }
+        if (result != TSI_OK) break;
+      }
+
+      if (cur != GRPC_SLICE_START_PTR(read_staging_buffer_)) {
+        grpc_slice_buffer_add(
+            read_buffer_,
+            grpc_slice_split_head(
+                &read_staging_buffer_,
+                static_cast<size_t>(
+                    cur - GRPC_SLICE_START_PTR(read_staging_buffer_))));
+      }
+    }
+
+    if (read_status.ok() && result != TSI_OK) {
+      read_status = GRPC_ERROR_CREATE(
+          absl::StrCat("Unwrap failed (", tsi_result_to_string(result), ")"));
+    }
+
+    return read_status;
+  }
+
+  void BeginRead(grpc_slice_buffer* slices) {
+    read_buffer_ = slices;
+    grpc_slice_buffer_reset_and_unref(read_buffer_);
+  }
+
+  bool MaybeCompleteReadImmediately() {
+    if (leftover_bytes_ != nullptr) {
+      grpc_slice_buffer_swap(leftover_bytes_->c_slice_buffer(), read_buffer_);
+      leftover_bytes_.reset();
+      return true;
+    }
+    return false;
+  }
+
+  grpc_slice_buffer* source_buffer() { return source_buffer_.c_slice_buffer(); }
+
+  int min_progress_size() const { return min_progress_size_; }
+
+ private:
+  struct tsi_frame_protector* const protector_;
+  struct tsi_zero_copy_grpc_protector* const zero_copy_protector_;
+  Mutex mu_;
+  Mutex read_mu_;
+  Mutex write_mu_;
+  Mutex protector_mu_;
+  grpc_slice_buffer* read_buffer_ = nullptr;
+  SliceBuffer source_buffer_;
+  // saved handshaker leftover data to unprotect.
+  std::unique_ptr<SliceBuffer> leftover_bytes_;
+  // buffers for read and write
+  grpc_slice read_staging_buffer_ ABSL_GUARDED_BY(read_mu_);
+  grpc_slice write_staging_buffer_ ABSL_GUARDED_BY(write_mu_);
+  SliceBuffer output_buffer_;
+  grpc_core::MemoryOwner memory_owner_;
+  grpc_core::MemoryAllocator::Reservation self_reservation_;
+  std::atomic<bool> has_posted_reclaimer_{false};
+  int min_progress_size_ = 1;
+  SliceBuffer protector_staging_buffer_;
+};
+}  // namespace
+}  // namespace grpc_core
+
 namespace {
 struct secure_endpoint : public grpc_endpoint {
   secure_endpoint(const grpc_endpoint_vtable* vtbl,
                   tsi_frame_protector* protector,
                   tsi_zero_copy_grpc_protector* zero_copy_protector,
                   grpc_core::OrphanablePtr<grpc_endpoint> endpoint,
-                  grpc_slice* leftover_slices,
-                  const grpc_channel_args* channel_args,
-                  size_t leftover_nslices)
+                  grpc_slice* leftover_slices, size_t leftover_nslices,
+                  const grpc_core::ChannelArgs& args)
       : wrapped_ep(std::move(endpoint)),
-        protector(protector),
-        zero_copy_protector(zero_copy_protector) {
+        frame_protector(protector, zero_copy_protector, leftover_slices,
+                        leftover_nslices, args) {
     this->vtable = vtbl;
-    gpr_mu_init(&protector_mu);
     GRPC_CLOSURE_INIT(&on_read, ::on_read, this, grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_write, ::on_write, this, grpc_schedule_on_exec_ctx);
-    grpc_slice_buffer_init(&source_buffer);
-    grpc_slice_buffer_init(&leftover_bytes);
-    for (size_t i = 0; i < leftover_nslices; i++) {
-      grpc_slice_buffer_add(&leftover_bytes,
-                            grpc_core::CSliceRef(leftover_slices[i]));
-    }
-    grpc_slice_buffer_init(&output_buffer);
-    memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
-                       ->memory_quota()
-                       ->CreateMemoryOwner();
-    self_reservation = memory_owner.MakeReservation(sizeof(*this));
-    if (zero_copy_protector) {
-      read_staging_buffer = grpc_empty_slice();
-      write_staging_buffer = grpc_empty_slice();
-    } else {
-      read_staging_buffer =
-          memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
-      write_staging_buffer =
-          memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
-    }
-    has_posted_reclaimer.store(false, std::memory_order_relaxed);
-    min_progress_size = 1;
-    grpc_slice_buffer_init(&protector_staging_buffer);
     gpr_ref_init(&ref, 1);
   }
 
-  ~secure_endpoint() {
-    tsi_frame_protector_destroy(protector);
-    tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
-    grpc_slice_buffer_destroy(&source_buffer);
-    grpc_slice_buffer_destroy(&leftover_bytes);
-    grpc_core::CSliceUnref(read_staging_buffer);
-    grpc_core::CSliceUnref(write_staging_buffer);
-    grpc_slice_buffer_destroy(&output_buffer);
-    grpc_slice_buffer_destroy(&protector_staging_buffer);
-    gpr_mu_destroy(&protector_mu);
-  }
+  ~secure_endpoint() {}
 
   grpc_core::OrphanablePtr<grpc_endpoint> wrapped_ep;
-  struct tsi_frame_protector* protector;
-  struct tsi_zero_copy_grpc_protector* zero_copy_protector;
-  gpr_mu protector_mu;
-  grpc_core::Mutex read_mu;
-  grpc_core::Mutex write_mu;
+  grpc_core::FrameProtector frame_protector;
   // saved upper level callbacks and user_data.
   grpc_closure* read_cb = nullptr;
   grpc_closure* write_cb = nullptr;
   grpc_closure on_read;
   grpc_closure on_write;
-  grpc_slice_buffer* read_buffer = nullptr;
-  grpc_slice_buffer source_buffer;
-  // saved handshaker leftover data to unprotect.
-  grpc_slice_buffer leftover_bytes;
-  // buffers for read and write
-  grpc_slice read_staging_buffer ABSL_GUARDED_BY(read_mu);
-  grpc_slice write_staging_buffer ABSL_GUARDED_BY(write_mu);
-  grpc_slice_buffer output_buffer;
-  grpc_core::MemoryOwner memory_owner;
-  grpc_core::MemoryAllocator::Reservation self_reservation;
-  std::atomic<bool> has_posted_reclaimer;
-  int min_progress_size;
-  grpc_slice_buffer protector_staging_buffer;
   gpr_refcount ref;
 };
 }  // namespace
@@ -185,165 +362,20 @@ static void secure_endpoint_unref(secure_endpoint* ep) {
 static void secure_endpoint_ref(secure_endpoint* ep) { gpr_ref(&ep->ref); }
 #endif
 
-static void maybe_post_reclaimer(secure_endpoint* ep) {
-  if (!ep->has_posted_reclaimer) {
-    SECURE_ENDPOINT_REF(ep, "benign_reclaimer");
-    ep->has_posted_reclaimer.exchange(true, std::memory_order_relaxed);
-    ep->memory_owner.PostReclaimer(
-        grpc_core::ReclamationPass::kBenign,
-        [ep](std::optional<grpc_core::ReclamationSweep> sweep) {
-          if (sweep.has_value()) {
-            GRPC_TRACE_LOG(resource_quota, INFO)
-                << "secure endpoint: benign reclamation to free memory";
-            grpc_slice temp_read_slice;
-            grpc_slice temp_write_slice;
-
-            ep->read_mu.Lock();
-            temp_read_slice = ep->read_staging_buffer;
-            ep->read_staging_buffer = grpc_empty_slice();
-            ep->read_mu.Unlock();
-
-            ep->write_mu.Lock();
-            temp_write_slice = ep->write_staging_buffer;
-            ep->write_staging_buffer = grpc_empty_slice();
-            ep->write_mu.Unlock();
-
-            grpc_core::CSliceUnref(temp_read_slice);
-            grpc_core::CSliceUnref(temp_write_slice);
-            ep->has_posted_reclaimer.exchange(false, std::memory_order_relaxed);
-          }
-          SECURE_ENDPOINT_UNREF(ep, "benign_reclaimer");
-        });
-  }
-}
-
-static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
-                                      uint8_t** end)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(ep->read_mu) {
-  grpc_slice_buffer_add_indexed(ep->read_buffer, ep->read_staging_buffer);
-  ep->read_staging_buffer =
-      ep->memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
-  *cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
-  *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
-}
-
 static void call_read_cb(secure_endpoint* ep, grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint) && ABSL_VLOG_IS_ON(2)) {
-    size_t i;
-    for (i = 0; i < ep->read_buffer->count; i++) {
-      char* data = grpc_dump_slice(ep->read_buffer->slices[i],
-                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      VLOG(2) << "READ " << ep << ": " << data;
-      gpr_free(data);
-    }
-  }
-  ep->read_buffer = nullptr;
+  ep->frame_protector.FinishRead(error.ok());
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, ep->read_cb, error);
   SECURE_ENDPOINT_UNREF(ep, "read");
 }
 
 static void on_read(void* user_data, grpc_error_handle error) {
-  unsigned i;
-  uint8_t keep_looping = 0;
-  tsi_result result = TSI_OK;
-  secure_endpoint* ep = static_cast<secure_endpoint*>(user_data);
+  secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(user_data);
 
-  {
-    grpc_core::MutexLock l(&ep->read_mu);
-
-    // If we were shut down after this callback was scheduled with OK
-    // status but before it was invoked, we need to treat that as an error.
-    if (ep->wrapped_ep == nullptr && error.ok()) {
-      error = absl::CancelledError("secure endpoint shutdown");
-    }
-
-    uint8_t* cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
-    uint8_t* end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
-
-    if (!error.ok()) {
-      grpc_slice_buffer_reset_and_unref(ep->read_buffer);
-    } else if (ep->zero_copy_protector != nullptr) {
-      // Use zero-copy grpc protector to unprotect.
-      int min_progress_size = 1;
-      // Get the size of the last frame which is not yet fully decrypted.
-      // This estimated frame size is stored in ep->min_progress_size which is
-      // passed to the TCP layer to indicate the minimum number of
-      // bytes that need to be read to make meaningful progress. This would
-      // avoid reading of small slices from the network.
-      // TODO(vigneshbabu): Set min_progress_size in the regular (non-zero-copy)
-      // frame protector code path as well.
-      result = tsi_zero_copy_grpc_protector_unprotect(
-          ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer,
-          &min_progress_size);
-      min_progress_size = std::max(1, min_progress_size);
-      ep->min_progress_size = result != TSI_OK ? 1 : min_progress_size;
-    } else {
-      // Use frame protector to unprotect.
-      // TODO(yangg) check error, maybe bail out early
-      for (i = 0; i < ep->source_buffer.count; i++) {
-        grpc_slice encrypted = ep->source_buffer.slices[i];
-        uint8_t* message_bytes = GRPC_SLICE_START_PTR(encrypted);
-        size_t message_size = GRPC_SLICE_LENGTH(encrypted);
-
-        while (message_size > 0 || keep_looping) {
-          size_t unprotected_buffer_size_written =
-              static_cast<size_t>(end - cur);
-          size_t processed_message_size = message_size;
-          gpr_mu_lock(&ep->protector_mu);
-          result = tsi_frame_protector_unprotect(
-              ep->protector, message_bytes, &processed_message_size, cur,
-              &unprotected_buffer_size_written);
-          gpr_mu_unlock(&ep->protector_mu);
-          if (result != TSI_OK) {
-            LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
-            break;
-          }
-          message_bytes += processed_message_size;
-          message_size -= processed_message_size;
-          cur += unprotected_buffer_size_written;
-
-          if (cur == end) {
-            flush_read_staging_buffer(ep, &cur, &end);
-            // Force to enter the loop again to extract buffered bytes in
-            // protector. The bytes could be buffered because of running out of
-            // staging_buffer. If this happens at the end of all slices, doing
-            // another unprotect avoids leaving data in the protector.
-            keep_looping = 1;
-          } else if (unprotected_buffer_size_written > 0) {
-            keep_looping = 1;
-          } else {
-            keep_looping = 0;
-          }
-        }
-        if (result != TSI_OK) break;
-      }
-
-      if (cur != GRPC_SLICE_START_PTR(ep->read_staging_buffer)) {
-        grpc_slice_buffer_add(
-            ep->read_buffer,
-            grpc_slice_split_head(
-                &ep->read_staging_buffer,
-                static_cast<size_t>(
-                    cur - GRPC_SLICE_START_PTR(ep->read_staging_buffer))));
-      }
-    }
-  }
+  error = ep->frame_protector.Unprotect(std::move(error));
 
   if (!error.ok()) {
     call_read_cb(
         ep, GRPC_ERROR_CREATE_REFERENCING("Secure read failed", &error, 1));
-    return;
-  }
-
-  // TODO(yangg) experiment with moving this block after read_cb to see if it
-  // helps latency
-  grpc_slice_buffer_reset_and_unref(&ep->source_buffer);
-
-  if (result != TSI_OK) {
-    grpc_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(
-        ep, GRPC_ERROR_CREATE(absl::StrCat("Unwrap failed (",
-                                           tsi_result_to_string(result), ")")));
     return;
   }
 
@@ -355,19 +387,17 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
                           int /*min_progress_size*/) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_cb = cb;
-  ep->read_buffer = slices;
-  grpc_slice_buffer_reset_and_unref(ep->read_buffer);
+  ep->frame_protector.BeginRead(slices);
 
   SECURE_ENDPOINT_REF(ep, "read");
-  if (ep->leftover_bytes.count) {
-    grpc_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
-    CHECK_EQ(ep->leftover_bytes.count, 0u);
+  if (ep->frame_protector.MaybeCompleteReadImmediately()) {
     on_read(ep, absl::OkStatus());
     return;
   }
 
-  grpc_endpoint_read(ep->wrapped_ep.get(), &ep->source_buffer, &ep->on_read,
-                     urgent, /*min_progress_size=*/ep->min_progress_size);
+  grpc_endpoint_read(ep->wrapped_ep.get(), ep->frame_protector.source_buffer(),
+                     &ep->on_read, urgent,
+                     ep->frame_protector.min_progress_size());
 }
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
@@ -566,12 +596,84 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_get_fd,
                                             endpoint_can_track_err};
 
+namespace grpc_event_engine::experimental {
+namespace {
+
+class SecureEndpoint final : public EventEngine::Endpoint {
+ public:
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            const ReadArgs* in_args) override {
+    return impl_->Read(std::move(on_read, buffer, in_args));
+  }
+
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data, const WriteArgs* args) override;
+
+  const ResolvedAddress& GetPeerAddress() const {
+    return wrapped_ep_->GetPeerAddress();
+  }
+
+  const ResolvedAddress& GetLocalAddress() const {
+    return wrapped_ep_->GetLocalAddress();
+  }
+
+ private:
+  class Impl : public grpc_core::RefCounted<Impl> {
+   public:
+    bool Read() {
+      on_read_ = std::move(on_read);
+      read_requested_bytes_ = in_args == nullptr ? 1 : in_args->read_hint_bytes;
+      ReadArgs args;
+      args.read_hint_bytes = min_progress_size_;
+      if (wrapped_ep_->Read(
+              [impl = Ref()](absl::Status status) {
+                if (!status.ok()) {
+                  std::move(impl->on_read_)(std::move(status));
+                  return;
+                }
+                UnprotectAndContinueRead();
+              },
+              &source_buffer_, &args)) {
+        UnprotectAndContinueRead();
+      }
+    }
+
+   private:
+    absl::AnyInvocable<void(absl::Status)> on_read_;
+    absl::AnyInvocable<void(absl::Status)> on_write_;
+    std::unique_ptr<EventEngine::Endpoint> wrapped_ep_;
+    SliceBuffer source_buffer_;
+    SliceBuffer leftover_bytes_;
+    SliceBuffer read_buffer_;
+    std::shared_ptr<EventEngine> event_engine_;
+    int64_t min_progress_size_ = 1;
+    int64_t read_requested_bytes_;
+    struct tsi_zero_copy_grpc_protector* zero_copy_protector_;
+  };
+
+  grpc_core::RefCountedPtr<Impl> impl_;
+};
+
+}  // namespace
+}  // namespace grpc_event_engine::experimental
+
 grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
     struct tsi_frame_protector* protector,
     struct tsi_zero_copy_grpc_protector* zero_copy_protector,
     grpc_core::OrphanablePtr<grpc_endpoint> to_wrap,
     grpc_slice* leftover_slices, const grpc_channel_args* channel_args,
     size_t leftover_nslices) {
+  if (grpc_core::IsEventEngineSecureEndpointEnabled()) {
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        event_engine_endpoint = grpc_event_engine::experimental::
+            grpc_take_wrapped_event_engine_endpoint(to_wrap.get());
+    if (event_engine_endpoint != nullptr) {
+      return grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
+          std::make_unique<SecureEndpoint>(
+              std::move(event_engine_endpoint), protector, zero_copy_protector,
+              leftover_slices, leftover_nslices, channel_args));
+    }
+  }
   return grpc_core::MakeOrphanable<secure_endpoint>(
       &vtable, protector, zero_copy_protector, std::move(to_wrap),
       leftover_slices, channel_args, leftover_nslices);
