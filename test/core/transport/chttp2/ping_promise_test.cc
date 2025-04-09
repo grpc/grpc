@@ -59,8 +59,9 @@ class MockPingSystemInterface : public PingSystemInterface {
       return Immediate(absl::OkStatus());
     }));
   }
-  void ExpectTriggerWrite() {
-    EXPECT_CALL(*this, TriggerWrite).WillOnce(([]() {
+  void ExpectTriggerWrite(Timestamp call_after) {
+    EXPECT_CALL(*this, TriggerWrite).WillOnce(([call_after]() {
+      EXPECT_GE(Timestamp::Now(), call_after);
       return Immediate(absl::OkStatus());
     }));
   }
@@ -368,7 +369,8 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
   ping_interface->ExpectPingTimeout();
 
   // Delayed ping
-  ping_interface->ExpectTriggerWrite();
+  ping_interface->ExpectTriggerWrite(/*call_after*/ Timestamp::Now() +
+                                     Duration::Hours(1));
 
   PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
   auto party = GetParty();
