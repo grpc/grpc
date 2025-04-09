@@ -97,6 +97,9 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
+            "secure_endpoint_test": [
+                "event_engine_secure_endpoint",
+            ],
             "xds_end2end_test": [
                 "error_flatten",
             ],
@@ -163,6 +166,9 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
+            "secure_endpoint_test": [
+                "event_engine_secure_endpoint",
+            ],
             "xds_end2end_test": [
                 "error_flatten",
             ],
@@ -228,6 +234,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "secure_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "xds_end2end_test": [
                 "error_flatten",
