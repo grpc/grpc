@@ -1334,7 +1334,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
           grpc_core::experimental::StatsPluginChannelScope(
               "dns:///localhost:8080", "", endpoint_config_));
   for (auto v : kCounterValues) {
-    stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
+    stats_plugins->AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1384,7 +1384,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
           grpc_core::experimental::StatsPluginChannelScope(
               "dns:///localhost:8080", "", endpoint_config_));
   for (auto v : kCounterValues) {
-    stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
+    stats_plugins->AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1436,8 +1436,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   for (auto v : kHistogramValues) {
-    stats_plugins.RecordHistogram(handle, v, kLabelValues,
-                                  kOptionalLabelValues);
+    stats_plugins->RecordHistogram(handle, v, kLabelValues,
+                                   kOptionalLabelValues);
   }
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1491,8 +1491,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   for (auto v : kHistogramValues) {
-    stats_plugins.RecordHistogram(handle, v, kLabelValues,
-                                  kOptionalLabelValues);
+    stats_plugins->RecordHistogram(handle, v, kLabelValues,
+                                   kOptionalLabelValues);
   }
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1550,8 +1550,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
     auto stats_plugins =
         grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
     for (auto v : kHistogramValues) {
-      stats_plugins.RecordHistogram(handle, v, kLabelValues,
-                                    kOptionalLabelValues);
+      stats_plugins->RecordHistogram(handle, v, kLabelValues,
+                                     kOptionalLabelValues);
     }
     auto data = ReadCurrentMetricsData(
         [&](const absl::flat_hash_map<
@@ -1589,8 +1589,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   for (auto v : kHistogramValues) {
-    stats_plugins.RecordHistogram(handle, v, kLabelValues,
-                                  kOptionalLabelValues);
+    stats_plugins->RecordHistogram(handle, v, kLabelValues,
+                                   kOptionalLabelValues);
   }
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1672,8 +1672,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   for (auto v : kHistogramValues) {
-    stats_plugins.RecordHistogram(handle, v, kLabelValues,
-                                  kOptionalLabelValues);
+    stats_plugins->RecordHistogram(handle, v, kLabelValues,
+                                   kOptionalLabelValues);
   }
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1710,8 +1710,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, InstrumentsEnabledTest) {
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(
           grpc_core::ChannelArgs());
-  EXPECT_TRUE(stats_plugins.IsInstrumentEnabled(histogram_handle));
-  EXPECT_FALSE(stats_plugins.IsInstrumentEnabled(counter_handle));
+  EXPECT_TRUE(stats_plugins->IsInstrumentEnabled(histogram_handle));
+  EXPECT_FALSE(stats_plugins->IsInstrumentEnabled(counter_handle));
 }
 
 using OpenTelemetryPluginCallbackMetricsTest =
@@ -1765,7 +1765,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   int report_count_1 = 0;
   int64_t int_value_1 = 1;
   double double_value_1 = 0.5;
-  auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
+  auto registered_metric_callback_1 = stats_plugins->RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_1;
         reporter.Report(integer_gauge_handle, int_value_1++, kLabelValuesSet1,
@@ -1779,7 +1779,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   int report_count_2 = 0;
   int64_t int_value_2 = 1;
   double double_value_2 = 0.5;
-  auto registered_metric_callback_2 = stats_plugins.RegisterCallback(
+  auto registered_metric_callback_2 = stats_plugins->RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_2;
         reporter.Report(integer_gauge_handle, int_value_2++, kLabelValuesSet2,
@@ -1893,7 +1893,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   int report_count_1 = 0;
   int64_t int_value_1 = 1;
   double double_value_1 = 0.5;
-  auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
+  auto registered_metric_callback_1 = stats_plugins->RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_1;
         reporter.Report(integer_gauge_handle, int_value_1++, kLabelValuesSet1,
@@ -1906,7 +1906,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   int report_count_2 = 0;
   int64_t int_value_2 = 1;
   double double_value_2 = 0.5;
-  auto registered_metric_callback_2 = stats_plugins.RegisterCallback(
+  auto registered_metric_callback_2 = stats_plugins->RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_2;
         reporter.Report(integer_gauge_handle, int_value_2++, kLabelValuesSet2,
@@ -2002,7 +2002,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest, VerifyCallbacksAreCleanedUp) {
   int report_count_1 = 0;
   int64_t int_value_1 = 1;
   double double_value_1 = 0.5;
-  auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
+  auto registered_metric_callback_1 = stats_plugins->RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_1;
         reporter.Report(integer_gauge_handle, int_value_1++, {}, {});
@@ -2013,7 +2013,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest, VerifyCallbacksAreCleanedUp) {
   int report_count_2 = 0;
   int64_t int_value_2 = 1;
   double double_value_2 = 0.5;
-  auto registered_metric_callback_2 = stats_plugins.RegisterCallback(
+  auto registered_metric_callback_2 = stats_plugins->RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_2;
         reporter.Report(integer_gauge_handle, int_value_2++, {}, {});
@@ -2109,7 +2109,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   // Registers integer_gauge_handle but reports double_gauge_handle.
   int report_count_1 = 0;
   double double_value_1 = 0.5;
-  auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
+  auto registered_metric_callback_1 = stats_plugins->RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_1;
         reporter.Report(double_gauge_handle, double_value_1++, {}, {});

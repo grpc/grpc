@@ -86,6 +86,8 @@
 
 namespace grpc_core {
 
+using http2::Http2ErrorCode;
+
 //
 // Server::ListenerState::ConfigFetcherWatcher
 //
@@ -989,10 +991,11 @@ class ChannelBroadcaster {
     grpc_transport_op* op = grpc_make_transport_op(&sc->closure);
     grpc_channel_element* elem;
     op->goaway_error =
-        send_goaway ? grpc_error_set_int(GRPC_ERROR_CREATE("Server shutdown"),
-                                         StatusIntProperty::kHttp2Error,
-                                         GRPC_HTTP2_NO_ERROR)
-                    : absl::OkStatus();
+        send_goaway
+            ? grpc_error_set_int(GRPC_ERROR_CREATE("Server shutdown"),
+                                 StatusIntProperty::kHttp2Error,
+                                 static_cast<int>(Http2ErrorCode::kNoError))
+            : absl::OkStatus();
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;
     elem = grpc_channel_stack_element(channel->channel_stack(), 0);

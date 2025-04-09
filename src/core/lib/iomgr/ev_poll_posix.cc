@@ -379,8 +379,12 @@ static void unref_by(grpc_fd* fd, int n) {
 
 static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+    GRPC_TRACE_LOG(event_engine, ERROR)
+        << "Creating a wrapped EventEngine grpc_fd with fd:" << fd;
     grpc_fd* new_fd = static_cast<grpc_fd*>(gpr_malloc(sizeof(grpc_fd)));
     new_fd->fd = fd;
+    new_fd->released = false;
+    new_fd->closed = false;
     return new_fd;
   }
   // Avoid unused-parameter warning for debug-only parameter

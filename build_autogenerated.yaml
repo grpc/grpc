@@ -323,6 +323,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
@@ -862,6 +863,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
@@ -1055,7 +1057,6 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -1116,6 +1117,7 @@ libs:
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/default_tcp_tracer.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -1980,6 +1982,7 @@ libs:
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -2351,6 +2354,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
@@ -2439,6 +2443,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
@@ -2627,7 +2632,6 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -2680,6 +2684,7 @@ libs:
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/default_tcp_tracer.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -3115,6 +3120,7 @@ libs:
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -3316,6 +3322,21 @@ libs:
   src:
   - third_party/upb/upb/base/status.c
   deps: []
+- name: upb_hash_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - third_party/upb/upb/base/internal/endian.h
+  - third_party/upb/upb/base/internal/log2.h
+  - third_party/upb/upb/hash/common.h
+  - third_party/upb/upb/hash/int_table.h
+  - third_party/upb/upb/hash/str_table.h
+  src:
+  - third_party/upb/upb/hash/common.c
+  deps:
+  - upb_base_lib
+  - upb_mem_lib
 - name: upb_json_lib
   build: all
   language: c
@@ -3327,43 +3348,6 @@ libs:
   - third_party/upb/upb/lex/round_trip.h
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
-  - third_party/upb/upb/message/copy.h
-  - third_party/upb/upb/message/merge.h
-  - third_party/upb/upb/reflection/common.h
-  - third_party/upb/upb/reflection/def.h
-  - third_party/upb/upb/reflection/def.hpp
-  - third_party/upb/upb/reflection/def_pool.h
-  - third_party/upb/upb/reflection/def_type.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
-  - third_party/upb/upb/reflection/enum_def.h
-  - third_party/upb/upb/reflection/enum_reserved_range.h
-  - third_party/upb/upb/reflection/enum_value_def.h
-  - third_party/upb/upb/reflection/extension_range.h
-  - third_party/upb/upb/reflection/field_def.h
-  - third_party/upb/upb/reflection/file_def.h
-  - third_party/upb/upb/reflection/internal/def_builder.h
-  - third_party/upb/upb/reflection/internal/def_pool.h
-  - third_party/upb/upb/reflection/internal/desc_state.h
-  - third_party/upb/upb/reflection/internal/enum_def.h
-  - third_party/upb/upb/reflection/internal/enum_reserved_range.h
-  - third_party/upb/upb/reflection/internal/enum_value_def.h
-  - third_party/upb/upb/reflection/internal/extension_range.h
-  - third_party/upb/upb/reflection/internal/field_def.h
-  - third_party/upb/upb/reflection/internal/file_def.h
-  - third_party/upb/upb/reflection/internal/message_def.h
-  - third_party/upb/upb/reflection/internal/message_reserved_range.h
-  - third_party/upb/upb/reflection/internal/method_def.h
-  - third_party/upb/upb/reflection/internal/oneof_def.h
-  - third_party/upb/upb/reflection/internal/service_def.h
-  - third_party/upb/upb/reflection/internal/strdup2.h
-  - third_party/upb/upb/reflection/internal/upb_edition_defaults.h
-  - third_party/upb/upb/reflection/message.h
-  - third_party/upb/upb/reflection/message.hpp
-  - third_party/upb/upb/reflection/message_def.h
-  - third_party/upb/upb/reflection/message_reserved_range.h
-  - third_party/upb/upb/reflection/method_def.h
-  - third_party/upb/upb/reflection/oneof_def.h
-  - third_party/upb/upb/reflection/service_def.h
   src:
   - third_party/upb/upb/json/decode.c
   - third_party/upb/upb/json/encode.c
@@ -3371,28 +3355,8 @@ libs:
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
-  - third_party/upb/upb/message/copy.c
-  - third_party/upb/upb/message/merge.c
-  - third_party/upb/upb/reflection/def_pool.c
-  - third_party/upb/upb/reflection/def_type.c
-  - third_party/upb/upb/reflection/desc_state.c
-  - third_party/upb/upb/reflection/enum_def.c
-  - third_party/upb/upb/reflection/enum_reserved_range.c
-  - third_party/upb/upb/reflection/enum_value_def.c
-  - third_party/upb/upb/reflection/extension_range.c
-  - third_party/upb/upb/reflection/field_def.c
-  - third_party/upb/upb/reflection/file_def.c
-  - third_party/upb/upb/reflection/internal/def_builder.c
-  - third_party/upb/upb/reflection/internal/strdup2.c
-  - third_party/upb/upb/reflection/message.c
-  - third_party/upb/upb/reflection/message_def.c
-  - third_party/upb/upb/reflection/message_reserved_range.c
-  - third_party/upb/upb/reflection/method_def.c
-  - third_party/upb/upb/reflection/oneof_def.c
-  - third_party/upb/upb/reflection/service_def.c
   deps:
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_reflection_lib
 - name: upb_mem_lib
   build: all
   language: c
@@ -3415,11 +3379,6 @@ libs:
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/base/internal/endian.h
-  - third_party/upb/upb/base/internal/log2.h
-  - third_party/upb/upb/hash/common.h
-  - third_party/upb/upb/hash/int_table.h
-  - third_party/upb/upb/hash/str_table.h
   - third_party/upb/upb/message/accessors.h
   - third_party/upb/upb/message/array.h
   - third_party/upb/upb/message/compat.h
@@ -3427,32 +3386,15 @@ libs:
   - third_party/upb/upb/message/internal/array.h
   - third_party/upb/upb/message/internal/extension.h
   - third_party/upb/upb/message/internal/map.h
-  - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
   - third_party/upb/upb/message/internal/tagged_ptr.h
-  - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
   - third_party/upb/upb/message/message.h
   - third_party/upb/upb/message/tagged_ptr.h
   - third_party/upb/upb/message/value.h
-  - third_party/upb/upb/mini_table/enum.h
-  - third_party/upb/upb/mini_table/extension.h
-  - third_party/upb/upb/mini_table/extension_registry.h
-  - third_party/upb/upb/mini_table/field.h
-  - third_party/upb/upb/mini_table/file.h
-  - third_party/upb/upb/mini_table/internal/enum.h
-  - third_party/upb/upb/mini_table/internal/extension.h
-  - third_party/upb/upb/mini_table/internal/field.h
-  - third_party/upb/upb/mini_table/internal/file.h
-  - third_party/upb/upb/mini_table/internal/message.h
-  - third_party/upb/upb/mini_table/internal/size_log2.h
-  - third_party/upb/upb/mini_table/internal/sub.h
-  - third_party/upb/upb/mini_table/message.h
-  - third_party/upb/upb/mini_table/sub.h
   src:
-  - third_party/upb/upb/hash/common.c
   - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/message/array.c
   - third_party/upb/upb/message/compat.c
@@ -3461,24 +3403,13 @@ libs:
   - third_party/upb/upb/message/map.c
   - third_party/upb/upb/message/map_sorter.c
   - third_party/upb/upb/message/message.c
-  - third_party/upb/upb/mini_table/extension_registry.c
-  - third_party/upb/upb/mini_table/internal/message.c
-  - third_party/upb/upb/mini_table/message.c
   deps:
-  - upb_base_lib
-  - upb_mem_lib
+  - upb_mini_table_lib
 - name: upb_mini_descriptor_lib
   build: all
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/base/internal/endian.h
-  - third_party/upb/upb/base/internal/log2.h
-  - third_party/upb/upb/hash/common.h
-  - third_party/upb/upb/hash/int_table.h
-  - third_party/upb/upb/hash/str_table.h
-  - third_party/upb/upb/message/internal/map_entry.h
-  - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -3488,6 +3419,21 @@ libs:
   - third_party/upb/upb/mini_descriptor/internal/modifiers.h
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
+  src:
+  - third_party/upb/upb/mini_descriptor/build_enum.c
+  - third_party/upb/upb/mini_descriptor/decode.c
+  - third_party/upb/upb/mini_descriptor/internal/base92.c
+  - third_party/upb/upb/mini_descriptor/internal/encode.c
+  - third_party/upb/upb/mini_descriptor/link.c
+  deps:
+  - upb_mini_table_lib
+- name: upb_mini_table_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - third_party/upb/upb/message/internal/map_entry.h
+  - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/mini_table/enum.h
   - third_party/upb/upb/mini_table/extension.h
   - third_party/upb/upb/mini_table/extension_registry.h
@@ -3503,27 +3449,16 @@ libs:
   - third_party/upb/upb/mini_table/message.h
   - third_party/upb/upb/mini_table/sub.h
   src:
-  - third_party/upb/upb/hash/common.c
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/mini_table/extension_registry.c
   - third_party/upb/upb/mini_table/internal/message.c
   - third_party/upb/upb/mini_table/message.c
   deps:
-  - upb_base_lib
-  - upb_mem_lib
-- name: upb_textformat_lib
+  - upb_hash_lib
+- name: upb_reflection_lib
   build: all
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/lex/atoi.h
-  - third_party/upb/upb/lex/round_trip.h
-  - third_party/upb/upb/lex/strtod.h
-  - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/message/copy.h
   - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
@@ -3561,14 +3496,7 @@ libs:
   - third_party/upb/upb/reflection/method_def.h
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
-  - third_party/upb/upb/text/encode.h
-  - third_party/upb/upb/text/internal/encode.h
-  - third_party/upb/upb/text/options.h
   src:
-  - third_party/upb/upb/lex/atoi.c
-  - third_party/upb/upb/lex/round_trip.c
-  - third_party/upb/upb/lex/strtod.c
-  - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/message/copy.c
   - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
@@ -3588,11 +3516,30 @@ libs:
   - third_party/upb/upb/reflection/method_def.c
   - third_party/upb/upb/reflection/oneof_def.c
   - third_party/upb/upb/reflection/service_def.c
-  - third_party/upb/upb/text/encode.c
-  - third_party/upb/upb/text/internal/encode.c
   deps:
   - upb_mini_descriptor_lib
   - upb_wire_lib
+- name: upb_textformat_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - third_party/upb/upb/lex/atoi.h
+  - third_party/upb/upb/lex/round_trip.h
+  - third_party/upb/upb/lex/strtod.h
+  - third_party/upb/upb/lex/unicode.h
+  - third_party/upb/upb/text/encode.h
+  - third_party/upb/upb/text/internal/encode.h
+  - third_party/upb/upb/text/options.h
+  src:
+  - third_party/upb/upb/lex/atoi.c
+  - third_party/upb/upb/lex/round_trip.c
+  - third_party/upb/upb/lex/strtod.c
+  - third_party/upb/upb/lex/unicode.c
+  - third_party/upb/upb/text/encode.c
+  - third_party/upb/upb/text/internal/encode.c
+  deps:
+  - upb_reflection_lib
 - name: upb_wire_lib
   build: all
   language: c
@@ -4416,6 +4363,7 @@ libs:
   - src/core/credentials/transport/tls/load_system_roots_supported.h
   - src/core/credentials/transport/tls/tls_utils.h
   - src/core/credentials/transport/transport_credentials.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -4462,6 +4410,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
@@ -4650,7 +4599,6 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -6010,6 +5958,7 @@ targets:
   - src/core/call/metadata_compression_traits.h
   - src/core/call/parsed_metadata.h
   - src/core/call/simple_slice_based_metadata.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6060,7 +6009,6 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
@@ -6252,6 +6200,7 @@ targets:
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6293,6 +6242,7 @@ targets:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
@@ -6469,7 +6419,6 @@ targets:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -6817,6 +6766,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6856,7 +6806,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -7431,6 +7380,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -7458,6 +7408,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - src/cpp/ext/chaotic_good.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -7480,6 +7431,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - src/cpp/ext/chaotic_good.cc
   - test/cpp/ext/chaotic_good_test.cc
   deps:
@@ -7523,6 +7475,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -7561,7 +7514,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -7661,10 +7613,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_auth_filter_test.cc
   - test/core/filters/filter_test.cc
@@ -7678,10 +7632,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_authority_filter_test.cc
   - test/core/filters/filter_test.cc
@@ -8245,6 +8201,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -8272,6 +8229,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8317,6 +8275,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_chaotic_good_config.cc
@@ -8336,6 +8295,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8360,6 +8322,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -8387,6 +8350,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8432,6 +8396,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_chaotic_good_config.cc
@@ -8539,6 +8504,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8563,6 +8531,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -8590,6 +8559,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8635,6 +8605,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_config.cc
@@ -8654,6 +8625,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8674,6 +8648,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -8701,6 +8676,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8746,6 +8722,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_security_config.cc
@@ -8765,6 +8742,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8785,6 +8765,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -8812,6 +8793,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8857,6 +8839,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_security_config.cc
@@ -8964,6 +8947,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8984,6 +8970,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -9011,6 +8998,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9056,6 +9044,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_config.cc
@@ -9163,6 +9152,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9183,6 +9175,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -9210,6 +9203,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9255,6 +9249,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_inproc_config.cc
@@ -9274,6 +9269,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9294,6 +9292,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -9321,6 +9320,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9366,6 +9366,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_inproc_config.cc
@@ -9473,6 +9474,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9493,6 +9497,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -9520,6 +9525,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9565,6 +9571,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_posix_config.cc
@@ -9584,6 +9591,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9604,6 +9614,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -9631,6 +9642,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9676,6 +9688,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_posix_config.cc
@@ -9783,6 +9796,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9992,6 +10008,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -10019,7 +10036,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -10201,6 +10217,7 @@ targets:
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -10242,6 +10259,7 @@ targets:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
@@ -10418,7 +10436,6 @@ targets:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -10749,10 +10766,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/filter_test.cc
   - test/core/filters/filter_test_test.cc
@@ -10791,6 +10810,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -10830,7 +10850,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -10901,6 +10920,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -10948,7 +10968,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -11079,6 +11098,7 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -11087,7 +11107,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/util/glob.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
@@ -11139,9 +11158,11 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_unittest.cc
   deps:
@@ -11153,10 +11174,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/filter_test.cc
   - test/core/filters/gcp_authentication_filter_test.cc
@@ -11628,6 +11651,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
@@ -11655,6 +11679,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
@@ -11698,6 +11723,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
@@ -11783,6 +11809,117 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: header_assembler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/call/message.h
+  - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/header_assembler.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/status_conversion.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/bitset.h
+  - src/core/util/cpp_impl_of.h
+  - src/core/util/down_cast.h
+  - src/core/util/dump_args.h
+  - src/core/util/glob.h
+  - src/core/util/latent_see.h
+  - src/core/util/manual_constructor.h
+  - src/core/util/orphanable.h
+  - src/core/util/per_cpu.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ring_buffer.h
+  - src/core/util/spinlock.h
+  - src/core/util/status_helper.h
+  - src/core/util/time.h
+  - third_party/upb/upb/generated_code_support.h
+  src:
+  - src/core/call/message.cc
+  - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
+  - src/core/lib/iomgr/closure.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/slice/percent_encoding.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
+  - src/core/util/dump_args.cc
+  - src/core/util/glob.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/per_cpu.cc
+  - src/core/util/status_helper.cc
+  - src/core/util/time.cc
+  - test/core/transport/chttp2/header_assembler_test.cc
+  deps:
+  - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/base:config
+  - absl/container:flat_hash_map
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/types:span
+  - gpr
 - name: headers_bad_client_test
   gtest: true
   build: test
@@ -11895,13 +12032,16 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/inter_activity_mutex.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
@@ -11913,6 +12053,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chttp2/http2_client_transport_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
@@ -11936,6 +12077,7 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
@@ -11945,6 +12087,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chttp2/http2_server_transport_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
@@ -12205,6 +12348,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -12244,7 +12388,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -12662,6 +12805,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -12709,7 +12853,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
@@ -13441,6 +13584,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -13462,7 +13606,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/bitset.h
   - src/core/util/glob.h
@@ -14307,6 +14450,7 @@ targets:
   - src/core/call/parsed_metadata.h
   - src/core/call/request_buffer.h
   - src/core/call/simple_slice_based_metadata.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -14362,7 +14506,6 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
@@ -15034,11 +15177,18 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/util/atomic_utils.h
+  - src/core/util/down_cast.h
+  - src/core/util/notification.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
   - src/core/util/single_set_ptr.h
   src:
   - test/core/util/single_set_ptr_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: sleep_test
@@ -15209,17 +15359,6 @@ targets:
   - gtest
   - absl/types:span
   - gpr
-  uses_polling: false
-- name: stats_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/telemetry/stats_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
   uses_polling: false
 - name: status_conversion_test
   gtest: true
@@ -20351,6 +20490,22 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: ztrace_collector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/channelz/ztrace_collector.h
+  src:
+  - test/core/channelz/ztrace_collector_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - grpc
   platforms:
   - linux
   - posix

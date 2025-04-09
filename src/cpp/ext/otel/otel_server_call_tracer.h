@@ -96,7 +96,7 @@ class OpenTelemetryPluginImpl::ServerCallTracer
   void RecordAnnotation(const Annotation& /*annotation*/) override {
     // Not implemented
   }
-  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+  std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override {
     // No TCP trace.
     return nullptr;
   }
