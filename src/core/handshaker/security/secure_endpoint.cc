@@ -678,21 +678,22 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       }
       ReadArgs args;
       args.read_hint_bytes = frame_protector_.min_progress_size();
-      if (wrapped_ep_->Read(
-              [impl = Ref()](absl::Status status) {
-                {
-                  grpc_core::MutexLock lock(impl->frame_protector_.read_mu());
-                  if (status.ok() && impl->wrapped_ep_ == nullptr) {
-                    status = absl::CancelledError("secure endpoint shutdown");
-                  }
-                  status = impl->frame_protector_.Unprotect(std::move(status));
-                }
-                std::move(impl->on_read_)(status);
-              },
-              frame_protector_.source_buffer(), &args)) {
-        return MaybeFinishReadImmediately();
-      }
-      return false;
+      return wrapped_ep_->Read(
+                 [impl = Ref()](absl::Status status) {
+                   {
+                     grpc_core::MutexLock lock(
+                         impl->frame_protector_.read_mu());
+                     if (status.ok() && impl->wrapped_ep_ == nullptr) {
+                       status =
+                           absl::CancelledError("secure endpoint shutdown");
+                     }
+                     status =
+                         impl->frame_protector_.Unprotect(std::move(status));
+                   }
+                   std::move(impl->on_read_)(status);
+                 },
+                 frame_protector_.source_buffer(), &args) &&
+             MaybeFinishReadImmediately();
     }
 
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
