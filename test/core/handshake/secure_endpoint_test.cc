@@ -290,7 +290,8 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_core::ExecCtx::Get()->Flush();
   ASSERT_EQ(n, 1);
   ASSERT_EQ(incoming.count, 1);
-  ASSERT_TRUE(grpc_slice_eq(s, incoming.slices[0]));
+  ASSERT_EQ(grpc_core::StringViewFromSlice(s),
+            grpc_core::StringViewFromSlice(incoming.slices[0]));
 
   grpc_endpoint_destroy(f.client_ep);
   grpc_endpoint_destroy(f.server_ep);

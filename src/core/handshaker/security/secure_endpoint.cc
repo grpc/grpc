@@ -82,7 +82,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
     if (leftover_nslices > 0) {
       leftover_bytes_ = std::make_unique<SliceBuffer>();
       for (size_t i = 0; i < leftover_nslices; i++) {
-        leftover_bytes_->Append(Slice(leftover_slices[i]));
+        leftover_bytes_->Append(Slice(CSliceRef(leftover_slices[i])));
       }
     }
     if (zero_copy_protector_ != nullptr) {
@@ -253,7 +253,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
   bool MaybeCompleteReadImmediately() {
     if (leftover_bytes_ != nullptr) {
-      grpc_slice_buffer_swap(leftover_bytes_->c_slice_buffer(), read_buffer_);
+      grpc_slice_buffer_swap(leftover_bytes_->c_slice_buffer(),
+                             source_buffer_.c_slice_buffer());
       leftover_bytes_.reset();
       return true;
     }
@@ -672,6 +673,9 @@ class SecureEndpoint final : public EventEngine::Endpoint {
               SliceBuffer* buffer, const ReadArgs* in_args) {
       on_read_ = std::move(on_read);
       frame_protector_.BeginRead(buffer->c_slice_buffer());
+      if (frame_protector_.MaybeCompleteReadImmediately()) {
+        return MaybeFinishReadImmediately();
+      }
       ReadArgs args;
       args.read_hint_bytes = frame_protector_.min_progress_size();
       if (wrapped_ep_->Read(
@@ -686,13 +690,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                 std::move(impl->on_read_)(status);
               },
               frame_protector_.source_buffer(), &args)) {
-        grpc_core::MutexLock lock(frame_protector_.read_mu());
-        auto status = frame_protector_.Unprotect(absl::OkStatus());
-        if (status.ok()) return true;
-        event_engine_->Run(
-            [impl = Ref(), status = std::move(status)]() mutable {
-              std::move(impl->on_read_)(std::move(status));
-            });
+        return MaybeFinishReadImmediately();
       }
       return false;
     }
@@ -743,6 +741,16 @@ class SecureEndpoint final : public EventEngine::Endpoint {
     }
 
    private:
+    bool MaybeFinishReadImmediately() {
+      grpc_core::MutexLock lock(frame_protector_.read_mu());
+      auto status = frame_protector_.Unprotect(absl::OkStatus());
+      if (status.ok()) return true;
+      event_engine_->Run([impl = Ref(), status = std::move(status)]() mutable {
+        std::move(impl->on_read_)(std::move(status));
+      });
+      return false;
+    }
+
     grpc_core::FrameProtector frame_protector_;
     absl::AnyInvocable<void(absl::Status)> on_read_;
     absl::AnyInvocable<void(absl::Status)> on_write_;

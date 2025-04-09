@@ -155,6 +155,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "secure_endpoint_test",
     srcs = ["secure_endpoint_test.cc"],
+    tags = ["secure_endpoint_test"],
     external_deps = [
         "absl/log:log",
         "gtest",
