@@ -343,7 +343,8 @@ class StreamsNotSeenTest : public ::testing::Test {
   void SendGoaway(uint32_t last_stream_id) {
     grpc_slice_buffer buffer;
     grpc_slice_buffer_init(&buffer);
-    grpc_chttp2_goaway_append(last_stream_id, 0, grpc_empty_slice(), &buffer);
+    grpc_chttp2_goaway_append(last_stream_id, 0, grpc_empty_slice(), &buffer,
+                              &http2_ztrace_collector_);
     WriteBuffer(&buffer);
     grpc_slice_buffer_destroy(&buffer);
   }
@@ -449,6 +450,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   Mutex mu_;
   CondVar read_cv_;
   std::atomic<bool> shutdown_{false};
+  Http2ZTraceCollector http2_ztrace_collector_;
 };
 
 // Client's HTTP2 transport starts a new stream, sends the request on the wire,
