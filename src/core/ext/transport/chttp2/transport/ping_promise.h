@@ -36,8 +36,16 @@ class PingSystemInterface {
     bool ack;
     uint64_t ping_id;
   };
+  // TODO(tjagtap) : [PH2][P1] Change the return type of the promises to
+  // Promise<Http2Status> type when that is submitted.
+
+  // Returns a promise that creates and sends a ping frame to the peer.
   virtual Promise<absl::Status> SendPing(SendPingArgs args) = 0;
+
+  // Returns a promise that triggers a write cycle on the transport.
   virtual Promise<absl::Status> TriggerWrite() = 0;
+
+  // Returns a promise that handles the ping timeout.
   virtual Promise<absl::Status> PingTimeout() = 0;
   virtual ~PingSystemInterface() = default;
 };
@@ -51,13 +59,10 @@ class PingSystem {
 
    public:
     // Returns a promise that resolves once a new ping is initiated and ack is
-    // received for the same. This promise MUST be spawned on the same party as
-    // the one that processes the ping ack.
+    // received for the same.
     Promise<absl::Status> RequestPing(Callback on_initiate);
 
     // Returns a promise that resolves once the next valid ping ack is received.
-    // This promise MUST be spawned on the same party as the one that processes
-    // the ping ack.
     Promise<absl::Status> WaitForPingAck();
 
     // Cancels all the callbacks for the inflight pings. This function does not
@@ -91,6 +96,12 @@ class PingSystem {
   PingSystem(const ChannelArgs& channel_args,
              std::unique_ptr<PingSystemInterface> ping_interface);
 
+  // All the promises returned by this class and the promise that triggers
+  // AckPing MUST be spawned on the same party.
+
+  // Returns a promise that determines if a ping frame should be sent to the
+  // peer. If a ping frame is sent, it also spawns a timeout promise that
+  // handles the ping timeout.
   Promise<absl::Status> MaybeSendPing(Duration next_allowed_ping_interval,
                                       Duration ping_timeout, Party* party);
 
