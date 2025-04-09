@@ -28,7 +28,7 @@ namespace grpc_core {
 
 // A representation of a SPIFFE ID per the spec:
 // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#the-spiffe-identity-and-verifiable-identity-document
-class SpiffeId {
+class SpiffeId final {
  public:
   // Parses the input string as a SPIFFE ID, and returns an error status if the
   // input string is not a valid SPIFFE ID.
