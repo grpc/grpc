@@ -21,8 +21,10 @@
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/http2_errors.h"
+
+using grpc_core::http2::Http2ErrorCode;
 
 namespace grpc_core {
 namespace {
@@ -138,7 +140,8 @@ TEST(Frame, Serialization) {
   EXPECT_EQ(Serialize(Http2ContinuationFrame{1, true,
                                              SliceBufferFromString("hello")}),
             ByteVec(0, 0, 5, 9, 4, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'));
-  EXPECT_EQ(Serialize(Http2RstStreamFrame{1, GRPC_HTTP2_CONNECT_ERROR}),
+  EXPECT_EQ(Serialize(Http2RstStreamFrame{
+                1, static_cast<uint32_t>(Http2ErrorCode::kConnectError)}),
             ByteVec(0, 0, 4, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0x0a));
   EXPECT_EQ(Serialize(Http2SettingsFrame{}),
             ByteVec(0, 0, 0, 4, 0, 0, 0, 0, 0));
@@ -157,10 +160,12 @@ TEST(Frame, Serialization) {
   EXPECT_EQ(Serialize(Http2PingFrame{true, 0x123456789abcdef0}),
             ByteVec(0, 0, 8, 6, 1, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x9a,
                     0xbc, 0xde, 0xf0));
-  EXPECT_EQ(Serialize(Http2GoawayFrame{0x12345678, GRPC_HTTP2_ENHANCE_YOUR_CALM,
-                                       Slice::FromCopiedString("hello")}),
-            ByteVec(0, 0, 13, 7, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0, 0, 0,
-                    0x0b, 'h', 'e', 'l', 'l', 'o'));
+  EXPECT_EQ(
+      Serialize(Http2GoawayFrame{
+          0x12345678, static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+          Slice::FromCopiedString("hello")}),
+      ByteVec(0, 0, 13, 7, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0, 0, 0, 0x0b,
+              'h', 'e', 'l', 'l', 'o'));
   EXPECT_EQ(Serialize(Http2WindowUpdateFrame{1, 0x12345678}),
             ByteVec(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12, 0x34, 0x56, 0x78));
   EXPECT_EQ(Serialize(Http2SecurityFrame{SliceBufferFromString("hello")}),
@@ -202,7 +207,8 @@ TEST(Frame, ParseHttp2ContinuationFrame) {
 
 TEST(Frame, ParseHttp2RstStreamFrame) {
   EXPECT_EQ(ParseFrame(0, 0, 4, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0x0a),
-            Http2Frame(Http2RstStreamFrame{1, GRPC_HTTP2_CONNECT_ERROR}));
+            Http2Frame(Http2RstStreamFrame{
+                1, static_cast<uint32_t>(Http2ErrorCode::kConnectError)}));
 }
 
 TEST(Frame, ParseHttp2SettingsFrame) {
@@ -232,8 +238,9 @@ TEST(Frame, ParseHttp2GoawayFrame) {
   EXPECT_EQ(
       ParseFrame(0, 0, 13, 7, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0, 0, 0,
                  0x0b, 'h', 'e', 'l', 'l', 'o'),
-      Http2Frame(Http2GoawayFrame{0x12345678, GRPC_HTTP2_ENHANCE_YOUR_CALM,
-                                  Slice::FromCopiedString("hello")}));
+      Http2Frame(Http2GoawayFrame{
+          0x12345678, static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+          Slice::FromCopiedString("hello")}));
 }
 
 TEST(Frame, ParseHttp2WindowUpdateFrame) {
