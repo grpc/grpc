@@ -126,6 +126,8 @@
   description: Use EventEngine secure endpoint wrapper instead of iomgr when available
   expiry: 2025/06/06
   owner: ctiller@google.com
+  test_tags: ["core_end2end_test"]
+  uses_polling: true
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
   expiry: 2025/03/31

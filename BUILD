@@ -2102,6 +2102,7 @@ grpc_cc_library(
         "//src/core:filter/auth/client_auth_filter.cc",
         "//src/core:filter/auth/server_auth_filter.cc",
         "//src/core:handshaker/security/secure_endpoint.cc",
+        "//src/core:handshaker/security/legacy_secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",
         "//src/core:transport/auth_context.cc",
     ],

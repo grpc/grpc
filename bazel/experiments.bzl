@@ -60,6 +60,7 @@ EXPERIMENT_POLLERS = [
     "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
+    "event_engine_secure_endpoint",
 ]
 
 EXPERIMENTS = {
@@ -72,6 +73,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
+                "event_engine_secure_endpoint",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
@@ -137,6 +139,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
+                "event_engine_secure_endpoint",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
@@ -202,6 +205,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
+                "event_engine_secure_endpoint",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
