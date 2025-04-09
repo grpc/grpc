@@ -19,6 +19,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
+#ifdef GRPC_WINSOCK_SOCKET
+
 #include <functional>
 
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -58,5 +61,7 @@ class NativeDNSResolver : public DNSResolver {
 };
 
 }  // namespace grpc_core
+
+#endif  // GRPC_WINSOCK_SOCKET
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
