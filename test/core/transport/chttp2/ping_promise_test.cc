@@ -418,7 +418,7 @@ PING_SYSTEM_TEST(TestPingSystemAck) {
                       Map(
                           [&ping_system, this, &cb] {
                             auto args = cb();
-                            return ping_system.AckPing(args.ping_id,
+                            return ping_system.AckPing(args.opaque_data,
                                                        event_engine().get());
                           },
                           [](bool) { return absl::OkStatus(); })),
@@ -460,7 +460,7 @@ PING_SYSTEM_TEST(TestPingSystemDelayedAck) {
                       Map(
                           [&ping_system, this, &cb] {
                             auto args = cb();
-                            return ping_system.AckPing(args.ping_id,
+                            return ping_system.AckPing(args.opaque_data,
                                                        event_engine().get());
                           },
                           [](bool) { return absl::OkStatus(); })),

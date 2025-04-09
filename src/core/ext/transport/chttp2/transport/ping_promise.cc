@@ -28,6 +28,12 @@
 
 namespace grpc_core {
 namespace http2 {
+#define PING_LOG                                           \
+  LOG_IF(INFO, (GRPC_TRACE_FLAG_ENABLED(http) ||           \
+                GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||  \
+                GRPC_TRACE_FLAG_ENABLED(http_keepalive) || \
+                GRPC_TRACE_FLAG_ENABLED(http2_ping)))
+
 // Ping Callback promise based wrappers
 Promise<absl::Status> PingSystem::PingPromiseCallbacks::RequestPing(
     Callback on_initiate) {
@@ -85,55 +91,36 @@ bool PingSystem::NeedToPing(Duration next_allowed_ping_interval, Party* party) {
       [&send_ping_now, this](Chttp2PingRatePolicy::SendGranted) {
         send_ping_now = true;
         // TODO(akshitpatel) : [PH2][P1] : Update some keepalive flags.
-        // TODO(akshitpatel) : [PH2][P1] : Traces
-        if (GRPC_TRACE_FLAG_ENABLED(http) ||
-            GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
-            GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
-            GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-          LOG(INFO) << "CLIENT" << "[" << "PH2"
-                    << "]: Ping sent" << ping_rate_policy_.GetDebugString();
-        }
+        PING_LOG << "CLIENT" << "[" << "PH2"
+                 << "]: Ping sent" << ping_rate_policy_.GetDebugString();
       },
       [this](Chttp2PingRatePolicy::TooManyRecentPings) {
-        // TODO(akshitpatel) : [PH2][P1] : Traces
-        if (GRPC_TRACE_FLAG_ENABLED(http) ||
-            GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
-            GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
-            GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-          LOG(INFO) << "CLIENT" << "[" << "PH2"
-                    << "]: Ping delayed too many recent pings: "
-                    << ping_rate_policy_.GetDebugString();
-        }
+        PING_LOG << "CLIENT" << "[" << "PH2"
+                 << "]: Ping delayed too many recent pings: "
+                 << ping_rate_policy_.GetDebugString();
       },
       [this, party](Chttp2PingRatePolicy::TooSoon too_soon) mutable {
-        // TODO(akshitpatel) : [PH2][P1] : Traces
-        if (GRPC_TRACE_FLAG_ENABLED(http) ||
-            GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
-            GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
-            GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-          LOG(INFO) << "CLIENT" << "[" << "PH2"
-                    << "]: Ping delayed not enough time elapsed since last "
-                       "ping. Last ping:"
-                    << too_soon.last_ping
-                    << ", minimum wait:" << too_soon.next_allowed_ping_interval
-                    << ", need to wait:" << too_soon.wait;
-        }
+        PING_LOG << "]: Ping delayed not enough time elapsed since last "
+                    "ping. Last ping:"
+                 << too_soon.last_ping
+                 << ", minimum wait:" << too_soon.next_allowed_ping_interval
+                 << ", need to wait:" << too_soon.wait;
         TriggerDelayedPing(too_soon.wait, party);
       });
 
   return send_ping_now;
 }
 
-void PingSystem::SpawnTimeout(Duration ping_timeout, const uint64_t ping_id,
+void PingSystem::SpawnTimeout(Duration ping_timeout, const uint64_t opaque_data,
                               Party* party) {
   party->Spawn(
       "PingTimeout",
-      [this, ping_timeout, ping_id]() {
+      [this, ping_timeout, opaque_data]() {
         return Race(TrySeq(Sleep(ping_timeout),
-                           [this, ping_id]() mutable {
+                           [this, opaque_data]() mutable {
                              VLOG(2)
-                                 << " Ping ack not received for id=" << ping_id
-                                 << ". Ping timeout triggered.";
+                                 << " Ping ack not received for id="
+                                 << opaque_data << ". Ping timeout triggered.";
                              return ping_interface_->PingTimeout();
                            }),
                     ping_callbacks_.WaitForPingAck());
@@ -146,14 +133,15 @@ Promise<absl::Status> PingSystem::MaybeSendPing(
   return If(
       NeedToPing(next_allowed_ping_interval, party),
       [this, ping_timeout, party]() mutable {
-        const uint64_t ping_id = ping_callbacks_.StartPing();
-        return TrySeq(ping_interface_->SendPing(SendPingArgs{false, ping_id}),
-                      [this, ping_timeout, ping_id, party]() {
-                        VLOG(2) << "Ping Sent with id: " << ping_id;
-                        SpawnTimeout(ping_timeout, ping_id, party);
-                        SentPing();
-                        return absl::OkStatus();
-                      });
+        const uint64_t opaque_data = ping_callbacks_.StartPing();
+        return TrySeq(
+            ping_interface_->SendPing(SendPingArgs{false, opaque_data}),
+            [this, ping_timeout, opaque_data, party]() {
+              VLOG(2) << "Ping Sent with id: " << opaque_data;
+              SpawnTimeout(ping_timeout, opaque_data, party);
+              SentPing();
+              return absl::OkStatus();
+            });
       },
       []() { return Immediate(absl::OkStatus()); });
 }

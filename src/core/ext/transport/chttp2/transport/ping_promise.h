@@ -34,7 +34,7 @@ class PingSystemInterface {
  public:
   struct SendPingArgs {
     bool ack;
-    uint64_t ping_id;
+    uint64_t opaque_data;
   };
   // TODO(tjagtap) : [PH2][P1] Change the return type of the promises to
   // Promise<Http2Status> type when that is submitted.
@@ -50,6 +50,8 @@ class PingSystemInterface {
   virtual ~PingSystemInterface() = default;
 };
 
+// All the promises returned by PingSystem MUST be spawned on the same party as
+// the other transport operations
 class PingSystem {
   using SendPingArgs = PingSystemInterface::SendPingArgs;
   using Callback = absl::AnyInvocable<void()>;
@@ -67,6 +69,8 @@ class PingSystem {
 
     // Cancels all the callbacks for the inflight pings. This function does not
     // cancel the promises that are waiting on the ping ack.
+    // This should be called as part of closing the transport to free up any
+    // memory in use by the ping callbacks.
     void Cancel(grpc_event_engine::experimental::EventEngine* event_engine) {
       ping_callbacks_.CancelAll(event_engine);
     }
@@ -79,25 +83,9 @@ class PingSystem {
     uint64_t CountPingInflight() { return ping_callbacks_.pings_inflight(); }
   };
 
- private:
-  PingPromiseCallbacks ping_callbacks_;
-  Chttp2PingAbusePolicy ping_abuse_policy_;
-  Chttp2PingRatePolicy ping_rate_policy_;
-  bool delayed_ping_spawned_ = false;
-  std::unique_ptr<PingSystemInterface> ping_interface_;
-
-  void TriggerDelayedPing(Duration wait, Party* party);
-  bool NeedToPing(Duration next_allowed_ping_interval, Party* party);
-  void SpawnTimeout(Duration ping_timeout, uint64_t ping_id, Party* party);
-
-  void SentPing() { ping_rate_policy_.SentPing(); }
-
  public:
   PingSystem(const ChannelArgs& channel_args,
              std::unique_ptr<PingSystemInterface> ping_interface);
-
-  // All the promises returned by this class and the promise that triggers
-  // AckPing MUST be spawned on the same party.
 
   // Returns a promise that determines if a ping frame should be sent to the
   // peer. If a ping frame is sent, it also spawns a timeout promise that
@@ -137,6 +125,19 @@ class PingSystem {
     return ping_callbacks_.AckPing(id, event_engine);
   }
   auto CountPingInflight() { return ping_callbacks_.CountPingInflight(); }
+
+ private:
+  PingPromiseCallbacks ping_callbacks_;
+  Chttp2PingAbusePolicy ping_abuse_policy_;
+  Chttp2PingRatePolicy ping_rate_policy_;
+  bool delayed_ping_spawned_ = false;
+  std::unique_ptr<PingSystemInterface> ping_interface_;
+
+  void TriggerDelayedPing(Duration wait, Party* party);
+  bool NeedToPing(Duration next_allowed_ping_interval, Party* party);
+  void SpawnTimeout(Duration ping_timeout, uint64_t opaque_data, Party* party);
+
+  void SentPing() { ping_rate_policy_.SentPing(); }
 };
 }  // namespace http2
 }  // namespace grpc_core
