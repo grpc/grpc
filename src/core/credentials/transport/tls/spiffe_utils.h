@@ -47,4 +47,4 @@ class SpiffeId {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SSL_UTILS_H
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SPIFFE_UTILS_H

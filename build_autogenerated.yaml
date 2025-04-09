@@ -15329,6 +15329,18 @@ targets:
   deps:
   - gtest
   uses_polling: false
+- name: spiffe_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/credentials/transport/tls/spiffe_utils.h
+  src:
+  - src/core/credentials/transport/tls/spiffe_utils.cc
+  - test/core/credentials/transport/tls/spiffe_utils_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: spinlock_test
   gtest: true
   build: test
