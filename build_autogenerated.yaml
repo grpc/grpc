@@ -10861,6 +10861,7 @@ targets:
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h

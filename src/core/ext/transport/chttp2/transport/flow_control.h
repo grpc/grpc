@@ -302,6 +302,24 @@ class TransportFlowControl final {
     double bdp_bw_est;
 
     std::string ToString() const;
+    grpc_core::Json::Object ToJsonObject() {
+      grpc_core::Json::Object object;
+      object["targetWindow"] = Json::FromNumber(target_window);
+      object["targetFrameSize"] = Json::FromNumber(target_frame_size);
+      object["targetPreferredRxCryptoFrameSize"] =
+          Json::FromNumber(target_preferred_rx_crypto_frame_size);
+      object["ackedInitWindow"] = Json::FromNumber(acked_init_window);
+      object["queuedInitWindow"] = Json::FromNumber(queued_init_window);
+      object["sentInitWindow"] = Json::FromNumber(sent_init_window);
+      object["remoteWindow"] = Json::FromNumber(remote_window);
+      object["announcedWindow"] = Json::FromNumber(announced_window);
+      object["announcedStreamTotalOverIncomingWindow"] =
+          Json::FromNumber(announced_stream_total_over_incoming_window);
+      object["bdpAccumulator"] = Json::FromNumber(bdp_accumulator);
+      object["bdpEstimate"] = Json::FromNumber(bdp_estimate);
+      object["bdpBwEst"] = Json::FromNumber(bdp_bw_est);
+      return object;
+    }
   };
 
   Stats stats() const {

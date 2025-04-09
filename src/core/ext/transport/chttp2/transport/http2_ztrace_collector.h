@@ -16,6 +16,8 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_ZTRACE_COLLECTOR_H
 
 #include <cstdint>
+#include <map>
+#include <string>
 
 #include "src/core/channelz/ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -25,6 +27,8 @@ namespace http2_ztrace_collector_detail {
 
 class Config {
  public:
+  explicit Config(std::map<std::string, std::string>) {}
+
   template <typename T>
   bool Finishes(const T&) {
     return false;
