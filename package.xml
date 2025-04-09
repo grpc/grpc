@@ -147,6 +147,7 @@
     <file baseinstalldir="/" name="src/core/channelz/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel.cc" role="src" />
@@ -384,6 +385,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
