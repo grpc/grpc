@@ -317,7 +317,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       protector_staging_buffer_.Clear();
     } else {
       // Use frame protector to protect.
-      for (int i = 0; i < slices->count; i++) {
+      for (size_t i = 0; i < slices->count; i++) {
         grpc_slice plain = slices->slices[i];
         uint8_t* message_bytes = GRPC_SLICE_START_PTR(plain);
         size_t message_size = GRPC_SLICE_LENGTH(plain);
@@ -670,7 +670,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                         grpc_event_engine::experimental::EventEngine>()) {}
 
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
-              SliceBuffer* buffer, const ReadArgs* in_args) {
+              SliceBuffer* buffer, const ReadArgs*) {
       on_read_ = std::move(on_read);
       frame_protector_.BeginRead(buffer->c_slice_buffer());
       if (frame_protector_.MaybeCompleteReadImmediately()) {
