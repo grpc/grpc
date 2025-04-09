@@ -83,6 +83,10 @@ def grpc_deps():
             urls = [
                 "https://github.com/google/googletest/archive/v1.16.0.tar.gz",
             ],
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+                "@re2": "@com_googlesource_code_re2",
+            },
         )
 
     if "com_google_fuzztest" not in native.existing_rules():
