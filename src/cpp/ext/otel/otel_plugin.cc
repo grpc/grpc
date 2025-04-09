@@ -507,14 +507,15 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
             grpc::OpenTelemetryPluginBuilder::kClientCallRetries)) {
       client_.call.retries = meter->CreateUInt64Histogram(
           std::string(grpc::OpenTelemetryPluginBuilder::kClientCallRetries),
-          "Number of retry attempts made during the call", "{retry}");
+          "EXPERIMENTAL: Number of retry attempts made during the call",
+          "{retry}");
     }
     if (metrics.contains(
             grpc::OpenTelemetryPluginBuilder::kClientCallRetryDelay)) {
       client_.call.retry_delay = meter->CreateDoubleHistogram(
           std::string(grpc::OpenTelemetryPluginBuilder::kClientCallRetryDelay),
-          "Total time of delay while there is no active attempt during the "
-          "client call",
+          "EXPERIMENTAL: Total time of delay while there is no active attempt "
+          "during the client call",
           "s");
     }
     // Store optional label keys for per call metrics
