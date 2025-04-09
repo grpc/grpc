@@ -16,8 +16,8 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/util/notification.h"
 #include "gtest/gtest.h"
+#include "src/core/util/notification.h"
 
 namespace grpc_core::channelz {
 
