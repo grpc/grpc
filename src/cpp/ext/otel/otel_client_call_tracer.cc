@@ -66,7 +66,7 @@ namespace internal {
 //
 
 OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::CallAttemptTracer(
-    const OpenTelemetryPluginImpl::ClientCallTracer* parent,
+    OpenTelemetryPluginImpl::ClientCallTracer* const parent,
     uint64_t attempt_num, bool is_transparent_retry, bool arena_allocated)
     : parent_(parent),
       arena_allocated_(arena_allocated),
@@ -242,6 +242,12 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     parent_->otel_plugin_->client_.attempt.rcvd_total_compressed_message_size
         ->Record(incoming_bytes, labels, opentelemetry::context::Context{});
   }
+  {
+    grpc_core::MutexLock lock(&parent_->mu_);
+    if (--parent_->num_active_attempts_ == 0) {
+      parent_->time_at_last_attempt_end_ = absl::Now();
+    }
+  }
   if (span_ != nullptr) {
     if (status.ok()) {
       span_->SetStatus(opentelemetry::trace::StatusCode::kOk);
@@ -356,6 +362,30 @@ OpenTelemetryPluginImpl::ClientCallTracer::ClientCallTracer(
 }
 
 OpenTelemetryPluginImpl::ClientCallTracer::~ClientCallTracer() {
+  if (otel_plugin_->client_.call.retries != nullptr) {
+    otel_plugin_->client_.call.retries->Record(
+        retries_ - 1,
+        std::array<std::pair<absl::string_view, absl::string_view>, 3>{
+            {{OpenTelemetryMethodKey(), MethodForStats()},
+             {OpenTelemetryTargetKey(), scope_config_->filtered_target()},
+             {OpenTelemetryRetryType(), "retry"}}},
+        opentelemetry::context::Context{});
+    otel_plugin_->client_.call.retries->Record(
+        transparent_retries_,
+        std::array<std::pair<absl::string_view, absl::string_view>, 3>{
+            {{OpenTelemetryMethodKey(), MethodForStats()},
+             {OpenTelemetryTargetKey(), scope_config_->filtered_target()},
+             {OpenTelemetryRetryType(), "transparent"}}},
+        opentelemetry::context::Context{});
+  }
+  if (otel_plugin_->client_.call.retry_delay != nullptr) {
+    otel_plugin_->client_.call.retry_delay->Record(
+        absl::ToDoubleSeconds(retry_delay_),
+        std::array<std::pair<absl::string_view, absl::string_view>, 2>{
+            {{OpenTelemetryMethodKey(), MethodForStats()},
+             {OpenTelemetryTargetKey(), scope_config_->filtered_target()}}},
+        opentelemetry::context::Context{});
+  }
   if (span_ != nullptr) {
     span_->End();
   }
@@ -373,6 +403,9 @@ OpenTelemetryPluginImpl::ClientCallTracer::StartNewAttempt(
     grpc_core::MutexLock lock(&mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
       is_first_attempt = false;
+      if (num_active_attempts_ == 0) {
+        retry_delay_ += absl::Now() - time_at_last_attempt_end_;
+      }
     }
     if (is_transparent_retry) {
       ++transparent_retries_;
@@ -380,6 +413,7 @@ OpenTelemetryPluginImpl::ClientCallTracer::StartNewAttempt(
       ++retries_;
     }
     attempt_num = retries_ - 1;  // Sequence starts at 0
+    ++num_active_attempts_;
   }
   if (is_first_attempt) {
     return arena_->New<CallAttemptTracer>(

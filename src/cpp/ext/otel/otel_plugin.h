@@ -119,6 +119,7 @@ class InternalOpenTelemetryPluginOption
 absl::string_view OpenTelemetryMethodKey();
 absl::string_view OpenTelemetryStatusKey();
 absl::string_view OpenTelemetryTargetKey();
+absl::string_view OpenTelemetryRetryType();
 
 class OpenTelemetryPluginBuilderImpl {
  public:
@@ -356,6 +357,10 @@ class OpenTelemetryPluginImpl
   };
 
   struct ClientMetrics {
+    struct Call {
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>> retries;
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>> retry_delay;
+    } call;
     struct Attempt {
       std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
       std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;

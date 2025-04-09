@@ -13429,6 +13429,7 @@ targets:
   - src/cpp/ext/otel/otel_plugin.h
   - src/cpp/ext/otel/otel_server_call_tracer.h
   - test/core/promise/test_context.h
+  - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/ext/otel/otel_test_library.h
@@ -13444,6 +13445,7 @@ targets:
   - src/cpp/ext/otel/otel_client_call_tracer.cc
   - src/cpp/ext/otel/otel_plugin.cc
   - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/ext/otel/otel_plugin_test.cc

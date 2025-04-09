@@ -100,6 +100,12 @@ class OpenTelemetryPluginBuilder {
       kServerCallRcvdTotalCompressedMessageSizeInstrumentName =
           "grpc.server.call.rcvd_total_compressed_message_size";
 
+  /// Experimental Retry Metrics
+  static constexpr absl::string_view kClientCallRetries =
+      "grpc.client.call.retries";
+  static constexpr absl::string_view kClientCallRetryDelay =
+      "grpc.client.call.retry_delay";
+
   OpenTelemetryPluginBuilder();
   ~OpenTelemetryPluginBuilder();
   /// If `SetMeterProvider()` is not called, no metrics are collected.

@@ -21759,6 +21759,7 @@ add_executable(otel_plugin_test
   src/cpp/ext/otel/otel_client_call_tracer.cc
   src/cpp/ext/otel/otel_plugin.cc
   src/cpp/ext/otel/otel_server_call_tracer.cc
+  test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/cpp/end2end/test_service_impl.cc
   test/cpp/ext/otel/otel_plugin_test.cc

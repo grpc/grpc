@@ -136,7 +136,6 @@ OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::Stop() {
 }
 
 void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
-  grpc_core::CoreConfiguration::Reset();
   ChannelArguments channel_args;
   if (!config.labels_to_inject.empty()) {
     labels_to_inject_ = std::move(config.labels_to_inject);
@@ -182,6 +181,7 @@ void OpenTelemetryPluginEnd2EndTest::TearDown() {
   grpc_core::ServerCallTracerFactory::TestOnlyReset();
   grpc_core::GlobalStatsPluginRegistryTestPeer::
       ResetGlobalStatsPluginRegistry();
+  grpc_core::CoreConfiguration::Reset();
 }
 
 void OpenTelemetryPluginEnd2EndTest::ResetStub(

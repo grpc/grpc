@@ -51,7 +51,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   class CallAttemptTracer
       : public grpc_core::ClientCallTracer::CallAttemptTracer {
    public:
-    CallAttemptTracer(const OpenTelemetryPluginImpl::ClientCallTracer* parent,
+    CallAttemptTracer(OpenTelemetryPluginImpl::ClientCallTracer* const parent,
                       uint64_t attempt_num, bool is_transparent_retry,
                       bool arena_allocated);
 
@@ -100,7 +100,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
    private:
     void PopulateLabelInjectors(grpc_metadata_batch* metadata);
 
-    const ClientCallTracer* parent_;
+    ClientCallTracer* const parent_;
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
@@ -162,6 +162,10 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
   // Transparent retries per call
   uint64_t transparent_retries_ ABSL_GUARDED_BY(&mu_) = 0;
+  // Retry delay
+  absl::Duration retry_delay_ ABSL_GUARDED_BY(&mu_);
+  absl::Time time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
+  uint64_t num_active_attempts_ ABSL_GUARDED_BY(&mu_) = 0;
   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
 };
 
