@@ -43,7 +43,7 @@ namespace grpc_core {
 NativeDNSResolver::NativeDNSResolver()
     : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   if (IsEventEngineDnsNonClientChannelEnabled() && IsEventEngineDnsEnabled()) {
-    grpc_core::Crash("The iomgr native resolver should not be used.");
+    Crash("The iomgr native resolver should not be used.");
   }
 }
 
