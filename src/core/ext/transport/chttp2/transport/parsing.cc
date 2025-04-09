@@ -667,10 +667,10 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                             t->settings.acked().max_concurrent_streams())) {
       ++t->num_pending_induced_frames;
       grpc_slice_buffer_add(
-          &t->qbuf,
-          grpc_chttp2_rst_stream_create(
-              t->incoming_stream_id,
-              static_cast<uint32_t>(Http2ErrorCode::kRefusedStream), nullptr));
+          &t->qbuf, grpc_chttp2_rst_stream_create(
+                        t->incoming_stream_id,
+                        static_cast<uint32_t>(Http2ErrorCode::kRefusedStream),
+                        nullptr, &t->http2_ztrace_collector));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (grpc_core::IsRqFastRejectEnabled() &&
@@ -683,7 +683,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           &t->qbuf, grpc_chttp2_rst_stream_create(
                         t->incoming_stream_id,
                         static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
-                        nullptr));
+                        nullptr, &t->http2_ztrace_collector));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
@@ -694,10 +694,10 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       // by refusing this stream.
       ++t->num_pending_induced_frames;
       grpc_slice_buffer_add(
-          &t->qbuf,
-          grpc_chttp2_rst_stream_create(
-              t->incoming_stream_id,
-              static_cast<uint32_t>(Http2ErrorCode::kRefusedStream), nullptr));
+          &t->qbuf, grpc_chttp2_rst_stream_create(
+                        t->incoming_stream_id,
+                        static_cast<uint32_t>(Http2ErrorCode::kRefusedStream),
+                        nullptr, &t->http2_ztrace_collector));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(t->stream_map.size() >=
@@ -711,10 +711,10 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       // Apply some backpressure by randomly not accepting new streams.
       ++t->num_pending_induced_frames;
       grpc_slice_buffer_add(
-          &t->qbuf,
-          grpc_chttp2_rst_stream_create(
-              t->incoming_stream_id,
-              static_cast<uint32_t>(Http2ErrorCode::kRefusedStream), nullptr));
+          &t->qbuf, grpc_chttp2_rst_stream_create(
+                        t->incoming_stream_id,
+                        static_cast<uint32_t>(Http2ErrorCode::kRefusedStream),
+                        nullptr, &t->http2_ztrace_collector));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT ||
@@ -741,7 +741,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           &t->qbuf, grpc_chttp2_rst_stream_create(
                         t->incoming_stream_id,
                         static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
-                        nullptr));
+                        nullptr, &t->http2_ztrace_collector));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       t->last_new_stream_id = t->incoming_stream_id;
       return init_header_skip_frame_parser(t, priority_type, is_eoh);

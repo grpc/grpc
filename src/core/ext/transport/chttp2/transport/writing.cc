@@ -657,7 +657,7 @@ class StreamWriteContext {
           t_->outbuf.c_slice_buffer(),
           grpc_chttp2_rst_stream_create(
               s_->id, static_cast<uint32_t>(Http2ErrorCode::kNoError),
-              &s_->call_tracer_wrapper));
+              &s_->call_tracer_wrapper, &t_->http2_ztrace_collector));
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
