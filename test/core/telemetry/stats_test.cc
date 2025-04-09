@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/telemetry/stats_data.h"
@@ -68,34 +69,20 @@ static int FindExpectedBucket(const HistogramView& h, int value) {
          h.bucket_boundaries - 1;
 }
 
-class HistogramTest : public ::testing::TestWithParam<int> {};
-
-TEST_P(HistogramTest, CheckBucket) {
-  const GlobalStats::Histogram kHistogram =
-      static_cast<GlobalStats::Histogram>(GetParam());
-  auto some_stats = std::make_unique<GlobalStats>();
-  auto view = some_stats->histogram(kHistogram);
-  const int max_bucket_boundary = view.bucket_boundaries[view.num_buckets];
-  for (int i = -1000; i < max_bucket_boundary + 1000; i++) {
-    ASSERT_EQ(FindExpectedBucket(view, i), view.bucket_for(i))
-        << "i=" << i << " expect_bucket="
-        << view.bucket_boundaries[FindExpectedBucket(view, i)]
-        << " actual_bucket=" << view.bucket_boundaries[view.bucket_for(i)];
-  }
+auto AnyHistogram() {
+  return ::fuzztest::Map(
+      [](int x) { return static_cast<GlobalStats::Histogram>(x); },
+      fuzztest::InRange(0,
+                        static_cast<int>(GlobalStats::Histogram::COUNT) - 1));
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    HistogramTestCases, HistogramTest,
-    ::testing::Range<int>(0, static_cast<int>(GlobalStats::Histogram::COUNT)));
+void CheckViewMatchesExpected(GlobalStats::Histogram histogram, int value) {
+  auto some_stats = std::make_unique<GlobalStats>();
+  auto view = some_stats->histogram(histogram);
+  EXPECT_EQ(FindExpectedBucket(view, value), view.bucket_for(value));
+}
+FUZZ_TEST(StatsTest, CheckViewMatchesExpected)
+    .WithDomains(AnyHistogram(), fuzztest::Arbitrary<int>());
 
 }  // namespace testing
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
-}

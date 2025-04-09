@@ -40,6 +40,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
@@ -322,15 +323,6 @@ class FuzzingEventEngine : public EventEngine {
   // evaluate whether we want to continue supporting ThreadedFuzzingEventEngine
   // at all.
   virtual void OnClockIncremented(Duration) {}
-
-  // We need everything EventEngine to do reasonable timer steps -- without it
-  // we need to do a bunch of evil to make sure both timer systems are ticking
-  // each step.
-  static bool IsSaneTimerEnvironment() {
-    return grpc_core::IsEventEngineClientEnabled() &&
-           grpc_core::IsEventEngineListenerEnabled() &&
-           grpc_core::IsEventEngineDnsEnabled();
-  }
 
   // For the next connection being built, query the list of fuzzer selected
   // write size limits.

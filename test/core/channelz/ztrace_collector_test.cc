@@ -14,6 +14,8 @@
 
 #include "src/core/channelz/ztrace_collector.h"
 
+#include <grpc/grpc.h>
+
 #include "gtest/gtest.h"
 #include "src/core/util/notification.h"
 
@@ -66,6 +68,7 @@ void ValidateSimpleTrace(const Json& result, int num_appends) {
 }
 
 TEST(ZTraceCollectorTest, SingleTraceWorks) {
+  grpc_init();
   ZTraceCollector<TestConfig, TestData> collector;
   Notification n;
   Json result;
@@ -83,9 +86,11 @@ TEST(ZTraceCollectorTest, SingleTraceWorks) {
     i++;
   }
   ValidateSimpleTrace(result, i);
+  grpc_shutdown();
 }
 
 TEST(ZTraceCollectorTest, MultipleTracesWork) {
+  grpc_init();
   ZTraceCollector<TestConfig, TestData> collector;
   Notification n1;
   Json result1;
@@ -114,9 +119,11 @@ TEST(ZTraceCollectorTest, MultipleTracesWork) {
   }
   ValidateSimpleTrace(result1, i);
   ValidateSimpleTrace(result2, i);
+  grpc_shutdown();
 }
 
 TEST(ZTraceCollectorTest, EarlyTerminationWorks) {
+  grpc_init();
   ZTraceCollector<TestConfig, TestData> collector;
   Notification n;
   Json result;
@@ -149,6 +156,7 @@ TEST(ZTraceCollectorTest, EarlyTerminationWorks) {
     EXPECT_EQ(n_it->second.string(), std::to_string(i));
     i++;
   }
+  grpc_shutdown();
 }
 
 }  // namespace grpc_core::channelz

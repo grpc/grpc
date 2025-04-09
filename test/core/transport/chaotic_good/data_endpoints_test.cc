@@ -168,8 +168,8 @@ DATA_ENDPOINTS_TEST(CanWrite) {
   auto close_ep =
       ep.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
   chaotic_good::DataEndpoints data_endpoints(
-      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false,
-      Time1Clock());
+      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), nullptr,
+      false, Time1Clock());
   ep.ExpectWrite(
       {DataFrameHeader(123, 1, 5),
        grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
@@ -192,7 +192,7 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   chaotic_good::DataEndpoints data_endpoints(
       Endpoints(std::move(ep1.promise_endpoint),
                 std::move(ep2.promise_endpoint)),
-      event_engine().get(), false, Time1Clock());
+      event_engine().get(), nullptr, false, Time1Clock());
   SliceBuffer writes;
   ep1.CaptureWrites(writes, event_engine().get());
   ep2.CaptureWrites(writes, event_engine().get());
@@ -232,8 +232,8 @@ DATA_ENDPOINTS_TEST(CanRead) {
   auto close_ep =
       ep.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
   chaotic_good::DataEndpoints data_endpoints(
-      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false,
-      Time1Clock());
+      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), nullptr,
+      false, Time1Clock());
   SpawnTestSeqWithoutContext("read", data_endpoints.Read(5).Await(),
                              [](absl::StatusOr<SliceBuffer> result) {
                                EXPECT_TRUE(result.ok());
