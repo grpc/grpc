@@ -228,151 +228,44 @@ class Http2Status {
   std::string message_;
 };
 
-// // A value if an operation was successful, or a failure flag if not.
-// template <typename T>
-// class ValueOrFailure {
-//  public:
-//   // NOLINTNEXTLINE(google-explicit-constructor)
-//   ValueOrFailure(T value) : value_(std::move(value)) {}
-//   // NOLINTNEXTLINE(google-explicit-constructor)
-//   ValueOrFailure(Failure) {}
-//   // NOLINTNEXTLINE(google-explicit-constructor)
-//   ValueOrFailure(StatusFlag status) { CHECK(!status.ok()); }
+// A value if an operation was successful, or a Http2Status if not.
+template <typename T>
+class ValueOrHttp2Status {
+ public:
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  ValueOrHttp2Status(T value) : value_(std::move(value)) {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  // See if string is deep copy or shallow copy
+  ValueOrHttp2Status(Http2Status status) : status_(status) {
+    CHECK(status.GetType() != Http2Status::Http2ErrorType::kOk);
+  }
 
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure FromOptional(
-//       std::optional<T> value) {
-//     return ValueOrFailure{std::move(value)};
-//   }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ok() const {
+    return value_.has_value();
+  }
 
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ok() const {
-//     return value_.has_value();
-//   }
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION StatusFlag status() const {
-//     return StatusFlag(ok());
-//   }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
+    return value_.value();
+  }
 
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
-//     return value_.value();
-//   }
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() { return value_.value(); }
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& operator*() const {
-//     return *value_;
-//   }
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& operator*() { return *value_; }
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T* operator->() const {
-//     return &*value_;
-//   }
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* operator->() { return &*value_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() { return value_.value(); }
 
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(
-//       const ValueOrFailure& other) const {
-//     return value_ == other.value_;
-//   }
+ private:
+  std::optional<T> value_;
+  std::optional<T> status_;
+};
 
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator!=(
-//       const ValueOrFailure& other) const {
-//     return value_ != other.value_;
-//   }
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
+    ValueOrHttp2Status<T>&& value) {
+  return std::move(value.value());
+}
 
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(const T& other) const
-//   {
-//     return value_ == other;
-//   }
-
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator!=(const T& other) const
-//   {
-//     return value_ != other;
-//   }
-
-//  private:
-//   std::optional<T> value_;
-// };
-
-// template <typename T>
-// inline std::ostream& operator<<(std::ostream& os,
-//                                 const ValueOrFailure<T>& value) {
-//   if (value.ok()) {
-//     return os << "Success(" << *value << ")";
-//   } else {
-//     return os << "Failure";
-//   }
-// }
-
-// template <typename Sink, typename T>
-// void AbslStringify(Sink& sink, const ValueOrFailure<T>& value) {
-//   if (value.ok()) {
-//     sink.Append("Success(");
-//     sink.Append(absl::StrCat(*value));
-//     sink.Append(")");
-//   } else {
-//     sink.Append("Failure");
-//   }
-// }
-
-// template <typename Sink, typename... Ts>
-// void AbslStringify(Sink& sink, const ValueOrFailure<std::tuple<Ts...>>&
-// value) {
-//   if (value.ok()) {
-//     sink.Append("Success(");
-//     sink.Append(absl::StrCat("(", absl::StrJoin(*value, ", "), ")"));
-//     sink.Append(")");
-//   } else {
-//     sink.Append("Failure");
-//   }
-// }
-
-// template <typename T>
-// GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool IsStatusOk(
-//     const ValueOrFailure<T>& value) {
-//   return value.ok();
-// }
-
-// template <typename T>
-// GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
-//     ValueOrFailure<T>&& value) {
-//   return std::move(value.value());
-// }
-
-// template <typename T>
-// GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
-//     absl::StatusOr<T>&& value) {
-//   return std::move(*value);
-// }
-
-// template <typename T>
-// struct StatusCastImpl<absl::StatusOr<T>, ValueOrFailure<T>> {
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
-//       ValueOrFailure<T> value) {
-//     return value.ok() ? absl::StatusOr<T>(std::move(value.value()))
-//                       : absl::CancelledError();
-//   }
-// };
-
-// template <typename T>
-// struct StatusCastImpl<ValueOrFailure<T>, Failure> {
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(Failure)
-//   {
-//     return ValueOrFailure<T>(Failure{});
-//   }
-// };
-
-// template <typename T>
-// struct StatusCastImpl<ValueOrFailure<T>, StatusFlag&> {
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(
-//       StatusFlag f) {
-//     CHECK(!f.ok());
-//     return ValueOrFailure<T>(Failure{});
-//   }
-// };
-
-// template <typename T>
-// struct StatusCastImpl<ValueOrFailure<T>, StatusFlag> {
-//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(
-//       StatusFlag f) {
-//     CHECK(!f.ok());
-//     return ValueOrFailure<T>(Failure{});
-//   }
-// };
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
+    absl::StatusOr<T>&& value) {
+  return std::move(*value);
+}
 
 }  // namespace http2
 }  // namespace grpc_core
