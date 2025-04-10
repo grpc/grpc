@@ -2615,10 +2615,10 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/channelz:channelz_proto",
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",
+        "//src/proto/grpc/channelz:channelz_proto",
     ],
     alwayslink = 1,
 )

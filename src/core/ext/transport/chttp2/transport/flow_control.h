@@ -302,8 +302,8 @@ class TransportFlowControl final {
     double bdp_bw_est;
 
     std::string ToString() const;
-    grpc_core::Json::Object ToJsonObject() {
-      grpc_core::Json::Object object;
+    Json::Object ToJsonObject() {
+      Json::Object object;
       object["targetWindow"] = Json::FromNumber(target_window);
       object["targetFrameSize"] = Json::FromNumber(target_frame_size);
       object["targetPreferredRxCryptoFrameSize"] =
