@@ -78,12 +78,15 @@ def grpc_deps():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
-            sha256 = "31bf78bd91b96dd5e24fab3bb1d7f3f7453ccbaceec9afb86d6e4816a15ab109",
-            strip_prefix = "googletest-2dd1c131950043a8ad5ab0d2dda0e0970596586a",
+            sha256 = "bde221be7f3841fcbc3971665d77d717116394a42155d988ee6407dfc39f1f09",
+            strip_prefix = "googletest-6910c9d9165801d8827d628cb72eb7ea9dd538c5",
             urls = [
-                # 2023-10-09
-                "https://github.com/google/googletest/archive/2dd1c131950043a8ad5ab0d2dda0e0970596586a.tar.gz",
+                "https://github.com/google/googletest/archive/6910c9d9165801d8827d628cb72eb7ea9dd538c5.tar.gz",
             ],
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+                "@re2": "@com_googlesource_code_re2",
+            },
         )
 
     if "com_google_fuzztest" not in native.existing_rules():
