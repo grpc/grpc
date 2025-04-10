@@ -271,8 +271,7 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordCancel(
     absl::Status /*cancel_error*/) {}
 
-void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordEnd(
-    const gpr_timespec& /*latency*/) {
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordEnd() {
   if (span_ != nullptr) {
     span_->End();
   }

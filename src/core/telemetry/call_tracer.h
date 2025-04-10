@@ -162,7 +162,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
         const grpc_transport_stream_stats* transport_stream_stats) = 0;
     // Should be the last API call to the object. Once invoked, the tracer
     // library is free to destroy the object.
-    virtual void RecordEnd(const gpr_timespec& latency) = 0;
+    virtual void RecordEnd() = 0;
 
     // Sets an optional label on the per-attempt metrics recorded at the end of
     // the attempt.
