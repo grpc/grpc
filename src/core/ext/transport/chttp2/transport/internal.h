@@ -233,7 +233,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   class ChannelzDataSource final : public grpc_core::channelz::DataSource {
    public:
-    ChannelzDataSource(grpc_chttp2_transport* transport)
+    explicit ChannelzDataSource(grpc_chttp2_transport* transport)
         : grpc_core::channelz::DataSource(transport->channelz_socket),
           transport_(transport) {}
 

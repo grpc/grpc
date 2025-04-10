@@ -220,4 +220,4 @@ using Http2ZTraceCollector = channelz::ZTraceCollector<
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_ZTRACE_COLLECTOR_H
