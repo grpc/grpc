@@ -543,6 +543,10 @@ class ArtifactGen {
       if (absl::c_contains(bazel_rule.tags, "bazel_only")) {
         continue;
       }
+      if (absl::StartsWith(test, "test/cpp/ext/otel")) {
+        test_dict["build"] = "plugin_test";
+        test_dict["plugin_option"] = "gRPC_BUILD_GRPCPP_OTEL_PLUGIN";
+      }
       // if any tags that restrict platform compatibility are present,
       // generate the "platforms" field accordingly
       // TODO(jtattermusch): there is also a "no_linux" tag, but we cannot take
