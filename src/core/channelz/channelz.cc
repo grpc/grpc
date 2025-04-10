@@ -383,8 +383,8 @@ Json SubchannelNode::RenderJson() {
         }),
     });
   }
-  PopulateJsonFromDataSources(data);
-  return Json::FromObject(object);
+  PopulateJsonFromDataSources(object);
+  return Json::FromObject(std::move(object));
 }
 
 //
@@ -709,7 +709,7 @@ Json SocketNode::RenderJson() {
   }
   PopulateSocketAddressJson(&object, "remote", remote_.c_str());
   PopulateSocketAddressJson(&object, "local", local_.c_str());
-  PopulateJsonFromDataSources(data);
+  PopulateJsonFromDataSources(object);
   return Json::FromObject(std::move(object));
 }
 
