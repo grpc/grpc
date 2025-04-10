@@ -4697,6 +4697,7 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
+        "//src/core:notification",
         "//src/core:ping_abuse_policy",
         "//src/core:ping_callbacks",
         "//src/core:ping_rate_policy",

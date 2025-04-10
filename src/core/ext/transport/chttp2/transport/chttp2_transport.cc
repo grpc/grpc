@@ -114,6 +114,7 @@
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/notification.h"
 
 using grpc_core::Json;
 
@@ -579,60 +580,66 @@ static void init_keepalive_pings_if_enabled_locked(
 
 void grpc_chttp2_transport::ChannelzDataSource::AddData(
     grpc_core::channelz::DataSink& sink) {
-  Json::Object http2_info;
-  http2_info["flowControl"] =
-      Json::FromObject(transport_->flow_control.stats().ToJsonObject());
-  Json::Object misc;
-  misc["maxRequestsPerRead"] =
-      Json::FromNumber(static_cast<int64_t>(transport_->max_requests_per_read));
-  misc["nextStreamId"] = Json::FromNumber(transport_->next_stream_id);
-  misc["lastNewStreamId"] = Json::FromNumber(transport_->last_new_stream_id);
-  misc["numIncomingStreamsBeforeSettingsAck"] =
-      Json::FromNumber(transport_->num_incoming_streams_before_settings_ack);
-  misc["pingAckCount"] =
-      Json::FromNumber(static_cast<int64_t>(transport_->ping_ack_count));
-  misc["allowTarpit"] = Json::FromBool(transport_->allow_tarpit);
-  if (transport_->allow_tarpit) {
-    misc["minTarpitDurationMs"] =
-        Json::FromNumber(transport_->min_tarpit_duration_ms);
-    misc["maxTarpitDurationMs"] =
-        Json::FromNumber(transport_->max_tarpit_duration_ms);
-  }
-  misc["keepaliveTime"] =
-      Json::FromString(transport_->keepalive_time.ToJsonString());
-  misc["nextAdjustedKeepaliveTimestamp"] =
-      Json::FromString((transport_->next_adjusted_keepalive_timestamp -
-                        grpc_core::Timestamp::Now())
-                           .ToJsonString());
-  misc["numMessagesInNextWrite"] =
-      Json::FromNumber(transport_->num_messages_in_next_write);
-  misc["numPendingInducedFrames"] =
-      Json::FromNumber(transport_->num_pending_induced_frames);
-  misc["writeBufferSize"] = Json::FromNumber(transport_->write_buffer_size);
-  misc["readingPausedOnPendingInducedFrames"] =
-      Json::FromBool(transport_->reading_paused_on_pending_induced_frames);
-  misc["enablePreferredRxCryptoFrameAdvertisement"] = Json::FromBool(
-      transport_->enable_preferred_rx_crypto_frame_advertisement);
-  misc["keepalivePermitWithoutCalls"] =
-      Json::FromBool(transport_->keepalive_permit_without_calls);
-  misc["bdpPingBlocked"] = Json::FromBool(transport_->bdp_ping_blocked);
-  misc["bdpPingStarted"] = Json::FromBool(transport_->bdp_ping_started);
-  misc["ackPings"] = Json::FromBool(transport_->ack_pings);
-  misc["keepaliveIncomingDataWanted"] =
-      Json::FromBool(transport_->keepalive_incoming_data_wanted);
-  misc["maxConcurrentStreamsOverloadProtection"] =
-      Json::FromBool(transport_->max_concurrent_streams_overload_protection);
-  misc["maxConcurrentStreamsRejectOnClient"] =
-      Json::FromBool(transport_->max_concurrent_streams_reject_on_client);
-  misc["pingOnRstStreamPercent"] =
-      Json::FromNumber(transport_->ping_on_rst_stream_percent);
-  misc["lastWindowUpdateAge"] = Json::FromString(
-      (grpc_core::Timestamp::Now() - transport_->last_window_update_time)
-          .ToJsonString());
-  http2_info["misc"] = Json::FromObject(std::move(misc));
-  http2_info["settings"] =
-      Json::FromObject(transport_->settings.ToJsonObject());
-  sink.AddAdditionalInfo("http2_info", std::move(http2_info));
+  grpc_core::Notification n;
+  transport_->combiner->Run(
+      grpc_core::NewClosure([t = transport_->Ref(), &n,
+                             &sink](grpc_error_handle) {
+        Json::Object http2_info;
+        http2_info["flowControl"] =
+            Json::FromObject(t->flow_control.stats().ToJsonObject());
+        Json::Object misc;
+        misc["maxRequestsPerRead"] =
+            Json::FromNumber(static_cast<int64_t>(t->max_requests_per_read));
+        misc["nextStreamId"] = Json::FromNumber(t->next_stream_id);
+        misc["lastNewStreamId"] = Json::FromNumber(t->last_new_stream_id);
+        misc["numIncomingStreamsBeforeSettingsAck"] =
+            Json::FromNumber(t->num_incoming_streams_before_settings_ack);
+        misc["pingAckCount"] =
+            Json::FromNumber(static_cast<int64_t>(t->ping_ack_count));
+        misc["allowTarpit"] = Json::FromBool(t->allow_tarpit);
+        if (t->allow_tarpit) {
+          misc["minTarpitDurationMs"] =
+              Json::FromNumber(t->min_tarpit_duration_ms);
+          misc["maxTarpitDurationMs"] =
+              Json::FromNumber(t->max_tarpit_duration_ms);
+        }
+        misc["keepaliveTime"] =
+            Json::FromString(t->keepalive_time.ToJsonString());
+        misc["nextAdjustedKeepaliveTimestamp"] = Json::FromString(
+            (t->next_adjusted_keepalive_timestamp - grpc_core::Timestamp::Now())
+                .ToJsonString());
+        misc["numMessagesInNextWrite"] =
+            Json::FromNumber(t->num_messages_in_next_write);
+        misc["numPendingInducedFrames"] =
+            Json::FromNumber(t->num_pending_induced_frames);
+        misc["writeBufferSize"] = Json::FromNumber(t->write_buffer_size);
+        misc["readingPausedOnPendingInducedFrames"] =
+            Json::FromBool(t->reading_paused_on_pending_induced_frames);
+        misc["enablePreferredRxCryptoFrameAdvertisement"] =
+            Json::FromBool(t->enable_preferred_rx_crypto_frame_advertisement);
+        misc["keepalivePermitWithoutCalls"] =
+            Json::FromBool(t->keepalive_permit_without_calls);
+        misc["bdpPingBlocked"] = Json::FromBool(t->bdp_ping_blocked);
+        misc["bdpPingStarted"] = Json::FromBool(t->bdp_ping_started);
+        misc["ackPings"] = Json::FromBool(t->ack_pings);
+        misc["keepaliveIncomingDataWanted"] =
+            Json::FromBool(t->keepalive_incoming_data_wanted);
+        misc["maxConcurrentStreamsOverloadProtection"] =
+            Json::FromBool(t->max_concurrent_streams_overload_protection);
+        misc["maxConcurrentStreamsRejectOnClient"] =
+            Json::FromBool(t->max_concurrent_streams_reject_on_client);
+        misc["pingOnRstStreamPercent"] =
+            Json::FromNumber(t->ping_on_rst_stream_percent);
+        misc["lastWindowUpdateAge"] = Json::FromString(
+            (grpc_core::Timestamp::Now() - t->last_window_update_time)
+                .ToJsonString());
+        http2_info["misc"] = Json::FromObject(std::move(misc));
+        http2_info["settings"] = Json::FromObject(t->settings.ToJsonObject());
+        sink.AddAdditionalInfo("http2_info", std::move(http2_info));
+        n.Notify();
+      }),
+      absl::OkStatus());
+  n.WaitForNotification();
 }
 
 std::unique_ptr<grpc_core::channelz::ZTrace>
