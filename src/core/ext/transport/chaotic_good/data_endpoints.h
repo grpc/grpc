@@ -80,6 +80,13 @@ class SendRate {
     }
     send_start_time_ = 0;
   }
+  void SetCurrentRate(double bytes_per_nanosecond) {
+    current_rate_ = bytes_per_nanosecond;
+    last_rate_measurement_ = Timestamp::Now();
+  }
+  bool IsRateMeasurementStale() {
+    return Timestamp::Now() - last_rate_measurement_ > Duration::Seconds(1);
+  }
   double DeliveryTime(uint64_t current_time, size_t bytes) {
     // start time relative to the current time for this send
     double start_time = 0.0;
@@ -103,6 +110,7 @@ class SendRate {
   uint64_t send_start_time_ = 0;
   uint64_t send_size_ = 0;
   double current_rate_;  // bytes per nanosecond
+  Timestamp last_rate_measurement_ = Timestamp::ProcessEpoch();
 };
 
 // Buffered writes for one data endpoint
