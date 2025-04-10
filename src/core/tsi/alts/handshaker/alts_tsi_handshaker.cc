@@ -66,6 +66,8 @@ struct alts_tsi_handshaker {
   bool shutdown = false;
   // Maximum frame size used by frame protector.
   size_t max_frame_size;
+  // The list of preferred transport protocols.
+  std::optional<absl::string_view> preferred_transport_protocols;
 };
 
 // Main struct for ALTS TSI handshaker result.
@@ -432,7 +434,8 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
         handshaker->interested_parties, handshaker->options,
         handshaker->target_name, grpc_cb, cb, user_data,
         handshaker->client_vtable_for_testing, handshaker->is_client,
-        handshaker->max_frame_size, error);
+        handshaker->max_frame_size, handshaker->preferred_transport_protocols,
+        error);
     if (client == nullptr) {
       LOG(ERROR) << "Failed to create ALTS handshaker client";
       if (error != nullptr) *error = "Failed to create ALTS handshaker client";
@@ -646,7 +649,8 @@ tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
     const char* handshaker_service_url, bool is_client,
     grpc_pollset_set* interested_parties, tsi_handshaker** self,
-    size_t user_specified_max_frame_size) {
+    size_t user_specified_max_frame_size,
+    std::optional<absl::string_view> preferred_transport_protocols) {
   if (handshaker_service_url == nullptr || self == nullptr ||
       options == nullptr || (is_client && target_name == nullptr)) {
     LOG(ERROR) << "Invalid arguments to alts_tsi_handshaker_create()";
@@ -668,6 +672,7 @@ tsi_result alts_tsi_handshaker_create(
   handshaker->max_frame_size = user_specified_max_frame_size != 0
                                    ? user_specified_max_frame_size
                                    : kTsiAltsMaxFrameSize;
+  handshaker->preferred_transport_protocols = preferred_transport_protocols;
   *self = &handshaker->base;
   return TSI_OK;
 }

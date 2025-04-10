@@ -104,7 +104,6 @@ static grpc_alts_credentials_options* alts_client_options_copy(
   // Copy rpc protocol versions.
   grpc_gcp_rpc_protocol_versions_copy(&options->rpc_versions,
                                       &new_options->rpc_versions);
-  grpc_gcp_transport_protocol_preference_copy(options, new_options);
   return new_options;
 }
 

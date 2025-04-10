@@ -38,9 +38,8 @@
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME "bigtable.google.api.com"
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1 "A@google.com"
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2 "B@google.com"
-#define ALTS_HANDSHAKER_CLIENT_SERVER_TRANSPORT_PROTOCOL "foo"
-#define ALTS_HANDSHAKER_SERVER_TRANSPORT_PROTOCOL "bar"
-#define ALTS_HANDSHAKER_CLIENT_TRANSPORT_PROTOCOL "baz"
+#define ALTS_HANDSHAKER_SERVER_TRANSPORT_PROTOCOL "bar,foo"
+#define ALTS_HANDSHAKER_CLIENT_TRANSPORT_PROTOCOL "baz,foo"
 #define ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE (64 * 1024)
 
 const char kMaxConcurrentStreamsEnvironmentVariable[] =
@@ -82,18 +81,14 @@ static void validate_transport_protocols(
   ASSERT_EQ(transport_protocol_count, 2);
 
   if (is_server) {
-    EXPECT_TRUE(upb_StringView_IsEqual(
-        transport_protocols[0],
-        upb_StringView_FromString(ALTS_HANDSHAKER_SERVER_TRANSPORT_PROTOCOL)));
+    EXPECT_TRUE(upb_StringView_IsEqual(transport_protocols[0],
+                                       upb_StringView_FromString("bar")));
   } else {
-    EXPECT_TRUE(upb_StringView_IsEqual(
-        transport_protocols[0],
-        upb_StringView_FromString(ALTS_HANDSHAKER_CLIENT_TRANSPORT_PROTOCOL)));
+    EXPECT_TRUE(upb_StringView_IsEqual(transport_protocols[0],
+                                       upb_StringView_FromString("baz")));
   }
-  EXPECT_TRUE(upb_StringView_IsEqual(
-      transport_protocols[1],
-      upb_StringView_FromString(
-          ALTS_HANDSHAKER_CLIENT_SERVER_TRANSPORT_PROTOCOL)));
+  EXPECT_TRUE(upb_StringView_IsEqual(transport_protocols[1],
+                                     upb_StringView_FromString("foo")));
 }
 
 static void validate_rpc_protocol_versions(
@@ -380,14 +375,7 @@ static grpc_alts_credentials_options* create_credentials_options(
         options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1);
     grpc_alts_credentials_client_options_add_target_service_account(
         options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2);
-    grpc_alts_credentials_options_add_transport_protocol_preference(
-        options, ALTS_HANDSHAKER_CLIENT_TRANSPORT_PROTOCOL);
-  } else {
-    grpc_alts_credentials_options_add_transport_protocol_preference(
-        options, ALTS_HANDSHAKER_SERVER_TRANSPORT_PROTOCOL);
   }
-  grpc_alts_credentials_options_add_transport_protocol_preference(
-      options, ALTS_HANDSHAKER_CLIENT_SERVER_TRANSPORT_PROTOCOL);
   grpc_gcp_rpc_protocol_versions* versions = &options->rpc_versions;
   EXPECT_TRUE(grpc_gcp_rpc_protocol_versions_set_max(
       versions, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
@@ -414,13 +402,15 @@ static alts_handshaker_client_test_config* create_config() {
       nullptr, server_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
       nullptr, nullptr, nullptr, nullptr, false,
-      ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE, nullptr);
+      ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE,
+      ALTS_HANDSHAKER_SERVER_TRANSPORT_PROTOCOL, nullptr);
   config->client = alts_grpc_handshaker_client_create(
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, client_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
       nullptr, nullptr, nullptr, nullptr, true,
-      ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE, nullptr);
+      ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE,
+      ALTS_HANDSHAKER_CLIENT_TRANSPORT_PROTOCOL, nullptr);
   EXPECT_NE(config->client, nullptr);
   EXPECT_NE(config->server, nullptr);
   grpc_alts_credentials_options_destroy(client_options);

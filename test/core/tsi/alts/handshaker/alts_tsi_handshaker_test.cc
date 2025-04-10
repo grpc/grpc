@@ -595,7 +595,7 @@ static tsi_handshaker* create_test_handshaker(bool is_client) {
       grpc_alts_credentials_client_options_create();
   alts_tsi_handshaker_create(options, "target_name",
                              ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING, is_client,
-                             nullptr, &handshaker, 0);
+                             nullptr, &handshaker, 0, std::nullopt);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_tsi_handshaker_set_client_vtable_for_testing(alts_handshaker, &vtable);

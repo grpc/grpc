@@ -102,10 +102,11 @@ class grpc_alts_channel_security_connector final
         static_cast<const grpc_alts_credentials*>(channel_creds());
     const size_t user_specified_max_frame_size =
         std::max(0, args.GetInt(GRPC_ARG_TSI_MAX_FRAME_SIZE).value_or(0));
-    CHECK(alts_tsi_handshaker_create(creds->options(), target_name_,
-                                     creds->handshaker_service_url(), true,
-                                     interested_parties, &handshaker,
-                                     user_specified_max_frame_size) == TSI_OK);
+    CHECK(alts_tsi_handshaker_create(
+              creds->options(), target_name_, creds->handshaker_service_url(),
+              true, interested_parties, &handshaker,
+              user_specified_max_frame_size,
+              args.GetString(GRPC_ARG_TRANSPORT_PROTOCOLS)) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -155,10 +156,10 @@ class grpc_alts_server_security_connector final
         static_cast<const grpc_alts_server_credentials*>(server_creds());
     size_t user_specified_max_frame_size =
         std::max(0, args.GetInt(GRPC_ARG_TSI_MAX_FRAME_SIZE).value_or(0));
-    CHECK(alts_tsi_handshaker_create(creds->options(), nullptr,
-                                     creds->handshaker_service_url(), false,
-                                     interested_parties, &handshaker,
-                                     user_specified_max_frame_size) == TSI_OK);
+    CHECK(alts_tsi_handshaker_create(
+              creds->options(), nullptr, creds->handshaker_service_url(), false,
+              interested_parties, &handshaker, user_specified_max_frame_size,
+              args.GetString(GRPC_ARG_TRANSPORT_PROTOCOLS)) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }

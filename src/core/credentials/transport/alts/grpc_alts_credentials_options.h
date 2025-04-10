@@ -35,7 +35,6 @@ typedef struct grpc_alts_credentials_options_vtable {
 struct grpc_alts_credentials_options {
   const struct grpc_alts_credentials_options_vtable* vtable;
   grpc_gcp_rpc_protocol_versions rpc_versions;
-  std::vector<std::unique_ptr<char[]>> transport_protocol_preferences;
 };
 
 typedef struct target_service_account {
@@ -71,9 +70,5 @@ typedef struct grpc_alts_credentials_server_options {
 ///
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options);
-
-bool grpc_gcp_transport_protocol_preference_copy(
-    const grpc_alts_credentials_options* src,
-    grpc_alts_credentials_options* dst);
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H
