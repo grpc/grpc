@@ -24,20 +24,54 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
+
 // IWYU pragma: no_include "google/protobuf/json/json.h"
 // IWYU pragma: no_include "google/protobuf/util/json_util.h"
 
 // IWYU pragma: no_include <google/protobuf/util/json_util.h>
 
+using grpc_core::Json;
+using grpc_core::JsonDump;
+using grpc_core::JsonParse;
+
 namespace grpc {
 
 namespace {
+
+Json RemoveAdditionalInfo(const Json& json) {
+  if (json.type() != Json::Type::kObject) return json;
+  Json::Object out;
+  for (const auto& [key, value] : json.object()) {
+    if (key == "additionalInfo") continue;
+    out[key] = RemoveAdditionalInfo(value);
+  }
+  return Json::FromObject(std::move(out));
+}
+
+// TODO(ctiller): Temporary hack to remove fields that are objectionable to the
+// protobuf parser (because we've not published them in protobuf yet).
+std::string ApplyHacks(const std::string& json_str) {
+  auto json = JsonParse(json_str);
+  if (!json.ok()) return json_str;
+  return JsonDump(RemoveAdditionalInfo(*json));
+}
 
 grpc::protobuf::util::Status ParseJson(const char* json_str,
                                        grpc::protobuf::Message* message) {
   grpc::protobuf::json::JsonParseOptions options;
   options.case_insensitive_enum_parsing = true;
-  return grpc::protobuf::json::JsonStringToMessage(json_str, message, options);
+  auto r = grpc::protobuf::json::JsonStringToMessage(ApplyHacks(json_str),
+                                                     message, options);
+  if (!r.ok()) {
+    LOG(ERROR) << "channelz json parse failed: error=" << r.ToString()
+               << " json:\n"
+               << ApplyHacks(json_str);
+  }
+  return r;
 }
 
 }  // namespace

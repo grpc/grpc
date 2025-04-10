@@ -26,12 +26,14 @@
 #include <atomic>
 #include <cstdint>
 #include <string>
+#include <tuple>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
+#include "channelz.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -65,9 +67,10 @@ std::string BaseNode::RenderJsonString() {
 }
 
 void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
+  DataSink sink(json);
   MutexLock lock(&data_sources_mu_);
   for (DataSource* data_source : data_sources_) {
-    data_source->AddJson(json);
+    data_source->AddData(sink);
   }
 }
 
@@ -105,6 +108,23 @@ void BaseNode::RunZTrace(
     return;
   }
   ztrace->Run(deadline, std::move(args), event_engine, std::move(callback));
+}
+
+//
+// DataSink
+//
+
+DataSink::~DataSink() {
+  if (additional_info_ != nullptr) {
+    output_["additionalInfo"] = Json::FromObject(std::move(*additional_info_));
+  }
+}
+
+void DataSink::AddAdditionalInfo(absl::string_view key, Json::Object value) {
+  if (additional_info_ == nullptr) {
+    additional_info_ = std::make_unique<Json::Object>();
+  }
+  additional_info_->emplace(key, Json::FromObject(std::move(value)));
 }
 
 //

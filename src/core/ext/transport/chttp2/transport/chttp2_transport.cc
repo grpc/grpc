@@ -485,9 +485,9 @@ static void read_channel_args(grpc_chttp2_transport* t,
                          t->peer_string.as_string_view()),
             channel_args
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
+    // Checks channelz_socket, so must be initialized after.
     t->channelz_data_source =
-        std::make_unique<grpc_chttp2_transport::ChannelzDataSource>(
-            t->channelz_socket);
+        std::make_unique<grpc_chttp2_transport::ChannelzDataSource>(t);
   }
 
   t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
@@ -577,7 +577,8 @@ static void init_keepalive_pings_if_enabled_locked(
   }
 }
 
-void grpc_chttp2_transport::ChannelzDataSource::AddJson(Json::Object& output) {
+void grpc_chttp2_transport::ChannelzDataSource::AddData(
+    grpc_core::channelz::DataSink& sink) {
   Json::Object http2_info;
   http2_info["flowControl"] =
       Json::FromObject(transport_->flow_control.stats().ToJsonObject());
@@ -630,7 +631,7 @@ void grpc_chttp2_transport::ChannelzDataSource::AddJson(Json::Object& output) {
   http2_info["misc"] = Json::FromObject(std::move(misc));
   http2_info["settings"] =
       Json::FromObject(transport_->settings.ToJsonObject());
-  output["http2Info"] = Json::FromObject(std::move(http2_info));
+  sink.AddAdditionalInfo("http2_info", std::move(http2_info));
 }
 
 std::unique_ptr<grpc_core::channelz::ZTrace>

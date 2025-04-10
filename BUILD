@@ -2603,6 +2603,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "protobuf_headers",
+        "absl/log",
     ],
     public_hdrs = [
         "include/grpcpp/ext/channelz_service_plugin.h",
@@ -2615,6 +2616,9 @@ grpc_cc_library(
         "grpc++",
         "grpc++_config_proto",
         "//src/proto/grpc/channelz:channelz_proto",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
     ],
     alwayslink = 1,
 )
