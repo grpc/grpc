@@ -144,6 +144,8 @@ class CallSpine final : public Party {
   template <typename StatusType>
   void CancelIfFailed(const StatusType& r) {
     if (!IsStatusOk(r)) {
+      GRPC_TRACE_LOG(call_state, INFO)
+          << "[call_state] spine " << this << " fails: " << r;
       Cancel();
     }
   }

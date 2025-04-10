@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.72.0-dev'
+  version = '1.73.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -516,6 +516,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.cc',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                      'src/core/ext/transport/chttp2/transport/http2_status.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.cc',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
@@ -1369,6 +1370,7 @@ Pod::Spec.new do |s|
                       'src/core/handshaker/proxy_mapper.h',
                       'src/core/handshaker/proxy_mapper_registry.cc',
                       'src/core/handshaker/proxy_mapper_registry.h',
+                      'src/core/handshaker/security/legacy_secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.h',
                       'src/core/handshaker/security/security_handshaker.cc',
@@ -1422,6 +1424,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine_factory.h',
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/event_engine_context.h',
+                      'src/core/lib/event_engine/extensions/blocking_dns.h',
                       'src/core/lib/event_engine/extensions/can_track_errors.h',
                       'src/core/lib/event_engine/extensions/chaotic_good_extension.h',
                       'src/core/lib/event_engine/extensions/iomgr_compatible.h',
@@ -1777,7 +1780,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/error_utils.cc',
                       'src/core/lib/transport/error_utils.h',
-                      'src/core/lib/transport/http2_errors.h',
                       'src/core/lib/transport/status_conversion.cc',
                       'src/core/lib/transport/status_conversion.h',
                       'src/core/lib/transport/timeout_encoding.cc',
@@ -1900,6 +1902,8 @@ Pod::Spec.new do |s|
                       'src/core/service_config/service_config_parser.h',
                       'src/core/telemetry/call_tracer.cc',
                       'src/core/telemetry/call_tracer.h',
+                      'src/core/telemetry/default_tcp_tracer.cc',
+                      'src/core/telemetry/default_tcp_tracer.h',
                       'src/core/telemetry/histogram_view.cc',
                       'src/core/telemetry/histogram_view.h',
                       'src/core/telemetry/metrics.cc',
@@ -2580,6 +2584,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                              'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
                               'src/core/ext/transport/chttp2/transport/legacy_frame.h',
@@ -3119,6 +3124,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
                               'src/core/lib/event_engine/event_engine_context.h',
+                              'src/core/lib/event_engine/extensions/blocking_dns.h',
                               'src/core/lib/event_engine/extensions/can_track_errors.h',
                               'src/core/lib/event_engine/extensions/chaotic_good_extension.h',
                               'src/core/lib/event_engine/extensions/iomgr_compatible.h',
@@ -3313,7 +3319,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/call_final_info.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/error_utils.h',
-                              'src/core/lib/transport/http2_errors.h',
                               'src/core/lib/transport/status_conversion.h',
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
@@ -3374,6 +3379,7 @@ Pod::Spec.new do |s|
                               'src/core/service_config/service_config_impl.h',
                               'src/core/service_config/service_config_parser.h',
                               'src/core/telemetry/call_tracer.h',
+                              'src/core/telemetry/default_tcp_tracer.h',
                               'src/core/telemetry/histogram_view.h',
                               'src/core/telemetry/metrics.h',
                               'src/core/telemetry/stats.h',

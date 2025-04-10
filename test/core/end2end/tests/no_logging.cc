@@ -72,6 +72,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   VerifyLogNoiseLogSink(const VerifyLogNoiseLogSink& other) = delete;
   VerifyLogNoiseLogSink& operator=(const VerifyLogNoiseLogSink& other) = delete;
 
+  void AllowNonErrorLogs(bool allow) {
+    allow_non_error_logs_.store(allow, std::memory_order_relaxed);
+  }
+
  private:
   bool IsVlogWithVerbosityMoreThan1(const absl::LogEntry& entry) const {
     return entry.log_severity() == absl::LogSeverity::kInfo &&
@@ -109,6 +113,11 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
          {"http_connect_handshaker.cc",
           std::regex("HTTP proxy handshake with .* failed:.*")}});
 
+    if (allow_non_error_logs_.load(std::memory_order_relaxed) &&
+        entry.log_severity() != absl::LogSeverity::kError) {
+      return;
+    }
+
     if (IsVlogWithVerbosityMoreThan1(entry)) {
       return;
     }
@@ -139,6 +148,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   int saved_absl_verbosity_;
   SavedTraceFlags saved_trace_flags_;
   bool log_noise_absent_;
+  std::atomic<bool> allow_non_error_logs_{false};
 };
 
 void SimpleRequest(CoreEnd2endTest& test) {
@@ -181,6 +191,13 @@ CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
   }
 #endif
   VerifyLogNoiseLogSink nolog_verifier(absl::LogSeverityAtLeast::kInfo, 2);
+  // Allow info logs, but not error logs on the first request.
+  // This allows connection warnings to be printed, and potentially some
+  // initialization noise - we tolerate that - this test is about not spamming
+  // on the per-RPC path.
+  nolog_verifier.AllowNonErrorLogs(true);
+  SimpleRequest(*this);
+  nolog_verifier.AllowNonErrorLogs(false);
   for (int i = 0; i < 10; i++) {
     SimpleRequest(*this);
   }

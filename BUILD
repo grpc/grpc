@@ -197,14 +197,15 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gusto"  # @unused
+g_stands_for = "gradient"  # @unused
 
-core_version = "46.0.0"  # @unused
+core_version = "47.0.0"  # @unused
 
-version = "1.72.0-dev"  # @unused
+version = "1.73.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
+    "include/grpc/support/atm.h",
     "include/grpc/support/atm_gcc_atomic.h",
     "include/grpc/support/atm_gcc_sync.h",
     "include/grpc/support/atm_windows.h",
@@ -1229,6 +1230,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
+        "absl/container:inlined_vector",
     ],
     deps = [
         "exec_ctx",
@@ -2099,6 +2101,7 @@ grpc_cc_library(
         "//src/core:credentials/transport/transport_credentials.cc",
         "//src/core:filter/auth/client_auth_filter.cc",
         "//src/core:filter/auth/server_auth_filter.cc",
+        "//src/core:handshaker/security/legacy_secure_endpoint.cc",
         "//src/core:handshaker/security/secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",
         "//src/core:transport/auth_context.cc",
@@ -4391,6 +4394,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "//src/core:http2_status",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -4672,14 +4676,15 @@ grpc_cc_library(
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:connectivity_state",
+        "//src/core:default_tcp_tracer",
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:event_engine_extensions",
         "//src/core:event_engine_query_extensions",
         "//src/core:experiments",
         "//src/core:gpr_manual_constructor",
-        "//src/core:http2_errors",
         "//src/core:http2_settings",
+        "//src/core:http2_status",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",

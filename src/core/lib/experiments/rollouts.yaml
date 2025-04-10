@@ -55,27 +55,15 @@
 - name: event_engine_callback_cq
   default: true
 - name: event_engine_client
-  default:
-    # not tested on iOS at all
-    ios: broken
-    posix: true
-    windows: true
+  default: true
 - name: event_engine_dns
-  default:
-    # not tested on iOS at all
-    ios: broken
-    posix: true
-    windows: true
+  default: true
 - name: event_engine_for_all_other_endpoints
   default: true
 - name: event_engine_fork
   default: false
 - name: event_engine_listener
-  default:
-    # not tested on iOS at all
-    ios: broken
-    posix: true
-    windows: true
+  default: true
 - name: free_large_allocator
   default: false
 - name: keep_alive_ping_timer_batch
@@ -105,6 +93,8 @@
 - name: server_listener
   default: true
 - name: server_privacy
+  default: false
+- name: sleep_promise_exec_ctx_removal
   default: false
 - name: tcp_frame_size_tuning
   default: false

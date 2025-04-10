@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 46.0.0
+PROJECT_NUMBER         = 47.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1173,6 +1173,7 @@ src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser_table.h \
 src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
+src/core/ext/transport/chttp2/transport/http2_status.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
@@ -2026,6 +2027,7 @@ src/core/handshaker/http_connect/xds_http_proxy_mapper.h \
 src/core/handshaker/proxy_mapper.h \
 src/core/handshaker/proxy_mapper_registry.cc \
 src/core/handshaker/proxy_mapper_registry.h \
+src/core/handshaker/security/legacy_secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \
 src/core/handshaker/security/security_handshaker.cc \
@@ -2081,6 +2083,7 @@ src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/event_engine_context.h \
+src/core/lib/event_engine/extensions/blocking_dns.h \
 src/core/lib/event_engine/extensions/can_track_errors.h \
 src/core/lib/event_engine/extensions/chaotic_good_extension.h \
 src/core/lib/event_engine/extensions/iomgr_compatible.h \
@@ -2439,7 +2442,6 @@ src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.cc \
 src/core/lib/transport/error_utils.h \
-src/core/lib/transport/http2_errors.h \
 src/core/lib/transport/status_conversion.cc \
 src/core/lib/transport/status_conversion.h \
 src/core/lib/transport/timeout_encoding.cc \
@@ -2565,6 +2567,8 @@ src/core/service_config/service_config_parser.cc \
 src/core/service_config/service_config_parser.h \
 src/core/telemetry/call_tracer.cc \
 src/core/telemetry/call_tracer.h \
+src/core/telemetry/default_tcp_tracer.cc \
+src/core/telemetry/default_tcp_tracer.h \
 src/core/telemetry/histogram_view.cc \
 src/core/telemetry/histogram_view.h \
 src/core/telemetry/metrics.cc \

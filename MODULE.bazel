@@ -14,7 +14,7 @@
 
 module(
     name = "grpc",
-    version = "1.72.0-dev",
+    version = "1.73.0-dev",
     compatibility_level = 1,
     repo_name = "com_github_grpc_grpc",
 )
@@ -29,7 +29,7 @@ bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20250128-4de3c74")
 bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
-bazel_dep(name = "googletest", version = "1.15.2", repo_name = "com_google_googletest")
+bazel_dep(name = "googletest", version = "1.16.0", repo_name = "com_google_googletest")
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 bazel_dep(name = "platforms", version = "0.0.10")

@@ -197,7 +197,7 @@ struct grpc_channel_stack {
   }
 
   grpc_core::ManualConstructor<
-      grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+      std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>>
       stats_plugin_group;
 
   // Minimal infrastructure to act like a RefCounted thing without converting

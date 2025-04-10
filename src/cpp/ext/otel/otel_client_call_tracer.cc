@@ -265,8 +265,7 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordCancel(
     absl::Status /*cancel_error*/) {}
 
-void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordEnd(
-    const gpr_timespec& /*latency*/) {
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordEnd() {
   if (span_ != nullptr) {
     span_->End();
   }
@@ -289,7 +288,7 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
   // Not implemented
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface> OpenTelemetryPluginImpl::
+std::shared_ptr<grpc_core::TcpCallTracer> OpenTelemetryPluginImpl::
     ClientCallTracer::CallAttemptTracer::StartNewTcpTrace() {
   // No TCP trace.
   return nullptr;

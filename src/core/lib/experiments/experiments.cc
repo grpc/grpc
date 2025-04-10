@@ -76,6 +76,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_secure_endpoint =
+    "Use EventEngine secure endpoint wrapper instead of iomgr when available";
+const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -146,6 +149,9 @@ const char* const additional_constraints_server_global_callbacks_ownership =
 const char* const description_server_listener =
     "If set, the new server listener classes are used.";
 const char* const additional_constraints_server_listener = "{}";
+const char* const description_sleep_promise_exec_ctx_removal =
+    "If set, polling the sleep promise does not rely on the ExecCtx.";
+const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -177,9 +183,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
-     additional_constraints_event_engine_client, nullptr, 0, false, false},
+     additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
-     additional_constraints_event_engine_dns, nullptr, 0, false, false},
+     additional_constraints_event_engine_dns, nullptr, 0, true, false},
     {"event_engine_dns_non_client_channel",
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
@@ -187,7 +193,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, false, false},
     {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, false, false},
+     additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
      additional_constraints_event_engine_callback_cq,
      required_experiments_event_engine_callback_cq, 2, true, true},
@@ -195,6 +201,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
+     additional_constraints_event_engine_secure_endpoint, nullptr, 0, false,
+     true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -241,6 +250,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"server_listener", description_server_listener,
      additional_constraints_server_listener, nullptr, 0, true, true},
+    {"sleep_promise_exec_ctx_removal",
+     description_sleep_promise_exec_ctx_removal,
+     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -308,6 +321,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_secure_endpoint =
+    "Use EventEngine secure endpoint wrapper instead of iomgr when available";
+const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -378,6 +394,9 @@ const char* const additional_constraints_server_global_callbacks_ownership =
 const char* const description_server_listener =
     "If set, the new server listener classes are used.";
 const char* const additional_constraints_server_listener = "{}";
+const char* const description_sleep_promise_exec_ctx_removal =
+    "If set, polling the sleep promise does not rely on the ExecCtx.";
+const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -427,6 +446,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
+     additional_constraints_event_engine_secure_endpoint, nullptr, 0, false,
+     true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -473,6 +495,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"server_listener", description_server_listener,
      additional_constraints_server_listener, nullptr, 0, true, true},
+    {"sleep_promise_exec_ctx_removal",
+     description_sleep_promise_exec_ctx_removal,
+     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -540,6 +566,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_secure_endpoint =
+    "Use EventEngine secure endpoint wrapper instead of iomgr when available";
+const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -610,6 +639,9 @@ const char* const additional_constraints_server_global_callbacks_ownership =
 const char* const description_server_listener =
     "If set, the new server listener classes are used.";
 const char* const additional_constraints_server_listener = "{}";
+const char* const description_sleep_promise_exec_ctx_removal =
+    "If set, polling the sleep promise does not rely on the ExecCtx.";
+const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -659,6 +691,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
+     additional_constraints_event_engine_secure_endpoint, nullptr, 0, false,
+     true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -705,6 +740,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"server_listener", description_server_listener,
      additional_constraints_server_listener, nullptr, 0, true, true},
+    {"sleep_promise_exec_ctx_removal",
+     description_sleep_promise_exec_ctx_removal,
+     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
