@@ -160,6 +160,7 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,
+    tags = ["secure_endpoint_test"],
     deps = [
         "//:gpr",
         "//:grpc",
