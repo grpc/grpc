@@ -33,7 +33,7 @@ constexpr absl::string_view kSpiffePrefix = "spiffe://";
 constexpr int kMaxTrustDomainLength = 255;
 
 // Checks broad conditions on the whole input before splitting into the
-// pieces of a SPIFFE id
+// pieces of a SPIFFE ID
 absl::Status DoInitialUriValidation(absl::string_view uri) {
   if (uri.empty()) {
     return absl::InvalidArgumentError(
