@@ -7586,6 +7586,42 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "header_assembler",
+    hdrs = [
+        "ext/transport/chttp2/transport/header_assembler.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+        "message",
+        ":slice",
+        ":slice_buffer",
+        "//:chttp2_frame",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "message_assembler",
+    hdrs = [
+        "ext/transport/chttp2/transport/message_assembler.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+        "message",
+        ":slice",
+        ":slice_buffer",
+        "//:chttp2_frame",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "http2_client_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_client_transport.cc",
@@ -7739,24 +7775,6 @@ grpc_cc_library(
         "//:hpack_encoder",
         "//:hpack_parser",
         "//:promise",
-        "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
-    name = "header_assembler",
-    hdrs = [
-        "ext/transport/chttp2/transport/header_assembler.h",
-    ],
-    external_deps = [
-        "absl/log",
-        "absl/log:check",
-    ],
-    deps = [
-        "message",
-        ":slice",
-        ":slice_buffer",
-        "//:chttp2_frame",
         "//:ref_counted_ptr",
     ],
 )

@@ -548,26 +548,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "header_assembler_test",
-    srcs = [
-        "header_assembler_test.cc",
-    ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-        "gtest",
-    ],
-    deps = [
-        "//:chttp2_frame",
-        "//:ref_counted_ptr",
-        "//src/core:header_assembler",
-        "//src/core:message",
-        "//src/core:slice",
-        "//src/core:slice_buffer",
-    ],
-)
-
-grpc_cc_test(
     name = "http2_server_transport_test",
     srcs = ["http2_server_transport_test.cc"],
     external_deps = [

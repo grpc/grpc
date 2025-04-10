@@ -236,6 +236,12 @@
   expiry: 2025/03/31
   owner: yashkt@google.com
   test_tags: ["xds_end2end_test", "core_end2end_test"]
+- name: sleep_promise_exec_ctx_removal
+  description:
+    If set, polling the sleep promise does not rely on the ExecCtx.
+  expiry: 2025/06/01
+  owner: akshitpatel@google.com
+  test_tags: ["promise_test"]
 - name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.
