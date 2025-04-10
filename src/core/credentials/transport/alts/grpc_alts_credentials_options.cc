@@ -46,7 +46,9 @@ void grpc_alts_credentials_options_add_transport_protocol_preference(
                   "preference()";
     return;
   }
-  options->transport_protocol_preferences.push_back(transport_protocol);
+  std::unique_ptr<char[]> line(new char[strlen(transport_protocol) + 1]);
+  strcpy(line.get(), transport_protocol);
+  options->transport_protocol_preferences.emplace_back(std::move(line));
 }
 
 bool grpc_gcp_transport_protocol_preference_copy(
@@ -58,15 +60,17 @@ bool grpc_gcp_transport_protocol_preference_copy(
                   "grpc_gcp_transport_protocol_preference_copy().";
     return false;
   }
-
-  std::copy(src->transport_protocol_preferences.begin(),
-            src->transport_protocol_preferences.end(),
-            std::back_inserter(dst->transport_protocol_preferences));
+  for (auto &tp : src->transport_protocol_preferences) {
+    grpc_alts_credentials_options_add_transport_protocol_preference(dst, tp.get());
+  }
   return true;
 }
 
 void grpc_alts_credentials_options_destroy(
     grpc_alts_credentials_options* options) {
+  for (auto &tp : options->transport_protocol_preferences) {
+    gpr_free(tp.get());
+  }
   if (options != nullptr) {
     if (options->vtable != nullptr && options->vtable->destruct != nullptr) {
       options->vtable->destruct(options);

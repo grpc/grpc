@@ -35,7 +35,7 @@ typedef struct grpc_alts_credentials_options_vtable {
 struct grpc_alts_credentials_options {
   const struct grpc_alts_credentials_options_vtable* vtable;
   grpc_gcp_rpc_protocol_versions rpc_versions;
-  std::vector<const char*> transport_protocol_preferences;
+  std::vector<std::unique_ptr<char[]>> transport_protocol_preferences;
 };
 
 typedef struct target_service_account {
