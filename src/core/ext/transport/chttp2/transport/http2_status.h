@@ -93,18 +93,18 @@ class Http2Status {
     return absl::Status(absl_code_, message_);
   }
 
+  std::string DebugString() {
+    return absl::StrCat(DebugGetType(), " : ", message,
+                        ". Http2 Code : ", http2_code_);
+  }
+
  private:
   explicit Http2Status(const absl::StatusCode code, const Http2ErrorType type)
       : error_type_(type), absl_code_(code) {
     http2_code_ = (code == absl::StatusCode::kOk)
                       ? Http2ErrorCode::kNoError
                       : Http2ErrorCode::kInternalError;
-    DCHECK((http2_code_ == Http2ErrorCode::kNoError &&
-            error_type_ == Http2ErrorType::kOk &&
-            absl_code_ == absl::StatusCode::kOk) ||
-           (http2_code_ > Http2ErrorCode::kNoError &&
-            error_type_ > Http2ErrorType::kOk &&
-            absl_code_ != absl::StatusCode::kOk));
+    Validate();
   }
 
   explicit Http2Status(const absl::StatusCode code, const Http2ErrorType type,
@@ -113,30 +113,33 @@ class Http2Status {
     http2_code_ = (code == absl::StatusCode::kOk)
                       ? Http2ErrorCode::kNoError
                       : Http2ErrorCode::kInternalError;
-    DCHECK((http2_code_ == Http2ErrorCode::kNoError &&
-            error_type_ == Http2ErrorType::kOk &&
-            absl_code_ == absl::StatusCode::kOk) ||
-           (http2_code_ > Http2ErrorCode::kNoError &&
-            error_type_ > Http2ErrorType::kOk &&
-            absl_code_ != absl::StatusCode::kOk));
+    Validate();
   }
 
   explicit Http2Status(const Http2ErrorCode code, const Http2ErrorType type,
                        std::string& message)
       : http2_code_(code), error_type_(type), message_(std::move(message)) {
     absl_code_ = ErrorCodeToStatusCode();
+    Validate();
+  }
+
+  void Validate() {
     DCHECK((http2_code_ == Http2ErrorCode::kNoError &&
             error_type_ == Http2ErrorType::kOk &&
             absl_code_ == absl::StatusCode::kOk) ||
            (http2_code_ > Http2ErrorCode::kNoError &&
             error_type_ > Http2ErrorType::kOk &&
             absl_code_ != absl::StatusCode::kOk));
+    DCHECK(absl_code_ == absl::StatusCode::kOk ? message.size() == 0
+                                               : message.size() > 0);
   }
 
   absl::StatusCode ErrorCodeToStatusCode() const {
     switch (http2_code_) {
       case Http2ErrorCode::kNoError:
         return absl::StatusCode::kOk;
+
+      // Majority return kInternal
       case Http2ErrorCode::kProtocolError:
         return absl::StatusCode::kInternal;
       case Http2ErrorCode::kInternalError:
@@ -146,21 +149,23 @@ class Http2Status {
       case Http2ErrorCode::kSettingsTimeout:
         return absl::StatusCode::kInternal;
       case Http2ErrorCode::kStreamClosed:
-        return absl::StatusCode::kAborted;
+        return absl::StatusCode::kInternal;
       case Http2ErrorCode::kFrameSizeError:
-        return absl::StatusCode::kInvalidArgument;
+        return absl::StatusCode::kInternal;
       case Http2ErrorCode::kRefusedStream:
-        return absl::StatusCode::kResourceExhausted;
-      case Http2ErrorCode::kCancel:
-        return absl::StatusCode::kCancelled;
+        return absl::StatusCode::kInternal;
       case Http2ErrorCode::kCompressionError:
         return absl::StatusCode::kInternal;
       case Http2ErrorCode::kConnectError:
-        return absl::StatusCode::kUnavailable;
+        return absl::StatusCode::kInternal;
+
+      case Http2ErrorCode::kCancel:
+        return absl::StatusCode::kCancelled;
       case Http2ErrorCode::kEnhanceYourCalm:
         return absl::StatusCode::kAborted;
       case Http2ErrorCode::kInadequateSecurity:
         return absl::StatusCode::kPermissionDenied;
+
       case Http2ErrorCode::kDoNotUse:
         DCHECK(false) << "This error code should never be used";
         return absl::StatusCode::kUnknown;
@@ -171,6 +176,17 @@ class Http2Status {
   }
 
   bool is_ok() const { return http2_code_ == Http2ErrorCode::kNoError; }
+
+  std::string DebugGetType() {
+    switch (error_type_) {
+      case Http2ErrorType::kOk:
+        return "Ok";
+      case Http2ErrorType::kStreamError:
+        return "Stream Error";
+      case Http2ErrorType::kConnectionError:
+        return "Connection Error";
+    }
+  }
 
   Http2ErrorCode http2_code_;
   Http2ErrorType error_type_;
