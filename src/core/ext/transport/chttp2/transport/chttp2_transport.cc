@@ -584,12 +584,13 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
       Json::FromObject(transport_->flow_control.stats().ToJsonObject());
   Json::Object misc;
   misc["maxRequestsPerRead"] =
-      Json::FromNumber(transport_->max_requests_per_read);
+      Json::FromNumber(static_cast<int64_t>(transport_->max_requests_per_read));
   misc["nextStreamId"] = Json::FromNumber(transport_->next_stream_id);
   misc["lastNewStreamId"] = Json::FromNumber(transport_->last_new_stream_id);
   misc["numIncomingStreamsBeforeSettingsAck"] =
       Json::FromNumber(transport_->num_incoming_streams_before_settings_ack);
-  misc["pingAckCount"] = Json::FromNumber(transport_->ping_ack_count);
+  misc["pingAckCount"] =
+      Json::FromNumber(static_cast<int64_t>(transport_->ping_ack_count));
   misc["allowTarpit"] = Json::FromBool(transport_->allow_tarpit);
   if (transport_->allow_tarpit) {
     misc["minTarpitDurationMs"] =

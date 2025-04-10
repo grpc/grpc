@@ -9533,6 +9533,7 @@ add_executable(call_utils_test
   src/core/util/glob.cc
   src/core/util/grpc_if_nametoindex_posix.cc
   src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
   src/core/util/load_file.cc
@@ -15602,6 +15603,7 @@ add_executable(filter_fusion_test
   src/core/util/glob.cc
   src/core/util/grpc_if_nametoindex_posix.cc
   src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
   src/core/util/load_file.cc
