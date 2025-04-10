@@ -78,8 +78,8 @@ Http2Frame ParseFrame(I... i) {
       << "frame_hdr=" << frame_hdr.ToString();
   auto value = ParseFramePayload(frame_hdr, std::move(buffer));
   EXPECT_TRUE(std::holds_alternative<Http2Frame>(value));
-  if (std::holds_alternative<Http2Error>(value)) {
-    LOG(ERROR) << std::get<Http2Error>(value).absl_status();
+  if (std::holds_alternative<Http2Status>(value)) {
+    LOG(ERROR) << std::get<Http2Status>(value).absl_status();
   }
   return std::get<Http2Frame>(std::move(value));
 }
@@ -94,8 +94,8 @@ absl::Status ValidateFrame(I... i) {
   EXPECT_EQ(frame_hdr.length, buffer.Length())
       << "frame_hdr=" << frame_hdr.ToString();
   Http2StatusOr value = ParseFramePayload(frame_hdr, std::move(buffer));
-  EXPECT_TRUE(std::holds_alternative<Http2Error>(value));
-  return std::get<Http2Error>(value).absl_status();
+  EXPECT_TRUE(std::holds_alternative<Http2Status>(value));
+  return std::get<Http2Status>(value).absl_status();
 }
 
 #define FRAME_LENGTH(num) 0, 0, (num)
