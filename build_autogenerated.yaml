@@ -13506,6 +13506,74 @@ targets:
   - test/core/test_util/osa_distance_test.cc
   deps:
   - gtest
+- name: otel_npc_metrics_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
+  - test/core/test_util/fake_stats_plugin.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/ext/otel/otel_test_library.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/core/test_util/fake_stats_plugin.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/ext/otel/otel_npc_metrics_test.cc
+  - test/cpp/ext/otel/otel_test_library.cc
+  deps:
+  - gtest
+  - opentelemetry-cpp::api
+  - opentelemetry-cpp::metrics
+  - grpc++_test_util
+- name: otel_plugin_option_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
+  - test/core/test_util/fake_stats_plugin.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/ext/otel/otel_test_library.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/core/test_util/fake_stats_plugin.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/ext/otel/otel_plugin_option_test.cc
+  - test/cpp/ext/otel/otel_test_library.cc
+  deps:
+  - gtest
+  - opentelemetry-cpp::api
+  - opentelemetry-cpp::metrics
+  - grpc++_test_util
 - name: otel_plugin_test
   gtest: true
   build: plugin_test
