@@ -46,6 +46,15 @@ void AppendResults(const Collection<T>& data, Json::Array& results) {
 
 }  // namespace ztrace_collector_detail
 
+inline std::optional<int64_t> IntFromArgs(
+    const std::map<std::string, std::string>& args, absl::string_view name) {
+  auto it = args.find(name);
+  if (it == args.end()) return std::nullopt;
+  int64_t out;
+  if (!absl::SimpleAtoi(it->second, &out)) return std::nullopt;
+  return out;
+}
+
 // Generic collector infrastructure for ztrace queries.
 // Abstracts away most of the ztrace requirements in an efficient manner,
 // allowing system authors to concentrate on emitting useful data.
@@ -93,8 +102,42 @@ class ZTraceCollector {
                  event_engine,
              absl::AnyInvocable<void(Json)> done)
         : config(std::move(args)),
+          memory_cap_(IntFromArgs(args, "memory_cap").value_or(1024 * 1024)),
           event_engine(std::move(event_engine)),
           done(std::move(done)) {}
+    using Collections = std::tuple<Collection<Data>...>;
+    struct RemoveMostRecentState {
+      void (*enact)(Collections* collections) = nullptr;
+      gpr_cycle_counter most_recent;
+    };
+    template <typename T>
+    void Append(T value) {
+      memory_used_ += value.MemoryUsage();
+      while (memory_used_ > memory_cap_) RemoveMostRecent();
+      std::get<Collection<T>>(data).push_back(std::move(value));
+    }
+    void RemoveMostRecent() {
+      RemoveMostRecentState state;
+      (UpdateRemoveMostRecent<Data...>(&state), ...);
+      CHECK(state.enact != nullptr);
+      state.enact(&data);
+    }
+    template <typename T>
+    void UpdateRemoveMostRecent(RemoveMostRecentState* state) {
+      auto& collection = std::get<Collection<T>>(instance->data);
+      if (collection.empty()) return;
+      if (state->enact == nullptr ||
+          collection.front().first > state->most_recent) {
+        state->enact = +[](Collections* collections) {
+          auto& collection = std::get<Collection<T>>(*collections);
+          const size_t ent_usage = collection.front().second.MemoryUsage();
+          CHECK_GE(memory_used_, ent_usage);
+          memory_used_ -= ent_usage;
+          collection.pop_front();
+        };
+        state->most_recent = collection.front().first;
+      }
+    }
     void Finish(absl::Status status) {
       event_engine->Run([data = std::move(data), done = std::move(done),
                          status = std::move(status)]() mutable {
@@ -109,10 +152,12 @@ class ZTraceCollector {
       });
     }
     Config config;
+    size_t memory_used_ = 0;
+    size_t memory_cap_ = 0;
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
     grpc_event_engine::experimental::EventEngine::TaskHandle task_handle{
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid};
-    std::tuple<Collection<Data>...> data;
+    Collections data;
     absl::AnyInvocable<void(Json)> done;
   };
   struct Impl : public RefCounted<Impl> {
@@ -160,7 +205,7 @@ class ZTraceCollector {
           auto& instances = impl->instances;
           auto& instance = *instances.begin();
           const bool finishes = instance->config.Finishes(value.second);
-          std::get<Collection<T>>(instance->data).push_back(std::move(value));
+          instance->Append(std::move(value));
           if (finishes) {
             instance->Finish(absl::OkStatus());
             instances.clear();
@@ -170,7 +215,7 @@ class ZTraceCollector {
           std::vector<RefCountedPtr<Instance>> finished;
           for (auto& instance : impl->instances) {
             const bool finishes = instance->config.Finishes(value.second);
-            std::get<Collection<T>>(instance->data).push_back(value);
+            instance->Append(value);
             if (finishes) {
               finished.push_back(instance);
             }
