@@ -46,7 +46,6 @@ EXPORTS
     grpc_composite_channel_credentials_create
     grpc_alts_credentials_client_options_create
     grpc_alts_credentials_server_options_create
-    grpc_alts_credentials_options_add_transport_protocol_preference
     grpc_alts_credentials_client_options_add_target_service_account
     grpc_alts_credentials_options_destroy
     grpc_alts_credentials_create
