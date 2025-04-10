@@ -20,6 +20,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
 namespace grpc_core {
