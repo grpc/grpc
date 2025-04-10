@@ -119,11 +119,12 @@ DataSink::~DataSink() {
   }
 }
 
-void DataSink::AddAdditionalInfo(absl::string_view key, Json::Object value) {
+void DataSink::AddAdditionalInfo(absl::string_view name,
+                                 Json::Object additional_info) {
   if (additional_info_ == nullptr) {
     additional_info_ = std::make_unique<Json::Object>();
   }
-  additional_info_->emplace(key, Json::FromObject(std::move(value)));
+  additional_info_->emplace(name, Json::FromObject(std::move(additional_info)));
 }
 
 //
