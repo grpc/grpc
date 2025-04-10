@@ -101,8 +101,8 @@ class ZTraceCollector {
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                  event_engine,
              absl::AnyInvocable<void(Json)> done)
-        : config(std::move(args)),
-          memory_cap_(IntFromArgs(args, "memory_cap").value_or(1024 * 1024)),
+        : memory_cap_(IntFromArgs(args, "memory_cap").value_or(1024 * 1024)),
+          config(args),
           event_engine(std::move(event_engine)),
           done(std::move(done)) {}
     using Collections = std::tuple<Collection<Data>...>;
@@ -140,7 +140,8 @@ class ZTraceCollector {
     }
     void Finish(absl::Status status) {
       event_engine->Run([data = std::move(data), done = std::move(done),
-                         status = std::move(status)]() mutable {
+                         status = std::move(status),
+                         memory_used = memory_used_]() mutable {
         Json::Array entries;
         (ztrace_collector_detail::AppendResults(
              std::get<Collection<Data>>(data), entries),
@@ -148,12 +149,14 @@ class ZTraceCollector {
         Json::Object result;
         result["entries"] = Json::FromArray(entries);
         result["status"] = Json::FromString(status.ToString());
+        result["memory_used"] =
+            Json::FromNumber(static_cast<uint64_t>(memory_used));
         done(Json::FromObject(std::move(result)));
       });
     }
-    Config config;
     size_t memory_used_ = 0;
     size_t memory_cap_ = 0;
+    Config config;
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
     grpc_event_engine::experimental::EventEngine::TaskHandle task_handle{
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid};
