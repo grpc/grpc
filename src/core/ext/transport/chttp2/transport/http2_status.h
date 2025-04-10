@@ -30,6 +30,7 @@
 namespace grpc_core {
 namespace http2 {
 
+// These error codes are as per RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-error-codes
 // The RFC tells us to use 32 bit, but since this is our internal
 // representation, we can use a smaller value.
@@ -52,19 +53,16 @@ enum class Http2ErrorCode : uint8_t {
 
 class Http2Status {
  public:
+  // Classifying if an error is a stream error or a connection Http2Status must
+  // be done at the time of error object creation. Once the Http2Status object
+  // is created, it is immutable. This is intentional.
   enum class Http2ErrorType : uint8_t {
     kOk = 0x0,
     kStreamError = 0x1,
     kConnectionError = 0x2,
   };
 
-  // Classifying if an error is a stream error or a connection Http2Status must
-  // be done at the time of error object creation. Once the Http2Status object
-  // is created, it is immutable. This is intentional.
-
-  static Http2Status Ok() {
-    return Http2Status(absl::StatusCode::kOk, Http2ErrorType::kNoError);
-  }
+  static Http2Status Ok() { return Http2Status(absl::StatusCode::kOk); }
 
   static Http2Status Http2ConnectionError(const Http2ErrorCode error_code,
                                           std::string message) {
@@ -86,7 +84,11 @@ class Http2Status {
 
   GRPC_MUST_USE_RESULT Http2ErrorType GetType() const { return error_type_; }
 
-  GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorType() {
+  // We only expect to use this in 2 places
+  // 1. To know what error code to send in a HTTP2 RST_STREAM.
+  // 2. In tests
+  // Any other usage is strongly discouraged.
+  GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorType() const {
     switch (http2_code_) {
       case Http2ErrorType::kOk:
         CHECK(false);
@@ -97,7 +99,11 @@ class Http2Status {
     }
   }
 
-  GRPC_MUST_USE_RESULT Http2ErrorCode GetConnectionErrorType() {
+  // We only expect to use this in 2 places
+  // 1. To know what error code to send in a HTTP2 GOAWAY frame.
+  // 2. In tests
+  // Any other usage is strongly discouraged.
+  GRPC_MUST_USE_RESULT Http2ErrorCode GetConnectionErrorType() const {
     switch (http2_code_) {
       case Http2ErrorType::kOk:
         CHECK(false);
@@ -108,6 +114,8 @@ class Http2Status {
     }
   }
 
+  // If an error code needs to be used along with promises, or passed out of the
+  // transport, this function should be used.
   GRPC_MUST_USE_RESULT absl::Status absl_status() const {
     if (is_ok()) {
       return absl::OkStatus();
@@ -121,20 +129,21 @@ class Http2Status {
   }
 
  private:
-  explicit Http2Status(const absl::StatusCode code, const Http2ErrorType type)
-      : error_type_(type), absl_code_(code) {
-    http2_code_ = (code == absl::StatusCode::kOk)
-                      ? Http2ErrorCode::kNoError
-                      : Http2ErrorCode::kInternalError;
+  explicit Http2Status()
+      : http2_code_(Http2ErrorCode::kNoError),
+        error_type_(Http2ErrorType::kOk),
+        absl_code_(absl::StatusCode::kOk) {
     Validate();
   }
 
   explicit Http2Status(const absl::StatusCode code, const Http2ErrorType type,
                        std::string& message)
-      : error_type_(type), absl_code_(code), message_(std::move(message)) {
-    http2_code_ = (code == absl::StatusCode::kOk)
-                      ? Http2ErrorCode::kNoError
-                      : Http2ErrorCode::kInternalError;
+      : http2_code_((code == absl::StatusCode::kOk)
+                        ? Http2ErrorCode::kNoError
+                        : Http2ErrorCode::kInternalError),
+        error_type_(type),
+        absl_code_(code),
+        message_(std::move(message)) {
     Validate();
   }
 
@@ -209,12 +218,158 @@ class Http2Status {
     }
   }
 
-  Http2ErrorCode http2_code_;
-  Http2ErrorType error_type_;
+  const Http2ErrorCode http2_code_;
+  const Http2ErrorType error_type_;
   absl::StatusCode absl_code_;
 
   std::string message_;
 };
+
+// // A value if an operation was successful, or a failure flag if not.
+// template <typename T>
+// class ValueOrFailure {
+//  public:
+//   // NOLINTNEXTLINE(google-explicit-constructor)
+//   ValueOrFailure(T value) : value_(std::move(value)) {}
+//   // NOLINTNEXTLINE(google-explicit-constructor)
+//   ValueOrFailure(Failure) {}
+//   // NOLINTNEXTLINE(google-explicit-constructor)
+//   ValueOrFailure(StatusFlag status) { CHECK(!status.ok()); }
+
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure FromOptional(
+//       std::optional<T> value) {
+//     return ValueOrFailure{std::move(value)};
+//   }
+
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ok() const {
+//     return value_.has_value();
+//   }
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION StatusFlag status() const {
+//     return StatusFlag(ok());
+//   }
+
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
+//     return value_.value();
+//   }
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() { return value_.value(); }
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& operator*() const {
+//     return *value_;
+//   }
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& operator*() { return *value_; }
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T* operator->() const {
+//     return &*value_;
+//   }
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* operator->() { return &*value_; }
+
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(
+//       const ValueOrFailure& other) const {
+//     return value_ == other.value_;
+//   }
+
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator!=(
+//       const ValueOrFailure& other) const {
+//     return value_ != other.value_;
+//   }
+
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(const T& other) const
+//   {
+//     return value_ == other;
+//   }
+
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator!=(const T& other) const
+//   {
+//     return value_ != other;
+//   }
+
+//  private:
+//   std::optional<T> value_;
+// };
+
+// template <typename T>
+// inline std::ostream& operator<<(std::ostream& os,
+//                                 const ValueOrFailure<T>& value) {
+//   if (value.ok()) {
+//     return os << "Success(" << *value << ")";
+//   } else {
+//     return os << "Failure";
+//   }
+// }
+
+// template <typename Sink, typename T>
+// void AbslStringify(Sink& sink, const ValueOrFailure<T>& value) {
+//   if (value.ok()) {
+//     sink.Append("Success(");
+//     sink.Append(absl::StrCat(*value));
+//     sink.Append(")");
+//   } else {
+//     sink.Append("Failure");
+//   }
+// }
+
+// template <typename Sink, typename... Ts>
+// void AbslStringify(Sink& sink, const ValueOrFailure<std::tuple<Ts...>>&
+// value) {
+//   if (value.ok()) {
+//     sink.Append("Success(");
+//     sink.Append(absl::StrCat("(", absl::StrJoin(*value, ", "), ")"));
+//     sink.Append(")");
+//   } else {
+//     sink.Append("Failure");
+//   }
+// }
+
+// template <typename T>
+// GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool IsStatusOk(
+//     const ValueOrFailure<T>& value) {
+//   return value.ok();
+// }
+
+// template <typename T>
+// GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
+//     ValueOrFailure<T>&& value) {
+//   return std::move(value.value());
+// }
+
+// template <typename T>
+// GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
+//     absl::StatusOr<T>&& value) {
+//   return std::move(*value);
+// }
+
+// template <typename T>
+// struct StatusCastImpl<absl::StatusOr<T>, ValueOrFailure<T>> {
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
+//       ValueOrFailure<T> value) {
+//     return value.ok() ? absl::StatusOr<T>(std::move(value.value()))
+//                       : absl::CancelledError();
+//   }
+// };
+
+// template <typename T>
+// struct StatusCastImpl<ValueOrFailure<T>, Failure> {
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(Failure)
+//   {
+//     return ValueOrFailure<T>(Failure{});
+//   }
+// };
+
+// template <typename T>
+// struct StatusCastImpl<ValueOrFailure<T>, StatusFlag&> {
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(
+//       StatusFlag f) {
+//     CHECK(!f.ok());
+//     return ValueOrFailure<T>(Failure{});
+//   }
+// };
+
+// template <typename T>
+// struct StatusCastImpl<ValueOrFailure<T>, StatusFlag> {
+//   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(
+//       StatusFlag f) {
+//     CHECK(!f.ok());
+//     return ValueOrFailure<T>(Failure{});
+//   }
+// };
 
 }  // namespace http2
 }  // namespace grpc_core
