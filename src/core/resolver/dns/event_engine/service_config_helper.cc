@@ -81,7 +81,8 @@ absl::StatusOr<std::string> ChooseServiceConfig(
     }
     // Check percentage, if specified.
     if (choice.percentage != -1) {
-      int random_pct = rand() % 100;
+      static thread_local absl::BitGen bitgen;
+      int random_pct = absl::uniform(bitgen, 0, 100);
       if (random_pct > choice.percentage || choice.percentage == 0) {
         continue;
       }
