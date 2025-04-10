@@ -370,7 +370,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/context_list_entry.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/decode_huff.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/decode_huff.h )
-  s.files += %w( src/core/ext/transport/chttp2/transport/errors.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/flow_control.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/flow_control.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame.cc )
