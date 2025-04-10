@@ -25,6 +25,7 @@
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -74,12 +75,14 @@ class Http2Status {
     return Http2Status(error_code, Http2ErrorType::kStreamError, message);
   }
 
-  static Http2Status AbslConnectionError(const absl::StatusCode code) {
-    return Http2Status(code, Http2ErrorType::kConnectionError);
+  static Http2Status AbslConnectionError(const absl::StatusCode code,
+                                         std::string message) {
+    return Http2Status(code, Http2ErrorType::kConnectionError, message);
   }
 
-  static Http2Status AbslStreamError(const absl::StatusCode code) {
-    return Http2Status(code, Http2ErrorType::kStreamError);
+  static Http2Status AbslStreamError(const absl::StatusCode code,
+                                     std::string message) {
+    return Http2Status(code, Http2ErrorType::kStreamError, message);
   }
 
   GRPC_MUST_USE_RESULT Http2ErrorType GetType() const { return error_type_; }
@@ -89,7 +92,7 @@ class Http2Status {
   // 2. In tests
   // Any other usage is strongly discouraged.
   GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorType() const {
-    switch (http2_code_) {
+    switch (error_type_) {
       case Http2ErrorType::kOk:
         CHECK(false);
       case Http2ErrorType::kStreamError:
@@ -104,7 +107,7 @@ class Http2Status {
   // 2. In tests
   // Any other usage is strongly discouraged.
   GRPC_MUST_USE_RESULT Http2ErrorCode GetConnectionErrorType() const {
-    switch (http2_code_) {
+    switch (error_type_) {
       case Http2ErrorType::kOk:
         CHECK(false);
       case Http2ErrorType::kStreamError:
