@@ -156,8 +156,8 @@ struct Http2GoawayFrame {
 
 // WINDOW_UPDATE frame
 struct Http2WindowUpdateFrame {
-  uint32_t stream_id;
-  uint32_t increment;
+  uint32_t stream_id = 0;
+  uint32_t increment = 0;
 
   bool operator==(const Http2WindowUpdateFrame& other) const {
     return stream_id == other.stream_id && increment == other.increment;
@@ -242,8 +242,8 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 constexpr uint8_t kGrpcHeaderSizeInBytes = 5;
 
 struct GrpcMessageHeader {
-  uint8_t flags;
-  uint32_t length;
+  uint8_t flags = 0;
+  uint32_t length = 0;
 };
 
 // If the payload SliceBuffer is too small to hold a gRPC header, this function
