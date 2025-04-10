@@ -20,7 +20,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
 
 #include "absl/log/log.h"
 
