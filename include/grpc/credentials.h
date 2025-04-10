@@ -518,17 +518,6 @@ GRPCAPI grpc_alts_credentials_options*
 grpc_alts_credentials_server_options_create(void);
 
 /**
- * This method adds a preferred transport protol to grpc client's ALTS
- * credentials options instance. It is used for experimental purpose for now and
- * subject to change.
- *
- * - options: grpc ALTS credentials options instance.
- * - transport_protocol: the transport protocol supported by the client.
- */
-GRPCAPI void grpc_alts_credentials_options_add_transport_protocol_preference(
-    grpc_alts_credentials_options* options, const char* transport_protocol);
-
-/**
  * This method adds a target service account to grpc client's ALTS credentials
  * options instance. It is used for experimental purpose for now and subject
  * to change.
