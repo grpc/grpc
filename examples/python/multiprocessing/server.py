@@ -13,6 +13,11 @@
 # limitations under the License.
 """An example of multiprocess concurrency with gRPC."""
 
+# NOTE: This does not work as expected on macox/osx, only 1 process will be picked
+# up to accept an incoming connection when multiple server processes listening
+# the same port. On Linux, SO_REUSEPORT socket is balanced by kernel.
+# The same feature does not seem available on macox/osx (TODO: needs reference)
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
