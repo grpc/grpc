@@ -62,7 +62,7 @@ class Http2Status {
     kConnectionError = 0x2,
   };
 
-  static Http2Status Ok() { return Http2Status(absl::StatusCode::kOk); }
+  static Http2Status Ok() { return Http2Status(); }
 
   static Http2Status Http2ConnectionError(const Http2ErrorCode error_code,
                                           std::string message) {
@@ -124,7 +124,7 @@ class Http2Status {
   }
 
   std::string DebugString() {
-    return absl::StrCat(DebugGetType(), " : ", message,
+    return absl::StrCat(DebugGetType(), " : ", message_,
                         ". Http2 Code : ", http2_code_);
   }
 
@@ -161,7 +161,7 @@ class Http2Status {
            (http2_code_ > Http2ErrorCode::kNoError &&
             error_type_ > Http2ErrorType::kOk &&
             absl_code_ != absl::StatusCode::kOk));
-    DCHECK(is_ok() ? message.size() == 0 : message.size() > 0);
+    DCHECK(is_ok() ? message_.size() == 0 : message_.size() > 0);
   }
 
   absl::StatusCode ErrorCodeToStatusCode() const {
