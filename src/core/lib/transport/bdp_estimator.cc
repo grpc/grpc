@@ -62,8 +62,9 @@ Timestamp BdpEstimator::CompletePing() {
     stable_estimate_count_++;
     if (stable_estimate_count_ >= 2) {
       // if the ping estimate is steady, slowly ramp down the probe time
+      static thread_local absl::BitGen bitgen;
       inter_ping_delay_ += Duration::Milliseconds(
-          100 + static_cast<int>(rand() * 100.0 / RAND_MAX));
+          100 + absl::uniform((bitgen, 0, 100));
     }
   }
   if (start_inter_ping_delay != inter_ping_delay_) {

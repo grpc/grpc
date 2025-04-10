@@ -1289,7 +1289,9 @@ grpc_error_handle Server::SetupTransport(
     }
     if (cq_idx == cqs_.size()) {
       // Completion queue not found.  Pick a random one to publish new calls to.
-      cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
+      static thread_local absl::BitGen bitgen;
+      cq_idx =
+          absl::uniform(bitgen, size_t{0}, std::max<size_t>(1, cqs_.size()));
     }
     intptr_t channelz_socket_uuid = 0;
     if (socket_node != nullptr) {

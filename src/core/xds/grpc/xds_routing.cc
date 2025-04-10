@@ -150,7 +150,9 @@ bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
 
 bool UnderFraction(const uint32_t fraction_per_million) {
   // Generate a random number in [0, 1000000).
-  const uint32_t random_number = rand() % 1000000;
+  static thread_local absl::BitGen bitgen;
+  const uint32_t random_number =
+      absl::uniform(bitgen, uint32_t{0}, uint32_t{1000000});
   return random_number < fraction_per_million;
 }
 
