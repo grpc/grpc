@@ -47,7 +47,7 @@ void AppendResults(const Collection<T>& data, Json::Array& results) {
 }  // namespace ztrace_collector_detail
 
 inline std::optional<int64_t> IntFromArgs(
-    const std::map<std::string, std::string>& args, absl::string_view name) {
+    const std::map<std::string, std::string>& args, const std::string& name) {
   auto it = args.find(name);
   if (it == args.end()) return std::nullopt;
   int64_t out;
@@ -107,32 +107,32 @@ class ZTraceCollector {
           done(std::move(done)) {}
     using Collections = std::tuple<Collection<Data>...>;
     struct RemoveMostRecentState {
-      void (*enact)(Collections* collections) = nullptr;
+      void (*enact)(Instance*) = nullptr;
       gpr_cycle_counter most_recent;
     };
     template <typename T>
-    void Append(T value) {
-      memory_used_ += value.MemoryUsage();
+    void Append(std::pair<gpr_cycle_counter, T> value) {
+      memory_used_ += value.second.MemoryUsage();
       while (memory_used_ > memory_cap_) RemoveMostRecent();
       std::get<Collection<T>>(data).push_back(std::move(value));
     }
     void RemoveMostRecent() {
       RemoveMostRecentState state;
-      (UpdateRemoveMostRecent<Data...>(&state), ...);
+      (UpdateRemoveMostRecentState<Data>(&state), ...);
       CHECK(state.enact != nullptr);
-      state.enact(&data);
+      state.enact(this);
     }
     template <typename T>
-    void UpdateRemoveMostRecent(RemoveMostRecentState* state) {
-      auto& collection = std::get<Collection<T>>(instance->data);
+    void UpdateRemoveMostRecentState(RemoveMostRecentState* state) {
+      auto& collection = std::get<Collection<T>>(data);
       if (collection.empty()) return;
       if (state->enact == nullptr ||
           collection.front().first > state->most_recent) {
-        state->enact = +[](Collections* collections) {
-          auto& collection = std::get<Collection<T>>(*collections);
+        state->enact = +[](Instance* instance) {
+          auto& collection = std::get<Collection<T>>(instance->data);
           const size_t ent_usage = collection.front().second.MemoryUsage();
-          CHECK_GE(memory_used_, ent_usage);
-          memory_used_ -= ent_usage;
+          CHECK_GE(instance->memory_used_, ent_usage);
+          instance->memory_used_ -= ent_usage;
           collection.pop_front();
         };
         state->most_recent = collection.front().first;

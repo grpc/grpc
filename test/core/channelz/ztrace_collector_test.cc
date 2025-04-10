@@ -25,6 +25,7 @@ struct TestData {
   int n;
 
   void RenderJson(Json::Object& json) const { json["n"] = Json::FromNumber(n); }
+  size_t MemoryUsage() const { return sizeof(TestData); }
 };
 
 class TestConfig {
