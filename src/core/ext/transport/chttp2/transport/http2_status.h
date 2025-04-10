@@ -52,76 +52,85 @@ enum class Http2ErrorCode : uint8_t {
 
 class Http2Status {
  public:
-  static Http2Status Ok() { return Http2Status(absl::StatusCode::kOk); }
+  enum class Http2ErrorType : uint8_t {
+    kOk = 0x0,
+    kStreamError = 0x1,
+    kConnectionError = 0x2,
+  };
 
-  static Http2Status ConnectionError(const Http2ErrorCode error_code,
-                                     std::string message) {
+  // Classifying if an error is a stream error or a connection Http2Status must
+  // be done at the time of error object creation. Once the Http2Status object
+  // is created, it is immutable. This is intentional.
+
+  static Http2Status Ok() {
+    return Http2Status(absl::StatusCode::kOk, Http2ErrorType::kNoError);
+  }
+
+  static Http2Status Http2ConnectionError(const Http2ErrorCode error_code,
+                                          std::string message) {
     return Http2Status(error_code, Http2ErrorType::kConnectionError, message);
   }
 
-  static Http2Status FrameSizeConnectionError(std::string message) {
-    return Http2Status(Http2ErrorCode::kFrameSizeError,
-                       Http2ErrorType::kConnectionError, message);
-  }
-
-  static Http2Status ProtocolConnectionError(std::string message) {
-    return Http2Status(Http2ErrorCode::kProtocolError,
-                       Http2ErrorType::kConnectionError, message);
-  }
-
-  static Http2Status StreamError(const Http2ErrorCode error_code,
-                                 std::string message) {
+  static Http2Status Http2StreamError(const Http2ErrorCode error_code,
+                                      std::string message) {
     return Http2Status(error_code, Http2ErrorType::kStreamError, message);
   }
 
-  static Http2Status GrpcError(const Http2ErrorCode error_code,
-                               std::string message) {
-    return Http2Status(error_code, Http2ErrorType::kGrpcError, message);
+  static Http2Status AbslConnectionError(const absl::StatusCode code) {
+    return Http2Status(code, Http2ErrorType::kConnectionError);
   }
 
-  static Http2Status AbslError(const absl::StatusCode code) {
-    return Http2Status(code);
+  static Http2Status AbslStreamError(const absl::StatusCode code) {
+    return Http2Status(code, Http2ErrorType::kStreamError);
   }
+
+  Http2ErrorType GetType() const { return error_type_; }
 
   absl::Status absl_status() const {
     if (is_ok()) {
       return absl::OkStatus();
     }
-    if (absl_code_ != absl::StatusCode::kOk) {
-      return absl::Status(absl_code_, message_);
-    }
-    return absl::Status(ErrorCodeToStatusCode(), message_);
+    return absl::Status(absl_code_, message_);
   }
 
  private:
-  enum class Http2ErrorType : uint8_t {
-    kOk = 0x0,
-    kStreamError = 0x1,
-    kConnectionError = 0x2,
-    kGrpcError = 0x3,
-  };
+  explicit Http2Status(const absl::StatusCode code, const Http2ErrorType type)
+      : error_type_(type), absl_code_(code) {
+    http2_code_ = (code == absl::StatusCode::kOk)
+                      ? Http2ErrorCode::kNoError
+                      : Http2ErrorCode::kInternalError;
+    DCHECK((http2_code_ == Http2ErrorCode::kNoError &&
+            error_type_ == Http2ErrorType::kOk &&
+            absl_code_ == absl::StatusCode::kOk) ||
+           (http2_code_ > Http2ErrorCode::kNoError &&
+            error_type_ > Http2ErrorType::kOk &&
+            absl_code_ != absl::StatusCode::kOk));
+  }
 
-  explicit Http2Status(const absl::StatusCode code)
-      : http2_code_(Http2ErrorCode::kNoError),
-        error_type_(Http2ErrorType::kOk),
-        absl_code_(code) {}
-
-  explicit Http2Status(const absl::StatusCode code, std::string& message)
-      : http2_code_(Http2ErrorCode::kNoError),
-        error_type_(Http2ErrorType::kOk),
-        absl_code_(code),
-        message_(std::move(message)) {}
+  explicit Http2Status(const absl::StatusCode code, const Http2ErrorType type,
+                       std::string& message)
+      : error_type_(type), absl_code_(code), message_(std::move(message)) {
+    http2_code_ = (code == absl::StatusCode::kOk)
+                      ? Http2ErrorCode::kNoError
+                      : Http2ErrorCode::kInternalError;
+    DCHECK((http2_code_ == Http2ErrorCode::kNoError &&
+            error_type_ == Http2ErrorType::kOk &&
+            absl_code_ == absl::StatusCode::kOk) ||
+           (http2_code_ > Http2ErrorCode::kNoError &&
+            error_type_ > Http2ErrorType::kOk &&
+            absl_code_ != absl::StatusCode::kOk));
+  }
 
   explicit Http2Status(const Http2ErrorCode code, const Http2ErrorType type,
                        std::string& message)
-      : http2_code_(code),
-        error_type_(type),
-        absl_code_(absl::StatusCode::kOk),
-        message_(std::move(message)) {
+      : http2_code_(code), error_type_(type), message_(std::move(message)) {
+    absl_code_ = ErrorCodeToStatusCode();
     DCHECK((http2_code_ == Http2ErrorCode::kNoError &&
-            error_type_ == Http2ErrorType::kOk) ||
+            error_type_ == Http2ErrorType::kOk &&
+            absl_code_ == absl::StatusCode::kOk) ||
            (http2_code_ > Http2ErrorCode::kNoError &&
-            error_type_ > Http2ErrorType::kOk));
+            error_type_ > Http2ErrorType::kOk &&
+            absl_code_ != absl::StatusCode::kOk));
   }
 
   absl::StatusCode ErrorCodeToStatusCode() const {
@@ -161,10 +170,7 @@ class Http2Status {
     }
   }
 
-  bool is_ok() const {
-    return http2_code_ == Http2ErrorCode::kNoError &&
-           absl_code_ == absl::StatusCode::kOk;
-  }
+  bool is_ok() const { return http2_code_ == Http2ErrorCode::kNoError; }
 
   Http2ErrorCode http2_code_;
   Http2ErrorType error_type_;
