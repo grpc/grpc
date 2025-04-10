@@ -235,10 +235,10 @@ template <typename T>
 class ValueOrHttp2Status {
  public:
   // NOLINTNEXTLINE(google-explicit-constructor)
-  ValueOrHttp2Status(T value) : value_(std::move(value)) {}
+  explicit ValueOrHttp2Status(T value) : value_(std::move(value)) {}
   // NOLINTNEXTLINE(google-explicit-constructor)
   // See if string is deep copy or shallow copy
-  ValueOrHttp2Status(Http2Status status) : status_(status) {
+  explicit ValueOrHttp2Status(Http2Status status) : status_(status) {
     CHECK(status.GetType() != Http2Status::Http2ErrorType::kOk);
   }
 
