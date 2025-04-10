@@ -166,7 +166,7 @@ class Http2Status {
            (http2_code_ > Http2ErrorCode::kNoError &&
             error_type_ > Http2ErrorType::kOk &&
             absl_code_ != absl::StatusCode::kOk));
-    DCHECK(is_ok() ? message_.size() == 0 : message_.size() > 0);
+    DCHECK((is_ok() && message_.empty()) || (!is_ok() && !message_.empty()));
   }
 
   absl::StatusCode ErrorCodeToStatusCode() const {
