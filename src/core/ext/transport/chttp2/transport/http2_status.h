@@ -84,9 +84,31 @@ class Http2Status {
     return Http2Status(code, Http2ErrorType::kStreamError);
   }
 
-  Http2ErrorType GetType() const { return error_type_; }
+  GRPC_MUST_USE_RESULT Http2ErrorType GetType() const { return error_type_; }
 
-  absl::Status absl_status() const {
+  GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorType() {
+    switch (http2_code_) {
+      case Http2ErrorType::kOk:
+        CHECK(false);
+      case Http2ErrorType::kStreamError:
+        return http2_code_;
+      case Http2ErrorType::kConnectionError:
+        CHECK(false);
+    }
+  }
+
+  GRPC_MUST_USE_RESULT Http2ErrorCode GetConnectionErrorType() {
+    switch (http2_code_) {
+      case Http2ErrorType::kOk:
+        CHECK(false);
+      case Http2ErrorType::kStreamError:
+        CHECK(false);
+      case Http2ErrorType::kConnectionError:
+        return http2_code_;
+    }
+  }
+
+  GRPC_MUST_USE_RESULT absl::Status absl_status() const {
     if (is_ok()) {
       return absl::OkStatus();
     }
@@ -130,8 +152,7 @@ class Http2Status {
            (http2_code_ > Http2ErrorCode::kNoError &&
             error_type_ > Http2ErrorType::kOk &&
             absl_code_ != absl::StatusCode::kOk));
-    DCHECK(absl_code_ == absl::StatusCode::kOk ? message.size() == 0
-                                               : message.size() > 0);
+    DCHECK(is_ok() ? message.size() == 0 : message.size() > 0);
   }
 
   absl::StatusCode ErrorCodeToStatusCode() const {
