@@ -568,6 +568,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "http2_status_test",
+    srcs = [
+        "http2_status_test.cc",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//src/core:http2_status",
+    ],
+)
+
+grpc_cc_test(
     name = "http2_server_transport_test",
     srcs = ["http2_server_transport_test.cc"],
     external_deps = [
