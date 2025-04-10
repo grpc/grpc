@@ -102,6 +102,7 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
+inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
@@ -152,6 +153,7 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
+inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
@@ -202,6 +204,7 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() { return true; }
+inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
@@ -240,6 +243,7 @@ enum ExperimentIds {
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdServerGlobalCallbacksOwnership,
   kExperimentIdServerListener,
+  kExperimentIdSleepPromiseExecCtxRemoval,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
@@ -368,6 +372,10 @@ inline bool IsServerGlobalCallbacksOwnershipEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
 inline bool IsServerListenerEnabled() {
   return IsExperimentEnabled<kExperimentIdServerListener>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_PROMISE_EXEC_CTX_REMOVAL
+inline bool IsSleepPromiseExecCtxRemovalEnabled() {
+  return IsExperimentEnabled<kExperimentIdSleepPromiseExecCtxRemoval>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
 inline bool IsTcpFrameSizeTuningEnabled() {
