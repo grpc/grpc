@@ -4576,9 +4576,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "chttp2_context_list_entry",
+    name = "context_list_entry",
     hdrs = [
-        "//src/core:ext/transport/chttp2/transport/context_list_entry.h",
+        "//src/core:telemetry/context_list_entry.h",
     ],
     deps = [
         "gpr",
@@ -4650,7 +4650,7 @@ grpc_cc_library(
         "call_tracer",
         "channel_arg_names",
         "channelz",
-        "chttp2_context_list_entry",
+        "context_list_entry",
         "chttp2_legacy_frame",
         "chttp2_varint",
         "config_vars",
