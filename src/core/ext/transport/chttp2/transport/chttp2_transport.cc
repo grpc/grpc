@@ -109,12 +109,12 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/http_client/parser.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
-#include "src/core/util/notification.h"
 
 using grpc_core::Json;
 
