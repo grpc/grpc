@@ -363,9 +363,26 @@ def grpc_deps():
             ],
         )
 
+    # Building grpc with openssl is only supported when using bzlmod. Workspaces
+    # are deprecated, so just create a dummy repo so that the grpc targets build
+    # when using workspaces.
+    openssl = repository_rule(
+        implementation = _openssl_impl,
+    )
+    openssl(name = "openssl")
+
     grpc_module_deps()
 
     grpc_python_deps()
+
+def _openssl_impl(ctx):
+    ctx.file("BUILD", """
+package(default_visibility = ["//visibility:public"])
+
+cc_library(name = "ssl")
+
+cc_library(name = "crypto")
+""")
 
 # TODO: move some dependencies from "grpc_deps" here?
 # buildifier: disable=unnamed-macro
