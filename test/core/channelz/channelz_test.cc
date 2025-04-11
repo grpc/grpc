@@ -331,7 +331,7 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     ASSERT_EQ(it_test_data->second.type(), Json::Type::kObject);
     const Json::Object& test_data = it_test_data->second.object();
     auto it = test_data.find("test");
-    ASSERT_NE(it, object.end());
+    ASSERT_NE(it, test_data.end());
     ASSERT_EQ(it->second.type(), Json::Type::kString);
     EXPECT_EQ(it->second.string(), "yes");
   }
