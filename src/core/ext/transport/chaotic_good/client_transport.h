@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
@@ -141,7 +142,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
 
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
 
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  const TransportContextPtr ctx_;
   grpc_event_engine::experimental::MemoryAllocator allocator_;
   RefCountedPtr<StreamDispatch> stream_dispatch_;
   MpscSender<Frame> outgoing_frames_;

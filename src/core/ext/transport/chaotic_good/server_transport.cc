@@ -172,7 +172,7 @@ absl::Status ChaoticGoodServerTransport::StreamDispatch::NewStream(
   }
   RefCountedPtr<Arena> arena(call_arena_allocator_->MakeArena());
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine_.get());
+      ctx_->event_engine.get());
   std::optional<CallInitiator> call_initiator;
   auto call = MakeCallPair(std::move(*md), std::move(arena));
   call_initiator.emplace(std::move(call.initiator));
@@ -256,8 +256,7 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
     const ChannelArgs& args, FrameTransport* frame_transport,
     MessageChunker message_chunker,
     RefCountedPtr<UnstartedCallDestination> call_destination)
-    : event_engine_(
-          args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+    : ctx_(frame_transport->ctx()),
       call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
@@ -267,7 +266,7 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
       message_chunker_(message_chunker) {
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine_.get());
+      ctx_->event_engine.get());
   party_ = Party::Make(std::move(party_arena));
   incoming_frame_spawner_ = party_->MakeSpawnSerializer();
   MpscReceiver<Frame> outgoing_pipe(8);

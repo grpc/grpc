@@ -8144,6 +8144,7 @@ grpc_cc_library(
         "1999",
         "chaotic_good_pending_connection",
         "chaotic_good_serialize_little_endian",
+        "chaotic_good_transport_context",
         "default_tcp_tracer",
         "event_engine_context",
         "event_engine_extensions",
@@ -8171,6 +8172,7 @@ grpc_cc_library(
         "1999",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "chaotic_good_transport_context",
         "event_engine_context",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
@@ -8206,6 +8208,7 @@ grpc_cc_library(
         "chaotic_good_frame_transport",
         "chaotic_good_pending_connection",
         "chaotic_good_serialize_little_endian",
+        "chaotic_good_transport_context",
         "event_engine_tcp_socket_utils",
         "if",
         "inter_activity_latch",
@@ -8214,6 +8217,17 @@ grpc_cc_library(
         "race",
         "seq",
         "try_seq",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_transport_context",
+    hdrs = [
+        "ext/transport/chaotic_good/transport_context.h",
+    ],
+    deps = [
+        "metrics",
+        "//:event_engine_base_hdrs",
     ],
 )
 
@@ -8244,6 +8258,7 @@ grpc_cc_library(
         "chaotic_good_frame_transport",
         "chaotic_good_message_reassembly",
         "chaotic_good_pending_connection",
+        "chaotic_good_transport_context",
         "context",
         "event_engine_context",
         "event_engine_query_extensions",
@@ -8303,6 +8318,7 @@ grpc_cc_library(
         "chaotic_good_message_chunker",
         "chaotic_good_message_reassembly",
         "chaotic_good_pending_connection",
+        "chaotic_good_transport_context",
         "context",
         "default_event_engine",
         "event_engine_context",

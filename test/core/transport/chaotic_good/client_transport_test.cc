@@ -99,7 +99,8 @@ ChannelArgs MakeChannelArgs(
 }
 
 TEST_F(TransportTest, AddOneStream) {
-  auto owned_frame_transport = MakeOrphanable<MockFrameTransport>();
+  auto owned_frame_transport =
+      MakeOrphanable<MockFrameTransport>(event_engine());
   auto* frame_transport = owned_frame_transport.get();
   static const std::string many_as(1024 * 1024, 'a');
   auto channel_args = MakeChannelArgs(event_engine());
@@ -160,7 +161,8 @@ TEST_F(TransportTest, AddOneStream) {
 }
 
 TEST_F(TransportTest, AddOneStreamMultipleMessages) {
-  auto owned_frame_transport = MakeOrphanable<MockFrameTransport>();
+  auto owned_frame_transport =
+      MakeOrphanable<MockFrameTransport>(event_engine());
   auto* frame_transport = owned_frame_transport.get();
   auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
@@ -220,7 +222,8 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
 }
 
 TEST_F(TransportTest, CheckFailure) {
-  auto owned_frame_transport = MakeOrphanable<MockFrameTransport>();
+  auto owned_frame_transport =
+      MakeOrphanable<MockFrameTransport>(event_engine());
   auto* frame_transport = owned_frame_transport.get();
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       MakeChannelArgs(event_engine()), std::move(owned_frame_transport),
