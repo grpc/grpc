@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_ENTRY_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_ENTRY_H
+#ifndef GRPC_SRC_CORE_TELEMETRY_CONTEXT_LIST_ENTRY_H
+#define GRPC_SRC_CORE_TELEMETRY_CONTEXT_LIST_ENTRY_H
 
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
@@ -79,4 +79,4 @@ class ContextListEntry {
 typedef std::vector<ContextListEntry> ContextList;
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_ENTRY_H
+#endif  // GRPC_SRC_CORE_TELEMETRY_CONTEXT_LIST_ENTRY_H
