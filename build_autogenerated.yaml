@@ -15377,6 +15377,18 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: shared_bit_gen_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/shared_bit_gen.h
+  src:
+  - test/core/util/shared_bit_gen_test.cc
+  deps:
+  - gtest
+  - absl/random:random
+  uses_polling: false
 - name: shutdown_test
   gtest: true
   build: test

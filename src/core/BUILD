@@ -6231,6 +6231,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "shared_bit_gen",
+    hdrs = [
+        "util/shared_bit_gen.h",
+    ],
+    external_deps = [
+        "absl/random",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_xds_cluster_impl",
     srcs = [
         "load_balancing/xds/xds_cluster_impl.cc",
@@ -9136,11 +9146,16 @@ grpc_cc_library(
     hdrs = [
         "call/filter_fusion.h",
     ],
+    external_deps = [
+        "absl/status",
+        "absl/log",
+    ],
     deps = [
         "call_filters",
         "call_final_info",
         "metadata",
         "type_list",
+        "//:grpc_base",
         "//:grpc_public_hdrs",
     ],
 )
