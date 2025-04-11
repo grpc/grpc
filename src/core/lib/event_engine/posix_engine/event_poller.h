@@ -92,12 +92,18 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller {
                                     bool track_err) = 0;
   virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
-  virtual void AdvanceGeneration() = 0;
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  // Handles fork in the child process. It performs cleanups like closing file
+  // descriptors, resetting lingering state to make sure the child and parent
+  // processes do not interfere with each other and that the child process
+  // remains in valid state.
+  virtual void HandleForkInChild() = 0;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   virtual void ResetKickState() = 0;
   EventEnginePosixInterface& posix_interface() { return posix_interface_; }
   ~PosixEventPoller() override = default;
 
- protected:
+ private:
   EventEnginePosixInterface posix_interface_;
 };
 

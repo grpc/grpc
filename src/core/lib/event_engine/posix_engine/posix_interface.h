@@ -54,10 +54,12 @@ class EventEnginePosixInterface {
   EventEnginePosixInterface(const EventEnginePosixInterface& other) = delete;
   EventEnginePosixInterface(EventEnginePosixInterface&& other) = delete;
 
+#ifdef GRPC_ENABLE_FORK_SUPPORT
   // ---- Fork generation management ----
   // Advances the internal generation counter, potentially invalidating old
   // descriptors.
   void AdvanceGeneration();
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   int generation() const { return descriptors_.generation(); }
 
   // ---- File Descriptor Management ----
@@ -67,7 +69,7 @@ class EventEnginePosixInterface {
   void Close(const FileDescriptor& fd);
   // Retrieves the raw POSIX file descriptor, if valid for the current
   // generation.
-  std::optional<int> GetFd(
+  PosixErrorOr<int> GetFd(
       const FileDescriptor& fd);  // Corrected: Added parameter
 
   // ---- Socket/FD Creation Factories ----

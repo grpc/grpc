@@ -86,7 +86,7 @@ TEST_F(AresResolverTest, ForkSupportInParent) {
   // code. It is ok for unit test that is aware of actual implementation.
   // The trick here is that polling should be stopped so the callback is not
   // called before AfterFork
-  event_engine_->BeforeForkForTests();
+  event_engine_->BeforeFork();
   resolver->get()->LookupHostname(
       [&](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
         lookup_result = std::move(result);
@@ -94,7 +94,7 @@ TEST_F(AresResolverTest, ForkSupportInParent) {
       },
       "youtube.com", "80");
   // Parent does not advance generation
-  event_engine_->AfterForkForTests(false);
+  event_engine_->AfterFork(PosixEventEngine::OnForkRole::kParent);
   notification.WaitForNotification();
   if (lookup_result.status().code() == absl::StatusCode::kUnavailable) {
     GTEST_SKIP() << "Running in hermetic environment";
@@ -109,7 +109,7 @@ TEST_F(AresResolverTest, ForkSupportInChild) {
   ASSERT_NE(*resolver, nullptr);
   grpc_core::Notification notification;
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> lookup_result;
-  event_engine_->BeforeForkForTests();
+  event_engine_->BeforeFork();
   resolver->get()->LookupHostname(
       [&](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
         lookup_result = std::move(result);
@@ -117,7 +117,7 @@ TEST_F(AresResolverTest, ForkSupportInChild) {
       },
       "google.com", "80");
   // Child advances the generation
-  event_engine_->AfterForkForTests(true);
+  event_engine_->AfterFork(PosixEventEngine::OnForkRole::kChild);
   notification.WaitForNotification();
   if (lookup_result.status().code() == absl::StatusCode::kUnavailable) {
     GTEST_SKIP() << "Running in hermetic environment";

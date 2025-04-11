@@ -14,9 +14,11 @@
 
 #include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 
+#include <gmock/gmock.h>
 #include <grpc/grpc.h>
+#include <gtest/gtest.h>
 
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 #include "src/core/lib/experiments/experiments.h"
 
 namespace grpc_event_engine::experimental {
@@ -27,6 +29,19 @@ bool ForkEnabled() {
 #else
   return grpc_core::IsEventEngineForkEnabled();
 #endif
+}
+
+TEST(FileDescriptorCollection, AddRecordsGenerationClearClears) {
+  FileDescriptorCollection collection(42);
+  EXPECT_EQ(collection.Add(10), FileDescriptor(10, 42));
+  EXPECT_EQ(collection.Add(12), FileDescriptor(12, 42));
+  if (ForkEnabled()) {
+    EXPECT_THAT(collection.ClearAndReturnRawDescriptors(),
+                ::testing::UnorderedElementsAre(10, 12));
+  } else {
+    EXPECT_THAT(collection.ClearAndReturnRawDescriptors(),
+                ::testing::IsEmpty());
+  }
 }
 
 TEST(FileDescriptorCollectionTest, RemoveHonorsGeneration) {

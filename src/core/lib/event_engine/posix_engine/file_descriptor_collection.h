@@ -15,28 +15,30 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_FILE_DESCRIPTOR_COLLECTION_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_FILE_DESCRIPTOR_COLLECTION_H
 
+#include <optional>
+#include <ostream>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <variant>
 
+#include "absl/container/flat_hash_set.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "src/core/util/strerror.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_event_engine::experimental {
 
 class PosixError {
  public:
-  static PosixError WrongGeneration() {
+  static constexpr PosixError WrongGeneration() {
     return PosixError(WrongGenerationError());
   }
 
-  static PosixError Error(int errno_value) {
+  static constexpr PosixError Error(int errno_value) {
     return PosixError(PosixErrorValue{errno_value});
   }
 
-  PosixError() : PosixError(std::monostate()) {}
+  constexpr PosixError() : PosixError(std::monostate()) {}
 
   bool ok() const { return std::holds_alternative<std::monostate>(payload_); }
 
@@ -54,19 +56,14 @@ class PosixError {
     return std::holds_alternative<WrongGenerationError>(payload_);
   }
 
-  int errno_value() const {
-    return std::get<PosixErrorValue>(payload_).errno_value;
+  std::optional<int> errno_value() const {
+    if (std::holds_alternative<PosixErrorValue>(payload_)) {
+      return std::get<PosixErrorValue>(payload_).errno_value;
+    }
+    return std::nullopt;
   }
 
-  std::string StrError() const {
-    if (ok()) {
-      return "ok";
-    }
-    if (IsWrongGenerationError()) {
-      return "file descriptor was created pre fork";
-    }
-    return grpc_core::StrError(errno_value());
-  }
+  std::string StrError() const;
 
  private:
   struct PosixErrorValue {
@@ -76,7 +73,7 @@ class PosixError {
   using Payload =
       std::variant<std::monostate, PosixErrorValue, WrongGenerationError>;
 
-  explicit PosixError(Payload error) : payload_(error) {}
+  explicit constexpr PosixError(Payload error) : payload_(error) {}
 
   Payload payload_;
 };
@@ -86,16 +83,21 @@ class PosixErrorOr {
  public:
   using Payload = std::variant<T, PosixError>;
 
-  PosixErrorOr() = default;
-  PosixErrorOr(const PosixErrorOr& other) = default;
-  PosixErrorOr(PosixErrorOr&& other) = default;
-  explicit PosixErrorOr(Payload error) : value_(std::move(error)) {}
+  constexpr PosixErrorOr() = default;
+  constexpr PosixErrorOr(const PosixErrorOr& other) = default;
+  constexpr PosixErrorOr(PosixErrorOr&& other) = default;
+  explicit constexpr PosixErrorOr(Payload error) : value_(std::move(error)) {}
   PosixErrorOr& operator=(const PosixErrorOr& other) = default;
   PosixErrorOr& operator=(PosixErrorOr&& other) = default;
 
   bool ok() const { return std::holds_alternative<T>(value_); }
 
-  int errno_value() const { return std::get<PosixError>(value_).errno_value(); }
+  std::optional<int> errno_value() const {
+    if (ok()) {
+      return std::nullopt;
+    }
+    return std::get<PosixError>(value_).errno_value();
+  }
 
   bool IsPosixError() const {
     const PosixError* error = std::get_if<PosixError>(&value_);
@@ -159,15 +161,28 @@ class FileDescriptor {
   template <typename Sink>
   friend void AbslStringify(Sink& sink, FileDescriptor fd) {
     sink.Append(
-        absl::StrFormat("FD(%d), generation: %d", fd.fd_, fd.generation_));
+        absl::StrFormat("fd(%d, generation: %d)", fd.fd_, fd.generation_));
+  }
+
+  bool operator==(const FileDescriptor& other) const {
+    return fd_ == other.fd_ && generation_ == other.generation_;
   }
 #else   // GRPC_ENABLE_FORK_SUPPORT
   int generation() const { return 0; }
   template <typename Sink>
   friend void AbslStringify(Sink& sink, FileDescriptor fd) {
-    sink.Append(absl::StrFormat("FD(%d)", fd.fd_));
+    sink.Append(absl::StrFormat("fd(%d)", fd.fd_));
   }
+  bool operator==(const FileDescriptor& other) const {
+    return fd_ == other.fd_;
+  }
+
 #endif  // GRPC_ENABLE_FORK_SUPPORT
+
+  friend std::ostream& operator<<(std::ostream& os, const FileDescriptor& fd) {
+    os << absl::StrCat(fd);
+    return os;
+  }
 
  private:
   // Can get raw fd!
@@ -198,8 +213,8 @@ class FileDescriptorCollection {
   // If fork support is enabled, fd is only removed if its generation matches
   // the current collection generation. Returns true if the fd was removed.
   bool Remove(const FileDescriptor& fd);
-  // Returns all file descriptors and empties the collection
-  std::unordered_set<int> Clear();
+  // Clears the internal collection and returns a set of file descriptors
+  absl::flat_hash_set<int> ClearAndReturnRawDescriptors();
 
   // Returns the current generation number of the collection.
   int generation() const { return generation_; }
@@ -207,7 +222,7 @@ class FileDescriptorCollection {
  private:
 #if GRPC_ENABLE_FORK_SUPPORT
   grpc_core::Mutex mu_;
-  std::unordered_set<int> file_descriptors_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_set<int> file_descriptors_ ABSL_GUARDED_BY(mu_);
 #endif  // GRPC_ENABLE_FORK_SUPPORT
   // Never changed outside of ctor, no need to synchronize
   int generation_;

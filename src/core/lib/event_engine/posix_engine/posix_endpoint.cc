@@ -105,7 +105,7 @@ PosixErrorOr<int64_t> TcpSend(EventEnginePosixInterface* posix_interface,
     grpc_core::global_stats().IncrementSyscallWrite();
     send_result =
         posix_interface->SendMsg(fd, msg, SENDMSG_FLAGS | additional_flags);
-    *saved_errno = send_result.IsPosixError() ? send_result.errno_value() : 0;
+    *saved_errno = send_result.errno_value().value_or(0);
   } while (send_result.IsPosixError(EINTR));
   return send_result;
 }
@@ -215,12 +215,11 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 absl::Status PosixOSError(const PosixErrorOr<int64_t>& error_no,
                           absl::string_view call_name) {
   if (error_no.IsPosixError()) {
-    return absl::UnknownError(absl::StrCat(call_name, ": ", error_no.StrError(),
-                                           " (", error_no.errno_value(), ")"));
-  } else {
     return absl::UnknownError(
-        absl::StrCat(call_name, ": Wrong file descriptor generation"));
+        absl::StrCat(call_name, ": ", error_no.StrError()));
   }
+  return absl::UnknownError(
+      absl::StrCat(call_name, ": Wrong file descriptor generation"));
 }
 
 }  // namespace
@@ -610,6 +609,8 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
   grpc_core::ReleasableMutexLock lock(&read_mu_);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "Endpoint[" << this << "]: Read";
   if (handle_->IsHandleShutdown()) {
     engine_->Run(
         [on_read = std::move(on_read),
@@ -621,8 +622,6 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
         });
     return false;
   }
-  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-      << "Endpoint[" << this << "]: Read";
   CHECK(read_cb_ == nullptr);
   incoming_buffer_ = buffer;
   incoming_buffer_->Clear();

@@ -207,7 +207,7 @@ void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
       "unimplemented on this platform: EventEnginePosixInterface::Close");
 }
 
-absl::StatusOr<FileDescriptor> EventEnginePosixInterface::CreateDualStackSocket(
+PosixErrorOr<FileDescriptor> EventEnginePosixInterface::CreateDualStackSocket(
     std::function<int(int, int, int)> socket_factory,
     const experimental::EventEngine::ResolvedAddress& addr, int type,
     int protocol, DSMode& dsmode) {

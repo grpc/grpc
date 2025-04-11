@@ -51,7 +51,9 @@ class PollPoller : public PosixEventPoller,
 
   void Close();
 
-  void AdvanceGeneration() override;
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  void HandleForkInChild() override;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   void ResetKickState() override;
 
  private:

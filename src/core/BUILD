@@ -2154,6 +2154,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/cleanup",
+        "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/log:check",
         "absl/log:log",
@@ -2320,6 +2321,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
         "absl/log",

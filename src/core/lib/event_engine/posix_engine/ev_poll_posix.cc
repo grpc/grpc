@@ -164,10 +164,9 @@ class PollEventHandle : public EventHandle {
       // SetReadyLocked immediately scheduled some closure. It would have set
       // the closure state to NOT_READY. We need to wakeup the Work(...)
       // thread to start polling on this fd. If this call is not made, it is
-      // possible that the poller will reach a state where all the
-      // posix_interface_ under the poller's control are not polled for
-      // POLLIN/POLLOUT events thus leading to an indefinitely blocked Work(..)
-      // method.
+      // possible that the poller will reach a state where all the fds under
+      // the poller's control are not polled for POLLIN/POLLOUT events thus
+      // leading to an indefinitely blocked Work(..) method.
       poller_->KickExternal(false);
     }
     Unref();
@@ -366,9 +365,9 @@ void PollEventHandle::NotifyOnRead(PosixEngineClosure* on_read) {
       // NotifyOnLocked immediately scheduled some closure. It would have set
       // the closure state to NOT_READY. We need to wakeup the Work(...) thread
       // to start polling on this fd. If this call is not made, it is possible
-      // that the poller will reach a state where all the posix_interface_ under
-      // the poller's control are not polled for POLLIN/POLLOUT events thus
-      // leading to an indefinitely blocked Work(..) method.
+      // that the poller will reach a state where all the posix_interface()
+      // under the poller's control are not polled for POLLIN/POLLOUT events
+      // thus leading to an indefinitely blocked Work(..) method.
       poller_->KickExternal(false);
     }
   }
@@ -388,9 +387,9 @@ void PollEventHandle::NotifyOnWrite(PosixEngineClosure* on_write) {
       // NotifyOnLocked immediately scheduled some closure. It would have set
       // the closure state to NOT_READY. We need to wakeup the Work(...) thread
       // to start polling on this fd. If this call is not made, it is possible
-      // that the poller will reach a state where all the posix_interface_ under
-      // the poller's control are not polled for POLLIN/POLLOUT events thus
-      // leading to an indefinitely blocked Work(..) method.
+      // that the poller will reach a state where all the posix_interface()
+      // under the poller's control are not polled for POLLIN/POLLOUT events
+      // thus leading to an indefinitely blocked Work(..) method.
       poller_->KickExternal(false);
     }
   }
@@ -511,7 +510,7 @@ PollPoller::PollPoller(Scheduler* scheduler, bool use_phony_poll)
       num_poll_handles_(0),
       poll_handles_list_head_(nullptr),
       closed_(false) {
-  wakeup_fd_ = *CreateWakeupFd(&posix_interface_);
+  wakeup_fd_ = *CreateWakeupFd(&posix_interface());
   CHECK(wakeup_fd_ != nullptr);
 }
 
@@ -561,8 +560,8 @@ Poller::WorkResult PollPoller::Work(
     }
 
     pfd_count = 1;
-    auto wakeup_fd = posix_interface_.GetFd(wakeup_fd_->ReadFd());
-    CHECK(wakeup_fd.has_value()) << "Wrong wakeup FD generation";
+    auto wakeup_fd = posix_interface().GetFd(wakeup_fd_->ReadFd());
+    CHECK(wakeup_fd.ok()) << wakeup_fd.StrError();
     pfds[0].fd = *wakeup_fd;
     pfds[0].events = POLLIN;
     pfds[0].revents = 0;
@@ -571,13 +570,13 @@ Poller::WorkResult PollPoller::Work(
     while (head != nullptr) {
       {
         grpc_core::MutexLock lock(head->mu());
-        // There shouldn't be any orphaned posix_interface_ at this point. This
+        // There shouldn't be any orphaned posix_interface() at this point. This
         // is because prior to marking a handle as orphaned it is first removed
         // from poll handle list for the poller under the poller lock.
         CHECK(!head->IsOrphaned());
         if (!head->IsPollhup()) {
-          if (auto file_descriptor = posix_interface_.GetFd(head->WrappedFd());
-              file_descriptor.has_value()) {
+          if (auto file_descriptor = posix_interface().GetFd(head->WrappedFd());
+              file_descriptor.ok()) {
             pfds[pfd_count].fd = *file_descriptor;
             watchers[pfd_count] = head;
             // BeginPollLocked takes a ref of the handle. It also marks the
@@ -627,7 +626,7 @@ Poller::WorkResult PollPoller::Work(
           // This fd was Watched with a watch mask > 0.
           if (watch_mask > 0 && r < 0) {
             // This case implies the fd was polled (since watch_mask > 0 and
-            // the poll returned an error. Mark the posix_interface_ as both
+            // the poll returned an error. Mark the posix_interface() as both
             // readable and writable.
             if (head->EndPollLocked(true, true)) {
               // Its safe to add to list of pending events because
@@ -724,8 +723,9 @@ void PollPoller::Close() {
   closed_ = true;
 }
 
-void PollPoller::AdvanceGeneration() {
-  posix_interface_.AdvanceGeneration();
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+void PollPoller::HandleForkInChild() {
+  posix_interface().AdvanceGeneration();
   PollEventHandle* handle;
   {
     grpc_core::MutexLock lock(&mu_);
@@ -736,9 +736,10 @@ void PollPoller::AdvanceGeneration() {
     handle = handle->PollerHandlesListPos().next;
   }
 }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 void PollPoller::ResetKickState() {
-  wakeup_fd_ = *CreateWakeupFd(&posix_interface_);
+  wakeup_fd_ = *CreateWakeupFd(&posix_interface());
   // Sometimes there's "kick" signalled on the wakeup FD. We need to redo it on
   // new fd
   // TODO (eostroukhov): Need to consider merging kicked/kicked_ext

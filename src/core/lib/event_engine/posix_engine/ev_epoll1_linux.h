@@ -20,9 +20,9 @@
 #include <list>
 #include <memory>
 #include <string>
-#include <unordered_set>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
@@ -66,7 +66,9 @@ class Epoll1Poller : public PosixEventPoller {
 
   void Close();
 
-  void AdvanceGeneration() override;
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  void HandleForkInChild() override;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   void ResetKickState() override;
 
  private:
@@ -113,7 +115,7 @@ class Epoll1Poller : public PosixEventPoller {
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
   std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
 #if GRPC_ENABLE_FORK_SUPPORT
-  std::unordered_set<EventHandle*> fork_handles_set_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_set<EventHandle*> fork_handles_set_ ABSL_GUARDED_BY(mu_);
 #endif  // GRPC_ENABLE_FORK_SUPPORT
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_;

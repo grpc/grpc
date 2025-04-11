@@ -14,14 +14,20 @@
 
 #include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 
-#include <unordered_set>
-
+#include "absl/strings/substitute.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
+
+namespace {
+
+bool IsForkEnabled() { return grpc_core::IsEventEngineForkEnabled(); }
+
+}  // namespace
 
 FileDescriptorCollection::FileDescriptorCollection(
     FileDescriptorCollection&& other) noexcept
@@ -40,7 +46,7 @@ FileDescriptorCollection& FileDescriptorCollection::operator=(
 }
 
 FileDescriptor FileDescriptorCollection::Add(int fd) {
-  if (grpc_core::IsEventEngineForkEnabled()) {
+  if (IsForkEnabled()) {
     grpc_core::MutexLock lock(&mu_);
     file_descriptors_.emplace(fd);
   }
@@ -48,7 +54,7 @@ FileDescriptor FileDescriptorCollection::Add(int fd) {
 }
 
 bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
-  if (!grpc_core::IsEventEngineForkEnabled()) {
+  if (!IsForkEnabled()) {
     return true;
   }
   if (fd.generation() == generation_) {
@@ -58,9 +64,13 @@ bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
   return false;
 }
 
-std::unordered_set<int> FileDescriptorCollection::Clear() {
+absl::flat_hash_set<int>
+FileDescriptorCollection::ClearAndReturnRawDescriptors() {
+  if (!IsForkEnabled()) {
+    return {};
+  }
   grpc_core::MutexLock lock(&mu_);
-  std::unordered_set<int> file_descriptors = std::move(file_descriptors_);
+  absl::flat_hash_set<int> file_descriptors = std::move(file_descriptors_);
   // Should not be necessary, but standard is not clear if move would empty
   // the collection
   file_descriptors_.clear();
@@ -71,11 +81,11 @@ std::unordered_set<int> FileDescriptorCollection::Clear() {
 
 FileDescriptorCollection::FileDescriptorCollection(
     FileDescriptorCollection&& other) noexcept
-    : generation_(other.generation_) {}
+    : generation_(std::move(other.generation_)) {}
 
 FileDescriptorCollection& FileDescriptorCollection::operator=(
     FileDescriptorCollection&& other) noexcept {
-  generation_ = other.generation_;
+  generation_ = std::move(other.generation_);
   return *this;
 }
 
@@ -87,8 +97,22 @@ bool FileDescriptorCollection::Remove(const FileDescriptor& /* fd */) {
   return true;
 }
 
-std::unordered_set<int> FileDescriptorCollection::Clear() { return {}; }
+absl::flat_hash_set<int>
+FileDescriptorCollection::ClearAndReturnRawDescriptors() {
+  return {};
+}
 
 #endif  // GRPC_ENABLE_FORK_SUPPORT
+
+std::string PosixError::StrError() const {
+  if (ok()) {
+    return "ok";
+  }
+  if (IsWrongGenerationError()) {
+    return "file descriptor was created pre fork";
+  }
+  int value = *errno_value();
+  return absl::Substitute("$0 ($1)", grpc_core::StrError(value), value);
+}
 
 }  // namespace grpc_event_engine::experimental

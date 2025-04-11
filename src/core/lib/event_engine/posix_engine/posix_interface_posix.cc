@@ -24,7 +24,6 @@
 
 #include <cerrno>
 #include <cstdint>
-#include <optional>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
@@ -466,19 +465,22 @@ bool IsSocketReusePortSupported() {
   return kSupportSoReusePort;
 }
 
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+
 void EventEnginePosixInterface::AdvanceGeneration() {
   if (!IsEventEngineForkEnabled()) {
     grpc_core::Crash(
         "Fork support is disabled but AdvanceGeneration was called");
   }
-  FileDescriptorCollection descriptors(std::move(descriptors_));
-  descriptors = FileDescriptorCollection(descriptors.generation() + 1);
-  for (int fd : descriptors_.Clear()) {
+  for (int fd : descriptors_.ClearAndReturnRawDescriptors()) {
     if (fd > 0) {
       close(fd);
     }
   }
+  descriptors_ = FileDescriptorCollection(descriptors_.generation() + 1);
 }
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 FileDescriptor EventEnginePosixInterface::Adopt(int fd) {
   return descriptors_.Add(fd);
@@ -490,11 +492,11 @@ void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
   }
 }
 
-std::optional<int> EventEnginePosixInterface::GetFd(const FileDescriptor& fd) {
-  if (IsCorrectGeneration(fd)) {
-    return fd.fd();
+PosixErrorOr<int> EventEnginePosixInterface::GetFd(const FileDescriptor& fd) {
+  if (!IsCorrectGeneration(fd)) {
+    return PosixErrorOr<int>(PosixError::WrongGeneration());
   }
-  return std::nullopt;
+  return PosixErrorOr<int>(fd.fd());
 }
 
 //

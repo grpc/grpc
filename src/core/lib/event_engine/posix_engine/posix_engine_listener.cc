@@ -148,7 +148,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       return;
     }
     if (fd.IsPosixError()) {
-      switch (fd.errno_value()) {
+      switch (*fd.errno_value()) {
         case EINTR:
           continue;
         case EMFILE:
