@@ -72,6 +72,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "transport_context.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -147,8 +148,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     uint32_t last_seen_new_stream_id_ ABSL_GUARDED_BY(mu_) = 0;
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
         "chaotic_good_server", GRPC_CHANNEL_READY};
-    const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-        event_engine_;
+    const TransportContextPtr ctx_;
     const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
     const RefCountedPtr<UnstartedCallDestination> call_destination_;
     Party::SpawnSerializer* incoming_frame_spawner_;

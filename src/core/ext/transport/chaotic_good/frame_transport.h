@@ -22,6 +22,7 @@
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
+#include "transport_context.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -80,6 +81,7 @@ class FrameTransport : public InternallyRefCounted<FrameTransport> {
 
   virtual void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
                      RefCountedPtr<FrameTransportSink> sink) = 0;
+  virtual TransportContextPtr ctx() = 0;
 };
 
 }  // namespace chaotic_good
