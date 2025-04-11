@@ -44,6 +44,7 @@ cleanup::job::cleanup_td() {
 cleanup::job::cleanup_td_dualstack() {
   cleanup::run_clean "$1" \
     --mode=td \
+    --td_resource_prefixes='psm-ds' \
     --enable_dualstack \
     --noenable_workload_identity \
     --network=dualstack  \
@@ -101,6 +102,8 @@ cleanup::job::cleanup_cluster_dualstack() {
   cleanup::activate_cluster GKE_CLUSTER_DUALSTACK
   cleanup::run_clean "$1" \
     --mode=k8s \
+    --server_prefixes='psm-ds', \
+    --client_prefixes='psm-ds' \
     --enable_dualstack \
     --noenable_workload_identity \
     --network=dualstack  \
