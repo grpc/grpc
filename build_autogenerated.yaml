@@ -208,6 +208,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_args.h
@@ -324,6 +325,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
@@ -2275,6 +2277,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_args.h
@@ -2356,6 +2359,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
@@ -6464,6 +6468,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/load_file.h
@@ -6717,6 +6722,7 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
   - src/core/util/load_file.cc
@@ -10481,6 +10487,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/load_file.h
@@ -10734,6 +10741,7 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
   - src/core/util/load_file.cc
@@ -10860,6 +10868,7 @@ targets:
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -20645,8 +20654,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/channelz/ztrace_collector.h
+  headers: []
   src:
   - test/core/channelz/ztrace_collector_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
