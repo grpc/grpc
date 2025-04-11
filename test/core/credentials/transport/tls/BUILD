@@ -208,3 +208,17 @@ grpc_cc_test(
         "//test/core/tsi:transport_security_test_lib",
     ],
 )
+
+grpc_cc_test(
+    name = "spiffe_utils_test",
+    srcs = ["spiffe_utils_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:spiffe_utils",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
