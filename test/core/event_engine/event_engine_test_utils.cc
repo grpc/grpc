@@ -241,5 +241,12 @@ ConnectionManager::CreateConnection(std::string target_addr,
   return absl::CancelledError("Failed to create connection.");
 }
 
+bool IsSaneTimerEnvironment() {
+  return grpc_core::IsEventEngineClientEnabled() &&
+         grpc_core::IsEventEngineListenerEnabled() &&
+         grpc_core::IsEventEngineDnsEnabled() &&
+         grpc_core::IsEventEngineDnsNonClientChannelEnabled();
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine

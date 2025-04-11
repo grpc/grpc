@@ -38,6 +38,7 @@ tasks:
     build_flags:
     - '--cxxopt=/std:c++17'
     - '--host_cxxopt=/std:c++17'
+    - '--define=protobuf_allow_msvc=true'
     build_targets:
       - "@grpc//:grpc"
       - "@grpc//:grpc_unsecure"

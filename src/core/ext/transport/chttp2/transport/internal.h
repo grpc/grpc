@@ -52,6 +52,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
@@ -73,6 +74,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/stats.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted.h"
@@ -228,6 +230,20 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
                         grpc_core::OrphanablePtr<grpc_endpoint> endpoint,
                         bool is_client);
   ~grpc_chttp2_transport() override;
+
+  class ChannelzDataSource final : public grpc_core::channelz::DataSource {
+   public:
+    explicit ChannelzDataSource(grpc_chttp2_transport* transport)
+        : grpc_core::channelz::DataSource(transport->channelz_socket),
+          transport_(transport) {}
+
+    void AddData(grpc_core::channelz::DataSink& sink) override;
+    std::unique_ptr<grpc_core::channelz::ZTrace> GetZTrace(
+        absl::string_view name) override;
+
+   private:
+    grpc_chttp2_transport* transport_;
+  };
 
   void Orphan() override;
 
@@ -471,7 +487,6 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_event_engine::experimental::EventEngine::TaskHandle
       keepalive_ping_timer_handle =
           grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
-  ;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
   /// Tracks any adjustments to the absolute timestamp of the next keepalive
@@ -488,6 +503,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   uint32_t max_header_list_size_soft_limit = 0;
   grpc_core::ContextList* context_list = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
+  std::unique_ptr<ChannelzDataSource> channelz_data_source;
   uint32_t num_messages_in_next_write = 0;
   /// The number of pending induced frames (SETTINGS_ACK, PINGS_ACK and
   /// RST_STREAM) in the outgoing buffer (t->qbuf). If this number goes beyond
@@ -559,6 +575,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // The last time a transport window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
+
+  grpc_core::Http2StatsCollector http2_stats;
+  grpc_core::Http2ZTraceCollector http2_ztrace_collector;
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };

@@ -72,7 +72,9 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
   export RUN_TESTS_FLAGS="--filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH $RUN_TESTS_FLAGS"
 fi
 
-if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
+# Changes not needed for sonoma(Already have version available)
+# cleanup this once migration complete
+if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ] && ! $is_sonoma;
 then
   # Workaround for https://github.com/rvm/rvm/issues/5133
   export CURL_CA_BUNDLE=$(pwd)/etc/roots.pem
