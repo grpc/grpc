@@ -123,9 +123,10 @@ def _bazel_query_xml_tree(query: str) -> ET.Element:
 
 def _rule_dict_from_xml_node(rule_xml_node):
     """Converts XML node representing a rule (obtained from "bazel query --output xml") to a dictionary that contains all the metadata we will need."""
+    rule_name = rule_xml_node.attrib.get("name")
     result = {
         "class": rule_xml_node.attrib.get("class"),
-        "name": rule_xml_node.attrib.get("name"),
+        "name": rule_name,
         "srcs": [],
         "hdrs": [],
         "textual_hdrs": [],
@@ -171,6 +172,13 @@ def _rule_dict_from_xml_node(rule_xml_node):
                     # make it seem that the actual name is a dependency of the alias or bind rule
                     # (aliases don't have dependencies themselves)
                     result["deps"].append(actual_name)
+                elif rule_name == "//third_party:libssl":
+                    # //third_party:libssl is a conditional alias so let's handle it manually.
+                    result["deps"].append("@boringssl//:ssl")
+                elif rule_name == "//third_party:libcrypto":
+                    # //third_party:libcrypto is a conditional alias so let's handle it manually.
+                    result["deps"].append("@boringssl//:crypto")
+
     return result
 
 
