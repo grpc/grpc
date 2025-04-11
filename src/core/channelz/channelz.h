@@ -37,6 +37,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/ref_counted.h"
@@ -141,6 +142,20 @@ class ZTrace {
                    absl::AnyInvocable<void(Json)>) = 0;
 };
 
+class DataSink {
+ public:
+  explicit DataSink(Json::Object& output) : output_(output) {
+    CHECK(output_.find("additionalInfo") == output_.end());
+  }
+  ~DataSink();
+
+  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info);
+
+ private:
+  Json::Object& output_;
+  std::unique_ptr<Json::Object> additional_info_;
+};
+
 class DataSource {
  public:
   explicit DataSource(RefCountedPtr<BaseNode> node);
@@ -148,7 +163,7 @@ class DataSource {
   // Add any relevant json fragments to the output.
   // This method must not cause the DataSource to be deleted, or else there will
   // be a deadlock.
-  virtual void AddJson(Json::Object& output) = 0;
+  virtual void AddData(DataSink& sink) = 0;
 
   // If this data source exports some ztrace, return it here.
   virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
@@ -262,6 +277,9 @@ class ChannelNode final : public BaseNode {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
   }
+  void SetChannelArgs(const ChannelArgs& channel_args) {
+    channel_args_ = channel_args;
+  }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
@@ -286,6 +304,7 @@ class ChannelNode final : public BaseNode {
     return child_subchannels_;
   }
   const ChannelTrace& trace() const { return trace_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   void PopulateChildRefs(Json::Object* json);
@@ -293,6 +312,7 @@ class ChannelNode final : public BaseNode {
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  ChannelArgs channel_args_;
 
   // Least significant bit indicates whether the value is set.  Remaining
   // bits are a grpc_connectivity_state value.
@@ -323,6 +343,9 @@ class SubchannelNode final : public BaseNode {
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
+  void SetChannelArgs(const ChannelArgs& channel_args) {
+    channel_args_ = channel_args;
+  }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
                                   const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
@@ -341,6 +364,7 @@ class SubchannelNode final : public BaseNode {
     return child_socket_;
   }
   const ChannelTrace& trace() const { return trace_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   // Allows the channel trace test to access trace_.
@@ -352,6 +376,7 @@ class SubchannelNode final : public BaseNode {
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  ChannelArgs channel_args_;
 };
 
 // Handles channelz bookkeeping for servers
@@ -384,6 +409,9 @@ class ServerNode final : public BaseNode {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
   }
+  void SetChannelArgs(const ChannelArgs& channel_args) {
+    channel_args_ = channel_args;
+  }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
@@ -399,10 +427,12 @@ class ServerNode final : public BaseNode {
   }
 
   const ChannelTrace& trace() const { return trace_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   PerCpuCallCountingHelper call_counter_;
   ChannelTrace trace_;
+  ChannelArgs channel_args_;
   Mutex child_mu_;  // Guards child maps below.
   std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
   std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;

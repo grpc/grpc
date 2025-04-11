@@ -246,6 +246,165 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
   std::unique_ptr<grpc::GenericStub> generic_stub_;
 };
 
+template <typename T>
+void PopulateLabelMap(
+    T label_keys, T label_values,
+    std::unordered_map<std::string,
+                       opentelemetry::sdk::common::OwnedAttributeValue>*
+        label_maps) {
+  for (size_t i = 0; i < label_keys.size(); ++i) {
+    (*label_maps)[std::string(label_keys[i])] = std::string(label_values[i]);
+  }
+}
+
+MATCHER_P4(AttributesEq, label_keys, label_values, optional_label_keys,
+           optional_label_values, "") {
+  std::unordered_map<std::string,
+                     opentelemetry::sdk::common::OwnedAttributeValue>
+      label_map;
+  PopulateLabelMap(label_keys, label_values, &label_map);
+  PopulateLabelMap(optional_label_keys, optional_label_values, &label_map);
+  return ::testing::ExplainMatchResult(
+      ::testing::UnorderedElementsAreArray(label_map),
+      arg.attributes.GetAttributes(), result_listener);
+}
+
+template <typename T>
+struct Extract;
+
+template <template <typename> class T, typename U>
+struct Extract<const T<U>> {
+  using Type = U;
+};
+
+MATCHER_P(CounterResultEq, value_matcher, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
+                           ::testing::VariantWith<
+                               typename Extract<decltype(value_matcher)>::Type>(
+                               value_matcher))),
+      arg.point_data, result_listener);
+}
+
+MATCHER_P4(HistogramResultEq, sum_matcher, min_matcher, max_matcher, count,
+           "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<
+          opentelemetry::sdk::metrics::HistogramPointData>(::testing::AllOf(
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::HistogramPointData::sum_,
+              ::testing::VariantWith<
+                  typename Extract<decltype(sum_matcher)>::Type>(sum_matcher)),
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::HistogramPointData::min_,
+              ::testing::VariantWith<
+                  typename Extract<decltype(min_matcher)>::Type>(min_matcher)),
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::HistogramPointData::max_,
+              ::testing::VariantWith<
+                  typename Extract<decltype(max_matcher)>::Type>(max_matcher)),
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::HistogramPointData::count_,
+              ::testing::Eq(count)))),
+      arg.point_data, result_listener);
+}
+
+MATCHER_P(GaugeResultIs, value_matcher, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<opentelemetry::sdk::metrics::LastValuePointData>(
+          ::testing::AllOf(
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::LastValuePointData::value_,
+                  ::testing::VariantWith<
+                      typename Extract<decltype(value_matcher)>::Type>(
+                      value_matcher)),
+              ::testing::Field(&opentelemetry::sdk::metrics::
+                                   LastValuePointData::is_lastvalue_valid_,
+                               ::testing::IsTrue()))),
+      arg.point_data, result_listener);
+}
+
+// This check might subject to system clock adjustment.
+MATCHER_P(GaugeResultLaterThan, prev_timestamp, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<opentelemetry::sdk::metrics::LastValuePointData>(
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::LastValuePointData::sample_ts_,
+              ::testing::Property(
+                  &opentelemetry::common::SystemTimestamp::time_since_epoch,
+                  ::testing::Gt(prev_timestamp.time_since_epoch())))),
+      arg.point_data, result_listener);
+}
+
+MATCHER_P7(GaugeDataIsIncrementalForSpecificMetricAndLabelSet, metric_name,
+           label_key, label_value, optional_label_key, optional_label_value,
+           default_value, greater_than, "") {
+  std::unordered_map<std::string,
+                     opentelemetry::sdk::common::OwnedAttributeValue>
+      label_map;
+  PopulateLabelMap(label_key, label_value, &label_map);
+  PopulateLabelMap(optional_label_key, optional_label_value, &label_map);
+  opentelemetry::common::SystemTimestamp prev_timestamp;
+  auto prev_value = default_value;
+  size_t prev_index = 0;
+  auto& data = arg.at(metric_name);
+  bool result = true;
+  for (size_t i = 1; i < data.size(); ++i) {
+    if (::testing::Matches(::testing::UnorderedElementsAreArray(
+            data[i - 1].attributes.GetAttributes()))(label_map)) {
+      // Update the previous value for the same associated label values.
+      prev_value = opentelemetry::nostd::get<decltype(prev_value)>(
+          opentelemetry::nostd::get<
+              opentelemetry::sdk::metrics::LastValuePointData>(
+              data[i - 1].point_data)
+              .value_);
+      prev_index = i - 1;
+      prev_timestamp = opentelemetry::nostd::get<
+                           opentelemetry::sdk::metrics::LastValuePointData>(
+                           data[i - 1].point_data)
+                           .sample_ts_;
+    }
+    if (!::testing::Matches(::testing::UnorderedElementsAreArray(
+            data[i].attributes.GetAttributes()))(label_map)) {
+      // Skip values that do not have the same associated label values.
+      continue;
+    }
+    *result_listener << " Comparing data[" << i << "] with data[" << prev_index
+                     << "] ";
+    if (greater_than) {
+      result &= ::testing::ExplainMatchResult(
+          ::testing::AllOf(
+              AttributesEq(label_key, label_value, optional_label_key,
+                           optional_label_value),
+              GaugeResultIs(::testing::Gt(prev_value)),
+              GaugeResultLaterThan(prev_timestamp)),
+          data[i], result_listener);
+    } else {
+      result &= ::testing::ExplainMatchResult(
+          ::testing::AllOf(
+              AttributesEq(label_key, label_value, optional_label_key,
+                           optional_label_value),
+              GaugeResultIs(::testing::Ge(prev_value)),
+              GaugeResultLaterThan(prev_timestamp)),
+          data[i], result_listener);
+    }
+  }
+  return result;
+}
+
+MATCHER_P2(IsWithinRange, lo, hi,
+           absl::StrCat(negation ? "isn't" : "is", " between ",
+                        ::testing::PrintToString(lo), " and ",
+                        ::testing::PrintToString(hi))) {
+  return (lo) <= arg && arg <= (hi);
+}
+
+template <typename T>
+struct Extract<const IsWithinRangeMatcherP2<T, T>> {
+  using Type = T;
+};
+
 }  // namespace testing
 }  // namespace grpc
 
