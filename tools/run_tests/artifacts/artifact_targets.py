@@ -151,7 +151,7 @@ class PythonArtifact:
             )
             environ["PIP"] = "/opt/python/{}/bin/pip3".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
-            environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+            #environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
             environ["LDFLAGS"] = "-s"
             return create_docker_jobspec(
                 self.name,
@@ -165,7 +165,7 @@ class PythonArtifact:
         elif "manylinux" in self.platform:
             if self.arch == "x86":
                 environ["SETARCH_CMD"] = "linux32"
-                environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+                #environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
             # Inside the manylinux container, the python installations are located in
             # special places...
             environ["PYTHON"] = "/opt/python/{}/bin/python".format(
@@ -174,7 +174,7 @@ class PythonArtifact:
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             if self.arch == "aarch64":
-                environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+                #environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
                 # As we won't strip the binary with auditwheel (see below), strip
                 # it at link time.
                 environ["LDFLAGS"] = "-s"
@@ -202,8 +202,8 @@ class PythonArtifact:
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX"] = "TRUE"
 
-            if self.arch in ("x86", "aarch64"):
-                environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+            #if self.arch in ("x86", "aarch64"):
+                #environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
 
             if self.arch == "aarch64":
                 # As we won't strip the binary with auditwheel (see below), strip
