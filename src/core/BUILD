@@ -9377,6 +9377,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ping_promise",
+    srcs = [
+        "ext/transport/chttp2/transport/ping_promise.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/ping_promise.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+        "absl/random",
+    ],
+    deps = [
+        "1999",
+        "if",
+        "latch",
+        "loop",
+        "map",
+        "match",
+        "ping_abuse_policy",
+        "ping_callbacks",
+        "ping_rate_policy",
+        "race",
+        "sleep",
+        "time",
+        "try_seq",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
     name = "ztrace_collector",
     hdrs = ["channelz/ztrace_collector.h"],
     external_deps = [
