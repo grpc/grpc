@@ -25,12 +25,12 @@ struct TestData {
   int n;
 
   void RenderJson(Json::Object& json) const { json["n"] = Json::FromNumber(n); }
+  size_t MemoryUsage() const { return sizeof(TestData); }
 };
 
 class TestConfig {
  public:
   explicit TestConfig(std::map<std::string, std::string> args) {
-    EXPECT_EQ(args.size(), 1);
     EXPECT_EQ(args["test_arg"], "test_value");
   }
 
@@ -74,7 +74,8 @@ TEST(ZTraceCollectorTest, SingleTraceWorks) {
   Json result;
   collector.MakeZTrace()->Run(
       Timestamp::Now() + Duration::Milliseconds(100),
-      {{"test_arg", "test_value"}},
+      {{"memory_cap", std::to_string(1024 * 1024 * 1024)},
+       {"test_arg", "test_value"}},
       grpc_event_engine::experimental::GetDefaultEventEngine(),
       [&n, &result](Json r) {
         result = r;
@@ -98,7 +99,8 @@ TEST(ZTraceCollectorTest, MultipleTracesWork) {
   Json result2;
   collector.MakeZTrace()->Run(
       Timestamp::Now() + Duration::Milliseconds(100),
-      {{"test_arg", "test_value"}},
+      {{"memory_cap", std::to_string(1024 * 1024 * 1024)},
+       {"test_arg", "test_value"}},
       grpc_event_engine::experimental::GetDefaultEventEngine(),
       [&n1, &result1](Json r) {
         result1 = r;
@@ -106,7 +108,8 @@ TEST(ZTraceCollectorTest, MultipleTracesWork) {
       });
   collector.MakeZTrace()->Run(
       Timestamp::Now() + Duration::Milliseconds(100),
-      {{"test_arg", "test_value"}},
+      {{"memory_cap", std::to_string(1024 * 1024 * 1024)},
+       {"test_arg", "test_value"}},
       grpc_event_engine::experimental::GetDefaultEventEngine(),
       [&n2, &result2](Json r) {
         result2 = r;
