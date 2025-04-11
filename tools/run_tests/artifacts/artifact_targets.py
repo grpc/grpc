@@ -202,8 +202,8 @@ class PythonArtifact:
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX"] = "TRUE"
 
-            if self.arch in ("x86"):
-                environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+            #if self.arch in ("x86"):
+            #    environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
 
             if self.arch == "aarch64":
                 # As we won't strip the binary with auditwheel (see below), strip
