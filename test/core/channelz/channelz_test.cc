@@ -301,8 +301,10 @@ class TestZTrace final : public ZTrace {
 class TestDataSource final : public DataSource {
  public:
   using DataSource::DataSource;
-  void AddJson(Json::Object& object) override {
+  void AddData(DataSink& sink) override {
+    Json::Object object;
     object["test"] = Json::FromString("yes");
+    sink.AddAdditionalInfo("testData", std::move(object));
   }
   std::unique_ptr<ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "test_ztrace") return std::make_unique<TestZTrace>();
@@ -320,8 +322,16 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     Json json = channelz_channel->RenderJson();
     ASSERT_EQ(json.type(), Json::Type::kObject);
     const Json::Object& object = json.object();
-    auto it = object.find("test");
-    ASSERT_NE(it, object.end());
+    auto it_additional_info = object.find("additionalInfo");
+    ASSERT_NE(it_additional_info, object.end());
+    ASSERT_EQ(it_additional_info->second.type(), Json::Type::kObject);
+    const Json::Object& additional_info = it_additional_info->second.object();
+    auto it_test_data = additional_info.find("testData");
+    ASSERT_NE(it_test_data, additional_info.end());
+    ASSERT_EQ(it_test_data->second.type(), Json::Type::kObject);
+    const Json::Object& test_data = it_test_data->second.object();
+    auto it = test_data.find("test");
+    ASSERT_NE(it, test_data.end());
     ASSERT_EQ(it->second.type(), Json::Type::kString);
     EXPECT_EQ(it->second.string(), "yes");
   }
@@ -330,7 +340,7 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     Json json = channelz_channel->RenderJson();
     ASSERT_EQ(json.type(), Json::Type::kObject);
     const Json::Object& object = json.object();
-    auto it = object.find("test");
+    auto it = object.find("additionalInfo");
     EXPECT_EQ(it, object.end());
   }
 }
