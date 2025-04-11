@@ -26,6 +26,7 @@
 #include <atomic>
 #include <cstdint>
 #include <string>
+#include <tuple>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
@@ -65,9 +66,10 @@ std::string BaseNode::RenderJsonString() {
 }
 
 void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
+  DataSink sink(json);
   MutexLock lock(&data_sources_mu_);
   for (DataSource* data_source : data_sources_) {
-    data_source->AddJson(json);
+    data_source->AddData(sink);
   }
 }
 
@@ -105,6 +107,24 @@ void BaseNode::RunZTrace(
     return;
   }
   ztrace->Run(deadline, std::move(args), event_engine, std::move(callback));
+}
+
+//
+// DataSink
+//
+
+DataSink::~DataSink() {
+  if (additional_info_ != nullptr) {
+    output_["additionalInfo"] = Json::FromObject(std::move(*additional_info_));
+  }
+}
+
+void DataSink::AddAdditionalInfo(absl::string_view name,
+                                 Json::Object additional_info) {
+  if (additional_info_ == nullptr) {
+    additional_info_ = std::make_unique<Json::Object>();
+  }
+  additional_info_->emplace(name, Json::FromObject(std::move(additional_info)));
 }
 
 //
@@ -383,8 +403,8 @@ Json SubchannelNode::RenderJson() {
         }),
     });
   }
-  PopulateJsonFromDataSources(data);
-  return Json::FromObject(object);
+  PopulateJsonFromDataSources(object);
+  return Json::FromObject(std::move(object));
 }
 
 //
@@ -709,7 +729,7 @@ Json SocketNode::RenderJson() {
   }
   PopulateSocketAddressJson(&object, "remote", remote_.c_str());
   PopulateSocketAddressJson(&object, "local", local_.c_str());
-  PopulateJsonFromDataSources(data);
+  PopulateJsonFromDataSources(object);
   return Json::FromObject(std::move(object));
 }
 

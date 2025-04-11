@@ -141,6 +141,20 @@ class ZTrace {
                    absl::AnyInvocable<void(Json)>) = 0;
 };
 
+class DataSink {
+ public:
+  explicit DataSink(Json::Object& output) : output_(output) {
+    CHECK(output_.find("additionalInfo") == output_.end());
+  }
+  ~DataSink();
+
+  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info);
+
+ private:
+  Json::Object& output_;
+  std::unique_ptr<Json::Object> additional_info_;
+};
+
 class DataSource {
  public:
   explicit DataSource(RefCountedPtr<BaseNode> node);
@@ -148,7 +162,7 @@ class DataSource {
   // Add any relevant json fragments to the output.
   // This method must not cause the DataSource to be deleted, or else there will
   // be a deadlock.
-  virtual void AddJson(Json::Object& output) = 0;
+  virtual void AddData(DataSink& sink) = 0;
 
   // If this data source exports some ztrace, return it here.
   virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
