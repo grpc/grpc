@@ -43,12 +43,9 @@ cleanup::job::cleanup_td() {
 
 cleanup::job::cleanup_td_dualstack() {
   cleanup::run_clean "$1" \
-    --mode=td \
+    --mode=td_no_legacy \
     --td_resource_prefixes='psm-ds' \
-    --enable_dualstack \
-    --noenable_workload_identity \
-    --network=dualstack  \
-    --compute_api_version=v1beta # TODO remove when ipAddressSelectionPolicy is available in compute v1
+    --flagfile=config/common-dualstack.cfg
 }
 
 #######################################
@@ -104,10 +101,7 @@ cleanup::job::cleanup_cluster_dualstack() {
     --mode=k8s \
     --server_prefixes='psm-ds', \
     --client_prefixes='psm-ds' \
-    --enable_dualstack \
-    --noenable_workload_identity \
-    --network=dualstack  \
-    --compute_api_version=v1beta # TODO remove when ipAddressSelectionPolicy is available in compute v1
+    --flagfile=config/common-dualstack.cfg
 }
 
 #######################################
