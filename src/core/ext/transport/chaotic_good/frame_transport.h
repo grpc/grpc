@@ -22,6 +22,7 @@
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -66,6 +67,16 @@ class IncomingFrame {
       payload_;
 };
 
+struct OutgoingFrame {
+  Frame payload;
+  // TODO(ctiller): what to do for non-TCP transports??
+  std::shared_ptr<TcpCallTracer> call_tracer;
+};
+
+inline OutgoingFrame UntracedOutgoingFrame(Frame frame) {
+  return OutgoingFrame{std::move(frame), nullptr};
+}
+
 class FrameTransportSink : public RefCounted<FrameTransportSink> {
  public:
   using RefCounted::RefCounted;
@@ -78,7 +89,7 @@ class FrameTransport : public InternallyRefCounted<FrameTransport> {
  public:
   using InternallyRefCounted::InternallyRefCounted;
 
-  virtual void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
+  virtual void Start(Party* party, MpscReceiver<OutgoingFrame> outgoing_frames,
                      RefCountedPtr<FrameTransportSink> sink) = 0;
 };
 

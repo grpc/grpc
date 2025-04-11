@@ -86,7 +86,8 @@ TcpFrameTransport::TcpFrameTransport(
                       std::move(stats_plugin_group), options.enable_tracing),
       options_(options) {}
 
-auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
+auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,
+                                   std::shared_ptr<TcpCallTracer> call_tracer) {
   FrameHeader header = frame.MakeHeader();
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: WriteFrame to:"
@@ -108,7 +109,7 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
         return control_endpoint_.Write(std::move(output));
       },
       // ... otherwise write it to a data connection
-      [this, header, &frame]() mutable {
+      [this, header, &frame, &call_tracer]() mutable {
         SliceBuffer control_bytes;
         SliceBuffer data_bytes;
         auto tag = next_payload_tag_;
@@ -132,20 +133,22 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
         }
         return DiscardResult(
             Join(control_endpoint_.Write(std::move(control_bytes)),
-                 data_endpoints_.Write(tag, std::move(data_bytes))));
+                 data_endpoints_.Write(tag, std::move(data_bytes),
+                                       std::move(call_tracer))));
       });
 }
 
-auto TcpFrameTransport::WriteLoop(MpscReceiver<Frame> frames) {
+auto TcpFrameTransport::WriteLoop(MpscReceiver<OutgoingFrame> frames) {
   return Loop([self = RefAsSubclass<TcpFrameTransport>(),
                frames = std::move(frames)]() mutable {
     return TrySeq(
         // Get next outgoing frame.
         frames.Next(),
         // Serialize and write it out.
-        [self = self.get()](Frame client_frame) {
+        [self = self.get()](OutgoingFrame outgoing_frame) {
           return self->WriteFrame(
-              absl::ConvertVariantTo<FrameInterface&>(client_frame));
+              absl::ConvertVariantTo<FrameInterface&>(outgoing_frame.payload),
+              std::move(outgoing_frame.call_tracer));
         },
         []() -> LoopCtl<absl::Status> {
           // The write failures will be caught in TrySeq and exit
@@ -231,7 +234,7 @@ auto TcpFrameTransport::UntilClosed(Promise promise) {
               std::move(promise));
 }
 
-void TcpFrameTransport::Start(Party* party, MpscReceiver<Frame> frames,
+void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
                               RefCountedPtr<FrameTransportSink> sink) {
   party->Spawn(
       "tcp-write",

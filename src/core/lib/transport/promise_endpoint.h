@@ -44,6 +44,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/telemetry/context_list_entry.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_core {
@@ -69,7 +70,8 @@ class PromiseEndpoint {
   // Concurrent writes are not supported, which means callers should not call
   // `Write()` before the previous write finishes. Doing that results in
   // undefined behavior.
-  auto Write(SliceBuffer data) {
+  auto Write(SliceBuffer data,
+             std::unique_ptr<ContextList> context_list = nullptr) {
     GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Write");
     // Start write and assert previous write finishes.
     auto prev = write_state_->state.exchange(WriteState::kWriting,
@@ -86,6 +88,9 @@ class PromiseEndpoint {
       // If `Write()` returns true immediately, the callback will not be called.
       // We still need to call our callback to pick up the result.
       write_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs
+          write_args;
+      write_args.google_specific = context_list.release();
       completed = endpoint_->Write(
           [write_state = write_state_](absl::Status status) {
             ExecCtx exec_ctx;
