@@ -37,7 +37,7 @@ def send_rpc(stub):
         _LOGGER.error("Received error: %s", rpc_error)
         return rpc_error
     else:
-        _LOGGER.info("Received message: %s", response)
+        _LOGGER.info("Received message: %s", response.message)
         return response
 
 
