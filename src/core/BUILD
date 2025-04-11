@@ -8041,6 +8041,7 @@ grpc_cc_library(
         "map",
         "seq",
         "status_flag",
+        "chaotic_good_frame_transport",
     ],
 )
 
@@ -9005,6 +9006,7 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
+        "//:context_list_entry",
     ],
 )
 

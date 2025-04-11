@@ -176,7 +176,8 @@ DATA_ENDPOINTS_TEST(CanWrite) {
       event_engine().get());
   SpawnTestSeqWithoutContext(
       "write",
-      data_endpoints.Write(123, SliceBuffer(Slice::FromCopiedString("hello"))));
+      data_endpoints.Write(123, SliceBuffer(Slice::FromCopiedString("hello")),
+                           nullptr));
   WaitForAllPendingWork();
   close_ep();
   WaitForAllPendingWork();
@@ -198,8 +199,10 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   ep2.CaptureWrites(writes, event_engine().get());
   SpawnTestSeqWithoutContext(
       "write",
-      data_endpoints.Write(123, SliceBuffer(Slice::FromCopiedString("hello"))),
-      data_endpoints.Write(124, SliceBuffer(Slice::FromCopiedString("world"))));
+      data_endpoints.Write(123, SliceBuffer(Slice::FromCopiedString("hello")),
+                           nullptr),
+      data_endpoints.Write(124, SliceBuffer(Slice::FromCopiedString("world")),
+                           nullptr));
   TickUntilTrue([&]() {
     return writes.Length() == 2 * (5 + chaotic_good::data_endpoints_detail::
                                            DataFrameHeader::kFrameHeaderSize);

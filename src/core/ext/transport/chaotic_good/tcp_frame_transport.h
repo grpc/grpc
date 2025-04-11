@@ -83,7 +83,7 @@ class TcpFrameTransport final : public FrameTransport {
 
  private:
   auto WriteFrame(const FrameInterface& frame,
-                  RefCountedPtr<CallTracerInterface> call_tracer);
+                  std::shared_ptr<TcpCallTracer> call_tracer);
   auto WriteLoop(MpscReceiver<OutgoingFrame> frames);
   // Read frame header and payloads for control and data portions of one frame.
   // Resolves to StatusOr<IncomingFrame>.

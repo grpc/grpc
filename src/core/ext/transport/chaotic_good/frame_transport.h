@@ -68,9 +68,14 @@ class IncomingFrame {
 };
 
 struct OutgoingFrame {
-  RefCountedPtr<CallTracerInterface> call_tracer;
   Frame payload;
+  // TODO(ctiller): what to do for non-TCP transports??
+  std::shared_ptr<TcpCallTracer> call_tracer;
 };
+
+inline OutgoingFrame UntracedOutgoingFrame(Frame frame) {
+  return OutgoingFrame{std::move(frame), nullptr};
+}
 
 class FrameTransportSink : public RefCounted<FrameTransportSink> {
  public:

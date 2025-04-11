@@ -52,7 +52,7 @@ namespace grpc_core {
 namespace chaotic_good {
 
 ChaoticGoodClientTransport::StreamDispatch::StreamDispatch(
-    MpscSender<Frame> outgoing_frames)
+    MpscSender<OutgoingFrame> outgoing_frames)
     : outgoing_frames_(std::move(outgoing_frames)) {}
 
 RefCountedPtr<ChaoticGoodClientTransport::Stream>
@@ -192,7 +192,7 @@ uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
             << " done: cancelled=" << cancelled;
         if (cancelled) {
           self->outgoing_frames_.UnbufferedImmediateSend(
-              CancelFrame{stream_id});
+              UntracedOutgoingFrame(CancelFrame{stream_id}));
         }
         MutexLock lock(&self->mu_);
         self->stream_map_.erase(stream_id);
@@ -230,7 +230,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
   party_ = Party::Make(std::move(party_arena));
-  MpscReceiver<Frame> outgoing_frames{8};
+  MpscReceiver<OutgoingFrame> outgoing_frames{8};
   outgoing_frames_ = outgoing_frames.MakeSender();
   stream_dispatch_ =
       MakeRefCounted<StreamDispatch>(outgoing_frames.MakeSender());
@@ -250,13 +250,20 @@ void ChaoticGoodClientTransport::Orphan() {
 
 auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                                                   CallHandler call_handler) {
-  auto send_fragment = [this, stream_id](auto frame) mutable {
+  CallTracerInterface* const tracer =
+      call_handler.arena()->GetContext<CallTracerInterface>();
+  std::shared_ptr<TcpCallTracer> call_tracer;
+  if (tracer != nullptr && tracer->IsSampled()) {
+    call_tracer = tracer->StartNewTcpTrace();
+  }
+  auto send_fragment = [this, &call_tracer, stream_id](auto frame) mutable {
     frame.stream_id = stream_id;
-    return outgoing_frames_.Send(std::move(frame));
+    return outgoing_frames_.Send(OutgoingFrame{std::move(frame), call_tracer});
   };
-  auto send_message = [this, stream_id, message_chunker = message_chunker_](
-                          MessageHandle message) mutable {
-    return message_chunker.Send(std::move(message), stream_id,
+  auto send_message = [this, stream_id, &call_tracer,
+                       message_chunker =
+                           message_chunker_](MessageHandle message) mutable {
+    return message_chunker.Send(std::move(message), stream_id, call_tracer,
                                 outgoing_frames_);
   };
   return GRPC_LATENT_SEE_PROMISE(
@@ -305,7 +312,8 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
                       GRPC_TRACE_LOG(chaotic_good, INFO)
                           << "CHAOTIC_GOOD: Send cancel";
                       if (!self->outgoing_frames_
-                               .UnbufferedImmediateSend(CancelFrame{stream_id})
+                               .UnbufferedImmediateSend(UntracedOutgoingFrame(
+                                   CancelFrame{stream_id}))
                                .ok()) {
                         GRPC_TRACE_LOG(chaotic_good, INFO)
                             << "CHAOTIC_GOOD: Send cancel failed";

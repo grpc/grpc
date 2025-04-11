@@ -105,13 +105,15 @@ class OutputBuffer {
     CHECK(!rate_probe_outstanding_);
     rate_probe_outstanding_ = true;
   }
-  void CompleteBandwidthProbe(double bytes_per_nanosecond) {
+  void FinishProbe() {
     CHECK(rate_probe_outstanding_);
     rate_probe_outstanding_ = false;
-    send_rate_.SetCurrentRate(bytes_per_nanosecond);
   }
   void AddTraceContext(std::shared_ptr<TcpCallTracer> call_tracer,
                        size_t payload_size);
+  void UpdateSendRate(double bytes_per_nanosecond) {
+    send_rate_.SetCurrentRate(bytes_per_nanosecond);
+  }
 
  private:
   Waker flush_waker_;
@@ -146,12 +148,41 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
   }
 
  private:
-  class ProbeCallTracer final : public TcpCallTracer {};
+  class ProbeCallTracer final : public TcpCallTracer {
+   public:
+    ProbeCallTracer(std::shared_ptr<TcpCallTracer> parent,
+                    RefCountedPtr<OutputBuffers> output_buffers,
+                    size_t output_buffer)
+        : parent_(std::move(parent)),
+          output_buffers_(std::move(output_buffers)),
+          output_buffer_(output_buffer) {}
+
+    ~ProbeCallTracer() override {
+      output_buffers_->FinishProbe(output_buffer_);
+    }
+
+    void RecordEvent(Type type, absl::Time time, size_t byte_offset,
+                     std::optional<TcpConnectionMetrics> metrics) override {
+      if (metrics.has_value()) {
+        output_buffers_->UpdateMetrics(output_buffer_, *metrics);
+      }
+      if (parent_ != nullptr) {
+        parent_->RecordEvent(type, time, byte_offset, std::move(metrics));
+      }
+    }
+
+   private:
+    const std::shared_ptr<TcpCallTracer> parent_;
+    const RefCountedPtr<OutputBuffers> output_buffers_;
+    const size_t output_buffer_;
+  };
 
   Poll<Empty> PollWrite(uint64_t payload_tag, uint64_t send_time,
                         SliceBuffer& output_buffer,
                         std::shared_ptr<TcpCallTracer>& call_tracer);
   Poll<NextWrite> PollNext(uint32_t connection_id);
+  void UpdateMetrics(size_t output_buffer, const TcpConnectionMetrics& metrics);
+  void FinishProbe(size_t output_buffer);
 
   Mutex mu_;
   std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
@@ -276,7 +307,7 @@ class DataEndpoints {
   // to how chaotic good communicates them on the wire - those are 1 based
   // to allow for the control channel identification)
   auto Write(uint64_t tag, SliceBuffer output_buffer,
-             RefCountedPtr<TcpCallTracer> call_tracer) {
+             std::shared_ptr<TcpCallTracer> call_tracer) {
     return output_buffers_->Write(tag, std::move(output_buffer),
                                   std::move(call_tracer));
   }

@@ -182,7 +182,8 @@ Poll<Empty> OutputBuffers::PollWrite(
   std::shared_ptr<TcpCallTracer> call_tracer = std::move(call_tracer_ref);
   if (buffer->NeedsBandwidthProbe()) {
     buffer->StartRateProbe();
-    call_tracer = std::make_shared<ProbeCallTracer>(std::move(call_tracer));
+    call_tracer = std::make_shared<ProbeCallTracer>(std::move(call_tracer),
+                                                    Ref(), best_endpoint);
   }
   if (call_tracer != nullptr) {
     buffer->AddTraceContext(
@@ -222,6 +223,22 @@ void OutputBuffers::AddEndpoint(uint32_t connection_id) {
   buffers_[connection_id].emplace();
   waker = std::move(write_waker_);
   ready_endpoints_.fetch_add(1, std::memory_order_relaxed);
+}
+
+void OutputBuffers::UpdateMetrics(size_t output_buffer,
+                                  const TcpConnectionMetrics& metrics) {
+  if (!metrics.delivery_rate.has_value()) return;
+  MutexLock lock(&mu_);
+  auto& buffer = buffers_[output_buffer];
+  if (!buffer.has_value()) return;
+  buffer->UpdateSendRate(*metrics.delivery_rate * 1e-9);
+}
+
+void OutputBuffers::FinishProbe(size_t output_buffer) {
+  MutexLock lock(&mu_);
+  auto& buffer = buffers_[output_buffer];
+  if (!buffer.has_value()) return;
+  buffer->FinishProbe();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

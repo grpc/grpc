@@ -86,9 +86,8 @@ TcpFrameTransport::TcpFrameTransport(
                       std::move(stats_plugin_group), options.enable_tracing),
       options_(options) {}
 
-auto TcpFrameTransport::WriteFrame(
-    const FrameInterface& frame,
-    RefCountedPtr<CallTracerInterface> call_tracer) {
+auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,
+                                   std::shared_ptr<TcpCallTracer> call_tracer) {
   FrameHeader header = frame.MakeHeader();
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: WriteFrame to:"
@@ -110,7 +109,7 @@ auto TcpFrameTransport::WriteFrame(
         return control_endpoint_.Write(std::move(output));
       },
       // ... otherwise write it to a data connection
-      [this, header, &frame]() mutable {
+      [this, header, &frame, &call_tracer]() mutable {
         SliceBuffer control_bytes;
         SliceBuffer data_bytes;
         auto tag = next_payload_tag_;
@@ -134,7 +133,8 @@ auto TcpFrameTransport::WriteFrame(
         }
         return DiscardResult(
             Join(control_endpoint_.Write(std::move(control_bytes)),
-                 data_endpoints_.Write(tag, std::move(data_bytes))));
+                 data_endpoints_.Write(tag, std::move(data_bytes),
+                                       std::move(call_tracer))));
       });
 }
 

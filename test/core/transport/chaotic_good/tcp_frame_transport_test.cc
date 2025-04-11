@@ -154,8 +154,8 @@ void CanSendFrames(size_t num_data_endpoints, uint32_t client_alignment,
   server_arena->SetContext(static_cast<EventEngine*>(engine.get()));
   auto client_party = Party::Make(client_arena);
   auto server_party = Party::Make(server_arena);
-  MpscReceiver<Frame> client_receiver(client_max_buffer_hint);
-  MpscReceiver<Frame> server_receiver(server_max_buffer_hint);
+  MpscReceiver<OutgoingFrame> client_receiver(client_max_buffer_hint);
+  MpscReceiver<OutgoingFrame> server_receiver(server_max_buffer_hint);
   auto client_sender = client_receiver.MakeSender();
   auto server_sender = server_receiver.MakeSender();
   auto client_sink =
@@ -167,10 +167,11 @@ void CanSendFrames(size_t num_data_endpoints, uint32_t client_alignment,
   server_transport->Start(server_party.get(), std::move(server_receiver),
                           server_sink);
   for (const auto& frame : send_on_client_frames) {
-    client_sender.UnbufferedImmediateSend(CopyFrame(frame));
+    client_sender.UnbufferedImmediateSend(
+        UntracedOutgoingFrame(CopyFrame(frame)));
   }
   for (const auto& frame : send_on_server_frames) {
-    server_sender.UnbufferedImmediateSend(CopyFrame(frame));
+    server_sender.UnbufferedImmediateSend(UntracedOutgoingFrame(CopyFrame(frame)));
   }
   auto deadline = Timestamp::Now() + Duration::Hours(6);
   while (!client_sink->done() || !server_sink->done()) {

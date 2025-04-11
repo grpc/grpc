@@ -18,6 +18,7 @@
 #include <cstdint>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
@@ -92,20 +93,23 @@ class MessageChunker {
       : max_chunk_size_(max_chunk_size), alignment_(alignment) {}
 
   template <typename Output>
-  auto Send(MessageHandle message, uint32_t stream_id, Output& output) {
+  auto Send(MessageHandle message, uint32_t stream_id,
+            std::shared_ptr<TcpCallTracer> call_tracer, Output& output) {
     return If(
         ShouldChunk(*message),
         [&]() {
           BeginMessageFrame begin;
           begin.body.set_length(message->payload()->Length());
           begin.stream_id = stream_id;
-          return Seq(output.Send(std::move(begin)),
+          return Seq(output.Send(OutgoingFrame{std::move(begin), call_tracer}),
                      Loop([chunker = message_chunker_detail::PayloadChunker(
                                max_chunk_size_, alignment_, stream_id,
                                std::move(*message->payload())),
-                           &output]() mutable {
+                           &output,
+                           call_tracer = std::move(call_tracer)]() mutable {
                        auto next = chunker.NextChunk();
-                       return Map(output.Send(std::move(next.frame)),
+                       return Map(output.Send(OutgoingFrame{
+                                      std::move(next.frame), call_tracer}),
                                   [done = next.done](
                                       StatusFlag x) -> LoopCtl<StatusFlag> {
                                     if (!done) return Continue{};
@@ -117,7 +121,7 @@ class MessageChunker {
           MessageFrame frame;
           frame.message = std::move(message);
           frame.stream_id = stream_id;
-          return output.Send(std::move(frame));
+          return output.Send(OutgoingFrame{std::move(frame)});
         });
   }
 
