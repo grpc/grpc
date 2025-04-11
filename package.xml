@@ -1295,6 +1295,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/blocking_dns.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/can_track_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/chaotic_good_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/iomgr_compatible.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
