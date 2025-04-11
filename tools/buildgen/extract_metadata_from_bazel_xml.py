@@ -960,6 +960,11 @@ def _generate_build_extra_metadata_for_tests(
         if "bazel_only" in bazel_tags:
             continue
 
+        # Only run OTel tests if building with the OTel plugin
+        if test.startswith("test/cpp/ext/otel"):
+            test_dict["build"] = "plugin_test"
+            test_dict["plugin_option"] = "gRPC_BUILD_GRPCPP_OTEL_PLUGIN"
+
         # if any tags that restrict platform compatibility are present,
         # generate the "platforms" field accordingly
         # TODO(jtattermusch): there is also a "no_linux" tag, but we cannot take
@@ -1336,34 +1341,6 @@ _BUILD_EXTRA_METADATA = {
         "run": False,
         "_TYPE": "target",
         "_RENAME": "grpc_cli",
-    },
-    "test/cpp/ext/otel:otel_plugin_test": {
-        "language": "c++",
-        "build": "plugin_test",
-        "_TYPE": "target",
-        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
-        "_RENAME": "otel_plugin_test",
-    },
-    "test/cpp/ext/otel:grpc_text_map_carrier_test": {
-        "language": "c++",
-        "build": "plugin_test",
-        "_TYPE": "target",
-        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
-        "_RENAME": "grpc_text_map_carrier_test",
-    },
-    "test/cpp/ext/otel:grpc_trace_bin_text_map_propagator_test": {
-        "language": "c++",
-        "build": "plugin_test",
-        "_TYPE": "target",
-        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
-        "_RENAME": "grpc_trace_bin_text_map_propagator_test",
-    },
-    "test/cpp/ext/otel:otel_tracing_test": {
-        "language": "c++",
-        "build": "plugin_test",
-        "_TYPE": "target",
-        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
-        "_RENAME": "otel_tracing_test",
     },
     # TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     # For now it's ok to disable them as these binaries aren't very useful anyway.

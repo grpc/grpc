@@ -7566,6 +7566,7 @@ grpc_cc_library(
     ],
     deps = [
         "http2_status",
+        "json",
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
@@ -9387,6 +9388,18 @@ grpc_cc_library(
         "time",
         "//:channelz",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_ztrace_collector",
+    hdrs = ["ext/transport/chttp2/transport/http2_ztrace_collector.h"],
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
+    deps = [
+        "ztrace_collector",
+        "//:chttp2_frame",
     ],
 )
 
