@@ -27,6 +27,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/util/json/json.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -132,6 +133,22 @@ class Http2Settings {
 
   bool operator!=(const Http2Settings& rhs) const { return !operator==(rhs); }
 
+  Json::Object ToJsonObject() const {
+    Json::Object object;
+    object["headerTableSize"] = Json::FromNumber(header_table_size());
+    object["maxConcurrentStreams"] = Json::FromNumber(max_concurrent_streams());
+    object["initialWindowSize"] = Json::FromNumber(initial_window_size());
+    object["maxFrameSize"] = Json::FromNumber(max_frame_size());
+    object["maxHeaderListSize"] = Json::FromNumber(max_header_list_size());
+    object["preferredReceiveCryptoMessageSize"] =
+        Json::FromNumber(preferred_receive_crypto_message_size());
+    object["enablePush"] = Json::FromBool(enable_push());
+    object["allowTrueBinaryMetadata"] =
+        Json::FromBool(allow_true_binary_metadata());
+    object["allowSecurityFrame"] = Json::FromBool(allow_security_frame());
+    return object;
+  }
+
  private:
   uint32_t header_table_size_ = 4096;
   uint32_t max_concurrent_streams_ = 4294967295u;
@@ -151,6 +168,15 @@ class Http2SettingsManager {
   const Http2Settings& acked() const { return acked_; }
   Http2Settings& mutable_peer() { return peer_; }
   const Http2Settings& peer() const { return peer_; }
+
+  Json::Object ToJsonObject() const {
+    Json::Object object;
+    object["local"] = Json::FromObject(local_.ToJsonObject());
+    object["sent"] = Json::FromObject(sent_.ToJsonObject());
+    object["peer"] = Json::FromObject(peer_.ToJsonObject());
+    object["acked"] = Json::FromObject(acked_.ToJsonObject());
+    return object;
+  }
 
   std::optional<Http2SettingsFrame> MaybeSendUpdate();
   GRPC_MUST_USE_RESULT bool AckLastSend();

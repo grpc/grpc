@@ -382,13 +382,6 @@ static const char* kBuildExtraMetadata = R"json({
         "run": true,
         "_TYPE": "target",
         "_RENAME": "grpc_cli"
-    },
-    "test/cpp/ext/otel:otel_plugin_test": {
-        "language": "c++",
-        "build": "plugin_test",
-        "_TYPE": "target",
-        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
-        "_RENAME": "otel_plugin_test"
     }
     // TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     // For now it's ok to disable them as these binaries aren't very useful anyway.
@@ -542,6 +535,10 @@ class ArtifactGen {
       }
       if (absl::c_contains(bazel_rule.tags, "bazel_only")) {
         continue;
+      }
+      if (absl::StartsWith(test, "test/cpp/ext/otel")) {
+        test_dict["build"] = "plugin_test";
+        test_dict["plugin_option"] = "gRPC_BUILD_GRPCPP_OTEL_PLUGIN";
       }
       // if any tags that restrict platform compatibility are present,
       // generate the "platforms" field accordingly
