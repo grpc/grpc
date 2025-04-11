@@ -256,11 +256,11 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
   if (tracer != nullptr && tracer->IsSampled()) {
     call_tracer = tracer->StartNewTcpTrace();
   }
-  auto send_fragment = [this, &call_tracer, stream_id](auto frame) mutable {
+  auto send_fragment = [this, call_tracer, stream_id](auto frame) mutable {
     frame.stream_id = stream_id;
     return outgoing_frames_.Send(OutgoingFrame{std::move(frame), call_tracer});
   };
-  auto send_message = [this, stream_id, &call_tracer,
+  auto send_message = [this, stream_id, call_tracer,
                        message_chunker =
                            message_chunker_](MessageHandle message) mutable {
     return message_chunker.Send(std::move(message), stream_id, call_tracer,
