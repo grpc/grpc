@@ -115,6 +115,7 @@ class BaseNode : public RefCounted<BaseNode> {
                  std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                      event_engine,
                  absl::AnyInvocable<void(Json output)> callback);
+  Json::Object AdditionalInfo();
 
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
@@ -143,16 +144,37 @@ class ZTrace {
 
 class DataSink {
  public:
-  explicit DataSink(Json::Object& output) : output_(output) {
+  virtual void AddAdditionalInfo(absl::string_view name,
+                                 Json::Object additional_info) = 0;
+
+ protected:
+  ~DataSink() = default;
+};
+
+class JsonDataSink final : public DataSink {
+ public:
+  explicit JsonDataSink(Json::Object& output) : output_(output) {
     CHECK(output_.find("additionalInfo") == output_.end());
   }
-  ~DataSink();
+  ~JsonDataSink();
 
-  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info);
+  void AddAdditionalInfo(absl::string_view name,
+                         Json::Object additional_info) override;
 
  private:
   Json::Object& output_;
   std::unique_ptr<Json::Object> additional_info_;
+};
+
+class ExplicitJsonDataSink final : public DataSink {
+ public:
+  void AddAdditionalInfo(absl::string_view name,
+                         Json::Object additional_info) override;
+
+  Json::Object Finalize() { return std::move(additional_info_); }
+
+ private:
+  Json::Object additional_info_;
 };
 
 class DataSource {
