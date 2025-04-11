@@ -44,4 +44,4 @@ using TransportContextPtr = RefCountedPtr<TransportContext>;
 
 }  // namespace grpc_core::chaotic_good
 
-#endif
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_CONTEXT_H
