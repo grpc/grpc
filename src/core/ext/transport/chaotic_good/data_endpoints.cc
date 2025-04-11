@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <memory>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/escaping.h"
@@ -55,21 +56,99 @@ absl::StatusOr<DataFrameHeader> DataFrameHeader::Parse(const uint8_t* data) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// SendRate
+
+void SendRate::StartSend(uint64_t current_time, uint64_t send_size) {
+  CHECK_NE(current_time, 0u);
+  send_start_time_ = current_time;
+  send_size_ = send_size;
+}
+
+void SendRate::MaybeCompleteSend(uint64_t current_time) {
+  if (send_start_time_ == 0) return;
+  if (current_time > send_start_time_) {
+    const double rate = static_cast<double>(send_size_) /
+                        static_cast<double>(current_time - send_start_time_);
+    // Adjust send rate based on observations.
+    if (current_rate_ > 0) {
+      current_rate_ = 0.9 * current_rate_ + 0.1 * rate;
+    } else {
+      current_rate_ = rate;
+    }
+  }
+  send_start_time_ = 0;
+}
+
+void SendRate::SetCurrentRate(double bytes_per_nanosecond) {
+  CHECK_GE(bytes_per_nanosecond, 0.0);
+  current_rate_ = bytes_per_nanosecond;
+  last_rate_measurement_ = Timestamp::Now();
+}
+
+bool SendRate::IsRateMeasurementStale() const {
+  return Timestamp::Now() - last_rate_measurement_ > Duration::Seconds(1);
+}
+
+double SendRate::DeliveryTime(uint64_t current_time, size_t bytes) {
+  if (current_rate_ <= 0) return 0.0;
+  // start time relative to the current time for this send
+  double start_time = 0.0;
+  if (send_start_time_ != 0) {
+    // Use integer subtraction to avoid rounding errors, getting everything
+    // with a zero base of 'now' to maximize precision.
+    // Since we have uint64_ts and want a signed double result we need to
+    // care about argument ordering to get a valid result.
+    const double send_start_time_relative_to_now =
+        current_time > send_start_time_
+            ? -static_cast<double>(current_time - send_start_time_)
+            : static_cast<double>(send_start_time_ - current_time);
+    const double predicted_end_time =
+        send_start_time_relative_to_now + current_rate_ * send_size_;
+    if (predicted_end_time > start_time) start_time = predicted_end_time;
+  }
+  return start_time + bytes / current_rate_;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // OutputBuffer
 
 std::optional<double> OutputBuffer::DeliveryTime(uint64_t current_time,
                                                  size_t bytes) {
-  if (pending_.Length() != 0 && pending_.Length() + bytes > pending_max_) {
+  double delivery_time = send_rate_.DeliveryTime(current_time, bytes);
+  // If there's already data queued and we claim immediate sending (eg new
+  // connection) OR if the send would take >100ms... wait for a bit.
+  if (pending_.Length() != 0 &&
+      (delivery_time <= 0 || delivery_time > 0.1 * 1e9)) {
     return std::nullopt;
   }
-  return send_rate_.DeliveryTime(current_time, pending_.Length() + bytes);
+  return delivery_time;
+}
+
+void OutputBuffer::MaybeCompleteSend(uint64_t current_time) {
+  send_rate_.MaybeCompleteSend(current_time);
+}
+
+NextWrite OutputBuffer::TakePendingAndStartWrite(uint64_t current_time) {
+  send_rate_.StartSend(current_time, pending_.Length());
+  return {std::move(pending_), std::move(context_list_)};
+}
+
+void OutputBuffer::AddTraceContext(std::shared_ptr<TcpCallTracer> call_tracer,
+                                   size_t payload_size) {
+  if (context_list_ == nullptr) {
+    context_list_ = std::make_unique<ContextList>();
+  }
+  context_list_->emplace_back(
+      /* context: */ nullptr, pending_.Length(), payload_size,
+      /* byte_offset: */ 0, /* stream_index: */ 0, std::move(call_tracer));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // OutputBuffers
 
-Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
-                                     SliceBuffer& output_buffer) {
+Poll<Empty> OutputBuffers::PollWrite(
+    uint64_t payload_tag, uint64_t send_time, SliceBuffer& output_buffer,
+    std::shared_ptr<TcpCallTracer>& call_tracer_ref) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   const uint32_t length = output_buffer.Length();
@@ -87,24 +166,36 @@ Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
     }
   }
   if (best_endpoint == std::numeric_limits<size_t>::max()) {
-    GRPC_TRACE_LOG(chaotic_good, INFO)
-        << "CHAOTIC_GOOD: No data endpoint ready for " << length
-        << " bytes on queue " << this;
+    GRPC_TRACE_LOG(chaotic_good, INFO) << "CHAOTIC_GOOD: No data endpoint "
+                                          "ready "
+                                          "for "
+                                       << length << " bytes on queue " << this;
     write_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
     return Pending{};
   }
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Queue " << length << " data onto endpoint "
       << best_endpoint << " queue " << this;
-  waker = buffers_[best_endpoint]->TakeWaker();
-  SliceBuffer& output = buffers_[best_endpoint]->pending();
+  auto& buffer = buffers_[best_endpoint];
+  waker = buffer->TakeWaker();
+  SliceBuffer& output = buffer->pending();
+  std::shared_ptr<TcpCallTracer> call_tracer = std::move(call_tracer_ref);
+  if (buffer->NeedsBandwidthProbe()) {
+    buffer->StartRateProbe();
+    call_tracer = std::make_shared<ProbeCallTracer>(std::move(call_tracer));
+  }
+  if (call_tracer != nullptr) {
+    buffer->AddTraceContext(
+        std::move(call_tracer),
+        DataFrameHeader::kFrameHeaderSize + output_buffer.Length());
+  }
   DataFrameHeader{payload_tag, send_time, length}.Serialize(
       output.AddTiny(DataFrameHeader::kFrameHeaderSize));
   output.TakeAndAppend(output_buffer);
   return Empty{};
 }
 
-Poll<SliceBuffer> OutputBuffers::PollNext(uint32_t connection_id) {
+Poll<NextWrite> OutputBuffers::PollNext(uint32_t connection_id) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   MutexLock lock(&mu_);
@@ -207,11 +298,12 @@ auto Endpoint::WriteLoop(uint32_t id,
                output_buffers = std::move(output_buffers)]() {
     return TrySeq(
         output_buffers->Next(id),
-        [endpoint, id](SliceBuffer buffer) {
+        [endpoint, id](data_endpoints_detail::NextWrite next_write) {
           GRPC_TRACE_LOG(chaotic_good, INFO)
-              << "CHAOTIC_GOOD: Write " << buffer.Length()
+              << "CHAOTIC_GOOD: Write " << next_write.bytes.Length()
               << "b to data endpoint #" << id;
-          return endpoint->Write(std::move(buffer));
+          return endpoint->Write(std::move(next_write.bytes),
+                                 std::move(next_write.context_list));
         },
         []() -> LoopCtl<absl::Status> { return Continue{}; });
   });

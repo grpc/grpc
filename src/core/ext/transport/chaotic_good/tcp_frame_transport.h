@@ -77,13 +77,14 @@ class TcpFrameTransport final : public FrameTransport {
       std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
           stats_plugin_group);
 
-  void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
+  void Start(Party* party, MpscReceiver<OutgoingFrame> outgoing_frames,
              RefCountedPtr<FrameTransportSink> sink) override;
   void Orphan() override;
 
  private:
-  auto WriteFrame(const FrameInterface& frame);
-  auto WriteLoop(MpscReceiver<Frame> frames);
+  auto WriteFrame(const FrameInterface& frame,
+                  RefCountedPtr<CallTracerInterface> call_tracer);
+  auto WriteLoop(MpscReceiver<OutgoingFrame> frames);
   // Read frame header and payloads for control and data portions of one frame.
   // Resolves to StatusOr<IncomingFrame>.
   auto ReadFrameBytes();
