@@ -174,7 +174,6 @@ class PythonArtifact:
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             if self.arch == "aarch64":
-                #environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
                 # As we won't strip the binary with auditwheel (see below), strip
                 # it at link time.
                 environ["LDFLAGS"] = "-s"
