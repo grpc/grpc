@@ -22,8 +22,8 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
-#include "transport_context.h"
 
 namespace grpc_core {
 namespace chaotic_good {

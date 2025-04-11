@@ -20,6 +20,7 @@
 #include <cstdint>
 
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -27,7 +28,6 @@
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/seq_bit_set.h"
-#include "transport_context.h"
 
 namespace grpc_core {
 namespace chaotic_good {

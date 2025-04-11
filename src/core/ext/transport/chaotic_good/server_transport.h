@@ -49,6 +49,7 @@
 #include "src/core/ext/transport/chaotic_good/message_chunker.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -72,7 +73,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
-#include "transport_context.h"
 
 namespace grpc_core {
 namespace chaotic_good {
