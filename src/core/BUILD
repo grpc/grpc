@@ -9130,11 +9130,19 @@ grpc_cc_library(
     hdrs = [
         "call/filter_fusion.h",
     ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/log:check",
+        "absl/log",
+        "absl/memory",
+    ],
     deps = [
         "call_filters",
         "call_final_info",
         "metadata",
         "type_list",
+        "//:grpc_base",
         "//:grpc_public_hdrs",
     ],
 )
