@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
