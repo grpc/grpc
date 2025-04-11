@@ -440,9 +440,9 @@ CORE_END2END_TEST(
       .RequestWithPayload(0, {{"grpc-internal-encoding-request", "identity"}});
 }
 
-// Note: The compression level is currently tied to the specific algorithm being
-// used declared in the CompressionAlgorithmForLevel function in the compression
-// library.
+// Note: This test currently assumes that the compression level is tied to a
+// specific algorithm. When the semantics around compression level become more
+// clear, this would need to change.
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithDefaultHighLevelDecompressInCore) {
   TestConfigurator(*this)
