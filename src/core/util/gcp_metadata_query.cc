@@ -68,8 +68,9 @@ GcpMetadataQuery::GcpMetadataQuery(
       attribute_(std::move(attribute)),
       callback_(std::move(callback)) {
   GRPC_CLOSURE_INIT(&on_done_, OnDone, this, nullptr);
-  auto uri = URI::Create("http", std::move(metadata_server_name), attribute_,
-                         {} /* query params */, "" /* fragment */);
+  auto uri =
+      URI::Create("http", /*user_info=*/"", std::move(metadata_server_name),
+                  attribute_, {} /* query params */, "" /* fragment */);
   CHECK(uri.ok());  // params are hardcoded
   grpc_http_request request;
   memset(&request, 0, sizeof(grpc_http_request));
