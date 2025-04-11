@@ -382,7 +382,7 @@ static const char* kBuildExtraMetadata = R"json({
         "run": true,
         "_TYPE": "target",
         "_RENAME": "grpc_cli"
-    },
+    }
     // TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     // For now it's ok to disable them as these binaries aren't very useful anyway.
     // 'test/core/security:create_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_create_jwt' },
