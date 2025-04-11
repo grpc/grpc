@@ -712,6 +712,17 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "shared_bit_gen_test",
+    srcs = ["shared_bit_gen_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:shared_bit_gen",
+    ],
+)
+
+grpc_cc_test(
     name = "ring_buffer_test",
     srcs = ["ring_buffer_test.cc"],
     external_deps = ["gtest"],

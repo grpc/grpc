@@ -6231,6 +6231,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "shared_bit_gen",
+    hdrs = [
+        "util/shared_bit_gen.h",
+    ],
+    external_deps = [
+        "absl/random",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_xds_cluster_impl",
     srcs = [
         "load_balancing/xds/xds_cluster_impl.cc",
