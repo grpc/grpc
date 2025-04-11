@@ -39,6 +39,15 @@
 namespace grpc_core {
 namespace {
 
+bool should_disable_executor() {
+#ifdef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+  return false;
+#else
+  return IsEventEngineClientEnabled() && IsEventEngineListenerEnabled() &&
+         IsEventEngineForAllOtherEndpointsEnabled();
+#endif
+}
+
 thread_local ThreadState* g_this_thread_state;
 
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
@@ -83,6 +92,9 @@ void Executor::Init() { SetThreading(true); }
 
 size_t Executor::RunClosures(const char* executor_name,
                              grpc_closure_list list) {
+  if (should_disable_executor()) {
+    grpc_core::Crash("Executor should not be in use");
+  }
   size_t n = 0;
 
   grpc_closure* c = list.head;
@@ -110,10 +122,16 @@ size_t Executor::RunClosures(const char* executor_name,
 }
 
 bool Executor::IsThreaded() const {
+  if (should_disable_executor()) {
+    return false;
+  }
   return gpr_atm_acq_load(&num_threads_) > 0;
 }
 
 void Executor::SetThreading(bool threading) {
+  if (should_disable_executor()) {
+    return;
+  }
   gpr_atm curr_num_threads = gpr_atm_acq_load(&num_threads_);
   GRPC_TRACE_LOG(executor, INFO)
       << "EXECUTOR (" << name_ << ") SetThreading(" << threading << ") begin";
@@ -195,6 +213,9 @@ void Executor::SetThreading(bool threading) {
 void Executor::Shutdown() { SetThreading(false); }
 
 void Executor::ThreadMain(void* arg) {
+  if (should_disable_executor()) {
+    grpc_core::Crash("Executor should not be in use");
+  }
   ThreadState* ts = static_cast<ThreadState*>(arg);
   g_this_thread_state = ts;
 
@@ -237,6 +258,9 @@ void Executor::ThreadMain(void* arg) {
 
 void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
                        bool is_short) {
+  if (should_disable_executor()) {
+    grpc_core::Crash("Executor should not be in use");
+  }
   bool retry_push;
 
   do {
@@ -358,6 +382,12 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
 // global mutex. So it is okay to assume that these functions are thread-safe
 void Executor::InitAll() {
   GRPC_TRACE_LOG(executor, INFO) << "Executor::InitAll() enter";
+  if (should_disable_executor()) {
+    GRPC_TRACE_LOG(executor, INFO)
+        << "Disabling the executor, all async execution should be going "
+           "through an EventEngine";
+    return;
+  }
 
   // Return if Executor::InitAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] != nullptr) {
@@ -378,12 +408,21 @@ void Executor::InitAll() {
 
 void Executor::Run(grpc_closure* closure, grpc_error_handle error,
                    ExecutorType executor_type, ExecutorJobType job_type) {
+  if (should_disable_executor()) {
+    grpc_core::Crash("Executor should not be in use");
+  }
   executor_enqueue_fns_[static_cast<size_t>(executor_type)]
                        [static_cast<size_t>(job_type)](closure, error);
 }
 
 void Executor::ShutdownAll() {
   GRPC_TRACE_LOG(executor, INFO) << "Executor::ShutdownAll() enter";
+  if (should_disable_executor()) {
+    GRPC_TRACE_LOG(executor, INFO) << "The Executor is already disabled, all "
+                                      "async execution should be going "
+                                      "through an EventEngine";
+    return;
+  }
 
   // Return if Executor:SshutdownAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] == nullptr) {
@@ -415,15 +454,24 @@ void Executor::ShutdownAll() {
 }
 
 bool Executor::IsThreaded(ExecutorType executor_type) {
+  if (should_disable_executor()) {
+    return false;
+  }
   CHECK(executor_type < ExecutorType::NUM_EXECUTORS);
   return executors[static_cast<size_t>(executor_type)]->IsThreaded();
 }
 
 bool Executor::IsThreadedDefault() {
+  if (should_disable_executor()) {
+    return false;
+  }
   return Executor::IsThreaded(ExecutorType::DEFAULT);
 }
 
 void Executor::SetThreadingAll(bool enable) {
+  if (should_disable_executor()) {
+    return;
+  }
   GRPC_TRACE_LOG(executor, INFO)
       << "EXECUTOR Executor::SetThreadingAll(" << enable << ") called";
   for (size_t i = 0; i < static_cast<size_t>(ExecutorType::NUM_EXECUTORS);
@@ -433,6 +481,9 @@ void Executor::SetThreadingAll(bool enable) {
 }
 
 void Executor::SetThreadingDefault(bool enable) {
+  if (should_disable_executor()) {
+    return;
+  }
   GRPC_TRACE_LOG(executor, INFO)
       << "EXECUTOR Executor::SetThreadingDefault(" << enable << ") called";
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->SetThreading(enable);
