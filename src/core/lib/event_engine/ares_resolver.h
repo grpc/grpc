@@ -19,7 +19,6 @@
 #include <utility>
 
 #include "absl/status/status.h"
-#include "src/core/lib/debug/trace.h"
 
 #if GRPC_ARES == 1
 
@@ -42,6 +41,25 @@ namespace grpc_event_engine::experimental {
 
 class AresResolver : public RefCountedDNSResolverInterface {
  public:
+  // A handle allowing  to trigger the reinitialization of a specific
+  // AresResolver instance after a fork. This approach avoids maintaining a
+  // global collection of resolvers and allows them to come and go. It also
+  // prevents the AresResolver class itself from depending on POSIX-specific
+  // fork APIs.
+  class ReinitHandle {
+   public:
+    explicit ReinitHandle(AresResolver* resolver);
+    // Only pass around as a pointer
+    ReinitHandle(ReinitHandle&& other) = delete;
+    ReinitHandle(const ReinitHandle& other) = delete;
+    void OnResolverGone();
+    void Reinit();
+
+   private:
+    grpc_core::Mutex mutex_;
+    AresResolver* resolver_ ABSL_GUARDED_BY(&mutex_);
+  };
+
   static absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
   CreateAresResolver(absl::string_view dns_server,
                      std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
@@ -49,7 +67,8 @@ class AresResolver : public RefCountedDNSResolverInterface {
 
   // Do not instantiate directly -- use CreateAresResolver() instead.
   AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-               std::shared_ptr<EventEngine> event_engine, ares_channel channel);
+               std::shared_ptr<EventEngine> event_engine, ares_channel channel,
+               absl::string_view dns_server);
   ~AresResolver() override;
   void Orphan() override ABSL_LOCKS_EXCLUDED(mutex_);
 
@@ -61,6 +80,10 @@ class AresResolver : public RefCountedDNSResolverInterface {
   void LookupTXT(EventEngine::DNSResolver::LookupTXTCallback callback,
                  absl::string_view name) ABSL_LOCKS_EXCLUDED(mutex_) override;
 
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  std::weak_ptr<ReinitHandle> GetReinitHandle();
+  void Reinitialize();
+#endif  // GRPC_ENABLE_FORK_SUPPORT
  private:
   // A FdNode saves (not owns) a live socket/fd which c-ares creates, and owns a
   // GrpcPolledFd object which has a platform-agnostic interface to interact
@@ -120,6 +143,12 @@ class AresResolver : public RefCountedDNSResolverInterface {
       ABSL_GUARDED_BY(mutex_);
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_;
   std::shared_ptr<EventEngine> event_engine_;
+  std::string dns_server_;
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  grpc_core::Mutex reinit_handle_mu_;
+  std::shared_ptr<ReinitHandle> reinit_handle_
+      ABSL_GUARDED_BY(reinit_handle_mu_);
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
 }  // namespace grpc_event_engine::experimental
