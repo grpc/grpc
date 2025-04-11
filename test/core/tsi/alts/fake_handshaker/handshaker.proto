@@ -98,6 +98,9 @@ message StartClientHandshakeReq {
 
   // (Optional) Maximum frame size supported by the client.
   uint32 max_frame_size = 10;
+
+  // (Optional) Ordered transport protocol preferences supported by the client.
+  TransportProtocolPreferences transport_protocol_preferences = 12;
 }
 
 message ServerHandshakeParameters {
@@ -139,6 +142,9 @@ message StartServerHandshakeReq {
 
   // (Optional) Maximum frame size supported by the server.
   uint32 max_frame_size = 7;
+
+  // (Optional) Transport protocol preferences supported by the server.
+  TransportProtocolPreferences transport_protocol_preferences = 8;
 }
 
 message NextHandshakeMessageReq {
@@ -227,7 +233,5 @@ service HandshakerService {
   // messages with next. Each time client sends a request, the handshaker
   // service expects to respond. Client does not have to wait for service's
   // response before sending next request.
-  rpc DoHandshake(stream HandshakerReq)
-      returns (stream HandshakerResp) {
-  }
+  rpc DoHandshake(stream HandshakerReq) returns (stream HandshakerResp) {}
 }
