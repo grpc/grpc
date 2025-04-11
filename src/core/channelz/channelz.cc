@@ -66,11 +66,20 @@ std::string BaseNode::RenderJsonString() {
 }
 
 void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
-  DataSink sink(json);
+  JsonDataSink sink(json);
   MutexLock lock(&data_sources_mu_);
   for (DataSource* data_source : data_sources_) {
     data_source->AddData(sink);
   }
+}
+
+Json::Object BaseNode::AdditionalInfo() {
+  ExplicitJsonDataSink sink;
+  MutexLock lock(&data_sources_mu_);
+  for (DataSource* data_source : data_sources_) {
+    data_source->AddData(sink);
+  }
+  return sink.Finalize();
 }
 
 void BaseNode::RunZTrace(
@@ -113,18 +122,23 @@ void BaseNode::RunZTrace(
 // DataSink
 //
 
-DataSink::~DataSink() {
+JsonDataSink::~JsonDataSink() {
   if (additional_info_ != nullptr) {
     output_["additionalInfo"] = Json::FromObject(std::move(*additional_info_));
   }
 }
 
-void DataSink::AddAdditionalInfo(absl::string_view name,
-                                 Json::Object additional_info) {
+void JsonDataSink::AddAdditionalInfo(absl::string_view name,
+                                     Json::Object additional_info) {
   if (additional_info_ == nullptr) {
     additional_info_ = std::make_unique<Json::Object>();
   }
   additional_info_->emplace(name, Json::FromObject(std::move(additional_info)));
+}
+
+void ExplicitJsonDataSink::AddAdditionalInfo(absl::string_view name,
+                                             Json::Object additional_info) {
+  additional_info_.emplace(name, Json::FromObject(std::move(additional_info)));
 }
 
 //
