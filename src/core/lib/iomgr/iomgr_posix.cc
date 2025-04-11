@@ -38,7 +38,11 @@ extern grpc_pollset_vtable grpc_posix_pollset_vtable;
 extern grpc_pollset_set_vtable grpc_posix_pollset_set_vtable;
 
 static void iomgr_platform_init(void) {
-  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::NativeDNSResolver>());
+  if (!grpc_core::IsEventEngineDnsEnabled() ||
+      !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+    grpc_core::ResetDNSResolver(
+        std::make_unique<grpc_core::NativeDNSResolver>());
+  }
   grpc_wakeup_fd_global_init();
   grpc_event_engine_init();
   grpc_tcp_posix_init();
