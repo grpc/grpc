@@ -225,6 +225,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
                      ->CreateMemoryAllocator("chaotic-good")),
       message_chunker_(message_chunker),
       frame_transport_(std::move(frame_transport)) {
+  CHECK(ctx_ != nullptr);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       ctx_->event_engine.get());

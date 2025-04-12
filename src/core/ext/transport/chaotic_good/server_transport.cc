@@ -264,6 +264,7 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
           1024)),
       call_destination_(std::move(call_destination)),
       message_chunker_(message_chunker) {
+  CHECK(ctx_ != nullptr);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       ctx_->event_engine.get());
