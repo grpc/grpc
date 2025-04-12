@@ -72,6 +72,7 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     channelz_node->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Channel created"));
+    channelz_node->SetChannelArgs(args);
     // Add channelz node to channel args.
     // We remove the is_internal_channel arg, since we no longer need it.
     args = args.Remove(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL)

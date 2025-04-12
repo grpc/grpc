@@ -71,6 +71,7 @@ _GRPC_DEP_NAMES = [
     "google_cloud_cpp",
     "rules_shell",
     "rules_java",
+    "yaml-cpp",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -96,6 +97,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "google_cloud_cpp",
     "rules_shell",
     "rules_java",
+    "yaml-cpp",
 ]
 
 
