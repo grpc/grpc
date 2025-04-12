@@ -390,6 +390,16 @@ def grpc_test_only_deps():
             build_file = "@com_github_grpc_grpc//third_party:libprotobuf_mutator.BUILD",
         )
 
+    if "yaml-cpp" not in native.existing_rules():
+        http_archive(
+            name = "yaml-cpp",
+            sha256 = "fbe74bbdcee21d656715688706da3c8becfd946d92cd44705cc6098bb23b3a16",
+            strip_prefix = "yaml-cpp-0.8.0",
+            urls = [
+                "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz",
+            ],
+        )
+
 def grpc_module_deps():
     if "google_cloud_cpp" not in native.existing_rules():
         http_archive(
