@@ -30,7 +30,8 @@ class MockFrameTransport final : public FrameTransport {
  public:
   explicit MockFrameTransport(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine) {}
+          event_engine)
+      : ctx_(MakeRefCounted<TransportContext>(std::move(event_engine))) {}
   ~MockFrameTransport() override;
 
   void Start(Party* party, MpscReceiver<Frame> outgoing_frames,

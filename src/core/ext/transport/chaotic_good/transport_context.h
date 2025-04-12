@@ -29,11 +29,15 @@ struct TransportContext : public RefCounted<TransportContext> {
       : event_engine(
             args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
         stats_plugin_group(
-            args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()) {}
+            args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()) {
+    CHECK(this->event_engine != nullptr);
+  }
   explicit TransportContext(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine)
-      : event_engine(std::move(event_engine)), stats_plugin_group(nullptr) {}
+      : event_engine(std::move(event_engine)), stats_plugin_group(nullptr) {
+    CHECK(this->event_engine != nullptr);
+  }
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine;
   const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
