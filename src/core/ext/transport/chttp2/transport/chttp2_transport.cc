@@ -637,7 +637,7 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                   .ToJsonString());
           http2_info["misc"] = Json::FromObject(std::move(misc));
           http2_info["settings"] = Json::FromObject(t->settings.ToJsonObject());
-          sink.AddAdditionalInfo("http2_info", std::move(http2_info));
+          sink.AddAdditionalInfo("http2", std::move(http2_info));
           n.Notify();
         }),
         absl::OkStatus());

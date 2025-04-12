@@ -116,6 +116,7 @@ class BaseNode : public RefCounted<BaseNode> {
                  std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                      event_engine,
                  absl::AnyInvocable<void(Json output)> callback);
+  Json::Object AdditionalInfo();
 
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
@@ -144,16 +145,11 @@ class ZTrace {
 
 class DataSink {
  public:
-  explicit DataSink(Json::Object& output) : output_(output) {
-    CHECK(output_.find("additionalInfo") == output_.end());
-  }
-  ~DataSink();
+  virtual void AddAdditionalInfo(absl::string_view name,
+                                 Json::Object additional_info) = 0;
 
-  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info);
-
- private:
-  Json::Object& output_;
-  std::unique_ptr<Json::Object> additional_info_;
+ protected:
+  ~DataSink() = default;
 };
 
 class DataSource {
