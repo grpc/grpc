@@ -26,6 +26,7 @@
 #include <atomic>
 #include <cstdint>
 #include <string>
+#include <tuple>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
@@ -48,6 +49,52 @@ namespace grpc_core {
 namespace channelz {
 
 //
+// DataSink
+//
+
+namespace {
+class JsonDataSink final : public DataSink {
+ public:
+  explicit JsonDataSink(Json::Object& output) : output_(output) {
+    CHECK(output_.find("additionalInfo") == output_.end());
+  }
+  ~JsonDataSink() {
+    if (additional_info_ != nullptr) {
+      output_["additionalInfo"] =
+          Json::FromObject(std::move(*additional_info_));
+    }
+  }
+
+  void AddAdditionalInfo(absl::string_view name,
+                         Json::Object additional_info) override {
+    if (additional_info_ == nullptr) {
+      additional_info_ = std::make_unique<Json::Object>();
+    }
+    additional_info_->emplace(name,
+                              Json::FromObject(std::move(additional_info)));
+  }
+
+ private:
+  Json::Object& output_;
+  std::unique_ptr<Json::Object> additional_info_;
+};
+
+class ExplicitJsonDataSink final : public DataSink {
+ public:
+  void AddAdditionalInfo(absl::string_view name,
+                         Json::Object additional_info) override {
+    additional_info_.emplace(name,
+                             Json::FromObject(std::move(additional_info)));
+  }
+
+  Json::Object Finalize() { return std::move(additional_info_); }
+
+ private:
+  Json::Object additional_info_;
+};
+}  // namespace
+
+//
 // BaseNode
 //
 
@@ -65,10 +112,20 @@ std::string BaseNode::RenderJsonString() {
 }
 
 void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
+  JsonDataSink sink(json);
   MutexLock lock(&data_sources_mu_);
   for (DataSource* data_source : data_sources_) {
-    data_source->AddJson(json);
+    data_source->AddData(sink);
   }
+}
+
+Json::Object BaseNode::AdditionalInfo() {
+  ExplicitJsonDataSink sink;
+  MutexLock lock(&data_sources_mu_);
+  for (DataSource* data_source : data_sources_) {
+    data_source->AddData(sink);
+  }
+  return sink.Finalize();
 }
 
 void BaseNode::RunZTrace(
@@ -383,8 +440,8 @@ Json SubchannelNode::RenderJson() {
         }),
     });
   }
-  PopulateJsonFromDataSources(data);
-  return Json::FromObject(object);
+  PopulateJsonFromDataSources(object);
+  return Json::FromObject(std::move(object));
 }
 
 //
@@ -709,7 +766,7 @@ Json SocketNode::RenderJson() {
   }
   PopulateSocketAddressJson(&object, "remote", remote_.c_str());
   PopulateSocketAddressJson(&object, "local", local_.c_str());
-  PopulateJsonFromDataSources(data);
+  PopulateJsonFromDataSources(object);
   return Json::FromObject(std::move(object));
 }
 
