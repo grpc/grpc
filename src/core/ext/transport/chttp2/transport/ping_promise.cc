@@ -28,25 +28,23 @@
 
 namespace grpc_core {
 namespace http2 {
+using SendPingArgs = ::grpc_core::http2::PingSystemInterface::SendPingArgs;
+using Callback = absl::AnyInvocable<void()>;
+
 #define PING_LOG                                           \
   LOG_IF(INFO, (GRPC_TRACE_FLAG_ENABLED(http) ||           \
                 GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||  \
                 GRPC_TRACE_FLAG_ENABLED(http_keepalive) || \
                 GRPC_TRACE_FLAG_ENABLED(http2_ping)))
 
-// Ping Callback promise based wrappers
 Promise<absl::Status> PingSystem::PingPromiseCallbacks::RequestPing(
     Callback on_initiate) {
-  // TODO(akshitpatel) : [PH2][P0] : shared_ptr might not be needed. Simply
-  // passing a ref to the ping_callback should suffice. The only case that
-  // needs some thought is the promise waiting on the latch is cancelled but
-  // the ack callback is still called. This should not happen in practice
-  // but need to verify.
   std::shared_ptr<Latch<void>> latch = std::make_shared<Latch<void>>();
   auto on_ack = [latch]() { latch->Set(); };
   ping_callbacks_.OnPing(std::move(on_initiate), std::move(on_ack));
   return Map(latch->Wait(), [latch](Empty) { return absl::OkStatus(); });
 }
+
 Promise<absl::Status> PingSystem::PingPromiseCallbacks::WaitForPingAck() {
   std::shared_ptr<Latch<void>> latch = std::make_shared<Latch<void>>();
   auto on_ack = [latch]() { latch->Set(); };
@@ -72,9 +70,9 @@ void PingSystem::TriggerDelayedPing(Duration wait, Party* party) {
       "DelayedPing",
       [this, wait]() mutable {
         VLOG(2) << "Scheduling delayed ping after wait=" << wait;
-        return TrySeq(Sleep(wait), [this]() mutable {
-          return ping_interface_->TriggerWrite();
-        });
+        return AssertResultType<absl::Status>(TrySeq(
+            Sleep(wait),
+            [this]() mutable { return ping_interface_->TriggerWrite(); }));
       },
       [this](auto) { delayed_ping_spawned_ = false; });
 }
@@ -116,14 +114,14 @@ void PingSystem::SpawnTimeout(Duration ping_timeout, const uint64_t opaque_data,
   party->Spawn(
       "PingTimeout",
       [this, ping_timeout, opaque_data]() {
-        return Race(TrySeq(Sleep(ping_timeout),
-                           [this, opaque_data]() mutable {
-                             VLOG(2)
-                                 << " Ping ack not received for id="
-                                 << opaque_data << ". Ping timeout triggered.";
-                             return ping_interface_->PingTimeout();
-                           }),
-                    ping_callbacks_.WaitForPingAck());
+        return AssertResultType<absl::Status>(Race(
+            TrySeq(Sleep(ping_timeout),
+                   [this, opaque_data]() mutable {
+                     VLOG(2) << " Ping ack not received for id=" << opaque_data
+                             << ". Ping timeout triggered.";
+                     return ping_interface_->PingTimeout();
+                   }),
+            ping_callbacks_.WaitForPingAck()));
       },
       [](auto) {});
 }
@@ -134,14 +132,14 @@ Promise<absl::Status> PingSystem::MaybeSendPing(
       NeedToPing(next_allowed_ping_interval, party),
       [this, ping_timeout, party]() mutable {
         const uint64_t opaque_data = ping_callbacks_.StartPing();
-        return TrySeq(
-            ping_interface_->SendPing(SendPingArgs{false, opaque_data}),
-            [this, ping_timeout, opaque_data, party]() {
-              VLOG(2) << "Ping Sent with id: " << opaque_data;
-              SpawnTimeout(ping_timeout, opaque_data, party);
-              SentPing();
-              return absl::OkStatus();
-            });
+        return AssertResultType<absl::Status>(
+            TrySeq(ping_interface_->SendPing(SendPingArgs{false, opaque_data}),
+                   [this, ping_timeout, opaque_data, party]() {
+                     VLOG(2) << "Ping Sent with id: " << opaque_data;
+                     SpawnTimeout(ping_timeout, opaque_data, party);
+                     SentPing();
+                     return absl::OkStatus();
+                   }));
       },
       []() { return Immediate(absl::OkStatus()); });
 }

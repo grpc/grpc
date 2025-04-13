@@ -46,26 +46,33 @@ class MockPingSystemInterface : public PingSystemInterface {
   MOCK_METHOD(Promise<absl::Status>, TriggerWrite, (), (override));
   MOCK_METHOD(Promise<absl::Status>, PingTimeout, (), (override));
 
-  void ExpectSendPing(SendPingArgs args, int times = 1) {
+  void ExpectSendPing(SendPingArgs expected_args) {
     EXPECT_CALL(*this, SendPing)
-        .Times(times)
-        .WillRepeatedly(WithArgs<0>([](SendPingArgs args) {
-          EXPECT_EQ(args.ack, args.ack);
+        .WillOnce(WithArgs<0>([expected_args](SendPingArgs args) {
+          EXPECT_EQ(expected_args.ack, args.ack);
+          LOG(INFO) << "MockPingSystemInterface SendPing Polled (ack: "
+                    << args.ack << " opaque_data: " << args.opaque_data << ")."
+                    << "Expected (ack: " << expected_args.ack
+                    << " opaque_data: " << expected_args.opaque_data << ")";
           return Immediate(absl::OkStatus());
         }));
   }
-  void ExpectPingTimeout(int times = 1) {
-    EXPECT_CALL(*this, PingTimeout).Times(times).WillRepeatedly(([]() {
+  void ExpectPingTimeout() {
+    EXPECT_CALL(*this, PingTimeout).WillOnce(([]() {
+      LOG(INFO) << "MockPingSystemInterface PingTimeout Polled";
       return Immediate(absl::OkStatus());
     }));
   }
   void ExpectTriggerWrite(Timestamp call_after) {
     EXPECT_CALL(*this, TriggerWrite).WillOnce(([call_after]() {
-      EXPECT_GE(Timestamp::Now(), call_after);
+      Timestamp now = Timestamp::Now();
+      LOG(INFO) << "MockPingSystemInterface TriggerWrite Polled(now: " << now
+                << " call_after: " << call_after << ")";
+      EXPECT_GE(now, call_after);
       return Immediate(absl::OkStatus());
     }));
   }
-  auto ExpectSendPingReturnArgs(SendPingArgs args) {
+  auto ExpectSendPingReturnArgs(SendPingArgs expected_args) {
     struct SendPingReturn {
       SendPingArgs args;
       Notification ready;
@@ -74,12 +81,18 @@ class MockPingSystemInterface : public PingSystemInterface {
         std::make_shared<SendPingReturn>();
 
     EXPECT_CALL(*this, SendPing)
-        .WillOnce(WithArgs<0>([send_ping_return](SendPingArgs args) {
-          EXPECT_EQ(args.ack, args.ack);
-          send_ping_return->args = args;
-          send_ping_return->ready.Notify();
-          return Immediate(absl::OkStatus());
-        }));
+        .WillOnce(
+            WithArgs<0>([send_ping_return, expected_args](SendPingArgs args) {
+              LOG(INFO) << "MockPingSystemInterface SendPing Polled (ack: "
+                        << args.ack << " opaque_data: " << args.opaque_data
+                        << ")."
+                        << "Expected (ack: " << expected_args.ack
+                        << " opaque_data: " << expected_args.opaque_data << ")";
+              EXPECT_EQ(expected_args.ack, args.ack);
+              send_ping_return->args = args;
+              send_ping_return->ready.Notify();
+              return Immediate(absl::OkStatus());
+            }));
     return [send_ping_return] {
       send_ping_return->ready.WaitForNotification();
       return send_ping_return->args;
@@ -307,7 +320,7 @@ PING_SYSTEM_TEST(TestPingCancel) {
   EXPECT_EQ(ping_system.CountPingInflight(), 1);
   EXPECT_FALSE(ping_system.PingRequested());
 
-  ping_system.Cancel(event_engine().get());
+  ping_system.CancelCallbacks(event_engine().get());
   EXPECT_FALSE(ping_system.PingRequested());
 
   WaitForAllPendingWork();

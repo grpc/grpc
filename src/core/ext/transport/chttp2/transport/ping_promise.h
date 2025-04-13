@@ -33,8 +33,8 @@ namespace http2 {
 class PingSystemInterface {
  public:
   struct SendPingArgs {
-    bool ack;
-    uint64_t opaque_data;
+    bool ack = false;
+    uint64_t opaque_data = 0;
   };
   // TODO(tjagtap) : [PH2][P1] Change the return type of the promises to
   // Promise<Http2Status> type when that is submitted.
@@ -50,28 +50,19 @@ class PingSystemInterface {
   virtual ~PingSystemInterface() = default;
 };
 
-// All the promises returned by PingSystem MUST be spawned on the same party as
-// the other transport operations
+// The code in this class is NOT thread safe. It has been designed to run on a
+// single thread. This guarantee is achieved by spawning all the promises
+// returned by this class on the same transport party.
 class PingSystem {
-  using SendPingArgs = PingSystemInterface::SendPingArgs;
-  using Callback = absl::AnyInvocable<void()>;
   class PingPromiseCallbacks {
     Chttp2PingCallbacks ping_callbacks_;
     absl::BitGen bitgen_;
 
    public:
-    // Returns a promise that resolves once a new ping is initiated and ack is
-    // received for the same.
-    Promise<absl::Status> RequestPing(Callback on_initiate);
-
-    // Returns a promise that resolves once the next valid ping ack is received.
+    Promise<absl::Status> RequestPing(absl::AnyInvocable<void()> on_initiate);
     Promise<absl::Status> WaitForPingAck();
-
-    // Cancels all the callbacks for the inflight pings. This function does not
-    // cancel the promises that are waiting on the ping ack.
-    // This should be called as part of closing the transport to free up any
-    // memory in use by the ping callbacks.
-    void Cancel(grpc_event_engine::experimental::EventEngine* event_engine) {
+    void CancelCallbacks(
+        grpc_event_engine::experimental::EventEngine* event_engine) {
       ping_callbacks_.CancelAll(event_engine);
     }
     uint64_t StartPing() { return ping_callbacks_.StartPing(bitgen_); }
@@ -80,7 +71,7 @@ class PingSystem {
                  grpc_event_engine::experimental::EventEngine* event_engine) {
       return ping_callbacks_.AckPing(id, event_engine);
     }
-    uint64_t CountPingInflight() { return ping_callbacks_.pings_inflight(); }
+    size_t CountPingInflight() { return ping_callbacks_.pings_inflight(); }
   };
 
  public:
@@ -109,22 +100,33 @@ class PingSystem {
   }
 
   // Ping callbacks wrapper
-  auto RequestPing(Callback on_initiate) {
+
+  // Returns a promise that resolves once a new ping is initiated and ack is
+  // received for the same. The on_initiate callback is executed when the
+  // ping is initiated.
+  auto RequestPing(absl::AnyInvocable<void()> on_initiate) {
     return ping_callbacks_.RequestPing(std::move(on_initiate));
   }
+
+  // Returns a promise that resolves once the next valid ping ack is received.
   auto WaitForPingAck() { return ping_callbacks_.WaitForPingAck(); }
 
-  auto Cancel(grpc_event_engine::experimental::EventEngine* event_engine) {
-    ping_callbacks_.Cancel(event_engine);
+  // Cancels all the callbacks for the inflight pings. This function does not
+  // cancel the promises that are waiting on the ping ack.
+  // This should be called as part of closing the transport to free up any
+  // memory in use by the ping callbacks.
+  auto CancelCallbacks(
+      grpc_event_engine::experimental::EventEngine* event_engine) {
+    ping_callbacks_.CancelCallbacks(event_engine);
   }
 
-  auto StartPing() { return ping_callbacks_.StartPing(); }
-  auto PingRequested() { return ping_callbacks_.PingRequested(); }
-  auto AckPing(uint64_t id,
+  uint64_t StartPing() { return ping_callbacks_.StartPing(); }
+  bool PingRequested() { return ping_callbacks_.PingRequested(); }
+  bool AckPing(uint64_t id,
                grpc_event_engine::experimental::EventEngine* event_engine) {
     return ping_callbacks_.AckPing(id, event_engine);
   }
-  auto CountPingInflight() { return ping_callbacks_.CountPingInflight(); }
+  size_t CountPingInflight() { return ping_callbacks_.CountPingInflight(); }
 
  private:
   PingPromiseCallbacks ping_callbacks_;
