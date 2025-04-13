@@ -146,7 +146,7 @@ YODEL_TEST(KeepAliveSystemTest, TestGotData) {
   party->Spawn("WaitForData",
                TrySeq(keep_alive_system.TestOnlyWaitForData(),
                       [&on_done, &execution_order, &latch]() {
-                        execution_order.append("3");
+                        execution_order.append("2");
                         on_done.Call(absl::OkStatus());
                         latch.Set();
                         return absl::OkStatus();
@@ -154,18 +154,21 @@ YODEL_TEST(KeepAliveSystemTest, TestGotData) {
                [](auto) { LOG(INFO) << "WaitForData1 resolved"; });
   party->Spawn("ReadDataAndWaitForData",
                TrySeq(
-                   [&keep_alive_system]() {
+                   [&keep_alive_system, &execution_order]() {
+                     execution_order.append("1");
                      keep_alive_system.GotData();
                      // redundant GotData call
                      keep_alive_system.GotData();
                      return absl::OkStatus();
                    },
                    [&latch]() { return latch.Wait(); },
-                   [&keep_alive_system, &latch2] {
+                   [&keep_alive_system, &latch2, &execution_order] {
+                     execution_order.append("3");
                      latch2.Set();
                      return keep_alive_system.TestOnlyWaitForData();
                    },
-                   [&on_done2] {
+                   [&on_done2, &execution_order] {
+                     execution_order.append("5");
                      on_done2.Call(absl::OkStatus());
                      return absl::OkStatus();
                    }),
@@ -173,7 +176,8 @@ YODEL_TEST(KeepAliveSystemTest, TestGotData) {
 
   party->Spawn("ReadData2",
                TrySeq(latch2.Wait(),
-                      [&keep_alive_system] {
+                      [&keep_alive_system, &execution_order] {
+                        execution_order.append("4");
                         keep_alive_system.GotData();
                         return absl::OkStatus();
                       }),
@@ -182,6 +186,7 @@ YODEL_TEST(KeepAliveSystemTest, TestGotData) {
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
+  EXPECT_STREQ(execution_order.c_str(), "12345");
 }
 
 }  // namespace grpc_core
