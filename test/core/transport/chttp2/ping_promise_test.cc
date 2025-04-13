@@ -1,3 +1,20 @@
+//
+//
+// Copyright 2025 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 
 #include <memory>
@@ -33,14 +50,13 @@ class MockKeepAliveSystemInterface : public KeepAliveSystemInterface {
         .Times(end_after)
         .WillRepeatedly([&end_after] {
           if (--end_after == 0) {
-            LOG(INFO) << "SendPing returning: " << absl::CancelledError();
             return Immediate(absl::CancelledError());
           }
-          LOG(INFO) << "SendPing returning: " << absl::OkStatus();
           return Immediate(absl::OkStatus());
         });
   }
-  void ExpectSendPing(Duration duration) {
+
+  void ExpectSendPingWithSleep(Duration duration) {
     EXPECT_CALL(*this, SendPing()).WillOnce([duration] {
       return TrySeq(Sleep(duration),
                     [] { return Immediate(absl::OkStatus()); });
@@ -83,7 +99,7 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
   keep_alive_interface->ExpectSendPing(end_after);
 
   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    Duration::Infinity());
+                                    /*keepalive_timeout*/ Duration::Infinity());
   auto party = GetParty();
   keep_alive_system.Spawn(party, Duration::Seconds(1));
 
@@ -94,15 +110,14 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
 
 YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeout) {
   InitParty();
-  // int end_after = 1;
   std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
       keep_alive_interface =
           std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
   keep_alive_interface->ExpectKeepAliveTimeout();
-  keep_alive_interface->ExpectSendPing(Duration::Hours(1));
+  keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1));
 
   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    Duration::Seconds(1));
+                                    /*keepalive_timeout*/ Duration::Seconds(1));
   auto party = GetParty();
   keep_alive_system.Spawn(party, Duration::Seconds(1));
 
@@ -123,7 +138,7 @@ YODEL_TEST(KeepAliveSystemTest, TestGotData) {
   EXPECT_CALL(on_done2, Call(absl::OkStatus()));
 
   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    Duration::Hours(1));
+                                    /*keepalive_timeout*/ Duration::Hours(1));
   auto party = GetParty();
   Latch<void> latch;
   Latch<void> latch2;
@@ -136,17 +151,17 @@ YODEL_TEST(KeepAliveSystemTest, TestGotData) {
                         latch.Set();
                         return absl::OkStatus();
                       }),
-               [](auto) { LOG(INFO) << "Reached KeepAlive end"; });
+               [](auto) { LOG(INFO) << "WaitForData1 resolved"; });
   party->Spawn("ReadDataAndWaitForData",
                TrySeq(
                    [&keep_alive_system]() {
                      keep_alive_system.GotData();
+                     // redundant GotData call
                      keep_alive_system.GotData();
                      return absl::OkStatus();
                    },
                    [&latch]() { return latch.Wait(); },
                    [&keep_alive_system, &latch2] {
-                     keep_alive_system.TestOnlyResetDataReceived();
                      latch2.Set();
                      return keep_alive_system.TestOnlyWaitForData();
                    },
@@ -154,7 +169,7 @@ YODEL_TEST(KeepAliveSystemTest, TestGotData) {
                      on_done2.Call(absl::OkStatus());
                      return absl::OkStatus();
                    }),
-               [](auto) { LOG(INFO) << "ReadData end"; });
+               [](auto) { LOG(INFO) << "WaitForData2 resolved"; });
 
   party->Spawn("ReadData2",
                TrySeq(latch2.Wait(),

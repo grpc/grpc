@@ -44,6 +44,7 @@ class KeepAliveSystem {
  private:
   void ResetDataReceived() { data_received_ = false; }
   auto WaitForData() {
+    ResetDataReceived();
     return [this]() -> Poll<absl::Status> {
       if (data_received_) {
         LOG(INFO) << "Data received. Poll resolved";
@@ -89,7 +90,6 @@ class KeepAliveSystem {
     keepalive_timeout_ = keepalive_timeout;
   }
   auto TestOnlyWaitForData() { return WaitForData(); }
-  void TestOnlyResetDataReceived() { ResetDataReceived(); }
 };
 }  // namespace http2
 }  // namespace grpc_core
