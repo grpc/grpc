@@ -29,6 +29,7 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -42,7 +43,7 @@ TcpFrameTransport::TcpFrameTransport(
     TransportContextPtr ctx)
     : ctx_(ctx),
       control_endpoint_(std::move(control_endpoint), ctx->event_engine.get()),
-      data_endpoints_(std::move(pending_data_endpoints), ctx,
+      data_endpoints_(std::move(pending_data_endpoints), ctx, ztrace_collector_,
                       options.enable_tracing),
       options_(options) {}
 
@@ -63,6 +64,7 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
         TcpFrameHeader hdr{header, 0};
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: Send control frame " << hdr.ToString();
+        ztrace_collector_->Append(WriteFrameHeaderTrace{hdr});
         hdr.Serialize(output.AddTiny(TcpFrameHeader::kFrameHeaderSize));
         frame.SerializePayload(output);
         return control_endpoint_.Write(std::move(output));
@@ -90,6 +92,7 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
           memset(slice.data(), 0, padding);
           data_bytes.AppendIndexed(Slice(std::move(slice)));
         }
+        ztrace_collector_->Append(WriteFrameHeaderTrace{hdr});
         return DiscardResult(
             Join(control_endpoint_.Write(std::move(control_bytes)),
                  data_endpoints_.Write(tag, std::move(data_bytes))));
@@ -133,6 +136,7 @@ auto TcpFrameTransport::ReadFrameBytes() {
         return frame_header;
       },
       [this](TcpFrameHeader frame_header) {
+        ztrace_collector_->Append(ReadFrameHeaderTrace{frame_header});
         return If(
             // If the payload is on the connection frame
             frame_header.payload_tag == 0,

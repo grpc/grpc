@@ -77,7 +77,6 @@ struct WriteFrameHeaderTrace {
 };
 
 struct WriteLargeFrameHeaderTrace {
-  TcpFrameHeader header;
   TcpDataFrameHeader data_header;
   std::vector<double> lb_decisions;
 
@@ -87,7 +86,6 @@ struct WriteLargeFrameHeaderTrace {
 
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(false, object);
-    tcp_ztrace_collector_detail::TcpFrameHeaderToJsonObject(header, object);
     tcp_ztrace_collector_detail::TcpDataFrameHeaderToJsonObject(data_header,
                                                                 object);
     Json::Array lb;

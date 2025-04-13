@@ -22,9 +22,9 @@
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
-#include "tcp_ztrace_collector.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -63,7 +63,8 @@ class TcpFrameTransport final : public FrameTransport {
   auto UntilClosed(Promise promise);
 
   const TransportContextPtr ctx_;
-  std::shared_ptr<TcpZTraceCollector> ztrace_collector_;
+  std::shared_ptr<TcpZTraceCollector> ztrace_collector_ =
+      std::make_shared<TcpZTraceCollector>();
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
   const Options options_;

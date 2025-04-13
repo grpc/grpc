@@ -33,6 +33,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -78,13 +79,24 @@ Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
     write_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
     return Pending{};
   }
+  TcpDataFrameHeader hdr{payload_tag, send_time, length};
+  ztrace_collector_->Append([this, &hdr, send_time, write_size]() {
+    std::vector<double> lb_decisions;
+    mu_.AssertHeld();
+    for (size_t i = 0; i < buffers_.size(); ++i) {
+      lb_decisions.push_back(
+          buffers_[i].has_value()
+              ? buffers_[i]->DeliveryTime(send_time, write_size).value_or(-1.0)
+              : -1.0);
+    }
+    return WriteLargeFrameHeaderTrace{hdr, std::move(lb_decisions)};
+  });
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Queue " << length << " data onto endpoint "
       << best_endpoint << " queue " << this;
   waker = buffers_[best_endpoint]->TakeWaker();
   SliceBuffer& output = buffers_[best_endpoint]->pending();
-  TcpDataFrameHeader{payload_tag, send_time, length}.Serialize(
-      output.AddTiny(TcpDataFrameHeader::kFrameHeaderSize));
+  hdr.Serialize(output.AddTiny(TcpDataFrameHeader::kFrameHeaderSize));
   output.TakeAndAppend(output_buffer);
   return Empty{};
 }
@@ -203,18 +215,21 @@ auto Endpoint::WriteLoop(uint32_t id,
 }
 
 auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
-                        std::shared_ptr<PromiseEndpoint> endpoint) {
+                        std::shared_ptr<PromiseEndpoint> endpoint,
+                        std::shared_ptr<TcpZTraceCollector> ztrace_collector) {
   return Loop([id, endpoint = std::move(endpoint),
-               input_queues = std::move(input_queues)]() {
+               input_queues = std::move(input_queues),
+               ztrace_collector = std::move(ztrace_collector)]() {
     return TrySeq(
         endpoint->ReadSlice(TcpDataFrameHeader::kFrameHeaderSize),
         [](Slice frame_header) {
           return TcpDataFrameHeader::Parse(frame_header.data());
         },
-        [id, endpoint](TcpDataFrameHeader frame_header) {
+        [id, endpoint, ztrace_collector](TcpDataFrameHeader frame_header) {
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: Read " << frame_header
               << " on data connection #" << id;
+          ztrace_collector->Append(ReadDataHeaderTrace{frame_header});
           return TryStaple(endpoint->Read(frame_header.payload_length),
                            frame_header);
         },
@@ -231,7 +246,8 @@ auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
 Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                    RefCountedPtr<InputQueue> input_queues,
                    PendingConnection pending_connection, bool enable_tracing,
-                   TransportContextPtr ctx) {
+                   TransportContextPtr ctx,
+                   std::shared_ptr<TcpZTraceCollector> ztrace_collector) {
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   arena->SetContext(ctx->event_engine.get());
   party_ = Party::Make(arena);
@@ -240,12 +256,15 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
       [id, enable_tracing, output_buffers = std::move(output_buffers),
        input_queues = std::move(input_queues),
        pending_connection = std::move(pending_connection),
-       arena = std::move(arena), ctx = std::move(ctx)]() mutable {
+       arena = std::move(arena), ctx = std::move(ctx),
+       ztrace_collector = std::move(ztrace_collector)]() mutable {
         return TrySeq(
             pending_connection.Await(),
             [id, enable_tracing, output_buffers = std::move(output_buffers),
              input_queues = std::move(input_queues), arena = std::move(arena),
-             ctx = std::move(ctx)](PromiseEndpoint ep) mutable {
+             ctx = std::move(ctx),
+             ztrace_collector =
+                 std::move(ztrace_collector)](PromiseEndpoint ep) mutable {
               GRPC_TRACE_LOG(chaotic_good, INFO)
                   << "CHAOTIC_GOOD: data endpoint " << id << " to "
                   << grpc_event_engine::experimental::ResolvedAddressToString(
@@ -269,8 +288,10 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
               auto read_party = Party::Make(std::move(arena));
               read_party->Spawn(
                   "read",
-                  [id, input_queues = std::move(input_queues), endpoint]() {
-                    return ReadLoop(id, input_queues, endpoint);
+                  [id, input_queues = std::move(input_queues), endpoint,
+                   ztrace_collector = std::move(ztrace_collector)]() {
+                    return ReadLoop(id, input_queues, endpoint,
+                                    ztrace_collector);
                   },
                   [](absl::Status) {});
               return Map(
@@ -286,15 +307,17 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
 ///////////////////////////////////////////////////////////////////////////////
 // DataEndpoints
 
-DataEndpoints::DataEndpoints(std::vector<PendingConnection> endpoints_vec,
-                             TransportContextPtr ctx, bool enable_tracing,
-                             data_endpoints_detail::Clock* clock)
-    : output_buffers_(
-          MakeRefCounted<data_endpoints_detail::OutputBuffers>(clock)),
+DataEndpoints::DataEndpoints(
+    std::vector<PendingConnection> endpoints_vec, TransportContextPtr ctx,
+    std::shared_ptr<TcpZTraceCollector> ztrace_collector, bool enable_tracing,
+    data_endpoints_detail::Clock* clock)
+    : output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
+          clock, ztrace_collector)),
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(i, output_buffers_, input_queues_,
-                            std::move(endpoints_vec[i]), enable_tracing, ctx);
+                            std::move(endpoints_vec[i]), enable_tracing, ctx,
+                            ztrace_collector);
   }
 }
 

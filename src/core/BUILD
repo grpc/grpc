@@ -8069,6 +8069,38 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_tcp_frame_header",
+    hdrs = [
+        "ext/transport/chaotic_good/tcp_frame_header.h",
+    ],
+    srcs = [
+        "ext/transport/chaotic_good/tcp_frame_header.cc",
+    ],
+    external_deps =[
+        "absl/strings",
+    ],
+    deps = [
+        "chaotic_good_frame_header",
+        "chaotic_good_serialize_little_endian",
+    ]
+)
+
+grpc_cc_library(
+    name = "chaotic_good_tcp_ztrace_collector",
+    hdrs = [
+        "ext/transport/chaotic_good/tcp_ztrace_collector.h",
+    ],
+    srcs = [
+        "ext/transport/chaotic_good/tcp_ztrace_collector.cc",
+    ],
+    deps = [
+        "ztrace_collector",
+        "chaotic_good_tcp_frame_header",
+        "chaotic_good_frame_header",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_message_chunker",
     hdrs = [
         "ext/transport/chaotic_good/message_chunker.h",
@@ -8157,6 +8189,8 @@ grpc_cc_library(
         "seq_bit_set",
         "slice_buffer",
         "status_flag",
+        "chaotic_good_tcp_frame_header",
+        "chaotic_good_tcp_ztrace_collector",
         "try_seq",
         "//:promise",
     ],
@@ -8209,6 +8243,8 @@ grpc_cc_library(
         "chaotic_good_pending_connection",
         "chaotic_good_serialize_little_endian",
         "chaotic_good_transport_context",
+        "chaotic_good_tcp_frame_header",
+        "chaotic_good_tcp_ztrace_collector",
         "event_engine_tcp_socket_utils",
         "if",
         "inter_activity_latch",

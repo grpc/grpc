@@ -18,8 +18,10 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <memory>
 
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
@@ -114,7 +116,9 @@ class OutputBuffer {
 // The set of output buffers for all connected data endpoints
 class OutputBuffers : public RefCounted<OutputBuffers> {
  public:
-  explicit OutputBuffers(Clock* clock) : clock_(clock) {}
+  OutputBuffers(Clock* clock,
+                std::shared_ptr<TcpZTraceCollector> ztrace_collector)
+      : ztrace_collector_(std::move(ztrace_collector)), clock_(clock) {}
 
   auto Write(uint64_t payload_tag, SliceBuffer output_buffer) {
     return [payload_tag, send_time = clock_->Now(),
@@ -138,6 +142,7 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
                         SliceBuffer& output_buffer);
   Poll<SliceBuffer> PollNext(uint32_t connection_id);
 
+  const std::shared_ptr<TcpZTraceCollector> ztrace_collector_;
   Mutex mu_;
   std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
@@ -225,14 +230,16 @@ class Endpoint final {
   Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
-           TransportContextPtr ctx);
+           TransportContextPtr ctx,
+           std::shared_ptr<TcpZTraceCollector> ztrace_collector);
 
  private:
   static auto WriteLoop(uint32_t id,
                         RefCountedPtr<OutputBuffers> output_buffers,
                         std::shared_ptr<PromiseEndpoint> endpoint);
   static auto ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
-                       std::shared_ptr<PromiseEndpoint> endpoint);
+                       std::shared_ptr<PromiseEndpoint> endpoint,
+                       std::shared_ptr<TcpZTraceCollector> ztrace_collector);
 
   RefCountedPtr<Party> party_;
 };
@@ -245,7 +252,9 @@ class DataEndpoints {
   using ReadTicket = data_endpoints_detail::InputQueue::ReadTicket;
 
   explicit DataEndpoints(std::vector<PendingConnection> endpoints,
-                         TransportContextPtr ctx, bool enable_tracing,
+                         TransportContextPtr ctx,
+                         std::shared_ptr<TcpZTraceCollector> ztrace_collector,
+                         bool enable_tracing,
                          data_endpoints_detail::Clock* clock = DefaultClock());
 
   // Try to queue output_buffer against a data endpoint.
