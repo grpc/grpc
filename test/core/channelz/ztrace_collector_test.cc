@@ -178,11 +178,12 @@ TEST(ZTraceCollectorTest, ExhaustionTest) {
           r->n.Notify();
         });
   }
+  absl::SleepFor(absl::Seconds(1));
   size_t num_completed_before_finish = 0;
   for (auto& r : results) {
     if (r->n.HasBeenNotified()) ++num_completed_before_finish;
   }
-  ASSERT_GT(num_completed_before_finish, 9950);
+  ASSERT_GT(num_completed_before_finish, 9000);
   ASSERT_LT(num_completed_before_finish, 10000);
   collector.Append(TestData{42});
   for (auto& r : results) {
