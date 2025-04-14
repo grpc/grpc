@@ -43,27 +43,21 @@ namespace {
 
 template <typename T>
 std::string ToString(T value) {
-  return std::to_string(value);
+  return absl::StrCat("\"", std::to_string(value), "\"");
 }
 
-template <>
-std::string ToString(bool value) {
-  return value ? "true" : "false";
-}
+std::string ToString(bool value) { return value ? "true" : "false"; }
 
-template <>
-std::string ToString(std::string value) {
-  return value;
-}
+std::string ToString(std::string value) { return value; }
 
 template <typename T>
 std::string ToString(const std::vector<T>& value) {
-  std::vector<std::string> parts;
-  parts.reserve(value.size());
-  for (const auto& item : value) {
-    parts.push_back(ToString(item));
-  }
-  return absl::StrCat("[", absl::StrJoin(parts, ", "), "]");
+  return absl::StrCat("[",
+                      absl::StrJoin(value, ", ",
+                                    [](std::string* out, T item) {
+                                      absl::StrAppend(out, ToString(item));
+                                    }),
+                      "]");
 }
 
 std::string ToString(
@@ -73,16 +67,15 @@ std::string ToString(
 
 std::string ToString(
     const opentelemetry::sdk::metrics::PointAttributes& point_attributes) {
-  std::vector<std::string> parts;
-  for (const auto& [key, value] : point_attributes.GetAttributes()) {
-    parts.push_back(absl::StrCat("{\"", key, "\", ", ToString(value), "}"));
-  }
-  return absl::StrJoin(parts, ", ");
+  return absl::StrJoin(point_attributes.GetAttributes(), ", ",
+                       [](std::string* out, const auto& attribute) {
+                         absl::StrAppend(out, "{", ToString(attribute.first),
+                                         ",", ToString(attribute.second), "}");
+                       });
 }
 
 std::string ToString(const opentelemetry::sdk::metrics::ValueType& value) {
-  return std::visit([](const auto& value) { return std::to_string(value); },
-                    value);
+  return std::visit([](const auto& value) { return ToString(value); }, value);
 }
 
 struct PointTypeVisitor {
