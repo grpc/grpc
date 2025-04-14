@@ -78,6 +78,8 @@ void BaseNode::RunZTrace(
     std::map<std::string, std::string> args,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
     absl::AnyInvocable<void(Json)> callback) {
+  // Limit deadline to help contain potential resource exhaustion due to
+  // tracing.
   deadline = std::min(deadline, Timestamp::Now() + Duration::Minutes(10));
   auto fail = [&callback, event_engine](absl::Status status) {
     event_engine->Run(
