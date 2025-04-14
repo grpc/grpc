@@ -132,8 +132,10 @@ void DataSink::AddAdditionalInfo(absl::string_view name,
 //
 
 DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {
-  MutexLock lock(&node_->data_sources_mu_);
-  node_->data_sources_.push_back(this);
+  if (node_ != nullptr) {
+    MutexLock lock(&node_->data_sources_mu_);
+    node_->data_sources_.push_back(this);
+  }
 }
 
 DataSource::~DataSource() {
