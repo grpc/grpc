@@ -64,9 +64,16 @@ void Chttp2PingRatePolicy::SetDefaults(const ChannelArgs& args) {
 Chttp2PingRatePolicy::RequestSendPingResult
 Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval,
                                       size_t inflight_pings) const {
-  if (max_inflight_pings_ > 0 &&
-      inflight_pings >= static_cast<size_t>(max_inflight_pings_)) {
-    return TooManyRecentPings{};
+  if (max_inflight_pings_ > 0) {
+    if (!IsMaxInflightPingsStrictLimitEnabled()) {
+      if (inflight_pings > static_cast<size_t>(max_inflight_pings_)) {
+        return TooManyRecentPings{};
+      }
+    } else {
+      if (inflight_pings >= static_cast<size_t>(max_inflight_pings_)) {
+        return TooManyRecentPings{};
+      }
+    }
   }
   const Timestamp next_allowed_ping =
       last_ping_sent_time_ + next_allowed_ping_interval;

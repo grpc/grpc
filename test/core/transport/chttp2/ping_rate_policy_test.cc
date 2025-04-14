@@ -121,7 +121,15 @@ TEST(PingRatePolicy, RateThrottlingWorks) {
 
 TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPings) {
   Chttp2PingRatePolicy policy{ChannelArgs(), false};
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 100000000),
+            TooManyRecentPings());
+}
 
+TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPingsStrictLimit) {
+  if (!IsMaxInflightPingsStrictLimitEnabled()) {
+    GTEST_SKIP() << "Strict limit is not enabled.";
+  }
+  Chttp2PingRatePolicy policy{ChannelArgs(), false};
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 0),
             SendGranted());
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 1),
