@@ -32,4 +32,4 @@ class PostMortem {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_H
