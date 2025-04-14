@@ -58,7 +58,7 @@ class Http2Status {
  public:
   // Classifying if an error is a stream error or a connection Http2Status must
   // be done at the time of error object creation. Once the Http2Status object
-  // is created, it is immutable. This is intentional.
+  // is created, its Http2ErrorType is immutable. This is intentional.
   enum class Http2ErrorType : uint8_t {
     kOk = 0x0,
     kStreamError = 0x1,
@@ -67,6 +67,9 @@ class Http2Status {
 
   static Http2Status Ok() { return Http2Status(); }
 
+  // To pass message :
+  // Either pass a absl::string_view which is then copied into a std::string.
+  // Or, pass a local std::string using std::move
   static Http2Status Http2ConnectionError(const Http2ErrorCode error_code,
                                           std::string message) {
     return Http2Status(error_code, Http2ErrorType::kConnectionError, message);
@@ -234,11 +237,14 @@ class Http2Status {
 template <typename T>
 class ValueOrHttp2Status {
  public:
+  // TODO [PH2][P0] : some http2 frame types used to give some compile
+  // issue with std::move. Check with tests.
+
   // NOLINTNEXTLINE(google-explicit-constructor)
   explicit ValueOrHttp2Status(T value) : value_(std::move(value)) {}
+
   // NOLINTNEXTLINE(google-explicit-constructor)
-  // See if string is deep copy or shallow copy
-  explicit ValueOrHttp2Status(Http2Status status) : status_(status) {
+  explicit ValueOrHttp2Status(Http2Status status) : status_(std::move(status)) {
     CHECK(status.GetType() != Http2Status::Http2ErrorType::kOk);
   }
 
@@ -246,13 +252,41 @@ class ValueOrHttp2Status {
     return value_.has_value();
   }
 
+  // Prefer TakeValue when you want std::move to be used
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
     return value_.value();
   }
 
+  // Prefer TakeValue when you want std::move to be used
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() { return value_.value(); }
 
+  GRPC_MUST_USE_RESULT Http2ErrorType GetErrorType() const {
+    CHECK(status_.has_value());
+    return status_.value().GetType();
+  }
+
+  GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorType() const {
+    CHECK(status_.has_value());
+    return status_.value().GetStreamErrorType();
+  }
+
+  GRPC_MUST_USE_RESULT Http2ErrorCode GetConnectionErrorType() const {
+    CHECK(status_.has_value());
+    return status_.value().GetConnectionErrorType();
+  }
+
+  std::string DebugString() const {
+    CHECK(status_.has_value());
+    return status_.value().DebugString();
+  }
+
+  GRPC_MUST_USE_RESULT absl::Status absl_status() const {
+    CHECK(status_.has_value());
+    return status_.value().absl_status();
+  }
+
  private:
+  friend function T TakeValue(ValueOrHttp2Status<T>&& value);
   std::optional<T> value_;
   std::optional<T> status_;
 };
@@ -261,12 +295,6 @@ template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
     ValueOrHttp2Status<T>&& value) {
   return std::move(value.value());
-}
-
-template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
-    absl::StatusOr<T>&& value) {
-  return std::move(*value);
 }
 
 }  // namespace http2
