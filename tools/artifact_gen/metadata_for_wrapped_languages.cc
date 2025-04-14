@@ -15,18 +15,20 @@
 #include "metadata_for_wrapped_languages.h"
 
 #include <fstream>
+#include <initializer_list>
 #include <optional>
+#include <regex>
 #include <set>
 #include <vector>
-#include <regex>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/escaping.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
 #include "utils.h"
 
 namespace {
@@ -82,7 +84,8 @@ void AddCApis(nlohmann::json& config) {
   config["c_api_headers"] = c_api_headers;
 }
 
-void AddPhpConfig(nlohmann::json& config) {
+auto MakePhpConfig(const nlohmann::json& config,
+                   std::initializer_list<std::string> remove_libs) {
   std::set<std::string> srcs;
   for (const auto& src : config["php_config_m4"]["src"]) {
     srcs.insert(src);
@@ -102,9 +105,9 @@ void AddPhpConfig(nlohmann::json& config) {
       php_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
     }
   }
-  php_full_deps.erase("z");
-  php_full_deps.erase("cares");
-  php_full_deps.erase("@zlib//:zlib");
+  for (const auto& lib : remove_libs) {
+    php_full_deps.erase(lib);
+  }
   for (const auto& dep : php_full_deps) {
     auto it = lib_maps.find(dep);
     if (it != lib_maps.end()) {
@@ -113,13 +116,34 @@ void AddPhpConfig(nlohmann::json& config) {
       srcs.insert(src.begin(), src.end());
     }
   }
-  config["php_config_m4"]["srcs"] = srcs;
-
   std::set<std::string> dirs;
   for (const auto& src : srcs) {
     dirs.insert(src.substr(0, src.rfind('/')));
   }
+  return std::pair(std::move(srcs), std::move(dirs));
+}
+
+void AddPhpConfig(nlohmann::json& config) {
+  auto [srcs, dirs] = MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"});
+  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"});
+
+  config["php_config_m4"]["srcs"] = srcs;
   config["php_config_m4"]["dirs"] = dirs;
+
+  std::vector<std::string> windows_srcs;
+  for (const auto& src : w32_srcs) {
+    windows_srcs.emplace_back(absl::StrReplaceAll(src, {{"/", "\\\\"}}));
+  }
+  config["php_config_w32"]["srcs"] = windows_srcs;
+  std::set<std::string> windows_dirs;
+  for (const auto& dir : w32_dirs) {
+    std::vector<std::string> frags = absl::StrSplit(dir, '/');
+    for (size_t i = 0; i < frags.size(); ++i) {
+      windows_dirs.insert(
+          absl::StrJoin(frags.begin(), frags.begin() + i + 1, "\\\\"));
+    }
+  }
+  config["php_config_w32"]["dirs"] = windows_dirs;
 }
 
 struct Version {
