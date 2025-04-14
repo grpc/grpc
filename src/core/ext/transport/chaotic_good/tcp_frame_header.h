@@ -76,4 +76,4 @@ struct TcpDataFrameHeader {
 
 }  // namespace grpc_core::chaotic_good
 
-#endif
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_FRAME_HEADER_H

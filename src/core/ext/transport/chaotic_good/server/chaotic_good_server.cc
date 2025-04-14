@@ -387,7 +387,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                 ep.GetPeerAddress())
                 .value_or("unknown"),
             self->connection_->args()
-                .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
+                .GetObjectRef<channelz::SocketNode::Security>());
         auto frame_transport = MakeOrphanable<TcpFrameTransport>(
             config.MakeTcpFrameTransportOptions(), std::move(ep),
             config.TakePendingDataEndpoints(),

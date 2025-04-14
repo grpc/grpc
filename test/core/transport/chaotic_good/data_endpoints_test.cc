@@ -99,27 +99,27 @@ FUZZ_TEST(SendRateTest, SendRateIsRobust)
                  fuzztest::VectorOf(AnySendOp()));
 
 TEST(DataFrameHeaderTest, CanSerialize) {
-  DataFrameHeader header;
+  TcpDataFrameHeader header;
   header.payload_tag = 0x0012'3456'789a'bcde;
   header.send_timestamp = 0x1234'5678'9abc'def0;
   header.payload_length = 0x1234'5678;
-  uint8_t buffer[DataFrameHeader::kFrameHeaderSize];
+  uint8_t buffer[TcpDataFrameHeader::kFrameHeaderSize];
   header.Serialize(buffer);
-  uint8_t expect[DataFrameHeader::kFrameHeaderSize] = {
+  uint8_t expect[TcpDataFrameHeader::kFrameHeaderSize] = {
       0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12, 0x00, 0xf0, 0xde,
       0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12};
-  EXPECT_EQ(std::string(buffer, buffer + DataFrameHeader::kFrameHeaderSize),
-            std::string(expect, expect + DataFrameHeader::kFrameHeaderSize));
+  EXPECT_EQ(std::string(buffer, buffer + TcpDataFrameHeader::kFrameHeaderSize),
+            std::string(expect, expect + TcpDataFrameHeader::kFrameHeaderSize));
 }
 
 void DataFrameRoundTrips(
-    std::array<uint8_t, DataFrameHeader::kFrameHeaderSize> input) {
-  auto parsed = DataFrameHeader::Parse(input.data());
+    std::array<uint8_t, TcpDataFrameHeader::kFrameHeaderSize> input) {
+  auto parsed = TcpDataFrameHeader::Parse(input.data());
   if (!parsed.ok()) return;
-  uint8_t buffer[DataFrameHeader::kFrameHeaderSize];
+  uint8_t buffer[TcpDataFrameHeader::kFrameHeaderSize];
   parsed->Serialize(buffer);
   EXPECT_EQ(std::string(input.begin(), input.end()),
-            std::string(buffer, buffer + DataFrameHeader::kFrameHeaderSize));
+            std::string(buffer, buffer + TcpDataFrameHeader::kFrameHeaderSize));
 }
 FUZZ_TEST(DataFrameHeaderTest, DataFrameRoundTrips);
 
@@ -153,14 +153,14 @@ std::vector<chaotic_good::PendingConnection> Endpoints(Args... args) {
 
 grpc_event_engine::experimental::Slice DataFrameHeader(
     uint64_t payload_tag, uint64_t send_time, uint32_t payload_length) {
-  uint8_t buffer
-      [chaotic_good::data_endpoints_detail::DataFrameHeader::kFrameHeaderSize];
-  chaotic_good::data_endpoints_detail::DataFrameHeader{payload_tag, send_time,
-                                                       payload_length}
-      .Serialize(buffer);
+  uint8_t buffer[chaotic_good::TcpDataFrameHeader::kFrameHeaderSize];
+  DataFrameHeader;
+  {
+    payload_tag, send_time, payload_length;
+  }
+  .Serialize(buffer);
   return grpc_event_engine::experimental::Slice::FromCopiedBuffer(
-      buffer,
-      chaotic_good::data_endpoints_detail::DataFrameHeader::kFrameHeaderSize);
+      buffer, chaotic_good::TcpDataFrameHeader::kFrameHeaderSize);
 }
 
 DATA_ENDPOINTS_TEST(CanWrite) {
@@ -203,8 +203,8 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
       data_endpoints.Write(123, SliceBuffer(Slice::FromCopiedString("hello"))),
       data_endpoints.Write(124, SliceBuffer(Slice::FromCopiedString("world"))));
   TickUntilTrue([&]() {
-    return writes.Length() == 2 * (5 + chaotic_good::data_endpoints_detail::
-                                           DataFrameHeader::kFrameHeaderSize);
+    return writes.Length() ==
+           2 * (5 + chaotic_good::TcpDataFrameHeader::kFrameHeaderSize);
   });
   WaitForAllPendingWork();
   close_ep1();
@@ -212,10 +212,10 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   WaitForAllPendingWork();
   auto expected = [](uint64_t payload_tag, std::string payload) {
     SliceBuffer buffer;
-    chaotic_good::data_endpoints_detail::DataFrameHeader{
-        payload_tag, 1, static_cast<uint32_t>(payload.length())}
-        .Serialize(buffer.AddTiny(chaotic_good::data_endpoints_detail::
-                                      DataFrameHeader::kFrameHeaderSize));
+    chaotic_good::data_endpoints_detail::DataFrameHeader;
+    {payload_tag, 1, static_cast<uint32_t>(payload.length())}.Serialize(
+        buffer.AddTiny(chaotic_good::data_endpoints_detail::DataFrameHeader::
+                           kFrameHeaderSize));
     buffer.Append(Slice::FromCopiedBuffer(payload));
     return buffer.JoinIntoString();
   };
