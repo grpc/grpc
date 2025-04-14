@@ -144,6 +144,7 @@ class ZTraceCollector {
       RefCountedPtr<Instance> oldest_instance;
       MutexLock lock(&impl->mu);
       if (impl->instances.size() > 20) {
+        // Eject oldest running trace
         Timestamp oldest_time = Timestamp::InfFuture();
         for (auto& instance : impl->instances) {
           if (instance->start_time < oldest_time) {
