@@ -35,7 +35,8 @@ inline std::vector<PromiseEndpoint> OneDataEndpoint(PromiseEndpoint endpoint) {
   return ep;
 }
 
-class TcpFrameTransport final : public FrameTransport {
+class TcpFrameTransport final : public FrameTransport,
+                                public channelz::DataSource {
  public:
   struct Options {
     uint32_t encode_alignment = 64;
@@ -52,6 +53,13 @@ class TcpFrameTransport final : public FrameTransport {
              RefCountedPtr<FrameTransportSink> sink) override;
   void Orphan() override;
   TransportContextPtr ctx() override { return ctx_; }
+  std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
+    if (name == "transport_frames") {
+      return ztrace_collector_->MakeZTrace();
+    }
+    return DataSource::GetZTrace(name);
+  }
+  void AddData(channelz::DataSink& sink) override;
 
  private:
   auto WriteFrame(const FrameInterface& frame);

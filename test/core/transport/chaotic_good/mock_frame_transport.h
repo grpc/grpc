@@ -31,7 +31,10 @@ class MockFrameTransport final : public FrameTransport {
   explicit MockFrameTransport(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine)
-      : ctx_(MakeRefCounted<TransportContext>(std::move(event_engine))) {}
+      : ctx_(MakeRefCounted<TransportContext>(
+            std::move(event_engine),
+            MakeRefCounted<channelz::SocketNode>(
+                "local", "remote", "chaotic_good remote", nullptr))) {}
   ~MockFrameTransport() override;
 
   void Start(Party* party, MpscReceiver<Frame> outgoing_frames,

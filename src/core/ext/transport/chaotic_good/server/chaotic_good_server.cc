@@ -375,16 +375,29 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       self->connection_->endpoint_.Write(std::move(write_buffer)), [self]() {
         auto config =
             std::move(std::get<ControlConnection>(self->data_).config);
+        auto& ep = self->connection_->endpoint_;
+        auto socket_node = MakeRefCounted<channelz::SocketNode>(
+            grpc_event_engine::experimental::ResolvedAddressToString(
+                ep.GetLocalAddress())
+                .value_or("unknown"),
+            grpc_event_engine::experimental::ResolvedAddressToString(
+                ep.GetPeerAddress())
+                .value_or("unknown"),
+            grpc_event_engine::experimental::ResolvedAddressToString(
+                ep.GetPeerAddress())
+                .value_or("unknown"),
+            self->connection_->args()
+                .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
         auto frame_transport = MakeOrphanable<TcpFrameTransport>(
-            config.MakeTcpFrameTransportOptions(),
-            std::move(self->connection_->endpoint_),
+            config.MakeTcpFrameTransportOptions(), std::move(ep),
             config.TakePendingDataEndpoints(),
-            MakeRefCounted<TransportContext>(self->connection_->args()));
+            MakeRefCounted<TransportContext>(self->connection_->args(),
+                                             std::move(socket_node)));
         return self->connection_->listener_->server_->SetupTransport(
             new ChaoticGoodServerTransport(self->connection_->args(),
                                            std::move(frame_transport),
                                            config.MakeMessageChunker()),
-            nullptr, self->connection_->args(), nullptr);
+            nullptr, self->connection_->args());
       });
 }
 

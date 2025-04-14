@@ -492,8 +492,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
                 ->Ref();
         grpc_error_handle channel_init_err =
             connection_->listener_->server_->SetupTransport(
-                transport.get(), accepting_pollset_, (*result)->args,
-                grpc_chttp2_transport_get_socket_node(transport.get()));
+                transport.get(), accepting_pollset_, (*result)->args);
         if (channel_init_err.ok()) {
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
@@ -1078,8 +1077,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
             ->Ref();
     grpc_error_handle channel_init_err =
         connection_->listener_state_->server()->SetupTransport(
-            transport.get(), accepting_pollset_, (*result)->args,
-            grpc_chttp2_transport_get_socket_node(transport.get()));
+            transport.get(), accepting_pollset_, (*result)->args);
     if (channel_init_err.ok()) {
       // Use notify_on_receive_settings callback to enforce the
       // handshake deadline.
@@ -1716,7 +1714,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
       server_args, std::move(server_endpoint), false  // is_client
   );
   grpc_error_handle error =
-      core_server->SetupTransport(transport, nullptr, server_args, nullptr);
+      core_server->SetupTransport(transport, nullptr, server_args);
   if (error.ok()) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                         nullptr);

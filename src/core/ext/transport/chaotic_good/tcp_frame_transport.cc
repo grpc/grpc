@@ -41,7 +41,8 @@ TcpFrameTransport::TcpFrameTransport(
     Options options, PromiseEndpoint control_endpoint,
     std::vector<PendingConnection> pending_data_endpoints,
     TransportContextPtr ctx)
-    : ctx_(ctx),
+    : DataSource(ctx->socket_node),
+      ctx_(ctx),
       control_endpoint_(std::move(control_endpoint), ctx->event_engine.get()),
       data_endpoints_(std::move(pending_data_endpoints), ctx, ztrace_collector_,
                       options.enable_tracing),
@@ -226,6 +227,16 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<Frame> frames,
 void TcpFrameTransport::Orphan() {
   closed_.Set();
   Unref();
+}
+
+void TcpFrameTransport::AddData(channelz::DataSink& sink) {
+  Json::Object options;
+  options["encode_alignment"] = Json::FromNumber(options_.encode_alignment);
+  options["decode_alignment"] = Json::FromNumber(options_.decode_alignment);
+  options["inlined_payload_size_threshold"] =
+      Json::FromNumber(options_.inlined_payload_size_threshold);
+  options["enable_tracing"] = Json::FromBool(options_.enable_tracing);
+  sink.AddAdditionalInfo("chaoticGoodTcpOptions", std::move(options));
 }
 
 }  // namespace chaotic_good
