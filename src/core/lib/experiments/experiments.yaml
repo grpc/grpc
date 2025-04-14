@@ -231,11 +231,6 @@
   expiry: 2025/06/30
   owner: yashkt@google.com
   test_tags: []
-- name: server_listener
-  description: If set, the new server listener classes are used.
-  expiry: 2025/03/31
-  owner: yashkt@google.com
-  test_tags: ["xds_end2end_test", "core_end2end_test"]
 - name: sleep_promise_exec_ctx_removal
   description:
     If set, polling the sleep promise does not rely on the ExecCtx.
