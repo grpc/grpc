@@ -223,7 +223,13 @@ void WorkStealingThreadPool::PostforkChild() { pool_->Postfork(); }
 
 WorkStealingThreadPool::WorkStealingThreadPoolImpl::WorkStealingThreadPoolImpl(
     size_t reserve_threads)
-    : reserve_threads_(reserve_threads), queue_(this) {}
+    : reserve_threads_(reserve_threads),
+      queue_(this),
+      backoff_(grpc_core::BackOff::Options()
+                   .set_initial_backoff(kLifeguardMinSleepBetweenChecks)
+                   .set_max_backoff(kLifeguardMaxSleepBetweenChecks)
+                   .set_multiplier(1.3))
+ {}
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
   for (size_t i = 0; i < reserve_threads_; i++) {
@@ -231,6 +237,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
   }
   grpc_core::MutexLock lock(&lifeguard_ptr_mu_);
   lifeguard_ = std::make_unique<Lifeguard>(this);
+  lifeguard_is_quiesced_ = std::make_unique<grpc_core::Notification>();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
@@ -279,6 +286,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   }
   CHECK(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
+  lifeguard_is_quiesced_->Notify();
   grpc_core::MutexLock lock(&lifeguard_ptr_mu_);
   lifeguard_.reset();
 }
@@ -311,6 +319,11 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsShutdown() {
 
 bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsQuiesced() {
   return quiesced_.load(std::memory_order_relaxed);
+}
+
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::WaitQuiesced() {
+  lifeguard_is_quiesced_->WaitForNotificationWithTimeout(
+      absl::Milliseconds(backoff_.NextAttemptDelay().millis()));
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
@@ -395,6 +408,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     // reduce the check rate if the pool is idle.
     if (pool_->IsShutdown()) {
       if (pool_->IsQuiesced()) break;
+      pool_->WaitQuiesced();
     } else {
       lifeguard_should_shut_down_->WaitForNotificationWithTimeout(
           absl::Milliseconds(backoff_.NextAttemptDelay().millis()));

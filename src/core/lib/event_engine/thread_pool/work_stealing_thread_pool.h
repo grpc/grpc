@@ -136,6 +136,7 @@ class WorkStealingThreadPool final : public ThreadPool {
     bool IsShutdown();
     bool IsForking();
     bool IsQuiesced();
+    void WaitQuiesced();
     size_t reserve_threads() { return reserve_threads_; }
     BusyThreadCount* busy_thread_count() { return &busy_thread_count_; }
     LivingThreadCount* living_thread_count() { return &living_thread_count_; }
@@ -192,6 +193,8 @@ class WorkStealingThreadPool final : public ThreadPool {
     // Set of threads for verbose failure debugging
     grpc_core::Mutex thd_set_mu_;
     absl::flat_hash_set<gpr_thd_id> thds_ ABSL_GUARDED_BY(thd_set_mu_);
+    grpc_core::BackOff backoff_;
+    std::unique_ptr<grpc_core::Notification> lifeguard_is_quiesced_;
   };
 
   class ThreadState {
