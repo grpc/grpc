@@ -784,9 +784,14 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
 
     if (t->keepalive_incoming_data_wanted &&
         t->keepalive_timeout < t->ping_timeout &&
-        t->keepalive_ping_timeout_handle !=
-            grpc_event_engine::experimental::EventEngine::TaskHandle::
-                kInvalid) {
+        ((::grpc_core::IsKeepAlivePingTimeoutEnabled() &&
+          t->keepalive_ping_timeout_handle ==
+              grpc_event_engine::experimental::EventEngine::TaskHandle::
+                  kInvalid) ||
+         (!::grpc_core::IsKeepAlivePingTimeoutEnabled() &&
+          t->keepalive_ping_timeout_handle !=
+              grpc_event_engine::experimental::EventEngine::TaskHandle::
+                  kInvalid))) {
       if (GRPC_TRACE_FLAG_ENABLED(http2_ping) ||
           GRPC_TRACE_FLAG_ENABLED(http_keepalive)) {
         LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t

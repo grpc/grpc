@@ -81,6 +81,8 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEngineSecureEndpointEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMEOUT
+inline bool IsKeepAlivePingTimeoutEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_PINGS_WO_DATA_THROTTLE
@@ -132,6 +134,8 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEngineSecureEndpointEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMEOUT
+inline bool IsKeepAlivePingTimeoutEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_PINGS_WO_DATA_THROTTLE
@@ -183,6 +187,8 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEngineSecureEndpointEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMEOUT
+inline bool IsKeepAlivePingTimeoutEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_PINGS_WO_DATA_THROTTLE
@@ -227,6 +233,7 @@ enum ExperimentIds {
   kExperimentIdEventEngineForAllOtherEndpoints,
   kExperimentIdEventEngineSecureEndpoint,
   kExperimentIdFreeLargeAllocator,
+  kExperimentIdKeepAlivePingTimeout,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMaxPingsWoDataThrottle,
@@ -308,6 +315,10 @@ inline bool IsEventEngineSecureEndpointEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {
   return IsExperimentEnabled<kExperimentIdFreeLargeAllocator>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMEOUT
+inline bool IsKeepAlivePingTimeoutEnabled() {
+  return IsExperimentEnabled<kExperimentIdKeepAlivePingTimeout>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {

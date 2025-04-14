@@ -133,6 +133,13 @@
   expiry: 2025/03/31
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: keep_alive_ping_timeout
+  description:
+    If set, enables usage of keepalive_timeout when its value is less than the configured ping 
+    timeout.
+  expiry: 2025/06/01
+  owner: akshitpatel@google.com
+  test_tags: []
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
