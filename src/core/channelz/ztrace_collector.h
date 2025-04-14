@@ -167,6 +167,7 @@ class ZTraceCollector {
     size_t memory_used_ = 0;
     size_t memory_cap_ = 0;
     Config config;
+    const Timestamp start_time = Timestamp::Now();
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
     grpc_event_engine::experimental::EventEngine::TaskHandle task_handle{
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid};
@@ -188,7 +189,22 @@ class ZTraceCollector {
       auto instance = MakeRefCounted<Instance>(std::move(args), event_engine,
                                                std::move(callback));
       auto impl = std::move(impl_);
+      RefCountedPtr<Instance> oldest_instance;
       MutexLock lock(&impl->mu);
+      if (impl->instances.size() > 20) {
+        // Eject oldest running trace
+        Timestamp oldest_time = Timestamp::InfFuture();
+        for (auto& instance : impl->instances) {
+          if (instance->start_time < oldest_time) {
+            oldest_time = instance->start_time;
+            oldest_instance = instance;
+          }
+        }
+        CHECK(oldest_instance != nullptr);
+        impl->instances.erase(oldest_instance);
+        oldest_instance->Finish(
+            absl::ResourceExhaustedError("Too many concurrent ztrace queries"));
+      }
       instance->task_handle = event_engine->RunAfter(
           deadline - Timestamp::Now(), [instance, impl]() {
             bool finish;
