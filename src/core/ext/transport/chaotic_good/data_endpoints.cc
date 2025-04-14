@@ -24,6 +24,7 @@
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/ext/transport/chaotic_good/serialize_little_endian.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
@@ -33,7 +34,6 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
-#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 
 namespace grpc_core {
 namespace chaotic_good {
