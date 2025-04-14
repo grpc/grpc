@@ -56,11 +56,16 @@ class MockKeepAliveSystemInterface : public KeepAliveSystemInterface {
         });
   }
 
-  void ExpectSendPingWithSleep(Duration duration) {
-    EXPECT_CALL(*this, SendPing()).WillOnce([duration] {
-      return TrySeq(Sleep(duration),
-                    [] { return Immediate(absl::OkStatus()); });
-    });
+  void ExpectSendPingWithSleep(Duration duration, int& end_after) {
+    EXPECT_CALL(*this, SendPing())
+        .Times(end_after)
+        .WillRepeatedly([duration, &end_after] {
+          return If((--end_after == 0),
+                    TrySeq(Sleep(duration),
+                           [] { return Immediate(absl::CancelledError()); }),
+                    TrySeq(Sleep(duration),
+                           [] { return Immediate(absl::OkStatus()); }));
+        });
   }
 
   void ExpectKeepAliveTimeout() {
@@ -110,11 +115,13 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
 
 YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeout) {
   InitParty();
+
+  int end_after = 1;
   std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
       keep_alive_interface =
           std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
   keep_alive_interface->ExpectKeepAliveTimeout();
-  keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1));
+  keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1), end_after);
 
   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
                                     /*keepalive_timeout*/ Duration::Seconds(1));
@@ -187,6 +194,32 @@ YODEL_TEST(KeepAliveSystemTest, TestGotData) {
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
   EXPECT_STREQ(execution_order.c_str(), "12345");
+}
+
+YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeoutGotData) {
+  InitParty();
+  int end_after = 2;
+  std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
+      keep_alive_interface =
+          std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
+  keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(100),
+                                                end_after);
+  keep_alive_interface->ExpectKeepAliveTimeout();
+
+  KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
+                                    /*keepalive_timeout=*/Duration::Hours(1));
+  auto party = GetParty();
+  keep_alive_system.Spawn(party, Duration::Seconds(1));
+
+  party->Spawn("ReadData", TrySeq([&keep_alive_system]() {
+                 keep_alive_system.GotData();
+                 return absl::OkStatus();
+               }),
+               [](auto) { LOG(INFO) << "ReadData end"; });
+
+  WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
 }
 
 }  // namespace grpc_core
