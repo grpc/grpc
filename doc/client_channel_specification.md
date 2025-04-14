@@ -39,8 +39,8 @@ channel for each RPC.
 The target name is expressed in URI syntax as defined in [RFC
 3986](https://tools.ietf.org/html/rfc3986).  The scheme of the
 URI indicates which [Name Resolver](#name-resolvers) to use to
-convert that name into a set of addresses and an optional [Service
-Config](#service-config).
+convert that name into a set of endpoint addresses and an optional
+[Service Config](#service-config).
 
 As a convenient shorthand, if the target name does not parse as a URI or
 there is no resolver registered for that URI, the channel will prepend
@@ -167,10 +167,16 @@ is expressed as an enum with the following values:
 Note that connectivity state changes can be rapid and can race with the
 notification returned to the application.  As a result, applications must
 be aware that the reported state may already be inaccurate by the time
-it is seen.  So, for example, while it may be reasonable behavior for
-an application to wait for the channel to report READY before finishing
-its startup, it must be aware that connectivity failures may still occur
-as soon as it starts sending RPCs.
+it is seen.
+
+It is an anti-pattern for applications to check that the channel is
+reporting READY state before sending RPCs, since this does not actually
+provide any assurance that the RPCs will succeed: the connectivity state
+could change in the moment between when the application sees the READY
+state and when it sends the first RPC.  The connectivity state is
+really intended to be used for health reporting purposes -- e.g., an
+application may advertise itself as unhealthy to its clients if the
+channels it creates to some of its dependencies are not reporting READY.
 
 The API for getting the current connectivity state also has a way for
 the application to explicitly request that the channel start connecting.
@@ -195,8 +201,8 @@ The main components of the client channel are:
   and determining which RPCs are sent on which subchannels.
 
 To understand how these components fit together, it's useful to step
-through the process that the channel uses to establish connections,
-as shown in the following diagram:
+through the process that the channel uses to establish connections with
+a typical LB policy, as shown in the following diagram:
 
 ![image](images/client_channel.png)
 
@@ -231,43 +237,6 @@ The resolver factory will provide a method to get the default authority to
 use for a given target URI.  By default, the authority will be the path
 part of the URI without the leading `/`, and it will be percent-encoded.
 However, individual resolver factories may override that behavior.
-
-### Starting Name Resolution
-
-When a channel is first created, it is in IDLE state, and it will not yet
-have started name resolution or establishing connections to endpoints.
-It will leave IDLE state when the application does one of two things:
-
-* Sends the first RPC on the channel.
-* Uses the [connectivity state API](#connectivity-state-api) to request
-  that the channel start to connect.
-
-When either of those things happen, the channel will start name resolution
-and will then transition to state CONNECTING.  The resolver is expected to
-return an initial [result](#resolver-result) shortly after being started.
-
-If name resolution fails (i.e., the initial result indicates an error for
-the service config), the channel will report TRANSIENT\_FAILURE state.
-It will stay in that state until name resolution succeeds.  Note that RPCs
-sent on the channel in this state will be failed unless they have enabled
-[wait\_for\_ready](#wait_for_ready).
-
-Once name resolution succeeds, the channel will create the LB policy
-indicated by the service config returned by the resolver (see [Channel
-Handling of Resolver Result](#channel-handling-of-resolver-result)
-for details).  The channel will send an update to the LB policy
-indicating the addresses returned by the resolver, and the LB policy
-will create subchannels to those addresses and request connections
-on those subchannels as appropriate.  At that point, the LB policy
-is responsible for determining the channel's connectivity state (see
-[Aggregated Connectivity State](#aggregated-connectivity-states) below).
-
-Applications may configure an idle timeout for the channel.  If
-configured, the channel will go back into IDLE state from CONNECTING,
-READY, or TRANSIENT\_FAILURE if the application has had no pending RPCs
-within the specified timeout period.  When this happens, the channel
-will return itself to its initial state by destroying the LB policy,
-thus dropping all subchannel connections, and stopping name resolution.
 
 ### Resolver Results
 
@@ -321,6 +290,44 @@ The channel does not directly use the list of endpoints returned by the
 resolver; it only passes that list on to the LB policy.  If the resolver
 returns an error for the list of addresses, the LB policy is responsible
 for determining how to handle that error.
+
+### Starting Name Resolution
+
+When a channel is first created, it is in IDLE state, and it will not yet
+have started name resolution or establishing connections to endpoints.
+It will leave IDLE state when the application does one of two things:
+
+* Sends the first RPC on the channel.
+* Uses the [connectivity state API](#connectivity-state-api) to request
+  that the channel start to connect.
+
+When either of those things happen, the channel will start name resolution
+and will then transition to state CONNECTING.  The resolver is expected to
+return an initial [result](#resolver-result) shortly after being started.
+
+If name resolution fails (i.e., the initial result contains an error for
+the service config), the channel will report TRANSIENT\_FAILURE state.
+It will stay in that state until name resolution succeeds.  Note that RPCs
+sent on the channel in this state will be failed unless they have enabled
+[wait\_for\_ready](#wait_for_ready).
+
+Once name resolution succeeds, the channel will create the LB policy
+indicated by the service config returned by the resolver (see [Channel
+Handling of Resolver Result](#channel-handling-of-resolver-result)
+for details).  The channel will send an update to the LB policy
+indicating the addresses returned by the resolver, and the LB policy
+will create subchannels to those addresses and request connections
+on those subchannels as appropriate.  At that point, the LB policy
+is responsible for determining the channel's connectivity state (see
+[Aggregated Connectivity State](#aggregated-connectivity-states) below).
+
+Applications may configure an idle timeout for the channel.  If
+configured, the channel will go back into IDLE state from CONNECTING,
+READY, or TRANSIENT\_FAILURE if the application has had no RPCs active
+on the channel within the specified timeout period.  When this happens,
+the channel will return itself to its initial state by destroying the
+LB policy, thus dropping all subchannel connections, and stopping name
+resolution.
 
 ### Channel Handling of Resolver Result
 
@@ -429,8 +436,8 @@ DNS](https://github.com/grpc/proposal/blob/master/A2-service-configs-in-dns.md).
 The DNS resolver is responsible for ensuring that we do not overly
 hammer the DNS server with requests.  In cases where the DNS resolution
 mechanism has built-in caching, nothing special may need to be done
-for this; otherwise, there should be a configurable (via a channel arg)
-minimum time between DNS re-resolutions.
+for this; otherwise, there should be a configurable (via a channel
+option) minimum time between DNS re-resolutions.
 
 #### unix
 
@@ -502,7 +509,8 @@ to do the following:
   subchannel.
 * Start and stop [health state](#subchannel-health-state) watch.
 * Request that the subchannel initiate a connection attempt.  This may be
-  called only when the subchannel is reporting connectivity state IDLE.
+  called only when the subchannel is reporting connectivity state IDLE;
+  it is a no-op in any other state.
 
 In addition, the subchannel will have a private interface, accessible
 to the channel but not to LB policies, that returns a reference to the
