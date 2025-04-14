@@ -145,7 +145,6 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     result_->transport = grpc_create_chttp2_transport(
         (*result)->args, std::move((*result)->endpoint), true);
     CHECK_NE(result_->transport, nullptr);
-    result_->socket_node = result_->transport->GetSocketNode();
     result_->channel_args = std::move((*result)->args);
     Ref().release();  // Ref held by OnReceiveSettings()
     GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
