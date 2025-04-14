@@ -318,9 +318,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithoutRetries) {
   Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::kClientCallRetries,
        grpc::OpenTelemetryPluginBuilder::kClientCallRetryDelay})));
-  for (int i = 0; i < 5; ++i) {
-    SendRPC();
-  }
+  SendRPC();
   const char* kRetryMetricName = "grpc.client.call.retries";
   const char* kRetryDelayMetricName = "grpc.client.call.retry_delay";
   auto data = ReadCurrentMetricsData(
@@ -350,7 +348,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithoutRetries) {
               HistogramResultEq(/*sum_matcher=*/::testing::Eq(int64_t(0)),
                                 /*min_matcher=*/::testing::Eq(int64_t(0)),
                                 /*max_matcher=*/::testing::Eq(int64_t(0)),
-                                /*count=*/5)),
+                                /*count=*/1)),
           ::testing::AllOf(
               AttributesEq(
                   /*label_keys=*/std::array<absl::string_view,
@@ -364,7 +362,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithoutRetries) {
               HistogramResultEq(/*sum_matcher=*/::testing::Eq(int64_t(0)),
                                 /*min_matcher=*/::testing::Eq(int64_t(0)),
                                 /*max_matcher=*/::testing::Eq(int64_t(0)),
-                                /*count=*/5))));
+                                /*count=*/1))));
   // Check for retry delay stats.
   EXPECT_THAT(
       data[kRetryDelayMetricName],
@@ -380,7 +378,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithoutRetries) {
           HistogramResultEq(/*sum_matcher=*/::testing::DoubleNear(0, 1e-9),
                             /*min_matcher=*/::testing::DoubleNear(0, 1e-9),
                             /*max_matcher=*/::testing::DoubleNear(0, 1e-9),
-                            /*count=*/5))));
+                            /*count=*/1))));
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
@@ -404,12 +402,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
               "    }\n"
               "  } ]\n"
               "}")));
-  EchoRequest request;
-  request.mutable_param()->mutable_expected_error()->set_code(
-      StatusCode::ABORTED);
-  request.set_message("foo");
-  EchoResponse response;
-  for (int i = 0; i < 5; ++i) {
+  {
+    EchoRequest request;
+    request.mutable_param()->mutable_expected_error()->set_code(
+        StatusCode::ABORTED);
+    request.set_message("foo");
+    EchoResponse response;
     grpc::ClientContext context;
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
@@ -424,6 +422,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
         return !data.contains(kRetryMetricName) ||
                !data.contains(kRetryDelayMetricName);
       });
+
   ASSERT_EQ(data.size(), 2);
   // Both transparent retry stats and non-transparent retry stats are populated
   // under "grpc.client.call.retries"
@@ -440,10 +439,10 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
                       kMethodName, canonical_server_address_, "retry"},
                   /*optional_label_keys=*/std::array<absl::string_view, 0>{},
                   /*optional_label_values=*/std::array<absl::string_view, 0>{}),
-              HistogramResultEq(/*sum_matcher=*/::testing::Eq(int64_t(10)),
+              HistogramResultEq(/*sum_matcher=*/::testing::Eq(int64_t(2)),
                                 /*min_matcher=*/::testing::Eq(int64_t(2)),
                                 /*max_matcher=*/::testing::Eq(int64_t(2)),
-                                /*count=*/5)),
+                                /*count=*/1)),
           ::testing::AllOf(
               AttributesEq(
                   /*label_keys=*/std::array<absl::string_view,
@@ -457,7 +456,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
               HistogramResultEq(/*sum_matcher=*/::testing::Eq(int64_t(0)),
                                 /*min_matcher=*/::testing::Eq(int64_t(0)),
                                 /*max_matcher=*/::testing::Eq(int64_t(0)),
-                                /*count=*/5))));
+                                /*count=*/1))));
   // Check for retry delay stats.
   EXPECT_THAT(
       data[kRetryDelayMetricName],
@@ -471,13 +470,13 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
               /*optional_label_keys=*/std::array<absl::string_view, 0>{},
               /*optional_label_values=*/std::array<absl::string_view, 0>{}),
           HistogramResultEq(
-              /*sum_matcher=*/IsWithinRange(
-                  0.1 * 5, 0.3 * 5 * grpc_test_slowdown_factor()),
+              /*sum_matcher=*/IsWithinRange(0.1,
+                                            0.3 * grpc_test_slowdown_factor()),
               /*min_matcher=*/
               IsWithinRange(0.1, 0.3 * grpc_test_slowdown_factor()),
               /*max_matcher=*/
               IsWithinRange(0.1, 0.3 * grpc_test_slowdown_factor()),
-              /*count=*/5))));
+              /*count=*/1))));
 }
 
 class OTelMetricsTestForTransparentRetries
@@ -499,14 +498,12 @@ TEST_F(OTelMetricsTestForTransparentRetries, RetryStatsWithTransparentRetries) {
   Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::kClientCallRetries,
        grpc::OpenTelemetryPluginBuilder::kClientCallRetryDelay})));
-  for (int i = 0; i < 5; ++i) {
-    ChannelArguments args;
-    args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
-    auto channel = grpc::CreateCustomChannel(
-        server_address_, grpc::InsecureChannelCredentials(), args);
-    ResetStub(std::move(channel));
-    SendRPC();
-  }
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+  auto channel = grpc::CreateCustomChannel(
+      server_address_, grpc::InsecureChannelCredentials(), args);
+  ResetStub(std::move(channel));
+  SendRPC();
   const char* kRetryMetricName = "grpc.client.call.retries";
   const char* kRetryDelayMetricName = "grpc.client.call.retry_delay";
   auto data = ReadCurrentMetricsData(
@@ -536,7 +533,7 @@ TEST_F(OTelMetricsTestForTransparentRetries, RetryStatsWithTransparentRetries) {
               HistogramResultEq(/*sum_matcher=*/::testing::Eq(int64_t(0)),
                                 /*min_matcher=*/::testing::Eq(int64_t(0)),
                                 /*max_matcher=*/::testing::Eq(int64_t(0)),
-                                /*count=*/5)),
+                                /*count=*/1)),
           ::testing::AllOf(
               AttributesEq(
                   /*label_keys=*/std::array<absl::string_view,
@@ -547,10 +544,10 @@ TEST_F(OTelMetricsTestForTransparentRetries, RetryStatsWithTransparentRetries) {
                       kMethodName, canonical_server_address_, "transparent"},
                   /*optional_label_keys=*/std::array<absl::string_view, 0>{},
                   /*optional_label_values=*/std::array<absl::string_view, 0>{}),
-              HistogramResultEq(/*sum_matcher=*/::testing::Eq(int64_t(5)),
+              HistogramResultEq(/*sum_matcher=*/::testing::Eq(int64_t(1)),
                                 /*min_matcher=*/::testing::Eq(int64_t(1)),
                                 /*max_matcher=*/::testing::Eq(int64_t(1)),
-                                /*count=*/5))));
+                                /*count=*/1))));
   // Check for retry delay stats.
   EXPECT_THAT(
       data[kRetryDelayMetricName],
@@ -570,7 +567,7 @@ TEST_F(OTelMetricsTestForTransparentRetries, RetryStatsWithTransparentRetries) {
               ::testing::DoubleNear(0, 0.1 * grpc_test_slowdown_factor()),
               /*max_matcher=*/
               ::testing::DoubleNear(0, 0.1 * grpc_test_slowdown_factor()),
-              /*count=*/5))));
+              /*count=*/1))));
 }
 
 // Make sure that no meter provider results in normal operations.

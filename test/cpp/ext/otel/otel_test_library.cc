@@ -39,6 +39,105 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 
+namespace {
+
+template <typename T>
+std::string ToString(T value) {
+  return std::to_string(value);
+}
+
+template <>
+std::string ToString(bool value) {
+  return value ? "true" : "false";
+}
+
+template <>
+std::string ToString(std::string value) {
+  return value;
+}
+
+template <typename T>
+std::string ToString(const std::vector<T>& value) {
+  std::vector<std::string> parts;
+  parts.reserve(value.size());
+  for (const auto& item : value) {
+    parts.push_back(ToString(item));
+  }
+  return absl::StrCat("[", absl::StrJoin(parts, ", "), "]");
+}
+
+std::string ToString(
+    const opentelemetry::sdk::common::OwnedAttributeValue& value) {
+  return std::visit([](const auto& value) { return ToString(value); }, value);
+}
+
+std::string ToString(
+    const opentelemetry::sdk::metrics::PointAttributes& point_attributes) {
+  std::vector<std::string> parts;
+  for (const auto& [key, value] : point_attributes.GetAttributes()) {
+    parts.push_back(absl::StrCat("{\"", key, "\", ", ToString(value), "}"));
+  }
+  return absl::StrJoin(parts, ", ");
+}
+
+std::string ToString(const opentelemetry::sdk::metrics::ValueType& value) {
+  return std::visit([](const auto& value) { return std::to_string(value); },
+                    value);
+}
+
+struct PointTypeVisitor {
+  std::string operator()(
+      const opentelemetry::sdk::metrics::SumPointData& point) {
+    return absl::StrFormat("{value = %s, is_monotonic = %s}",
+                           ToString(point.value_),
+                           ToString(point.is_monotonic_));
+  }
+
+  std::string operator()(
+      const opentelemetry::sdk::metrics::LastValuePointData& point) {
+    return absl::StrFormat(
+        "{value = %s, is_lastvalue_valid = %s, sample_ts = %ldns}",
+        ToString(point.value_), ToString(point.is_lastvalue_valid_),
+        point.sample_ts_.time_since_epoch().count());
+  }
+
+  std::string operator()(
+      const opentelemetry::sdk::metrics::HistogramPointData& point) {
+    return absl::StrFormat(
+        "{boundaries = %s, sum = %s, min = %s, max = %s, counts = %s, count = "
+        "%ld, record_min_max = %s}",
+        ToString(point.boundaries_), ToString(point.sum_), ToString(point.min_),
+        ToString(point.max_), ToString(point.counts_), point.count_,
+        ToString(point.record_min_max_));
+  }
+
+  std::string operator()(
+      const opentelemetry::sdk::metrics::DropPointData& point) {
+    return "<DropPointData>";
+  }
+};
+
+std::string ToString(const opentelemetry::sdk::metrics::PointType& point_type) {
+  return std::visit(PointTypeVisitor(), point_type);
+}
+
+}  // namespace
+
+OPENTELEMETRY_BEGIN_NAMESPACE
+namespace sdk {
+namespace metrics {
+
+void PrintTo(const PointDataAttributes& point_data_attributes,
+             std::ostream* os) {
+  *os << "{attributes = {" << ToString(point_data_attributes.attributes)
+      << "}, point_data = {" << ToString(point_data_attributes.point_data)
+      << "}}";
+}
+
+}  // namespace metrics
+}  // namespace sdk
+OPENTELEMETRY_END_NAMESPACE
+
 namespace grpc {
 namespace testing {
 
