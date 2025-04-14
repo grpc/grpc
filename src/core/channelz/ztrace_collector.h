@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
 #define GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
 
+#include <grpc/support/time.h>
+
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -37,8 +39,9 @@ template <typename T>
 void AppendResults(const Collection<T>& data, Json::Array& results) {
   for (const auto& value : data) {
     Json::Object object;
-    object["timestamp"] = Json::FromString(
-        gpr_format_timespec(gpr_cycle_counter_to_time(value.first)));
+    object["timestamp"] =
+        Json::FromString(gpr_format_timespec(gpr_convert_clock_type(
+            gpr_cycle_counter_to_time(value.first), GPR_CLOCK_REALTIME)));
     value.second.RenderJson(object);
     results.emplace_back(Json::FromObject(std::move(object)));
   }
