@@ -373,8 +373,8 @@ void WaitAndShutdown(server* sv, client* cl) {
 
 class EventPollerTest : public ::testing::Test {
   void SetUp() override {
-    engine_ =
-        std::make_unique<grpc_event_engine::experimental::PosixEventEngine>();
+    engine_ = grpc_event_engine::experimental::PosixEventEngine::
+        MakePosixEventEngine();
     EXPECT_NE(engine_, nullptr);
     scheduler_ =
         std::make_unique<grpc_event_engine::experimental::TestScheduler>(

@@ -352,6 +352,27 @@ void PosixEnginePollerManager::TriggerShutdown() {
   poller_->Kick();
 }
 
+std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine() {
+  // Constructor is private, can't use std::make_shared
+  return std::shared_ptr<PosixEventEngine>(new PosixEventEngine());
+}
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+// The posix EventEngine returned by this method would have a shared ownership
+// of the poller and would not be in-charge of driving the poller by calling
+// its Work(..) method. Instead its upto the test to drive the poller. The
+// returned posix EventEngine will also not attempt to shutdown the poller
+// since it does not own it.
+std::shared_ptr<PosixEventEngine>
+PosixEventEngine::MakeTestOnlyPosixEventEngine(
+    std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+        test_only_poller) {
+  // Constructor is private, can't use std::make_shared
+  return std::shared_ptr<PosixEventEngine>(
+      new PosixEventEngine(std::move(test_only_poller)));
+}
+#endif  // GRPC_POSIX_SOCKET_TCP
+
 PosixEnginePollerManager::~PosixEnginePollerManager() {
   if (poller_ != nullptr) {
     poller_->Shutdown();
