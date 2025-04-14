@@ -121,6 +121,11 @@ TEST(PingRatePolicy, RateThrottlingWorks) {
 
 TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPings) {
   Chttp2PingRatePolicy policy{ChannelArgs(), false};
+
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 0),
+            SendGranted());
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 1),
+            TooManyRecentPings());
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 100000000),
             TooManyRecentPings());
 }
