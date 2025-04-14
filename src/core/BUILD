@@ -84,6 +84,7 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/extensions/blocking_dns.h",
         "lib/event_engine/extensions/can_track_errors.h",
+        "lib/event_engine/extensions/channelz.h",
         "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/iomgr_compatible.h",
         "lib/event_engine/extensions/supports_fd.h",
@@ -100,8 +101,10 @@ grpc_cc_library(
     ],
     deps = [
         "memory_quota",
+        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//:ref_counted_ptr",
         "//:tcp_tracer",
     ],
 )
@@ -8262,8 +8265,11 @@ grpc_cc_library(
         "ext/transport/chaotic_good/transport_context.h",
     ],
     deps = [
+        "channel_args",
         "metrics",
+        "ref_counted",
         "//:event_engine_base_hdrs",
+        "//:ref_counted_ptr",
     ],
 )
 
