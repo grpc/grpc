@@ -66,6 +66,8 @@ struct alts_tsi_handshaker {
   bool shutdown = false;
   // Maximum frame size used by frame protector.
   size_t max_frame_size;
+  // The list of preferred transport protocols.
+  std::vector<std::string> transport_porotocol_preferences;
 };
 
 // Main struct for ALTS TSI handshaker result.
@@ -646,7 +648,8 @@ tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
     const char* handshaker_service_url, bool is_client,
     grpc_pollset_set* interested_parties, tsi_handshaker** self,
-    size_t user_specified_max_frame_size) {
+    size_t user_specified_max_frame_size,
+    std::optional<absl::string_view> preferred_transport_protocols) {
   if (handshaker_service_url == nullptr || self == nullptr ||
       options == nullptr || (is_client && target_name == nullptr)) {
     LOG(ERROR) << "Invalid arguments to alts_tsi_handshaker_create()";
@@ -668,6 +671,13 @@ tsi_result alts_tsi_handshaker_create(
   handshaker->max_frame_size = user_specified_max_frame_size != 0
                                    ? user_specified_max_frame_size
                                    : kTsiAltsMaxFrameSize;
+  std::vector<std::string> transport_protocols;
+  if (preferred_transport_protocols.has_value()) {
+    transport_protocols =
+        absl:: : StrSplit(preferred_transport_protocols.value(), ',',
+                          absl::SkipoWhitespace());
+  }
+  handshaker->transport_porotocol_preferences(*transport_protocols);
   *self = &handshaker->base;
   return TSI_OK;
 }

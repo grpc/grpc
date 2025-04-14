@@ -424,6 +424,9 @@
 #define GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS "grpc.experimental.stats_plugins"
 /** If non-zero, allow security frames to be sent and received. */
 #define GRPC_ARG_SECURITY_FRAME_ALLOWED "grpc.security_frame_allowed"
+/** A comma separated string list of supported transport protocols. If empty, no
+ * transport protocol negoitiation will occur and will default to http/2. */
+#define GRPC_ARG_TRANSPORT_PROTOCOLS "grpc.transport_protocols"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */
