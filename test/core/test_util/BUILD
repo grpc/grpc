@@ -572,3 +572,17 @@ grpc_cc_library(
         "//:grpc",
     ],
 )
+
+grpc_cc_library(
+    name = "postmortem",
+    testonly = True,
+    external_deps = [
+        "gtest"
+    ],
+    srcs = ["postmortem.cc"],
+    hdrs = ["postmortem.h"],
+    deps = [
+        "//:stats",
+        "//:channelz",
+    ]
+)
