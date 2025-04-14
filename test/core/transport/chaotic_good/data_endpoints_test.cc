@@ -154,11 +154,8 @@ std::vector<chaotic_good::PendingConnection> Endpoints(Args... args) {
 grpc_event_engine::experimental::Slice DataFrameHeader(
     uint64_t payload_tag, uint64_t send_time, uint32_t payload_length) {
   uint8_t buffer[chaotic_good::TcpDataFrameHeader::kFrameHeaderSize];
-  DataFrameHeader;
-  {
-    payload_tag, send_time, payload_length;
-  }
-  .Serialize(buffer);
+  chaotic_good::TcpDataFrameHeader{payload_tag, send_time, payload_length}
+      .Serialize(buffer);
   return grpc_event_engine::experimental::Slice::FromCopiedBuffer(
       buffer, chaotic_good::TcpDataFrameHeader::kFrameHeaderSize);
 }
@@ -169,7 +166,8 @@ DATA_ENDPOINTS_TEST(CanWrite) {
       ep.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
   chaotic_good::DataEndpoints data_endpoints(
       Endpoints(std::move(ep.promise_endpoint)),
-      MakeRefCounted<chaotic_good::TransportContext>(event_engine()), false,
+      MakeRefCounted<chaotic_good::TransportContext>(event_engine(), nullptr),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
       Time1Clock());
   ep.ExpectWrite(
       {DataFrameHeader(123, 1, 5),
@@ -193,7 +191,8 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   chaotic_good::DataEndpoints data_endpoints(
       Endpoints(std::move(ep1.promise_endpoint),
                 std::move(ep2.promise_endpoint)),
-      MakeRefCounted<chaotic_good::TransportContext>(event_engine()), false,
+      MakeRefCounted<chaotic_good::TransportContext>(event_engine(), nullptr),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
       Time1Clock());
   SliceBuffer writes;
   ep1.CaptureWrites(writes, event_engine().get());
@@ -212,10 +211,10 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   WaitForAllPendingWork();
   auto expected = [](uint64_t payload_tag, std::string payload) {
     SliceBuffer buffer;
-    chaotic_good::data_endpoints_detail::DataFrameHeader;
-    {payload_tag, 1, static_cast<uint32_t>(payload.length())}.Serialize(
-        buffer.AddTiny(chaotic_good::data_endpoints_detail::DataFrameHeader::
-                           kFrameHeaderSize));
+    chaotic_good::TcpDataFrameHeader{payload_tag, 1,
+                                     static_cast<uint32_t>(payload.length())}
+        .Serialize(
+            buffer.AddTiny(chaotic_good::TcpDataFrameHeader::kFrameHeaderSize));
     buffer.Append(Slice::FromCopiedBuffer(payload));
     return buffer.JoinIntoString();
   };
@@ -235,7 +234,8 @@ DATA_ENDPOINTS_TEST(CanRead) {
       ep.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
   chaotic_good::DataEndpoints data_endpoints(
       Endpoints(std::move(ep.promise_endpoint)),
-      MakeRefCounted<chaotic_good::TransportContext>(event_engine()), false,
+      MakeRefCounted<chaotic_good::TransportContext>(event_engine(), nullptr),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
       Time1Clock());
   SpawnTestSeqWithoutContext("read", data_endpoints.Read(5).Await(),
                              [](absl::StatusOr<SliceBuffer> result) {

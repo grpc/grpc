@@ -376,18 +376,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         auto config =
             std::move(std::get<ControlConnection>(self->data_).config);
         auto& ep = self->connection_->endpoint_;
-        auto socket_node = MakeRefCounted<channelz::SocketNode>(
-            grpc_event_engine::experimental::ResolvedAddressToString(
-                ep.GetLocalAddress())
-                .value_or("unknown"),
-            grpc_event_engine::experimental::ResolvedAddressToString(
-                ep.GetPeerAddress())
-                .value_or("unknown"),
-            grpc_event_engine::experimental::ResolvedAddressToString(
-                ep.GetPeerAddress())
-                .value_or("unknown"),
-            self->connection_->args()
-                .GetObjectRef<channelz::SocketNode::Security>());
+        auto socket_node =
+            TcpFrameTransport::MakeSocketNode(self->connection_->args(), ep);
         auto frame_transport = MakeOrphanable<TcpFrameTransport>(
             config.MakeTcpFrameTransportOptions(), std::move(ep),
             config.TakePendingDataEndpoints(),

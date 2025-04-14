@@ -239,5 +239,19 @@ void TcpFrameTransport::AddData(channelz::DataSink& sink) {
   sink.AddAdditionalInfo("chaoticGoodTcpOptions", std::move(options));
 }
 
+RefCountedPtr<channelz::SocketNode> TcpFrameTransport::MakeSocketNode(
+    const ChannelArgs& args, const PromiseEndpoint& endpoint) {
+  std::string peer_string =
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          endpoint.GetPeerAddress())
+          .value_or("unknown");
+  return MakeRefCounted<channelz::SocketNode>(
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          endpoint.GetLocalAddress())
+          .value_or("unknown"),
+      peer_string, absl::StrCat("chaotic-good ", peer_string),
+      args.GetObjectRef<channelz::SocketNode::Security>());
+}
+
 }  // namespace chaotic_good
 }  // namespace grpc_core

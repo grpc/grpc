@@ -252,18 +252,9 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
               if (!parse_status.ok()) {
                 return parse_status;
               }
-              auto socket_node = MakeRefCounted<channelz::SocketNode>(
-                  grpc_event_engine::experimental::ResolvedAddressToString(
-                      result.connect_result.endpoint.GetLocalAddress())
-                      .value_or("unknown"),
-                  grpc_event_engine::experimental::ResolvedAddressToString(
-                      result.connect_result.endpoint.GetPeerAddress())
-                      .value_or("unknown"),
-                  grpc_event_engine::experimental::ResolvedAddressToString(
-                      result.connect_result.endpoint.GetPeerAddress())
-                      .value_or("unknown"),
-                  result_notifier_ptr->args.channel_args
-                      .GetObjectRef<channelz::SocketNode::Security>());
+              auto socket_node = TcpFrameTransport::MakeSocketNode(
+                  result_notifier_ptr->args.channel_args,
+                  result.connect_result.endpoint);
               auto frame_transport = MakeOrphanable<TcpFrameTransport>(
                   result_notifier_ptr->config.MakeTcpFrameTransportOptions(),
                   std::move(result.connect_result.endpoint),

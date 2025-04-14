@@ -49,6 +49,9 @@ class TcpFrameTransport final : public FrameTransport,
                     std::vector<PendingConnection> pending_data_endpoints,
                     TransportContextPtr ctx);
 
+  static RefCountedPtr<channelz::SocketNode> MakeSocketNode(
+      const ChannelArgs& args, const PromiseEndpoint& endpoint);
+
   void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
              RefCountedPtr<FrameTransportSink> sink) override;
   void Orphan() override;
