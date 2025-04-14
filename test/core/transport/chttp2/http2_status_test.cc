@@ -25,7 +25,11 @@
 
 namespace grpc_core {
 namespace http2 {
-namespace testing {}  // namespace testing
+namespace testing {
+
+// TEST(Http2StatusTest, )
+
+}  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
 

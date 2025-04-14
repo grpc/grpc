@@ -260,7 +260,7 @@ class ValueOrHttp2Status {
   // Prefer TakeValue when you want std::move to be used
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() { return value_.value(); }
 
-  GRPC_MUST_USE_RESULT Http2ErrorType GetErrorType() const {
+  GRPC_MUST_USE_RESULT Http2Status::Http2ErrorType GetErrorType() const {
     CHECK(status_.has_value());
     return status_.value().GetType();
   }
@@ -286,7 +286,7 @@ class ValueOrHttp2Status {
   }
 
  private:
-  friend function T TakeValue(ValueOrHttp2Status<T>&& value);
+  friend T TakeValue(ValueOrHttp2Status<T>&& value);
   std::optional<T> value_;
   std::optional<T> status_;
 };
