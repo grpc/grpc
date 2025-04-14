@@ -867,6 +867,7 @@ libs:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -2450,6 +2451,7 @@ libs:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -4418,6 +4420,7 @@ libs:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -6251,6 +6254,7 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -10281,6 +10285,7 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -15377,6 +15382,18 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: shared_bit_gen_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/shared_bit_gen.h
+  src:
+  - test/core/util/shared_bit_gen_test.cc
+  deps:
+  - gtest
+  - absl/random:random
+  uses_polling: false
 - name: shutdown_test
   gtest: true
   build: test

@@ -84,6 +84,7 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/extensions/blocking_dns.h",
         "lib/event_engine/extensions/can_track_errors.h",
+        "lib/event_engine/extensions/channelz.h",
         "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/iomgr_compatible.h",
         "lib/event_engine/extensions/supports_fd.h",
@@ -100,8 +101,10 @@ grpc_cc_library(
     ],
     deps = [
         "memory_quota",
+        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//:ref_counted_ptr",
         "//:tcp_tracer",
     ],
 )
@@ -6231,6 +6234,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "shared_bit_gen",
+    hdrs = [
+        "util/shared_bit_gen.h",
+    ],
+    external_deps = [
+        "absl/random",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_xds_cluster_impl",
     srcs = [
         "load_balancing/xds/xds_cluster_impl.cc",
@@ -8216,8 +8229,11 @@ grpc_cc_library(
         "ext/transport/chaotic_good/transport_context.h",
     ],
     deps = [
+        "channel_args",
         "metrics",
+        "ref_counted",
         "//:event_engine_base_hdrs",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -9136,11 +9152,16 @@ grpc_cc_library(
     hdrs = [
         "call/filter_fusion.h",
     ],
+    external_deps = [
+        "absl/status",
+        "absl/log",
+    ],
     deps = [
         "call_filters",
         "call_final_info",
         "metadata",
         "type_list",
+        "//:grpc_base",
         "//:grpc_public_hdrs",
     ],
 )
