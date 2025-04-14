@@ -374,6 +374,8 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
   //    set to 1 hour to ensure that the test reliably makes an attempt to send
   //    both pings within next_allowed_ping_interval.
   // 3. The ping timeout is triggered for the first ping.
+  // 4. Write cycle is triggered only once even if there are multiple calls to
+  //    MaybeSendPing within the next_allowed_ping_interval.
   InitParty();
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
@@ -419,6 +421,14 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
 
   party->Spawn(
       "PingSystem2",
+      TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+                                       Duration::Hours(1),
+                                       /*ping_timeout=*/Duration::Seconds(100),
+                                       party),
+             []() { return absl::OkStatus(); }),
+      [](auto) { LOG(INFO) << "Reached PingSystem end"; });
+  party->Spawn(
+      "PingSystem3",
       TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
                                        Duration::Hours(1),
                                        /*ping_timeout=*/Duration::Seconds(100),
@@ -521,6 +531,35 @@ PING_SYSTEM_TEST(TestPingSystemDelayedAck) {
                           },
                           [](bool) { return absl::OkStatus(); })),
                [](auto) { LOG(INFO) << "Reached PingAckReceived end"; });
+
+  WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
+PING_SYSTEM_TEST(TestPingSystemNoPingRequest) {
+  // Tests that MaybeSendPing returns immediately if no ping request has been
+  // made.
+  InitParty();
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
+      std::make_unique<StrictMock<MockPingSystemInterface>>();
+
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
+  auto party = GetParty();
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+
+  party->Spawn(
+      "PingSystem",
+      TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+                                       Duration::Seconds(100),
+                                       /*ping_timeout=*/Duration::Seconds(2),
+                                       party),
+             [&on_done]() {
+               on_done.Call(absl::OkStatus());
+               return absl::OkStatus();
+             }),
+      [](auto) { LOG(INFO) << "Reached PingSystem end"; });
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();

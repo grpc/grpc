@@ -34,6 +34,9 @@ class PingSystemInterface {
  public:
   struct SendPingArgs {
     bool ack = false;
+    // RFC9113: PING frames MUST contain 8 octets of opaque data in the frame
+    // payload. A sender can include any value it chooses and use those octets
+    // in any fashion.
     uint64_t opaque_data = 0;
   };
   // TODO(tjagtap) : [PH2][P1] Change the return type of the promises to
