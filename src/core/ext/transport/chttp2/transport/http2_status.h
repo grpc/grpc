@@ -233,6 +233,11 @@ class Http2Status {
   std::string message_;
 };
 
+// TODO [PH2][P2] : We can add more methods and helpers as needed.
+// This class is similar to ValueOrFailure but a more minamilasit version.
+// Reference :
+// https://github.com/grpc/grpc/blob/master/src/core/lib/promise/status_flag.h
+
 // A value if an operation was successful, or a Http2Status if not.
 template <typename T>
 class ValueOrHttp2Status {
