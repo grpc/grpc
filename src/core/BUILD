@@ -9445,13 +9445,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "ztrace_collector",
     hdrs = ["channelz/ztrace_collector.h"],
-    external_deps = [
-        "absl/container:flat_hash_set",
-    ],
     defines = select({
         "//:grpc_no_ztrace": ["GRPC_NO_ZTRACE"],
         "//conditions:default": [],
     }),
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
     deps = [
         "single_set_ptr",
         "sync",
