@@ -84,6 +84,8 @@ class PingSystem {
   // Returns a promise that determines if a ping frame should be sent to the
   // peer. If a ping frame is sent, it also spawns a timeout promise that
   // handles the ping timeout.
+  // The Party raw pointer is only used for promise creation and is guaranteed
+  // to be dropped inline when this function returns.
   Promise<absl::Status> MaybeSendPing(Duration next_allowed_ping_interval,
                                       Duration ping_timeout, Party* party);
 
@@ -140,7 +142,7 @@ class PingSystem {
 
   void TriggerDelayedPing(Duration wait, Party* party);
   bool NeedToPing(Duration next_allowed_ping_interval, Party* party);
-  void SpawnTimeout(Duration ping_timeout, uint64_t opaque_data, Party* party);
+  void SpawnTimeout(Duration ping_timeout, uint64_t opaque_data);
 
   void SentPing() { ping_rate_policy_.SentPing(); }
 };

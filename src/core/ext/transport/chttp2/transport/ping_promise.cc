@@ -109,8 +109,9 @@ bool PingSystem::NeedToPing(Duration next_allowed_ping_interval, Party* party) {
   return send_ping_now;
 }
 
-void PingSystem::SpawnTimeout(Duration ping_timeout, const uint64_t opaque_data,
-                              Party* party) {
+void PingSystem::SpawnTimeout(Duration ping_timeout,
+                              const uint64_t opaque_data) {
+  Party* party = GetContext<Party>();
   party->Spawn(
       "PingTimeout",
       [this, ping_timeout, opaque_data]() {
@@ -130,13 +131,13 @@ Promise<absl::Status> PingSystem::MaybeSendPing(
     Duration next_allowed_ping_interval, Duration ping_timeout, Party* party) {
   return If(
       NeedToPing(next_allowed_ping_interval, party),
-      [this, ping_timeout, party]() mutable {
+      [this, ping_timeout]() mutable {
         const uint64_t opaque_data = ping_callbacks_.StartPing();
         return AssertResultType<absl::Status>(
             TrySeq(ping_interface_->SendPing(SendPingArgs{false, opaque_data}),
-                   [this, ping_timeout, opaque_data, party]() {
+                   [this, ping_timeout, opaque_data]() {
                      VLOG(2) << "Ping Sent with id: " << opaque_data;
-                     SpawnTimeout(ping_timeout, opaque_data, party);
+                     SpawnTimeout(ping_timeout, opaque_data);
                      SentPing();
                      return absl::OkStatus();
                    }));

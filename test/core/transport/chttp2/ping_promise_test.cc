@@ -52,8 +52,7 @@ class MockPingSystemInterface : public PingSystemInterface {
           EXPECT_EQ(expected_args.ack, args.ack);
           LOG(INFO) << "MockPingSystemInterface SendPing Polled (ack: "
                     << args.ack << " opaque_data: " << args.opaque_data << ")."
-                    << "Expected (ack: " << expected_args.ack
-                    << " opaque_data: " << expected_args.opaque_data << ")";
+                    << "Expected (ack: " << expected_args.ack << ")";
           return Immediate(absl::OkStatus());
         }));
   }
@@ -86,8 +85,7 @@ class MockPingSystemInterface : public PingSystemInterface {
               LOG(INFO) << "MockPingSystemInterface SendPing Polled (ack: "
                         << args.ack << " opaque_data: " << args.opaque_data
                         << ")."
-                        << "Expected (ack: " << expected_args.ack
-                        << " opaque_data: " << expected_args.opaque_data << ")";
+                        << "Expected (ack: " << expected_args.ack << ")";
               EXPECT_EQ(expected_args.ack, args.ack);
               send_ping_return->args = args;
               send_ping_return->ready.Notify();
