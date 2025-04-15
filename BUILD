@@ -1771,6 +1771,7 @@ grpc_cc_library(
         "//src/core:resolved_address",
         "//src/core:seq",
         "//src/core:server_interface",
+        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:status_helper",
@@ -3377,6 +3378,7 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "//src/core:experiments",
+        "//src/core:shared_bit_gen",
         "//src/core:time",
     ],
 )
@@ -4626,9 +4628,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "chttp2_context_list_entry",
+    name = "context_list_entry",
     hdrs = [
-        "//src/core:ext/transport/chttp2/transport/context_list_entry.h",
+        "//src/core:telemetry/context_list_entry.h",
     ],
     deps = [
         "gpr",
@@ -4700,10 +4702,10 @@ grpc_cc_library(
         "call_tracer",
         "channel_arg_names",
         "channelz",
-        "chttp2_context_list_entry",
         "chttp2_legacy_frame",
         "chttp2_varint",
         "config_vars",
+        "context_list_entry",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -4753,6 +4755,7 @@ grpc_cc_library(
         "//src/core:random_early_detection",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
+        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",

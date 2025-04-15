@@ -111,19 +111,24 @@ RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
   return node->RefIfNonZero();
 }
 
-void ChannelzRegistry::InternalLogAllEntities() {
+std::vector<RefCountedPtr<BaseNode>>
+ChannelzRegistry::InternalGetAllEntities() {
   std::vector<RefCountedPtr<BaseNode>> nodes;
   {
     MutexLock lock(&mu_);
-    for (auto& p : node_map_) {
-      RefCountedPtr<BaseNode> node = p.second->RefIfNonZero();
+    for (const auto& [_, p] : node_map_) {
+      RefCountedPtr<BaseNode> node = p->RefIfNonZero();
       if (node != nullptr) {
         nodes.emplace_back(std::move(node));
       }
     }
   }
-  for (size_t i = 0; i < nodes.size(); ++i) {
-    std::string json = nodes[i]->RenderJsonString();
+  return nodes;
+}
+
+void ChannelzRegistry::InternalLogAllEntities() {
+  for (const auto& p : InternalGetAllEntities()) {
+    std::string json = p->RenderJsonString();
     LOG(INFO) << json;
   }
 }
