@@ -24,6 +24,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 
@@ -527,7 +528,7 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
   CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
   uint8_t buffer[kGrpcHeaderSizeInBytes];
-  payload.MoveFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
+  payload.CopyFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
   GrpcMessageHeader header;
   header.flags = buffer[0];
   header.length = Read4b(buffer + 1);
