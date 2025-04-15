@@ -373,12 +373,9 @@ void WaitAndShutdown(server* sv, client* cl) {
 
 class EventPollerTest : public ::testing::Test {
   void SetUp() override {
-    engine_ = grpc_event_engine::experimental::PosixEventEngine::
-        MakePosixEventEngine();
+    engine_ = PosixEventEngine::MakePosixEventEngine();
     EXPECT_NE(engine_, nullptr);
-    scheduler_ =
-        std::make_unique<grpc_event_engine::experimental::TestScheduler>(
-            engine_.get());
+    scheduler_ = std::make_unique<TestScheduler>(engine_.get());
     EXPECT_NE(scheduler_, nullptr);
     g_event_poller = MakeDefaultPoller(scheduler_.get());
     engine_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(g_event_poller);
@@ -399,8 +396,8 @@ class EventPollerTest : public ::testing::Test {
   TestScheduler* Scheduler() { return scheduler_.get(); }
 
  private:
-  std::shared_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
-  std::unique_ptr<grpc_event_engine::experimental::TestScheduler> scheduler_;
+  std::shared_ptr<PosixEventEngine> engine_;
+  std::unique_ptr<TestScheduler> scheduler_;
 };
 
 // Test grpc_fd. Start an upload server and client, upload a stream of bytes

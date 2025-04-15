@@ -358,9 +358,10 @@ std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine() {
 }
 
 #ifdef GRPC_POSIX_SOCKET_TCP
+
 // The posix EventEngine returned by this method would have a shared ownership
 // of the poller and would not be in-charge of driving the poller by calling
-// its Work(..) method. Instead its upto the test to drive the poller. The
+// its Work(..) method. Instead its up to the test to drive the poller. The
 // returned posix EventEngine will also not attempt to shutdown the poller
 // since it does not own it.
 std::shared_ptr<PosixEventEngine>
