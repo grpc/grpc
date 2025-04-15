@@ -192,6 +192,11 @@ void ExpandVersion(nlohmann::json& config) {
       LOG(FATAL) << "Unknown tag: " << *version.tag;
     }
   }
+  std::string ruby_version =
+      absl::StrCat(version.major, ".", version.minor, ".", version.patch);
+  if (version.tag.has_value()) {
+    ruby_version += "." + *version.tag;
+  }
   std::string pep440 =
       absl::StrCat(version.major, ".", version.minor, ".", version.patch);
   if (version.tag.has_value()) {
@@ -204,12 +209,30 @@ void ExpandVersion(nlohmann::json& config) {
                  << " to pep440";
     }
   }
+  for (std::string language :
+       {"cpp", "csharp", "node", "objc", "php", "python", "ruby"}) {
+    std::string version_tag = absl::StrCat(language, "_version");
+    Version v = version;
+    if (auto override_major =
+            settings.find(absl::StrCat(language, "_major_version"));
+        override_major != settings.end()) {
+      std::string override_value = *override_major;
+      CHECK(absl::SimpleAtoi(override_value, &v.major));
+    }
+    settings[version_tag] = nlohmann::json::object();
+    settings[version_tag]["string"] =
+        absl::StrCat(v.major, ".", v.minor, ".", v.patch,
+                     v.tag.has_value() ? absl::StrCat("-", *v.tag) : "");
+    settings[version_tag]["major"] = v.major;
+    settings[version_tag]["minor"] = v.minor;
+    settings[version_tag]["patch"] = v.patch;
+    settings[version_tag]["tag_or_empty"] = v.tag.value_or("");
+  }
   settings["version"]["php"] = php_version;
   ExpandOneVersion(settings, "core_version");
-  settings["php_version"] = nlohmann::json::object();
   settings["php_version"]["php_current_version"] = "8.1";
-  settings["python_version"] = nlohmann::json::object();
   settings["python_version"]["pep440"] = pep440;
+  settings["ruby_version"]["ruby_version"] = ruby_version;
 }
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {
