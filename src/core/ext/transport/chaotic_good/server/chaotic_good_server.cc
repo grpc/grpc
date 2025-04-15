@@ -379,9 +379,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             config.MakeTcpFrameTransportOptions(),
             std::move(self->connection_->endpoint_),
             config.TakePendingDataEndpoints(),
-            self->connection_->args().GetObjectRef<EventEngine>(),
-            self->connection_->args()
-                .GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>());
+            MakeRefCounted<TransportContext>(self->connection_->args()));
         return self->connection_->listener_->server_->SetupTransport(
             new ChaoticGoodServerTransport(self->connection_->args(),
                                            std::move(frame_transport),
