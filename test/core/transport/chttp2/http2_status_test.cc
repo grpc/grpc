@@ -56,12 +56,18 @@ TEST(Http2StatusTest, CrashForWrongType1) {
 
 ///////////////////////////////////////////////////////////////////////////////
 // ValueOrHttp2Status Tests
+// These tests first create the specific type of ValueOrHttp2Status object.
+// Then check the following:
+// 1. Status is ok
+// 2. Extract the value either via value() or TakeValue
+// 3. Get message
+// 4. Get absl status
 
 TEST(ValueOrHttp2Status, ValuePrimitiveDataType) { CHECK(true); }
 
 TEST(ValueOrHttp2Status, ValueHttp2DataFrame) { CHECK(true); }
 
-TEST(ValueOrHttp2Status, ValueWindowUpdateFrame) { CHECK(true); }
+TEST(ValueOrHttp2Status, ValueHttp2WindowUpdateFrame) { CHECK(true); }
 
 TEST(ValueOrHttp2Status, ValueStdString) { CHECK(true); }
 
