@@ -76,7 +76,8 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     // Add channelz node to channel args.
     // We remove the is_internal_channel arg, since we no longer need it.
     args = args.Remove(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL)
-               .SetObject(std::move(channelz_node));
+               .SetObject<channelz::BaseNode>(channelz_node)
+               .SetObject(channelz_node);
   }
   // Add transport to args.
   if (optional_transport != nullptr) {
