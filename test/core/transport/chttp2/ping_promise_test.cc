@@ -32,13 +32,11 @@
 
 namespace grpc_core {
 
-namespace {
 using ::grpc_core::http2::PingSystem;
 using ::grpc_core::http2::PingSystemInterface;
 using ::testing::MockFunction;
 using ::testing::StrictMock;
 using ::testing::WithArgs;
-}  // namespace
 
 class MockPingSystemInterface : public PingSystemInterface {
  public:
