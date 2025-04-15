@@ -52,14 +52,19 @@ async def serve() -> None:
         await server.stop(5)
 
     _cleanup_coroutines.append(server_graceful_shutdown())
-    await server.wait_for_termination()
+
+    try:
+        await server.wait_for_termination()
+    finally:
+        if hasattr(asyncio, "TaskGroup"):
+            # Better tracebacks for Python >= 3.11
+            async with asyncio.TaskGroup() as tg:
+                for coroutine in _cleanup_coroutines:
+                    tg.create_task(coroutine)
+        else:
+            await asyncio.gather(*_cleanup_coroutines, return_exceptions=True)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(serve())
-    finally:
-        loop.run_until_complete(*_cleanup_coroutines)
-        loop.close()
+    asyncio.run(serve())
