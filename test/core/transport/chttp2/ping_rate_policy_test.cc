@@ -129,11 +129,16 @@ TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPingsStrictLimit) {
   if (!IsMaxInflightPingsStrictLimitEnabled()) {
     GTEST_SKIP() << "Strict limit is not enabled.";
   }
-  Chttp2PingRatePolicy policy{ChannelArgs(), false};
+  int max_inflight_pings = 1;
+  auto channel_args =
+      ChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, max_inflight_pings);
+  Chttp2PingRatePolicy policy{channel_args, false};
+
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 0),
             SendGranted());
-  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 1),
-            TooManyRecentPings());
+  EXPECT_EQ(
+      policy.RequestSendPing(Duration::Milliseconds(1), max_inflight_pings),
+      TooManyRecentPings());
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 100000000),
             TooManyRecentPings());
 }

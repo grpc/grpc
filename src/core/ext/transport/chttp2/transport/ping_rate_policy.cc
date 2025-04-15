@@ -25,12 +25,6 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/match.h"
 
-// How many pings do we allow to be inflight at any given time?
-// In older versions of gRPC this was implicitly 1.
-// With the multiping experiment we allow this to rise to 100 by default.
-// TODO(ctiller): consider making this public API
-#define GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS "grpc.http2.max_inflight_pings"
-
 namespace grpc_core {
 
 namespace {
