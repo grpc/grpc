@@ -94,6 +94,24 @@ class BaseNode : public RefCounted<BaseNode> {
     kSocket,
   };
 
+  static absl::string_view EntityTypeString(EntityType type) {
+    switch (type) {
+      case EntityType::kTopLevelChannel:
+        return "top_level_channel";
+      case EntityType::kInternalChannel:
+        return "internal_channel";
+      case EntityType::kSubchannel:
+        return "subchannel";
+      case EntityType::kServer:
+        return "server";
+      case EntityType::kListenSocket:
+        return "listen_socket";
+      case EntityType::kSocket:
+        return "socket";
+    }
+    return "unknown";
+  }
+
  protected:
   BaseNode(EntityType type, std::string name);
 
