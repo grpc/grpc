@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
+#include <memory>
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -29,7 +30,7 @@ namespace grpc_core {
 // A DNS resolver which uses the native platform's getaddrinfo API.
 class NativeDNSResolver : public DNSResolver {
  public:
-  NativeDNSResolver() = default;
+  NativeDNSResolver();
 
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>

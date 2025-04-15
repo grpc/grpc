@@ -29,7 +29,7 @@ namespace grpc_core {
 const char* kDefaultSecurePort = "https";
 
 namespace {
-NoDestruct<std::shared_ptr<DNSResolver>> g_dns_resolver;
+NoDestruct<std::shared_ptr<DNSResolver>> g_dns_resolver{nullptr};
 }
 
 const DNSResolver::LookupTaskHandle DNSResolver::LookupTaskHandle::kInvalid = {
