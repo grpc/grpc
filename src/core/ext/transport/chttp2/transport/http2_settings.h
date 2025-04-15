@@ -28,6 +28,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -133,20 +134,23 @@ class Http2Settings {
 
   bool operator!=(const Http2Settings& rhs) const { return !operator==(rhs); }
 
-  Json::Object ToJsonObject() const {
-    Json::Object object;
-    object["headerTableSize"] = Json::FromNumber(header_table_size());
-    object["maxConcurrentStreams"] = Json::FromNumber(max_concurrent_streams());
-    object["initialWindowSize"] = Json::FromNumber(initial_window_size());
-    object["maxFrameSize"] = Json::FromNumber(max_frame_size());
-    object["maxHeaderListSize"] = Json::FromNumber(max_header_list_size());
-    object["preferredReceiveCryptoMessageSize"] =
-        Json::FromNumber(preferred_receive_crypto_message_size());
-    object["enablePush"] = Json::FromBool(enable_push());
-    object["allowTrueBinaryMetadata"] =
-        Json::FromBool(allow_true_binary_metadata());
-    object["allowSecurityFrame"] = Json::FromBool(allow_security_frame());
-    return object;
+  static const JsonLoaderInterface* JsonLoader(const grpc_core::JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<Http2Settings>()
+            .Field("headerTableSize", &Http2Settings::header_table_size_)
+            .Field("maxConcurrentStreams",
+                   &Http2Settings::max_concurrent_streams_)
+            .Field("initialWindowSize", &Http2Settings::initial_window_size_)
+            .Field("maxFrameSize", &Http2Settings::max_frame_size_)
+            .Field("maxHeaderListSize", &Http2Settings::max_header_list_size_)
+            .Field("preferredReceiveCryptoMessageSize",
+                   &Http2Settings::preferred_receive_crypto_message_size_)
+            .Field("enablePush", &Http2Settings::enable_push_)
+            .Field("allowTrueBinaryMetadata",
+                   &Http2Settings::allow_true_binary_metadata_)
+            .Field("allowSecurityFrame", &Http2Settings::allow_security_frame_)
+            .Finish();
+    return loader;
   }
 
  private:
@@ -169,13 +173,15 @@ class Http2SettingsManager {
   Http2Settings& mutable_peer() { return peer_; }
   const Http2Settings& peer() const { return peer_; }
 
-  Json::Object ToJsonObject() const {
-    Json::Object object;
-    object["local"] = Json::FromObject(local_.ToJsonObject());
-    object["sent"] = Json::FromObject(sent_.ToJsonObject());
-    object["peer"] = Json::FromObject(peer_.ToJsonObject());
-    object["acked"] = Json::FromObject(acked_.ToJsonObject());
-    return object;
+  static const JsonLoaderInterface* JsonLoader(const grpc_core::JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<Http2SettingsManager>()
+            .Field("local", &Http2SettingsManager::local_)
+            .Field("sent", &Http2SettingsManager::sent_)
+            .Field("peer", &Http2SettingsManager::peer_)
+            .Field("acked", &Http2SettingsManager::acked_)
+            .Finish();
+    return loader;
   }
 
   std::optional<Http2SettingsFrame> MaybeSendUpdate();

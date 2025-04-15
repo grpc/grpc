@@ -7606,6 +7606,7 @@ grpc_cc_library(
     deps = [
         "http2_status",
         "json",
+        "json_object_loader",
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",

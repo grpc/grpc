@@ -302,23 +302,26 @@ class TransportFlowControl final {
     double bdp_bw_est;
 
     std::string ToString() const;
-    Json::Object ToJsonObject() {
-      Json::Object object;
-      object["targetWindow"] = Json::FromNumber(target_window);
-      object["targetFrameSize"] = Json::FromNumber(target_frame_size);
-      object["targetPreferredRxCryptoFrameSize"] =
-          Json::FromNumber(target_preferred_rx_crypto_frame_size);
-      object["ackedInitWindow"] = Json::FromNumber(acked_init_window);
-      object["queuedInitWindow"] = Json::FromNumber(queued_init_window);
-      object["sentInitWindow"] = Json::FromNumber(sent_init_window);
-      object["remoteWindow"] = Json::FromNumber(remote_window);
-      object["announcedWindow"] = Json::FromNumber(announced_window);
-      object["announcedStreamTotalOverIncomingWindow"] =
-          Json::FromNumber(announced_stream_total_over_incoming_window);
-      object["bdpAccumulator"] = Json::FromNumber(bdp_accumulator);
-      object["bdpEstimate"] = Json::FromNumber(bdp_estimate);
-      object["bdpBwEst"] = Json::FromNumber(bdp_bw_est);
-      return object;
+
+    static const JsonLoaderInterface* JsonLoader(const grpc_core::JsonArgs&) {
+      static const auto* loader =
+          JsonObjectLoader<Stats>()
+              .Field("targetWindow", &Stats::target_window)
+              .Field("targetFrameSize", &Stats::target_frame_size)
+              .Field("targetPreferredRxCryptoFrameSize",
+                     &Stats::target_preferred_rx_crypto_frame_size)
+              .Field("ackedInitWindow", &Stats::acked_init_window)
+              .Field("queuedInitWindow", &Stats::queued_init_window)
+              .Field("sentInitWindow", &Stats::sent_init_window)
+              .Field("remoteWindow", &Stats::remote_window)
+              .Field("announcedWindow", &Stats::announced_window)
+              .Field("announcedStreamTotalOverIncomingWindow",
+                     &Stats::announced_stream_total_over_incoming_window)
+              .Field("bdpAccumulator", &Stats::bdp_accumulator)
+              .Field("bdpEstimate", &Stats::bdp_estimate)
+              .Field("bdpBwEst", &Stats::bdp_bw_est)
+              .Finish();
+      return loader;
     }
   };
 
