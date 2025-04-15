@@ -49,19 +49,26 @@ class MockKeepAliveSystemInterface : public KeepAliveSystemInterface {
     EXPECT_CALL(*this, SendPing())
         .Times(end_after)
         .WillRepeatedly([&end_after] {
+          LOG(INFO) << "ExpectSendPing Called. Remaining times: " << end_after;
           if (--end_after == 0) {
-            LOG(INFO) << "SendPing returning: " << absl::CancelledError();
             return Immediate(absl::CancelledError());
           }
-          LOG(INFO) << "SendPing returning: " << absl::OkStatus();
           return Immediate(absl::OkStatus());
         });
   }
-  void ExpectSendPing(Duration duration) {
-    EXPECT_CALL(*this, SendPing()).WillOnce([duration] {
-      return TrySeq(Sleep(duration),
-                    [] { return Immediate(absl::OkStatus()); });
-    });
+
+  void ExpectSendPingWithSleep(Duration duration, int& end_after) {
+    EXPECT_CALL(*this, SendPing())
+        .Times(end_after)
+        .WillRepeatedly([duration, &end_after] {
+          LOG(INFO) << "ExpectSendPingWithSleep Called. Remaining times: "
+                    << end_after;
+          return If((--end_after == 0),
+                    TrySeq(Sleep(duration),
+                           [] { return Immediate(absl::CancelledError()); }),
+                    TrySeq(Sleep(duration),
+                           [] { return Immediate(absl::OkStatus()); }));
+        });
   }
 
   void ExpectKeepAliveTimeout() {
@@ -111,16 +118,55 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
 
 YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeout) {
   InitParty();
+  int end_after = 1;
   std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
       keep_alive_interface =
           std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
   keep_alive_interface->ExpectKeepAliveTimeout();
-  keep_alive_interface->ExpectSendPing(Duration::Hours(1));
+  keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1), end_after);
 
   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
                                     Duration::Hours(1), Duration::Seconds(1));
   auto party = GetParty();
   keep_alive_system.Spawn(party);
+
+  WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
+YODEL_TEST(KeepAliveSystemTest, TestKeepAliveWithData) {
+  InitParty();
+  int end_after = 1;
+  int read_loop_end_after = 500;
+  std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
+      keep_alive_interface =
+          std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
+
+  // break the keepalive loop
+  keep_alive_interface->ExpectSendPing(end_after);
+
+  KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
+                                    Duration::Seconds(100),
+                                    Duration::Seconds(100));
+  auto party = GetParty();
+  keep_alive_system.Spawn(party);
+
+  party->Spawn("ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
+                 return TrySeq(
+                     Sleep(Duration::Seconds(1)),
+                     [&read_loop_end_after,
+                      &keep_alive_system]() mutable -> LoopCtl<absl::Status> {
+                       keep_alive_system.GotData();
+                       if (read_loop_end_after == 0) {
+                         read_loop_end_after--;
+                         return Continue();
+                       }
+
+                       return absl::OkStatus();
+                     });
+               }),
+               [](auto) { LOG(INFO) << "ReadData end"; });
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();

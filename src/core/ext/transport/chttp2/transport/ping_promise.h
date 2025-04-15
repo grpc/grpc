@@ -42,10 +42,6 @@ class KeepAliveSystemInterface {
 
 class KeepAliveSystem {
  private:
-  struct NextKeepAlive {
-    Duration wait;
-    bool send_ping;
-  };
   auto SendPing() { return keep_alive_interface_->SendPing(); }
   // Will be called if keepalive_timeout_ is not infinity.
   auto TimeoutAndSendPing() {
@@ -56,26 +52,15 @@ class KeepAliveSystem {
             [] { return absl::CancelledError("KeepAlive timeout"); }),
         SendPing());
   }
-  NextKeepAlive NeedToSendKeepAlivePing() {
-    Timestamp next_allowed_time =
-        last_data_received_time_ + keepalive_interval_;
-    Timestamp now = Timestamp::Now();
-    bool send_ping = next_allowed_time <= now;
-    return (send_ping) ? NextKeepAlive{Duration::Zero(), true}
-                       : NextKeepAlive{next_allowed_time - now, false};
-  }
-  void UpdateNextKeepAliveInterval(NextKeepAlive next_ping) {
-    if (next_ping.send_ping) {
-      next_keepalive_interval_ = keepalive_interval_;
-    } else {
-      next_keepalive_interval_ =
-          std::max(next_ping.wait, min_keepalive_interval_);
-    }
+  // If no data is received in the last keepalive_interval, we should send a
+  // keepalive ping. This also means that there can be scenarios where we would
+  // send one keepalive ping in ~(2*keepalive_interval).
+  bool NeedToSendKeepAlivePing() {
+    return (data_received_in_last_cycle_ == false);
   }
   auto MaybeSendKeepAlivePing() {
-    auto next_ping = NeedToSendKeepAlivePing();
     return TrySeq(If(
-                      next_ping.send_ping,
+                      NeedToSendKeepAlivePing(),
                       [this]() {
                         // TODO(akshitpatel) : [PH2][P0] : Should we wait for
                         // ping ack if some data is received after the ping is
@@ -85,8 +70,8 @@ class KeepAliveSystem {
                                   [this] { return SendPing(); });
                       },
                       []() { return Immediate(absl::OkStatus()); }),
-                  [this, next_ping] {
-                    UpdateNextKeepAliveInterval(next_ping);
+                  [this] {
+                    data_received_in_last_cycle_ = false;
                     return Immediate(absl::OkStatus());
                   });
   }
@@ -96,17 +81,14 @@ class KeepAliveSystem {
   // timeout for keepalive pings using this field.
   Duration keepalive_timeout_;
   Duration keepalive_interval_;
-  Duration next_keepalive_interval_;
-  Timestamp last_data_received_time_;
-  // TODO(akshitpatel) : [PH2][P0] : Figure out if this is good.
-  Duration min_keepalive_interval_ = Duration::Seconds(5);
+  bool data_received_in_last_cycle_ = false;
 
  public:
   KeepAliveSystem(
       std::unique_ptr<KeepAliveSystemInterface> keep_alive_interface,
       Duration keepalive_timeout, Duration keepalive_interval);
   void Spawn(Party* party);
-  void GotData() { last_data_received_time_ = Timestamp::Now(); }
+  void GotData() { data_received_in_last_cycle_ = true; }
   void SetKeepAliveTimeout(Duration keepalive_timeout) {
     keepalive_timeout_ = keepalive_timeout;
   }

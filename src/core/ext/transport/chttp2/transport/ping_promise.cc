@@ -24,14 +24,12 @@ KeepAliveSystem::KeepAliveSystem(
     Duration keepalive_timeout, Duration keepalive_interval)
     : keep_alive_interface_(std::move(keep_alive_interface)),
       keepalive_timeout_(keepalive_timeout),
-      keepalive_interval_(keepalive_interval),
-      next_keepalive_interval_(keepalive_interval),
-      last_data_received_time_(Timestamp::InfPast()) {}
+      keepalive_interval_(keepalive_interval) {}
 
 void KeepAliveSystem::Spawn(Party* party) {
   party->Spawn("KeepAlive", Loop([this]() {
                  return TrySeq(
-                     Sleep(next_keepalive_interval_),
+                     Sleep(keepalive_interval_),
                      [this]() { return MaybeSendKeepAlivePing(); },
                      []() -> LoopCtl<absl::Status> { return Continue(); });
                }),
