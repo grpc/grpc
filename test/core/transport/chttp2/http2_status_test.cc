@@ -27,7 +27,23 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
-// TEST(Http2StatusTest, )
+// Constructor tests first create the specific Http2Status object.
+// Then check the following
+// 1. Http2ErrorType
+// 2. Http2ErrorCode
+// 3. message
+// 4. Absl status
+// 5. For a small subset of tests, check that extracting the wrong
+TEST(Http2StatusTest, ConstructorOkTest) {}
+
+TEST(Http2StatusTest, ConstructorHttp2ConnectionErrorTest) {}
+
+TEST(Http2StatusTest, ConstructorHttp2StreamErrorTest) {}
+
+TEST(Http2StatusTest, ConstructorAbslConnectionErrorTest) {}
+
+TEST(Http2StatusTest, ConstructorAbslStreamErrorTest) {}
+
 
 }  // namespace testing
 }  // namespace http2

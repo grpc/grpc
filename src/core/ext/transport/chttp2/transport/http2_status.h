@@ -242,7 +242,7 @@ class Http2Status {
 template <typename T>
 class ValueOrHttp2Status {
  public:
-  // TODOTODO(tjagtap): [PH2][P0] : some http2 frame types used to give some
+  // TODO(tjagtap): [PH2][P0] : some http2 frame types used to give some
   // compile issue with std::move. Check with tests.
 
   // NOLINTNEXTLINE(google-explicit-constructor)
