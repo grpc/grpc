@@ -108,7 +108,6 @@ struct LegacyMaxAgeFilter::Config {
         return absl::Uniform(bit_gen, min, max);
       }
     };
-    static NoDestruct<PerCpu<BitGen>> bit_gen(PerCpuOptions().SetMaxShards(8));
     const double multiplier = []() {
       SharedBitGen g;
       return absl::Uniform(g, 1.0 - kMaxConnectionAgeJitter,

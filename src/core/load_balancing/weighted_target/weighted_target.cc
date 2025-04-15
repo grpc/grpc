@@ -246,10 +246,8 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
 WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
     PickArgs args) {
   // Generate a random number in [0, total weight).
-  const uint64_t key = [&]() {
-    SharedBitGen g;
-    return absl::Uniform<uint64_t>(g, 0, pickers_.back().first);
-  }();
+  const uint64_t key =
+      absl::Uniform<uint64_t>(SharedBitGen(), 0, pickers_.back().first);
   // Find the index in pickers_ corresponding to key.
   size_t mid = 0;
   size_t start_index = 0;
