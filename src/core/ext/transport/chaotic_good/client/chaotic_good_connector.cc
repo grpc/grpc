@@ -256,10 +256,8 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                   result_notifier_ptr->config.MakeTcpFrameTransportOptions(),
                   std::move(result.connect_result.endpoint),
                   result_notifier_ptr->config.TakePendingDataEndpoints(),
-                  result_notifier_ptr->args.channel_args
-                      .GetObjectRef<EventEngine>(),
-                  result_notifier_ptr->args.channel_args.GetObjectRef<
-                      GlobalStatsPluginRegistry::StatsPluginGroup>());
+                  MakeRefCounted<TransportContext>(
+                      result_notifier_ptr->args.channel_args));
               auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
                   result_notifier_ptr->args.channel_args,
                   std::move(frame_transport),

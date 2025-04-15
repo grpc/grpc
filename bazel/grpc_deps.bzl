@@ -366,9 +366,26 @@ def grpc_deps():
             ],
         )
 
+    # Building grpc with openssl is only supported when using bzlmod. Workspaces
+    # are deprecated, so just create a dummy repo so that the grpc targets build
+    # when using workspaces.
+    openssl = repository_rule(
+        implementation = _openssl_impl,
+    )
+    openssl(name = "openssl")
+
     grpc_module_deps()
 
     grpc_python_deps()
+
+def _openssl_impl(ctx):
+    ctx.file("BUILD", """
+package(default_visibility = ["//visibility:public"])
+
+cc_library(name = "ssl")
+
+cc_library(name = "crypto")
+""")
 
 # TODO: move some dependencies from "grpc_deps" here?
 # buildifier: disable=unnamed-macro
@@ -388,6 +405,16 @@ def grpc_test_only_deps():
             ],
             strip_prefix = "libprotobuf-mutator-1f95f8083066f5b38fd2db172e7e7f9aa7c49d2d",
             build_file = "@com_github_grpc_grpc//third_party:libprotobuf_mutator.BUILD",
+        )
+
+    if "yaml-cpp" not in native.existing_rules():
+        http_archive(
+            name = "yaml-cpp",
+            sha256 = "fbe74bbdcee21d656715688706da3c8becfd946d92cd44705cc6098bb23b3a16",
+            strip_prefix = "yaml-cpp-0.8.0",
+            urls = [
+                "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz",
+            ],
         )
 
 def grpc_module_deps():

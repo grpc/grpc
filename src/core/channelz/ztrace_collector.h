@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
 #define GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
 
+#include <grpc/support/time.h>
+
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -37,8 +39,9 @@ template <typename T>
 void AppendResults(const Collection<T>& data, Json::Array& results) {
   for (const auto& value : data) {
     Json::Object object;
-    object["timestamp"] = Json::FromString(
-        gpr_format_timespec(gpr_cycle_counter_to_time(value.first)));
+    object["timestamp"] =
+        Json::FromString(gpr_format_timespec(gpr_convert_clock_type(
+            gpr_cycle_counter_to_time(value.first), GPR_CLOCK_REALTIME)));
     value.second.RenderJson(object);
     results.emplace_back(Json::FromObject(std::move(object)));
   }
@@ -55,6 +58,15 @@ constexpr bool kIsElement<Needle, H, Haystack...> =
     kIsElement<Needle, Haystack...>;
 
 }  // namespace ztrace_collector_detail
+
+inline std::optional<int64_t> IntFromArgs(
+    const std::map<std::string, std::string>& args, const std::string& name) {
+  auto it = args.find(name);
+  if (it == args.end()) return std::nullopt;
+  int64_t out;
+  if (!absl::SimpleAtoi(it->second, &out)) return std::nullopt;
+  return out;
+}
 
 // Generic collector infrastructure for ztrace queries.
 // Abstracts away most of the ztrace requirements in an efficient manner,
@@ -102,12 +114,47 @@ class ZTraceCollector {
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                  event_engine,
              absl::AnyInvocable<void(Json)> done)
-        : config(std::move(args)),
+        : memory_cap_(IntFromArgs(args, "memory_cap").value_or(1024 * 1024)),
+          config(args),
           event_engine(std::move(event_engine)),
           done(std::move(done)) {}
+    using Collections = std::tuple<Collection<Data>...>;
+    struct RemoveMostRecentState {
+      void (*enact)(Instance*) = nullptr;
+      gpr_cycle_counter most_recent;
+    };
+    template <typename T>
+    void Append(std::pair<gpr_cycle_counter, T> value) {
+      memory_used_ += value.second.MemoryUsage();
+      while (memory_used_ > memory_cap_) RemoveMostRecent();
+      std::get<Collection<T>>(data).push_back(std::move(value));
+    }
+    void RemoveMostRecent() {
+      RemoveMostRecentState state;
+      (UpdateRemoveMostRecentState<Data>(&state), ...);
+      CHECK(state.enact != nullptr);
+      state.enact(this);
+    }
+    template <typename T>
+    void UpdateRemoveMostRecentState(RemoveMostRecentState* state) {
+      auto& collection = std::get<Collection<T>>(data);
+      if (collection.empty()) return;
+      if (state->enact == nullptr ||
+          collection.front().first > state->most_recent) {
+        state->enact = +[](Instance* instance) {
+          auto& collection = std::get<Collection<T>>(instance->data);
+          const size_t ent_usage = collection.front().second.MemoryUsage();
+          CHECK_GE(instance->memory_used_, ent_usage);
+          instance->memory_used_ -= ent_usage;
+          collection.pop_front();
+        };
+        state->most_recent = collection.front().first;
+      }
+    }
     void Finish(absl::Status status) {
       event_engine->Run([data = std::move(data), done = std::move(done),
-                         status = std::move(status)]() mutable {
+                         status = std::move(status),
+                         memory_used = memory_used_]() mutable {
         Json::Array entries;
         (ztrace_collector_detail::AppendResults(
              std::get<Collection<Data>>(data), entries),
@@ -115,14 +162,19 @@ class ZTraceCollector {
         Json::Object result;
         result["entries"] = Json::FromArray(entries);
         result["status"] = Json::FromString(status.ToString());
+        result["memory_used"] =
+            Json::FromNumber(static_cast<uint64_t>(memory_used));
         done(Json::FromObject(std::move(result)));
       });
     }
+    size_t memory_used_ = 0;
+    size_t memory_cap_ = 0;
     Config config;
+    const Timestamp start_time = Timestamp::Now();
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
     grpc_event_engine::experimental::EventEngine::TaskHandle task_handle{
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid};
-    std::tuple<Collection<Data>...> data;
+    Collections data;
     absl::AnyInvocable<void(Json)> done;
   };
   struct Impl : public RefCounted<Impl> {
@@ -140,7 +192,22 @@ class ZTraceCollector {
       auto instance = MakeRefCounted<Instance>(std::move(args), event_engine,
                                                std::move(callback));
       auto impl = std::move(impl_);
+      RefCountedPtr<Instance> oldest_instance;
       MutexLock lock(&impl->mu);
+      if (impl->instances.size() > 20) {
+        // Eject oldest running trace
+        Timestamp oldest_time = Timestamp::InfFuture();
+        for (auto& instance : impl->instances) {
+          if (instance->start_time < oldest_time) {
+            oldest_time = instance->start_time;
+            oldest_instance = instance;
+          }
+        }
+        CHECK(oldest_instance != nullptr);
+        impl->instances.erase(oldest_instance);
+        oldest_instance->Finish(
+            absl::ResourceExhaustedError("Too many concurrent ztrace queries"));
+      }
       instance->task_handle = event_engine->RunAfter(
           deadline - Timestamp::Now(), [instance, impl]() {
             bool finish;
@@ -170,7 +237,7 @@ class ZTraceCollector {
           auto& instances = impl->instances;
           auto& instance = *instances.begin();
           const bool finishes = instance->config.Finishes(value.second);
-          std::get<Collection<T>>(instance->data).push_back(std::move(value));
+          instance->Append(std::move(value));
           if (finishes) {
             instance->Finish(absl::OkStatus());
             instances.clear();
@@ -180,7 +247,7 @@ class ZTraceCollector {
           std::vector<RefCountedPtr<Instance>> finished;
           for (auto& instance : impl->instances) {
             const bool finishes = instance->config.Finishes(value.second);
-            std::get<Collection<T>>(instance->data).push_back(value);
+            instance->Append(value);
             if (finishes) {
               finished.push_back(instance);
             }

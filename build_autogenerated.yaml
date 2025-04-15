@@ -306,7 +306,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
-  - src/core/ext/transport/chttp2/transport/context_list_entry.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
@@ -867,6 +866,7 @@ libs:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -1119,6 +1119,7 @@ libs:
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/default_tcp_tracer.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
@@ -2340,7 +2341,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
-  - src/core/ext/transport/chttp2/transport/context_list_entry.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
@@ -2450,6 +2450,7 @@ libs:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -2689,6 +2690,7 @@ libs:
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/default_tcp_tracer.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
@@ -4418,6 +4420,7 @@ libs:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -6251,6 +6254,7 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -7393,6 +7397,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8214,6 +8219,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8335,6 +8341,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8544,6 +8551,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8661,6 +8669,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8778,6 +8787,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8983,6 +8993,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9188,6 +9199,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9305,6 +9317,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9510,6 +9523,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9627,6 +9641,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -10270,6 +10285,7 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -11667,6 +11683,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -15365,6 +15382,18 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: shared_bit_gen_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/shared_bit_gen.h
+  src:
+  - test/core/util/shared_bit_gen_test.cc
+  deps:
+  - gtest
+  - absl/random:random
+  uses_polling: false
 - name: shutdown_test
   gtest: true
   build: test

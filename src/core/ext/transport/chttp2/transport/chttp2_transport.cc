@@ -59,7 +59,6 @@
 #include "src/core/call/metadata_info.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
-#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -77,6 +76,7 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/extensions/channelz.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -102,6 +102,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -402,6 +403,10 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   }
 }
 
+using grpc_event_engine::experimental::ChannelzExtension;
+using grpc_event_engine::experimental::QueryExtension;
+using grpc_event_engine::experimental::TcpTraceExtension;
+
 static void read_channel_args(grpc_chttp2_transport* t,
                               const grpc_core::ChannelArgs& channel_args,
                               const bool is_client) {
@@ -489,6 +494,12 @@ static void read_channel_args(grpc_chttp2_transport* t,
     // Checks channelz_socket, so must be initialized after.
     t->channelz_data_source =
         std::make_unique<grpc_chttp2_transport::ChannelzDataSource>(t);
+    auto epte = QueryExtension<ChannelzExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            t->ep.get()));
+    if (epte != nullptr) {
+      epte->SetSocketNode(t->channelz_socket);
+    }
   }
 
   t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
@@ -637,7 +648,7 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                   .ToJsonString());
           http2_info["misc"] = Json::FromObject(std::move(misc));
           http2_info["settings"] = Json::FromObject(t->settings.ToJsonObject());
-          sink.AddAdditionalInfo("http2_info", std::move(http2_info));
+          sink.AddAdditionalInfo("http2", std::move(http2_info));
           n.Notify();
         }),
         absl::OkStatus());
@@ -682,9 +693,6 @@ void grpc_chttp2_transport::WriteSecurityFrameLocked(
   grpc_slice_buffer_move_into(security_frame.c_slice_buffer(), &qbuf);
   grpc_chttp2_initiate_write(this, GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE);
 }
-
-using grpc_event_engine::experimental::QueryExtension;
-using grpc_event_engine::experimental::TcpTraceExtension;
 
 grpc_chttp2_transport::grpc_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args,

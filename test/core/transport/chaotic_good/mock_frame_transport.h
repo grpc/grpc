@@ -28,6 +28,10 @@ namespace testing {
 
 class MockFrameTransport final : public FrameTransport {
  public:
+  explicit MockFrameTransport(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine)
+      : ctx_(MakeRefCounted<TransportContext>(std::move(event_engine))) {}
   ~MockFrameTransport() override;
 
   void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
@@ -48,6 +52,7 @@ class MockFrameTransport final : public FrameTransport {
     Close();
     Unref();
   }
+  TransportContextPtr ctx() override { return ctx_; }
 
  private:
   struct ExpectedWrite {
@@ -56,6 +61,7 @@ class MockFrameTransport final : public FrameTransport {
     Frame frame;
     SourceLocation whence;
   };
+  TransportContextPtr ctx_;
   std::queue<ExpectedWrite> expected_writes_;
   RefCountedPtr<FrameTransportSink> sink_;
   InterActivityLatch<void> closed_;
