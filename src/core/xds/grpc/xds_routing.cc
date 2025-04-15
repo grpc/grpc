@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -150,9 +151,9 @@ bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
 
 bool UnderFraction(const uint32_t fraction_per_million) {
   // Generate a random number in [0, 1000000).
-  static thread_local absl::BitGen bitgen;
+  static thread_local absl::InsecureBitGen bitgen;
   const uint32_t random_number =
-      absl::uniform(bitgen, uint32_t{0}, uint32_t{1000000});
+      absl::Uniform(bitgen, uint32_t{0}, uint32_t{1000000});
   return random_number < fraction_per_million;
 }
 
