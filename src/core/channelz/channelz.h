@@ -49,11 +49,12 @@
 #include "src/core/util/useful.h"
 
 // Channel arg key for channelz node.
-#define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.internal.channelz_channel_node"
+#define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
+  "grpc.internal.no_subchannel.channelz_channel_node"
 
 // Channel arg key for the containing base node
 #define GRPC_ARG_CHANNELZ_CONTAINING_BASE_NODE \
-  "grpc.internal.channelz_containing_base_node"
+  "grpc.internal.no_subchannel.channelz_containing_base_node"
 
 // Channel arg key for indicating an internal channel.
 #define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL \
