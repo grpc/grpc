@@ -69,9 +69,10 @@ TEST(SpiffeId, ShortSchemePrefixFails) {
 }
 
 TEST(SpiffeId, SchemeInvalidCharacterFails) {
-  EXPECT_EQ(SpiffeId::FromString("ſPiffe://trustdomain/path").status(),
-            absl::InvalidArgumentError(
-                "SPIFFE ID URI cannot contain non-ascii characters"));
+  EXPECT_EQ(
+      SpiffeId::FromString("ſPiffe://trustdomain/path").status(),
+      absl::InvalidArgumentError(
+          "SPIFFE ID URI cannot contain non-ascii characters. Contains 0xc5"));
 }
 
 TEST(SpiffeId, SchemePrefixAndTrustDomainMissingFails) {
@@ -113,24 +114,27 @@ TEST(SpiffeId, TrustDomainTooLongFails) {
 }
 
 TEST(SpiffeId, TrustDomainWithUserInfoFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://domain@userinfo").status(),
-            absl::InvalidArgumentError(
-                "Trust domain contains invalid character @. MUST contain only "
-                "lowercase letters, numbers, dots, dashes, and underscores"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://domain@userinfo").status(),
+      absl::InvalidArgumentError(
+          "Trust domain contains invalid character '@'. MUST contain only "
+          "lowercase letters, numbers, dots, dashes, and underscores"));
 }
 
 TEST(SpiffeId, TrustDomainInvalidCharacterFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://foo$bar").status(),
-            absl::InvalidArgumentError(
-                "Trust domain contains invalid character $. MUST contain only "
-                "lowercase letters, numbers, dots, dashes, and underscores"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://foo$bar").status(),
+      absl::InvalidArgumentError(
+          "Trust domain contains invalid character '$'. MUST contain only "
+          "lowercase letters, numbers, dots, dashes, and underscores"));
 }
 
 TEST(SpiffeId, TrustDomainInvalidCharacterUppercaseFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://BadDdomain").status(),
-            absl::InvalidArgumentError(
-                "Trust domain contains invalid character B. MUST contain only "
-                "lowercase letters, numbers, dots, dashes, and underscores"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://BadDdomain").status(),
+      absl::InvalidArgumentError(
+          "Trust domain contains invalid character 'B'. MUST contain only "
+          "lowercase letters, numbers, dots, dashes, and underscores"));
 }
 
 TEST(SpiffeId, PathContainsRelativeModifier1Fails) {
@@ -149,27 +153,30 @@ TEST(SpiffeId, PathSegmentBadCharacterFails) {
   EXPECT_EQ(
       SpiffeId::FromString("spiffe://example/path/foo.bar/foo@bar").status(),
       absl::InvalidArgumentError(
-          "Path segment contains invalid character @. MUST contain only "
+          "Path segment contains invalid character '@'. MUST contain only "
           "letters, numbers, dots, dashes, and underscores"));
 }
 
 TEST(SpiffeId, ContainsNonASCIITrustDomainFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://µ/path").status(),
-            absl::InvalidArgumentError(
-                "SPIFFE ID URI cannot contain non-ascii characters"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://µ/path").status(),
+      absl::InvalidArgumentError(
+          "SPIFFE ID URI cannot contain non-ascii characters. Contains 0xc2"));
 }
 
 TEST(SpiffeId, TrustDomainContainsNonASCIIFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://fooµbar/path").status(),
-            absl::InvalidArgumentError(
-                "SPIFFE ID URI cannot contain non-ascii characters"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://fooµbar/path").status(),
+      absl::InvalidArgumentError(
+          "SPIFFE ID URI cannot contain non-ascii characters. Contains 0xc2"));
 }
 
 TEST(SpiffeId, TrustDomainPercentEncodingFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://foo%21bar/path").status(),
-            absl::InvalidArgumentError(
-                "Trust domain contains invalid character %. MUST contain only "
-                "lowercase letters, numbers, dots, dashes, and underscores"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://foo%21bar/path").status(),
+      absl::InvalidArgumentError(
+          "Trust domain contains invalid character '%'. MUST contain only "
+          "lowercase letters, numbers, dots, dashes, and underscores"));
 }
 
 TEST(SpiffeId, TrustDomainTrailingSlashFails) {
@@ -178,10 +185,11 @@ TEST(SpiffeId, TrustDomainTrailingSlashFails) {
 }
 
 TEST(SpiffeId, PortInTrustDomainFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://foo:1234/path").status(),
-            absl::InvalidArgumentError(
-                "Trust domain contains invalid character :. MUST contain only "
-                "lowercase letters, numbers, dots, dashes, and underscores"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://foo:1234/path").status(),
+      absl::InvalidArgumentError(
+          "Trust domain contains invalid character ':'. MUST contain only "
+          "lowercase letters, numbers, dots, dashes, and underscores"));
 }
 
 TEST(SpiffeId, PathQueryParameterFails) {
@@ -191,20 +199,17 @@ TEST(SpiffeId, PathQueryParameterFails) {
 }
 
 TEST(SpiffeId, EscapedCharacterInPathFails) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://foo/p\ath");
-  ASSERT_FALSE(spiffe_id.ok());
-  // Attempting to hard-code the escaped character is odd, just check the
-  // substring
-  EXPECT_THAT(spiffe_id.status().message(),
-              ::testing::HasSubstr("Path segment contains invalid character"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://foo/p\ath").status(),
+      absl::InvalidArgumentError(
+          "Path segment contains invalid character '\a'. MUST contain only "
+          "letters, numbers, dots, dashes, and underscores"));
 }
 
 TEST(SpiffeId, FragmentInPathFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://foo/pa^h").status(),
-            absl::InvalidArgumentError(
-                "Path segment contains invalid character ^. MUST contain only "
-                "letters, numbers, dots, dashes, and underscores"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://foo/pa#h").status(),
+      absl::InvalidArgumentError("SPIFFE ID cannot contain query fragments"));
 }
 
 TEST(SpiffeId, MultipleSlashesInPathFails) {
@@ -213,151 +218,84 @@ TEST(SpiffeId, MultipleSlashesInPathFails) {
 }
 
 TEST(SpiffeId, NonASCIIPathFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://foo.bar/µ").status(),
-            absl::InvalidArgumentError(
-                "SPIFFE ID URI cannot contain non-ascii characters"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://foo.bar/µ").status(),
+      absl::InvalidArgumentError(
+          "SPIFFE ID URI cannot contain non-ascii characters. Contains 0xc2"));
 }
 
 TEST(SpiffeId, ContainsNonASCIIPathFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe://foo.bar/fooµbar").status(),
-            absl::InvalidArgumentError(
-                "SPIFFE ID URI cannot contain non-ascii characters"));
+  EXPECT_EQ(
+      SpiffeId::FromString("spiffe://foo.bar/fooµbar").status(),
+      absl::InvalidArgumentError(
+          "SPIFFE ID URI cannot contain non-ascii characters. Contains 0xc2"));
 }
 
 TEST(SpiffeId, NoPathSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://example.com");
+  auto spiffe_id = SpiffeId::FromString("spiffe://example.com");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
   EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
   EXPECT_EQ(spiffe_id->path(), "");
 }
 
 TEST(SpiffeId, BasicSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://example.com/us");
+  auto spiffe_id = SpiffeId::FromString("spiffe://example.com/us");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
   EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
   EXPECT_EQ(spiffe_id->path(), "/us");
 }
 
 TEST(SpiffeId, WeirdCapitalizationSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("sPiffe://example.com/us");
+  auto spiffe_id = SpiffeId::FromString("sPiffe://example.com/us");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
   EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
   EXPECT_EQ(spiffe_id->path(), "/us");
 }
 
 TEST(SpiffeId, AllSpiffeCapitalizedSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("SPIFFE://example.com/us");
+  auto spiffe_id = SpiffeId::FromString("SPIFFE://example.com/us");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
   EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
   EXPECT_EQ(spiffe_id->path(), "/us");
 }
 
 TEST(SpiffeId, FirstSpiffeCapitalizedSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("Spiffe://example.com/us");
+  auto spiffe_id = SpiffeId::FromString("Spiffe://example.com/us");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
   EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
   EXPECT_EQ(spiffe_id->path(), "/us");
 }
 
 TEST(SpiffeId, LongPathSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id = SpiffeId::FromString(
+  auto spiffe_id = SpiffeId::FromString(
       "spiffe://example.com/country/us/state/FL/city/Miami");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
   EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
   EXPECT_EQ(spiffe_id->path(), "/country/us/state/FL/city/Miami");
 }
 
-TEST(SpiffeId, TrustDomainDashesSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://trust-domain-name/path");
+TEST(SpiffeId, AcceptedCharactersSuccess) {
+  auto spiffe_id = SpiffeId::FromString(
+      "spiffe://abcdefghijklmnopqrstuvwxyz1234567890.-_/"
+      "abcdefghijklmnopqrstuvwxyz1234567890.-_");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "trust-domain-name");
-  EXPECT_EQ(spiffe_id->path(), "/path");
-}
-
-TEST(SpiffeId, DotsInTrustDomainSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://staging.example.com/payments/mysql");
-  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "staging.example.com");
-  EXPECT_EQ(spiffe_id->path(), "/payments/mysql");
-}
-
-TEST(SpiffeId, DashesInPathSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://staging.example.com/payments/web-fe");
-  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "staging.example.com");
-  EXPECT_EQ(spiffe_id->path(), "/payments/web-fe");
-}
-
-TEST(SpiffeId, K8sAddressSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id = SpiffeId::FromString(
-      "spiffe://k8s-west.example.com/ns/staging/sa/default");
-  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "k8s-west.example.com");
-  EXPECT_EQ(spiffe_id->path(), "/ns/staging/sa/default");
-}
-
-TEST(SpiffeId, PathIsIDSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id = SpiffeId::FromString(
-      "spiffe://example.com/9eebccd2-12bf-40a6-b262-65fe0487d453");
-  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
-  EXPECT_EQ(spiffe_id->path(), "/9eebccd2-12bf-40a6-b262-65fe0487d453");
+  EXPECT_EQ(spiffe_id->trust_domain(),
+            "abcdefghijklmnopqrstuvwxyz1234567890.-_");
+  EXPECT_EQ(spiffe_id->path(), "/abcdefghijklmnopqrstuvwxyz1234567890.-_");
 }
 
 TEST(SpiffeId, NonRelativePathDotsSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://trustdomain/.a..");
+  auto spiffe_id = SpiffeId::FromString("spiffe://trustdomain/.a..");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
   EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
   EXPECT_EQ(spiffe_id->path(), "/.a..");
 }
 
 TEST(SpiffeId, TripleDotsSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://trustdomain/...");
+  auto spiffe_id = SpiffeId::FromString("spiffe://trustdomain/...");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
   EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
   EXPECT_EQ(spiffe_id->path(), "/...");
-}
-
-TEST(SpiffeId, AllLowercaseCharactersSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://trustdomain/abcdefghijklmnopqrstuvwxyz");
-  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
-  EXPECT_EQ(spiffe_id->path(), "/abcdefghijklmnopqrstuvwxyz");
-}
-
-TEST(SpiffeId, MixOfCharactersPathSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://trustdomain/abc0123.-_");
-  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
-  EXPECT_EQ(spiffe_id->path(), "/abc0123.-_");
-}
-
-TEST(SpiffeId, AllNumbersPathSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://trustdomain/0123456789");
-  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
-  EXPECT_EQ(spiffe_id->path(), "/0123456789");
-}
-
-TEST(SpiffeId, NumbersTrustDomainSuccess) {
-  absl::StatusOr<SpiffeId> spiffe_id =
-      SpiffeId::FromString("spiffe://trustdomain0123456789/path");
-  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain0123456789");
-  EXPECT_EQ(spiffe_id->path(), "/path");
 }
 
 }  // namespace testing

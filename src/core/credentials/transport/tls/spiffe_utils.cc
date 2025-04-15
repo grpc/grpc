@@ -54,8 +54,9 @@ absl::Status DoInitialUriValidation(absl::string_view uri) {
   }
   for (char ch : uri) {
     if (!absl::ascii_isascii(ch)) {
-      return absl::InvalidArgumentError(
-          absl::StrFormat("SPIFFE ID URI cannot contain non-ascii characters"));
+      return absl::InvalidArgumentError(absl::StrFormat(
+          "SPIFFE ID URI cannot contain non-ascii characters. Contains %#x",
+          ch));
     }
   }
   return absl::OkStatus();
@@ -76,7 +77,7 @@ absl::Status ValidateTrustDomain(absl::string_view trust_domain) {
     if (c == '-') continue;
     if (c == '_') continue;
     return absl::InvalidArgumentError(absl::StrFormat(
-        "Trust domain contains invalid character %c. MUST contain only "
+        "Trust domain contains invalid character '%c'. MUST contain only "
         "lowercase letters, numbers, dots, dashes, and underscores",
         c));
   }
@@ -99,7 +100,7 @@ absl::Status ValidatePathSegment(absl::string_view path_segment) {
     if (c == '-') continue;
     if (c == '_') continue;
     return absl::InvalidArgumentError(absl::StrFormat(
-        "Path segment contains invalid character %c. MUST contain only "
+        "Path segment contains invalid character '%c'. MUST contain only "
         "letters, numbers, dots, dashes, and underscores",
         c));
   }
