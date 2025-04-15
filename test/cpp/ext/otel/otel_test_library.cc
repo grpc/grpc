@@ -67,11 +67,14 @@ std::string ToString(
 
 std::string ToString(
     const opentelemetry::sdk::metrics::PointAttributes& point_attributes) {
-  return absl::StrJoin(point_attributes.GetAttributes(), ", ",
-                       [](std::string* out, const auto& attribute) {
-                         absl::StrAppend(out, "{", ToString(attribute.first),
-                                         ",", ToString(attribute.second), "}");
-                       });
+  return absl::StrCat(
+      "{",
+      absl::StrJoin(point_attributes.GetAttributes(), ", ",
+                    [](std::string* out, const auto& attribute) {
+                      absl::StrAppend(out, "{", ToString(attribute.first), ",",
+                                      ToString(attribute.second), "}");
+                    }),
+      "}");
 }
 
 std::string ToString(const opentelemetry::sdk::metrics::ValueType& value) {
@@ -105,7 +108,7 @@ struct PointTypeVisitor {
   }
 
   std::string operator()(
-      const opentelemetry::sdk::metrics::DropPointData& point) {
+      const opentelemetry::sdk::metrics::DropPointData& /*point*/) {
     return "<DropPointData>";
   }
 };
@@ -122,9 +125,8 @@ namespace metrics {
 
 void PrintTo(const PointDataAttributes& point_data_attributes,
              std::ostream* os) {
-  *os << "{attributes = {" << ToString(point_data_attributes.attributes)
-      << "}, point_data = {" << ToString(point_data_attributes.point_data)
-      << "}}";
+  *os << "{attributes = " << ToString(point_data_attributes.attributes)
+      << ", point_data = " << ToString(point_data_attributes.point_data) << "}";
 }
 
 }  // namespace metrics
