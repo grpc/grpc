@@ -1943,6 +1943,7 @@
     <file baseinstalldir="/" name="src/core/util/ref_counted_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/ref_counted_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/ring_buffer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/shared_bit_gen.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/single_set_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/sorted_pack.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/spinlock.h" role="src" />
