@@ -92,7 +92,28 @@ class BaseNode : public RefCounted<BaseNode> {
     kServer,
     kListenSocket,
     kSocket,
+    kCall,
   };
+
+  static absl::string_view EntityTypeName(EntityType type) {
+    switch (type) {
+      case EntityType::kTopLevelChannel:
+        return "top_level_channel";
+      case EntityType::kInternalChannel:
+        return "internal_channel";
+      case EntityType::kSubchannel:
+        return "subchannel";
+      case EntityType::kServer:
+        return "server";
+      case EntityType::kListenSocket:
+        return "listen_socket";
+      case EntityType::kSocket:
+        return "socket";
+      case EntityType::kCall:
+        return "call";
+    }
+    return "unknown";
+  }
 
  protected:
   BaseNode(EntityType type, std::string name);
@@ -147,6 +168,8 @@ class DataSink {
  public:
   virtual void AddAdditionalInfo(absl::string_view name,
                                  Json::Object additional_info) = 0;
+  virtual void AddChildObjects(
+      std::vector<RefCountedPtr<BaseNode>> children) = 0;
 
  protected:
   ~DataSink() = default;
@@ -564,6 +587,14 @@ class ListenSocketNode final : public BaseNode {
 
  private:
   std::string local_addr_;
+};
+
+class CallNode final : public BaseNode {
+ public:
+  explicit CallNode(std::string name)
+      : BaseNode(EntityType::kCall, std::move(name)) {}
+
+  Json RenderJson() override;
 };
 
 }  // namespace channelz
