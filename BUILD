@@ -1771,6 +1771,7 @@ grpc_cc_library(
         "//src/core:resolved_address",
         "//src/core:seq",
         "//src/core:server_interface",
+        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:status_helper",
@@ -3377,6 +3378,7 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "//src/core:experiments",
+        "//src/core:shared_bit_gen",
         "//src/core:time",
     ],
 )
@@ -4753,6 +4755,7 @@ grpc_cc_library(
         "//src/core:random_early_detection",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
+        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
