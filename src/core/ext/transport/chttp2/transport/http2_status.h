@@ -233,7 +233,7 @@ class Http2Status {
   std::string message_;
 };
 
-// TODO [PH2][P2] : We can add more methods and helpers as needed.
+// TODO(tjagtap): [PH2][P2] : We can add more methods and helpers as needed.
 // This class is similar to ValueOrFailure but a more minamilasit version.
 // Reference :
 // https://github.com/grpc/grpc/blob/master/src/core/lib/promise/status_flag.h
@@ -242,15 +242,15 @@ class Http2Status {
 template <typename T>
 class ValueOrHttp2Status {
  public:
-  // TODO [PH2][P0] : some http2 frame types used to give some compile
-  // issue with std::move. Check with tests.
+  // TODOTODO(tjagtap): [PH2][P0] : some http2 frame types used to give some
+  // compile issue with std::move. Check with tests.
 
   // NOLINTNEXTLINE(google-explicit-constructor)
   explicit ValueOrHttp2Status(T value) : value_(std::move(value)) {}
 
   // NOLINTNEXTLINE(google-explicit-constructor)
   explicit ValueOrHttp2Status(Http2Status status) : status_(std::move(status)) {
-    CHECK(status.GetType() != Http2Status::Http2ErrorType::kOk);
+    CHECK(status_.GetType() != Http2Status::Http2ErrorType::kOk);
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ok() const {
