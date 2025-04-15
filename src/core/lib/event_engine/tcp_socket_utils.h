@@ -83,7 +83,7 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
 // Given a URI string, returns the corresponding resolved address if the URI
 // is valid. Otherwise it returns an appropriate error.
 absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
-    std::string address_str);
+    absl::string_view address_str);
 
 }  // namespace grpc_event_engine::experimental
 

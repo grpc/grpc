@@ -182,5 +182,41 @@ CORE_END2END_TEST(RetryTests, RetryRecvTrailingMetadataError) {
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
+TEST(Fuzzers, RetryTests_RetryRecvTrailingMetadataErrorRegression2) {
+  RetryTests_RetryRecvTrailingMetadataError(
+      CoreTestConfigurationNamed("Chttp2Fullstack"),
+      ParseTestProto(
+          R"pb(event_engine_actions {
+                 run_delay: 1
+                 assign_ports: 2700045926
+                 assign_ports: 573024280
+                 assign_ports: 2147483647
+                 assign_ports: 383376706
+                 assign_ports: 4294967295
+                 connections { write_size: 4294967295 write_size: 192371743 }
+                 connections {
+                   write_size: 0
+                   write_size: 0
+                   write_size: 0
+                   write_size: 4294967295
+                   write_size: 349308977
+                   write_size: 0
+                   write_size: 2147483647
+                   write_size: 2908926233
+                   write_size: 1
+                   write_size: 0
+                   write_size: 2147483647
+                   write_size: 0
+                 }
+               }
+               config_vars {
+                 enable_fork_support: true
+                 verbosity: "debug"
+                 trace: "shuffle_lb"
+                 experiments: "-free_large_allocator,lbns_support_in_address_resolver"
+               }
+          )pb"));
+}
+
 }  // namespace
 }  // namespace grpc_core

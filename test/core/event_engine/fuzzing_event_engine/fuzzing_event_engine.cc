@@ -27,7 +27,9 @@
 
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/blocking_dns.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -39,6 +41,7 @@
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 
 #if defined(GRPC_POSIX_SOCKET_TCP)
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
@@ -662,7 +665,17 @@ class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
     if (name == "server") {
       return {{EventEngine::ResolvedAddress()}};
     }
-    return absl::UnknownError("Resolution failed");
+    if (absl::StartsWith(name, "localhost")) {
+      const std::vector<absl::string_view> parts = absl::StrSplit(name, ":");
+      std::string addr_str = "127.0.0.1";
+      if (parts.size() > 1) {
+        absl::StrAppend(&addr_str, ":", parts[1]);
+      }
+      auto addr = URIToResolvedAddress(absl::StrCat("ipv4:", addr_str));
+      if (!addr.ok()) return addr.status();
+      return {{*addr}};
+    }
+    return absl::UnknownError("FuzzingEventEngine Resolution failed");
   }
 
   std::shared_ptr<EventEngine> engine_;

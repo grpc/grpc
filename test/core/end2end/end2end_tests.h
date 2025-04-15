@@ -760,10 +760,6 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
-    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
-      GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
-                      "fuzzing currently";                                     \
-    }                                                                          \
     CoreEnd2endTest_##suite##_##name(config, &msg, #suite).RunTest();          \
     grpc_event_engine::experimental::ShutdownDefaultEventEngine();             \
   }                                                                            \

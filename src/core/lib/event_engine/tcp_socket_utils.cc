@@ -433,7 +433,7 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
 }
 
 absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
-    std::string address_str) {
+    absl::string_view address_str) {
   grpc_resolved_address addr;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
   if (!uri.ok()) {

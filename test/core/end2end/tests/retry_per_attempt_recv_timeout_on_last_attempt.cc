@@ -95,5 +95,19 @@ CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeoutOnLastAttempt) {
   EXPECT_EQ(s1->method(), "/service/method");
 }
 
+TEST(Fuzzers, RetryTests_RetryPerAttemptRecvTimeoutOnLastAttemptRegression1) {
+  RetryTests_RetryPerAttemptRecvTimeoutOnLastAttempt(
+      CoreTestConfigurationNamed("Chttp2FullstackWithCensus"),
+      ParseTestProto(
+          R"pb(event_engine_actions { run_delay: 2900720851364001849 }
+               config_vars {
+                 verbosity: "error"
+                 dns_resolver: ""
+                 trace: ""
+                 experiments: ""
+               }
+          )pb"));
+}
+
 }  // namespace
 }  // namespace grpc_core
