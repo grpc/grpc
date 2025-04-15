@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
 #define GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
 
+#include <grpc/support/time.h>
+
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -37,8 +39,9 @@ template <typename T>
 void AppendResults(const Collection<T>& data, Json::Array& results) {
   for (const auto& value : data) {
     Json::Object object;
-    object["timestamp"] = Json::FromString(
-        gpr_format_timespec(gpr_cycle_counter_to_time(value.first)));
+    object["timestamp"] =
+        Json::FromString(gpr_format_timespec(gpr_convert_clock_type(
+            gpr_cycle_counter_to_time(value.first), GPR_CLOCK_REALTIME)));
     value.second.RenderJson(object);
     results.emplace_back(Json::FromObject(std::move(object)));
   }
@@ -167,6 +170,7 @@ class ZTraceCollector {
     size_t memory_used_ = 0;
     size_t memory_cap_ = 0;
     Config config;
+    const Timestamp start_time = Timestamp::Now();
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
     grpc_event_engine::experimental::EventEngine::TaskHandle task_handle{
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid};
@@ -188,7 +192,22 @@ class ZTraceCollector {
       auto instance = MakeRefCounted<Instance>(std::move(args), event_engine,
                                                std::move(callback));
       auto impl = std::move(impl_);
+      RefCountedPtr<Instance> oldest_instance;
       MutexLock lock(&impl->mu);
+      if (impl->instances.size() > 20) {
+        // Eject oldest running trace
+        Timestamp oldest_time = Timestamp::InfFuture();
+        for (auto& instance : impl->instances) {
+          if (instance->start_time < oldest_time) {
+            oldest_time = instance->start_time;
+            oldest_instance = instance;
+          }
+        }
+        CHECK(oldest_instance != nullptr);
+        impl->instances.erase(oldest_instance);
+        oldest_instance->Finish(
+            absl::ResourceExhaustedError("Too many concurrent ztrace queries"));
+      }
       instance->task_handle = event_engine->RunAfter(
           deadline - Timestamp::Now(), [instance, impl]() {
             bool finish;

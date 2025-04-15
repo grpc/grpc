@@ -22,6 +22,7 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
 
 namespace grpc_core {
@@ -69,17 +70,14 @@ class TcpFrameTransport final : public FrameTransport {
     bool enable_tracing = false;
   };
 
-  TcpFrameTransport(
-      Options options, PromiseEndpoint control_endpoint,
-      std::vector<PendingConnection> pending_data_endpoints,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-          stats_plugin_group);
+  TcpFrameTransport(Options options, PromiseEndpoint control_endpoint,
+                    std::vector<PendingConnection> pending_data_endpoints,
+                    TransportContextPtr ctx);
 
   void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
              RefCountedPtr<FrameTransportSink> sink) override;
   void Orphan() override;
+  TransportContextPtr ctx() override { return ctx_; }
 
  private:
   auto WriteFrame(const FrameInterface& frame);
@@ -90,6 +88,7 @@ class TcpFrameTransport final : public FrameTransport {
   template <typename Promise>
   auto UntilClosed(Promise promise);
 
+  const TransportContextPtr ctx_;
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
   const Options options_;
