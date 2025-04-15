@@ -35,6 +35,8 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_core {
@@ -57,6 +59,24 @@ std::string RenderArray(std::tuple<T, bool> values_and_end,
     object["end"] = Json::FromBool(true);
   }
   return JsonDump(Json::FromObject(std::move(object)));
+}
+
+Json RemoveAdditionalInfo(const Json& json) {
+  if (json.type() != Json::Type::kObject) return json;
+  Json::Object out;
+  for (const auto& [key, value] : json.object()) {
+    if (key == "additionalInfo") continue;
+    out[key] = RemoveAdditionalInfo(value);
+  }
+  return Json::FromObject(std::move(out));
+}
+
+// TODO(ctiller): Temporary hack to remove fields that are objectionable to the
+// protobuf parser (because we've not published them in protobuf yet).
+char* ApplyHacks(const std::string& json_str) {
+  auto json = JsonParse(json_str);
+  if (!json.ok()) return gpr_strdup(json_str.c_str());
+  return gpr_strdup(JsonDump(RemoveAdditionalInfo(*json)).c_str());
 }
 }  // namespace
 
@@ -91,19 +111,24 @@ RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
   return node->RefIfNonZero();
 }
 
-void ChannelzRegistry::InternalLogAllEntities() {
+std::vector<RefCountedPtr<BaseNode>>
+ChannelzRegistry::InternalGetAllEntities() {
   std::vector<RefCountedPtr<BaseNode>> nodes;
   {
     MutexLock lock(&mu_);
-    for (auto& p : node_map_) {
-      RefCountedPtr<BaseNode> node = p.second->RefIfNonZero();
+    for (const auto& [_, p] : node_map_) {
+      RefCountedPtr<BaseNode> node = p->RefIfNonZero();
       if (node != nullptr) {
         nodes.emplace_back(std::move(node));
       }
     }
   }
-  for (size_t i = 0; i < nodes.size(); ++i) {
-    std::string json = nodes[i]->RenderJsonString();
+  return nodes;
+}
+
+void ChannelzRegistry::InternalLogAllEntities() {
+  for (const auto& p : InternalGetAllEntities()) {
+    std::string json = p->RenderJsonString();
     LOG(INFO) << json;
   }
 }
@@ -121,14 +146,15 @@ std::string ChannelzRegistry::GetServersJson(intptr_t start_server_id) {
 
 char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
   grpc_core::ExecCtx exec_ctx;
-  return gpr_strdup(grpc_core::channelz::ChannelzRegistry::GetTopChannelsJson(
-                        start_channel_id)
-                        .c_str());
+  return grpc_core::channelz::ApplyHacks(
+      grpc_core::channelz::ChannelzRegistry::GetTopChannelsJson(
+          start_channel_id)
+          .c_str());
 }
 
 char* grpc_channelz_get_servers(intptr_t start_server_id) {
   grpc_core::ExecCtx exec_ctx;
-  return gpr_strdup(
+  return grpc_core::channelz::ApplyHacks(
       grpc_core::channelz::ChannelzRegistry::GetServersJson(start_server_id)
           .c_str());
 }
@@ -145,7 +171,7 @@ char* grpc_channelz_get_server(intptr_t server_id) {
   grpc_core::Json json = grpc_core::Json::FromObject({
       {"server", server_node->RenderJson()},
   });
-  return gpr_strdup(grpc_core::JsonDump(json).c_str());
+  return grpc_core::channelz::ApplyHacks(grpc_core::JsonDump(json).c_str());
 }
 
 char* grpc_channelz_get_server_sockets(intptr_t server_id,
@@ -164,7 +190,7 @@ char* grpc_channelz_get_server_sockets(intptr_t server_id,
   // actually a server node.
   grpc_core::channelz::ServerNode* server_node =
       static_cast<grpc_core::channelz::ServerNode*>(base_node.get());
-  return gpr_strdup(
+  return grpc_core::channelz::ApplyHacks(
       server_node->RenderServerSockets(start_socket_id, max_results).c_str());
 }
 
@@ -182,7 +208,7 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
   grpc_core::Json json = grpc_core::Json::FromObject({
       {"channel", channel_node->RenderJson()},
   });
-  return gpr_strdup(grpc_core::JsonDump(json).c_str());
+  return grpc_core::channelz::ApplyHacks(grpc_core::JsonDump(json).c_str());
 }
 
 char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
@@ -197,7 +223,7 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
   grpc_core::Json json = grpc_core::Json::FromObject({
       {"subchannel", subchannel_node->RenderJson()},
   });
-  return gpr_strdup(grpc_core::JsonDump(json).c_str());
+  return grpc_core::channelz::ApplyHacks(grpc_core::JsonDump(json).c_str());
 }
 
 char* grpc_channelz_get_socket(intptr_t socket_id) {
@@ -214,5 +240,5 @@ char* grpc_channelz_get_socket(intptr_t socket_id) {
   grpc_core::Json json = grpc_core::Json::FromObject({
       {"socket", socket_node->RenderJson()},
   });
-  return gpr_strdup(grpc_core::JsonDump(json).c_str());
+  return grpc_core::channelz::ApplyHacks(grpc_core::JsonDump(json).c_str());
 }

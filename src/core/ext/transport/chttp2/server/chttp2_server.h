@@ -51,7 +51,7 @@ class ActiveConnectionTestPeer;
 class HandshakingStateTestPeer;
 }  // namespace testing
 
-// New ChttpServerListener used if experiment "server_listener" is enabled
+// New ChttpServerListener
 class NewChttp2ServerListener : public Server::ListenerInterface {
  public:
   using AcceptorPtr =

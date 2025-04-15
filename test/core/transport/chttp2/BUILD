@@ -503,6 +503,47 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "header_assembler_test",
+    srcs = [
+        "header_assembler_test.cc",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "gtest",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//:ref_counted_ptr",
+        "//src/core:header_assembler",
+        "//src/core:message",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+    ],
+)
+
+grpc_cc_test(
+    name = "message_assembler_test",
+    srcs = [
+        "message_assembler_test.cc",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//:ref_counted_ptr",
+        "//src/core:message",
+        "//src/core:message_assembler",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+    ],
+)
+
+grpc_cc_test(
     name = "http2_client_transport_test",
     srcs = ["http2_client_transport_test.cc"],
     external_deps = [
@@ -528,22 +569,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "header_assembler_test",
+    name = "http2_status_test",
     srcs = [
-        "header_assembler_test.cc",
+        "http2_status_test.cc",
     ],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/status",
         "gtest",
     ],
     deps = [
         "//:chttp2_frame",
-        "//:ref_counted_ptr",
-        "//src/core:header_assembler",
-        "//src/core:message",
-        "//src/core:slice",
-        "//src/core:slice_buffer",
+        "//src/core:http2_status",
     ],
 )
 

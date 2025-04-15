@@ -56,7 +56,7 @@ TARGET=$(bazel query "$1")
 TARGET_BINARY_PATH="${OUTPUT_BASE}/${MIDDLE}/$(echo ${TARGET:2} | sed 's/:/\//')"
 
 # Build:
-bazel build --dynamic_mode=off --config=dbg --config=fuzzer_asan --config=coverage "${TARGET}"
+bazel build --dynamic_mode=off --config=dbg --config=coverage "${TARGET}"
 # Run:
 "${TARGET_BINARY_PATH}" ${@:2}
 

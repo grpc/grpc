@@ -25,12 +25,12 @@ struct TestData {
   int n;
 
   void RenderJson(Json::Object& json) const { json["n"] = Json::FromNumber(n); }
+  size_t MemoryUsage() const { return sizeof(TestData); }
 };
 
 class TestConfig {
  public:
   explicit TestConfig(std::map<std::string, std::string> args) {
-    EXPECT_EQ(args.size(), 1);
     EXPECT_EQ(args["test_arg"], "test_value");
   }
 
@@ -74,7 +74,8 @@ TEST(ZTraceCollectorTest, SingleTraceWorks) {
   Json result;
   collector.MakeZTrace()->Run(
       Timestamp::Now() + Duration::Milliseconds(100),
-      {{"test_arg", "test_value"}},
+      {{"memory_cap", std::to_string(1024 * 1024 * 1024)},
+       {"test_arg", "test_value"}},
       grpc_event_engine::experimental::GetDefaultEventEngine(),
       [&n, &result](Json r) {
         result = r;
@@ -98,7 +99,8 @@ TEST(ZTraceCollectorTest, MultipleTracesWork) {
   Json result2;
   collector.MakeZTrace()->Run(
       Timestamp::Now() + Duration::Milliseconds(100),
-      {{"test_arg", "test_value"}},
+      {{"memory_cap", std::to_string(1024 * 1024 * 1024)},
+       {"test_arg", "test_value"}},
       grpc_event_engine::experimental::GetDefaultEventEngine(),
       [&n1, &result1](Json r) {
         result1 = r;
@@ -106,7 +108,8 @@ TEST(ZTraceCollectorTest, MultipleTracesWork) {
       });
   collector.MakeZTrace()->Run(
       Timestamp::Now() + Duration::Milliseconds(100),
-      {{"test_arg", "test_value"}},
+      {{"memory_cap", std::to_string(1024 * 1024 * 1024)},
+       {"test_arg", "test_value"}},
       grpc_event_engine::experimental::GetDefaultEventEngine(),
       [&n2, &result2](Json r) {
         result2 = r;
@@ -155,6 +158,43 @@ TEST(ZTraceCollectorTest, EarlyTerminationWorks) {
     ASSERT_EQ(n_it->second.type(), Json::Type::kNumber);
     EXPECT_EQ(n_it->second.string(), std::to_string(i));
     i++;
+  }
+  grpc_shutdown();
+}
+
+struct ExhaustionResult {
+  Json result;
+  Notification n;
+};
+
+TEST(ZTraceCollectorTest, ExhaustionTest) {
+  grpc_init();
+  ZTraceCollector<TestConfig, TestData> collector;
+  std::vector<std::unique_ptr<ExhaustionResult>> results;
+  for (size_t i = 0; i < 10000; i++) {
+    results.emplace_back(std::make_unique<ExhaustionResult>());
+    auto* r = results.back().get();
+    collector.MakeZTrace()->Run(
+        Timestamp::Now() + Duration::Hours(100), {{"test_arg", "test_value"}},
+        grpc_event_engine::experimental::GetDefaultEventEngine(), [r](Json j) {
+          r->result = j;
+          r->n.Notify();
+        });
+  }
+  absl::SleepFor(absl::Seconds(1));
+  size_t num_completed_before_finish = 0;
+  for (auto& r : results) {
+    if (r->n.HasBeenNotified()) ++num_completed_before_finish;
+  }
+  ASSERT_GT(num_completed_before_finish, 9000);
+  ASSERT_LT(num_completed_before_finish, 10000);
+  collector.Append(TestData{42});
+  for (auto& r : results) {
+    r->n.WaitForNotification();
+    ASSERT_EQ(r->result.type(), Json::Type::kObject);
+    auto status_it = r->result.object().find("status");
+    ASSERT_NE(status_it, r->result.object().end());
+    ASSERT_EQ(status_it->second.type(), Json::Type::kString);
   }
   grpc_shutdown();
 }

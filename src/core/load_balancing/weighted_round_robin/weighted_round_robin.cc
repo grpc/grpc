@@ -68,6 +68,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
@@ -415,10 +416,9 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
 
   bool shutdown_ = false;
 
-  absl::BitGen bit_gen_;
-
   // Accessed by picker.
-  std::atomic<uint32_t> scheduler_state_{absl::Uniform<uint32_t>(bit_gen_)};
+  std::atomic<uint32_t> scheduler_state_{
+      absl::Uniform<uint32_t>(SharedBitGen())};
 };
 
 //
@@ -539,7 +539,7 @@ WeightedRoundRobin::Picker::Picker(RefCountedPtr<WeightedRoundRobin> wrr,
                                    WrrEndpointList* endpoint_list)
     : wrr_(std::move(wrr)),
       config_(wrr_->config_),
-      last_picked_index_(absl::Uniform<size_t>(wrr_->bit_gen_)) {
+      last_picked_index_(absl::Uniform<size_t>(SharedBitGen())) {
   for (auto& endpoint : endpoint_list->endpoints()) {
     auto* ep = static_cast<WrrEndpointList::WrrEndpoint*>(endpoint.get());
     if (ep->connectivity_state() == GRPC_CHANNEL_READY) {

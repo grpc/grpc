@@ -147,6 +147,7 @@
     <file baseinstalldir="/" name="src/core/channelz/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel.cc" role="src" />
@@ -349,7 +350,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/context_list_entry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/decode_huff.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/decode_huff.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.cc" role="src" />
@@ -384,6 +384,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
@@ -1237,6 +1238,7 @@
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/handshaker/security/legacy_secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/secure_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/security_handshaker.cc" role="src" />
@@ -1292,6 +1294,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/blocking_dns.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/can_track_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/chaotic_good_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/iomgr_compatible.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
@@ -1768,6 +1771,7 @@
     <file baseinstalldir="/" name="src/core/service_config/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/call_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/call_tracer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/context_list_entry.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/default_tcp_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/default_tcp_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/histogram_view.cc" role="src" />
@@ -1939,6 +1943,7 @@
     <file baseinstalldir="/" name="src/core/util/ref_counted_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/ref_counted_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/ring_buffer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/shared_bit_gen.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/single_set_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/sorted_pack.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/spinlock.h" role="src" />
