@@ -857,5 +857,19 @@ Json ListenSocketNode::RenderJson() {
   return Json::FromObject(std::move(object));
 }
 
+//
+// CallNode
+//
+
+Json CallNode::RenderJson() {
+  Json::Object object = {
+      {"ref", Json::FromObject({
+                  {"callId", Json::FromString(absl::StrCat(uuid()))},
+              })},
+  };
+  PopulateJsonFromDataSources(object);
+  return Json::FromObject(std::move(object));
+}
+
 }  // namespace channelz
 }  // namespace grpc_core
