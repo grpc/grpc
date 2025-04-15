@@ -42,26 +42,10 @@ class KeepAliveSystemInterface {
 
 class KeepAliveSystem {
  private:
-  void ResetDataReceived() { data_received_ = false; }
-  auto WaitForData() {
-    ResetDataReceived();
-    return [this]() -> Poll<absl::Status> {
-      if (data_received_) {
-        LOG(INFO) << "Data received. Poll resolved";
-        return absl::OkStatus();
-      } else {
-        waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-        return Pending{};
-      }
-    };
-  }
-  // Needs to be called when data is received on the transport.
-  void ReceivedData() {
-    LOG(INFO) << "Data received. Setting data_received_ to true";
-    data_received_ = true;
-    auto waker = std::move(waker_);
-    waker.Wakeup();
-  }
+  struct NextKeepAlive {
+    Duration wait;
+    bool send_ping;
+  };
   auto SendPing() { return keep_alive_interface_->SendPing(); }
   // Will be called if keepalive_timeout_ is not infinity.
   auto TimeoutAndSendPing() {
@@ -72,25 +56,62 @@ class KeepAliveSystem {
             [] { return absl::CancelledError("KeepAlive timeout"); }),
         SendPing());
   }
+  NextKeepAlive NeedToSendKeepAlivePing() {
+    Timestamp next_allowed_time =
+        last_data_received_time_ + keepalive_interval_;
+    Timestamp now = Timestamp::Now();
+    bool send_ping = next_allowed_time <= now;
+    return (send_ping) ? NextKeepAlive{Duration::Zero(), true}
+                       : NextKeepAlive{next_allowed_time - now, false};
+  }
+  void UpdateNextKeepAliveInterval(NextKeepAlive next_ping) {
+    if (next_ping.send_ping) {
+      next_keepalive_interval_ = keepalive_interval_;
+    } else {
+      next_keepalive_interval_ =
+          std::max(next_ping.wait, min_keepalive_interval_);
+    }
+  }
+  auto MaybeSendKeepAlivePing() {
+    auto next_ping = NeedToSendKeepAlivePing();
+    return TrySeq(If(
+                      next_ping.send_ping,
+                      [this]() {
+                        // TODO(akshitpatel) : [PH2][P0] : Should we wait for
+                        // ping ack if some data is received after the ping is
+                        // sent?
+                        return If(keepalive_timeout_ != Duration::Infinity(),
+                                  TimeoutAndSendPing(),
+                                  [this] { return SendPing(); });
+                      },
+                      []() { return Immediate(absl::OkStatus()); }),
+                  [this, next_ping] {
+                    UpdateNextKeepAliveInterval(next_ping);
+                    return Immediate(absl::OkStatus());
+                  });
+  }
   std::unique_ptr<KeepAliveSystemInterface> keep_alive_interface_;
   // If the keepalive_timeout_ is set to infinity, then the timeout is dictated
   // by the ping timeout. Otherwise, the transport can choose to set a specific
   // timeout for keepalive pings using this field.
   Duration keepalive_timeout_;
-  bool data_received_ = false;
-  Waker waker_;
+  Duration keepalive_interval_;
+  Duration next_keepalive_interval_;
+  Timestamp last_data_received_time_;
+  // TODO(akshitpatel) : [PH2][P0] : Figure out if this is good.
+  Duration min_keepalive_interval_ = Duration::Seconds(5);
 
  public:
   KeepAliveSystem(
       std::unique_ptr<KeepAliveSystemInterface> keep_alive_interface,
-      Duration keepalive_timeout);
-  void Spawn(Party* party, Duration keepalive_interval);
-  void GotData() { ReceivedData(); }
+      Duration keepalive_timeout, Duration keepalive_interval);
+  void Spawn(Party* party);
+  void GotData() { last_data_received_time_ = Timestamp::Now(); }
   void SetKeepAliveTimeout(Duration keepalive_timeout) {
     keepalive_timeout_ = keepalive_timeout;
   }
-  auto TestOnlyWaitForData() { return WaitForData(); }
 };
+
 }  // namespace http2
 }  // namespace grpc_core
 

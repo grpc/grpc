@@ -21,21 +21,23 @@ namespace grpc_core {
 namespace http2 {
 KeepAliveSystem::KeepAliveSystem(
     std::unique_ptr<KeepAliveSystemInterface> keep_alive_interface,
-    Duration keepalive_timeout)
+    Duration keepalive_timeout, Duration keepalive_interval)
     : keep_alive_interface_(std::move(keep_alive_interface)),
-      keepalive_timeout_(keepalive_timeout) {}
+      keepalive_timeout_(keepalive_timeout),
+      keepalive_interval_(keepalive_interval),
+      next_keepalive_interval_(keepalive_interval),
+      last_data_received_time_(Timestamp::InfPast()) {}
 
-void KeepAliveSystem::Spawn(Party* party, Duration keepalive_interval) {
-  party->Spawn(
-      "KeepAlive", Loop([this, keepalive_interval]() {
-        return TrySeq(Race(WaitForData(),
-                           TrySeq(Sleep(keepalive_interval),
-                                  If(keepalive_timeout_ != Duration::Infinity(),
-                                     TimeoutAndSendPing(),
-                                     [this] { return SendPing(); }))),
-                      []() -> LoopCtl<absl::Status> { return Continue(); });
-      }),
-      [](auto status) { VLOG(2) << "KeepAlive end with status: " << status; });
+void KeepAliveSystem::Spawn(Party* party) {
+  party->Spawn("KeepAlive", Loop([this]() {
+                 return TrySeq(
+                     Sleep(next_keepalive_interval_),
+                     [this]() { return MaybeSendKeepAlivePing(); },
+                     []() -> LoopCtl<absl::Status> { return Continue(); });
+               }),
+               [](auto status) {
+                 LOG(INFO) << "KeepAlive end with status: " << status;
+               });
 }
 }  // namespace http2
 }  // namespace grpc_core

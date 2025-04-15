@@ -50,22 +50,18 @@ class MockKeepAliveSystemInterface : public KeepAliveSystemInterface {
         .Times(end_after)
         .WillRepeatedly([&end_after] {
           if (--end_after == 0) {
+            LOG(INFO) << "SendPing returning: " << absl::CancelledError();
             return Immediate(absl::CancelledError());
           }
+          LOG(INFO) << "SendPing returning: " << absl::OkStatus();
           return Immediate(absl::OkStatus());
         });
   }
-
-  void ExpectSendPingWithSleep(Duration duration, int& end_after) {
-    EXPECT_CALL(*this, SendPing())
-        .Times(end_after)
-        .WillRepeatedly([duration, &end_after] {
-          return If((--end_after == 0),
-                    TrySeq(Sleep(duration),
-                           [] { return Immediate(absl::CancelledError()); }),
-                    TrySeq(Sleep(duration),
-                           [] { return Immediate(absl::OkStatus()); }));
-        });
+  void ExpectSendPing(Duration duration) {
+    EXPECT_CALL(*this, SendPing()).WillOnce([duration] {
+      return TrySeq(Sleep(duration),
+                    [] { return Immediate(absl::OkStatus()); });
+    });
   }
 
   void ExpectKeepAliveTimeout() {
@@ -104,9 +100,9 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
   keep_alive_interface->ExpectSendPing(end_after);
 
   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    /*keepalive_timeout*/ Duration::Infinity());
+                                    Duration::Infinity(), Duration::Seconds(1));
   auto party = GetParty();
-  keep_alive_system.Spawn(party, Duration::Seconds(1));
+  keep_alive_system.Spawn(party);
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
@@ -115,107 +111,16 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
 
 YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeout) {
   InitParty();
-
-  int end_after = 1;
   std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
       keep_alive_interface =
           std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
   keep_alive_interface->ExpectKeepAliveTimeout();
-  keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1), end_after);
+  keep_alive_interface->ExpectSendPing(Duration::Hours(1));
 
   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    /*keepalive_timeout*/ Duration::Seconds(1));
+                                    Duration::Hours(1), Duration::Seconds(1));
   auto party = GetParty();
-  keep_alive_system.Spawn(party, Duration::Seconds(1));
-
-  WaitForAllPendingWork();
-  event_engine()->TickUntilIdle();
-  event_engine()->UnsetGlobalHooks();
-}
-
-YODEL_TEST(KeepAliveSystemTest, TestGotData) {
-  InitParty();
-  std::string execution_order;
-  StrictMock<MockFunction<void(absl::Status)>> on_done;
-  StrictMock<MockFunction<void(absl::Status)>> on_done2;
-  std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
-      keep_alive_interface =
-          std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
-  EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  EXPECT_CALL(on_done2, Call(absl::OkStatus()));
-
-  KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    /*keepalive_timeout*/ Duration::Hours(1));
-  auto party = GetParty();
-  Latch<void> latch;
-  Latch<void> latch2;
-
-  party->Spawn("WaitForData",
-               TrySeq(keep_alive_system.TestOnlyWaitForData(),
-                      [&on_done, &execution_order, &latch]() {
-                        execution_order.append("2");
-                        on_done.Call(absl::OkStatus());
-                        latch.Set();
-                        return absl::OkStatus();
-                      }),
-               [](auto) { LOG(INFO) << "WaitForData1 resolved"; });
-  party->Spawn("ReadDataAndWaitForData",
-               TrySeq(
-                   [&keep_alive_system, &execution_order]() {
-                     execution_order.append("1");
-                     keep_alive_system.GotData();
-                     // redundant GotData call
-                     keep_alive_system.GotData();
-                     return absl::OkStatus();
-                   },
-                   [&latch]() { return latch.Wait(); },
-                   [&keep_alive_system, &latch2, &execution_order] {
-                     execution_order.append("3");
-                     latch2.Set();
-                     return keep_alive_system.TestOnlyWaitForData();
-                   },
-                   [&on_done2, &execution_order] {
-                     execution_order.append("5");
-                     on_done2.Call(absl::OkStatus());
-                     return absl::OkStatus();
-                   }),
-               [](auto) { LOG(INFO) << "WaitForData2 resolved"; });
-
-  party->Spawn("ReadData2",
-               TrySeq(latch2.Wait(),
-                      [&keep_alive_system, &execution_order] {
-                        execution_order.append("4");
-                        keep_alive_system.GotData();
-                        return absl::OkStatus();
-                      }),
-               [](auto) { LOG(INFO) << "ReadData2 end"; });
-
-  WaitForAllPendingWork();
-  event_engine()->TickUntilIdle();
-  event_engine()->UnsetGlobalHooks();
-  EXPECT_STREQ(execution_order.c_str(), "12345");
-}
-
-YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeoutGotData) {
-  InitParty();
-  int end_after = 2;
-  std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
-      keep_alive_interface =
-          std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
-  keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(100),
-                                                end_after);
-  keep_alive_interface->ExpectKeepAliveTimeout();
-
-  KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    /*keepalive_timeout=*/Duration::Hours(1));
-  auto party = GetParty();
-  keep_alive_system.Spawn(party, Duration::Seconds(1));
-
-  party->Spawn("ReadData", TrySeq([&keep_alive_system]() {
-                 keep_alive_system.GotData();
-                 return absl::OkStatus();
-               }),
-               [](auto) { LOG(INFO) << "ReadData end"; });
+  keep_alive_system.Spawn(party);
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
