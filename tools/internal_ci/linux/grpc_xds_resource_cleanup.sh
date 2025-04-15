@@ -99,7 +99,7 @@ cleanup::job::cleanup_cluster_dualstack() {
   cleanup::activate_cluster GKE_CLUSTER_DUALSTACK
   cleanup::run_clean "$1" \
     --mode=k8s \
-    --server_prefixes='psm-ds', \
+    --server_prefixes='psm-ds' \
     --client_prefixes='psm-ds' \
     --flagfile=config/common-dualstack.cfg
 }
