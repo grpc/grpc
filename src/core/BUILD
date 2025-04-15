@@ -9448,6 +9448,10 @@ grpc_cc_library(
     external_deps = [
         "absl/container:flat_hash_set",
     ],
+    defines = select({
+        "//:grpc_no_ztrace": ["GRPC_NO_ZTRACE"],
+        "//conditions:default": [],
+    }),
     deps = [
         "single_set_ptr",
         "sync",

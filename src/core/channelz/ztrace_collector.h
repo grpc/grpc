@@ -30,6 +30,38 @@
 
 namespace grpc_core::channelz {
 
+#ifdef GRPC_NO_ZTRACE
+
+namespace ztrace_collector_detail {
+class ZTraceImpl final : public ZTrace {
+ public:
+  explicit ZTraceImpl() {}
+
+  void Run(Timestamp deadline, std::map<std::string, std::string> args,
+           std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+               event_engine,
+           absl::AnyInvocable<void(Json)> callback) override {
+    event_engine->Run([callback = std::move(callback)]() mutable {
+      callback(Json::FromBool(false));
+    });
+  }
+};
+
+class StubImpl {
+ public:
+  template <typename T>
+  void Append(const T&) {}
+
+  std::unique_ptr<ZTrace> MakeZTrace() {
+    return std::make_unique<ZTraceImpl>();
+  }
+};
+}  // namespace ztrace_collector_detail
+
+template <typename...>
+class ZTraceCollector : public ztrace_collector_detail::StubImpl {};
+
+#else
 namespace ztrace_collector_detail {
 
 template <typename T>
@@ -263,6 +295,7 @@ class ZTraceCollector {
 
   SingleSetRefCountedPtr<Impl> impl_;
 };
+#endif  // GRPC_NO_ZTRACE
 
 }  // namespace grpc_core::channelz
 
