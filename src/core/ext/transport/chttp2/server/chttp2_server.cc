@@ -37,15 +37,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
@@ -90,6 +81,15 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 #include "src/core/lib/iomgr/ev_posix.h"

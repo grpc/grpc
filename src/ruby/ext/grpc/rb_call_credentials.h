@@ -19,10 +19,9 @@
 #ifndef GRPC_RB_CALL_CREDENTIALS_H_
 #define GRPC_RB_CALL_CREDENTIALS_H_
 
-#include <ruby/ruby.h>
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
+#include <ruby/ruby.h>
 
 /* Initializes the ruby CallCredentials class. */
 void Init_grpc_call_credentials();

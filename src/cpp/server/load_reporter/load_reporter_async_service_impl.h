@@ -32,11 +32,11 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
+#include "absl/log/check.h"
 
 namespace grpc {
 namespace load_reporter {

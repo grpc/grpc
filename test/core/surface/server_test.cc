@@ -26,9 +26,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/utils.h"
@@ -36,6 +33,9 @@
 #include "src/core/util/useful.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 void test_register_method_fail(void) {
   grpc_server* server = grpc_server_create(nullptr, nullptr);

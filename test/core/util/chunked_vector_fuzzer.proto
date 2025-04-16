@@ -16,40 +16,40 @@ syntax = "proto3";
 package chunked_vector_fuzzer;
 
 message EmplaceBack {
-    int32 vector = 1;
-    int32 value = 2;
+  int32 vector = 1;
+  int32 value = 2;
 }
 
 message PopBack {
-    int32 vector = 1;
+  int32 vector = 1;
 }
 
 message Copy {
-    int32 from = 1;
-    int32 to = 2;
+  int32 from = 1;
+  int32 to = 2;
 }
 
 message ClearVector {
-    int32 vector = 1;
+  int32 vector = 1;
 }
 
 message RemoveIf {
-    int32 vector = 1;
-    int32 value = 2;
+  int32 vector = 1;
+  int32 value = 2;
 }
 
 message Action {
-    oneof action_type {
-        EmplaceBack emplace_back = 1;
-        PopBack pop_back = 2;
-        Copy copy = 3;
-        Copy move = 4;
-        ClearVector clear = 5;
-        Copy swap = 6;
-        RemoveIf remove_if = 7;
-    }
+  oneof action_type {
+    EmplaceBack emplace_back = 1;
+    PopBack pop_back = 2;
+    Copy copy = 3;
+    Copy move = 4;
+    ClearVector clear = 5;
+    Copy swap = 6;
+    RemoveIf remove_if = 7;
+  }
 }
 
 message Msg {
-    repeated Action actions = 1;
+  repeated Action actions = 1;
 }

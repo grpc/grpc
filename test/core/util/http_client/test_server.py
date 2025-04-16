@@ -47,31 +47,32 @@ print("server running on port %d" % args.port)
 
 
 class Handler(BaseHTTPRequestHandler):
-    def good(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html")
-        self.end_headers()
-        self.wfile.write(
-            "<html><head><title>Hello world!</title></head>".encode("ascii")
-        )
-        self.wfile.write(
-            "<body><p>This is a test</p></body></html>".encode("ascii")
-        )
 
-    def do_GET(self):
-        if self.path == "/get?foo=bar&baz=quux":
-            self.good()
+  def good(self):
+    self.send_response(200)
+    self.send_header("Content-Type", "text/html")
+    self.end_headers()
+    self.wfile.write(
+        "<html><head><title>Hello world!</title></head>".encode("ascii")
+    )
+    self.wfile.write(
+        "<body><p>This is a test</p></body></html>".encode("ascii")
+    )
 
-    def do_POST(self):
-        content_len = self.headers.get("content-length")
-        content = self.rfile.read(int(content_len)).decode("ascii")
-        if self.path == "/post?foo=bar&mumble=frotz" and content == "hello":
-            self.good()
+  def do_GET(self):
+    if self.path == "/get?foo=bar&baz=quux":
+      self.good()
+
+  def do_POST(self):
+    content_len = self.headers.get("content-length")
+    content = self.rfile.read(int(content_len)).decode("ascii")
+    if self.path == "/post?foo=bar&mumble=frotz" and content == "hello":
+      self.good()
 
 
 httpd = HTTPServer(("localhost", args.port), Handler)
 if args.ssl:
-    ctx = ssl.SSLContext()
-    ctx.load_cert_chain(certfile=_PEM, keyfile=_KEY)
-    httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+  ctx = ssl.SSLContext()
+  ctx.load_cert_chain(certfile=_PEM, keyfile=_KEY)
+  httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
 httpd.serve_forever()

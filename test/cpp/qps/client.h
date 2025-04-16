@@ -34,10 +34,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
@@ -49,6 +45,10 @@
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
 
 #define INPROC_NAME_PREFIX "qpsinproc:"
 

@@ -24,11 +24,11 @@
 #include <grpc/slice.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/useful.h"
 #include "test/core/bad_ssl/server_common.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/log/check.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"

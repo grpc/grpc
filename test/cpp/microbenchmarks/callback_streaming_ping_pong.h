@@ -23,12 +23,12 @@
 
 #include <sstream>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {

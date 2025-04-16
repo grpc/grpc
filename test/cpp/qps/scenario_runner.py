@@ -68,7 +68,10 @@ _SCENARIO_JSON = flags.DEFINE_string(
 _RUNNER_CMD = flags.DEFINE_string(
     "runner_cmd",
     default="",
-    help="Run the scearnio runner under a custom command (example: bazel ... --cmd='perf lock record -o $(pwd)/out')",
+    help=(
+        "Run the scearnio runner under a custom command (example: bazel ..."
+        " --cmd='perf lock record -o $(pwd)/out')"
+    ),
 )
 _RUN_FIRST = flags.DEFINE_bool(
     "run_first",
@@ -81,58 +84,57 @@ _RUN_ALL = flags.DEFINE_bool(
 
 
 def run_command(filename):
-    cmd = [
-        os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "scenario_runner_cc",
-        ),
-        "--loadtest_config",
-        filename,
-    ]
-    if _RUNNER_CMD.value:
-        cmd = _RUNNER_CMD.value.split(" ") + cmd
-    print(cmd)
-    subprocess.run(cmd, check=True)
-    if _RUN_FIRST.value:
-        print("Exiting due to --run_first")
-        sys.exit(0)
+  cmd = [
+      os.path.join(
+          os.path.dirname(os.path.abspath(__file__)),
+          "scenario_runner_cc",
+      ),
+      "--loadtest_config",
+      filename,
+  ]
+  if _RUNNER_CMD.value:
+    cmd = _RUNNER_CMD.value.split(" ") + cmd
+  print(cmd)
+  subprocess.run(cmd, check=True)
+  if _RUN_FIRST.value:
+    print("Exiting due to --run_first")
+    sys.exit(0)
 
 
 def run_loadtests():
-    loadtests = []
-    with open(
-        os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), _LOADTEST_YAML.value
-        )
-    ) as f:
-        loadtests = list(yaml.safe_load_all(f))
-    if len(loadtests) > 1 and not (_RUN_FIRST.value or _RUN_ALL.value):
-        print(
-            "The loadtest configuration file contains more than one loadtest. Please specify --run_first or --run_all.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    for loadtest in loadtests:
-        with tempfile.NamedTemporaryFile() as tmp_f:
-            tmp_f.write(
-                "".join(loadtest["spec"]["scenariosJSON"]).encode("utf-8")
-            )
-            tmp_f.flush()
-            run_command(tmp_f.name)
+  loadtests = []
+  with open(
+      os.path.join(
+          os.path.dirname(os.path.abspath(__file__)), _LOADTEST_YAML.value
+      )
+  ) as f:
+    loadtests = list(yaml.safe_load_all(f))
+  if len(loadtests) > 1 and not (_RUN_FIRST.value or _RUN_ALL.value):
+    print(
+        "The loadtest configuration file contains more than one loadtest."
+        " Please specify --run_first or --run_all.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+  for loadtest in loadtests:
+    with tempfile.NamedTemporaryFile() as tmp_f:
+      tmp_f.write("".join(loadtest["spec"]["scenariosJSON"]).encode("utf-8"))
+      tmp_f.flush()
+      run_command(tmp_f.name)
 
 
 def run_scenario_file():
-    run_command(_SCENARIO_JSON.value)
+  run_command(_SCENARIO_JSON.value)
 
 
 def main(args):
-    if _LOADTEST_YAML.value:
-        run_loadtests()
-    elif _SCENARIO_JSON.value:
-        run_scenario_file()
-    else:
-        "You must provide either a scenario.json or loadtest.yaml"
+  if _LOADTEST_YAML.value:
+    run_loadtests()
+  elif _SCENARIO_JSON.value:
+    run_scenario_file()
+  else:
+    "You must provide either a scenario.json or loadtest.yaml"
 
 
 if __name__ == "__main__":
-    app.run(main)
+  app.run(main)

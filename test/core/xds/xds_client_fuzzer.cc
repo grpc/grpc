@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 
 #include <map>
@@ -24,15 +23,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-#include "envoy/service/discovery/v3/discovery.pb.h"
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -53,6 +43,16 @@
 #include "test/core/xds/xds_client_fuzzer.pb.h"
 #include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "envoy/service/discovery/v3/discovery.pb.h"
+#include <google/protobuf/text_format.h>
 
 using grpc_event_engine::experimental::FuzzingEventEngine;
 

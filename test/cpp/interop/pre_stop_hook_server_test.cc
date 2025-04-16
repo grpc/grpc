@@ -22,15 +22,15 @@
 
 #include <thread>
 
-#include "absl/strings/str_format.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 namespace testing {

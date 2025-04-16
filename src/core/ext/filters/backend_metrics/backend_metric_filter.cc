@@ -24,8 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -38,9 +36,11 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/util/latent_see.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
+#include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
 
 namespace grpc_core {
 

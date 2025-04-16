@@ -34,17 +34,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
@@ -89,6 +78,17 @@
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/grpc/xds_routing.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {

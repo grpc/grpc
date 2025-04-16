@@ -21,40 +21,40 @@ import "test/core/test_util/fuzz_config_vars.proto";
 message Empty {}
 
 message Reclaimer {
-    enum Pass {
-        BENIGN = 0;
-        IDLE = 1;
-        DESTRUCTIVE = 2;
-    }
-    bool synchronous = 1;
-    Pass pass = 2;
-    Msg msg = 3;
+  enum Pass {
+    BENIGN = 0;
+    IDLE = 1;
+    DESTRUCTIVE = 2;
+  }
+  bool synchronous = 1;
+  Pass pass = 2;
+  Msg msg = 3;
 }
 
 message AllocationRequest {
-    uint32 min = 1;
-    uint32 max = 2;
+  uint32 min = 1;
+  uint32 max = 2;
 }
 
 message Action {
-    reserved 15;
-    int32 quota = 1;
-    int32 allocator = 2;
-    int32 allocation = 3;
-    oneof action_type {
-        Empty flush_exec_ctx = 7;
-        Empty create_quota = 10;
-        Empty delete_quota = 11;
-        Empty create_allocator = 12;
-        Empty delete_allocator = 13;
-        uint64 set_quota_size = 14;
-        AllocationRequest create_allocation = 16;
-        Empty delete_allocation = 17;
-        Reclaimer post_reclaimer = 18;
-    }
+  reserved 15;
+  int32 quota = 1;
+  int32 allocator = 2;
+  int32 allocation = 3;
+  oneof action_type {
+    Empty flush_exec_ctx = 7;
+    Empty create_quota = 10;
+    Empty delete_quota = 11;
+    Empty create_allocator = 12;
+    Empty delete_allocator = 13;
+    uint64 set_quota_size = 14;
+    AllocationRequest create_allocation = 16;
+    Empty delete_allocation = 17;
+    Reclaimer post_reclaimer = 18;
+  }
 }
 
 message Msg {
-    repeated Action actions = 2;
-    grpc.testing.FuzzConfigVars config_vars = 3;
+  repeated Action actions = 2;
+  grpc.testing.FuzzConfigVars config_vars = 3;
 }

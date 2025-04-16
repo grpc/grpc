@@ -25,11 +25,11 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

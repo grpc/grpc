@@ -32,11 +32,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/memory.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 
 static void notification_signal(tsi_test_fixture* fixture) {
   gpr_mu_lock(&fixture->mu);

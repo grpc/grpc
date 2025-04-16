@@ -26,10 +26,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "google/cloud/opentelemetry/resource_detector.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/resource/resource.h"
 #include "opentelemetry/sdk/resource/resource_detector.h"
@@ -38,6 +34,10 @@
 #include "src/core/xds/grpc/xds_enabled_server.h"
 #include "src/cpp/ext/csm/metadata_exchange.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "google/cloud/opentelemetry/resource_detector.h"
 
 namespace grpc {
 

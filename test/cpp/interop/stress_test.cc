@@ -27,10 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/globals.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
@@ -39,6 +35,10 @@
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "absl/log/globals.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(int32_t, metrics_port, 8081, "The metrics server port.");
 

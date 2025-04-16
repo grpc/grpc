@@ -16,10 +16,10 @@
 
 #include <vector>
 
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 
 namespace grpc_core {
 namespace {

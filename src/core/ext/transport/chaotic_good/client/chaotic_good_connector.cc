@@ -21,11 +21,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -67,6 +62,11 @@
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 using grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using grpc_event_engine::experimental::EventEngine;

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -20,9 +19,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
@@ -38,6 +34,10 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/log/check.h"
+#include <google/protobuf/text_format.h>
 
 namespace grpc_core {
 namespace testing {

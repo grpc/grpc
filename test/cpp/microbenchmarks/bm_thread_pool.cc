@@ -21,8 +21,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/util/crash.h"
@@ -31,6 +29,8 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_format.h"
 
 namespace {
 

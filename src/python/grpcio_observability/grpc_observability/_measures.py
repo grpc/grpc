@@ -25,7 +25,8 @@ UNIT_COUNT = "1"
 # Client
 CLIENT_STARTED_RPCS_MEASURE = measure.MeasureInt(
     "grpc.io/client/started_rpcs",
-    "The total number of client RPCs ever opened, including those that have not been completed.",
+    "The total number of client RPCs ever opened, including those that have not"
+    " been completed.",
     UNIT_COUNT,
 )
 
@@ -37,7 +38,8 @@ CLIENT_COMPLETED_RPCS_MEASURE = measure.MeasureInt(
 
 CLIENT_ROUNDTRIP_LATENCY_MEASURE = measure.MeasureFloat(
     "grpc.io/client/roundtrip_latency",
-    "Time between first byte of request sent to last byte of response received, or terminal error",
+    "Time between first byte of request sent to last byte of response received,"
+    " or terminal error",
     UNIT_MILLISECONDS,
 )
 
@@ -86,6 +88,7 @@ SERVER_RECEIVED_BYTES_PER_RPC_MEASURE = measure.MeasureFloat(
 
 SERVER_SERVER_LATENCY_MEASURE = measure.MeasureFloat(
     "grpc.io/server/server_latency",
-    "Time between first byte of request received to last byte of response sent, or terminal error",
+    "Time between first byte of request received to last byte of response sent,"
+    " or terminal error",
     UNIT_MILLISECONDS,
 )

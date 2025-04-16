@@ -25,12 +25,12 @@
 #include <gtest/gtest.h>
 #include <string.h>
 
-#include "absl/strings/escaping.h"
 #include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/json/json_reader.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/strings/escaping.h"
 
 using grpc_core::Json;
 

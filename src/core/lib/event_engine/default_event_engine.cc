@@ -22,7 +22,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/functional/any_invocable.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
@@ -31,6 +30,7 @@
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/wait_for_single_owner.h"
+#include "absl/functional/any_invocable.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"  // IWYU pragma: keep

@@ -31,11 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "google/api/monitored_resource.pb.h"
 #include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
 #include "google/monitoring/v3/metric_service.grpc.pb.h"
@@ -54,6 +49,11 @@
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 

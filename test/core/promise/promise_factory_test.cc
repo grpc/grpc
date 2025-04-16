@@ -14,9 +14,9 @@
 
 #include "src/core/lib/promise/detail/promise_factory.h"
 
-#include "absl/functional/bind_front.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/poll.h"
+#include "gtest/gtest.h"
+#include "absl/functional/bind_front.h"
 
 namespace grpc_core {
 namespace promise_detail {

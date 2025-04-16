@@ -27,10 +27,10 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/handshaker/proxy_mapper.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

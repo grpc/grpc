@@ -23,9 +23,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -42,6 +39,9 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 

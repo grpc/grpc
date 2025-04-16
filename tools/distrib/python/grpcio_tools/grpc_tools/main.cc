@@ -14,14 +14,6 @@
 
 #include "grpc_tools/main.h"
 
-#include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/compiler/command_line_interface.h>
-#include <google/protobuf/compiler/importer.h>
-#include <google/protobuf/compiler/python/generator.h>
-#include <google/protobuf/compiler/python/pyi_generator.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
-
 #include <algorithm>
 #include <map>
 #include <string>
@@ -29,8 +21,15 @@
 #include <unordered_set>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/compiler/python_generator.h"
+#include "absl/strings/string_view.h"
+#include <google/protobuf/compiler/code_generator.h>
+#include <google/protobuf/compiler/command_line_interface.h>
+#include <google/protobuf/compiler/importer.h>
+#include <google/protobuf/compiler/python/generator.h>
+#include <google/protobuf/compiler/python/pyi_generator.h>
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 using ::google::protobuf::FileDescriptor;
 using ::google::protobuf::compiler::CodeGenerator;
@@ -94,8 +93,7 @@ class GeneratorContextImpl : public GeneratorContext {
     return Open(filename);
   }
 
-  void ListParsedFiles(
-      std::vector<const ::google::protobuf::FileDescriptor*>* output) {
+  void ListParsedFiles(std::vector<const ::google::protobuf::FileDescriptor*>* output) {
     *output = parsed_files_;
   }
 

@@ -16,75 +16,75 @@ syntax = "proto3";
 
 package event_engine_client_channel_resolver;
 
-import "test/core/test_util/fuzzing_channel_args.proto";
 import "test/core/test_util/fuzz_config_vars.proto";
+import "test/core/test_util/fuzzing_channel_args.proto";
 
 message Error {
-    uint32 code = 1;
-    string message = 2;
+  uint32 code = 1;
+  string message = 2;
 }
 
 message ResolvedAddress {
-    uint32 port = 1;
+  uint32 port = 1;
 }
 message ResolvedAddresses {
-    repeated ResolvedAddress addresses = 1;
+  repeated ResolvedAddress addresses = 1;
 }
 
 message SRVRecord {
-    string host = 1;
-    uint32 port = 2;
-    uint32 priority = 3;
-    uint32 weight = 4;
+  string host = 1;
+  uint32 port = 2;
+  uint32 priority = 3;
+  uint32 weight = 4;
 }
 message SRVRecords {
-    repeated SRVRecord srv_records = 1;
+  repeated SRVRecord srv_records = 1;
 }
 
 enum TXTRecordType {
-    TXT_UNDEFINED = 0;
-    TXT_VALID = 1;
-    TXT_RANDOM_NON_CONFIG = 2;
-    TXT_RANDOM_PREFIXED_CONFIG = 3;
+  TXT_UNDEFINED = 0;
+  TXT_VALID = 1;
+  TXT_RANDOM_NON_CONFIG = 2;
+  TXT_RANDOM_PREFIXED_CONFIG = 3;
 }
 message TXTRecord {
-    oneof record {
-        TXTRecordType enumerated_value = 1;
-        // TODO(hork): add a ServiceConfig fuzzer when the proto definitions
-        // are worked out. See https://github.com/grpc/grpc/pull/32956 for the
-        // implementation.
-    }
-    // Random TXT record content, used for some TXTRecordTypes.
-    string arbitrary_value = 2;
+  oneof record {
+    TXTRecordType enumerated_value = 1;
+    // TODO(hork): add a ServiceConfig fuzzer when the proto definitions
+    // are worked out. See https://github.com/grpc/grpc/pull/32956 for the
+    // implementation.
+  }
+  // Random TXT record content, used for some TXTRecordTypes.
+  string arbitrary_value = 2;
 }
 message TXTRecords {
-    repeated TXTRecord txt_records = 1;
+  repeated TXTRecord txt_records = 1;
 }
 
 enum ExecutionStep {
-    NEVER = 0;
-    DURING_LOOKUP_HOSTNAME = 1;
-    AFTER_LOOKUP_HOSTNAME_CALLBACK = 2;
-    DURING_LOOKUP_SRV = 3;
-    AFTER_LOOKUP_SRV_CALLBACK = 4;
-    DURING_LOOKUP_TXT = 5;
-    AFTER_LOOKUP_TXT_CALLBACK = 6;
+  NEVER = 0;
+  DURING_LOOKUP_HOSTNAME = 1;
+  AFTER_LOOKUP_HOSTNAME_CALLBACK = 2;
+  DURING_LOOKUP_SRV = 3;
+  AFTER_LOOKUP_SRV_CALLBACK = 4;
+  DURING_LOOKUP_TXT = 5;
+  AFTER_LOOKUP_TXT_CALLBACK = 6;
 }
 
 message Msg {
-    grpc.testing.FuzzingChannelArgs channel_args = 1;
-    grpc.testing.FuzzConfigVars config_vars = 9;
-    oneof hostname {
-        ResolvedAddresses hostname_response = 2;
-        Error hostname_error = 3;
-    }
-    oneof srv {
-        SRVRecords srv_response = 4;
-        Error srv_error = 5;
-    }
-    oneof txt {
-        TXTRecords txt_response = 6;
-        Error txt_error = 7;
-    }
-    ExecutionStep should_orphan_at_step = 8;
+  grpc.testing.FuzzingChannelArgs channel_args = 1;
+  grpc.testing.FuzzConfigVars config_vars = 9;
+  oneof hostname {
+    ResolvedAddresses hostname_response = 2;
+    Error hostname_error = 3;
+  }
+  oneof srv {
+    SRVRecords srv_response = 4;
+    Error srv_error = 5;
+  }
+  oneof txt {
+    TXTRecords txt_response = 6;
+    Error txt_error = 7;
+  }
+  ExecutionStep should_orphan_at_step = 8;
 }

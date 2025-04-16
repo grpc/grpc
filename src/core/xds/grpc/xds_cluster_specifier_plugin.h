@@ -23,10 +23,10 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "absl/strings/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.h"
 

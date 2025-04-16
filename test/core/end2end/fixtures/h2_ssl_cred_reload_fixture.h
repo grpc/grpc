@@ -24,24 +24,28 @@
 #include <grpc/status.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
 #include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/log/check.h"
 
 class SslCredReloadFixture : public SecureFixture {
  public:
   explicit SslCredReloadFixture(grpc_tls_version tls_version)
       : tls_version_(tls_version) {}
 
-  static const char* CaCertPath() { return "src/core/tsi/test_creds/ca.pem"; }
+  static const char* CaCertPath() {
+    return "src/core/tsi/test_creds/ca.pem";
+  }
   static const char* CertPath() {
     return "src/core/tsi/test_creds/server1.pem";
   }
-  static const char* KeyPath() { return "src/core/tsi/test_creds/server1.key"; }
+  static const char* KeyPath() {
+    return "src/core/tsi/test_creds/server1.key";
+  }
 
  private:
   grpc_core::ChannelArgs MutateClientArgs(

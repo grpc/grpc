@@ -24,9 +24,9 @@
 
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
 #include "src/core/util/time.h"
+#include "absl/strings/string_view.h"
 #include "upb/mem/arena.h"
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128

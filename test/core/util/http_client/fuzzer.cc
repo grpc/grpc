@@ -23,9 +23,9 @@
 
 #include <cstdint>
 
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/util/http_client/parser.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 
 void RequestTest(std::vector<uint8_t> buffer) {
   grpc_http_parser parser;

@@ -38,15 +38,6 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
@@ -79,6 +70,15 @@
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
 
 namespace grpc {

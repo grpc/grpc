@@ -21,14 +21,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "fuzztest/fuzztest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -48,6 +40,14 @@
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
 #include "test/core/test_util/test_config.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace {
 

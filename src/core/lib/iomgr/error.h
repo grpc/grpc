@@ -26,13 +26,13 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/spinlock.h"
 #include "src/core/util/status_helper.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 
 /// Opaque representation of an error.
 

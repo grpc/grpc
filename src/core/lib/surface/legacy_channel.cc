@@ -26,10 +26,6 @@
 
 #include <optional>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -58,6 +54,10 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 

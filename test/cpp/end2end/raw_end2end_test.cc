@@ -30,8 +30,6 @@
 #include <memory>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
@@ -41,6 +39,8 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;

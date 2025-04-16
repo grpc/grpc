@@ -27,9 +27,6 @@
 #include <memory>
 #include <optional>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -46,6 +43,9 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

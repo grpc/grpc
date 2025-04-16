@@ -29,12 +29,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/cord.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
@@ -70,6 +64,12 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 // Backoff parameters.
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1

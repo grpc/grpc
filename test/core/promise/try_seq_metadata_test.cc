@@ -17,10 +17,10 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

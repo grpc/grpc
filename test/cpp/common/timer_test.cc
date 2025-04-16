@@ -20,9 +20,6 @@
 
 #include <grpc/grpc.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -30,6 +27,9 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"

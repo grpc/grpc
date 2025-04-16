@@ -26,6 +26,11 @@
 
 #include <mutex>
 
+#include "src/core/lib/surface/init.h"
+#include "src/core/util/crash.h"
+#include "test/core/event_engine/test_init.h"
+#include "test/core/test_util/build.h"
+#include "test/core/test_util/stack_tracer.h"
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
@@ -34,11 +39,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/surface/init.h"
-#include "src/core/util/crash.h"
-#include "test/core/event_engine/test_init.h"
-#include "test/core/test_util/build.h"
-#include "test/core/test_util/stack_tracer.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;

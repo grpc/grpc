@@ -46,74 +46,72 @@ _COPYRIGHT = """# Copyright 2021 The gRPC Authors
 
 
 def _mutate_scenario(scenario_json):
-    """Modifies vanilla benchmark scenario config to make it more suitable for running as a unit test."""
-    # tweak parameters to get fast test times
-    scenario_json = dict(scenario_json)
-    scenario_json["warmup_seconds"] = 0
-    scenario_json["benchmark_seconds"] = 1
-    outstanding_rpcs_divisor = 1
-    if (
-        scenario_json["client_config"]["client_type"] == "SYNC_CLIENT"
-        or scenario_json["server_config"]["server_type"] == "SYNC_SERVER"
-    ):
-        # reduce the number of threads needed for scenarios that use synchronous API
-        outstanding_rpcs_divisor = 10
-    scenario_json["client_config"]["outstanding_rpcs_per_channel"] = max(
-        1,
-        scenario_json["client_config"]["outstanding_rpcs_per_channel"]
-        // outstanding_rpcs_divisor,
-    )
-    # Some scenarios use high channel count since when actually
-    # benchmarking, we want to saturate the machine that runs the benchmark.
-    # For unit test, this is an overkill.
-    max_client_channels = 16
-    if scenario_json["client_config"]["rpc_type"] == "STREAMING_FROM_SERVER":
-        # streaming from server scenarios tend to have trouble shutting down
-        # quickly if there are too many channels.
-        max_client_channels = 4
+  """Modifies vanilla benchmark scenario config to make it more suitable for running as a unit test."""
+  # tweak parameters to get fast test times
+  scenario_json = dict(scenario_json)
+  scenario_json["warmup_seconds"] = 0
+  scenario_json["benchmark_seconds"] = 1
+  outstanding_rpcs_divisor = 1
+  if (
+      scenario_json["client_config"]["client_type"] == "SYNC_CLIENT"
+      or scenario_json["server_config"]["server_type"] == "SYNC_SERVER"
+  ):
+    # reduce the number of threads needed for scenarios that use synchronous API
+    outstanding_rpcs_divisor = 10
+  scenario_json["client_config"]["outstanding_rpcs_per_channel"] = max(
+      1,
+      scenario_json["client_config"]["outstanding_rpcs_per_channel"]
+      // outstanding_rpcs_divisor,
+  )
+  # Some scenarios use high channel count since when actually
+  # benchmarking, we want to saturate the machine that runs the benchmark.
+  # For unit test, this is an overkill.
+  max_client_channels = 16
+  if scenario_json["client_config"]["rpc_type"] == "STREAMING_FROM_SERVER":
+    # streaming from server scenarios tend to have trouble shutting down
+    # quickly if there are too many channels.
+    max_client_channels = 4
 
-    scenario_json["client_config"]["client_channels"] = min(
-        max_client_channels, scenario_json["client_config"]["client_channels"]
-    )
+  scenario_json["client_config"]["client_channels"] = min(
+      max_client_channels, scenario_json["client_config"]["client_channels"]
+  )
 
-    return scenario_config.remove_nonproto_fields(scenario_json)
+  return scenario_config.remove_nonproto_fields(scenario_json)
 
 
 def generate_json_run_localhost_scenarios():
-    return [
-        _mutate_scenario(scenario_json)
-        for scenario_json in scenario_config.CXXLanguage().scenarios()
-        if "scalable" in scenario_json.get("CATEGORIES", [])
-    ]
+  return [
+      _mutate_scenario(scenario_json)
+      for scenario_json in scenario_config.CXXLanguage().scenarios()
+      if "scalable" in scenario_json.get("CATEGORIES", [])
+  ]
 
 
 def generate_qps_json_driver_scenarios():
-    return [
-        _mutate_scenario(scenario_json)
-        for scenario_json in scenario_config.CXXLanguage().scenarios()
-        if "inproc" in scenario_json.get("CATEGORIES", [])
-    ]
+  return [
+      _mutate_scenario(scenario_json)
+      for scenario_json in scenario_config.CXXLanguage().scenarios()
+      if "inproc" in scenario_json.get("CATEGORIES", [])
+  ]
 
 
 def generate_scenarios_bzl(json_scenarios, bzl_filename, bzl_variablename):
-    """Generate .bzl file that defines a variable with JSON scenario configs."""
-    all_scenarios = []
-    for scenario in json_scenarios:
-        scenario_name = scenario["name"]
-        # argument will be passed as "--scenarios_json" to the test binary
-        # the string needs to be quoted in \' to ensure it gets passed as a single argument in shell
-        scenarios_json_arg_str = "\\'%s\\'" % json.dumps(
-            {"scenarios": [scenario]}
-        )
-        all_scenarios.append((scenario_name, scenarios_json_arg_str))
+  """Generate .bzl file that defines a variable with JSON scenario configs."""
+  all_scenarios = []
+  for scenario in json_scenarios:
+    scenario_name = scenario["name"]
+    # argument will be passed as "--scenarios_json" to the test binary
+    # the string needs to be quoted in \' to ensure it gets passed as a single argument in shell
+    scenarios_json_arg_str = "\\'%s\\'" % json.dumps({"scenarios": [scenario]})
+    all_scenarios.append((scenario_name, scenarios_json_arg_str))
 
-    with open(bzl_filename, "w") as f:
-        f.write(_COPYRIGHT)
-        f.write(
-            '"""AUTOGENERATED: configuration of benchmark scenarios to be run'
-            ' as bazel test"""\n\n'
-        )
-        f.write("%s = {\n" % bzl_variablename)
-        for scenario in all_scenarios:
-            f.write("    \"%s\": '%s',\n" % (scenario[0], scenario[1]))
-        f.write("}\n")
+  with open(bzl_filename, "w") as f:
+    f.write(_COPYRIGHT)
+    f.write(
+        '"""AUTOGENERATED: configuration of benchmark scenarios to be run'
+        ' as bazel test"""\n\n'
+    )
+    f.write("%s = {\n" % bzl_variablename)
+    for scenario in all_scenarios:
+      f.write("    \"%s\": '%s',\n" % (scenario[0], scenario[1]))
+    f.write("}\n")

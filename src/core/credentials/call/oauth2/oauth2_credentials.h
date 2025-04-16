@@ -30,8 +30,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -51,6 +49,8 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // Constants.
 #define GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING                               \

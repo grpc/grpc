@@ -22,8 +22,6 @@
 
 #include <utility>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -33,6 +31,8 @@
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/ref_counted_string.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

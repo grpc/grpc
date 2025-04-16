@@ -14,16 +14,19 @@
 
 #include <grpcpp/security/authorization_policy_provider.h>
 
-#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
 
-#define VALID_POLICY_PATH_1 \
-  "test/core/security/authorization/test_policies/valid_policy_1.json"
-#define VALID_POLICY_PATH_2 \
-  "test/core/security/authorization/test_policies/valid_policy_2.json"
-#define INVALID_POLICY_PATH \
-  "test/core/security/authorization/test_policies/invalid_policy.json"
+#define VALID_POLICY_PATH_1                                          \
+  "test/core/security/authorization/test_policies/" \
+  "valid_policy_1.json"
+#define VALID_POLICY_PATH_2                                          \
+  "test/core/security/authorization/test_policies/" \
+  "valid_policy_2.json"
+#define INVALID_POLICY_PATH                                          \
+  "test/core/security/authorization/test_policies/" \
+  "invalid_policy.json"
 
 namespace grpc {
 

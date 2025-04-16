@@ -22,10 +22,10 @@
 #include <utility>
 #include <vector>
 
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/retry_interceptor.h"
 #include "src/core/util/json/json_reader.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 
 using fuzztest::Arbitrary;
 using fuzztest::ElementOf;

@@ -31,14 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/algorithm/container.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -65,6 +57,14 @@
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/algorithm/container.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

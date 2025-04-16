@@ -33,8 +33,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/avl.h"
 #include "src/core/util/debug_location.h"
@@ -44,6 +42,8 @@
 #include "src/core/util/ref_counted_string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/meta/type_traits.h"
+#include "absl/strings/string_view.h"
 
 // TODO(hork): When we're ready to allow setting via a channel arg from the
 // application, replace this with a macro in

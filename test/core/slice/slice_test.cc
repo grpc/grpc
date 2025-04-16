@@ -30,14 +30,14 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/no_destruct.h"
 #include "test/core/test_util/build.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {
   // Calls grpc_slice_create for various lengths and verifies the internals for

@@ -16,11 +16,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
-#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 
 using grpc_core::chaotic_good::TcpFrameHeader;
 using HeaderBuffer = std::array<uint8_t, TcpFrameHeader::kFrameHeaderSize>;

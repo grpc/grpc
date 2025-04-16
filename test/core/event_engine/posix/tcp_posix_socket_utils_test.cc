@@ -18,9 +18,9 @@
 
 #include <memory>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 

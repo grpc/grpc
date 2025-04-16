@@ -25,12 +25,12 @@
 #include <sstream>
 #include <string>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(std::string, address, "", "Address to connect to");
 ABSL_FLAG(std::string, mode, "", "Test mode to use");

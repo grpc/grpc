@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <google/protobuf/text_format.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,12 +22,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/random/bit_gen_ref.h"
-#include "absl/status/status.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/match.h"
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
@@ -49,6 +42,13 @@
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/status/status.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
+#include <google/protobuf/text_format.h>
 
 namespace grpc_core {
 namespace {

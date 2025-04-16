@@ -34,19 +34,19 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
-#include "gtest/gtest.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 
 // CRL Providers not supported for <1.1
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -54,12 +54,18 @@ namespace grpc {
 namespace testing {
 namespace {
 
-const char* kRootPath = "test/core/tsi/test_creds/crl_data/ca.pem";
-const char* kRevokedKeyPath = "test/core/tsi/test_creds/crl_data/revoked.key";
-const char* kRevokedCertPath = "test/core/tsi/test_creds/crl_data/revoked.pem";
-const char* kValidKeyPath = "test/core/tsi/test_creds/crl_data/valid.key";
-const char* kValidCertPath = "test/core/tsi/test_creds/crl_data/valid.pem";
-const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
+const char* kRootPath =
+    "test/core/tsi/test_creds/crl_data/ca.pem";
+const char* kRevokedKeyPath =
+    "test/core/tsi/test_creds/crl_data/revoked.key";
+const char* kRevokedCertPath =
+    "test/core/tsi/test_creds/crl_data/revoked.pem";
+const char* kValidKeyPath =
+    "test/core/tsi/test_creds/crl_data/valid.key";
+const char* kValidCertPath =
+    "test/core/tsi/test_creds/crl_data/valid.pem";
+const char* kRootCrlPath =
+    "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const char* kCrlDirectoryPath =
     "test/core/tsi/test_creds/crl_data/crl_provider_test_dir/";
 constexpr char kMessage[] = "Hello";

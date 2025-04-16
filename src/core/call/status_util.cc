@@ -23,9 +23,9 @@
 
 #include <vector>
 
+#include "src/core/util/useful.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "src/core/util/useful.h"
 
 struct status_string_entry {
   const char* str;

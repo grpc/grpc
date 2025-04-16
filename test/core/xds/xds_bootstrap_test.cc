@@ -27,12 +27,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/credentials/transport/tls/certificate_provider_factory.h"
@@ -48,6 +42,12 @@
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {

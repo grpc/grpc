@@ -21,10 +21,6 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
 
-#include "absl/functional/any_invocable.h"
-#include "gmock/gmock.h"
-#include "google/cloud/opentelemetry/resource_detector.h"
-#include "gtest/gtest.h"
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
@@ -37,6 +33,10 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "google/cloud/opentelemetry/resource_detector.h"
 
 namespace grpc {
 namespace testing {

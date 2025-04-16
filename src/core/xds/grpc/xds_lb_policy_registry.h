@@ -22,11 +22,11 @@
 #include <map>
 #include <memory>
 
-#include "absl/strings/string_view.h"
-#include "envoy/config/cluster/v3/cluster.upb.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "absl/strings/string_view.h"
+#include "envoy/config/cluster/v3/cluster.upb.h"
 
 namespace grpc_core {
 

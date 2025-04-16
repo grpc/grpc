@@ -27,15 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/strip.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
@@ -55,6 +46,15 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 
 // IWYU pragma: no_include <ratio>
 

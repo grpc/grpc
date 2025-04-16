@@ -31,11 +31,6 @@
 #include <memory>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/port.h"
@@ -49,6 +44,11 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"

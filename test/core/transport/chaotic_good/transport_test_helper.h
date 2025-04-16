@@ -15,10 +15,6 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_HELPER_H
 #define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_HELPER_H
 
-#include <google/protobuf/text_format.h>
-
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -28,6 +24,9 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include <google/protobuf/text_format.h>
 
 namespace grpc_core {
 namespace chaotic_good {

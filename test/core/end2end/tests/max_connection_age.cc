@@ -22,12 +22,12 @@
 
 #include <memory>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #define MAX_CONNECTION_AGE_MS 500
 #define MAX_CONNECTION_AGE_GRACE_MS 2000

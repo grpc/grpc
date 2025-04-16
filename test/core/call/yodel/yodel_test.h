@@ -15,15 +15,8 @@
 #ifndef GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 #define GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 
-#include <google/protobuf/text_format.h>
 #include <grpc/event_engine/event_engine.h>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/strings/string_view.h"
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
@@ -38,6 +31,13 @@
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/strings/string_view.h"
+#include <google/protobuf/text_format.h>
 
 namespace grpc_core {
 

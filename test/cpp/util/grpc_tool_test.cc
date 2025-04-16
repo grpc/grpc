@@ -32,10 +32,6 @@
 #include <chrono>
 #include <sstream>
 
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
-#include "absl/strings/str_split.h"
-#include "gtest/gtest.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.pb.h"
@@ -45,6 +41,10 @@
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+#include "absl/strings/str_split.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -69,7 +69,7 @@ using grpc::testing::EchoResponse;
   "UnimplementedBidi\n"
 
 #define ECHO_TEST_SERVICE_DESCRIPTION                                          \
-  "filename: src/proto/grpc/testing/echo.proto\n"                              \
+  "filename: src/proto/grpc/testing/echo.proto\n"             \
   "package: grpc.testing;\n"                                                   \
   "service EchoTestService {\n"                                                \
   "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) "  \

@@ -26,13 +26,13 @@
 #include <memory>
 #include <utility>
 
+#include "src/core/lib/security/authorization/stdout_logger.h"
+#include "src/core/util/sync.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/security/authorization/stdout_logger.h"
-#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace experimental {

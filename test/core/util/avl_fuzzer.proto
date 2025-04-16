@@ -16,28 +16,28 @@ syntax = "proto3";
 
 package avl_fuzzer;
 
-message Empty{}
+message Empty {}
 
 message Action {
-    int32 key = 1;
-    oneof action {
-        int32 set = 2;
-        Empty get = 3;
-        Empty del = 4;
-    }
+  int32 key = 1;
+  oneof action {
+    int32 set = 2;
+    Empty get = 3;
+    Empty del = 4;
+  }
 }
 
 message KeyValue {
-    int32 key = 1;
-    int32 value = 2;
+  int32 key = 1;
+  int32 value = 2;
 }
 
 message Compares {
-    repeated KeyValue left = 1;
-    repeated KeyValue right = 2;
+  repeated KeyValue left = 1;
+  repeated KeyValue right = 2;
 }
 
 message Msg {
-    repeated Action actions = 2;
-    repeated Compares compares = 3;
+  repeated Action actions = 2;
+  repeated Compares compares = 3;
 }

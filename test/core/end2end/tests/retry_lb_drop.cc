@@ -23,11 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -38,6 +33,11 @@
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/test_lb_policies.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {

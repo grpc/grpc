@@ -35,12 +35,6 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/call/call_credentials.h"
@@ -56,6 +50,12 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"

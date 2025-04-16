@@ -38,11 +38,6 @@
 #include <queue>
 #include <string>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "google/protobuf/text_format.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
@@ -51,6 +46,11 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 ABSL_FLAG(std::string, server_address, "", "channelz server address");
 ABSL_FLAG(std::string, custom_credentials_type, "", "custom credentials type");
@@ -445,8 +445,7 @@ class ChannelzSampler final {
     for (const auto& _subchannel : all_subchannels_) {
       std::cout << "subchannel ID" << GetSubchannelID(_subchannel) << "_"
                 << GetSubchannelName(_subchannel) << " data:" << std::endl;
-      ::google::protobuf::TextFormat::PrintToString(_subchannel.data(),
-                                                    &data_str);
+      ::google::protobuf::TextFormat::PrintToString(_subchannel.data(), &data_str);
       printf("%s\n", data_str.c_str());
     }
     for (const auto& _server : all_servers_) {
@@ -478,8 +477,7 @@ class ChannelzSampler final {
     std::string id = grpc::to_string(GetSubchannelID(subchannel));
     std::string type = "Subchannel";
     std::string description;
-    ::google::protobuf::TextFormat::PrintToString(subchannel.data(),
-                                                  &description);
+    ::google::protobuf::TextFormat::PrintToString(subchannel.data(), &description);
     grpc_core::Json description_json = grpc_core::Json::FromString(description);
     StoreEntityInJson(id, type, description_json);
   }

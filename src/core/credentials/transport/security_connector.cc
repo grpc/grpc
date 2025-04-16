@@ -23,12 +23,12 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/useful.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 grpc_channel_security_connector::grpc_channel_security_connector(
     absl::string_view url_scheme,

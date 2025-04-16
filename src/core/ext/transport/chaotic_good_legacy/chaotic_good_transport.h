@@ -22,7 +22,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/escaping.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chaotic_good_legacy/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good_legacy/data_endpoints.h"
@@ -38,6 +37,7 @@
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "absl/strings/escaping.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {

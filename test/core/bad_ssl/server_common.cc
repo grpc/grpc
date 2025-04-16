@@ -21,10 +21,10 @@
 #include <grpc/support/time.h>
 #include <signal.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 // Common server implementation details for all servers in servers/.
 // There's nothing *wrong* with these servers per-se, but they are

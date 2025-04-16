@@ -25,14 +25,14 @@
 
 #include <memory>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 
 #if GRPC_ARES == 1
 

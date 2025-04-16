@@ -22,8 +22,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
+#include "absl/log/check.h"
 
 static const char alphabet[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

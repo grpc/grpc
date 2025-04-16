@@ -21,10 +21,10 @@
 #include <memory>
 #include <string>
 
+#include "src/core/lib/iomgr/port.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
-#include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV
@@ -37,10 +37,6 @@
 
 #include <vector>
 
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -48,6 +44,10 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 // This test exercises IPv4, IPv6, and dualstack sockets in various ways.
 

@@ -37,10 +37,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -53,6 +49,10 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
 
 namespace {
 class FakeTransport final : public grpc_core::Transport {

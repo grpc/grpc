@@ -24,9 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
@@ -39,12 +36,18 @@
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define CLIENT_CERT_PATH "src/core/tsi/test_creds/multi-domain.pem"
-#define SERVER_CERT_PATH_0 "src/core/tsi/test_creds/server0.pem"
+#define CLIENT_CERT_PATH \
+  "src/core/tsi/test_creds/multi-domain.pem"
+#define SERVER_CERT_PATH_0 \
+  "src/core/tsi/test_creds/server0.pem"
 #define SERVER_KEY_PATH_0 "src/core/tsi/test_creds/server0.key"
-#define SERVER_CERT_PATH_1 "src/core/tsi/test_creds/server1.pem"
+#define SERVER_CERT_PATH_1 \
+  "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH_1 "src/core/tsi/test_creds/server1.key"
 
 namespace grpc_core {

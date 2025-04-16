@@ -32,12 +32,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/external/external_account_credentials.h"
 #include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
@@ -71,6 +65,12 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 using grpc_core::Json;
 

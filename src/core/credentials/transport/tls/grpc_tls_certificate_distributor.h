@@ -27,12 +27,12 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
 struct grpc_tls_identity_pairs {
   grpc_core::PemKeyCertPairList pem_key_cert_pairs;

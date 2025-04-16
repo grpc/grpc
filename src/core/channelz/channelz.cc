@@ -28,11 +28,6 @@
 #include <string>
 #include <tuple>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/strip.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -44,6 +39,11 @@
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
+#include "absl/log/check.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 namespace channelz {

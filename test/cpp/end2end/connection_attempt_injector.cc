@@ -16,14 +16,14 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/utility/utility.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/sync.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/utility/utility.h"
 
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;

@@ -26,11 +26,11 @@
 #include <memory>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/inlined_vector.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/inlined_vector.h"
 
 namespace grpc_core {
 

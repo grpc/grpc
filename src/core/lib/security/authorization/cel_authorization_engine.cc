@@ -89,8 +89,7 @@ CelAuthorizationEngine::CelAuthorizationEngine(
         const char* serialized = google_api_expr_v1alpha1_Expr_serialize(
             condition, temp_arena.ptr(), &serial_len);
         const google_api_expr_v1alpha1_Expr* parsed_condition =
-            google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
-                                                arena_.ptr());
+            google_api_expr_v1alpha1_Expr_parse(serialized, serial_len, arena_.ptr());
         if (envoy_config_rbac_v3_RBAC_action(rbac_policy) == kAllow) {
           allow_if_matched_.insert(std::pair(policy_name, parsed_condition));
         } else {

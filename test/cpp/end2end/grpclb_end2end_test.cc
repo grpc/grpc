@@ -32,16 +32,6 @@
 #include <string>
 #include <thread>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/synchronization/notification.h"
-#include "absl/types/span.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
@@ -69,6 +59,16 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/synchronization/notification.h"
+#include "absl/types/span.h"
 
 // TODO(dgq): Other scenarios in need of testing:
 // - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).

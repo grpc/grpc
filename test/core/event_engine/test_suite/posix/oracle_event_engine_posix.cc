@@ -25,6 +25,10 @@
 #include <cstring>
 #include <memory>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -32,10 +36,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -27,9 +27,6 @@
 
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "gmock/gmock.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -49,6 +46,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
+#include "gmock/gmock.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #ifndef GPR_WINDOWS
 #include <arpa/inet.h>

@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
@@ -33,6 +32,7 @@
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

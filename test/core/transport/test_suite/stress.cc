@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/random/random.h"
 #include "test/core/transport/test_suite/transport_test.h"
+#include "absl/random/random.h"
 
 namespace grpc_core {
 

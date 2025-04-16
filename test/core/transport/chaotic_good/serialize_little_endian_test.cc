@@ -20,10 +20,10 @@
 
 #include <cstdint>
 
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 
 namespace grpc_core::chaotic_good {
 

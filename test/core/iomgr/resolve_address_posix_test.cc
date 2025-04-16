@@ -26,11 +26,6 @@
 
 #include <string>
 
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -44,6 +39,11 @@
 #include "src/core/util/useful.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 static gpr_timespec test_deadline(void) {
   return grpc_timeout_seconds_to_deadline(100);

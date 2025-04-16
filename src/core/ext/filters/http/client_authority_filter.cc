@@ -25,14 +25,14 @@
 #include <memory>
 #include <optional>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/filter/auth/auth_filters.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/latent_see.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

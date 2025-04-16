@@ -20,8 +20,8 @@
 #include <string>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

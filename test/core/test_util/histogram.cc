@@ -23,8 +23,8 @@
 #include <math.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
 #include "src/core/util/useful.h"
+#include "absl/log/check.h"
 
 // Histograms are stored with exponentially increasing bucket sizes.
 // The first bucket is [0, m) where m = 1 + resolution

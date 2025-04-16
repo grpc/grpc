@@ -19,9 +19,8 @@
 #ifndef GRPC_RB_COMPRESSION_OPTIONS_H_
 #define GRPC_RB_COMPRESSION_OPTIONS_H_
 
-#include <ruby/ruby.h>
-
 #include <grpc/grpc.h>
+#include <ruby/ruby.h>
 
 /* Initializes the compression options ruby wrapper. */
 void Init_grpc_compression_options();

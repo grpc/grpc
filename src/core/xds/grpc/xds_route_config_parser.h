@@ -27,10 +27,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "envoy/config/route/v3/route.upb.h"
-#include "envoy/config/route/v3/route.upbdefs.h"
-#include "re2/re2.h"
 #include "src/core/call/status_util.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/time.h"
@@ -42,6 +38,10 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+#include "absl/strings/string_view.h"
+#include "envoy/config/route/v3/route.upb.h"
+#include "envoy/config/route/v3/route.upbdefs.h"
+#include "re2/re2.h"
 #include "upb/reflection/def.h"
 
 namespace grpc_core {

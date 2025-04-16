@@ -16,7 +16,6 @@
 //
 //
 
-#include <google/protobuf/text_format.h>
 #include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -35,16 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -70,6 +59,17 @@
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include <google/protobuf/text_format.h>
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 

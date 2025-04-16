@@ -28,10 +28,6 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
@@ -41,6 +37,10 @@
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/useful.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

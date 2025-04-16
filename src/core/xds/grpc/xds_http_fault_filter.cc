@@ -25,13 +25,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
-#include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
-#include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
-#include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/call/status_util.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
@@ -45,6 +38,13 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
+#include "envoy/type/v3/percent.upb.h"
 
 namespace grpc_core {
 

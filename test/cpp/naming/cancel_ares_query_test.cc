@@ -27,10 +27,6 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "gmock/gmock.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -58,6 +54,10 @@
 #include "test/core/test_util/socket_use_after_close_detector.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
+#include "gmock/gmock.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"

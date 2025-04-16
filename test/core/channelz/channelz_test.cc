@@ -34,9 +34,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -52,6 +49,9 @@
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 

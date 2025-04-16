@@ -26,14 +26,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/memory/memory.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
-#include "absl/strings/string_view.h"
-#include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"
@@ -42,6 +34,14 @@
 #include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
 
 namespace grpc {
 namespace testing {

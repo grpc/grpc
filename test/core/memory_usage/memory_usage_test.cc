@@ -34,6 +34,15 @@
 #include <utility>
 #include <vector>
 
+#include "google/protobuf/wrappers.pb.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/util/env.h"
+#include "src/core/util/subprocess.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/xds/xds_server.h"
+#include "test/cpp/end2end/xds/xds_utils.h"
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -44,15 +53,6 @@
 #include "absl/strings/string_view.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/core/v3/health_check.pb.h"
-#include "google/protobuf/wrappers.pb.h"
-#include "src/core/config/config_vars.h"
-#include "src/core/util/env.h"
-#include "src/core/util/subprocess.h"
-#include "test/core/test_util/port.h"
-#include "test/core/test_util/resolve_localhost_ip46.h"
-#include "test/core/test_util/test_config.h"
-#include "test/cpp/end2end/xds/xds_server.h"
-#include "test/cpp/end2end/xds/xds_utils.h"
 
 using grpc::testing::XdsResourceUtils;
 

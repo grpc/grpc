@@ -32,9 +32,9 @@
 #include <memory>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc {
 

@@ -32,12 +32,12 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 struct test_state {
   int is_client;

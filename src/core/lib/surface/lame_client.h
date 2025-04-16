@@ -24,9 +24,6 @@
 
 #include <memory>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -35,6 +32,9 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #define GRPC_ARG_LAME_FILTER_ERROR "grpc.lame_filter_error"
 

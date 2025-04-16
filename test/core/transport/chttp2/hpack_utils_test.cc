@@ -17,10 +17,10 @@
 #include <random>
 #include <unordered_map>
 
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
+#include "gtest/gtest.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "gtest/gtest.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
 
 namespace grpc_core {
 namespace testing {

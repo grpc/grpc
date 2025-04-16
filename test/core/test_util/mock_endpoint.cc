@@ -24,12 +24,12 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/util/down_cast.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {

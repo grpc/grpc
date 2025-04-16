@@ -20,11 +20,11 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
 #include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 #define APPEND_BUFFER(string, to_append) \
   ((string).append((to_append), sizeof(to_append) - 1))

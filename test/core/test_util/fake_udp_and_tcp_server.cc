@@ -25,14 +25,14 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/test_util/port.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 

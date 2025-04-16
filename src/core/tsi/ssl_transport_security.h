@@ -26,10 +26,10 @@
 
 #include <memory>
 
-#include "absl/strings/string_view.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "absl/strings/string_view.h"
 
 // Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs.
 #define TSI_X509_CERTIFICATE_TYPE "X509"

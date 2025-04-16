@@ -26,13 +26,13 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"

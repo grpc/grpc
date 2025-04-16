@@ -25,18 +25,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
-#include "envoy/type/matcher/v3/regex.pb.h"
-#include "envoy/type/matcher/v3/string.pb.h"
-#include "gmock/gmock.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
-#include "gtest/gtest.h"
-#include "re2/re2.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/json/json_writer.h"
@@ -53,10 +43,20 @@
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/config_grpc_cli.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
+#include "envoy/type/matcher/v3/regex.pb.h"
+#include "envoy/type/matcher/v3/string.pb.h"
+#include "re2/re2.h"
 #include "udpa/type/v1/typed_struct.pb.h"
+#include "xds/type/v3/typed_struct.pb.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "xds/type/v3/typed_struct.pb.h"
 
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;

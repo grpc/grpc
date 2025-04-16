@@ -34,24 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/time/time.h"
-#include "envoy/config/cluster/v3/cluster.pb.h"
-#include "envoy/config/endpoint/v3/endpoint.pb.h"
-#include "envoy/config/listener/v3/listener.pb.h"
-#include "envoy/config/route/v3/route.pb.h"
-#include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
-#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
-#include "envoy/extensions/filters/http/router/v3/router.pb.h"
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
@@ -76,6 +58,24 @@
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/time/time.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "xds/type/v3/typed_struct.pb.h"
 
 namespace grpc {
@@ -107,10 +107,14 @@ using ::grpc_core::experimental::AuditLoggerRegistry;
 using ::grpc_core::testing::ScopedExperimentalEnvVar;
 using ::grpc_core::testing::TestAuditLoggerFactory;
 
-constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
-constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
-constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
-constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
+constexpr char kClientCertPath[] =
+    "src/core/tsi/test_creds/client.pem";
+constexpr char kClientKeyPath[] =
+    "src/core/tsi/test_creds/client.key";
+constexpr char kBadClientCertPath[] =
+    "src/core/tsi/test_creds/badclient.pem";
+constexpr char kBadClientKeyPath[] =
+    "src/core/tsi/test_creds/badclient.key";
 
 // Based on StaticDataCertificateProvider, but provides alternate certificates
 // if the certificate name is not empty.

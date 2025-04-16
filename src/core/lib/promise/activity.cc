@@ -19,11 +19,11 @@
 
 #include <vector>
 
+#include "src/core/util/atomic_utils.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "src/core/util/atomic_utils.h"
 
 namespace grpc_core {
 

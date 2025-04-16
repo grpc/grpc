@@ -16,33 +16,30 @@ syntax = "proto3";
 package work_queue_fuzzer;
 
 enum CallbackType {
-    CALLBACK_TYPE_CLOSURE = 0;
-    CALLBACK_TYPE_ANY_INVOCABLE = 1;
+  CALLBACK_TYPE_CLOSURE = 0;
+  CALLBACK_TYPE_ANY_INVOCABLE = 1;
 }
 
 message Add {
-    CallbackType type = 1;
-    int32 key = 2;
+  CallbackType type = 1;
+  int32 key = 2;
 }
 
-message PopMostRecent {
-}
+message PopMostRecent {}
 
-message PopOldest {
-}
+message PopOldest {}
 
-message Empty {
-}
+message Empty {}
 
 message Action {
-    oneof action_type {
-        Add add = 1;
-        PopMostRecent pop_most_recent = 2;
-        PopOldest pop_oldest = 3;
-        Empty empty = 4;
-    }
+  oneof action_type {
+    Add add = 1;
+    PopMostRecent pop_most_recent = 2;
+    PopOldest pop_oldest = 3;
+    Empty empty = 4;
+  }
 }
 
 message Msg {
-    repeated Action actions = 1;
+  repeated Action actions = 1;
 }

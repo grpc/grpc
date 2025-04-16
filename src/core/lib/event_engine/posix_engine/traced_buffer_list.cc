@@ -23,10 +23,10 @@
 
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 #include <linux/errqueue.h>  // IWYU pragma: keep

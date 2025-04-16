@@ -30,10 +30,6 @@
 #include <optional>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -51,6 +47,10 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // User agent this library reports
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"

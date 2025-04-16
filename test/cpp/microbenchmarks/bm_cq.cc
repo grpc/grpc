@@ -24,13 +24,13 @@
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/log/check.h"
 
 namespace grpc {
 namespace testing {
