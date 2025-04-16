@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_TRANSPORT_ENDPOINT_TRANSPORT_H
 #define GRPC_SRC_CORE_TRANSPORT_ENDPOINT_TRANSPORT_H
 
+#include <grpc/impl/grpc_types.h>
+
 #include <memory>
 #include <string>
 
@@ -34,12 +36,16 @@ class EndpointTransport {
  public:
   virtual grpc_channel* ChannelCreate(std::string target,
                                       const ChannelArgs& args) = 0;
-  virtual int AddPort(Server* server, std::string addr,
-                      const ChannelArgs& args) = 0;
-  virtual ~EndpointTransport();
+  virtual absl::StatusOr<int> AddPort(Server* server, std::string addr,
+                                      const ChannelArgs& args) = 0;
+  virtual ~EndpointTransport() = default;
 };
 
 class EndpointTransportRegistry {
+ private:
+  using TransportMap =
+      std::map<std::string, std::unique_ptr<EndpointTransport>>;
+
  public:
   class Builder {
    public:
@@ -53,16 +59,22 @@ class EndpointTransportRegistry {
     }
 
    private:
-    std::map<std::string, std::unique_ptr<EndpointTransport>> transports_;
+    TransportMap transports_;
   };
 
-  EndpointTransport* GetTransport(absl::string_view name);
+  EndpointTransport* GetTransport(absl::string_view name) const {
+    auto it = transports_.find(std::string(name));
+    if (it == transports_.end()) {
+      return nullptr;
+    }
+    return it->second.get();
+  }
 
  private:
-  explicit EndpointTransportRegistry(
-      std::map<std::string, std::unique_ptr<EndpointTransport>> transports);
+  explicit EndpointTransportRegistry(TransportMap transports)
+      : transports_(std::move(transports)) {}
 
-  std::map<std::string, std::unique_ptr<EndpointTransport>> transports_;
+  TransportMap transports_;
 };
 
 }  // namespace grpc_core

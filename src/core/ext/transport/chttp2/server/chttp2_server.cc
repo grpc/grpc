@@ -614,17 +614,15 @@ void NewChttp2ServerListener::Orphan() {
   }
 }
 
-namespace {
-
-grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
-                                      const ChannelArgs& args, int* port_num) {
+absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
+                                        const ChannelArgs& args) {
   if (addr == nullptr) {
     return GRPC_ERROR_CREATE("Invalid address: addr cannot be a nullptr.");
   }
   if (strncmp(addr, "external:", 9) == 0) {
     return NewChttp2ServerListener::CreateWithAcceptor(server, addr, args);
   }
-  *port_num = -1;
+  int port_num = -1;
   absl::StatusOr<std::vector<grpc_resolved_address>> resolved;
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results =
       std::vector<EventEngine::ResolvedAddress>();
@@ -680,20 +678,19 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     for (EventEngine::ResolvedAddress& addr : *results) {
       // If address has a wildcard port (0), use the same port as a previous
       // listener.
-      if (*port_num != -1 &&
+      if (port_num != -1 &&
           grpc_event_engine::experimental::ResolvedAddressGetPort(addr) == 0) {
-        grpc_event_engine::experimental::ResolvedAddressSetPort(addr,
-                                                                *port_num);
+        grpc_event_engine::experimental::ResolvedAddressSetPort(addr, port_num);
       }
       int port_temp = -1;
       error = NewChttp2ServerListener::Create(server, addr, args, &port_temp);
       if (!error.ok()) {
         error_list.push_back(error);
       } else {
-        if (*port_num == -1) {
-          *port_num = port_temp;
+        if (port_num == -1) {
+          port_num = port_temp;
         } else {
-          CHECK(*port_num == port_temp);
+          CHECK(port_num == port_temp);
         }
       }
     }
@@ -715,11 +712,9 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     }
     return absl::OkStatus();
   }();  // lambda end
-  if (!error.ok()) *port_num = 0;
-  return error;
+  if (!error.ok()) return error;
+  return port_num;
 }
-
-}  // namespace
 
 namespace experimental {
 
@@ -767,55 +762,6 @@ void PassiveListenerImpl::ListenerDestroyed() {
 
 }  // namespace experimental
 }  // namespace grpc_core
-
-int grpc_server_add_http2_port(grpc_server* server, const char* addr,
-                               grpc_server_credentials* creds) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_error_handle err;
-  grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
-  int port_num = 0;
-  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
-  grpc_core::ChannelArgs args = core_server->channel_args();
-  GRPC_TRACE_LOG(api, INFO) << "grpc_server_add_http2_port(server=" << server
-                            << ", addr=" << addr << ", creds=" << creds << ")";
-  // Create security context.
-  if (creds == nullptr) {
-    err = GRPC_ERROR_CREATE(
-        "No credentials specified for secure server port (creds==NULL)");
-    goto done;
-  }
-  // TODO(yashykt): Ideally, we would not want to have different behavior here
-  // based on whether a config fetcher is configured or not. Currently, we have
-  // a feature for SSL credentials reloading with an application callback that
-  // assumes that there is a single security connector. If we delay the creation
-  // of the security connector to after the creation of the listener(s), we
-  // would have potentially multiple security connectors which breaks the
-  // assumption for SSL creds reloading. When the API for SSL creds reloading is
-  // rewritten, we would be able to make this workaround go away by removing
-  // that assumption. As an immediate drawback of this workaround, config
-  // fetchers need to be registered before adding ports to the server.
-  if (core_server->config_fetcher() != nullptr) {
-    // Create channel args.
-    args = args.SetObject(creds->Ref());
-  } else {
-    sc = creds->create_security_connector(grpc_core::ChannelArgs());
-    if (sc == nullptr) {
-      err = GRPC_ERROR_CREATE(absl::StrCat(
-          "Unable to create secure server with credentials of type ",
-          creds->type().name()));
-      goto done;
-    }
-    args = args.SetObject(creds->Ref()).SetObject(sc);
-  }
-  // Add server port.
-  err = grpc_core::Chttp2ServerAddPort(core_server, addr, args, &port_num);
-done:
-  sc.reset(DEBUG_LOCATION, "server");
-  if (!err.ok()) {
-    LOG(ERROR) << grpc_core::StatusToString(err);
-  }
-  return port_num;
-}
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 void grpc_server_add_channel_from_fd(grpc_server* server, int fd,

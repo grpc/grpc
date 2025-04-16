@@ -273,72 +273,27 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
   }
 };
 
-absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(const char* target,
-                                                     const ChannelArgs& args) {
-  if (target == nullptr) {
-    LOG(ERROR) << "cannot create channel with NULL target name";
-    return absl::InvalidArgumentError("channel target is NULL");
+}  // namespace
+
+grpc_channel* CreateHttp2Channel(std::string target, const ChannelArgs& args) {
+  // Add channel args containing the client channel factory and channel
+  // credentials.
+  static Chttp2SecureClientChannelFactory* factory =
+      new Chttp2SecureClientChannelFactory();
+  auto r = ChannelCreate(target, args.SetObject(factory), GRPC_CLIENT_CHANNEL,
+                         nullptr);
+  if (r.ok()) {
+    return r->release()->c_ptr();
+  } else {
+    return grpc_lame_client_channel_create(
+        target.c_str(), static_cast<grpc_status_code>(r.status().code()),
+        absl::StrCat("Failed to create http2 channel to '", target,
+                     "':", r.status().message())
+            .c_str());
   }
-  return ChannelCreate(target, args, GRPC_CLIENT_CHANNEL, nullptr);
 }
 
-}  // namespace
 }  // namespace grpc_core
-
-namespace {
-
-grpc_core::Chttp2SecureClientChannelFactory* g_factory;
-gpr_once g_factory_once = GPR_ONCE_INIT;
-
-void FactoryInit() {
-  g_factory = new grpc_core::Chttp2SecureClientChannelFactory();
-}
-
-}  // namespace
-
-// Create a client channel:
-//   Asynchronously: - resolve target
-//                   - connect to it (trying alternatives as presented)
-//                   - perform handshakes
-grpc_channel* grpc_channel_create(const char* target,
-                                  grpc_channel_credentials* creds,
-                                  const grpc_channel_args* c_args) {
-  grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO)
-      << "grpc_channel_create(target=" << target << ", creds=" << (void*)creds
-      << ", args=" << (void*)c_args << ")";
-  grpc_channel* channel = nullptr;
-  grpc_error_handle error;
-  if (creds != nullptr) {
-    // Add channel args containing the client channel factory and channel
-    // credentials.
-    gpr_once_init(&g_factory_once, FactoryInit);
-    grpc_core::ChannelArgs args =
-        creds->update_arguments(grpc_core::CoreConfiguration::Get()
-                                    .channel_args_preconditioning()
-                                    .PreconditionChannelArgs(c_args)
-                                    .SetObject(creds->Ref())
-                                    .SetObject(g_factory));
-    // Create channel.
-    auto r = grpc_core::CreateChannel(target, args);
-    if (r.ok()) {
-      channel = r->release()->c_ptr();
-    } else {
-      error = absl_status_to_grpc_error(r.status());
-    }
-  }
-  if (channel == nullptr) {
-    intptr_t integer;
-    grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                           &integer)) {
-      status = static_cast<grpc_status_code>(integer);
-    }
-    channel = grpc_lame_client_channel_create(
-        target, status, "Failed to create client channel");
-  }
-  return channel;
-}
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
