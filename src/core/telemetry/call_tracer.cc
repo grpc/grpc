@@ -87,7 +87,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     explicit DelegatingClientCallAttemptTracer(
         std::vector<CallAttemptTracer*> tracers)
         : ClientCallTracer::CallAttemptTracer(
-              std::all_of(tracers.begin(), tracers.end(),
+              std::any_of(tracers.begin(), tracers.end(),
                           [](ClientCallTracer::CallAttemptTracer* p) {
                             return p->IsSampled();
                           })),
