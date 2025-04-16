@@ -320,7 +320,7 @@ PING_SYSTEM_TEST(TestPingCancel) {
   EXPECT_EQ(ping_system.CountPingInflight(), 1);
   EXPECT_FALSE(ping_system.PingRequested());
 
-  ping_system.CancelCallbacks(event_engine().get());
+  ping_system.CancelCallbacks();
   EXPECT_FALSE(ping_system.PingRequested());
 
   WaitForAllPendingWork();

@@ -71,10 +71,7 @@ class PingSystem {
         : event_engine_(event_engine) {}
     Promise<absl::Status> RequestPing(absl::AnyInvocable<void()> on_initiate);
     Promise<absl::Status> WaitForPingAck();
-    void CancelCallbacks(
-        grpc_event_engine::experimental::EventEngine* event_engine) {
-      ping_callbacks_.CancelAll(event_engine);
-    }
+    void CancelCallbacks() { ping_callbacks_.CancelAll(event_engine_.get()); }
     uint64_t StartPing() { return ping_callbacks_.StartPing(bitgen_); }
     bool PingRequested() { return ping_callbacks_.ping_requested(); }
     bool AckPing(uint64_t id,
@@ -141,10 +138,7 @@ class PingSystem {
   // cancel the promises that are waiting on the ping ack.
   // This should be called as part of closing the transport to free up any
   // memory in use by the ping callbacks.
-  auto CancelCallbacks(
-      grpc_event_engine::experimental::EventEngine* event_engine) {
-    ping_callbacks_.CancelCallbacks(event_engine);
-  }
+  void CancelCallbacks() { ping_callbacks_.CancelCallbacks(); }
 
   uint64_t StartPing() { return ping_callbacks_.StartPing(); }
   bool PingRequested() { return ping_callbacks_.PingRequested(); }
