@@ -26,7 +26,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "absl/random/random.h"
 
 namespace grpc_core {
 
@@ -63,9 +62,8 @@ Timestamp BdpEstimator::CompletePing() {
     stable_estimate_count_++;
     if (stable_estimate_count_ >= 2) {
       // if the ping estimate is steady, slowly ramp down the probe time
-      static thread_local absl::InsecureBitGen bitgen;
       inter_ping_delay_ += Duration::Milliseconds(
-          100 + absl::Uniform(absl::IntervalClosed, bitgen, 0, 100));
+          100 + SharedBitGen::Get().Uniform(100));
     }
   }
   if (start_inter_ping_delay != inter_ping_delay_) {

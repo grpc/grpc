@@ -19,7 +19,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/gethostname.h"
@@ -82,8 +81,7 @@ absl::StatusOr<std::string> ChooseServiceConfig(
     }
     // Check percentage, if specified.
     if (choice.percentage != -1) {
-      static thread_local absl::BitGen bitgen;
-      int random_pct = absl::Uniform(bitgen, 0, 100);
+      int random_pct = SharedBitGen::Get().Uniform(100);
       if (random_pct > choice.percentage || choice.percentage == 0) {
         continue;
       }
