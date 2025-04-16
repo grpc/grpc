@@ -53,11 +53,6 @@ class OpenTelemetryPluginImpl::ServerCallTracer
     return "";
   }
 
-  bool IsSampled() override {
-    // Not implemented
-    return false;
-  }
-
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
   void RecordSendInitialMetadata(

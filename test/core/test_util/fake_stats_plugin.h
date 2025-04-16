@@ -103,7 +103,6 @@ class FakeClientCallTracer : public ClientCallTracer {
     }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
-    bool IsSampled() override { return false; }
 
     const std::map<OptionalLabelKey, RefCountedStringValue>& GetOptionalLabels()
         const {
@@ -131,7 +130,6 @@ class FakeClientCallTracer : public ClientCallTracer {
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
-  bool IsSampled() override { return false; }
 
   FakeClientCallAttemptTracer* GetLastCallAttemptTracer() const {
     return call_attempt_tracers_.back().get();
@@ -194,7 +192,6 @@ class FakeServerCallTracer : public ServerCallTracer {
   std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
-  bool IsSampled() override { return false; }
 
  private:
   std::vector<std::string>* annotation_logger_;

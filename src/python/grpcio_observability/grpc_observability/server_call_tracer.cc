@@ -111,6 +111,7 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
   GenerateServerContext(
       tracing_enabled ? som.tracing_slice.as_string_view() : "",
       absl::StrCat("Recv.", method_), &context_);
+  if (context_.GetSpanContext().IsSampled()) set_sampled();
   registered_method_ =
       recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
           .value_or(nullptr) != nullptr;

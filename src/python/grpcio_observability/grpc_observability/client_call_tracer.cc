@@ -55,6 +55,7 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(
   GenerateClientContext(absl::StrCat("Sent.", method_),
                         absl::string_view(trace_id),
                         absl::string_view(parent_span_id), &context_);
+  if (context_.GetSpanContext().IsSampled()) set_sampled();
 }
 
 void PythonOpenCensusCallTracer::GenerateContext() {}

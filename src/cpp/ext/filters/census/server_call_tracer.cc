@@ -108,8 +108,6 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
 
   std::string SpanId() override { return context_.Context().span_id().ToHex(); }
 
-  bool IsSampled() override { return context_.Span().IsSampled(); }
-
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
   void RecordSendInitialMetadata(
@@ -216,6 +214,7 @@ void OpenCensusServerCallTracer::RecordReceivedInitialMetadata(
   GenerateServerContext(
       tracing_enabled ? sml.tracing_slice.as_string_view() : "",
       absl::StrCat("Recv.", method_), &context_);
+  if (context_.Span().IsSampled()) set_sampled();
   if (tracing_enabled) {
     grpc_core::SetContext<census_context>(
         reinterpret_cast<census_context*>(&context_));

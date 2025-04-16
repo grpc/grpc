@@ -77,8 +77,6 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
       return context_.Context().span_id().ToHex();
     }
 
-    bool IsSampled() override { return context_.Span().IsSampled(); }
-
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
@@ -140,8 +138,6 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
   }
 
   std::string SpanId() override { return context_.Context().span_id().ToHex(); }
-
-  bool IsSampled() override { return context_.Span().IsSampled(); }
 
   void GenerateContext();
   OpenCensusCallAttemptTracer* StartNewAttempt(

@@ -118,6 +118,7 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
       arena_allocated_(arena_allocated),
       context_(parent_->CreateCensusContextForCallAttempt()),
       start_time_(absl::Now()) {
+  if (context_.Span().IsSampled()) set_sampled();
   if (parent_->tracing_enabled_) {
     context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
     context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
@@ -323,6 +324,7 @@ OpenCensusCallTracer::OpenCensusCallTracer(grpc_core::Slice path,
   GenerateClientContext(tracing_enabled_ ? absl::StrCat("Sent.", method_) : "",
                         &context_,
                         (parent_context == nullptr) ? nullptr : parent_context);
+  if (context_.Span().IsSampled()) set_sampled();
 }
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {

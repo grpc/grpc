@@ -78,11 +78,18 @@ class CallTracerAnnotationInterface {
   virtual void RecordAnnotation(const Annotation& annotation) = 0;
   virtual std::string TraceId() = 0;
   virtual std::string SpanId() = 0;
-  virtual bool IsSampled() = 0;
   // Indicates whether this tracer is a delegating tracer or not.
   // `DelegatingClientCallTracer`, `DelegatingClientCallAttemptTracer` and
   // `DelegatingServerCallTracer` are the only delegating call tracers.
   virtual bool IsDelegatingTracer() { return false; }
+
+  bool IsSampled() { return is_sampled_; }
+
+ protected:
+  void set_sampled() { is_sampled_ = true; }
+
+ private:
+  bool is_sampled_ = false;
 };
 
 // The base class for CallAttemptTracer and ServerCallTracer.

@@ -65,11 +65,6 @@ class OpenTelemetryPluginImpl::ClientCallTracer
       return "";
     }
 
-    bool IsSampled() override {
-      // Not implemented
-      return false;
-    }
-
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
@@ -137,11 +132,6 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   std::string SpanId() override {
     // Not implemented
     return "";
-  }
-
-  bool IsSampled() override {
-    // Not implemented
-    return false;
   }
 
   CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override;

@@ -59,7 +59,6 @@ class Chttp2CallTracerWrapper final : public CallTracerInterface {
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
-  bool IsSampled() override { return false; }
 
  private:
   grpc_chttp2_stream* stream_;

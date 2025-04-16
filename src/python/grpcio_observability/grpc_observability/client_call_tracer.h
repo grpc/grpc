@@ -49,8 +49,6 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
           absl::string_view(context_.GetSpanContext().SpanId()));
     }
 
-    bool IsSampled() override { return context_.GetSpanContext().IsSampled(); }
-
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
@@ -123,8 +121,6 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     return absl::BytesToHexString(
         absl::string_view(context_.GetSpanContext().SpanId()));
   }
-
-  bool IsSampled() override { return context_.GetSpanContext().IsSampled(); }
 
   void GenerateContext();
   PythonOpenCensusCallAttemptTracer* StartNewAttempt(

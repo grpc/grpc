@@ -146,7 +146,6 @@ class FakeCallTracer : public ClientCallTracer {
     }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
-    bool IsSampled() override { return false; }
     void RecordSendInitialMetadata(
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
@@ -210,7 +209,6 @@ class FakeCallTracer : public ClientCallTracer {
   ~FakeCallTracer() override {}
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
-  bool IsSampled() override { return false; }
 
   FakeCallAttemptTracer* StartNewAttempt(
       bool /*is_transparent_retry*/) override {
@@ -275,7 +273,6 @@ class FakeServerCallTracer : public ServerCallTracer {
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
-  bool IsSampled() override { return false; }
 
  private:
   std::shared_ptr<TestState> test_state_;

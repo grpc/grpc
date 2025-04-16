@@ -71,8 +71,6 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
 
   std::string SpanId() override;
 
-  bool IsSampled() override;
-
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
   // It's not a requirement to have this metric thus left unimplemented.

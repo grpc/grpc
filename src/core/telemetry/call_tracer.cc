@@ -86,6 +86,11 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     explicit DelegatingClientCallAttemptTracer(
         std::vector<CallAttemptTracer*> tracers)
         : tracers_(std::move(tracers)) {
+      if (std::any_of(
+              tracers_.begin(), tracers_.end(),
+              [](CallAttemptTracer* tracer) { return tracer->IsSampled(); })) {
+        set_sampled();
+      }
       DCHECK(!tracers_.empty());
     }
     ~DelegatingClientCallAttemptTracer() override {}
@@ -180,7 +185,6 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     }
     std::string TraceId() override { return tracers_[0]->TraceId(); }
     std::string SpanId() override { return tracers_[0]->SpanId(); }
-    bool IsSampled() override { return tracers_[0]->IsSampled(); }
     bool IsDelegatingTracer() override { return true; }
 
    private:
@@ -191,7 +195,13 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     std::vector<CallAttemptTracer*> tracers_;
   };
   explicit DelegatingClientCallTracer(ClientCallTracer* tracer)
-      : tracers_{tracer} {}
+      : tracers_{tracer} {
+    if (std::any_of(
+            tracers_.begin(), tracers_.end(),
+            [](ClientCallTracer* tracer) { return tracer->IsSampled(); })) {
+      set_sampled();
+    }
+  }
   ~DelegatingClientCallTracer() override {}
   CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override {
     std::vector<CallAttemptTracer*> attempt_tracers;
@@ -217,7 +227,6 @@ class DelegatingClientCallTracer : public ClientCallTracer {
   }
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }
-  bool IsSampled() override { return tracers_[0]->IsSampled(); }
   bool IsDelegatingTracer() override { return true; }
 
   // There is no additional synchronization needed since filters/interceptors
@@ -233,7 +242,13 @@ class DelegatingClientCallTracer : public ClientCallTracer {
 class DelegatingServerCallTracer : public ServerCallTracer {
  public:
   explicit DelegatingServerCallTracer(ServerCallTracer* tracer)
-      : tracers_{tracer} {}
+      : tracers_{tracer} {
+    if (std::any_of(
+            tracers_.begin(), tracers_.end(),
+            [](ServerCallTracer* tracer) { return tracer->IsSampled(); })) {
+      set_sampled();
+    }
+  }
   ~DelegatingServerCallTracer() override {}
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override {
@@ -316,7 +331,6 @@ class DelegatingServerCallTracer : public ServerCallTracer {
   std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }
-  bool IsSampled() override { return tracers_[0]->IsSampled(); }
   bool IsDelegatingTracer() override { return true; }
 
   void AddTracer(ServerCallTracer* tracer) { tracers_.push_back(tracer); }
