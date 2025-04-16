@@ -33,7 +33,6 @@
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "testing/base/public/gunit.h"
 #include "testing/fuzzing/fuzztest.h"
 
 namespace grpc_core {
