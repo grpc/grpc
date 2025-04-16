@@ -81,6 +81,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 
@@ -726,7 +727,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       }
       if (rc == nullptr) {
         if (server_->pending_backlog_protector_.Reject(pending_promises_.size(),
-                                                       server_->bitgen_)) {
+                                                       SharedBitGen())) {
           return Immediate(absl::ResourceExhaustedError(
               "Too many pending requests for this server"));
         }
@@ -1251,7 +1252,8 @@ grpc_error_handle Server::SetupTransport(
     // TODO(ctiller): post-v3-transition make this method take an
     // OrphanablePtr<ServerTransport> directly.
     OrphanablePtr<ServerTransport> t(transport->server_transport());
-    auto destination = MakeCallDestination(args.SetObject(transport));
+    auto destination = MakeCallDestination(
+        args.SetObject(transport).SetObject<channelz::BaseNode>(socket_node));
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
@@ -1269,7 +1271,9 @@ grpc_error_handle Server::SetupTransport(
   } else {
     CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
-        "", args.SetObject(transport), GRPC_SERVER_CHANNEL);
+        "",
+        args.SetObject(transport).SetObject<channelz::BaseNode>(socket_node),
+        GRPC_SERVER_CHANNEL);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }

@@ -38,7 +38,6 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
@@ -65,11 +64,13 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
@@ -126,7 +127,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                                           t->ping_callbacks.pings_inflight()),
       [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
         t->ping_rate_policy.SentPing();
-        const uint64_t id = t->ping_callbacks.StartPing(t->bitgen);
+        grpc_core::SharedBitGen g;
+        const uint64_t id = t->ping_callbacks.StartPing(g);
         t->http2_ztrace_collector.Append(
             grpc_core::H2PingTrace<false>{false, id});
         grpc_slice_buffer_add(t->outbuf.c_slice_buffer(),

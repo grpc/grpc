@@ -41,6 +41,13 @@ cleanup::job::cleanup_td() {
   cleanup::run_clean "$1" --mode=td
 }
 
+cleanup::job::cleanup_td_dualstack() {
+  cleanup::run_clean "$1" \
+    --mode=td_no_legacy \
+    --td_resource_prefixes='psm-ds' \
+    --flagfile=config/common-dualstack.cfg
+}
+
 #######################################
 # The PSM_LB cluster is used by k8s_lb tests.
 # The keep hours is reduced to 6.
@@ -83,6 +90,18 @@ cleanup::job::cleanup_cluster_security() {
 cleanup::job::cleanup_cluster_gamma() {
   cleanup::activate_cluster GKE_CLUSTER_PSM_CSM
   cleanup::run_clean "$1" --mode=k8s
+}
+
+#######################################
+# The Dualstack cluster is used by the dualstack test suites.
+#######################################
+cleanup::job::cleanup_cluster_dualstack() {
+  cleanup::activate_cluster GKE_CLUSTER_DUALSTACK
+  cleanup::run_clean "$1" \
+    --mode=k8s \
+    --server_prefixes='psm-ds' \
+    --client_prefixes='psm-ds' \
+    --flagfile=config/common-dualstack.cfg
 }
 
 #######################################
@@ -135,11 +154,13 @@ main() {
   declare -a cleanup_jobs
   cleanup_jobs=(
     "cleanup_td"
+    "cleanup_td_dualstack"
     "cleanup_cluster_lb_primary"
     "cleanup_cluster_lb_secondary"
     "cleanup_cluster_security"
     "cleanup_cluster_url_map"
     "cleanup_cluster_gamma"
+    "cleanup_cluster_dualstack"
   )
   for job_name in "${cleanup_jobs[@]}"; do
     echo "-------------------- Starting job ${job_name} --------------------"
