@@ -181,6 +181,8 @@ int grpc_sockaddr_is_wildcard1(const grpc_resolved_address* resolved_addr,
   grpc_resolved_address addr4_normalized;
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
     resolved_addr = &addr4_normalized;
+  } else {
+    return 0;
   }
   addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   if (addr->sa_family == GRPC_AF_INET) {
