@@ -33,7 +33,7 @@ namespace grpc_core {
 class Chttp2CallTracerWrapper final : public CallTracerInterface {
  public:
   explicit Chttp2CallTracerWrapper(grpc_chttp2_stream* stream)
-      : stream_(stream) {}
+      : CallTracerInterface(false), stream_(stream) {}
 
   void RecordIncomingBytes(
       const TransportByteSize& transport_byte_size) override;
@@ -59,7 +59,6 @@ class Chttp2CallTracerWrapper final : public CallTracerInterface {
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
-  bool IsSampled() override { return false; }
 
  private:
   grpc_chttp2_stream* stream_;

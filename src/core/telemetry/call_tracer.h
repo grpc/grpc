@@ -51,6 +51,9 @@ namespace grpc_core {
 // The base class for all tracer implementations.
 class CallTracerAnnotationInterface {
  public:
+  explicit CallTracerAnnotationInterface(bool is_sampled)
+      : is_sampled_(is_sampled) {}
+
   // Enum associated with types of Annotations.
   enum class AnnotationType {
     kMetadataSizes,
@@ -78,17 +81,22 @@ class CallTracerAnnotationInterface {
   virtual void RecordAnnotation(const Annotation& annotation) = 0;
   virtual std::string TraceId() = 0;
   virtual std::string SpanId() = 0;
-  virtual bool IsSampled() = 0;
   // Indicates whether this tracer is a delegating tracer or not.
   // `DelegatingClientCallTracer`, `DelegatingClientCallAttemptTracer` and
   // `DelegatingServerCallTracer` are the only delegating call tracers.
   virtual bool IsDelegatingTracer() { return false; }
+
+  bool IsSampled() const { return is_sampled_; }
+
+ private:
+  const bool is_sampled_;
 };
 
 // The base class for CallAttemptTracer and ServerCallTracer.
 // TODO(yashykt): What's a better name for this?
 class CallTracerInterface : public CallTracerAnnotationInterface {
  public:
+  using CallTracerAnnotationInterface::CallTracerAnnotationInterface;
   ~CallTracerInterface() override {}
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
@@ -134,11 +142,14 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
 // on the ClientCallTracer object.
 class ClientCallTracer : public CallTracerAnnotationInterface {
  public:
+  using CallTracerAnnotationInterface::CallTracerAnnotationInterface;
   // Interface for a tracer that records activities on a particular call
   // attempt.
   // (A single RPC can have multiple attempts due to retry/hedging policies or
   // as transparent retry attempts.)
   class CallAttemptTracer : public CallTracerInterface {
+    using CallTracerInterface::CallTracerInterface;
+
    public:
     // Note that not all of the optional label keys are exposed as public API.
     enum class OptionalLabelKey : std::uint8_t {
@@ -185,6 +196,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
 // Interface for a tracer that records activities on a server call.
 class ServerCallTracer : public CallTracerInterface {
  public:
+  using CallTracerInterface::CallTracerInterface;
   ~ServerCallTracer() override {}
   // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
   // and `RecordEnd` should be moved into CallTracerInterface.
