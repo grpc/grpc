@@ -147,8 +147,8 @@ void DeregisterEventEngineForFork(PosixEventEngine* engine) {
   fork_supports_->erase(engine);
 }
 
-#if defined(GRPC_ENABLE_FORK_SUPPORT) && GRPC_ARES == 1 && \
-    defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+#if GRPC_ARES && GRPC_POSIX_SOCKET_ARES_EV_DRIVER && \
+    GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 void RegisterResolver(
     std::vector<std::weak_ptr<AresResolver::ReinitHandle>>* resolver_handles,
@@ -164,7 +164,8 @@ void RegisterResolver(
   resolver_handles->erase(new_end, resolver_handles->end());
 }
 
-#endif
+#endif  // GRPC_ARES && GRPC_POSIX_SOCKET_ARES_EV_DRIVER
+        //   && GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 #else  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
@@ -175,6 +176,8 @@ void DeregisterEventEngineForFork(PosixEventEngine* /* engine */) {}
 #endif  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 }  // namespace
+
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 PosixEventEngine::PollingCycle::PollingCycle(
     PosixEnginePollerManager* poller_manager)
@@ -215,6 +218,8 @@ void PosixEventEngine::PollingCycle::PollerWorkInternal() {
   }
   cond_.SignalAll();
 }
+
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 void AsyncConnect::Start(EventEngine::Duration timeout) {
   on_writable_ = PosixEngineClosure::ToPermanentClosure(
@@ -370,6 +375,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     const EventEngine::ResolvedAddress& addr,
     const PosixTcpOptions& tcp_options, MemoryAllocator memory_allocator,
     EventEngine::Duration timeout) {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   PosixError err;
   int connect_errno;
   do {
@@ -437,6 +443,9 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
   // Start asynchronous connect and return the connection id.
   ac->Start(timeout);
   return {static_cast<intptr_t>(connection_id), 0};
+#else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  grpc_core::Crash("Polling is not available on this platform");
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
 void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
@@ -506,7 +515,6 @@ PosixEventEngine::MakeTestOnlyPosixEventEngine(
   return engine;
 }
 
-#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
     : grpc_core::KeepsGrpcInitialized(
           /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
@@ -534,8 +542,6 @@ PosixEventEngine::PosixEventEngine()
 {
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
-
-#endif  // GRPC_POSIX_SOCKET_TCP
 
 struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
@@ -654,6 +660,7 @@ PosixEventEngine::GetDNSResolver(
   // configuration.
   if (ShouldUseAresDnsResolver()) {
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
     GRPC_TRACE_LOG(event_engine_dns, INFO)
         << "PosixEventEngine::" << this << " creating AresResolver";
     auto ares_resolver = AresResolver::CreateAresResolver(
@@ -670,6 +677,9 @@ PosixEventEngine::GetDNSResolver(
 #endif  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     return std::make_unique<PosixEventEngine::PosixDNSResolver>(
         std::move(*ares_resolver));
+#else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+    grpc_core::Crash("Can not create CAres resolver with disabled poller");
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   }
   GRPC_TRACE_LOG(event_engine_dns, INFO)
@@ -856,9 +866,13 @@ PosixEventEngine::CreatePosixListener(
 #if GRPC_POSIX_SOCKET_TCP && GRPC_ENABLE_FORK_SUPPORT && \
     GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+
 PosixEventPoller* PosixEventEngine::PollerForTests() const {
   return poller_manager_.Poller();
 }
+
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
@@ -881,12 +895,16 @@ void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
 #endif
   executor_->PostFork();
   timer_manager_.PostFork();
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   SchedulePoller();
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
 void PosixEventEngine::BeforeFork() {
   timer_manager_.PrepareFork();
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   ResetPollCycle();
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   executor_->PrepareFork();
 }
 

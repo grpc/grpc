@@ -259,7 +259,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
     defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   std::vector<std::weak_ptr<AresResolver::ReinitHandle>> resolver_handles_
       ABSL_GUARDED_BY(mu_);
-#endif  // defined(GRPC_ENABLE_FORK_SUPPORT) && GRPC_ARES == 1 && \
+#endif  // defined(GRPC_ENABLE_FORK_SUPPORT) && GRPC_ARES == 1 &&
         // defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   std::shared_ptr<ThreadPool> executor_;
   TimerManager timer_manager_;
@@ -292,7 +292,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   // Ensures there's ever only one of these.
   std::optional<PollingCycle> polling_cycle_ ABSL_GUARDED_BY(&mu_);
 
-#endif  // defined(GRPC_POSIX_SOCKET_TCP) && \
+#endif  // defined(GRPC_POSIX_SOCKET_TCP) &&
         // !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
 };
 
