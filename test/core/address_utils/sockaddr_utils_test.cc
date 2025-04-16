@@ -138,10 +138,12 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
   grpc_resolved_address wild_mapped;
   ASSERT_TRUE(grpc_sockaddr_to_v4mapped(&wild4, &wild_mapped));
 
+
   int port = -1;
-  ASSERT_EQ(grpc_sockaddr_is_wildcard_dummy(&wild_mapped, &port), 1);
-  port = -1;
-  ASSERT_EQ(grpc_sockaddr_is_wildcard1(&wild_mapped, &port), 1);
+  int ret = 0;
+  auto rc = grpc_sockaddr_is_wildcard1(&wild_mapped, &port, &ret);
+  LOG(ERROR)<<"Return : "<<ret;
+  ASSERT_EQ(rc, 1);
   port = -1;
   ASSERT_EQ(grpc_sockaddr_is_wildcard(&wild_mapped, &port), 1);
   

@@ -158,9 +158,10 @@ int grpc_sockaddr_to_v4mapped(const grpc_resolved_address* resolved_addr,
   return 0;
 }
 
-int grpc_sockaddr_is_wildcard_dummy(const grpc_resolved_address* resolved_addr,
-                                    int* port_out) {
+int grpc_sockaddr_is_wildcard1(const grpc_resolved_address* resolved_addr,
+                              int* port_out, int *ret) {
   const grpc_sockaddr* addr;
+  *ret = 0;
   grpc_resolved_address addr4_normalized;
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
     resolved_addr = &addr4_normalized;
@@ -171,7 +172,8 @@ int grpc_sockaddr_is_wildcard_dummy(const grpc_resolved_address* resolved_addr,
     const grpc_sockaddr_in* addr4 =
         reinterpret_cast<const grpc_sockaddr_in*>(addr);
     if (addr4->sin_addr.s_addr != 0) {
-      return 1;
+      *ret = 2;
+      return 0;
     }
     *port_out = grpc_ntohs(addr4->sin_port);
     return 1;
@@ -182,36 +184,14 @@ int grpc_sockaddr_is_wildcard_dummy(const grpc_resolved_address* resolved_addr,
     int i;
     for (i = 0; i < 16; i++) {
       if (addr6->sin6_addr.s6_addr[i] != 0) {
+        *ret = 3;
         return 0;
       }
     }
     *port_out = grpc_ntohs(addr6->sin6_port);
-    return 0;
-  } else {
-    return 1;
-  }
-}
-
-int grpc_sockaddr_is_wildcard1(const grpc_resolved_address* resolved_addr,
-                               int* port_out) {
-  const grpc_sockaddr* addr;
-  grpc_resolved_address addr4_normalized;
-  if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
-    resolved_addr = &addr4_normalized;
-  } else {
-    return 1;
-  }
-  addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
-  if (addr->sa_family == GRPC_AF_INET) {
-    // Check for 0.0.0.0
-    const grpc_sockaddr_in* addr4 =
-        reinterpret_cast<const grpc_sockaddr_in*>(addr);
-    if (addr4->sin_addr.s_addr != 0) {
-      return 1;
-    }
-    *port_out = grpc_ntohs(addr4->sin_port);
     return 1;
   } else {
+    *ret = 4;
     return 0;
   }
 }

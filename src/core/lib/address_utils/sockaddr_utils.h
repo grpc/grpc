@@ -42,8 +42,7 @@ int grpc_sockaddr_to_v4mapped(const grpc_resolved_address* addr,
 
 // If addr is ::, 0.0.0.0, or ::ffff:0.0.0.0, writes the port number to
 // port_out (if not NULL) and returns true, otherwise returns false.
-int grpc_sockaddr_is_wildcard_dummy(const grpc_resolved_address* addr, int* port_out);
-int grpc_sockaddr_is_wildcard1(const grpc_resolved_address* addr, int* port_out);
+int grpc_sockaddr_is_wildcard1(const grpc_resolved_address* addr, int* port_out, int *ret);
 int grpc_sockaddr_is_wildcard(const grpc_resolved_address* addr, int* port_out);
 
 // Writes 0.0.0.0:port and [::]:port to separate sockaddrs.
