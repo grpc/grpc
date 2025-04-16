@@ -130,7 +130,7 @@
   uses_polling: true
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2025/09/31
+  expiry: 2025/09/30
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: keep_alive_ping_timer_batch
