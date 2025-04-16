@@ -64,6 +64,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
@@ -298,7 +299,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         if (frame_header.ok()) {
           if (frame_header->header.type != FrameType::kSettings) {
             frame_header = absl::InternalError("Not a settings frame");
-          } else if (frame_header->payload_connection_id != 0) {
+          } else if (frame_header->payload_tag != 0) {
             frame_header = absl::InternalError("Unexpected connection id");
           } else if (frame_header->header.stream_id != 0) {
             frame_header = absl::InternalError("Unexpected stream id");
@@ -378,7 +379,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             config.MakeTcpFrameTransportOptions(),
             std::move(self->connection_->endpoint_),
             config.TakePendingDataEndpoints(),
-            self->connection_->args().GetObjectRef<EventEngine>());
+            MakeRefCounted<TransportContext>(self->connection_->args()));
         return self->connection_->listener_->server_->SetupTransport(
             new ChaoticGoodServerTransport(self->connection_->args(),
                                            std::move(frame_transport),

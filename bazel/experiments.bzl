@@ -30,6 +30,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
+    "event_engine_secure_endpoint": "event_engine_secure_endpoint",
     "free_large_allocator": "free_large_allocator",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
@@ -46,7 +47,7 @@ EXPERIMENT_ENABLES = {
     "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
-    "server_listener": "server_listener",
+    "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
@@ -59,6 +60,7 @@ EXPERIMENT_POLLERS = [
     "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
+    "event_engine_secure_endpoint",
 ]
 
 EXPERIMENTS = {
@@ -71,6 +73,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
+                "event_engine_secure_endpoint",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
@@ -93,9 +96,15 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "promise_test": [
+                "sleep_promise_exec_ctx_removal",
+            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "secure_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "xds_end2end_test": [
                 "error_flatten",
@@ -111,7 +120,6 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
-                "server_listener",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -124,9 +132,6 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
-            ],
-            "xds_end2end_test": [
-                "server_listener",
             ],
         },
     },
@@ -139,6 +144,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
+                "event_engine_secure_endpoint",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
@@ -161,63 +167,15 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "resource_quota_test": [
-                "free_large_allocator",
-                "unconstrained_max_quota_buffer_size",
-            ],
-            "xds_end2end_test": [
-                "error_flatten",
-            ],
-        },
-        "on": {
-            "core_end2end_test": [
-                "chaotic_good_framing_layer",
-                "event_engine_for_all_other_endpoints",
-                "posix_ee_skip_grpc_init",
-                "server_listener",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
-            ],
-            "xds_end2end_test": [
-                "server_listener",
-            ],
-        },
-    },
-    "posix": {
-        "dbg": {
-        },
-        "off": {
-            "core_end2end_test": [
-                "callv3_client_auth_filter",
-                "error_flatten",
-                "event_engine_dns_non_client_channel",
-                "event_engine_fork",
-                "local_connector_secure",
-                "pollset_alternative",
-                "retry_in_callv3",
-            ],
-            "cpp_end2end_test": [
-                "error_flatten",
-            ],
-            "endpoint_test": [
-                "tcp_frame_size_tuning",
-                "tcp_rcv_lowat",
-            ],
-            "error_tests": [
-                "error_flatten",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
-            ],
-            "flow_control_test": [
-                "multiping",
-                "tcp_frame_size_tuning",
-                "tcp_rcv_lowat",
+            "promise_test": [
+                "sleep_promise_exec_ctx_removal",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "secure_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "xds_end2end_test": [
                 "error_flatten",
@@ -233,7 +191,6 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
-                "server_listener",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -247,8 +204,76 @@ EXPERIMENTS = {
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
+        },
+    },
+    "posix": {
+        "dbg": {
+        },
+        "off": {
+            "core_end2end_test": [
+                "callv3_client_auth_filter",
+                "error_flatten",
+                "event_engine_dns_non_client_channel",
+                "event_engine_fork",
+                "event_engine_secure_endpoint",
+                "local_connector_secure",
+                "pollset_alternative",
+                "retry_in_callv3",
+            ],
+            "cpp_end2end_test": [
+                "error_flatten",
+            ],
+            "endpoint_test": [
+                "tcp_frame_size_tuning",
+                "tcp_rcv_lowat",
+            ],
+            "error_tests": [
+                "error_flatten",
+            ],
+            "event_engine_fork_test": [
+                "event_engine_fork",
+            ],
+            "flow_control_test": [
+                "multiping",
+                "tcp_frame_size_tuning",
+                "tcp_rcv_lowat",
+            ],
+            "promise_test": [
+                "sleep_promise_exec_ctx_removal",
+            ],
+            "resource_quota_test": [
+                "free_large_allocator",
+                "unconstrained_max_quota_buffer_size",
+            ],
+            "secure_endpoint_test": [
+                "event_engine_secure_endpoint",
+            ],
             "xds_end2end_test": [
-                "server_listener",
+                "error_flatten",
+            ],
+        },
+        "on": {
+            "cancel_ares_query_test": [
+                "event_engine_dns",
+            ],
+            "core_end2end_test": [
+                "chaotic_good_framing_layer",
+                "event_engine_client",
+                "event_engine_for_all_other_endpoints",
+                "event_engine_listener",
+                "posix_ee_skip_grpc_init",
+            ],
+            "cpp_end2end_test": [
+                "posix_ee_skip_grpc_init",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
+            ],
+            "event_engine_listener_test": [
+                "event_engine_listener",
+            ],
+            "resolver_component_tests_runner_invoker": [
+                "event_engine_dns",
             ],
         },
     },

@@ -22,29 +22,33 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
 struct TcpFrameHeader {
-  // Frame header size is fixed to 12 bytes.
-  enum { kFrameHeaderSize = 12 };
+  // Frame header size is fixed.
+  enum { kFrameHeaderSize = 16 };
 
   FrameHeader header;
-  uint32_t payload_connection_id = 0;
+  // if 0 ==> this frames payload will be on the control channel
+  // otherwise ==> a data frame will be sent on a data channel with a matching
+  // tag.
+  uint64_t payload_tag = 0;
 
-  // Parses a frame header from a buffer of 12 bytes. All 12 bytes are consumed.
+  // Parses a frame header from a buffer of kFrameHeaderSize bytes. All
+  // kFrameHeaderSize bytes are consumed.
   static absl::StatusOr<TcpFrameHeader> Parse(const uint8_t* data);
-  // Serializes a frame header into a buffer of 12 bytes.
+  // Serializes a frame header into a buffer of kFrameHeaderSize bytes.
   void Serialize(uint8_t* data) const;
 
   // Report contents as a string
   std::string ToString() const;
 
   bool operator==(const TcpFrameHeader& h) const {
-    return header == h.header &&
-           payload_connection_id == h.payload_connection_id;
+    return header == h.header && payload_tag == h.payload_tag;
   }
 
   // Required padding to maintain alignment.
@@ -66,15 +70,14 @@ class TcpFrameTransport final : public FrameTransport {
     bool enable_tracing = false;
   };
 
-  TcpFrameTransport(
-      Options options, PromiseEndpoint control_endpoint,
-      std::vector<PendingConnection> pending_data_endpoints,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+  TcpFrameTransport(Options options, PromiseEndpoint control_endpoint,
+                    std::vector<PendingConnection> pending_data_endpoints,
+                    TransportContextPtr ctx);
 
   void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
              RefCountedPtr<FrameTransportSink> sink) override;
   void Orphan() override;
+  TransportContextPtr ctx() override { return ctx_; }
 
  private:
   auto WriteFrame(const FrameInterface& frame);
@@ -85,10 +88,12 @@ class TcpFrameTransport final : public FrameTransport {
   template <typename Promise>
   auto UntilClosed(Promise promise);
 
+  const TransportContextPtr ctx_;
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
   const Options options_;
   InterActivityLatch<void> closed_;
+  uint64_t next_payload_tag_ = 1;
 };
 
 }  // namespace chaotic_good

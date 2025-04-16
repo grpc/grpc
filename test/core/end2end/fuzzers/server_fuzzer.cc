@@ -30,6 +30,7 @@
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/env.h"
+#include "src/core/util/notification.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
@@ -41,11 +42,14 @@
 namespace grpc_core {
 namespace testing {
 
+using grpc_event_engine::experimental::FuzzingEventEngine;
+
 class ServerFuzzer final : public BasicFuzzer {
  public:
   explicit ServerFuzzer(
       const fuzzer_input::Msg& msg,
-      absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
+      absl::FunctionRef<void(FuzzingEventEngine*, grpc_server*, int,
+                             const ChannelArgs&)>
           server_setup)
       : BasicFuzzer(msg.event_engine_actions()) {
     ExecCtx exec_ctx;
@@ -53,7 +57,7 @@ class ServerFuzzer final : public BasicFuzzer {
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server_, "/reg", nullptr, {}, 0);
     server_setup(
-        server_, 1234,
+        engine().get(), server_, 1234,
         CoreConfiguration::Get()
             .channel_args_preconditioning()
             .PreconditionChannelArgs(
@@ -91,10 +95,10 @@ class ServerFuzzer final : public BasicFuzzer {
   grpc_server* server_ = grpc_server_create(nullptr, nullptr);
 };
 
-void RunServerFuzzer(
-    const fuzzer_input::Msg& msg,
-    absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
-        server_setup) {
+void RunServerFuzzer(const fuzzer_input::Msg& msg,
+                     absl::FunctionRef<void(FuzzingEventEngine*, grpc_server*,
+                                            int, const ChannelArgs&)>
+                         server_setup) {
   if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
     return;  // Not supported without event engine
   }
@@ -110,8 +114,8 @@ auto ParseTestProto(const std::string& proto) {
 }
 
 void ChaoticGood(fuzzer_input::Msg msg) {
-  RunServerFuzzer(msg, [](grpc_server* server, int port_num,
-                          const ChannelArgs& channel_args) {
+  RunServerFuzzer(msg, [](FuzzingEventEngine* engine, grpc_server* server,
+                          int port_num, const ChannelArgs& channel_args) {
     ExecCtx exec_ctx;
     auto* listener = new chaotic_good::ChaoticGoodServerListener(
         Server::FromC(server), channel_args, [next = uint64_t(0)]() mutable {
@@ -132,26 +136,40 @@ FUZZ_TEST(ServerFuzzers, ChaoticGood)
         "config_vars", AnyConfigVars()));
 
 void Chttp2(fuzzer_input::Msg msg) {
-  RunServerFuzzer(
-      msg, [](grpc_server* server, int port_num, const ChannelArgs&) {
-        auto* creds = grpc_insecure_server_credentials_create();
-        grpc_server_add_http2_port(
-            server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
-        grpc_server_credentials_release(creds);
-      });
+  RunServerFuzzer(msg, [](FuzzingEventEngine* engine, grpc_server* server,
+                          int port_num, const ChannelArgs&) {
+    auto* creds = grpc_insecure_server_credentials_create();
+    Notification done_adding_port;
+    engine->Run([&]() {
+      grpc_server_add_http2_port(
+          server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
+      done_adding_port.Notify();
+    });
+    while (!done_adding_port.HasBeenNotified()) {
+      engine->Tick(Duration::Seconds(1));
+    };
+    grpc_server_credentials_release(creds);
+  });
 }
 FUZZ_TEST(ServerFuzzers, Chttp2)
     .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
         "config_vars", AnyConfigVars()));
 
 void Chttp2FakeSec(fuzzer_input::Msg msg) {
-  RunServerFuzzer(
-      msg, [](grpc_server* server, int port_num, const ChannelArgs&) {
-        auto* creds = grpc_fake_transport_security_server_credentials_create();
-        grpc_server_add_http2_port(
-            server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
-        grpc_server_credentials_release(creds);
-      });
+  RunServerFuzzer(msg, [](FuzzingEventEngine* engine, grpc_server* server,
+                          int port_num, const ChannelArgs&) {
+    auto* creds = grpc_fake_transport_security_server_credentials_create();
+    Notification done_adding_port;
+    engine->Run([&]() {
+      grpc_server_add_http2_port(
+          server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
+      done_adding_port.Notify();
+    });
+    while (!done_adding_port.HasBeenNotified()) {
+      engine->Tick(Duration::Seconds(1));
+    }
+    grpc_server_credentials_release(creds);
+  });
 }
 FUZZ_TEST(ServerFuzzers, Chttp2FakeSec)
     .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(

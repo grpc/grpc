@@ -21,6 +21,7 @@ licenses(["notice"])
 
 grpc_cc_library(
     name = "test_handshake",
+    testonly = True,
     srcs = ["test_handshake.cc"],
     hdrs = ["test_handshake.h"],
     deps = [
@@ -159,6 +160,7 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,
+    tags = ["secure_endpoint_test"],
     deps = [
         "//:gpr",
         "//:grpc",

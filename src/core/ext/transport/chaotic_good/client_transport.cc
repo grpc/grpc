@@ -219,16 +219,16 @@ void ChaoticGoodClientTransport::StreamDispatch::StopConnectivityWatch(
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     const ChannelArgs& args, OrphanablePtr<FrameTransport> frame_transport,
     MessageChunker message_chunker)
-    : event_engine_(
-          args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+    : ctx_(frame_transport->ctx()),
       allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
       message_chunker_(message_chunker),
       frame_transport_(std::move(frame_transport)) {
+  CHECK(ctx_ != nullptr);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine_.get());
+      ctx_->event_engine.get());
   party_ = Party::Make(std::move(party_arena));
   MpscReceiver<Frame> outgoing_frames{8};
   outgoing_frames_ = outgoing_frames.MakeSender();

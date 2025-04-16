@@ -53,6 +53,8 @@ static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
 
 namespace grpc_core {
 
+static Http2ZTraceCollector* ztrace_collector = new Http2ZTraceCollector();
+
 class FakeCallTracer final : public CallTracerInterface {
  public:
   void RecordIncomingBytes(
@@ -72,9 +74,7 @@ class FakeCallTracer final : public CallTracerInterface {
   void RecordReceivedDecompressedMessage(
       const Message& recv_decompressed_message) override {}
   void RecordCancel(grpc_error_handle cancel_error) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   void RecordAnnotation(absl::string_view annotation) override {}
   void RecordAnnotation(const Annotation& annotation) override {}
   std::string TraceId() override { return ""; }
@@ -116,12 +116,8 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   while (state.KeepRunning()) {
     c.EncodeHeaders(
         grpc_core::HPackCompressor::EncodeHeaderOptions{
-            static_cast<uint32_t>(state.iterations()),
-            true,
-            false,
-            size_t{1024},
-            &call_tracer,
-        },
+            static_cast<uint32_t>(state.iterations()), true, false,
+            size_t{1024}, &call_tracer, grpc_core::ztrace_collector},
         b, &outbuf);
     grpc_slice_buffer_reset_and_unref(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
@@ -146,12 +142,10 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
     static constexpr int kEnsureMaxFrameAtLeast = 2;
     c.EncodeHeaders(
         grpc_core::HPackCompressor::EncodeHeaderOptions{
-            static_cast<uint32_t>(state.iterations()),
-            state.range(0) != 0,
+            static_cast<uint32_t>(state.iterations()), state.range(0) != 0,
             Fixture::kEnableTrueBinary,
             static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
-            &call_tracer,
-        },
+            &call_tracer, grpc_core::ztrace_collector},
         b, &outbuf);
     if (!logged_representative_output && state.iterations() > 3) {
       logged_representative_output = true;
@@ -420,12 +414,9 @@ class FromEncoderFixture {
       grpc_slice_buffer_init(&outbuf);
       c.EncodeHeaders(
           grpc_core::HPackCompressor::EncodeHeaderOptions{
-              static_cast<uint32_t>(i),
-              false,
-              EncoderFixture::kEnableTrueBinary,
-              1024 * 1024,
-              &call_tracer,
-          },
+              static_cast<uint32_t>(i), false,
+              EncoderFixture::kEnableTrueBinary, 1024 * 1024, &call_tracer,
+              grpc_core::ztrace_collector},
           b, &outbuf);
       if (i == iteration) {
         for (size_t s = 0; s < outbuf.count; s++) {

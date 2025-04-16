@@ -411,6 +411,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//src/core:notification",
+        "//src/core:ref_counted",
         "//src/core:single_set_ptr",
     ],
 )
@@ -711,6 +713,17 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "shared_bit_gen_test",
+    srcs = ["shared_bit_gen_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:shared_bit_gen",
+    ],
+)
+
+grpc_cc_test(
     name = "ring_buffer_test",
     srcs = ["ring_buffer_test.cc"],
     external_deps = ["gtest"],
@@ -799,4 +812,15 @@ grpc_fuzz_test(
         "gtest",
     ],
     deps = ["//src/core:useful"],
+)
+
+grpc_fuzz_test(
+    name = "seq_bit_set_test",
+    srcs = ["seq_bit_set_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:seq_bit_set"],
 )

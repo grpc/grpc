@@ -438,8 +438,6 @@ class ClientChannelFilter::LoadBalancedCall
 
   absl::AnyInvocable<void()> on_commit_;
 
-  gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
-
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   const BackendMetricData* backend_metric_data_ = nullptr;
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>

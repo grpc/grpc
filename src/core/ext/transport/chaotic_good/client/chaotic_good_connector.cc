@@ -62,6 +62,7 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -183,7 +184,7 @@ class SettingsHandshake : public RefCounted<SettingsHandshake> {
           return TcpFrameHeader::Parse(frame_header.data());
         },
         [this](TcpFrameHeader frame_header) {
-          if (frame_header.payload_connection_id != 0) {
+          if (frame_header.payload_tag != 0) {
             return absl::InternalError("Unexpected connection id in frame");
           }
           server_header_ = frame_header.header;
@@ -255,8 +256,8 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                   result_notifier_ptr->config.MakeTcpFrameTransportOptions(),
                   std::move(result.connect_result.endpoint),
                   result_notifier_ptr->config.TakePendingDataEndpoints(),
-                  result_notifier_ptr->args.channel_args
-                      .GetObjectRef<EventEngine>());
+                  MakeRefCounted<TransportContext>(
+                      result_notifier_ptr->args.channel_args));
               auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
                   result_notifier_ptr->args.channel_args,
                   std::move(frame_transport),
