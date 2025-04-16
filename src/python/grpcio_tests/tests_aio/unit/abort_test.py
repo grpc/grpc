@@ -28,6 +28,7 @@ _UNARY_UNARY_ABORT = "/test/UnaryUnaryAbort"
 _SUPPRESS_ABORT = "/test/SuppressAbort"
 _REPLACE_ABORT = "/test/ReplaceAbort"
 _ABORT_AFTER_REPLY = "/test/AbortAfterReply"
+_SYNC_ABORT = "/test/SyncAbort"
 
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x01\x01\x01"
@@ -66,6 +67,11 @@ class _GenericHandler(grpc.GenericRpcHandler):
         await context.abort(_ABORT_CODE, _ABORT_DETAILS)
         raise RuntimeError("This line should not be executed")
 
+    @staticmethod
+    def _sync_abort(unused_request, context):
+        context.abort(_ABORT_CODE, _ABORT_DETAILS)
+        raise RuntimeError("This line should not be executed")
+
     def service(self, handler_details):
         if handler_details.method == _UNARY_UNARY_ABORT:
             return grpc.unary_unary_rpc_method_handler(self._unary_unary_abort)
@@ -75,6 +81,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return grpc.unary_unary_rpc_method_handler(self._replace_abort)
         if handler_details.method == _ABORT_AFTER_REPLY:
             return grpc.unary_stream_rpc_method_handler(self._abort_after_reply)
+        if handler_details.method == _SYNC_ABORT:
+            return grpc.unary_unary_rpc_method_handler(self._sync_abort)
 
 
 async def _start_test_server():
@@ -144,6 +152,17 @@ class TestAbort(AioTestBase):
 
         self.assertEqual(_ABORT_CODE, await call.code())
         self.assertEqual(_ABORT_DETAILS, await call.details())
+
+    async def test_sync_handler_abort(self):
+        method = self._channel.unary_unary(_SYNC_ABORT)
+        call = method(_REQUEST)
+
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call
+
+        rpc_error = exception_context.exception
+        self.assertEqual(_ABORT_CODE, rpc_error.code())
+        self.assertEqual(_ABORT_DETAILS, rpc_error.details())
 
 
 if __name__ == "__main__":
