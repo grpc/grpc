@@ -37,6 +37,9 @@ namespace {
 // Client sends a request, then waits for the keepalive watchdog timeouts before
 // returning status.
 CORE_END2END_TEST(Http2SingleHopTests, KeepaliveTimeout) {
+  if (!IsKeepAlivePingTimeoutEnabled()) {
+    GTEST_SKIP() << "Keepalive timeout is not enabled";
+  }
   // Disable ping ack to trigger the keepalive timeout
   InitServer(ChannelArgs().Set("grpc.http2.ack_pings", false));
   InitClient(ChannelArgs()

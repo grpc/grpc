@@ -784,11 +784,11 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
 
     if (t->keepalive_incoming_data_wanted &&
         t->keepalive_timeout < t->ping_timeout &&
-        ((::grpc_core::IsKeepAlivePingTimeoutEnabled() &&
+        ((grpc_core::IsKeepAlivePingTimeoutEnabled() &&
           t->keepalive_ping_timeout_handle ==
               grpc_event_engine::experimental::EventEngine::TaskHandle::
                   kInvalid) ||
-         (!::grpc_core::IsKeepAlivePingTimeoutEnabled() &&
+         (!grpc_core::IsKeepAlivePingTimeoutEnabled() &&
           t->keepalive_ping_timeout_handle !=
               grpc_event_engine::experimental::EventEngine::TaskHandle::
                   kInvalid))) {
