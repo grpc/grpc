@@ -139,6 +139,9 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
   ASSERT_TRUE(grpc_sockaddr_to_v4mapped(&wild4, &wild_mapped));
 
   int port = -1;
+  ASSERT_EQ(grpc_sockaddr_is_wildcard_dummy(&wild_mapped, &port), 1);
+
+  port = -1;
   ASSERT_EQ(grpc_sockaddr_is_wildcard(&wild_mapped, &port), 1);
   ASSERT_EQ(port, 555);
   grpc_sockaddr_in6* wild_mapped_addr =
