@@ -21,8 +21,8 @@ namespace grpc_core {
 namespace {
 class Chttp2Transport final : public EndpointTransport {
  public:
-  grpc_channel* ChannelCreate(std::string target,
-                              const ChannelArgs& args) override {
+  absl::StatusOr<grpc_channel*> ChannelCreate(
+      std::string target, const ChannelArgs& args) override {
     return CreateHttp2Channel(target, args);
   }
 

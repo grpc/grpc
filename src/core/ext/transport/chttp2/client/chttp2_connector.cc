@@ -275,7 +275,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
 
 }  // namespace
 
-grpc_channel* CreateHttp2Channel(std::string target, const ChannelArgs& args) {
+absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
+                                                 const ChannelArgs& args) {
   // Add channel args containing the client channel factory and channel
   // credentials.
   static Chttp2SecureClientChannelFactory* factory =
@@ -285,11 +286,7 @@ grpc_channel* CreateHttp2Channel(std::string target, const ChannelArgs& args) {
   if (r.ok()) {
     return r->release()->c_ptr();
   } else {
-    return grpc_lame_client_channel_create(
-        target.c_str(), static_cast<grpc_status_code>(r.status().code()),
-        absl::StrCat("Failed to create http2 channel to '", target,
-                     "':", r.status().message())
-            .c_str());
+    return r.status();
   }
 }
 

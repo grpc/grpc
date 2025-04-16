@@ -26,6 +26,11 @@ namespace grpc_core {
 
 class Server;
 
+// Comma separated list of transport protocols in order of most preferred to
+// least preferred.
+#define GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS \
+  "grpc.preferred_transport_protocols"
+
 // EndpointTransport is a transport that operates over EventEngine::Endpoint
 // objects.
 // This interface is an iterim thing whilst call-v3 is finished and we flesh
@@ -34,8 +39,8 @@ class Server;
 // on one listener, and negotiate protocol with one connector.
 class EndpointTransport {
  public:
-  virtual grpc_channel* ChannelCreate(std::string target,
-                                      const ChannelArgs& args) = 0;
+  virtual absl::StatusOr<grpc_channel*> ChannelCreate(
+      std::string target, const ChannelArgs& args) = 0;
   virtual absl::StatusOr<int> AddPort(Server* server, std::string addr,
                                       const ChannelArgs& args) = 0;
   virtual ~EndpointTransport() = default;
@@ -51,6 +56,9 @@ class EndpointTransportRegistry {
    public:
     void RegisterTransport(std::string name,
                            std::unique_ptr<EndpointTransport> transport) {
+      if (transports_.find(name) != transports_.end()) {
+        LOG(FATAL) << "Duplicate endpoint transport registration: " << name;
+      }
       transports_[name] = std::move(transport);
     }
 

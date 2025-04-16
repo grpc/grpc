@@ -430,10 +430,6 @@
 #define GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS "grpc.experimental.stats_plugins"
 /** If non-zero, allow security frames to be sent and received. */
 #define GRPC_ARG_SECURITY_FRAME_ALLOWED "grpc.security_frame_allowed"
-/** Comma separated list of transport protocols in order of most preferred to
- *  least preferred. */
-#define GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS \
-  "grpc.preferred_transport_protocols"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

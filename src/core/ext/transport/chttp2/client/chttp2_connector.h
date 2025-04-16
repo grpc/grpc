@@ -72,7 +72,8 @@ class Chttp2Connector : public SubchannelConnector {
   RefCountedPtr<HandshakeManager> handshake_mgr_;
 };
 
-grpc_channel* CreateHttp2Channel(std::string target, const ChannelArgs& args);
+absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
+                                                 const ChannelArgs& args);
 
 }  // namespace grpc_core
 
