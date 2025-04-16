@@ -1757,7 +1757,10 @@ std::string GetSourceIncludes(grpc_generator::File* file,
         "grpcpp/impl/server_callback_handlers.h",
         "grpcpp/server_context.h",
         "grpcpp/impl/service_type.h",
-        "grpcpp/support/sync_stream.h"};
+        "grpcpp/support/sync_stream.h",
+        // ports_def.inc Must be included at last
+        "grpcpp/ports_def.inc",
+    };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
@@ -2253,6 +2256,8 @@ std::string GetSourceEpilogue(grpc_generator::File* file,
       temp.append(*part);
       temp.append("\n");
     }
+    // Must be included at end of file
+    temp.append("#include <grpcpp/ports_undef.inc>\n");
     temp.append("\n");
   }
 
