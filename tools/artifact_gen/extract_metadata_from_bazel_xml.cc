@@ -1145,6 +1145,7 @@ class ArtifactGen {
       {"@utf8_range//", "third_party/utf8_range"},
       {"@com_googlesource_code_re2//", "third_party/re2"},
       {"@com_google_googletest//", "third_party/googletest"},
+      {"@googletest//", "third_party/googletest"},
       {"@com_google_protobuf//upb", "third_party/upb/upb"},
       {"@com_google_protobuf//third_party/utf8_range",
        "third_party/utf8_range"},
