@@ -137,8 +137,7 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
   grpc_sockaddr_make_wildcards(555, &wild4, &wild6);
   grpc_resolved_address wild_mapped;
   ASSERT_TRUE(grpc_sockaddr_to_v4mapped(&wild4, &wild_mapped));
-
-
+  
   int port = -1;
   int ret = 0;
   auto rc = grpc_sockaddr_is_wildcard1(&wild_mapped, &port, &ret);
