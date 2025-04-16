@@ -24,13 +24,13 @@
 
 namespace grpc_core {
 
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
-                 absl::AnyInvocable<void(ServerMetadata&)>
-                     on_server_trailing_metadata_from_initiator) {
-  call_handler.AddChildCall(call_initiator);
+void CallHandler::ForwardTo(CallInitiator call_initiator,
+                            absl::AnyInvocable<void(ServerMetadata&)>
+                                on_server_trailing_metadata_from_initiator) {
+  spine_->AddChildCall(call_initiator.spine_);
   // Read messages from handler into initiator.
-  call_handler.SpawnInfallible(
-      "read_messages", [call_handler, call_initiator]() mutable {
+  SpawnInfallible(
+      "read_messages", [call_handler = *this, call_initiator]() mutable {
         return Seq(
             ForEach(MessagesFrom(call_handler),
                     [call_initiator](MessageHandle msg) mutable {
@@ -43,7 +43,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
       });
   call_initiator.SpawnInfallible(
       "read_the_things",
-      [call_initiator, call_handler,
+      [call_initiator, call_handler = *this,
        on_server_trailing_metadata_from_initiator =
            std::move(on_server_trailing_metadata_from_initiator)]() mutable {
         return Seq(

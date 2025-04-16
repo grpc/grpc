@@ -35,6 +35,10 @@
 
 namespace grpc_core {
 
+// Helper class to provide an arena to a call.
+// If constructed via an arena pointer, use that arena for the call.
+// If constructed via an allocator, use that allocator to create an arena.
+// If default constructed (tests!) use a simple allocator.
 class CallArenaSource {
  public:
   // NOLINTNEXTLINE: implicit construction desired
@@ -558,6 +562,16 @@ class CallHandler {
       ClientMetadataHandle client_initial_metadata,
       CallArenaSource arena_source);
 
+  // Forward this call to `call_initiator` (with initial metadata
+  // `client_initial_metadata`)
+  // `on_server_trailing_metadata_from_initiator` is a callback that will be
+  // called with the server trailing metadata received by the initiator, and can
+  // be used to mutate that metadata if desired.
+  void ForwardTo(
+      CallInitiator call_initiator,
+      absl::AnyInvocable<void(ServerMetadata&)>
+          on_server_trailing_metadata_from_initiator = [](ServerMetadata&) {});
+
   Arena* arena() { return spine_->arena(); }
   Party* party() { return spine_.get(); }
 
@@ -652,16 +666,6 @@ auto MessagesFrom(CallHalf* h) {
   };
   return Wrapper{h};
 }
-
-// Forward a call from `call_handler` to `call_initiator` (with initial metadata
-// `client_initial_metadata`)
-// `on_server_trailing_metadata_from_initiator` is a callback that will be
-// called with the server trailing metadata received by the initiator, and can
-// be used to mutate that metadata if desired.
-void ForwardCall(
-    CallHandler call_handler, CallInitiator call_initiator,
-    absl::AnyInvocable<void(ServerMetadata&)>
-        on_server_trailing_metadata_from_initiator = [](ServerMetadata&) {});
 
 }  // namespace grpc_core
 
