@@ -30,7 +30,7 @@ void Chttp2CallTracerWrapper::RecordIncomingBytes(
   stream_->stats.incoming.header_bytes += transport_byte_size.header_bytes;
   // Update new API.
   if (!IsCallTracerInTransportEnabled()) return;
-  auto* call_tracer = stream_->CallTracer();
+  auto* call_tracer = stream_->call_tracer;
   if (call_tracer != nullptr) {
     call_tracer->RecordIncomingBytes(transport_byte_size);
   }
@@ -44,7 +44,7 @@ void Chttp2CallTracerWrapper::RecordOutgoingBytes(
   stream_->stats.outgoing.header_bytes +=
       transport_byte_size.header_bytes;  // Update new API.
   if (!IsCallTracerInTransportEnabled()) return;
-  auto* call_tracer = stream_->CallTracer();
+  auto* call_tracer = stream_->call_tracer;
   if (call_tracer != nullptr) {
     call_tracer->RecordOutgoingBytes(transport_byte_size);
   }

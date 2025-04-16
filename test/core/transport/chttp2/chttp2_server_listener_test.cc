@@ -455,7 +455,6 @@ TEST_F(Chttp2ActiveConnectionTest, CloseAfterSettingsFrame) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_core::ForceEnableExperiment("server_listener", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();

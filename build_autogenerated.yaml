@@ -208,6 +208,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_args.h
@@ -305,7 +306,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
-  - src/core/ext/transport/chttp2/transport/context_list_entry.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
@@ -323,6 +323,8 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
@@ -862,9 +864,13 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
@@ -1054,7 +1060,6 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -1115,6 +1120,8 @@ libs:
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
+  - src/core/telemetry/default_tcp_tracer.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -1732,6 +1739,7 @@ libs:
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/http_connect/xds_http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/handshaker/security/legacy_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
@@ -1981,6 +1989,7 @@ libs:
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -2115,24 +2124,41 @@ libs:
   headers:
   - test/core/event_engine/test_init.h
   - test/core/test_util/build.h
+  - test/core/test_util/cmdline.h
+  - test/core/test_util/evaluate_args_test_util.h
+  - test/core/test_util/grpc_profiler.h
+  - test/core/test_util/histogram.h
+  - test/core/test_util/mock_endpoint.h
+  - test/core/test_util/parse_hexstring.h
   - test/core/test_util/port.h
   - test/core/test_util/port_server_client.h
   - test/core/test_util/reconnect_server.h
+  - test/core/test_util/resolve_localhost_ip46.h
+  - test/core/test_util/slice_splitter.h
   - test/core/test_util/stack_tracer.h
   - test/core/test_util/test_config.h
   - test/core/test_util/test_tcp_server.h
   - test/core/test_util/tls_utils.h
+  - test/core/test_util/tracer_util.h
   src:
   - test/core/event_engine/test_init.cc
   - test/core/test_util/build.cc
+  - test/core/test_util/cmdline.cc
+  - test/core/test_util/grpc_profiler.cc
+  - test/core/test_util/histogram.cc
+  - test/core/test_util/mock_endpoint.cc
+  - test/core/test_util/parse_hexstring.cc
   - test/core/test_util/port.cc
   - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
   - test/core/test_util/reconnect_server.cc
+  - test/core/test_util/resolve_localhost_ip46.cc
+  - test/core/test_util/slice_splitter.cc
   - test/core/test_util/stack_tracer.cc
   - test/core/test_util/test_config.cc
   - test/core/test_util/test_tcp_server.cc
   - test/core/test_util/tls_utils.cc
+  - test/core/test_util/tracer_util.cc
   deps:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
@@ -2146,22 +2172,39 @@ libs:
   headers:
   - test/core/event_engine/test_init.h
   - test/core/test_util/build.h
+  - test/core/test_util/cmdline.h
+  - test/core/test_util/evaluate_args_test_util.h
+  - test/core/test_util/grpc_profiler.h
+  - test/core/test_util/histogram.h
+  - test/core/test_util/mock_endpoint.h
+  - test/core/test_util/parse_hexstring.h
   - test/core/test_util/port.h
   - test/core/test_util/port_server_client.h
   - test/core/test_util/reconnect_server.h
+  - test/core/test_util/resolve_localhost_ip46.h
+  - test/core/test_util/slice_splitter.h
   - test/core/test_util/stack_tracer.h
   - test/core/test_util/test_config.h
   - test/core/test_util/test_tcp_server.h
+  - test/core/test_util/tracer_util.h
   src:
   - test/core/event_engine/test_init.cc
   - test/core/test_util/build.cc
+  - test/core/test_util/cmdline.cc
+  - test/core/test_util/grpc_profiler.cc
+  - test/core/test_util/histogram.cc
+  - test/core/test_util/mock_endpoint.cc
+  - test/core/test_util/parse_hexstring.cc
   - test/core/test_util/port.cc
   - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
   - test/core/test_util/reconnect_server.cc
+  - test/core/test_util/resolve_localhost_ip46.cc
+  - test/core/test_util/slice_splitter.cc
   - test/core/test_util/stack_tracer.cc
   - test/core/test_util/test_config.cc
   - test/core/test_util/test_tcp_server.cc
+  - test/core/test_util/tracer_util.cc
   deps:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
@@ -2238,6 +2281,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_args.h
@@ -2300,7 +2344,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
-  - src/core/ext/transport/chttp2/transport/context_list_entry.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
@@ -2318,6 +2361,8 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
@@ -2406,9 +2451,13 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
@@ -2593,7 +2642,6 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -2646,6 +2694,8 @@ libs:
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
+  - src/core/telemetry/default_tcp_tracer.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -2851,6 +2901,7 @@ libs:
   - src/core/handshaker/http_connect/http_connect_handshaker.cc
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/handshaker/security/legacy_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
@@ -3083,6 +3134,7 @@ libs:
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -3284,6 +3336,21 @@ libs:
   src:
   - third_party/upb/upb/base/status.c
   deps: []
+- name: upb_hash_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - third_party/upb/upb/base/internal/endian.h
+  - third_party/upb/upb/base/internal/log2.h
+  - third_party/upb/upb/hash/common.h
+  - third_party/upb/upb/hash/int_table.h
+  - third_party/upb/upb/hash/str_table.h
+  src:
+  - third_party/upb/upb/hash/common.c
+  deps:
+  - upb_base_lib
+  - upb_mem_lib
 - name: upb_json_lib
   build: all
   language: c
@@ -3295,43 +3362,6 @@ libs:
   - third_party/upb/upb/lex/round_trip.h
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
-  - third_party/upb/upb/message/copy.h
-  - third_party/upb/upb/message/merge.h
-  - third_party/upb/upb/reflection/common.h
-  - third_party/upb/upb/reflection/def.h
-  - third_party/upb/upb/reflection/def.hpp
-  - third_party/upb/upb/reflection/def_pool.h
-  - third_party/upb/upb/reflection/def_type.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
-  - third_party/upb/upb/reflection/enum_def.h
-  - third_party/upb/upb/reflection/enum_reserved_range.h
-  - third_party/upb/upb/reflection/enum_value_def.h
-  - third_party/upb/upb/reflection/extension_range.h
-  - third_party/upb/upb/reflection/field_def.h
-  - third_party/upb/upb/reflection/file_def.h
-  - third_party/upb/upb/reflection/internal/def_builder.h
-  - third_party/upb/upb/reflection/internal/def_pool.h
-  - third_party/upb/upb/reflection/internal/desc_state.h
-  - third_party/upb/upb/reflection/internal/enum_def.h
-  - third_party/upb/upb/reflection/internal/enum_reserved_range.h
-  - third_party/upb/upb/reflection/internal/enum_value_def.h
-  - third_party/upb/upb/reflection/internal/extension_range.h
-  - third_party/upb/upb/reflection/internal/field_def.h
-  - third_party/upb/upb/reflection/internal/file_def.h
-  - third_party/upb/upb/reflection/internal/message_def.h
-  - third_party/upb/upb/reflection/internal/message_reserved_range.h
-  - third_party/upb/upb/reflection/internal/method_def.h
-  - third_party/upb/upb/reflection/internal/oneof_def.h
-  - third_party/upb/upb/reflection/internal/service_def.h
-  - third_party/upb/upb/reflection/internal/strdup2.h
-  - third_party/upb/upb/reflection/internal/upb_edition_defaults.h
-  - third_party/upb/upb/reflection/message.h
-  - third_party/upb/upb/reflection/message.hpp
-  - third_party/upb/upb/reflection/message_def.h
-  - third_party/upb/upb/reflection/message_reserved_range.h
-  - third_party/upb/upb/reflection/method_def.h
-  - third_party/upb/upb/reflection/oneof_def.h
-  - third_party/upb/upb/reflection/service_def.h
   src:
   - third_party/upb/upb/json/decode.c
   - third_party/upb/upb/json/encode.c
@@ -3339,28 +3369,8 @@ libs:
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
-  - third_party/upb/upb/message/copy.c
-  - third_party/upb/upb/message/merge.c
-  - third_party/upb/upb/reflection/def_pool.c
-  - third_party/upb/upb/reflection/def_type.c
-  - third_party/upb/upb/reflection/desc_state.c
-  - third_party/upb/upb/reflection/enum_def.c
-  - third_party/upb/upb/reflection/enum_reserved_range.c
-  - third_party/upb/upb/reflection/enum_value_def.c
-  - third_party/upb/upb/reflection/extension_range.c
-  - third_party/upb/upb/reflection/field_def.c
-  - third_party/upb/upb/reflection/file_def.c
-  - third_party/upb/upb/reflection/internal/def_builder.c
-  - third_party/upb/upb/reflection/internal/strdup2.c
-  - third_party/upb/upb/reflection/message.c
-  - third_party/upb/upb/reflection/message_def.c
-  - third_party/upb/upb/reflection/message_reserved_range.c
-  - third_party/upb/upb/reflection/method_def.c
-  - third_party/upb/upb/reflection/oneof_def.c
-  - third_party/upb/upb/reflection/service_def.c
   deps:
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_reflection_lib
 - name: upb_mem_lib
   build: all
   language: c
@@ -3383,11 +3393,6 @@ libs:
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/base/internal/endian.h
-  - third_party/upb/upb/base/internal/log2.h
-  - third_party/upb/upb/hash/common.h
-  - third_party/upb/upb/hash/int_table.h
-  - third_party/upb/upb/hash/str_table.h
   - third_party/upb/upb/message/accessors.h
   - third_party/upb/upb/message/array.h
   - third_party/upb/upb/message/compat.h
@@ -3395,32 +3400,15 @@ libs:
   - third_party/upb/upb/message/internal/array.h
   - third_party/upb/upb/message/internal/extension.h
   - third_party/upb/upb/message/internal/map.h
-  - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
   - third_party/upb/upb/message/internal/tagged_ptr.h
-  - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
   - third_party/upb/upb/message/message.h
   - third_party/upb/upb/message/tagged_ptr.h
   - third_party/upb/upb/message/value.h
-  - third_party/upb/upb/mini_table/enum.h
-  - third_party/upb/upb/mini_table/extension.h
-  - third_party/upb/upb/mini_table/extension_registry.h
-  - third_party/upb/upb/mini_table/field.h
-  - third_party/upb/upb/mini_table/file.h
-  - third_party/upb/upb/mini_table/internal/enum.h
-  - third_party/upb/upb/mini_table/internal/extension.h
-  - third_party/upb/upb/mini_table/internal/field.h
-  - third_party/upb/upb/mini_table/internal/file.h
-  - third_party/upb/upb/mini_table/internal/message.h
-  - third_party/upb/upb/mini_table/internal/size_log2.h
-  - third_party/upb/upb/mini_table/internal/sub.h
-  - third_party/upb/upb/mini_table/message.h
-  - third_party/upb/upb/mini_table/sub.h
   src:
-  - third_party/upb/upb/hash/common.c
   - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/message/array.c
   - third_party/upb/upb/message/compat.c
@@ -3429,24 +3417,13 @@ libs:
   - third_party/upb/upb/message/map.c
   - third_party/upb/upb/message/map_sorter.c
   - third_party/upb/upb/message/message.c
-  - third_party/upb/upb/mini_table/extension_registry.c
-  - third_party/upb/upb/mini_table/internal/message.c
-  - third_party/upb/upb/mini_table/message.c
   deps:
-  - upb_base_lib
-  - upb_mem_lib
+  - upb_mini_table_lib
 - name: upb_mini_descriptor_lib
   build: all
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/base/internal/endian.h
-  - third_party/upb/upb/base/internal/log2.h
-  - third_party/upb/upb/hash/common.h
-  - third_party/upb/upb/hash/int_table.h
-  - third_party/upb/upb/hash/str_table.h
-  - third_party/upb/upb/message/internal/map_entry.h
-  - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -3456,6 +3433,21 @@ libs:
   - third_party/upb/upb/mini_descriptor/internal/modifiers.h
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
+  src:
+  - third_party/upb/upb/mini_descriptor/build_enum.c
+  - third_party/upb/upb/mini_descriptor/decode.c
+  - third_party/upb/upb/mini_descriptor/internal/base92.c
+  - third_party/upb/upb/mini_descriptor/internal/encode.c
+  - third_party/upb/upb/mini_descriptor/link.c
+  deps:
+  - upb_mini_table_lib
+- name: upb_mini_table_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - third_party/upb/upb/message/internal/map_entry.h
+  - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/mini_table/enum.h
   - third_party/upb/upb/mini_table/extension.h
   - third_party/upb/upb/mini_table/extension_registry.h
@@ -3471,27 +3463,16 @@ libs:
   - third_party/upb/upb/mini_table/message.h
   - third_party/upb/upb/mini_table/sub.h
   src:
-  - third_party/upb/upb/hash/common.c
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/mini_table/extension_registry.c
   - third_party/upb/upb/mini_table/internal/message.c
   - third_party/upb/upb/mini_table/message.c
   deps:
-  - upb_base_lib
-  - upb_mem_lib
-- name: upb_textformat_lib
+  - upb_hash_lib
+- name: upb_reflection_lib
   build: all
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/lex/atoi.h
-  - third_party/upb/upb/lex/round_trip.h
-  - third_party/upb/upb/lex/strtod.h
-  - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/message/copy.h
   - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
@@ -3529,14 +3510,7 @@ libs:
   - third_party/upb/upb/reflection/method_def.h
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
-  - third_party/upb/upb/text/encode.h
-  - third_party/upb/upb/text/internal/encode.h
-  - third_party/upb/upb/text/options.h
   src:
-  - third_party/upb/upb/lex/atoi.c
-  - third_party/upb/upb/lex/round_trip.c
-  - third_party/upb/upb/lex/strtod.c
-  - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/message/copy.c
   - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
@@ -3556,11 +3530,30 @@ libs:
   - third_party/upb/upb/reflection/method_def.c
   - third_party/upb/upb/reflection/oneof_def.c
   - third_party/upb/upb/reflection/service_def.c
-  - third_party/upb/upb/text/encode.c
-  - third_party/upb/upb/text/internal/encode.c
   deps:
   - upb_mini_descriptor_lib
   - upb_wire_lib
+- name: upb_textformat_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - third_party/upb/upb/lex/atoi.h
+  - third_party/upb/upb/lex/round_trip.h
+  - third_party/upb/upb/lex/strtod.h
+  - third_party/upb/upb/lex/unicode.h
+  - third_party/upb/upb/text/encode.h
+  - third_party/upb/upb/text/internal/encode.h
+  - third_party/upb/upb/text/options.h
+  src:
+  - third_party/upb/upb/lex/atoi.c
+  - third_party/upb/upb/lex/round_trip.c
+  - third_party/upb/upb/lex/strtod.c
+  - third_party/upb/upb/lex/unicode.c
+  - third_party/upb/upb/text/encode.c
+  - third_party/upb/upb/text/internal/encode.c
+  deps:
+  - upb_reflection_lib
 - name: upb_wire_lib
   build: all
   language: c
@@ -3633,15 +3626,6 @@ libs:
   language: c++
   public_headers: []
   headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   - test/cpp/microbenchmarks/fullstack_context_mutators.h
   - test/cpp/microbenchmarks/fullstack_fixtures.h
   - test/cpp/microbenchmarks/helpers.h
@@ -3654,14 +3638,6 @@ libs:
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/cpp/microbenchmarks/helpers.cc
   deps:
   - benchmark
@@ -4027,15 +4003,6 @@ libs:
   headers:
   - src/core/util/subprocess.h
   - test/core/end2end/data/ssl_test_data.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/credentials.h
@@ -4049,14 +4016,6 @@ libs:
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
@@ -4418,6 +4377,7 @@ libs:
   - src/core/credentials/transport/tls/load_system_roots_supported.h
   - src/core/credentials/transport/tls/tls_utils.h
   - src/core/credentials/transport/transport_credentials.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -4464,9 +4424,13 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
@@ -4651,7 +4615,6 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -4777,6 +4740,7 @@ libs:
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/handshaker/security/legacy_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/lib/address_utils/parse_address.cc
@@ -5097,26 +5061,9 @@ targets:
 - name: fd_conservation_posix_test
   build: test
   language: c
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/fd_conservation_posix_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - grpc_test_util
   platforms:
@@ -5182,6 +5129,7 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -5218,15 +5166,6 @@ targets:
   language: c++
   headers:
   - src/core/util/subprocess.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/credentials.h
   - test/cpp/util/string_ref_helper.h
@@ -5234,14 +5173,6 @@ targets:
   src:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/cpp/naming/address_sorting_test.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/string_ref_helper.cc
@@ -5403,25 +5334,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/cpp/common/alarm_test.cc
   deps:
   - gtest
@@ -5492,12 +5406,14 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/fake_udp_and_tcp_server.h
+  - test/core/test_util/postmortem.h
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h
   src:
   - test/core/tsi/alts/fake_handshaker/handshaker.proto
   - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
+  - test/core/test_util/postmortem.cc
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
   - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
   deps:
@@ -5597,26 +5513,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/alts/alts_security_connector_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5724,25 +5623,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/auth_context_test.cc
   deps:
   - gtest
@@ -5763,26 +5645,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/security/authorization_matchers_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5821,26 +5686,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/call/external/aws_request_signer_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5880,9 +5728,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/bad_server_response_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5893,28 +5743,13 @@ targets:
   headers:
   - src/core/util/subprocess.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  - test/core/test_util/postmortem.h
   src:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5929,28 +5764,13 @@ targets:
   headers:
   - src/core/util/subprocess.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  - test/core/test_util/postmortem.h
   src:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5965,10 +5785,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/bad_streaming_id.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5979,10 +5801,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/badreq.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -6100,26 +5924,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/buffer_list_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -6167,30 +5974,13 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
   - test/core/test_util/test_call_creds.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/credentials/call/call_credentials_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
   - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - protobuf
@@ -6209,6 +5999,7 @@ targets:
   - src/core/call/metadata_compression_traits.h
   - src/core/call/parsed_metadata.h
   - src/core/call/simple_slice_based_metadata.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6259,7 +6050,6 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
@@ -6451,6 +6241,7 @@ targets:
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6492,9 +6283,13 @@ targets:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
@@ -6667,7 +6462,6 @@ targets:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -6710,6 +6504,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/load_file.h
@@ -6965,6 +6760,7 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
   - src/core/util/load_file.cc
@@ -7002,10 +6798,12 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/fake_udp_and_tcp_server.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/socket_use_after_close_detector.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/socket_use_after_close_detector.cc
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
@@ -7017,6 +6815,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -7056,6 +6855,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
@@ -7095,6 +6895,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -7306,15 +7107,6 @@ targets:
   - src/core/lib/security/authorization/mock_cel/cel_value.h
   - src/core/lib/security/authorization/mock_cel/evaluator_core.h
   - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
@@ -7408,14 +7200,6 @@ targets:
   - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   - src/core/lib/security/authorization/cel_authorization_engine.cc
   - test/core/security/cel_authorization_engine_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -7526,26 +7310,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/channel_creds_registry_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -7651,7 +7418,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -7659,11 +7425,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -7688,6 +7458,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - src/cpp/ext/chaotic_good.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -7699,6 +7470,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -7707,7 +7479,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - src/cpp/ext/chaotic_good.cc
   - test/cpp/ext/chaotic_good_test.cc
   deps:
@@ -7718,26 +7492,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/alts/check_gcp_environment_linux_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -7745,26 +7502,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/alts/check_gcp_environment_windows_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -7774,25 +7514,10 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
+  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/chttp2_server_listener_test.cc
   deps:
   - gtest
@@ -7802,6 +7527,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -7840,6 +7566,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/chunked_vector.h
@@ -7880,6 +7607,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -7937,10 +7665,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_auth_filter_test.cc
   - test/core/filters/filter_test.cc
@@ -7954,10 +7684,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_authority_filter_test.cc
   - test/core/filters/filter_test.cc
@@ -8109,26 +7841,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
   - test/core/test_util/cmdline_test.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8162,26 +7877,9 @@ targets:
   build: test
   run: false
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/combiner_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8250,26 +7948,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/surface/connection_context_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8281,10 +7962,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/connection_prefix.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8294,9 +7977,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8304,25 +7989,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/connectivity_state_test.cc
   deps:
   - gtest
@@ -8533,9 +8201,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/dualstack_socket_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8565,10 +8235,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/duplicate_header.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8578,7 +8250,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -8586,11 +8257,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8615,6 +8290,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8634,6 +8310,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8649,6 +8326,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8657,7 +8335,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_chaotic_good_config.cc
@@ -8672,11 +8352,15 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8690,7 +8374,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -8698,11 +8381,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8727,6 +8414,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8746,6 +8434,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8761,6 +8450,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8769,7 +8459,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_chaotic_good_config.cc
@@ -8872,11 +8564,15 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8890,7 +8586,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -8898,11 +8593,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8927,6 +8626,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8946,6 +8646,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8961,6 +8662,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8969,7 +8671,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_config.cc
@@ -8984,11 +8688,15 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -8998,7 +8706,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9006,11 +8713,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9035,6 +8746,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9054,6 +8766,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9069,6 +8782,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9077,7 +8791,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_security_config.cc
@@ -9092,11 +8808,15 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9106,7 +8826,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9114,11 +8833,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9143,6 +8866,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9162,6 +8886,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9177,6 +8902,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9185,7 +8911,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_security_config.cc
@@ -9288,11 +9016,15 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9302,7 +9034,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9310,11 +9041,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9339,6 +9074,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9358,6 +9094,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9373,6 +9110,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9381,7 +9119,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_http2_config.cc
@@ -9484,11 +9224,15 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9498,7 +9242,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9506,11 +9249,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9535,6 +9282,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9554,6 +9302,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9569,6 +9318,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9577,7 +9327,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_inproc_config.cc
@@ -9592,11 +9344,15 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9606,7 +9362,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9614,11 +9369,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9643,6 +9402,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9662,6 +9422,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9677,6 +9438,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9685,7 +9447,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_inproc_config.cc
@@ -9788,11 +9552,15 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9802,7 +9570,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9810,11 +9577,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9839,6 +9610,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9858,6 +9630,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9873,6 +9646,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9881,7 +9655,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_posix_config.cc
@@ -9896,11 +9672,15 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -9910,7 +9690,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9918,11 +9697,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9947,6 +9730,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9966,6 +9750,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9981,6 +9766,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9989,7 +9775,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_posix_config.cc
@@ -10092,11 +9880,15 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -10173,26 +9965,9 @@ targets:
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/iomgr/endpoint_pair_test.cc
   - test/core/iomgr/endpoint_tests.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -10230,26 +10005,9 @@ targets:
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/error_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -10258,25 +10016,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/error_utils_test.cc
   deps:
   - gtest
@@ -10285,26 +10026,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/security/evaluate_args_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -10374,6 +10098,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -10401,6 +10126,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
@@ -10434,6 +10160,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -10527,26 +10254,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/fd_posix_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -10611,6 +10321,7 @@ targets:
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -10652,9 +10363,13 @@ targets:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
   - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
@@ -10827,7 +10542,6 @@ targets:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -10870,6 +10584,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/load_file.h
@@ -11125,6 +10840,7 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
   - src/core/util/load_file.cc
@@ -11160,10 +10876,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/filter_test.cc
   - test/core/filters/filter_test_test.cc
@@ -11202,6 +10920,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -11241,13 +10960,14 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -11285,6 +11005,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -11310,6 +11031,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -11357,6 +11079,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
@@ -11397,6 +11120,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -11437,28 +11161,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/data/ssl_test_data.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/util/http_client/format_request_test.cc
   deps:
   - gtest
@@ -11481,6 +11188,7 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -11489,7 +11197,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/util/glob.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
@@ -11541,9 +11248,11 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_unittest.cc
   deps:
@@ -11555,10 +11264,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/filter_test.cc
   - test/core/filters/gcp_authentication_filter_test.cc
@@ -11603,9 +11314,12 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/event_engine/util/delegating_event_engine.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/goaway_server_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11638,8 +11352,10 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/graceful_shutdown_test.cc
   deps:
   - gtest
@@ -11648,26 +11364,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/alts/grpc_alts_credentials_options_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11687,26 +11386,9 @@ targets:
   language: c++
   headers:
   - test/core/test_util/audit_logging_utils.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/security/grpc_authorization_engine_test.cc
   - test/core/test_util/audit_logging_utils.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11714,26 +11396,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/security/grpc_authorization_policy_provider_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_authorization_provider
@@ -11828,26 +11493,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11916,26 +11564,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/tls/grpc_tls_certificate_distributor_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11943,26 +11574,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/tls/grpc_tls_certificate_provider_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11970,26 +11584,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/tls/grpc_tls_certificate_verifier_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11997,26 +11594,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12024,26 +11604,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/tls/grpc_tls_credentials_options_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12171,7 +11734,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -12179,11 +11741,15 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -12208,6 +11774,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
@@ -12226,6 +11793,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -12240,6 +11808,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -12248,7 +11817,9 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
@@ -12264,6 +11835,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
@@ -12275,9 +11847,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_ssl_session_reuse_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12287,9 +11861,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12327,13 +11903,126 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/head_of_line_blocking.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
+- name: header_assembler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/call/message.h
+  - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/header_assembler.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/status_conversion.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/bitset.h
+  - src/core/util/cpp_impl_of.h
+  - src/core/util/down_cast.h
+  - src/core/util/dump_args.h
+  - src/core/util/glob.h
+  - src/core/util/latent_see.h
+  - src/core/util/manual_constructor.h
+  - src/core/util/orphanable.h
+  - src/core/util/per_cpu.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ring_buffer.h
+  - src/core/util/spinlock.h
+  - src/core/util/status_helper.h
+  - src/core/util/time.h
+  - third_party/upb/upb/generated_code_support.h
+  src:
+  - src/core/call/message.cc
+  - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
+  - src/core/lib/iomgr/closure.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/slice/percent_encoding.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
+  - src/core/util/dump_args.cc
+  - src/core/util/glob.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/per_cpu.cc
+  - src/core/util/status_helper.cc
+  - src/core/util/time.cc
+  - test/core/transport/chttp2/header_assembler_test.cc
+  deps:
+  - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/base:config
+  - absl/container:flat_hash_map
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/types:span
+  - gpr
 - name: headers_bad_client_test
   gtest: true
   build: test
@@ -12341,10 +12030,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/headers.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12376,26 +12067,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
   - test/core/test_util/histogram_test.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12415,25 +12089,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/chttp2/hpack_encoder_test.cc
   deps:
   - gtest
@@ -12443,25 +12100,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/chttp2/hpack_parser_table_test.cc
   deps:
   - gtest
@@ -12471,25 +12111,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/chttp2/hpack_parser_test.cc
   deps:
   - gtest
@@ -12514,24 +12137,19 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
+  - src/core/ext/transport/chttp2/transport/message_assembler.h
   - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/inter_activity_mutex.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   - test/core/transport/util/transport_test.h
@@ -12539,16 +12157,10 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/chttp2/http2_client_transport_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
@@ -12571,32 +12183,18 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   - test/core/transport/util/transport_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/chttp2/http2_server_transport_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
@@ -12618,6 +12216,38 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: http2_status_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/glob.h
+  src:
+  - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/glob.cc
+  - test/core/transport/chttp2/http2_status_test.cc
+  deps:
+  - gtest
+  - absl/container:flat_hash_map
+  - absl/hash:hash
+  - absl/status:statusor
+  - absl/types:span
+  - gpr
 - name: http_proxy_mapper_test
   gtest: true
   build: test
@@ -12748,10 +12378,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/initial_settings_frame.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12769,26 +12401,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/insecure/insecure_security_connector_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12801,6 +12416,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/wait_set.h
   src:
+  - src/core/lib/promise/wait_set.cc
   - test/core/promise/inter_activity_latch_test.cc
   deps:
   - gtest
@@ -12829,6 +12445,7 @@ targets:
   - src/core/util/dump_args.h
   - src/core/util/glob.h
   - src/core/util/latent_see.h
+  - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
@@ -12871,6 +12488,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -12910,6 +12528,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
@@ -12950,6 +12569,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -13014,9 +12634,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/invalid_call_argument_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13109,26 +12731,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/call/jwt/json_token_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13137,26 +12742,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/call/jwt/jwt_verifier_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13167,9 +12755,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/surface/lame_client_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13291,26 +12881,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/local/local_security_connector_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13376,6 +12949,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -13423,6 +12997,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
@@ -13463,6 +13038,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -13522,25 +13098,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/util/matchers_test.cc
   deps:
   - gtest
@@ -13591,30 +13150,124 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-- name: message_compress_test
+- name: message_assembler_test
   gtest: true
   build: test
   language: c++
   headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  - src/core/call/message.h
+  - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/message_assembler.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/status_conversion.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/bitset.h
+  - src/core/util/cpp_impl_of.h
+  - src/core/util/down_cast.h
+  - src/core/util/dump_args.h
+  - src/core/util/glob.h
+  - src/core/util/latent_see.h
+  - src/core/util/manual_constructor.h
+  - src/core/util/orphanable.h
+  - src/core/util/per_cpu.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ring_buffer.h
+  - src/core/util/spinlock.h
+  - src/core/util/status_helper.h
+  - src/core/util/time.h
+  - third_party/upb/upb/generated_code_support.h
+  src:
+  - src/core/call/message.cc
+  - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
+  - src/core/lib/iomgr/closure.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/slice/percent_encoding.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
+  - src/core/util/dump_args.cc
+  - src/core/util/glob.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/per_cpu.cc
+  - src/core/util/status_helper.cc
+  - src/core/util/time.cc
+  - test/core/transport/chttp2/message_assembler_test.cc
+  deps:
+  - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/base:config
+  - absl/container:flat_hash_map
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/types:span
+  - gpr
+- name: message_compress_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
   src:
   - test/core/compression/message_compress_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13633,26 +13286,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/call/metadata_map_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13760,6 +13396,7 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
@@ -13808,9 +13445,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/no_server_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13977,6 +13616,76 @@ targets:
   - test/core/test_util/osa_distance_test.cc
   deps:
   - gtest
+- name: otel_npc_metrics_test
+  gtest: true
+  build: plugin_test
+  language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
+  - test/core/test_util/fake_stats_plugin.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/ext/otel/otel_test_library.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/core/test_util/fake_stats_plugin.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/ext/otel/otel_npc_metrics_test.cc
+  - test/cpp/ext/otel/otel_test_library.cc
+  deps:
+  - gtest
+  - opentelemetry-cpp::api
+  - opentelemetry-cpp::metrics
+  - grpc++_test_util
+- name: otel_plugin_option_test
+  gtest: true
+  build: plugin_test
+  language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
+  - test/core/test_util/fake_stats_plugin.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/ext/otel/otel_test_library.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/core/test_util/fake_stats_plugin.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/ext/otel/otel_plugin_option_test.cc
+  - test/cpp/ext/otel/otel_test_library.cc
+  deps:
+  - gtest
+  - opentelemetry-cpp::api
+  - opentelemetry-cpp::metrics
+  - grpc++_test_util
 - name: otel_plugin_test
   gtest: true
   build: plugin_test
@@ -14058,10 +13767,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/out_of_bounds.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14147,28 +13858,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/data/ssl_test_data.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/util/http_client/parser_test.cc
   deps:
   - gtest
@@ -14182,6 +13876,7 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
   src:
+  - src/core/lib/promise/wait_set.cc
   - test/core/promise/party_mpsc_test.cc
   deps:
   - gtest
@@ -14195,6 +13890,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/wait_set.h
   src:
+  - src/core/lib/promise/wait_set.cc
   - test/core/promise/party_test.cc
   deps:
   - gtest
@@ -14217,6 +13913,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -14238,6 +13935,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/status_conversion.h
   - src/core/util/bitset.h
   - src/core/util/glob.h
   - src/core/util/latent_see.h
@@ -14265,6 +13963,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/status_conversion.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
@@ -14306,25 +14005,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/chttp2/ping_abuse_policy_test.cc
   deps:
   - gtest
@@ -14346,25 +14028,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/chttp2/ping_configuration_test.cc
   deps:
   - gtest
@@ -14374,25 +14039,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/chttp2/ping_rate_policy_test.cc
   deps:
   - gtest
@@ -15092,26 +14740,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/security/rbac_translator_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_authorization_provider
@@ -15167,6 +14798,7 @@ targets:
   - src/core/call/parsed_metadata.h
   - src/core/call/request_buffer.h
   - src/core/call/simple_slice_based_metadata.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -15222,7 +14854,6 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
@@ -15322,26 +14953,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/resolve_address_posix_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15356,27 +14970,10 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fake_udp_and_tcp_server.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/iomgr/resolve_address_test.cc
-  - test/core/test_util/cmdline.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15385,26 +14982,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/resolve_address_posix_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15419,27 +14999,10 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fake_udp_and_tcp_server.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/iomgr/resolve_address_test.cc
-  - test/core/test_util/cmdline.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15616,26 +15179,9 @@ targets:
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/handshake/secure_endpoint_test.cc
   - test/core/iomgr/endpoint_tests.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15643,26 +15189,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/security_connector_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15730,15 +15259,6 @@ targets:
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -15749,14 +15269,6 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/cpp/server/server_builder_test.cc
   deps:
   - gtest
@@ -15770,16 +15282,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -15789,14 +15292,6 @@ targets:
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
   - gtest
@@ -15895,10 +15390,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/server_registered_method.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15906,16 +15403,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -15925,14 +15413,6 @@ targets:
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/cpp/server/server_request_call_test.cc
   deps:
   - gtest
@@ -16003,29 +15483,24 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/chttp2/settings_timeout_test.cc
   deps:
   - gtest
   - grpc_test_util
+- name: shared_bit_gen_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/shared_bit_gen.h
+  src:
+  - test/core/util/shared_bit_gen_test.cc
+  deps:
+  - gtest
+  - absl/random:random
+  uses_polling: false
 - name: shutdown_test
   gtest: true
   build: test
@@ -16052,10 +15527,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16064,11 +15541,18 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/util/atomic_utils.h
+  - src/core/util/down_cast.h
+  - src/core/util/notification.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
   - src/core/util/single_set_ptr.h
   src:
   - test/core/util/single_set_ptr_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: sleep_test
@@ -16135,26 +15619,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/socket_utils_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16257,40 +15724,12 @@ targets:
   - absl/types:span
   - gpr
   uses_polling: false
-- name: stats_test
+- name: status_conversion_test
   gtest: true
   build: test
   language: c++
   headers: []
   src:
-  - test/core/telemetry/stats_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  uses_polling: false
-- name: status_conversion_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
-  src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/status_conversion_test.cc
   deps:
   - gtest
@@ -16372,25 +15811,10 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
+  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/streams_not_seen_test.cc
   deps:
   - gtest
@@ -16463,26 +15887,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/tls/system_roots_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16507,26 +15914,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/tcp_client_posix_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16555,26 +15945,9 @@ targets:
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/tcp_posix_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16585,26 +15958,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/tcp_server_posix_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16647,26 +16003,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/ssl/ssl_credentials_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16744,26 +16083,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/iomgr/timer_heap_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -17027,25 +16349,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/core/transport/timeout_encoding_test.cc
   deps:
   - gtest
@@ -17130,27 +16435,10 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
   - test/core/test_util/test_call_creds.h
-  - test/core/test_util/tracer_util.h
   src:
   - test/core/credentials/transport/tls/tls_security_connector_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
   - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -17161,8 +16449,10 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/too_many_pings_test.cc
   deps:
   - gtest
@@ -17321,10 +16611,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/unknown_frame.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -17516,10 +16808,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/window_overflow.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -17580,15 +16874,6 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -17601,14 +16886,6 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
   - gtest
@@ -18621,26 +17898,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
+  headers: []
   src:
   - test/core/credentials/transport/xds/xds_credentials_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
@@ -21602,6 +20862,21 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: ztrace_collector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channelz/ztrace_collector_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - grpc
   platforms:
   - linux
   - posix

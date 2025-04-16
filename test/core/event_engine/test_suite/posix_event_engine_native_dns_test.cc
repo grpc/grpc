@@ -30,8 +30,8 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   SetEventEngineFactories(
       []() {
-        return std::make_unique<
-            grpc_event_engine::experimental::PosixEventEngine>();
+        return grpc_event_engine::experimental::PosixEventEngine::
+            MakePosixEventEngine();
       },
       []() {
         return std::make_unique<

@@ -32,14 +32,22 @@ TRANSPORT_FIXTURE(ChaoticGoodSingleConnection) {
   chaotic_good::Config server_config(channel_args);
   auto client_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
-          channel_args, std::move(control_endpoints.client),
-          std::move(client_config),
-          MakeRefCounted<FakeClientConnectionFactory>());
+          channel_args,
+          MakeOrphanable<chaotic_good::TcpFrameTransport>(
+              client_config.MakeTcpFrameTransportOptions(),
+              std::move(control_endpoints.client),
+              client_config.TakePendingDataEndpoints(),
+              MakeRefCounted<chaotic_good::TransportContext>(channel_args)),
+          client_config.MakeMessageChunker());
   auto server_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
-          channel_args, std::move(control_endpoints.server),
-          std::move(server_config),
-          MakeRefCounted<FakeServerConnectionFactory>());
+          channel_args,
+          MakeOrphanable<chaotic_good::TcpFrameTransport>(
+              server_config.MakeTcpFrameTransportOptions(),
+              std::move(control_endpoints.server),
+              server_config.TakePendingDataEndpoints(),
+              MakeRefCounted<chaotic_good::TransportContext>(channel_args)),
+          server_config.MakeMessageChunker());
   return ClientAndServerTransportPair{std::move(client_transport),
                                       std::move(server_transport)};
 }

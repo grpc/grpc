@@ -31,6 +31,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/strings/str_format.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
@@ -48,6 +49,7 @@ ABSL_FLAG(std::string, prometheus_endpoint, "localhost:9464",
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Register a global gRPC OpenTelemetry plugin configured with a prometheus
   // exporter.
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;

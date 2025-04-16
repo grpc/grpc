@@ -19,6 +19,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "src/core/lib/event_engine/extensions/iomgr_compatible.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
@@ -306,7 +307,7 @@ WindowsEventEngineListener::WindowsEventEngineListener(
 
 WindowsEventEngineListener::~WindowsEventEngineListener() {
   GRPC_TRACE_LOG(event_engine, INFO) << "~WindowsEventEngineListener::" << this;
-  ShutdownListeners();
+  Shutdown();
   on_shutdown_(absl::OkStatus());
 }
 
@@ -366,7 +367,7 @@ absl::Status WindowsEventEngineListener::Start() {
   return absl::OkStatus();
 }
 
-void WindowsEventEngineListener::ShutdownListeners() {
+void WindowsEventEngineListener::Shutdown() {
   grpc_core::MutexLock lock(&port_listeners_mu_);
   if (std::exchange(listeners_shutdown_, true)) return;
   // Shut down each port listener before destroying this EventEngine::Listener

@@ -256,8 +256,9 @@ class RetryFilter::LegacyCallData final {
     bool lb_call_committed_ = false;
 
     grpc_closure on_per_attempt_recv_timer_;
-    std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-        per_attempt_recv_timer_handle_;
+    grpc_event_engine::experimental::EventEngine::TaskHandle
+        per_attempt_recv_timer_handle_ =
+            grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
 
     // BatchData.batch.payload points to this.
     grpc_transport_stream_op_batch_payload batch_payload_;
@@ -409,8 +410,8 @@ class RetryFilter::LegacyCallData final {
   bool retry_codepath_started_ : 1;
   bool sent_transparent_retry_not_seen_by_server_ : 1;
   int num_attempts_completed_ = 0;
-  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      retry_timer_handle_;
+  grpc_event_engine::experimental::EventEngine::TaskHandle retry_timer_handle_ =
+      grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
   grpc_closure retry_closure_;
 
   // Cached data for retrying send ops.

@@ -17,10 +17,13 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/escaping.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/serialize_little_endian.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
@@ -28,6 +31,7 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/telemetry/default_tcp_tracer.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -35,50 +39,83 @@ namespace chaotic_good {
 namespace data_endpoints_detail {
 
 ///////////////////////////////////////////////////////////////////////////////
+// FrameHeader
+
+void DataFrameHeader::Serialize(uint8_t* data) const {
+  WriteLittleEndianUint64(payload_tag, data);
+  WriteLittleEndianUint64(send_timestamp, data + 8);
+  WriteLittleEndianUint32(payload_length, data + 16);
+}
+
+absl::StatusOr<DataFrameHeader> DataFrameHeader::Parse(const uint8_t* data) {
+  DataFrameHeader header;
+  header.payload_tag = ReadLittleEndianUint64(data);
+  header.send_timestamp = ReadLittleEndianUint64(data + 8);
+  header.payload_length = ReadLittleEndianUint32(data + 16);
+  return header;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // OutputBuffer
 
-bool OutputBuffer::Accept(SliceBuffer& buffer) {
-  if (pending_.Length() != 0 &&
-      pending_.Length() + buffer.Length() > pending_max_) {
-    return false;
+std::optional<double> OutputBuffer::DeliveryTime(uint64_t current_time,
+                                                 size_t bytes) {
+  if (pending_.Length() != 0 && pending_.Length() + bytes > pending_max_) {
+    return std::nullopt;
   }
-  pending_.Append(buffer);
-  return true;
+  return send_rate_.DeliveryTime(current_time, pending_.Length() + bytes);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // OutputBuffers
 
-Poll<uint32_t> OutputBuffers::PollWrite(SliceBuffer& output_buffer) {
+Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
+                                     SliceBuffer& output_buffer) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-  const auto length = output_buffer.Length();
+  const uint32_t length = output_buffer.Length();
+  const size_t write_size = DataFrameHeader::kFrameHeaderSize + length;
   MutexLock lock(&mu_);
+  size_t best_endpoint = std::numeric_limits<size_t>::max();
+  double earliest_delivery = std::numeric_limits<double>::max();
   for (size_t i = 0; i < buffers_.size(); ++i) {
-    if (buffers_[i].has_value() && buffers_[i]->Accept(output_buffer)) {
-      GRPC_TRACE_LOG(chaotic_good, INFO)
-          << "CHAOTIC_GOOD: Queue " << length << " data onto endpoint " << i
-          << " queue " << this;
-      waker = buffers_[i]->TakeWaker();
-      return i;
+    if (!buffers_[i].has_value()) continue;
+    auto delivery_time = buffers_[i]->DeliveryTime(send_time, write_size);
+    if (!delivery_time.has_value()) continue;
+    if (*delivery_time < earliest_delivery) {
+      earliest_delivery = *delivery_time;
+      best_endpoint = i;
     }
   }
+  if (best_endpoint == std::numeric_limits<size_t>::max()) {
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "CHAOTIC_GOOD: No data endpoint ready for " << length
+        << " bytes on queue " << this;
+    write_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    return Pending{};
+  }
   GRPC_TRACE_LOG(chaotic_good, INFO)
-      << "CHAOTIC_GOOD: No data endpoint ready for " << length
-      << " bytes on queue " << this;
-  write_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-  return Pending{};
+      << "CHAOTIC_GOOD: Queue " << length << " data onto endpoint "
+      << best_endpoint << " queue " << this;
+  waker = buffers_[best_endpoint]->TakeWaker();
+  SliceBuffer& output = buffers_[best_endpoint]->pending();
+  DataFrameHeader{payload_tag, send_time, length}.Serialize(
+      output.AddTiny(DataFrameHeader::kFrameHeaderSize));
+  output.TakeAndAppend(output_buffer);
+  return Empty{};
 }
 
 Poll<SliceBuffer> OutputBuffers::PollNext(uint32_t connection_id) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   MutexLock lock(&mu_);
+  const auto current_time = clock_->Now();
   auto& buffer = buffers_[connection_id];
   CHECK(buffer.has_value());
+  buffer->MaybeCompleteSend(current_time);
   if (buffer->HavePending()) {
     waker = std::move(write_waker_);
-    return buffer->TakePending();
+    return buffer->TakePendingAndStartWrite(current_time);
   }
   buffer->SetWaker();
   return Pending{};
@@ -100,83 +137,64 @@ void OutputBuffers::AddEndpoint(uint32_t connection_id) {
 ///////////////////////////////////////////////////////////////////////////////
 // InputQueues
 
-InputQueues::InputQueues() : read_requests_(), read_request_waker_() {}
+InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
+  {
+    MutexLock lock(&mu_);
+    if (read_requested_.Set(payload_tag)) {
+      return ReadTicket(Failure{}, nullptr);
+    }
+  }
+  return ReadTicket(payload_tag, Ref());
+}
 
-absl::StatusOr<uint64_t> InputQueues::CreateTicket(uint32_t connection_id,
-                                                   size_t length) {
+Poll<absl::StatusOr<SliceBuffer>> InputQueue::PollRead(uint64_t payload_tag) {
+  MutexLock lock(&mu_);
+  if (!read_completed_.IsSet(payload_tag)) {
+    read_wakers_.emplace(payload_tag,
+                         GetContext<Activity>()->MakeNonOwningWaker());
+    return Pending{};
+  }
+  auto it_buffer = read_buffers_.find(payload_tag);
+  // If a read is complete then it must either be in read_buffers_ or it
+  // was cancelled; if it was cancelled then we shouldn't be polling for
+  // it.
+  CHECK(it_buffer != read_buffers_.end());
+  auto buffer = std::move(it_buffer->second);
+  read_buffers_.erase(it_buffer);
+  read_wakers_.erase(payload_tag);
+  return std::move(buffer);
+}
+
+void InputQueue::CompleteRead(uint64_t payload_tag,
+                              absl::StatusOr<SliceBuffer> buffer) {
+  if (payload_tag == 0) return;
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   MutexLock lock(&mu_);
-  if (connection_id >= read_requests_.size()) {
-    return absl::UnavailableError(
-        absl::StrCat("Invalid connection id: ", connection_id));
+  GRPC_TRACE_LOG(chaotic_good, INFO) << "CHAOTIC_GOOD: Complete payload_tag #"
+                                     << payload_tag << ": " << buffer.status();
+  if (read_completed_.Set(payload_tag)) return;
+  read_buffers_.emplace(payload_tag, std::move(buffer));
+  auto it = read_wakers_.find(payload_tag);
+  if (it != read_wakers_.end()) {
+    waker = std::move(it->second);
+    read_wakers_.erase(it);
   }
-  uint64_t ticket = next_ticket_id_;
-  ++next_ticket_id_;
-  auto r = ReadRequest{length, ticket};
-  GRPC_TRACE_LOG(chaotic_good, INFO)
-      << "CHAOTIC_GOOD: New read ticket on #" << connection_id << " " << r;
-  read_requests_[connection_id].push_back(r);
-  outstanding_reads_.emplace(ticket, Waker{});
-  waker = std::move(read_request_waker_[connection_id]);
-  return ticket;
 }
 
-Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
-  MutexLock lock(&mu_);
-  auto it = outstanding_reads_.find(ticket);
-  CHECK(it != outstanding_reads_.end()) << " ticket=" << ticket;
-  if (auto* waker = std::get_if<Waker>(&it->second)) {
-    *waker = GetContext<Activity>()->MakeNonOwningWaker();
-    return Pending{};
-  }
-  auto result = std::move(std::get<absl::StatusOr<SliceBuffer>>(it->second));
-  outstanding_reads_.erase(it);
-  GRPC_TRACE_LOG(chaotic_good, INFO)
-      << "CHAOTIC_GOOD: Poll for ticket #" << ticket
-      << " completes: " << result.status();
-  return result;
-}
-
-Poll<std::vector<InputQueues::ReadRequest>> InputQueues::PollNext(
-    uint32_t connection_id) {
-  MutexLock lock(&mu_);
-  auto& q = read_requests_[connection_id];
-  if (q.empty()) {
-    read_request_waker_[connection_id] =
-        GetContext<Activity>()->MakeNonOwningWaker();
-    return Pending{};
-  }
-  auto r = std::move(q);
-  q.clear();
-  return r;
-}
-
-void InputQueues::CompleteRead(uint64_t ticket,
-                               absl::StatusOr<SliceBuffer> buffer) {
+void InputQueue::Cancel(uint64_t payload_tag) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   MutexLock lock(&mu_);
   GRPC_TRACE_LOG(chaotic_good, INFO)
-      << "CHAOTIC_GOOD: Complete ticket #" << ticket << ": " << buffer.status();
-  auto it = outstanding_reads_.find(ticket);
-  if (it == outstanding_reads_.end()) return;  // cancelled
-  waker = std::move(std::get<Waker>(it->second));
-  it->second.emplace<absl::StatusOr<SliceBuffer>>(std::move(buffer));
-}
-
-void InputQueues::CancelTicket(uint64_t ticket) {
-  MutexLock lock(&mu_);
-  outstanding_reads_.erase(ticket);
-}
-
-void InputQueues::AddEndpoint(uint32_t connection_id) {
-  MutexLock lock(&mu_);
-  CHECK_EQ(read_requests_.size(), read_request_waker_.size());
-  if (read_requests_.size() <= connection_id) {
-    read_requests_.resize(connection_id + 1);
-    read_request_waker_.resize(connection_id + 1);
+      << "CHAOTIC_GOOD: Cancel payload_tag #" << payload_tag;
+  auto it = read_wakers_.find(payload_tag);
+  if (it != read_wakers_.end()) {
+    waker = std::move(it->second);
+    read_wakers_.erase(it);
   }
+  read_buffers_.erase(payload_tag);
+  read_completed_.Set(payload_tag);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -200,52 +218,50 @@ auto Endpoint::WriteLoop(uint32_t id,
   });
 }
 
-auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueues> input_queues,
+auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
                         std::shared_ptr<PromiseEndpoint> endpoint) {
-  return Loop([id, endpoint, input_queues = std::move(input_queues)]() {
+  return Loop([id, endpoint = std::move(endpoint),
+               input_queues = std::move(input_queues)]() {
     return TrySeq(
-        input_queues->Next(id),
-        [endpoint, input_queues](
-            std::vector<data_endpoints_detail::InputQueues::ReadRequest>
-                requests) {
-          return TrySeqContainer(
-              std::move(requests), Empty{},
-              [endpoint, input_queues](
-                  data_endpoints_detail::InputQueues::ReadRequest read_request,
-                  Empty) {
-                return Seq(endpoint->Read(read_request.length),
-                           [ticket = read_request.ticket,
-
-                            input_queues](absl::StatusOr<SliceBuffer> buffer) {
-                             input_queues->CompleteRead(ticket,
-                                                        std::move(buffer));
-                             return Empty{};
-                           });
-              });
+        endpoint->ReadSlice(DataFrameHeader::kFrameHeaderSize),
+        [](Slice frame_header) {
+          return DataFrameHeader::Parse(frame_header.data());
         },
-        []() -> LoopCtl<absl::Status> { return Continue{}; });
+        [id, endpoint](DataFrameHeader frame_header) {
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "CHAOTIC_GOOD: Read " << frame_header
+              << " on data connection #" << id;
+          return TryStaple(endpoint->Read(frame_header.payload_length),
+                           frame_header);
+        },
+        [input_queues](std::tuple<SliceBuffer, DataFrameHeader> buffer_frame)
+            -> LoopCtl<absl::Status> {
+          auto& [buffer, frame_header] = buffer_frame;
+          input_queues->CompleteRead(frame_header.payload_tag,
+                                     std::move(buffer));
+          return Continue{};
+        });
   });
 }
 
 Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
-                   RefCountedPtr<InputQueues> input_queues,
+                   RefCountedPtr<InputQueue> input_queues,
                    PendingConnection pending_connection, bool enable_tracing,
-                   grpc_event_engine::experimental::EventEngine* event_engine) {
-  input_queues->AddEndpoint(id);
+                   TransportContextPtr ctx) {
   auto arena = SimpleArenaAllocator(0)->MakeArena();
-  arena->SetContext(event_engine);
+  arena->SetContext(ctx->event_engine.get());
   party_ = Party::Make(arena);
   party_->Spawn(
       "write",
       [id, enable_tracing, output_buffers = std::move(output_buffers),
        input_queues = std::move(input_queues),
        pending_connection = std::move(pending_connection),
-       arena = std::move(arena)]() mutable {
+       arena = std::move(arena), ctx = std::move(ctx)]() mutable {
         return TrySeq(
             pending_connection.Await(),
             [id, enable_tracing, output_buffers = std::move(output_buffers),
-             input_queues = std::move(input_queues),
-             arena = std::move(arena)](PromiseEndpoint ep) mutable {
+             input_queues = std::move(input_queues), arena = std::move(arena),
+             ctx = std::move(ctx)](PromiseEndpoint ep) mutable {
               GRPC_TRACE_LOG(chaotic_good, INFO)
                   << "CHAOTIC_GOOD: data endpoint " << id << " to "
                   << grpc_event_engine::experimental::ResolvedAddressToString(
@@ -261,7 +277,10 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
                     grpc_event_engine::experimental::TcpTraceExtension>(
                     endpoint->GetEventEngineEndpoint().get());
-                if (epte != nullptr) epte->InitializeAndReturnTcpTracer();
+                if (epte != nullptr) {
+                  epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
+                      ctx->stats_plugin_group));
+                }
               }
               auto read_party = Party::Make(std::move(arena));
               read_party->Spawn(
@@ -283,17 +302,15 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
 ///////////////////////////////////////////////////////////////////////////////
 // DataEndpoints
 
-DataEndpoints::DataEndpoints(
-    std::vector<PendingConnection> endpoints_vec,
-    grpc_event_engine::experimental::EventEngine* event_engine,
-    bool enable_tracing)
-    : output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>()),
-      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueues>()) {
-  CHECK(event_engine != nullptr);
+DataEndpoints::DataEndpoints(std::vector<PendingConnection> endpoints_vec,
+                             TransportContextPtr ctx, bool enable_tracing,
+                             data_endpoints_detail::Clock* clock)
+    : output_buffers_(
+          MakeRefCounted<data_endpoints_detail::OutputBuffers>(clock)),
+      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(i, output_buffers_, input_queues_,
-                            std::move(endpoints_vec[i]), enable_tracing,
-                            event_engine);
+                            std::move(endpoints_vec[i]), enable_tracing, ctx);
   }
 }
 

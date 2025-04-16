@@ -20,42 +20,44 @@
 
 #include <grpc/support/port_platform.h>
 
-grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status) {
+using grpc_core::http2::Http2ErrorCode;
+
+Http2ErrorCode grpc_status_to_http2_error(grpc_status_code status) {
   switch (status) {
     case GRPC_STATUS_OK:
-      return GRPC_HTTP2_NO_ERROR;
+      return Http2ErrorCode::kNoError;
     case GRPC_STATUS_CANCELLED:
-      return GRPC_HTTP2_CANCEL;
+      return Http2ErrorCode::kCancel;
     case GRPC_STATUS_DEADLINE_EXCEEDED:
-      return GRPC_HTTP2_CANCEL;
+      return Http2ErrorCode::kCancel;
     case GRPC_STATUS_RESOURCE_EXHAUSTED:
-      return GRPC_HTTP2_ENHANCE_YOUR_CALM;
+      return Http2ErrorCode::kEnhanceYourCalm;
     case GRPC_STATUS_PERMISSION_DENIED:
-      return GRPC_HTTP2_INADEQUATE_SECURITY;
+      return Http2ErrorCode::kInadequateSecurity;
     case GRPC_STATUS_UNAVAILABLE:
-      return GRPC_HTTP2_REFUSED_STREAM;
+      return Http2ErrorCode::kRefusedStream;
     default:
-      return GRPC_HTTP2_INTERNAL_ERROR;
+      return Http2ErrorCode::kInternalError;
   }
 }
 
 grpc_status_code grpc_http2_error_to_grpc_status(
-    grpc_http2_error_code error, grpc_core::Timestamp deadline) {
+    Http2ErrorCode error, grpc_core::Timestamp deadline) {
   switch (error) {
-    case GRPC_HTTP2_NO_ERROR:
+    case Http2ErrorCode::kNoError:
       // should never be received
       return GRPC_STATUS_INTERNAL;
-    case GRPC_HTTP2_CANCEL:
+    case Http2ErrorCode::kCancel:
       // http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
       // exceeded
       return grpc_core::Timestamp::Now() > deadline
                  ? GRPC_STATUS_DEADLINE_EXCEEDED
                  : GRPC_STATUS_CANCELLED;
-    case GRPC_HTTP2_ENHANCE_YOUR_CALM:
+    case Http2ErrorCode::kEnhanceYourCalm:
       return GRPC_STATUS_RESOURCE_EXHAUSTED;
-    case GRPC_HTTP2_INADEQUATE_SECURITY:
+    case Http2ErrorCode::kInadequateSecurity:
       return GRPC_STATUS_PERMISSION_DENIED;
-    case GRPC_HTTP2_REFUSED_STREAM:
+    case Http2ErrorCode::kRefusedStream:
       return GRPC_STATUS_UNAVAILABLE;
     default:
       return GRPC_STATUS_INTERNAL;

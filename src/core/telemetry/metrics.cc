@@ -120,6 +120,28 @@ void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
   }
 }
 
+int GlobalStatsPluginRegistry::StatsPluginGroup::ChannelArgsCompare(
+    const StatsPluginGroup* a, const StatsPluginGroup* b) {
+  for (size_t i = 0; i < a->plugins_state_.size(); ++i) {
+    if (b->plugins_state_.size() == i) return 1;  // a is greater
+    auto& a_state = a->plugins_state_[i];
+    auto& b_state = b->plugins_state_[i];
+    int r = QsortCompare(a_state.plugin.get(), b_state.plugin.get());
+    if (r != 0) return r;
+    if (a_state.scope_config == nullptr) {
+      if (b_state.scope_config != nullptr) return -1;  // a is less
+      // If both are null, they're equal.
+    } else {
+      if (b_state.scope_config == nullptr) return 1;  // a is greater
+      // Neither is null, so compare.
+      r = a_state.scope_config->Compare(*b_state.scope_config);
+      if (r != 0) return r;
+    }
+  }
+  if (b->plugins_state_.size() > a->plugins_state_.size()) return -1;
+  return 0;
+}
+
 std::atomic<GlobalStatsPluginRegistry::GlobalStatsPluginNode*>
     GlobalStatsPluginRegistry::plugins_;
 
@@ -133,32 +155,28 @@ void GlobalStatsPluginRegistry::RegisterStatsPlugin(
   }
 }
 
-GlobalStatsPluginRegistry::StatsPluginGroup
+std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
 GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
     const experimental::StatsPluginChannelScope& scope) {
-  StatsPluginGroup group;
+  auto group = std::make_shared<StatsPluginGroup>();
   for (GlobalStatsPluginNode* node = plugins_.load(std::memory_order_acquire);
        node != nullptr; node = node->next) {
-    bool is_enabled = false;
-    std::shared_ptr<StatsPlugin::ScopeConfig> config;
-    std::tie(is_enabled, config) = node->plugin->IsEnabledForChannel(scope);
+    auto [is_enabled, config] = node->plugin->IsEnabledForChannel(scope);
     if (is_enabled) {
-      group.AddStatsPlugin(node->plugin, std::move(config));
+      group->AddStatsPlugin(node->plugin, std::move(config));
     }
   }
   return group;
 }
 
-GlobalStatsPluginRegistry::StatsPluginGroup
+std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
 GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
-  StatsPluginGroup group;
+  auto group = std::make_shared<StatsPluginGroup>();
   for (GlobalStatsPluginNode* node = plugins_.load(std::memory_order_acquire);
        node != nullptr; node = node->next) {
-    bool is_enabled = false;
-    std::shared_ptr<StatsPlugin::ScopeConfig> config;
-    std::tie(is_enabled, config) = node->plugin->IsEnabledForServer(args);
+    auto [is_enabled, config] = node->plugin->IsEnabledForServer(args);
     if (is_enabled) {
-      group.AddStatsPlugin(node->plugin, std::move(config));
+      group->AddStatsPlugin(node->plugin, std::move(config));
     }
   }
   return group;

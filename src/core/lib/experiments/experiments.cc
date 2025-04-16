@@ -38,6 +38,9 @@ const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_error_flatten =
+    "Flatten errors to ordinary absl::Status form.";
+const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -73,6 +76,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_secure_endpoint =
+    "Use EventEngine secure endpoint wrapper instead of iomgr when available";
+const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -95,6 +101,13 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_pollset_alternative =
+    "Code outside iomgr that relies directly on pollsets will use non-pollset "
+    "alternatives when enabled.";
+const char* const additional_constraints_pollset_alternative = "{}";
+const uint8_t required_experiments_pollset_alternative[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -128,9 +141,14 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
+const char* const description_server_global_callbacks_ownership =
+    "If set, server global callbacks ownership is fixed to not be owned by "
+    "gRPC.";
+const char* const additional_constraints_server_global_callbacks_ownership =
+    "{}";
+const char* const description_sleep_promise_exec_ctx_removal =
+    "If set, polling the sleep promise does not rely on the ExecCtx.";
+const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -158,12 +176,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
-     true},
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
+    {"error_flatten", description_error_flatten,
+     additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
-     additional_constraints_event_engine_client, nullptr, 0, false, false},
+     additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
-     additional_constraints_event_engine_dns, nullptr, 0, false, false},
+     additional_constraints_event_engine_dns, nullptr, 0, true, false},
     {"event_engine_dns_non_client_channel",
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
@@ -171,7 +190,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, false, false},
     {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, false, false},
+     additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
      additional_constraints_event_engine_callback_cq,
      required_experiments_event_engine_callback_cq, 2, true, true},
@@ -179,6 +198,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
+     additional_constraints_event_engine_secure_endpoint, nullptr, 0, false,
+     true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -192,6 +214,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"pollset_alternative", description_pollset_alternative,
+     additional_constraints_pollset_alternative,
+     required_experiments_pollset_alternative, 2, false, false},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
@@ -216,8 +241,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener, nullptr, 0, true, true},
+    {"server_global_callbacks_ownership",
+     description_server_global_callbacks_ownership,
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
+     false, true},
+    {"sleep_promise_exec_ctx_removal",
+     description_sleep_promise_exec_ctx_removal,
+     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -247,6 +278,9 @@ const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_error_flatten =
+    "Flatten errors to ordinary absl::Status form.";
+const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -282,6 +316,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_secure_endpoint =
+    "Use EventEngine secure endpoint wrapper instead of iomgr when available";
+const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -304,6 +341,13 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_pollset_alternative =
+    "Code outside iomgr that relies directly on pollsets will use non-pollset "
+    "alternatives when enabled.";
+const char* const additional_constraints_pollset_alternative = "{}";
+const uint8_t required_experiments_pollset_alternative[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -337,9 +381,14 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
+const char* const description_server_global_callbacks_ownership =
+    "If set, server global callbacks ownership is fixed to not be owned by "
+    "gRPC.";
+const char* const additional_constraints_server_global_callbacks_ownership =
+    "{}";
+const char* const description_sleep_promise_exec_ctx_removal =
+    "If set, polling the sleep promise does not rely on the ExecCtx.";
+const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -367,8 +416,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
-     true},
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
+    {"error_flatten", description_error_flatten,
+     additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -388,6 +438,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
+     additional_constraints_event_engine_secure_endpoint, nullptr, 0, false,
+     true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -401,6 +454,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"pollset_alternative", description_pollset_alternative,
+     additional_constraints_pollset_alternative,
+     required_experiments_pollset_alternative, 2, false, false},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
@@ -425,8 +481,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener, nullptr, 0, true, true},
+    {"server_global_callbacks_ownership",
+     description_server_global_callbacks_ownership,
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
+     false, true},
+    {"sleep_promise_exec_ctx_removal",
+     description_sleep_promise_exec_ctx_removal,
+     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -456,6 +518,9 @@ const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_error_flatten =
+    "Flatten errors to ordinary absl::Status form.";
+const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -491,6 +556,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_secure_endpoint =
+    "Use EventEngine secure endpoint wrapper instead of iomgr when available";
+const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -513,6 +581,13 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_pollset_alternative =
+    "Code outside iomgr that relies directly on pollsets will use non-pollset "
+    "alternatives when enabled.";
+const char* const additional_constraints_pollset_alternative = "{}";
+const uint8_t required_experiments_pollset_alternative[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_posix_ee_skip_grpc_init =
     "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
     "creation and destruction.";
@@ -546,9 +621,14 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
+const char* const description_server_global_callbacks_ownership =
+    "If set, server global callbacks ownership is fixed to not be owned by "
+    "gRPC.";
+const char* const additional_constraints_server_global_callbacks_ownership =
+    "{}";
+const char* const description_sleep_promise_exec_ctx_removal =
+    "If set, polling the sleep promise does not rely on the ExecCtx.";
+const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -576,8 +656,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, false,
-     true},
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
+    {"error_flatten", description_error_flatten,
+     additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -597,6 +678,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
+     additional_constraints_event_engine_secure_endpoint, nullptr, 0, false,
+     true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -610,6 +694,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"pollset_alternative", description_pollset_alternative,
+     additional_constraints_pollset_alternative,
+     required_experiments_pollset_alternative, 2, false, false},
     {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
      additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
@@ -634,8 +721,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener, nullptr, 0, true, true},
+    {"server_global_callbacks_ownership",
+     description_server_global_callbacks_ownership,
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
+     false, true},
+    {"sleep_promise_exec_ctx_removal",
+     description_sleep_promise_exec_ctx_removal,
+     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,

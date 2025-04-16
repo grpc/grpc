@@ -133,6 +133,9 @@ absl::Status PrepareSocket(SOCKET sock);
 // Set non block option for socket.
 absl::Status SetSocketNonBlock(SOCKET sock);
 
+// Get the local address of a socket.
+absl::StatusOr<EventEngine::ResolvedAddress> SocketToAddress(SOCKET sock);
+
 }  // namespace grpc_event_engine::experimental
 
 #endif

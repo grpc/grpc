@@ -19,6 +19,15 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/end2end")
 
+# grpc_core_end2end_test_suite() currently needs to consume the source for tests directly.
+exports_files(
+    glob(["tests/**"]),
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:core_end2end_tests",
+    ],
+)
+
 grpc_cc_library(
     name = "cq_verifier",
     testonly = 1,
@@ -41,6 +50,7 @@ grpc_cc_library(
         "//src/core:match",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:postmortem",
     ],
 )
 
@@ -185,6 +195,7 @@ grpc_cc_library(
             "//test/core/event_engine/fuzzing_event_engine",
             "//test/core/test_util:fuzz_config_vars",
             "//test/core/test_util:grpc_test_util",
+            "//test/core/test_util:postmortem",
             "//test/core/test_util:test_call_creds",
         ] + (["//test/core/test_util:fuzz_config_vars_helpers"] if fuzz else []),
         alwayslink = 1,
@@ -313,6 +324,7 @@ grpc_cc_test(
         "//src/core:iomgr_fwd",
         "//src/core:resolved_address",
         "//src/core:time",
+        "//test/core/event_engine:delegating_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
 )

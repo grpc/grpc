@@ -41,7 +41,7 @@ struct Sender {
   Sender& operator=(Sender&&) = delete;
   auto Send(Frame frame) {
     frames.emplace_back(std::move(frame));
-    return []() -> Poll<bool> { return true; };
+    return []() -> Poll<StatusFlag> { return Success{}; };
   }
 };
 
@@ -54,7 +54,7 @@ void MessageChunkerTest(uint32_t max_chunk_size, uint32_t alignment,
                                SliceBuffer(Slice::FromCopiedString(payload)),
                                message_flags),
                            stream_id, sender)(),
-              IsReady(true));
+              IsReady(Success{}));
   if (max_chunk_size == 0) {
     // No chunking ==> one frame with just a message.
     EXPECT_EQ(sender.frames.size(), 1);

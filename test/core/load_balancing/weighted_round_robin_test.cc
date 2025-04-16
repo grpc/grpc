@@ -48,6 +48,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
@@ -112,6 +113,9 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
 
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();
+    if (!grpc_event_engine::experimental::IsSaneTimerEnvironment()) {
+      GTEST_SKIP() << "Needs most EventEngine experiments enabled";
+    }
     SetExpectedTimerDuration(std::chrono::seconds(1));
   }
 
@@ -328,7 +332,6 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
 };
 
 TEST_F(WeightedRoundRobinTest, Basic) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -357,7 +360,6 @@ TEST_F(WeightedRoundRobinTest, Basic) {
 }
 
 TEST_F(WeightedRoundRobinTest, CpuUtilWithNoAppUtil) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -392,7 +394,6 @@ TEST_F(WeightedRoundRobinTest, CpuUtilWithNoAppUtil) {
 }
 
 TEST_F(WeightedRoundRobinTest, AppUtilOverCpuUtil) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -427,7 +428,6 @@ TEST_F(WeightedRoundRobinTest, AppUtilOverCpuUtil) {
 }
 
 TEST_F(WeightedRoundRobinTest, Eps) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -447,7 +447,6 @@ TEST_F(WeightedRoundRobinTest, Eps) {
 }
 
 TEST_F(WeightedRoundRobinTest, IgnoresDuplicateAddresses) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -480,7 +479,6 @@ TEST_F(WeightedRoundRobinTest, IgnoresDuplicateAddresses) {
 }
 
 TEST_F(WeightedRoundRobinTest, FallsBackToRoundRobinWithoutWeights) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -493,7 +491,6 @@ TEST_F(WeightedRoundRobinTest, FallsBackToRoundRobinWithoutWeights) {
 }
 
 TEST_F(WeightedRoundRobinTest, OobReporting) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -531,7 +528,6 @@ TEST_F(WeightedRoundRobinTest, OobReporting) {
 }
 
 TEST_F(WeightedRoundRobinTest, OobReportingCpuUtilWithNoAppUtil) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -576,7 +572,6 @@ TEST_F(WeightedRoundRobinTest, OobReportingCpuUtilWithNoAppUtil) {
 }
 
 TEST_F(WeightedRoundRobinTest, OobReportingAppUtilOverCpuUtil) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -621,7 +616,6 @@ TEST_F(WeightedRoundRobinTest, OobReportingAppUtilOverCpuUtil) {
 }
 
 TEST_F(WeightedRoundRobinTest, HonorsOobReportingPeriod) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = SendInitialUpdateAndWaitForConnected(
@@ -647,7 +641,6 @@ TEST_F(WeightedRoundRobinTest, HonorsOobReportingPeriod) {
 }
 
 TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   SetExpectedTimerDuration(std::chrono::seconds(2));
@@ -666,7 +659,6 @@ TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
 }
 
 TEST_F(WeightedRoundRobinTest, WeightUpdatePeriodLowerBound) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   SetExpectedTimerDuration(std::chrono::milliseconds(100));
@@ -686,7 +678,6 @@ TEST_F(WeightedRoundRobinTest, WeightUpdatePeriodLowerBound) {
 }
 
 TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -714,7 +705,6 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
 }
 
 TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -759,7 +749,6 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
 }
 
 TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -812,7 +801,6 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
 }
 
 TEST_F(WeightedRoundRobinTest, BlackoutPeriodDoesNotGetResetAfterUpdate) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -852,7 +840,6 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodDoesNotGetResetAfterUpdate) {
 }
 
 TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -872,7 +859,6 @@ TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
 }
 
 TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in WRR.
@@ -1012,7 +998,6 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionRrFallback) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.rr_fallback");
@@ -1030,7 +1015,6 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionRrFallback) {
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.endpoint_weight_not_yet_usable");
@@ -1048,7 +1032,6 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.endpoint_weight_stale");
@@ -1066,7 +1049,6 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.endpoint_weights");
@@ -1084,7 +1066,6 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
 }
 
 TEST_F(WeightedRoundRobinTest, MetricValues) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const auto kRrFallback =
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
           "grpc.lb.wrr.rr_fallback")

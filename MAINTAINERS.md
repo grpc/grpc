@@ -37,6 +37,7 @@ for general contribution guidelines.
 - [sanjaypujare](https://github.com/sanjaypujare), Google LLC
 - [sastryvp](https://github.com/sastryvp), Google LLC
 - [sergiitk](https://github.com/sergiitk), Google LLC
+- [siddharthnohria](https://github.com/siddharthnohria), Google LLC
 - [soheilhy](https://github.com/soheilhy), Google LLC
 - [stanley-cheung](https://github.com/stanley-cheung), Google LLC
 - [thisisnotapril](https://github.com/thisisnotapril), Google LLC

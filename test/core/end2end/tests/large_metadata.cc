@@ -45,11 +45,11 @@ class LargeMetadataTest {
       auto status = PerformOneRequest(metadata_size);
       if (status.status() == GRPC_STATUS_RESOURCE_EXHAUSTED) {
         EXPECT_THAT(status.message(),
-                    ::testing::StartsWith("received metadata size exceeds"));
+                    ::testing::HasSubstr("received metadata size exceeds"));
       } else {
         num_requests_accepted++;
         EXPECT_EQ(status.status(), GRPC_STATUS_OK);
-        EXPECT_EQ(status.message(), "xyz");
+        EXPECT_EQ(status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
       }
     }
     return num_requests_accepted;

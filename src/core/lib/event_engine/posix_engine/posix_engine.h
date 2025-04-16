@@ -150,16 +150,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
     grpc_core::OrphanablePtr<RefCountedDNSResolverInterface> dns_resolver_;
   };
 
-#ifdef GRPC_POSIX_SOCKET_TCP
-  // Constructs an EventEngine which has a shared ownership of the poller. Do
-  // not call this constructor directly. Instead use the
-  // MakeTestOnlyPosixEventEngine static method. Its expected to be used only in
-  // tests.
-  explicit PosixEventEngine(
-      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
-          poller);
-#endif  // GRPC_POSIX_SOCKET_TCP
-  PosixEventEngine();
+  static std::shared_ptr<PosixEventEngine> MakePosixEventEngine();
 
   ~PosixEventEngine() override;
 
@@ -221,13 +212,24 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   // since it does not own it.
   static std::shared_ptr<PosixEventEngine> MakeTestOnlyPosixEventEngine(
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
-          test_only_poller) {
-    return std::make_shared<PosixEventEngine>(std::move(test_only_poller));
-  }
+          test_only_poller);
 #endif  // GRPC_POSIX_SOCKET_TCP
 
  private:
   struct ClosureData;
+
+  PosixEventEngine();
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+  // Constructs an EventEngine which has a shared ownership of the poller. Do
+  // not call this constructor directly. Instead use the
+  // MakeTestOnlyPosixEventEngine static method. Its expected to be used only in
+  // tests.
+  explicit PosixEventEngine(
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+          poller);
+#endif  // GRPC_POSIX_SOCKET_TCP
+
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
 

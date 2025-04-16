@@ -118,7 +118,7 @@ CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeout) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s2.method(), "/service/method");
   EXPECT_FALSE(client_close2.was_cancelled());
 }

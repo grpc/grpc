@@ -30,6 +30,7 @@
 #include "absl/status/statusor.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
@@ -45,7 +46,6 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/http2_errors.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"
@@ -55,12 +55,14 @@
 
 namespace grpc_core {
 
-namespace {
+using http2::Http2ErrorCode;
 
+namespace {
 constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
 
 // If these settings change, make sure that we are not sending a GOAWAY for
-// inproc transport, since a GOAWAY to inproc ends up destroying the transport.
+// inproc transport, since a GOAWAY to inproc ends up destroying the
+// transport.
 const auto kDefaultMaxConnectionAge = Duration::Infinity();
 const auto kDefaultMaxConnectionAgeGrace = Duration::Infinity();
 const auto kDefaultMaxConnectionIdle = Duration::Infinity();
@@ -184,7 +186,8 @@ void LegacyMaxAgeFilter::PostInit() {
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
                 op->goaway_error = grpc_error_set_int(
                     GRPC_ERROR_CREATE("max_age"),
-                    StatusIntProperty::kHttp2Error, GRPC_HTTP2_NO_ERROR);
+                    StatusIntProperty::kHttp2Error,
+                    static_cast<intptr_t>(Http2ErrorCode::kNoError));
                 grpc_channel_element* elem =
                     grpc_channel_stack_element(channel_stack, 0);
                 elem->filter->start_transport_op(elem, op);

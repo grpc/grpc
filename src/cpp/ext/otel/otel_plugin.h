@@ -44,6 +44,7 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/util/down_cast.h"
 
 namespace grpc {
 namespace internal {
@@ -281,6 +282,11 @@ class OpenTelemetryPluginImpl
       return true;
     }
 
+    int Compare(const ActivePluginOptionsView& other) const {
+      return grpc_core::QsortCompare(active_mask_.to_ulong(),
+                                     other.active_mask_.to_ulong());
+    }
+
    private:
     explicit ActivePluginOptionsView(
         absl::FunctionRef<bool(const InternalOpenTelemetryPluginOption&)> func,
@@ -311,6 +317,13 @@ class OpenTelemetryPluginImpl
                   ? scope.target()
                   : "other") {}
 
+    int Compare(const ScopeConfig& other) const override {
+      const auto& o = grpc_core::DownCast<const ClientScopeConfig&>(other);
+      int r = grpc_core::QsortCompare(filtered_target_, o.filtered_target_);
+      if (r != 0) return r;
+      return active_plugin_options_view_.Compare(o.active_plugin_options_view_);
+    }
+
     const ActivePluginOptionsView& active_plugin_options_view() const {
       return active_plugin_options_view_;
     }
@@ -321,12 +334,18 @@ class OpenTelemetryPluginImpl
     ActivePluginOptionsView active_plugin_options_view_;
     std::string filtered_target_;
   };
+
   class ServerScopeConfig : public grpc_core::StatsPlugin::ScopeConfig {
    public:
     ServerScopeConfig(const OpenTelemetryPluginImpl* otel_plugin,
                       const grpc_core::ChannelArgs& args)
         : active_plugin_options_view_(
               ActivePluginOptionsView::MakeForServer(args, otel_plugin)) {}
+
+    int Compare(const ScopeConfig& other) const override {
+      const auto& o = grpc_core::DownCast<const ServerScopeConfig&>(other);
+      return active_plugin_options_view_.Compare(o.active_plugin_options_view_);
+    }
 
     const ActivePluginOptionsView& active_plugin_options_view() const {
       return active_plugin_options_view_;

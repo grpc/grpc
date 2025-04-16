@@ -43,6 +43,7 @@
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/dump_args.h"
@@ -256,6 +257,47 @@ bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
   known_handles_.erase(handle);
   if (r) delete cd;
   return r;
+}
+
+std::unique_ptr<EventEngine::Endpoint>
+WindowsEventEngine::CreateEndpointFromWinSocket(SOCKET socket,
+                                                const EndpointConfig& config) {
+  // Get address from socket.
+  auto local_address = SocketToAddress(socket);
+  if (!local_address.ok()) {
+    LOG(ERROR) << "WindowsEventEngine::" << this
+               << ": Error getting local socket address: "
+               << local_address.status();
+    return nullptr;
+  }
+  // Create winsocket and ensure IOCP is polling it.
+  auto winsocket = iocp_.Watch(socket);
+  if (winsocket == nullptr) {
+    LOG(ERROR) << "WindowsEventEngine::" << this
+               << ": Error registering socket with IOCP engine.";
+    return nullptr;
+  }
+  // Get the config's memory allocator factory if present, or fall back to the
+  // resource quota.
+  MemoryAllocator allocator;
+  auto local_address_string = *ResolvedAddressToURI(*local_address);
+  auto* allocator_factory =
+      config.GetVoidPointer(GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY);
+  if (allocator_factory != nullptr) {
+    allocator = static_cast<MemoryAllocatorFactory*>(allocator_factory)
+                    ->CreateMemoryAllocator(local_address_string);
+  } else {
+    auto* rqv = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
+    CHECK_NE(rqv, nullptr) << "WindowsEventEngine::" << this
+                           << ": config does not contain a resource quota. "
+                              "This should not happen.";
+    allocator = static_cast<grpc_core::ResourceQuota*>(rqv)
+                    ->memory_quota()
+                    ->CreateMemoryAllocator(local_address_string);
+  }
+  return std::make_unique<WindowsEndpoint>(
+      std::move(*local_address), std::move(winsocket), std::move(allocator),
+      config, thread_pool_.get(), shared_from_this());
 }
 
 EventEngine::TaskHandle WindowsEventEngine::RunAfter(

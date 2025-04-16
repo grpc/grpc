@@ -112,7 +112,7 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
 
   void RecordAnnotation(const Annotation& annotation) override;
 
-  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
+  std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
 
  private:
   PythonCensusContext context_;

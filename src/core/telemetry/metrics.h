@@ -275,6 +275,10 @@ class StatsPlugin {
   class ScopeConfig {
    public:
     virtual ~ScopeConfig() = default;
+
+    // NOTE: This is safe to invoke ONLY if both ScopeConfig objects
+    // come from the same StatsPlugin.
+    virtual int Compare(const ScopeConfig& other) const = 0;
   };
 
   virtual ~StatsPlugin() = default;
@@ -369,7 +373,8 @@ class GlobalStatsPluginRegistry {
   // stats plugins. They got a stats plugin group which contains all the stats
   // plugins for a specific scope and all operations on the stats plugin group
   // will be applied to all the stats plugins within the group.
-  class StatsPluginGroup {
+  class StatsPluginGroup
+      : public std::enable_shared_from_this<StatsPluginGroup> {
    public:
     // Adds a stats plugin and a scope config (per-channel or per-server) to the
     // group.
@@ -471,6 +476,12 @@ class GlobalStatsPluginRegistry {
     // within the group to \a call_context.
     void AddServerCallTracers(Arena* arena);
 
+    static absl::string_view ChannelArgName() {
+      return "grpc.internal.stats_plugin_group";
+    }
+    static int ChannelArgsCompare(const StatsPluginGroup* a,
+                                  const StatsPluginGroup* b);
+
    private:
     friend class RegisteredMetricCallback;
 
@@ -499,9 +510,10 @@ class GlobalStatsPluginRegistry {
 
   // The following functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
-  static StatsPluginGroup GetStatsPluginsForChannel(
+  static std::shared_ptr<StatsPluginGroup> GetStatsPluginsForChannel(
       const experimental::StatsPluginChannelScope& scope);
-  static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);
+  static std::shared_ptr<StatsPluginGroup> GetStatsPluginsForServer(
+      const ChannelArgs& args);
 
  private:
   struct GlobalStatsPluginNode {

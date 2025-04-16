@@ -56,7 +56,7 @@
 #include "src/core/util/notification.h"
 
 extern absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory();
 
 ABSL_FLAG(std::string, target, "ipv4:127.0.0.1:50051", "Target string");

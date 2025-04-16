@@ -186,7 +186,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       // the endpoint read operation as complete. gRPC may use this argument
       // to minimize the number of endpoint read API calls over the lifetime
       // of a connection.
-      int64_t read_hint_bytes;
+      int64_t read_hint_bytes = 1;
     };
     /// Reads data from the Endpoint.
     ///
@@ -225,7 +225,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       // into frames of the specified max_frame_size. gRPC may use this
       // argument to dynamically control the max sizes of frames sent to a
       // receiver in response to high receiver memory pressure.
-      int64_t max_frame_size;
+      int64_t max_frame_size = 1024 * 1024;
     };
     /// Writes data out on the connection.
     ///
@@ -334,7 +334,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// when the object is destroyed and all pending callbacks will be called
   /// shortly. If cancellation races with request completion, implementations
   /// may choose to either cancel or satisfy the request.
-  class DNSResolver {
+  class DNSResolver : public Extensible {
    public:
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {

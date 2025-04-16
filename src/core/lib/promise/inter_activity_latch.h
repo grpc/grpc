@@ -133,7 +133,7 @@ class InterActivityLatch<void> {
   }
 
   std::string StateString() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return absl::StrCat("is_set:", is_set_);
+    return absl::StrCat("is_set:", is_set_, " waiters:", waiters_.ToString());
   }
 
   mutable Mutex mu_;

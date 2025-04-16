@@ -99,10 +99,10 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordOutgoingBytes(
         const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
-    void RecordEnd(const gpr_timespec& /*latency*/) override;
+    void RecordEnd() override;
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
-    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
+    std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
     void SetOptionalLabel(OptionalLabelKey,
                           grpc_core::RefCountedStringValue) override {}
 

@@ -116,3 +116,4 @@ RUN git config --global protocol.file.allow always
 
 # Define the default command.
 CMD ["bash"]
+
