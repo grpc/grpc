@@ -620,7 +620,9 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
     return GRPC_ERROR_CREATE("Invalid address: addr cannot be a nullptr.");
   }
   if (strncmp(addr, "external:", 9) == 0) {
-    return NewChttp2ServerListener::CreateWithAcceptor(server, addr, args);
+    auto r = NewChttp2ServerListener::CreateWithAcceptor(server, addr, args);
+    if (!r.ok()) return r;
+    return -1;
   }
   int port_num = -1;
   absl::StatusOr<std::vector<grpc_resolved_address>> resolved;
