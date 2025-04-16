@@ -193,7 +193,7 @@ int grpc_sockaddr_is_wildcard1(const grpc_resolved_address* resolved_addr,
     *port_out = grpc_ntohs(addr4->sin_port);
     return 1;
   } else {
-    return 0;
+    return 1;
   }
 }
 
