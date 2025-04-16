@@ -137,7 +137,8 @@ PING_SYSTEM_TEST(TestPingRequest) {
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface),
+                         event_engine());
   std::string execution_order;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
 
@@ -190,7 +191,8 @@ PING_SYSTEM_TEST(TestPingUnrelatedAck) {
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface),
+                         event_engine());
   std::string execution_order;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
 
@@ -252,7 +254,8 @@ PING_SYSTEM_TEST(TestPingWaitForAck) {
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface),
+                         event_engine());
   std::string execution_order;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
 
@@ -300,7 +303,8 @@ PING_SYSTEM_TEST(TestPingCancel) {
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface),
+                         event_engine());
 
   auto party = GetParty();
   EXPECT_EQ(ping_system.CountPingInflight(), 0);
@@ -335,7 +339,8 @@ PING_SYSTEM_TEST(TestPingSystemNoAck) {
   ping_interface->ExpectSendPing(SendPingArgs{false, /*not used*/ 1234});
   ping_interface->ExpectPingTimeout();
 
-  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface),
+                         event_engine());
   auto party = GetParty();
   party->Spawn("PingRequest",
                TrySeq(ping_system.RequestPing([]() {
@@ -383,7 +388,8 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
   ping_interface->ExpectTriggerWrite(/*call_after*/ Timestamp::Now() +
                                      Duration::Hours(1));
 
-  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface),
+                         event_engine());
   auto party = GetParty();
 
   // Ping 1
@@ -450,7 +456,8 @@ PING_SYSTEM_TEST(TestPingSystemAck) {
 
   auto cb = ping_interface->ExpectSendPingReturnArgs(SendPingArgs{false, 1234});
 
-  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface),
+                         event_engine());
   auto party = GetParty();
 
   party->Spawn("PingRequest",
@@ -499,7 +506,8 @@ PING_SYSTEM_TEST(TestPingSystemDelayedAck) {
   auto cb = ping_interface->ExpectSendPingReturnArgs(SendPingArgs{false, 1234});
   ping_interface->ExpectPingTimeout();
 
-  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface),
+                         event_engine());
   auto party = GetParty();
   party->Spawn("PingRequest",
                TrySeq(ping_system.RequestPing([]() {
@@ -541,7 +549,8 @@ PING_SYSTEM_TEST(TestPingSystemNoPingRequest) {
   std::unique_ptr<StrictMock<MockPingSystemInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingSystemInterface>>();
 
-  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface));
+  PingSystem ping_system(GetChannelArgs(), std::move(ping_interface),
+                         event_engine());
   auto party = GetParty();
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
 

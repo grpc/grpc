@@ -9458,6 +9458,7 @@ grpc_cc_library(
     deps = [
         "1999",
         "if",
+        "inter_activity_latch",
         "latch",
         "map",
         "match",

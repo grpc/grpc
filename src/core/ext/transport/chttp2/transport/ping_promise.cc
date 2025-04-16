@@ -53,9 +53,11 @@ Promise<absl::Status> PingSystem::PingPromiseCallbacks::WaitForPingAck() {
 }
 
 // Ping System implementation
-PingSystem::PingSystem(const ChannelArgs& channel_args,
-                       std::unique_ptr<PingSystemInterface> ping_interface)
-    : ping_callbacks_(),
+PingSystem::PingSystem(
+    const ChannelArgs& channel_args,
+    std::unique_ptr<PingSystemInterface> ping_interface,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+    : ping_callbacks_(event_engine),
       ping_abuse_policy_(channel_args),
       ping_rate_policy_(channel_args, /*is_client=*/true),
       ping_interface_(std::move(ping_interface)) {}
@@ -116,7 +118,7 @@ void PingSystem::SpawnTimeout(Duration ping_timeout,
       "PingTimeout",
       [this, ping_timeout, opaque_data]() {
         return AssertResultType<absl::Status>(Race(
-            TrySeq(Sleep(ping_timeout),
+            TrySeq(ping_callbacks_.PingTimeout(ping_timeout),
                    [this, opaque_data]() mutable {
                      VLOG(2) << " Ping ack not received for id=" << opaque_data
                              << ". Ping timeout triggered.";

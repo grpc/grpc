@@ -24,6 +24,8 @@
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/util/time.h"
@@ -60,8 +62,13 @@ class PingSystem {
   class PingPromiseCallbacks {
     Chttp2PingCallbacks ping_callbacks_;
     absl::BitGen bitgen_;
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
    public:
+    explicit PingPromiseCallbacks(
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+            event_engine)
+        : event_engine_(event_engine) {}
     Promise<absl::Status> RequestPing(absl::AnyInvocable<void()> on_initiate);
     Promise<absl::Status> WaitForPingAck();
     void CancelCallbacks(
@@ -75,11 +82,25 @@ class PingSystem {
       return ping_callbacks_.AckPing(id, event_engine);
     }
     size_t CountPingInflight() { return ping_callbacks_.pings_inflight(); }
+
+    auto PingTimeout(Duration ping_timeout) {
+      std::shared_ptr<InterActivityLatch<void>> latch =
+          std::make_shared<InterActivityLatch<void>>();
+      auto timeout_cb = [latch]() { latch->Set(); };
+      auto id = ping_callbacks_.OnPingTimeout(ping_timeout, event_engine_.get(),
+                                              std::move(timeout_cb));
+      DCHECK(id.has_value());
+      VLOG(2) << "Ping timeout of duration: " << ping_timeout
+              << " initiated for ping id: " << *id;
+      return Map(latch->Wait(), [latch](Empty) { return absl::OkStatus(); });
+    }
   };
 
  public:
   PingSystem(const ChannelArgs& channel_args,
-             std::unique_ptr<PingSystemInterface> ping_interface);
+             std::unique_ptr<PingSystemInterface> ping_interface,
+             std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                 event_engine);
 
   // Returns a promise that determines if a ping frame should be sent to the
   // peer. If a ping frame is sent, it also spawns a timeout promise that
