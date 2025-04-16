@@ -554,12 +554,12 @@ grpc_fuzz_test(
         "gtest",
     ],
     deps = [
-        "//third_party/grpc:chttp2_frame",
-        "//third_party/grpc:ref_counted_ptr",
-        "//third_party/grpc/src/core:message",
-        "//third_party/grpc/src/core:message_assembler",
-        "//third_party/grpc/src/core:slice",
-        "//third_party/grpc/src/core:slice_buffer",
+        "//:chttp2_frame",
+        "//:ref_counted_ptr",
+        "//src/core:message",
+        "//src/core:message_assembler",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
     ],
 )
 
