@@ -137,20 +137,9 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
   grpc_sockaddr_make_wildcards(555, &wild4, &wild6);
   grpc_resolved_address wild_mapped;
   ASSERT_TRUE(grpc_sockaddr_to_v4mapped(&wild4, &wild_mapped));
-  
-  int port = -1;
-  //int ret = 0;
-  auto rc = grpc_sockaddr_is_wildcard(&wild_mapped, &port);
-  //LOG(ERROR)<<"Return : "<<ret;
-  ASSERT_EQ(rc, 1);
-  ASSERT_EQ(port, 555);
-  grpc_sockaddr_in6* wild_mapped_addr =
-      reinterpret_cast<grpc_sockaddr_in6*>(&wild_mapped.addr);
-  memset(&wild_mapped_addr->sin6_addr.s6_addr, 0xbd, 1);
-  ASSERT_FALSE(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
 
   // Test 0.0.0.0:555
-  port = -1;
+  int port = -1;
   ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild4, &port));
   ASSERT_TRUE(port == 555);
   grpc_sockaddr_in* wild4_addr =
@@ -169,64 +158,13 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
 
   // Test [::ffff:0.0.0.0]:555
   port = -1;
-/*
-  auto *addr6_mapped = reinterpret_cast<grpc_sockaddr_in6*>(&wild_mapped.addr);
-  LOG(ERROR)<<"Address ";
-  for (int i = 0; i < 16; i++)
-    LOG(ERROR)<<int(addr6_mapped->sin6_addr.s6_addr[i]);
-
-  grpc_resolved_address addr4_normalized;
-  ASSERT_TRUE(grpc_sockaddr_is_v4mapped(&wild_mapped, &addr4_normalized));
-  auto *tmp_addr = reinterpret_cast<const grpc_sockaddr*>(addr4_normalized.addr);
-  ASSERT_TRUE(tmp_addr->sa_family == GRPC_AF_INET);
-  const grpc_sockaddr_in* tmp_addr4 =
-        reinterpret_cast<const grpc_sockaddr_in*>(tmp_addr);
-  ASSERT_EQ(tmp_addr4->sin_addr.s_addr, 0);
-  //ASSERT_TRUE(tmp_addr4->sin_addr.s_addr != 0);
-
-  {
-    const grpc_resolved_address* resolved_addr = &wild_mapped;
-    int* port_out = &port;
-
-    const grpc_sockaddr* addr;
-    grpc_resolved_address addr4_normalized;
-    if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
-      resolved_addr = &addr4_normalized;
-    }
-    addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
-    if (addr->sa_family == GRPC_AF_INET) {
-      // Check for 0.0.0.0
-      const grpc_sockaddr_in* addr4 =
-          reinterpret_cast<const grpc_sockaddr_in*>(addr);
-      if (addr4->sin_addr.s_addr != 0) {
-        ASSERT_EQ(1,0);
-      }
-      *port_out = grpc_ntohs(addr4->sin_port);
-      ASSERT_EQ(1,1);
-    } else if (addr->sa_family == GRPC_AF_INET6) {
-      // Check for ::
-      const grpc_sockaddr_in6* addr6 =
-          reinterpret_cast<const grpc_sockaddr_in6*>(addr);
-      int i;
-      for (i = 0; i < 16; i++) {
-        if (addr6->sin6_addr.s6_addr[i] != 0) {
-          ASSERT_EQ(1,0);
-        }
-      }
-      *port_out = grpc_ntohs(addr6->sin6_port);
-      ASSERT_EQ(1,1);
-    } else {
-      ASSERT_EQ(1,0);
-    }
-  }
-  port = -1;
-  ASSERT_EQ(grpc_sockaddr_is_wildcard(&wild_mapped, &port), 1);
+  ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
   ASSERT_EQ(port, 555);
   grpc_sockaddr_in6* wild_mapped_addr =
       reinterpret_cast<grpc_sockaddr_in6*>(&wild_mapped.addr);
   memset(&wild_mapped_addr->sin6_addr.s6_addr, 0xbd, 1);
   ASSERT_FALSE(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
-  */
+
   // Test AF_UNSPEC.
   port = -1;
   grpc_resolved_address phony;

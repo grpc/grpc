@@ -125,7 +125,6 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
         // Normalize ::ffff:0.0.0.0/96 to IPv4.
         memset(resolved_addr4_out, 0, sizeof(*resolved_addr4_out));
         addr4_out->sin_family = GRPC_AF_INET;
-        LOG(ERROR) << "Pawan setting family as v4";
         // s6_addr32 would be nice, but it's non-standard.
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
         addr4_out->sin_port = addr6->sin6_port;
@@ -165,12 +164,10 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
   grpc_resolved_address addr4_normalized;
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
     resolved_addr = &addr4_normalized;
-    LOG(ERROR) << "v4 mapped return true";
   }
   addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
-  LOG(ERROR) <<"Family : "<< addr->sa_family;
+  LOG(ERROR)<<"ADDR family is : "<<addr->sa_family;
   if (addr->sa_family == GRPC_AF_INET) {
-    //LOG(ERROR) << "v4 Address";
     // Check for 0.0.0.0
     const grpc_sockaddr_in* addr4 =
         reinterpret_cast<const grpc_sockaddr_in*>(addr);
