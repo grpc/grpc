@@ -112,8 +112,8 @@ void AssemblerFuzzer(
   // TODO(tjagtap) : [PH2][P4] : Currently the average size of the payload is
   // usually around 0.91. Write more tests to test with :
   // 1. Mixed sized payloads with average payload size 1KB.
-  // 2. A mix of valid frames and malformed frames. In this test all are
-  // malformed frames.
+  // 2. A mix of valid gRPC messages and malformed gRPC messages. In this test
+  // all are malformed gRPC messages.
   // 3. Valid and invalid states of is_end_stream.
 }
 
