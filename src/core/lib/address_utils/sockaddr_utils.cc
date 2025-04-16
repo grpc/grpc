@@ -158,45 +158,6 @@ int grpc_sockaddr_to_v4mapped(const grpc_resolved_address* resolved_addr,
   }
   return 0;
 }
-/// ::ffff::00:00
-int grpc_sockaddr_is_wildcard1(const grpc_resolved_address* resolved_addr,
-                              int* port_out, int *ret) {
-  const grpc_sockaddr* addr;
-  *ret = 0;
-  grpc_resolved_address addr4_normalized;
-  if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
-    // 0
-    resolved_addr = &addr4_normalized;
-  }
-  addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
-  if (addr->sa_family == GRPC_AF_INET) {
-    // Check for 0.0.0.0
-    const grpc_sockaddr_in* addr4 =
-        reinterpret_cast<const grpc_sockaddr_in*>(addr);
-    if (addr4->sin_addr.s_addr != 0) {
-      *ret = 2;
-      return 0;
-    }
-    *port_out = grpc_ntohs(addr4->sin_port);
-    return 1;
-  } else if (addr->sa_family == GRPC_AF_INET6) {
-    // Check for ::
-    const grpc_sockaddr_in6* addr6 =
-        reinterpret_cast<const grpc_sockaddr_in6*>(addr);
-    int i;
-    for (i = 0; i < 16; i++) {
-      if (addr6->sin6_addr.s6_addr[i] != 0) {
-        *ret = 3;
-        return 0;
-      }
-    }
-    *port_out = grpc_ntohs(addr6->sin6_port);
-    return 1;
-  } else {
-    *ret = 4;
-    return 0;
-  }
-}
 
 int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
                               int* port_out) {
@@ -209,7 +170,7 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
   addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   LOG(ERROR) <<"Family : "<< addr->sa_family;
   if (addr->sa_family == GRPC_AF_INET) {
-    LOG(ERROR) << "v4 Address";
+    //LOG(ERROR) << "v4 Address";
     // Check for 0.0.0.0
     const grpc_sockaddr_in* addr4 =
         reinterpret_cast<const grpc_sockaddr_in*>(addr);
