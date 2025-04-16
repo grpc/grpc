@@ -28,6 +28,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
@@ -91,6 +92,10 @@ TEST(GrpcCompletionQueueTest, TestNoOp) {
 }
 
 TEST(GrpcCompletionQueueTest, TestPollsetConversion) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    GTEST_SKIP_(
+        "Pollsets aren't used when EventEngine experiments are enabled.");
+  }
   grpc_cq_completion_type completion_types[] = {GRPC_CQ_NEXT, GRPC_CQ_PLUCK};
   grpc_cq_polling_type polling_types[] = {GRPC_CQ_DEFAULT_POLLING,
                                           GRPC_CQ_NON_LISTENING};

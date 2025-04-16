@@ -41,7 +41,6 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
-#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
@@ -52,6 +51,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
@@ -73,7 +73,8 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
-#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/telemetry/context_list_entry.h"
+#include "src/core/telemetry/stats.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted.h"
@@ -229,6 +230,20 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
                         grpc_core::OrphanablePtr<grpc_endpoint> endpoint,
                         bool is_client);
   ~grpc_chttp2_transport() override;
+
+  class ChannelzDataSource final : public grpc_core::channelz::DataSource {
+   public:
+    explicit ChannelzDataSource(grpc_chttp2_transport* transport)
+        : grpc_core::channelz::DataSource(transport->channelz_socket),
+          transport_(transport) {}
+
+    void AddData(grpc_core::channelz::DataSink& sink) override;
+    std::unique_ptr<grpc_core::channelz::ZTrace> GetZTrace(
+        absl::string_view name) override;
+
+   private:
+    grpc_chttp2_transport* transport_;
+  };
 
   void Orphan() override;
 
@@ -472,7 +487,6 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_event_engine::experimental::EventEngine::TaskHandle
       keepalive_ping_timer_handle =
           grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
-  ;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
   /// Tracks any adjustments to the absolute timestamp of the next keepalive
@@ -489,6 +503,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   uint32_t max_header_list_size_soft_limit = 0;
   grpc_core::ContextList* context_list = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
+  std::unique_ptr<ChannelzDataSource> channelz_data_source;
   uint32_t num_messages_in_next_write = 0;
   /// The number of pending induced frames (SETTINGS_ACK, PINGS_ACK and
   /// RST_STREAM) in the outgoing buffer (t->qbuf). If this number goes beyond
@@ -560,6 +575,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // The last time a transport window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
+
+  grpc_core::Http2StatsCollector http2_stats;
+  grpc_core::Http2ZTraceCollector http2_ztrace_collector;
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };
@@ -672,13 +690,19 @@ struct grpc_chttp2_stream {
 
   grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
 
-  // TODO(roth): Remove this when call v3 is supported.
+  // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
+  // https://github.com/grpc/grpc/pull/38729 for more information.)
+  // In the transport, we use tracers for two things, recording byte stats and
+  // recording annotations. Recording byte stats is safe as long as call_tracer
+  // is non null. Recording annotations on the other hand is only safe after
+  // send_initial_metadata. On the client, this is not an issue since that is
+  // the first operation. On the server, we would ideally be able to record
+  // annotations as soon as we have parsed initial metadata, but in our legacy
+  // stack, we create the stream before parsing headers. In the new v3 stack,
+  // that won't be an issue.
   grpc_core::CallTracerInterface* call_tracer = nullptr;
   // TODO(yashykt): Remove this once call_tracer_transport_fix is rolled out
   grpc_core::CallTracerAnnotationInterface* parent_call_tracer = nullptr;
-
-  /// Only set when enabled.
-  std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
 
   // time this stream was created
   gpr_timespec creation_time = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -700,14 +724,6 @@ struct grpc_chttp2_stream {
   // The last time a stream window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
-
-  // TODO(yashykt): Remove this when call v3 is supported.
-  grpc_core::CallTracerInterface* CallTracer() const {
-    if (t->is_client) {
-      return call_tracer;
-    }
-    return arena->GetContext<grpc_core::CallTracerInterface>();
-  }
 };
 
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"

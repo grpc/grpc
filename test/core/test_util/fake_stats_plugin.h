@@ -85,7 +85,7 @@ class FakeClientCallTracer : public ClientCallTracer {
         grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* /*transport_stream_stats*/)
         override {}
-    void RecordEnd(const gpr_timespec& /*latency*/) override { Unref(); }
+    void RecordEnd() override { Unref(); }
     void RecordIncomingBytes(
         const TransportByteSize& /*transport_byte_size*/) override {}
     void RecordOutgoingBytes(
@@ -94,7 +94,7 @@ class FakeClientCallTracer : public ClientCallTracer {
       annotation_logger_->push_back(std::string(annotation));
     }
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
-    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override {
       return nullptr;
     }
     void SetOptionalLabel(OptionalLabelKey key,
@@ -191,9 +191,7 @@ class FakeServerCallTracer : public ServerCallTracer {
     annotation_logger_->push_back(std::string(annotation));
   }
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
   bool IsSampled() override { return false; }
@@ -210,8 +208,6 @@ std::string MakeLabelString(
 
 class FakeStatsPlugin : public StatsPlugin {
  public:
-  class ScopeConfig : public StatsPlugin::ScopeConfig {};
-
   explicit FakeStatsPlugin(
       absl::AnyInvocable<
           bool(const experimental::StatsPluginChannelScope& /*scope*/) const>

@@ -4,7 +4,6 @@
 ARG_WITH("grpc", "grpc support", "no");
 
 if (PHP_GRPC != "no") {
-
   EXTENSION("grpc",
     "src\\core\\call\\call_arena_allocator.cc " +
     "src\\core\\call\\call_filters.cc " +
@@ -485,6 +484,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\handshaker\\http_connect\\http_proxy_mapper.cc " +
     "src\\core\\handshaker\\http_connect\\xds_http_proxy_mapper.cc " +
     "src\\core\\handshaker\\proxy_mapper_registry.cc " +
+    "src\\core\\handshaker\\security\\legacy_secure_endpoint.cc " +
     "src\\core\\handshaker\\security\\secure_endpoint.cc " +
     "src\\core\\handshaker\\security\\security_handshaker.cc " +
     "src\\core\\handshaker\\tcp_connect\\tcp_connect_handshaker.cc " +
@@ -733,6 +733,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\service_config\\service_config_impl.cc " +
     "src\\core\\service_config\\service_config_parser.cc " +
     "src\\core\\telemetry\\call_tracer.cc " +
+    "src\\core\\telemetry\\default_tcp_tracer.cc " +
     "src\\core\\telemetry\\histogram_view.cc " +
     "src\\core\\telemetry\\metrics.cc " +
     "src\\core\\telemetry\\stats.cc " +
@@ -1403,7 +1404,6 @@ if (PHP_GRPC != "no") {
     "/I"+configure_module_dirname+"\\third_party\\utf8_range "+
     "/I"+configure_module_dirname+"\\third_party\\xxhash "+
     "/I"+configure_module_dirname+"\\third_party\\zlib ");
-
   base_dir = get_define('BUILD_DIR');
   FSO.CreateFolder(base_dir+"\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc");

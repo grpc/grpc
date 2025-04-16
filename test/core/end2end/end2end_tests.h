@@ -62,6 +62,7 @@
 #include "test/core/end2end/end2end_test_fuzzer.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/test_config.h"
 
 #ifdef GRPC_END2END_TEST_INCLUDE_FUZZER
@@ -187,6 +188,11 @@ class CoreEnd2endTest {
           void(std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
           quiesce_event_engine) {
     quiesce_event_engine_ = std::move(quiesce_event_engine);
+  }
+
+  static void DisableCoreConfigurationReset() {
+    CHECK(core_configuration_reset_);
+    core_configuration_reset_ = false;
   }
 
   class Call;
@@ -550,9 +556,6 @@ class CoreEnd2endTest {
 
   bool fuzzing() const { return fuzzing_; }
 
- private:
-  void ForceInitialized();
-
   CoreTestFixture& fixture() {
     if (fixture_ == nullptr) {
       grpc_init();
@@ -562,6 +565,11 @@ class CoreEnd2endTest {
     }
     return *fixture_;
   }
+
+  bool core_configuration_reset() const { return core_configuration_reset_; }
+
+ private:
+  void ForceInitialized();
 
   CqVerifier& cq_verifier() {
     if (cq_verifier_ == nullptr) {
@@ -582,6 +590,7 @@ class CoreEnd2endTest {
     return *cq_verifier_;
   }
 
+  PostMortem post_mortem_;
   const CoreTestConfiguration* const test_config_;
   const bool fuzzing_;
   std::unique_ptr<CoreTestFixture> fixture_;
@@ -593,6 +602,7 @@ class CoreEnd2endTest {
   };
   int expectations_ = 0;
   bool initialized_ = false;
+  static bool core_configuration_reset_;
   absl::AnyInvocable<void()> post_grpc_init_func_ = []() {};
   absl::AnyInvocable<void(
       grpc_event_engine::experimental::EventEngine::Duration) const>
@@ -694,6 +704,11 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
   }
 
+#define SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED() \
+  if (!core_configuration_reset()) {                \
+    GTEST_SKIP() << "Skipping test for fuzzing";    \
+  }
+
 #ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
 #define CORE_END2END_FUZZER(suite, name)
 #else
@@ -773,5 +788,13 @@ inline auto MaybeAddNullConfig(
     return configs;                                                            \
   }
 // NOLINTEND(bugprone-macro-parentheses)
+
+#define CORE_END2END_TEST_DISABLE_CORE_CONFIGURATION_RESET()     \
+  namespace {                                                    \
+  int g_core_configuration_reset_disabled_called = []() {        \
+    grpc_core::CoreEnd2endTest::DisableCoreConfigurationReset(); \
+    return 42;                                                   \
+  }();                                                           \
+  }
 
 #endif  // GRPC_TEST_CORE_END2END_END2END_TESTS_H

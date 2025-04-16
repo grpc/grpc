@@ -26,6 +26,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -96,6 +97,7 @@ class GreeterClient {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   GreeterClient greeter(grpc::CreateChannel(
       absl::GetFlag(FLAGS_target),
       absl::GetFlag(FLAGS_xds_creds)

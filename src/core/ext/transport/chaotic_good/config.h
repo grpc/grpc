@@ -19,9 +19,9 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/message_chunker.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 
@@ -143,8 +143,8 @@ class Config {
   }
 
   // Factory: make transport options from the settings derived here-in.
-  ChaoticGoodTransport::Options MakeTransportOptions() const {
-    ChaoticGoodTransport::Options options;
+  TcpFrameTransport::Options MakeTcpFrameTransportOptions() const {
+    TcpFrameTransport::Options options;
     options.encode_alignment = encode_alignment_;
     options.decode_alignment = decode_alignment_;
     options.inlined_payload_size_threshold = inline_payload_size_threshold_;

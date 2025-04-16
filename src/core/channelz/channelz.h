@@ -34,18 +34,27 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 
 // Channel arg key for channelz node.
-#define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.internal.channelz_channel_node"
+#define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
+  "grpc.internal.no_subchannel.channelz_channel_node"
+
+// Channel arg key for the containing base node
+#define GRPC_ARG_CHANNELZ_CONTAINING_BASE_NODE \
+  "grpc.internal.no_subchannel.channelz_containing_base_node"
 
 // Channel arg key for indicating an internal channel.
 #define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL \
@@ -67,6 +76,8 @@ namespace channelz {
 
 class SocketNode;
 class ListenSocketNode;
+class DataSource;
+class ZTrace;
 
 namespace testing {
 class CallCountingHelperPeer;
@@ -84,14 +95,40 @@ class BaseNode : public RefCounted<BaseNode> {
     kInternalChannel,
     kSubchannel,
     kServer,
+    kListenSocket,
     kSocket,
   };
+
+  static absl::string_view EntityTypeString(EntityType type) {
+    switch (type) {
+      case EntityType::kTopLevelChannel:
+        return "top_level_channel";
+      case EntityType::kInternalChannel:
+        return "internal_channel";
+      case EntityType::kSubchannel:
+        return "subchannel";
+      case EntityType::kServer:
+        return "server";
+      case EntityType::kListenSocket:
+        return "listen_socket";
+      case EntityType::kSocket:
+        return "socket";
+    }
+    return "unknown";
+  }
 
  protected:
   BaseNode(EntityType type, std::string name);
 
  public:
   ~BaseNode() override;
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_CHANNELZ_CONTAINING_BASE_NODE;
+  }
+  static int ChannelArgsCompare(const BaseNode* a, const BaseNode* b) {
+    return QsortCompare(a, b);
+  }
 
   // All children must implement this function.
   virtual Json RenderJson() = 0;
@@ -104,12 +141,83 @@ class BaseNode : public RefCounted<BaseNode> {
   intptr_t uuid() const { return uuid_; }
   const std::string& name() const { return name_; }
 
+  void RunZTrace(absl::string_view name, Timestamp deadline,
+                 std::map<std::string, std::string> args,
+                 std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                     event_engine,
+                 absl::AnyInvocable<void(Json output)> callback);
+  Json::Object AdditionalInfo();
+
+ protected:
+  void PopulateJsonFromDataSources(Json::Object& json);
+
  private:
   // to allow the ChannelzRegistry to set uuid_ under its lock.
   friend class ChannelzRegistry;
+  // allow data source to register/unregister itself
+  friend class DataSource;
   const EntityType type_;
   intptr_t uuid_;
   std::string name_;
+  Mutex data_sources_mu_;
+  absl::InlinedVector<DataSource*, 3> data_sources_
+      ABSL_GUARDED_BY(data_sources_mu_);
+};
+
+class ZTrace {
+ public:
+  virtual ~ZTrace() = default;
+  virtual void Run(Timestamp deadline, std::map<std::string, std::string> args,
+                   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                       event_engine,
+                   absl::AnyInvocable<void(Json)>) = 0;
+};
+
+class DataSink {
+ public:
+  virtual void AddAdditionalInfo(absl::string_view name,
+                                 Json::Object additional_info) = 0;
+
+ protected:
+  ~DataSink() = default;
+};
+
+class DataSource {
+ public:
+  explicit DataSource(RefCountedPtr<BaseNode> node);
+
+  // Add any relevant json fragments to the output.
+  // This method must not cause the DataSource to be deleted, or else there will
+  // be a deadlock.
+  virtual void AddData(DataSink& sink) = 0;
+
+  // If this data source exports some ztrace, return it here.
+  virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
+    return nullptr;
+  }
+
+ protected:
+  ~DataSource();
+  RefCountedPtr<BaseNode> channelz_node() { return node_; }
+
+  void ResetDataSource();
+
+ private:
+  RefCountedPtr<BaseNode> node_;
+};
+
+struct CallCounts {
+  int64_t calls_started = 0;
+  int64_t calls_succeeded = 0;
+  int64_t calls_failed = 0;
+  gpr_cycle_counter last_call_started_cycle = 0;
+
+  std::string last_call_started_timestamp() const {
+    return gpr_format_timespec(
+        gpr_cycle_counter_to_time(last_call_started_cycle));
+  }
+
+  void PopulateJson(Json::Object& json) const;
 };
 
 // This class is a helper class for channelz entities that deal with Channels,
@@ -124,8 +232,14 @@ class CallCountingHelper final {
   void RecordCallFailed();
   void RecordCallSucceeded();
 
-  // Common rendering of the call count data and last_call_started_timestamp.
-  void PopulateCallCounts(Json::Object* json);
+  CallCounts GetCallCounts() const {
+    return {
+        calls_started_.load(std::memory_order_relaxed),
+        calls_succeeded_.load(std::memory_order_relaxed),
+        calls_failed_.load(std::memory_order_relaxed),
+        last_call_started_cycle_.load(std::memory_order_relaxed),
+    };
+  }
 
  private:
   // testing peer friend.
@@ -143,8 +257,7 @@ class PerCpuCallCountingHelper final {
   void RecordCallFailed();
   void RecordCallSucceeded();
 
-  // Common rendering of the call count data and last_call_started_timestamp.
-  void PopulateCallCounts(Json::Object* json);
+  CallCounts GetCallCounts() const;
 
  private:
   // testing peer friend.
@@ -190,6 +303,9 @@ class ChannelNode final : public BaseNode {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
   }
+  void SetChannelArgs(const ChannelArgs& channel_args) {
+    channel_args_ = channel_args;
+  }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
@@ -206,12 +322,23 @@ class ChannelNode final : public BaseNode {
   void AddChildSubchannel(intptr_t child_uuid);
   void RemoveChildSubchannel(intptr_t child_uuid);
 
+  const std::string& target() const { return target_; }
+  std::optional<std::string> connectivity_state();
+  CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
+  const std::set<intptr_t>& child_channels() const { return child_channels_; }
+  const std::set<intptr_t>& child_subchannels() const {
+    return child_subchannels_;
+  }
+  const ChannelTrace& trace() const { return trace_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
+
  private:
   void PopulateChildRefs(Json::Object* json);
 
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  ChannelArgs channel_args_;
 
   // Least significant bit indicates whether the value is set.  Remaining
   // bits are a grpc_connectivity_state value.
@@ -242,6 +369,9 @@ class SubchannelNode final : public BaseNode {
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
+  void SetChannelArgs(const ChannelArgs& channel_args) {
+    channel_args_ = channel_args;
+  }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
                                   const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
@@ -252,16 +382,27 @@ class SubchannelNode final : public BaseNode {
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
+  const std::string& target() const { return target_; }
+  std::string connectivity_state() const;
+  CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
+  RefCountedPtr<SocketNode> child_socket() const {
+    MutexLock lock(&socket_mu_);
+    return child_socket_;
+  }
+  const ChannelTrace& trace() const { return trace_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
+
  private:
   // Allows the channel trace test to access trace_.
   friend class testing::SubchannelNodePeer;
 
   std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
-  Mutex socket_mu_;
+  mutable Mutex socket_mu_;
   RefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  ChannelArgs channel_args_;
 };
 
 // Handles channelz bookkeeping for servers
@@ -294,13 +435,30 @@ class ServerNode final : public BaseNode {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
   }
+  void SetChannelArgs(const ChannelArgs& channel_args) {
+    channel_args_ = channel_args;
+  }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
+  CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
+
+  const std::map<intptr_t, RefCountedPtr<ListenSocketNode>>&
+  child_listen_sockets() const {
+    return child_listen_sockets_;
+  }
+  const std::map<intptr_t, RefCountedPtr<SocketNode>>& child_sockets() const {
+    return child_sockets_;
+  }
+
+  const ChannelTrace& trace() const { return trace_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
+
  private:
   PerCpuCallCountingHelper call_counter_;
   ChannelTrace trace_;
+  ChannelArgs channel_args_;
   Mutex child_mu_;  // Guards child maps below.
   std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
   std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
@@ -368,7 +526,49 @@ class SocketNode final : public BaseNode {
 
   const std::string& remote() { return remote_; }
 
+  int64_t streams_started() const {
+    return streams_started_.load(std::memory_order_relaxed);
+  }
+  int64_t streams_succeeded() const {
+    return streams_succeeded_.load(std::memory_order_relaxed);
+  }
+  int64_t streams_failed() const {
+    return streams_failed_.load(std::memory_order_relaxed);
+  }
+  int64_t messages_sent() const {
+    return messages_sent_.load(std::memory_order_relaxed);
+  }
+  int64_t messages_received() const {
+    return messages_received_.load(std::memory_order_relaxed);
+  }
+  int64_t keepalives_sent() const {
+    return keepalives_sent_.load(std::memory_order_relaxed);
+  }
+  auto last_local_stream_created_timestamp() const {
+    return CycleCounterToTimestamp(
+        last_local_stream_created_cycle_.load(std::memory_order_relaxed));
+  }
+  auto last_remote_stream_created_timestamp() const {
+    return CycleCounterToTimestamp(
+        last_remote_stream_created_cycle_.load(std::memory_order_relaxed));
+  }
+  auto last_message_sent_timestamp() const {
+    return CycleCounterToTimestamp(
+        last_message_sent_cycle_.load(std::memory_order_relaxed));
+  }
+  auto last_message_received_timestamp() const {
+    return CycleCounterToTimestamp(
+        last_message_received_cycle_.load(std::memory_order_relaxed));
+  }
+  const std::string& local() const { return local_; }
+  const std::string& remote() const { return remote_; }
+
  private:
+  std::optional<std::string> CycleCounterToTimestamp(
+      gpr_cycle_counter cycle_counter) const {
+    return gpr_format_timespec(gpr_cycle_counter_to_time(cycle_counter));
+  }
+
   std::atomic<int64_t> streams_started_{0};
   std::atomic<int64_t> streams_succeeded_{0};
   std::atomic<int64_t> streams_failed_{0};

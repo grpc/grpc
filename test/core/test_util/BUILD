@@ -126,6 +126,7 @@ grpc_cc_library(
     ],
     deps = [
         "build",
+        "grpc_test_util_base",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
@@ -173,6 +174,7 @@ grpc_cc_library(
     ],
     deps = [
         "build",
+        "grpc_test_util_base",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
@@ -568,5 +570,19 @@ grpc_cc_library(
     hdrs = ["test_call_creds.h"],
     deps = [
         "//:grpc",
+    ],
+)
+
+grpc_cc_library(
+    name = "postmortem",
+    testonly = True,
+    srcs = ["postmortem.cc"],
+    hdrs = ["postmortem.h"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:channelz",
+        "//:stats",
     ],
 )
