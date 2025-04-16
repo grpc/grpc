@@ -18,14 +18,14 @@
 
 #include "src/core/lib/slice/percent_encoding.h"
 
-#include <cstdint>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
+
+#include <cstdint>
 #include <utility>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/util/bitset.h"
 #include "absl/log/check.h"
+#include "src/core/util/bitset.h"
 
 namespace grpc_core {
 

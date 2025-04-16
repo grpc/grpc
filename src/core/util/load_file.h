@@ -15,12 +15,12 @@
 #ifndef GRPC_SRC_CORE_UTIL_LOAD_FILE_H
 #define GRPC_SRC_CORE_UTIL_LOAD_FILE_H
 
-#include <string>
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/slice/slice.h"
+#include <string>
+
 #include "absl/status/statusor.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 

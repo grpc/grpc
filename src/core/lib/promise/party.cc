@@ -14,26 +14,26 @@
 
 #include "src/core/lib/promise/party.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <cstdint>
 #include <limits>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/sync.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
-#include "src/core/lib/iomgr/exec_ctx.h"     // IWYU pragma: keep
-#include "src/core/util/thd.h"               // IWYU pragma: keep
-#include "absl/random/random.h"  // IWYU pragma: keep
+#include "absl/random/random.h"           // IWYU pragma: keep
+#include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
+#include "src/core/util/thd.h"            // IWYU pragma: keep
 #endif
 
 namespace grpc_core {

@@ -18,13 +18,13 @@
 
 #include "src/core/load_balancing/grpclb/client_load_reporting_filter.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
 #include <optional>
 #include <type_traits>
 #include <utility>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"

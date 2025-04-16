@@ -14,18 +14,17 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
 

@@ -14,18 +14,22 @@
 
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
 
-#include <functional>
-#include <inttypes.h>
-#include <memory>
-#include <optional>
-#include <utility>
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/port_platform.h>
+#include <inttypes.h>
 
+#include <functional>
+#include <memory>
+#include <optional>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -45,10 +49,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/latent_see.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 

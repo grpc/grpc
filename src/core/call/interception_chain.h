@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_CALL_INTERCEPTION_CHAIN_H
 #define GRPC_SRC_CORE_CALL_INTERCEPTION_CHAIN_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_filters.h"

@@ -19,11 +19,10 @@
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 
 #include <ctype.h>
-#include <stdio.h>
-#include <string.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "absl/log/log.h"
 

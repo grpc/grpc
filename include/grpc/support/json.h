@@ -17,14 +17,14 @@
 #ifndef GRPC_SUPPORT_JSON_H
 #define GRPC_SUPPORT_JSON_H
 
-#include <map>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
+
+#include <map>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "absl/strings/str_cat.h"
 

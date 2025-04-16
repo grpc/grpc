@@ -15,16 +15,19 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
 
-#include <memory>
-#include <optional>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -35,9 +38,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

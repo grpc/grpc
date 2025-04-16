@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_UTIL_SORTED_PACK_H
 #define GRPC_SRC_CORE_UTIL_SORTED_PACK_H
 
-#include <type_traits>
-
 #include <grpc/support/port_platform.h>
+
+#include <type_traits>
 
 #include "src/core/util/type_list.h"
 

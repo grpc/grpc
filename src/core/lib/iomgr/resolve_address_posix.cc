@@ -21,12 +21,11 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
-#include <string.h>
-#include <sys/types.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <string.h>
+#include <sys/types.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/block_annotate.h"

@@ -19,9 +19,8 @@
 #ifndef GRPC_SRC_CORE_UTIL_TMPFILE_H
 #define GRPC_SRC_CORE_UTIL_TMPFILE_H
 
-#include <stdio.h>
-
 #include <grpc/support/port_platform.h>
+#include <stdio.h>
 
 // Creates a temporary file from a prefix.
 // If tmp_filename is not NULL, *tmp_filename is assigned the name of the

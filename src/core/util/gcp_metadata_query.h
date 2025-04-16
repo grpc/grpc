@@ -17,10 +17,12 @@
 #ifndef GRPC_SRC_CORE_UTIL_GCP_METADATA_QUERY_H
 #define GRPC_SRC_CORE_UTIL_GCP_METADATA_QUERY_H
 
-#include <string>
-
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/status/statusor.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -28,8 +30,6 @@
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/time.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

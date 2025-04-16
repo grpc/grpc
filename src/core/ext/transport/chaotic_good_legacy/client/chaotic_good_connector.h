@@ -15,13 +15,15 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CLIENT_CHAOTIC_GOOD_CONNECTOR_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CLIENT_CHAOTIC_GOOD_CONNECTOR_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
+#include "absl/random/random.h"
+#include "absl/status/statusor.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/ext/transport/chaotic_good_legacy/config.h"
 #include "src/core/handshaker/handshaker.h"
@@ -41,8 +43,6 @@
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
-#include "absl/random/random.h"
-#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {

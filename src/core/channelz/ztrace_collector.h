@@ -15,18 +15,18 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
 #define GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
 
+#include <grpc/support/time.h>
+
 #include <memory>
 #include <tuple>
 #include <vector>
 
-#include <grpc/support/time.h>
-
+#include "absl/container/flat_hash_set.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
-#include "absl/container/flat_hash_set.h"
 
 #ifdef GRPC_NO_ZTRACE
 namespace grpc_core::channelz {

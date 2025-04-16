@@ -19,6 +19,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "src/core/call/metadata.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
@@ -31,9 +34,6 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/util/single_set_ptr.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

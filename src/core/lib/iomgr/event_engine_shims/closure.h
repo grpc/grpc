@@ -17,9 +17,9 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/functional/any_invocable.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "absl/functional/any_invocable.h"
 
 namespace grpc_event_engine {
 namespace experimental {

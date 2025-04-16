@@ -20,14 +20,14 @@
 #include <string>
 #include <utility>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/strings/string_view.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

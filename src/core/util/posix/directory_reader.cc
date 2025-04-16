@@ -16,9 +16,9 @@
 //
 //
 
-#include <memory>
-
 #include <grpc/support/port_platform.h>
+
+#include <memory>
 
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
@@ -28,6 +28,7 @@
     defined(GPR_APPLE) || defined(GPR_NETBSD)
 
 #include <dirent.h>
+
 #include <string>
 
 #include "src/core/util/directory_reader.h"

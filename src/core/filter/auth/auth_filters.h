@@ -24,6 +24,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/statusor.h"
 #include "src/core/call/status_util.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/security_connector.h"
@@ -35,7 +36,6 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

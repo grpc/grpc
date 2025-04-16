@@ -16,10 +16,10 @@
 
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <optional>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 

@@ -14,9 +14,9 @@
 
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
 
-#include <cstdint>
-
 #include <grpc/support/port_platform.h>
+
+#include <cstdint>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"

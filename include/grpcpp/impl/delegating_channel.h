@@ -19,9 +19,9 @@
 #ifndef GRPCPP_IMPL_DELEGATING_CHANNEL_H
 #define GRPCPP_IMPL_DELEGATING_CHANNEL_H
 
-#include <memory>
-
 #include <grpcpp/impl/channel_interface.h>
+
+#include <memory>
 
 namespace grpc {
 namespace experimental {

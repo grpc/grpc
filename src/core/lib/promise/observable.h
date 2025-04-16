@@ -17,12 +17,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/util/sync.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

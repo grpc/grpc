@@ -14,11 +14,11 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H
 
-#include <optional>
-#include <string>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+
+#include <optional>
+#include <string>
 
 #include "absl/status/statusor.h"
 

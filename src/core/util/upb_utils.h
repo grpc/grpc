@@ -20,7 +20,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-
 #include "upb/base/string_view.h"
 
 namespace grpc_core {

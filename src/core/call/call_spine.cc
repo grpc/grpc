@@ -16,10 +16,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/functional/any_invocable.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "absl/functional/any_invocable.h"
 
 namespace grpc_core {
 

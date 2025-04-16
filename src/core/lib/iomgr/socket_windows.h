@@ -24,10 +24,9 @@
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
-#include <winsock2.h>
-
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
+#include <winsock2.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"

@@ -15,8 +15,6 @@
 #ifndef GRPCPP_IMPL_GENERIC_SERIALIZE_H
 #define GRPCPP_IMPL_GENERIC_SERIALIZE_H
 
-#include <type_traits>
-
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
@@ -27,6 +25,8 @@
 #include <grpcpp/support/proto_buffer_writer.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
+
+#include <type_traits>
 
 #include "absl/log/absl_check.h"
 

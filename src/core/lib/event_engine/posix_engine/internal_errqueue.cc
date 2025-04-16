@@ -16,17 +16,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
 #include "absl/log/log.h"
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include <cstddef>
 #include <errno.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/utsname.h>
+
+#include <cstddef>
 
 #include "src/core/util/strerror.h"
 

@@ -18,19 +18,19 @@
 
 #include "src/cpp/server/load_reporter/load_data_store.h"
 
+#include <grpc/support/port_platform.h>
+#include <stdint.h>
+#include <stdio.h>
+
 #include <cstdlib>
 #include <iterator>
 #include <set>
-#include <stdint.h>
-#include <stdio.h>
 #include <unordered_map>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/iomgr/socket_utils.h"
-#include "src/cpp/server/load_reporter/constants.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "src/core/lib/iomgr/socket_utils.h"
+#include "src/cpp/server/load_reporter/constants.h"
 
 namespace grpc {
 namespace load_reporter {

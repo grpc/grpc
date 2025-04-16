@@ -16,14 +16,15 @@
 //
 //
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 #ifdef GPR_LINUX
 
-#include <cstdio>
 #include <inttypes.h>
+
+#include <cstdio>
 
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
 

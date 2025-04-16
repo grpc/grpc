@@ -14,15 +14,6 @@
 // limitations under the License.
 //
 
-#include <algorithm>
-#include <map>
-#include <memory>
-#include <optional>
-#include <stdint.h>
-#include <string>
-#include <utility>
-#include <vector>
-
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
@@ -30,7 +21,29 @@
 #include <grpcpp/opencensus.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <stdint.h>
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "google/api/monitored_resource.pb.h"
+#include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
+#include "google/monitoring/v3/metric_service.grpc.pb.h"
+#include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
+#include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
+#include "opencensus/stats/stats.h"
+#include "opencensus/trace/sampler.h"
+#include "opencensus/trace/trace_config.h"
 #include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/notification.h"
@@ -41,20 +54,6 @@
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-
-#include "google/api/monitored_resource.pb.h"
-#include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
-#include "google/monitoring/v3/metric_service.grpc.pb.h"
-#include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
-#include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
-#include "opencensus/stats/stats.h"
-#include "opencensus/trace/sampler.h"
-#include "opencensus/trace/trace_config.h"
 
 namespace grpc {
 

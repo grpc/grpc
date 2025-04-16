@@ -15,17 +15,16 @@
 #include "src/core/util/load_file.h"
 
 #include <errno.h>
-#include <stdio.h>
-#include <string.h>
-
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "src/core/util/strerror.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_core {
 

@@ -19,16 +19,16 @@
 #ifndef GRPC_SRC_CORE_UTIL_REF_COUNTED_PTR_H
 #define GRPC_SRC_CORE_UTIL_REF_COUNTED_PTR_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstddef>
 #include <iosfwd>
 #include <type_traits>
 #include <utility>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/hash/hash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
-#include "absl/hash/hash.h"
 
 namespace grpc_core {
 

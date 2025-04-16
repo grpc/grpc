@@ -16,21 +16,14 @@
 
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 
-#include <optional>
+#include <grpc/support/json.h>
 #include <stdlib.h>
+
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <grpc/support/json.h>
-
-#include "src/core/util/down_cast.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_object_loader.h"
-#include "src/core/util/json/json_reader.h"
-#include "src/core/util/json/json_writer.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/string.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -38,6 +31,13 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/string.h"
 
 namespace grpc_core {
 

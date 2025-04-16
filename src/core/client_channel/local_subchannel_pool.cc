@@ -18,12 +18,12 @@
 
 #include "src/core/client_channel/local_subchannel_pool.h"
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/client_channel/subchannel.h"
+#include <utility>
+
 #include "absl/log/check.h"
+#include "src/core/client_channel/subchannel.h"
 
 namespace grpc_core {
 

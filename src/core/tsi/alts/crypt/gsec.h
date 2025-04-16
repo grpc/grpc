@@ -20,14 +20,14 @@
 #define GRPC_SRC_CORE_TSI_ALTS_CRYPT_GSEC_H
 
 #include <assert.h>
-#include <memory>
-#include <stdint.h>
-#include <stdlib.h>
-#include <vector>
-
 #include <grpc/event_engine/port.h>
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#include <memory>
+#include <vector>
 
 #include "absl/types/span.h"
 

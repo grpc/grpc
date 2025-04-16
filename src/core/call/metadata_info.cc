@@ -14,13 +14,13 @@
 
 #include "src/core/call/metadata_info.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <cstddef>
 #include <string>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/slice/slice.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 

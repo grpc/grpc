@@ -16,18 +16,25 @@
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <stdint.h>
+
 #include <algorithm>
 #include <atomic>
 #include <functional>
 #include <optional>
-#include <stdint.h>
 #include <string>
 #include <type_traits>
 #include <utility>
 
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/config/core_configuration.h"
@@ -40,13 +47,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/time.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

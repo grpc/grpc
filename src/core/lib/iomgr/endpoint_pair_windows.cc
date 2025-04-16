@@ -25,6 +25,8 @@
 #include <fcntl.h>
 #include <string.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -36,8 +38,6 @@
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/util/crash.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 
 static void create_sockets(SOCKET sv[2]) {
   SOCKET svr_sock = INVALID_SOCKET;

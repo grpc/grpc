@@ -22,11 +22,10 @@
     !defined(GPR_CUSTOM_SYNC)
 
 #include <errno.h>
-#include <time.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <time.h>
 
 #include "absl/log/check.h"
 

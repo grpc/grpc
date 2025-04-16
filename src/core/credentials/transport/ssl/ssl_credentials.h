@@ -18,14 +18,14 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SSL_SSL_CREDENTIALS_H
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SSL_SSL_CREDENTIALS_H
 
-#include <stddef.h>
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
+#include "absl/log/check.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/ssl/ssl_security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
@@ -34,7 +34,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
-#include "absl/log/check.h"
 
 class grpc_ssl_credentials : public grpc_channel_credentials {
  public:

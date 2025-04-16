@@ -21,10 +21,10 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 tsi_result alts_tsi_utils_convert_to_tsi_result(grpc_status_code code) {
   switch (code) {

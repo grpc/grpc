@@ -19,9 +19,6 @@
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 
-#include <memory>
-#include <vector>
-
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
@@ -29,6 +26,9 @@
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_crl_provider.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
+#include <vector>
 
 namespace grpc {
 namespace experimental {

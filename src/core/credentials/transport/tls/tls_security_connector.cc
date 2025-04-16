@@ -18,17 +18,22 @@
 
 #include "src/core/credentials/transport/tls/tls_security_connector.h"
 
-#include <memory>
-#include <string.h>
-#include <utility>
-#include <vector>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
 
+#include <memory>
+#include <utility>
+#include <vector>
+
+#include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
@@ -42,11 +47,6 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
-#include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

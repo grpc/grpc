@@ -18,16 +18,16 @@
 
 #include "src/core/lib/slice/slice_buffer.h"
 
-#include <string.h>
-#include <utility>
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <string.h>
 
-#include "src/core/lib/slice/slice_internal.h"
+#include <utility>
+
 #include "absl/log/check.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 

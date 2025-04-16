@@ -14,11 +14,11 @@
 
 #include "src/core/util/crash.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
 
-#include <grpc/support/port_platform.h>
+#include <string>
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"

@@ -15,16 +15,18 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_FILTER_LEGACY_CALL_DATA_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_FILTER_LEGACY_CALL_DATA_H
 
-#include <optional>
-#include <stddef.h>
-#include <stdint.h>
-#include <utility>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <optional>
+#include <utility>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/any_invocable.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_filter.h"
@@ -45,8 +47,6 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/any_invocable.h"
 
 namespace grpc_core {
 

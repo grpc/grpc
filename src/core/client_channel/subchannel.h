@@ -17,15 +17,18 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_H
 
-#include <functional>
-#include <map>
-#include <memory>
-#include <stddef.h>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
+#include <functional>
+#include <map>
+#include <memory>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
@@ -54,9 +57,6 @@
 #include "src/core/util/time_precise.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/work_serializer.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/status/status.h"
 
 namespace grpc_core {
 

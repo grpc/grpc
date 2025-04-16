@@ -20,11 +20,11 @@
 #include <memory>
 #include <utility>
 
+#include "absl/strings/string_view.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

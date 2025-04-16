@@ -15,6 +15,10 @@
 
 #ifdef GPR_WINDOWS
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/extensions/iomgr_compatible.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
@@ -25,10 +29,6 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 
 namespace grpc_event_engine::experimental {
 

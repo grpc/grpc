@@ -18,14 +18,16 @@
 
 #include "src/core/lib/surface/lame_client.h"
 
-#include <memory>
-#include <utility>
-
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -44,8 +46,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 
 // Avoid some IWYU confusion:
 // IWYU pragma: no_include "src/core/util/orphanable.h"

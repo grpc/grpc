@@ -22,12 +22,14 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include <limits>
-#include <winsock2.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
+#include <winsock2.h>
 
+#include <limits>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/socket_windows.h"
@@ -36,8 +38,6 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/thd.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 
 static ULONG g_iocp_kick_token;
 static OVERLAPPED g_iocp_custom_overlap;

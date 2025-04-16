@@ -15,9 +15,8 @@
 #ifndef GRPC_SRC_CORE_CALL_METADATA_COMPRESSION_TRAITS_H
 #define GRPC_SRC_CORE_CALL_METADATA_COMPRESSION_TRAITS_H
 
-#include <stddef.h>
-
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 namespace grpc_core {
 

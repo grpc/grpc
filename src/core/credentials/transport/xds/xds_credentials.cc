@@ -18,12 +18,13 @@
 
 #include "src/core/credentials/transport/xds/xds_credentials.h"
 
-#include <optional>
-
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
+#include "absl/log/check.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
@@ -32,7 +33,6 @@
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/util/useful.h"
 #include "src/core/xds/grpc/xds_certificate_provider.h"
-#include "absl/log/check.h"
 
 namespace grpc_core {
 

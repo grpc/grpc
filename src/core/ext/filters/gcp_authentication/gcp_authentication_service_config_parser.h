@@ -17,12 +17,14 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTHENTICATION_GCP_AUTHENTICATION_SERVICE_CONFIG_PARSER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTHENTICATION_GCP_AUTHENTICATION_SERVICE_CONFIG_PARSER_H
 
+#include <stddef.h>
+
 #include <memory>
 #include <optional>
-#include <stddef.h>
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/service_config/service_config_parser.h"
@@ -30,7 +32,6 @@
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/validation_errors.h"
-#include "absl/strings/string_view.h"
 
 // Channel arg key for enabling parsing fault injection via method config.
 #define GRPC_ARG_PARSE_GCP_AUTHENTICATION_METHOD_CONFIG \

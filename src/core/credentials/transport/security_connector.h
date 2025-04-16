@@ -19,13 +19,15 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SECURITY_CONNECTOR_H
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SECURITY_CONNECTOR_H
 
-#include <memory>
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -38,8 +40,6 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 
 // --- URL schemes. ---
 

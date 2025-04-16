@@ -21,16 +21,19 @@
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 #include <ares.h>
-#include <map>
-#include <memory>
-#include <string.h>
-#include <unordered_set>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <string.h>
 
+#include <map>
+#include <memory>
+#include <unordered_set>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -43,9 +46,6 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/string.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.
 // Our grpc/c-ares code on Windows uses the ares_set_socket_functions API,

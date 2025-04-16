@@ -18,10 +18,10 @@
 
 #include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <utility>
-
-#include <grpc/support/port_platform.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"

@@ -18,14 +18,17 @@
 
 #include "src/core/lib/transport/transport.h"
 
-#include <memory>
-#include <new>
-#include <string.h>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+#include <string.h>
 
+#include <memory>
+#include <new>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
@@ -34,9 +37,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/time.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 void grpc_stream_destroy(grpc_stream_refcount* refcount) {
   if ((grpc_core::ExecCtx::Get()->flags() &

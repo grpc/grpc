@@ -21,14 +21,14 @@
 #ifndef GRPCPP_ALARM_H
 #define GRPCPP_ALARM_H
 
-#include <functional>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/time.h>
+
+#include <functional>
 
 namespace grpc {
 

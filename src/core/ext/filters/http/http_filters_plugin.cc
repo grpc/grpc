@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/match.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
@@ -27,7 +28,6 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
-#include "absl/strings/match.h"
 
 namespace grpc_core {
 namespace {

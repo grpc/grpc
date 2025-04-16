@@ -13,12 +13,14 @@
 // limitations under the License.
 #include "src/core/resolver/dns/event_engine/service_config_helper.h"
 
-#include <algorithm>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
+
+#include <algorithm>
 #include <vector>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "src/core/util/gethostname.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -26,8 +28,6 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/status_helper.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

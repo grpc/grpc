@@ -19,9 +19,9 @@
 #ifndef GRPCPP_TEST_CLIENT_CONTEXT_TEST_PEER_H
 #define GRPCPP_TEST_CLIENT_CONTEXT_TEST_PEER_H
 
-#include <map>
-
 #include <grpcpp/client_context.h>
+
+#include <map>
 
 namespace grpc {
 namespace testing {

@@ -19,18 +19,17 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H
 #define GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H
 
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
 
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
+#include "absl/base/thread_annotations.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
-#include "absl/base/thread_annotations.h"
 
 namespace grpc_core {
 namespace channelz {

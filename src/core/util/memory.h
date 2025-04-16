@@ -19,11 +19,11 @@
 #ifndef GRPC_SRC_CORE_UTIL_MEMORY_H
 #define GRPC_SRC_CORE_UTIL_MEMORY_H
 
-#include <memory>
-#include <type_traits>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+
+#include <memory>
+#include <type_traits>
 
 namespace grpc_core {
 

@@ -18,14 +18,15 @@
 
 #include "src/cpp/ext/otel/otel_plugin.h"
 
-#include <memory>
-#include <type_traits>
-#include <utility>
-
 #include <grpc/support/port_platform.h>
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/version_info.h>
 
+#include <memory>
+#include <type_traits>
+#include <utility>
+
+#include "absl/log/check.h"
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/sync_instruments.h"
@@ -42,7 +43,6 @@
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
-#include "absl/log/check.h"
 
 using opentelemetry::context::propagation::TextMapPropagator;
 using opentelemetry::trace::SpanContext;

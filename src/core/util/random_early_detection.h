@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_UTIL_RANDOM_EARLY_DETECTION_H
 #define GRPC_SRC_CORE_UTIL_RANDOM_EARLY_DETECTION_H
 
-#include <cstdint>
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 
-#include <grpc/support/port_platform.h>
+#include <cstdint>
 
 #include "absl/random/bit_gen_ref.h"
 

@@ -14,9 +14,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 
-#include <algorithm>
-
 #include <grpc/support/port_platform.h>
+
+#include <algorithm>
 
 #include "absl/log/check.h"
 

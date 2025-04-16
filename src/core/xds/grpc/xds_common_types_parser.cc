@@ -16,27 +16,19 @@
 
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 
-#include <algorithm>
-#include <map>
+#include <grpc/support/json.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#include <algorithm>
+#include <map>
 #include <utility>
 
-#include <grpc/support/json.h>
-
-#include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
-#include "src/core/util/json/json_reader.h"
-#include "src/core/util/upb_utils.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/xds_client/xds_client.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
@@ -46,6 +38,13 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/env.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/xds_client/xds_client.h"
 #include "upb/base/status.hpp"
 #include "upb/json/encode.h"
 #include "upb/mem/arena.h"

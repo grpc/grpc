@@ -20,8 +20,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/useful.h"
 #include "absl/log/check.h"
+#include "src/core/util/useful.h"
 
 // in order of preference
 static const char* const supported_versions[] = {"h2"};

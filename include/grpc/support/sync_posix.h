@@ -19,10 +19,9 @@
 #ifndef GRPC_SUPPORT_SYNC_POSIX_H
 #define GRPC_SUPPORT_SYNC_POSIX_H
 
-#include <pthread.h>
-
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync_generic.h>
+#include <pthread.h>
 
 #ifdef GRPC_ASAN_ENABLED
 /* The member |leak_checker| is used to check whether there is a memory leak

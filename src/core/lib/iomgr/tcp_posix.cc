@@ -22,21 +22,7 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include <algorithm>
 #include <errno.h>
-#include <limits.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <optional>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <unordered_map>
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
@@ -44,7 +30,27 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <limits.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
+#include <algorithm>
+#include <optional>
+#include <unordered_map>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -69,12 +75,6 @@
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP

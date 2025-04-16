@@ -15,14 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_EVENT_ENGINE_WAKEUP_SCHEDULER_H
 #define GRPC_SRC_CORE_LIB_PROMISE_EVENT_ENGINE_WAKEUP_SCHEDULER_H
 
-#include <memory>
-#include <utility>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include <memory>
+#include <utility>
+
 #include "absl/log/check.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 

@@ -19,18 +19,18 @@
 #ifndef GRPC_SRC_CORE_UTIL_REF_COUNTED_H
 #define GRPC_SRC_CORE_UTIL_REF_COUNTED_H
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <cassert>
 #include <cinttypes>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/util/atomic_utils.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 
 namespace grpc_core {
 

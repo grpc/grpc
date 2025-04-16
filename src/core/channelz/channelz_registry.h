@@ -19,11 +19,11 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_CHANNELZ_REGISTRY_H
 #define GRPC_SRC_CORE_CHANNELZ_CHANNELZ_REGISTRY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <map>
 #include <string>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/json/json_writer.h"

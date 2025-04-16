@@ -17,6 +17,7 @@
  */
 
 #include <google/protobuf/compiler/php/names.h>
+
 #include <map>
 
 #include "src/compiler/config.h"

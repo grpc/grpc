@@ -22,23 +22,6 @@
 
 #include "src/core/load_balancing/rls/rls.h"
 
-#include <algorithm>
-#include <deque>
-#include <inttypes.h>
-#include <list>
-#include <map>
-#include <memory>
-#include <optional>
-#include <random>
-#include <set>
-#include <stdlib.h>
-#include <string.h>
-#include <string>
-#include <type_traits>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/event_engine/event_engine.h>
@@ -50,7 +33,35 @@
 #include <grpc/status.h>
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
+#include <inttypes.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include <algorithm>
+#include <deque>
+#include <list>
+#include <map>
+#include <memory>
+#include <optional>
+#include <random>
+#include <set>
+#include <string>
+#include <type_traits>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/hash/hash.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -94,18 +105,6 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/hash/hash.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 

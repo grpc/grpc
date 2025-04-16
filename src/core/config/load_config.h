@@ -15,12 +15,12 @@
 #ifndef GRPC_SRC_CORE_CONFIG_LOAD_CONFIG_H
 #define GRPC_SRC_CORE_CONFIG_LOAD_CONFIG_H
 
-#include <optional>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
+
+#include <optional>
 #include <string>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "absl/flags/flag.h"
 #include "absl/strings/string_view.h"

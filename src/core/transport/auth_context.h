@@ -17,16 +17,17 @@
 #ifndef GRPC_SRC_CORE_TRANSPORT_AUTH_CONTEXT_H
 #define GRPC_SRC_CORE_TRANSPORT_AUTH_CONTEXT_H
 
-#include <memory>
-#include <stddef.h>
-#include <utility>
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
+#include <memory>
+#include <utility>
+
+#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/connection_context.h"
@@ -35,7 +36,6 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
-#include "absl/strings/string_view.h"
 
 // --- grpc_auth_context ---
 

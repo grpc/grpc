@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CORE_UTIL_MPSCQ_H
 #define GRPC_SRC_CORE_UTIL_MPSCQ_H
 
-#include <atomic>
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/sync.h"
+#include <atomic>
+
 #include "absl/log/check.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

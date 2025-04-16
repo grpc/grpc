@@ -14,9 +14,9 @@
 
 #include "src/core/lib/transport/call_final_info.h"
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 static void move64bits(uint64_t* from, uint64_t* to) {
   *to += *from;

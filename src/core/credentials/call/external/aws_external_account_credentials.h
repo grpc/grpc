@@ -17,13 +17,14 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_CALL_EXTERNAL_AWS_EXTERNAL_ACCOUNT_CREDENTIALS_H
 #define GRPC_SRC_CORE_CREDENTIALS_CALL_EXTERNAL_AWS_EXTERNAL_ACCOUNT_CREDENTIALS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/external/aws_request_signer.h"
 #include "src/core/credentials/call/external/external_account_credentials.h"
 #include "src/core/lib/iomgr/error.h"
@@ -31,7 +32,6 @@
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

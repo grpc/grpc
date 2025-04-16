@@ -16,15 +16,29 @@
 
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 
-#include <algorithm>
+#include <grpc/support/json.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#include <algorithm>
 #include <string>
 #include <utility>
 #include <variant>
 
-#include <grpc/support/json.h>
-
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "envoy/config/core/v3/address.upb.h"
+#include "envoy/config/rbac/v3/rbac.upb.h"
+#include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.upb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h"
+#include "envoy/type/matcher/v3/metadata.upb.h"
+#include "envoy/type/matcher/v3/path.upb.h"
+#include "envoy/type/matcher/v3/regex.upb.h"
+#include "envoy/type/matcher/v3/string.upb.h"
+#include "envoy/type/v3/range.upb.h"
+#include "google/protobuf/wrappers.upb.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -38,21 +52,6 @@
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_client.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-
-#include "envoy/config/core/v3/address.upb.h"
-#include "envoy/config/rbac/v3/rbac.upb.h"
-#include "envoy/config/route/v3/route_components.upb.h"
-#include "envoy/extensions/filters/http/rbac/v3/rbac.upb.h"
-#include "envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h"
-#include "envoy/type/matcher/v3/metadata.upb.h"
-#include "envoy/type/matcher/v3/path.upb.h"
-#include "envoy/type/matcher/v3/regex.upb.h"
-#include "envoy/type/matcher/v3/string.upb.h"
-#include "envoy/type/v3/range.upb.h"
-#include "google/protobuf/wrappers.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/message/array.h"
 #include "upb/message/map.h"

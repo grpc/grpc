@@ -14,19 +14,19 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
-#include <cstdint>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
+
+#include <cstdint>
 #include <string>
 #include <utility>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/util/crash.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_core {
 

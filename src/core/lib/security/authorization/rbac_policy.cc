@@ -14,9 +14,9 @@
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"

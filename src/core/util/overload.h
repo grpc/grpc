@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_UTIL_OVERLOAD_H
 #define GRPC_SRC_CORE_UTIL_OVERLOAD_H
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 namespace grpc_core {
 

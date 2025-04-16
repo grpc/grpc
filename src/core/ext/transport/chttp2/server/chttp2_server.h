@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H
 
-#include <functional>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/passive_listener.h>
 #include <grpc/support/port_platform.h>
+
+#include <functional>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/handshaker/handshaker.h"

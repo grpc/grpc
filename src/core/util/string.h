@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CORE_UTIL_STRING_H
 #define GRPC_SRC_CORE_UTIL_STRING_H
 
-#include <stddef.h>
-#include <stdint.h>
-#include <string>
-
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <string>
 
 // String utility functions
 

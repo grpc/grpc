@@ -19,13 +19,15 @@
 #ifndef GRPC_SRC_CORE_HANDSHAKER_HANDSHAKER_H
 #define GRPC_SRC_CORE_HANDSHAKER_HANDSHAKER_H
 
-#include <memory>
-#include <stddef.h>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
+#include <memory>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/container/inlined_vector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -37,8 +39,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/container/inlined_vector.h"
 
 namespace grpc_core {
 

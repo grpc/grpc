@@ -16,10 +16,9 @@
 
 #include "src/core/xds/xds_client/xds_api.h"
 
+#include "google/protobuf/struct.upb.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/upb_utils.h"
-
-#include "google/protobuf/struct.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 

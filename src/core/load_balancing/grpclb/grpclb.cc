@@ -58,19 +58,6 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
-#include <algorithm>
-#include <atomic>
-#include <inttypes.h>
-#include <map>
-#include <memory>
-#include <optional>
-#include <string.h>
-#include <string>
-#include <type_traits>
-#include <utility>
-#include <variant>
-#include <vector>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -79,7 +66,31 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <inttypes.h>
+#include <string.h>
 
+#include <algorithm>
+#include <atomic>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/check.h"
+#include "absl/log/globals.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
@@ -129,18 +140,6 @@
 #include "src/core/util/useful.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/log/globals.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-
 #include "upb/mem/arena.hpp"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1

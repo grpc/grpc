@@ -19,14 +19,14 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 #define GRPC_SRC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 
-#include <cstddef>
-#include <memory>
-#include <utility>
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
+
+#include <cstddef>
+#include <memory>
+#include <utility>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"

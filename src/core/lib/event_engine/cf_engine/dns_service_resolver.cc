@@ -18,14 +18,14 @@
 #include <AvailabilityMacros.h>
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/host_port.h"
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 
 namespace grpc_event_engine::experimental {
 

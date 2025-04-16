@@ -14,9 +14,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 #include "absl/log/check.h"
 #include "absl/meta/type_traits.h"

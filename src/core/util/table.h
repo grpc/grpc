@@ -15,17 +15,17 @@
 #ifndef GRPC_SRC_CORE_UTIL_TABLE_H
 #define GRPC_SRC_CORE_UTIL_TABLE_H
 
+#include <grpc/support/port_platform.h>
+#include <stddef.h>
+
 #include <initializer_list>
 #include <new>
-#include <stddef.h>
 #include <type_traits>
 #include <utility>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/util/bitset.h"
 #include "absl/meta/type_traits.h"
 #include "absl/utility/utility.h"
+#include "src/core/util/bitset.h"
 
 namespace grpc_core {
 

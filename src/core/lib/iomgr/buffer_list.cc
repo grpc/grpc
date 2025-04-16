@@ -21,10 +21,10 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
-#include "absl/log/log.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 #include <netinet/in.h>

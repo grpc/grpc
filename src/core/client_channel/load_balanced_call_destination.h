@@ -15,11 +15,11 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_LOAD_BALANCED_CALL_DESTINATION_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_LOAD_BALANCED_CALL_DESTINATION_H
 
+#include "absl/functional/any_invocable.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/load_balancing/lb_policy.h"
-#include "absl/functional/any_invocable.h"
 
 namespace grpc_core {
 

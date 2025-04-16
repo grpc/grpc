@@ -19,9 +19,9 @@
 #ifndef GRPC_SRC_CORE_UTIL_SUBPROCESS_H
 #define GRPC_SRC_CORE_UTIL_SUBPROCESS_H
 
-#include <string>
-
 #include <grpc/support/port_platform.h>
+
+#include <string>
 
 typedef struct gpr_subprocess gpr_subprocess;
 

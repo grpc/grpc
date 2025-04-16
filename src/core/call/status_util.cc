@@ -18,14 +18,14 @@
 
 #include "src/core/call/status_util.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
+
 #include <vector>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/util/useful.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "src/core/util/useful.h"
 
 struct status_string_entry {
   const char* str;

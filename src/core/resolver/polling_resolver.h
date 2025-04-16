@@ -17,13 +17,14 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_POLLING_RESOLVER_H
 #define GRPC_SRC_CORE_RESOLVER_POLLING_RESOLVER_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <optional>
 #include <string>
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
+#include "absl/status/status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -33,7 +34,6 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/time.h"
 #include "src/core/util/work_serializer.h"
-#include "absl/status/status.h"
 
 namespace grpc_core {
 

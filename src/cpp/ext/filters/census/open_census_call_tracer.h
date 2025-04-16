@@ -19,15 +19,23 @@
 #ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
 
-#include <atomic>
-#include <memory>
-#include <stdint.h>
-#include <string>
-
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
+#include <stdint.h>
 
+#include <atomic>
+#include <memory>
+#include <string>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
+#include "opencensus/trace/span_id.h"
+#include "opencensus/trace/trace_id.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -37,15 +45,6 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/sync.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-
-#include "opencensus/trace/span.h"
-#include "opencensus/trace/span_context.h"
-#include "opencensus/trace/span_id.h"
-#include "opencensus/trace/trace_id.h"
 
 // TODO(yashykt): This might not be the right place for this channel arg, but we
 // don't have a better place for this right now.

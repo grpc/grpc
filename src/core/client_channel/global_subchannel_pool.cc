@@ -18,9 +18,9 @@
 
 #include "src/core/client_channel/global_subchannel_pool.h"
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 #include "src/core/client_channel/subchannel.h"
 

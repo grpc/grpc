@@ -14,9 +14,9 @@
 
 #include "src/core/call/interception_chain.h"
 
-#include <cstddef>
-
 #include <grpc/support/port_platform.h>
+
+#include <cstddef>
 
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_filters.h"

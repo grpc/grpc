@@ -19,10 +19,10 @@
 #ifndef GRPCPP_IMPL_SERVER_INITIALIZER_H
 #define GRPCPP_IMPL_SERVER_INITIALIZER_H
 
+#include <grpcpp/server.h>
+
 #include <memory>
 #include <vector>
-
-#include <grpcpp/server.h>
 
 namespace grpc {
 class Server;

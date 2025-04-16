@@ -14,12 +14,12 @@
 
 #include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"

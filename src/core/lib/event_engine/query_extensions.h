@@ -14,10 +14,10 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_QUERY_EXTENSIONS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_QUERY_EXTENSIONS_H
 
-#include <type_traits>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+
+#include <type_traits>
 
 #include "absl/strings/string_view.h"
 

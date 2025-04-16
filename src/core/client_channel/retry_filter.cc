@@ -16,12 +16,14 @@
 
 #include "src/core/client_channel/retry_filter.h"
 
-#include <optional>
-#include <string>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+#include <string>
+
+#include "absl/status/statusor.h"
+#include "absl/strings/strip.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_filter_legacy_call_data.h"
 #include "src/core/client_channel/retry_service_config.h"
@@ -34,8 +36,6 @@
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/uri.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/strip.h"
 
 //
 // Retry filter

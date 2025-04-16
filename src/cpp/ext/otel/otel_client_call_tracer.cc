@@ -18,18 +18,27 @@
 
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+#include <stdint.h>
+
 #include <array>
 #include <functional>
 #include <memory>
 #include <optional>
-#include <stdint.h>
 #include <string>
 #include <utility>
 
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/trace/context.h"
@@ -48,15 +57,6 @@
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "absl/types/span.h"
 
 namespace grpc {
 namespace internal {

@@ -17,15 +17,16 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_CALL_EXTERNAL_EXTERNAL_ACCOUNT_CREDENTIALS_H
 #define GRPC_SRC_CORE_CREDENTIALS_CALL_EXTERNAL_EXTERNAL_ACCOUNT_CREDENTIALS_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+#include <stdint.h>
+
 #include <functional>
 #include <memory>
-#include <stdint.h>
 #include <string>
 #include <vector>
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
+#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/oauth2/oauth2_credentials.h"
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -37,7 +38,6 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

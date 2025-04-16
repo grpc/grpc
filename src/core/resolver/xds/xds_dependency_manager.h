@@ -17,6 +17,9 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_XDS_XDS_DEPENDENCY_MANAGER_H
 #define GRPC_SRC_CORE_RESOLVER_XDS_XDS_DEPENDENCY_MANAGER_H
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/strings/string_view.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/ref_counted.h"
@@ -25,9 +28,6 @@
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

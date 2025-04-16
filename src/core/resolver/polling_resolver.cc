@@ -16,14 +16,20 @@
 
 #include "src/core/resolver/polling_resolver.h"
 
-#include <functional>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
+
+#include <functional>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/resolver/endpoint_addresses.h"
@@ -33,12 +39,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/strip.h"
 
 namespace grpc_core {
 

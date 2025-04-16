@@ -18,11 +18,11 @@
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
-#include <algorithm>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include <grpc/support/port_platform.h>
+#include <algorithm>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"

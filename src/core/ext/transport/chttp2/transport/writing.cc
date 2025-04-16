@@ -16,20 +16,24 @@
 //
 //
 
-#include <algorithm>
-#include <inttypes.h>
-#include <limits>
-#include <memory>
-#include <optional>
-#include <stddef.h>
-#include <string>
-#include <utility>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <inttypes.h>
+#include <stddef.h>
 
+#include <algorithm>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -68,10 +72,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 
 // IWYU pragma: no_include "src/core/util/orphanable.h"
 

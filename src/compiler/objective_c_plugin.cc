@@ -19,6 +19,7 @@
 // Generates Objective C gRPC service interface out of Protobuf IDL.
 
 #include <google/protobuf/compiler/objectivec/names.h>
+
 #include <memory>
 
 #include "src/compiler/config.h"

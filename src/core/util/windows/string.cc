@@ -22,12 +22,11 @@
 
 #ifdef GPR_WINDOWS_STRING
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/util/string.h"
 

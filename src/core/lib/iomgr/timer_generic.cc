@@ -16,14 +16,18 @@
 //
 //
 
-#include <inttypes.h>
-#include <string>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <inttypes.h>
 
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
@@ -35,10 +39,6 @@
 #include "src/core/util/time.h"
 #include "src/core/util/time_averaged_stats.h"
 #include "src/core/util/useful.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 

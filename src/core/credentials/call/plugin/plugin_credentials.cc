@@ -18,12 +18,17 @@
 
 #include "src/core/credentials/call/plugin/plugin_credentials.h"
 
-#include <atomic>
-#include <memory>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+#include <memory>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -31,11 +36,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 grpc_plugin_credentials::~grpc_plugin_credentials() {
   if (plugin_.state != nullptr && plugin_.destroy != nullptr) {

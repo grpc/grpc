@@ -20,11 +20,11 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

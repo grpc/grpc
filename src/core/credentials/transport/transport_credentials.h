@@ -17,10 +17,6 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TRANSPORT_CREDENTIALS_H
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TRANSPORT_CREDENTIALS_H
 
-#include <string>
-#include <utility>
-#include <vector>
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -28,6 +24,13 @@
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
 
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -38,9 +41,6 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 // --- Constants. ---
 

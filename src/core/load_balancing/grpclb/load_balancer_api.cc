@@ -18,18 +18,17 @@
 
 #include "src/core/load_balancing/grpclb/load_balancer_api.h"
 
-#include <algorithm>
-#include <string.h>
-
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <string.h>
 
-#include "src/core/util/memory.h"
-#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
+#include <algorithm>
+
 #include "absl/log/log.h"
-
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
+#include "src/core/util/memory.h"
+#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 #include "upb/base/string_view.h"
 
 namespace grpc_core {

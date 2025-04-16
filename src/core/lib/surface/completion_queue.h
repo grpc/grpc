@@ -21,10 +21,9 @@
 
 // Internal API for completion queues
 
-#include <stdint.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"

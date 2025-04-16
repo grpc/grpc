@@ -21,10 +21,10 @@
 #define _GNU_SOURCE
 #endif
 
+#include <grpc/support/port_platform.h>
+
 #include <optional>
 #include <string>
-
-#include <grpc/support/port_platform.h>
 
 #ifdef GPR_LINUX_ENV
 

@@ -18,15 +18,15 @@
 
 #include "src/core/telemetry/call_tracer.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/check.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/telemetry/tcp_tracer.h"
-#include "absl/log/check.h"
 
 namespace grpc_core {
 

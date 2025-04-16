@@ -13,14 +13,14 @@
 // limitations under the License.
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_POOL_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_POOL_H
-#include <memory>
-#include <stddef.h>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
-#include "src/core/lib/event_engine/forkable.h"
+#include <memory>
+
 #include "absl/functional/any_invocable.h"
+#include "src/core/lib/event_engine/forkable.h"
 
 namespace grpc_event_engine::experimental {
 

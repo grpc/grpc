@@ -17,9 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/slice/slice_buffer.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
+#include "src/core/lib/slice/slice_buffer.h"
 
 namespace grpc_core {
 

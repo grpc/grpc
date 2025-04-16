@@ -16,10 +16,10 @@
 
 #include "src/core/service_config/service_config_parser.h"
 
-#include <stdlib.h>
-#include <string>
-
 #include <grpc/support/port_platform.h>
+#include <stdlib.h>
+
+#include <string>
 
 #include "absl/log/log.h"
 

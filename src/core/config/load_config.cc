@@ -14,16 +14,16 @@
 
 #include "src/core/config/load_config.h"
 
-#include <optional>
+#include <grpc/support/port_platform.h>
 #include <stdio.h>
 
-#include <grpc/support/port_platform.h>
+#include <optional>
 
-#include "src/core/util/env.h"
 #include "absl/flags/marshalling.h"
 #include "absl/log/check.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_join.h"
+#include "src/core/util/env.h"
 
 namespace grpc_core {
 

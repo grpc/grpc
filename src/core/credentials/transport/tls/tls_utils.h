@@ -19,11 +19,11 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_TLS_UTILS_H
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_TLS_UTILS_H
 
-#include <string>
-#include <vector>
-
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
+
+#include <string>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 

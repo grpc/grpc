@@ -18,16 +18,16 @@
 
 #include "src/core/xds/grpc/xds_certificate_provider.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <optional>
 #include <utility>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
 
 namespace grpc_core {
 

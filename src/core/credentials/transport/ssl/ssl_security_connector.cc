@@ -18,14 +18,20 @@
 
 #include "src/core/credentials/transport/ssl/ssl_security_connector.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
+
 #include <string>
 #include <utility>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/credentials/transport/transport_credentials.h"
@@ -47,12 +53,6 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 
 namespace {
 grpc_error_handle ssl_check_peer(

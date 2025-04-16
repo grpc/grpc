@@ -21,9 +21,9 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "absl/log/check.h"
 
 //
 // == Default completion queue factory implementation ==

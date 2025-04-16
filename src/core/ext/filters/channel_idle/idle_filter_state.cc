@@ -15,7 +15,6 @@
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 
 #include <assert.h>
-
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {

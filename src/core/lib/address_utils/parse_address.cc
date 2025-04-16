@@ -41,17 +41,17 @@
 #endif  // GRPC_HAVE_UNIX_SOCKET
 #include <string>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/util/grpc_if_nametoindex.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/strip.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 

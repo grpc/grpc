@@ -17,16 +17,19 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
 
-#include <map>
-#include <optional>
-#include <string>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include <map>
+#include <optional>
+#include <string>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/channelz/channelz.h"
@@ -42,9 +45,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 // Forward declaration to avoid dependency loop.
 struct grpc_channel_stack;

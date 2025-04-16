@@ -15,15 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
 
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/port_platform.h>
+#include <stdint.h>
+
 #include <map>
 #include <memory>
 #include <optional>
-#include <stdint.h>
 #include <string>
 #include <vector>
-
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/util/matchers.h"
 

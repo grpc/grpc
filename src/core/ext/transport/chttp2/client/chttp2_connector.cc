@@ -18,11 +18,6 @@
 
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 
-#include <stdint.h>
-#include <string>
-#include <type_traits>
-#include <utility>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -31,7 +26,17 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <stdint.h>
 
+#include <string>
+#include <type_traits>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
@@ -64,11 +69,6 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 

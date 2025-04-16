@@ -18,9 +18,8 @@
 
 #include "src/core/util/host_port.h"
 
-#include <stddef.h>
-
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"

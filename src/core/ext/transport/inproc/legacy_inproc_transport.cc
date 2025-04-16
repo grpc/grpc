@@ -18,15 +18,6 @@
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 
-#include <algorithm>
-#include <memory>
-#include <new>
-#include <optional>
-#include <stddef.h>
-#include <stdint.h>
-#include <string>
-#include <utility>
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
@@ -34,7 +25,22 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <algorithm>
+#include <memory>
+#include <new>
+#include <optional>
+#include <string>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
@@ -58,12 +64,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 namespace {
 struct inproc_stream;

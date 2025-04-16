@@ -16,9 +16,9 @@
 
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
-#include <optional>
-
 #include <grpc/support/port_platform.h>
+
+#include <optional>
 
 #include "src/core/util/env.h"
 #include "src/core/util/string.h"

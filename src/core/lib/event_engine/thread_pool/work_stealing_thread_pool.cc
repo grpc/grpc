@@ -17,17 +17,22 @@
 //
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/thd_id.h>
+#include <inttypes.h>
+
 #include <atomic>
 #include <chrono>
 #include <cstddef>
-#include <inttypes.h>
 #include <memory>
 #include <optional>
 #include <utility>
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/thd_id.h>
-
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
@@ -39,11 +44,6 @@
 #include "src/core/util/examine_stack.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/time.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 
 #ifdef GPR_POSIX_SYNC
 #include <csignal>

@@ -16,12 +16,6 @@
 
 #include "src/cpp/server/orca/orca_service.h"
 
-#include <map>
-#include <memory>
-#include <optional>
-#include <stddef.h>
-#include <utility>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/ext/server_metric_recorder.h>
@@ -34,19 +28,24 @@
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
+#include <stddef.h>
 
+#include <map>
+#include <memory>
+#include <optional>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "google/protobuf/duration.upb.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/time.h"
 #include "src/cpp/server/backend_metric_recorder.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-
-#include "google/protobuf/duration.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"

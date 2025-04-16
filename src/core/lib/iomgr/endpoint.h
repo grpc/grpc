@@ -24,9 +24,9 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "absl/strings/string_view.h"
 
 // An endpoint caps a streaming channel between two communicating processes.
 // Examples may be: a tcp socket, <stdin+stdout>, or some shared memory.

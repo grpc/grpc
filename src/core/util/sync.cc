@@ -19,7 +19,6 @@
 // Generic implementation of synchronization primitives.
 
 #include <assert.h>
-
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>

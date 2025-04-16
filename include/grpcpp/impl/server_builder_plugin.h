@@ -19,10 +19,10 @@
 #ifndef GRPCPP_IMPL_SERVER_BUILDER_PLUGIN_H
 #define GRPCPP_IMPL_SERVER_BUILDER_PLUGIN_H
 
-#include <memory>
-
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
 
 namespace grpc {
 

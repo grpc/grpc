@@ -18,10 +18,10 @@
 
 #include "src/core/lib/surface/event_string.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"

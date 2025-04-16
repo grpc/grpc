@@ -17,11 +17,13 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_RESOLVER_H
 #define GRPC_SRC_CORE_RESOLVER_RESOLVER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <string>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/resolver/endpoint_addresses.h"
@@ -29,8 +31,6 @@
 #include "src/core/service_config/service_config.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

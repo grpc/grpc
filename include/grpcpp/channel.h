@@ -19,8 +19,6 @@
 #ifndef GRPCPP_CHANNEL_H
 #define GRPCPP_CHANNEL_H
 
-#include <memory>
-
 #include <grpc/grpc.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
@@ -29,6 +27,8 @@
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
 
 struct grpc_channel;
 

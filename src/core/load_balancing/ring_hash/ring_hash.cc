@@ -16,22 +16,31 @@
 
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
 
-#include <algorithm>
-#include <cmath>
-#include <inttypes.h>
-#include <map>
-#include <memory>
-#include <optional>
-#include <stdlib.h>
-#include <string>
-#include <utility>
-#include <vector>
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
+#include <inttypes.h>
+#include <stdlib.h>
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/base/attributes.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -60,15 +69,6 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/work_serializer.h"
 #include "src/core/util/xxhash_inline.h"
-#include "absl/base/attributes.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

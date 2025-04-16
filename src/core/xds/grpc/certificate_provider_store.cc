@@ -21,10 +21,10 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/config/core_configuration.h"
-#include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 
 namespace grpc_core {
 

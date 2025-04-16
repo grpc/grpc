@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CONTROL_ENDPOINT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CONTROL_ENDPOINT_H
 
+#include "absl/cleanup/cleanup.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/sync.h"
-#include "absl/cleanup/cleanup.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {

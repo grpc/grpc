@@ -17,9 +17,8 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_IMPL_H
 #define GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_IMPL_H
 
-#include <stddef.h>
-
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"

@@ -16,6 +16,12 @@
 
 #include "src/core/xds/grpc/xds_client_grpc.h"
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <memory>
@@ -24,12 +30,12 @@
 #include <utility>
 #include <vector>
 
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "envoy/service/status/v3/csds.upb.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -56,13 +62,6 @@
 #include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_transport.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-
-#include "envoy/service/status/v3/csds.upb.h"
 #include "upb/base/string_view.h"
 
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string

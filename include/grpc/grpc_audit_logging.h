@@ -19,11 +19,11 @@
 #ifndef GRPC_GRPC_AUDIT_LOGGING_H
 #define GRPC_GRPC_AUDIT_LOGGING_H
 
-#include <memory>
-#include <string>
-
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
+
+#include <memory>
+#include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"

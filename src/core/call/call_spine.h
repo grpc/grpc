@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/message.h"
@@ -31,7 +32,6 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/dual_ref_counted.h"
-#include "absl/log/check.h"
 
 namespace grpc_core {
 

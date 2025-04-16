@@ -20,6 +20,7 @@
 #define GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H
 
 #include <google/protobuf/compiler/objectivec/names.h>
+
 #include <map>
 
 #include "src/compiler/config.h"

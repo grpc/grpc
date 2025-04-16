@@ -16,17 +16,25 @@
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 
+#include <grpc/support/port_platform.h>
+#include <string.h>
+
 #include <algorithm>
 #include <functional>
 #include <memory>
 #include <optional>
-#include <string.h>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/check.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
@@ -43,14 +51,6 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/time.h"
-#include "absl/log/check.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 
 namespace grpc_core {
 

@@ -16,19 +16,19 @@
 
 #include "src/cpp/server/backend_metric_recorder.h"
 
-#include <functional>
+#include <grpcpp/ext/call_metric_recorder.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 #include <inttypes.h>
+
+#include <functional>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
 
-#include <grpcpp/ext/call_metric_recorder.h>
-#include <grpcpp/ext/server_metric_recorder.h>
-
+#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/load_balancing/backend_metric_data.h"
-#include "absl/log/log.h"
 
 using grpc_core::BackendMetricData;
 

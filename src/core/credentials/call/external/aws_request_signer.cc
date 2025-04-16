@@ -15,14 +15,14 @@
 //
 #include "src/core/credentials/call/external/aws_request_signer.h"
 
+#include <grpc/support/port_platform.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
+
 #include <utility>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"

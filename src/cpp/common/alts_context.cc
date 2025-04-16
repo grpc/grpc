@@ -16,16 +16,15 @@
 //
 //
 
-#include <map>
-#include <stddef.h>
-#include <string>
-
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/alts_context.h>
+#include <stddef.h>
+
+#include <map>
+#include <string>
 
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "src/proto/grpc/gcp/transport_security_common.upb.h"
-
 #include "upb/base/string_view.h"
 #include "upb/message/map.h"
 

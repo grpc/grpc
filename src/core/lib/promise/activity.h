@@ -15,16 +15,20 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 
+#include <grpc/support/port_platform.h>
+#include <stdint.h>
+
 #include <algorithm>
 #include <atomic>
 #include <memory>
 #include <optional>
-#include <stdint.h>
 #include <string>
 #include <utility>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -36,10 +40,6 @@
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

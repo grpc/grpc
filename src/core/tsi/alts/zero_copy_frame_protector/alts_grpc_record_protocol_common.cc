@@ -18,17 +18,16 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 
-#include <string.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <string.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 
 const size_t kInitialIovecBufferSize = 8;
 

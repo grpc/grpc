@@ -17,15 +17,17 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_TRANSPORT_GRPC_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_TRANSPORT_GRPC_H
 
-#include <functional>
-#include <memory>
-#include <string>
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+#include <memory>
+#include <string>
+
+#include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -36,8 +38,6 @@
 #include "src/core/util/sync.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/status/status.h"
 
 namespace grpc_core {
 

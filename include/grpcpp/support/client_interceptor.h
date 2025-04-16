@@ -19,12 +19,12 @@
 #ifndef GRPCPP_SUPPORT_CLIENT_INTERCEPTOR_H
 #define GRPCPP_SUPPORT_CLIENT_INTERCEPTOR_H
 
-#include <memory>
-#include <vector>
-
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <memory>
+#include <vector>
 
 #include "absl/log/absl_check.h"
 

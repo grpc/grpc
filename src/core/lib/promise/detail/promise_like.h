@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/poll.h"
+#include <utility>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
+#include "src/core/lib/promise/poll.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.
 // Often when we're writing code that uses promises, we end up wanting to also

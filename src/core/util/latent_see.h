@@ -18,6 +18,9 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_ENABLE_LATENT_SEE
+#include <sys/syscall.h>
+#include <unistd.h>
+
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -25,18 +28,16 @@
 #include <cstdlib>
 #include <optional>
 #include <string>
-#include <sys/syscall.h>
-#include <unistd.h>
 #include <utility>
 #include <vector>
 
-#include "src/core/util/per_cpu.h"
-#include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
+#include "src/core/util/per_cpu.h"
+#include "src/core/util/sync.h"
 
 #define TAGGED_POINTER_SIZE_BITS 48
 

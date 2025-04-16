@@ -14,6 +14,11 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc_security.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -25,11 +30,12 @@
 #include <variant>
 #include <vector>
 
-#include <grpc/grpc_security.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -57,12 +63,6 @@
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

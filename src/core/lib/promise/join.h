@@ -15,15 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_JOIN_H
 #define GRPC_SRC_CORE_LIB_PROMISE_JOIN_H
 
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
+
 #include <tuple>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/meta/type_traits.h"
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/map.h"
-#include "absl/meta/type_traits.h"
 
 namespace grpc_core {
 namespace promise_detail {

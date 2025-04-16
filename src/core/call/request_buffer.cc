@@ -17,8 +17,8 @@
 #include <cstdint>
 #include <optional>
 
-#include "src/core/util/match.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/util/match.h"
 
 namespace grpc_core {
 

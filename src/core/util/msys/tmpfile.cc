@@ -20,13 +20,12 @@
 
 #ifdef GPR_MSYS_TMPFILE
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <io.h>
 #include <stdio.h>
 #include <string.h>
 #include <tchar.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/util/crash.h"
 #include "src/core/util/string_windows.h"

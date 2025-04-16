@@ -14,12 +14,16 @@
 
 #include "src/core/client_channel/retry_filter_legacy_call_data.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
+
 #include <memory>
 #include <new>
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -46,10 +50,6 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

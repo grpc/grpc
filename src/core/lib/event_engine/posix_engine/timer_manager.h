@@ -19,21 +19,21 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TIMER_MANAGER_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TIMER_MANAGER_H
 
-#include <memory>
-#include <optional>
-#include <stdint.h>
-#include <vector>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
+#include <memory>
+#include <optional>
+#include <vector>
+
+#include "absl/base/thread_annotations.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
-#include "absl/base/thread_annotations.h"
 
 namespace grpc_event_engine::experimental {
 

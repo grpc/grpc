@@ -19,26 +19,25 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H
 
+#include <google/protobuf/repeated_ptr_field.h>
+#include <grpc/support/port_platform.h>
+#include <stddef.h>
+
 #include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <deque>
-#include <google/protobuf/repeated_ptr_field.h>
 #include <memory>
-#include <stddef.h>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include <grpc/support/port_platform.h>
-
+#include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
-
-#include "opencensus/stats/stats.h"
-#include "opencensus/tags/tag_key.h"
 
 // IWYU pragma: no_include <ratio>
 

@@ -17,9 +17,9 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_BOOTSTRAP_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_BOOTSTRAP_H
 
-#include <string>
-
 #include <grpc/support/port_platform.h>
+
+#include <string>
 
 #include "src/core/util/json/json.h"
 

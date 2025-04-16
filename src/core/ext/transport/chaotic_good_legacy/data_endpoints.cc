@@ -18,6 +18,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "absl/cleanup/cleanup.h"
+#include "absl/strings/escaping.h"
 #include "src/core/ext/transport/chaotic_good_legacy/pending_connection.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
@@ -27,8 +29,6 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
-#include "absl/cleanup/cleanup.h"
-#include "absl/strings/escaping.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {

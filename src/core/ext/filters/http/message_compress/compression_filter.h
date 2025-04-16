@@ -19,13 +19,15 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
 
-#include <optional>
+#include <grpc/impl/compression_types.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#include <grpc/impl/compression_types.h>
-#include <grpc/support/port_platform.h>
+#include <optional>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -33,8 +35,6 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

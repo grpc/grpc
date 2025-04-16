@@ -14,13 +14,6 @@
 // limitations under the License.
 //
 
-#include <algorithm>
-#include <functional>
-#include <map>
-#include <stddef.h>
-#include <utility>
-#include <vector>
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
@@ -30,6 +23,13 @@
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+#include <stddef.h>
+
+#include <algorithm>
+#include <functional>
+#include <map>
+#include <utility>
+#include <vector>
 
 #include "absl/log/check.h"
 

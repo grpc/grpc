@@ -17,9 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
 #include "src/core/call/parsed_metadata.h"
 #include "src/core/lib/slice/slice.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

@@ -34,10 +34,6 @@
 #ifndef GRPCPP_CLIENT_CONTEXT_H
 #define GRPCPP_CLIENT_CONTEXT_H
 
-#include <map>
-#include <memory>
-#include <string>
-
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpcpp/impl/create_auth_context.h>
@@ -51,6 +47,10 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 #include <grpcpp/support/time.h>
+
+#include <map>
+#include <memory>
+#include <string>
 
 #include "absl/log/absl_check.h"
 

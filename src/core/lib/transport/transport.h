@@ -19,20 +19,24 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 
-#include <functional>
-#include <optional>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
-#include <string>
-#include <utility>
-
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <functional>
+#include <optional>
+#include <string>
+#include <utility>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
@@ -56,10 +60,6 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 
 // Minimum and maximum protocol accepted versions.
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2

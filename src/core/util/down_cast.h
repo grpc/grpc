@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_UTIL_DOWN_CAST_H
 #define GRPC_SRC_CORE_UTIL_DOWN_CAST_H
 
-#include <type_traits>
-
 #include <grpc/support/port_platform.h>
+
+#include <type_traits>
 
 #include "absl/base/config.h"
 #include "absl/log/check.h"

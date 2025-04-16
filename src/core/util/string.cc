@@ -19,6 +19,9 @@
 #include "src/core/util/string.h"
 
 #include <ctype.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -26,14 +29,10 @@
 #include <string.h>
 #include <time.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/util/crash.h"
-#include "src/core/util/useful.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/useful.h"
 
 char* gpr_strdup(const char* src) {
   char* dst;

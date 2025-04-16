@@ -18,11 +18,11 @@
 
 #include "src/core/telemetry/stats.h"
 
-#include <algorithm>
-#include <stddef.h>
-#include <vector>
-
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
+
+#include <algorithm>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
