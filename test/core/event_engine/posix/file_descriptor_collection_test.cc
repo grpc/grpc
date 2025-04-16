@@ -18,7 +18,6 @@
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
-#include "gmock/gmock.h"
 #include "src/core/lib/experiments/experiments.h"
 
 namespace grpc_event_engine::experimental {

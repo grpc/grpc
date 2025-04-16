@@ -81,11 +81,11 @@ FileDescriptorCollection::ClearAndReturnRawDescriptors() {
 
 FileDescriptorCollection::FileDescriptorCollection(
     FileDescriptorCollection&& other) noexcept
-    : generation_(std::move(other.generation_)) {}
+    : generation_(other.generation_) {}
 
 FileDescriptorCollection& FileDescriptorCollection::operator=(
     FileDescriptorCollection&& other) noexcept {
-  generation_ = std::move(other.generation_);
+  generation_ = other.generation_;
   return *this;
 }
 

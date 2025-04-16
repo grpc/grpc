@@ -167,7 +167,7 @@ class FileDescriptor {
   bool operator==(const FileDescriptor& other) const {
     return fd_ == other.fd_ && generation_ == other.generation_;
   }
-#else   // GRPC_ENABLE_FORK_SUPPORT
+#else  // GRPC_ENABLE_FORK_SUPPORT
   int generation() const { return 0; }
   template <typename Sink>
   friend void AbslStringify(Sink& sink, FileDescriptor fd) {
