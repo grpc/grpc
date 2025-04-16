@@ -140,7 +140,8 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
 
   int port = -1;
   ASSERT_EQ(grpc_sockaddr_is_wildcard_dummy(&wild_mapped, &port), 1);
-
+  port = -1;
+  ASSERT_EQ(grpc_sockaddr_is_wildcard1(&wild_mapped, &port), 1);
   port = -1;
   ASSERT_EQ(grpc_sockaddr_is_wildcard(&wild_mapped, &port), 1);
   ASSERT_EQ(port, 555);

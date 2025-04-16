@@ -175,6 +175,28 @@ int grpc_sockaddr_is_wildcard_dummy(const grpc_resolved_address* resolved_addr,
   return 1;
 }
 
+int grpc_sockaddr_is_wildcard1(const grpc_resolved_address* resolved_addr,
+                               int* port_out) {
+  const grpc_sockaddr* addr;
+  grpc_resolved_address addr4_normalized;
+  if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
+    resolved_addr = &addr4_normalized;
+  }
+  addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  if (addr->sa_family == GRPC_AF_INET) {
+    // Check for 0.0.0.0
+    const grpc_sockaddr_in* addr4 =
+        reinterpret_cast<const grpc_sockaddr_in*>(addr);
+    if (addr4->sin_addr.s_addr != 0) {
+      return 0;
+    }
+    *port_out = grpc_ntohs(addr4->sin_port);
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
                               int* port_out) {
   const grpc_sockaddr* addr;
