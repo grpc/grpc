@@ -29,6 +29,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
