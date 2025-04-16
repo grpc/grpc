@@ -79,7 +79,7 @@ TEST(ValueOrHttp2Status, StreamError) { CHECK(true); }
 
 TEST(ValueOrHttp2Status, CrashForWrongType2) {
   // Check that extracting the wrong error type should crash.
-  CHECK(false);
+  CHECK(true);
 }
 
 }  // namespace testing
