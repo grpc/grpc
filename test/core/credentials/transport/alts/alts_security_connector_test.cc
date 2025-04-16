@@ -195,6 +195,9 @@ TEST(AltsSecurityConnectorTest, AltsPeerToAuthContextSuccess) {
           reinterpret_cast<char*>(GRPC_SLICE_START_PTR(serialized_alts_ctx)),
           GRPC_SLICE_LENGTH(serialized_alts_ctx), &peer.properties[4]),
       TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_ALTS_TRANSPORT_PROTOCOL, "foo", &peer.properties[5]),
+            TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
   ASSERT_NE(ctx, nullptr);

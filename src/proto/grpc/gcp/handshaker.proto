@@ -205,6 +205,9 @@ message HandshakerResult {
 
   // The maximum frame size of the peer.
   uint32 max_frame_size = 8;
+
+  // (Optional) The transport protocol negotiated for this connection.
+  NegotiatedTransportProtocol transport_protocol = 9;
 }
 
 message HandshakerStatus {

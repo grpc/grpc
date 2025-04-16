@@ -82,6 +82,7 @@ typedef struct alts_tsi_handshaker_result {
   grpc_slice serialized_context;
   // Peer's maximum frame size.
   size_t max_frame_size;
+  char* transport_protocol;
 } alts_tsi_handshaker_result;
 
 static tsi_result handshaker_result_extract_peer(
@@ -93,7 +94,7 @@ static tsi_result handshaker_result_extract_peer(
   alts_tsi_handshaker_result* result =
       reinterpret_cast<alts_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
-  CHECK_EQ(kTsiAltsNumOfPeerProperties, 5u);
+  CHECK_EQ(kTsiAltsNumOfPeerProperties, 6u);
   tsi_result ok = tsi_construct_peer(kTsiAltsNumOfPeerProperties, peer);
   int index = 0;
   if (ok != TSI_OK) {
@@ -143,6 +144,15 @@ static tsi_result handshaker_result_extract_peer(
   ok = tsi_construct_string_peer_property_from_cstring(
       TSI_SECURITY_LEVEL_PEER_PROPERTY,
       tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+      &peer->properties[index]);
+  if (ok != TSI_OK) {
+    tsi_peer_destruct(peer);
+    LOG(ERROR) << "Failed to set tsi peer property";
+  }
+  index++;
+  CHECK_NE(&peer->properties[index], nullptr);
+  ok = tsi_construct_string_peer_property_from_cstring(
+      TSI_ALTS_TRANSPORT_PROTOCOL, result->transport_protocol,
       &peer->properties[index]);
   if (ok != TSI_OK) {
     tsi_peer_destruct(peer);
@@ -324,6 +334,17 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   memcpy(sresult->peer_identity, peer_service_account.data,
          peer_service_account.size);
   sresult->max_frame_size = grpc_gcp_HandshakerResult_max_frame_size(hresult);
+  const grpc_gcp_NegotiatedTransportProtocol* negotiated_transport_protocol =
+      grpc_gcp_HandshakerResult_transport_protocol(hresult);
+  if (negotiated_transport_protocol != nullptr) {
+    upb_StringView transport_protocol =
+        grpc_gcp_NegotiatedTransportProtocol_transport_protocol(
+            negotiated_transport_protocol);
+    sresult->transport_protocol =
+        static_cast<char*>(gpr_zalloc(transport_protocol.size + 1));
+    memcpy(sresult->transport_protocol, transport_protocol.data,
+           transport_protocol.size);
+  }
   upb::Arena rpc_versions_arena;
   bool serialized = grpc_gcp_rpc_protocol_versions_encode(
       peer_rpc_version, rpc_versions_arena.ptr(), &sresult->rpc_versions);

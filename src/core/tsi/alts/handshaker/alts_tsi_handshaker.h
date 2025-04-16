@@ -34,8 +34,9 @@
 #define TSI_ALTS_CERTIFICATE_TYPE "ALTS"
 #define TSI_ALTS_RPC_VERSIONS "rpc_versions"
 #define TSI_ALTS_CONTEXT "alts_context"
+#define TSI_ALTS_TRANSPORT_PROTOCOL "alts_transport_protocol"
 
-const size_t kTsiAltsNumOfPeerProperties = 5;
+const size_t kTsiAltsNumOfPeerProperties = 6;
 
 // Frame size negotiation extends send frame size range to
 // [kTsiAltsMinFrameSize, kTsiAltsMaxFrameSize].

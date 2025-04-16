@@ -185,6 +185,7 @@ namespace grpc_core {
 namespace internal {
 RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     const tsi_peer* peer) {
+  LOG(ERROR) << "anasalazar";
   if (peer == nullptr) {
     LOG(ERROR) << "Invalid arguments to grpc_alts_auth_context_from_tsi_peer()";
     return nullptr;
@@ -205,6 +206,7 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     LOG(ERROR) << "Missing security level property.";
     return nullptr;
   }
+  LOG(ERROR) << "anasalazar";
   // Validate RPC protocol versions.
   const tsi_peer_property* rpc_versions_prop =
       tsi_peer_get_property_by_name(peer, TSI_ALTS_RPC_VERSIONS);
@@ -237,14 +239,18 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     LOG(ERROR) << "Missing alts context property.";
     return nullptr;
   }
+  LOG(ERROR) << "anasalazar";
   // Create auth context.
   auto ctx = MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_ALTS_TRANSPORT_SECURITY_TYPE);
   size_t i = 0;
+  LOG(ERROR) << "anasalazar " << peer->property_count;
   for (i = 0; i < peer->property_count; i++) {
+    LOG(ERROR) << "anasalazar";
     const tsi_peer_property* tsi_prop = &peer->properties[i];
+    LOG(ERROR) << "anasalazar";
     // Add service account to auth context.
     if (strcmp(tsi_prop->name, TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(
@@ -253,12 +259,14 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
       CHECK(grpc_auth_context_set_peer_identity_property_name(
                 ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 1);
     }
+    LOG(ERROR) << "anasalazar";
     // Add alts context to auth context.
     if (strcmp(tsi_prop->name, TSI_ALTS_CONTEXT) == 0) {
       grpc_auth_context_add_property(ctx.get(), TSI_ALTS_CONTEXT,
                                      tsi_prop->value.data,
                                      tsi_prop->value.length);
     }
+    LOG(ERROR) << "anasalazar " << i;
     // Add security level to auth context.
     if (strcmp(tsi_prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(
@@ -266,11 +274,13 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
           tsi_prop->value.data, tsi_prop->value.length);
     }
   }
+  LOG(ERROR) << "anasalazar";
   if (!grpc_auth_context_peer_is_authenticated(ctx.get())) {
     LOG(ERROR) << "Invalid unauthenticated peer.";
     ctx.reset(DEBUG_LOCATION, "test");
     return nullptr;
   }
+  LOG(ERROR) << "anasalazar";
   return ctx;
 }
 

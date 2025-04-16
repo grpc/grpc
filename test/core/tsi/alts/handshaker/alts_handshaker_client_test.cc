@@ -255,7 +255,7 @@ static grpc_call_error check_client_start_success_with_negotiation(
   validate_transport_protocols(
       grpc_gcp_StartClientHandshakeReq_transport_protocol_preferences(
           client_start),
-      false /* is_server */);
+      /*is_server=*/false);
   return check_client_start_success(nullptr, op, nops, closure);
 }
 
@@ -323,7 +323,7 @@ static grpc_call_error check_server_start_success_with_negotiation(
   validate_transport_protocols(
       grpc_gcp_StartServerHandshakeReq_transport_protocol_preferences(
           server_start),
-      true /* is_server */);
+      /*is_server=*/true);
   return check_server_start_success(nullptr, op, nops, closure);
 }
 

@@ -268,27 +268,29 @@ const upb_MiniTable grpc__gcp__HandshakerReq_msg_init = {
 };
 
 const upb_MiniTable* grpc__gcp__HandshakerReq_msg_init_ptr = &grpc__gcp__HandshakerReq_msg_init;
-static const upb_MiniTableSubInternal grpc_gcp_HandshakerResult__submsgs[3] = {
+static const upb_MiniTableSubInternal grpc_gcp_HandshakerResult__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__NegotiatedTransportProtocol_msg_init_ptr},
 };
 
-static const upb_MiniTableField grpc_gcp_HandshakerResult__fields[8] = {
-  {1, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(36, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(44, 48), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField grpc_gcp_HandshakerResult__fields[9] = {
+  {1, UPB_SIZE(32, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(40, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, 48, 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(12, 64), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(16, 72), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {6, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(20, 80), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(24, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(28, 88), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable grpc__gcp__HandshakerResult_msg_init = {
   &grpc_gcp_HandshakerResult__submsgs[0],
   &grpc_gcp_HandshakerResult__fields[0],
-  UPB_SIZE(56, 88), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(56, 96), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.gcp.HandshakerResult",
 #endif

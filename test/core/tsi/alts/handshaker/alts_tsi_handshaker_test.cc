@@ -58,6 +58,8 @@
 #define ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE (2 * 1024 * 1024)
 #define ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY "peer"
 #define ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE "attributes"
+#define ALTS_TSI_HANDSHAKER_NEGOTIATED_TRANSPORT_PROTOCOL "foo"
+#define ALTS_TSI_HANDSHAKER_PREFERRED_TRANSPORT_PROTOCOL "foo,bar,baz"
 
 using grpc_core::internal::alts_handshaker_client_check_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_get_handshaker_for_testing;
@@ -136,6 +138,7 @@ static grpc_byte_buffer* generate_handshaker_response(
       grpc_gcp_HandshakerResp_mutable_status(resp, arena.ptr());
   grpc_gcp_HandshakerStatus_set_code(status, 0);
   grpc_gcp_Identity* local_identity;
+  grpc_gcp_NegotiatedTransportProtocol* protocol;
   switch (type) {
     case INVALID:
       break;
@@ -182,6 +185,11 @@ static grpc_byte_buffer* generate_handshaker_response(
           upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       grpc_gcp_HandshakerResult_set_max_frame_size(
           result, ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE);
+      protocol = grpc_gcp_HandshakerResult_mutable_transport_protocol(
+          result, arena.ptr());
+      grpc_gcp_NegotiatedTransportProtocol_set_transport_protocol(
+          protocol, upb_StringView_FromString(
+                        ALTS_TSI_HANDSHAKER_NEGOTIATED_TRANSPORT_PROTOCOL));
       break;
     case SERVER_NEXT:
       grpc_gcp_HandshakerResp_set_bytes_consumed(
@@ -217,6 +225,11 @@ static grpc_byte_buffer* generate_handshaker_response(
       grpc_gcp_HandshakerResult_set_record_protocol(
           result,
           upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
+      protocol = grpc_gcp_HandshakerResult_mutable_transport_protocol(
+          result, arena.ptr());
+      grpc_gcp_NegotiatedTransportProtocol_set_transport_protocol(
+          protocol, upb_StringView_FromString(
+                        ALTS_TSI_HANDSHAKER_NEGOTIATED_TRANSPORT_PROTOCOL));
       break;
     case FAILED:
       grpc_gcp_HandshakerStatus_set_code(status, 3 /* INVALID ARGUMENT */);
@@ -595,7 +608,8 @@ static tsi_handshaker* create_test_handshaker(bool is_client) {
       grpc_alts_credentials_client_options_create();
   alts_tsi_handshaker_create(options, "target_name",
                              ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING, is_client,
-                             nullptr, &handshaker, 0, std::nullopt);
+                             nullptr, &handshaker, 0,
+                             ALTS_TSI_HANDSHAKER_PREFERRED_TRANSPORT_PROTOCOL);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_tsi_handshaker_set_client_vtable_for_testing(alts_handshaker, &vtable);
