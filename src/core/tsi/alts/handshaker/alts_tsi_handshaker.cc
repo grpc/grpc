@@ -262,6 +262,7 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
   gpr_free(result->peer_identity);
   gpr_free(result->key_data);
   gpr_free(result->unused_bytes);
+  gpr_free(result->transport_protocol);
   grpc_core::CSliceUnref(result->rpc_versions);
   grpc_core::CSliceUnref(result->serialized_context);
   gpr_free(result);

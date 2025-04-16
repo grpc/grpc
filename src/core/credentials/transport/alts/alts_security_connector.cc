@@ -237,6 +237,13 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     LOG(ERROR) << "Missing alts context property.";
     return nullptr;
   }
+  // Check if security level exists.
+  const tsi_peer_property* transport_protocol =
+      tsi_peer_get_property_by_name(peer, TSI_ALTS_TRANSPORT_PROTOCOL);
+  if (transport_protocol == nullptr) {
+    LOG(ERROR) << "Missing transport protocol property.";
+    return nullptr;
+  }
   // Create auth context.
   auto ctx = MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(

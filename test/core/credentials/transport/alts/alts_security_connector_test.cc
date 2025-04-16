@@ -26,6 +26,7 @@
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
+#include "src/core/credentials/transport/alts/alts_credentials.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
@@ -108,6 +109,54 @@ TEST(AltsSecurityConnectorTest, MissingSecurityLevelPropertyFailure) {
           reinterpret_cast<char*>(
               GRPC_SLICE_START_PTR(serialized_peer_versions)),
           GRPC_SLICE_LENGTH(serialized_peer_versions), &peer.properties[2]),
+      TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_alts_auth_context_from_tsi_peer(&peer);
+  ASSERT_EQ(ctx, nullptr);
+  grpc_slice_unref(serialized_peer_versions);
+  tsi_peer_destruct(&peer);
+}
+
+TEST(AltsSecurityConnectorTest, MissingTransportProtocol) {
+  tsi_peer peer;
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
+                &peer.properties[0]),
+            TSI_OK);
+  ASSERT_EQ(
+      tsi_construct_string_peer_property_from_cstring(
+          TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, "alice", &peer.properties[1]),
+      TSI_OK);
+  grpc_gcp_rpc_protocol_versions peer_versions;
+  grpc_gcp_rpc_protocol_versions_set_max(&peer_versions,
+                                         GRPC_PROTOCOL_VERSION_MAX_MAJOR,
+                                         GRPC_PROTOCOL_VERSION_MAX_MINOR);
+  grpc_gcp_rpc_protocol_versions_set_min(&peer_versions,
+                                         GRPC_PROTOCOL_VERSION_MIN_MAJOR,
+                                         GRPC_PROTOCOL_VERSION_MIN_MINOR);
+  grpc_slice serialized_peer_versions;
+  ASSERT_TRUE(grpc_gcp_rpc_protocol_versions_encode(&peer_versions,
+                                                    &serialized_peer_versions));
+  ASSERT_EQ(
+      tsi_construct_string_peer_property(
+          TSI_ALTS_RPC_VERSIONS,
+          reinterpret_cast<char*>(
+              GRPC_SLICE_START_PTR(serialized_peer_versions)),
+          GRPC_SLICE_LENGTH(serialized_peer_versions), &peer.properties[2]),
+      TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_SECURITY_LEVEL_PEER_PROPERTY,
+                tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+                &peer.properties[3]),
+            TSI_OK);
+  char test_ctx[] = "test serialized context";
+  grpc_slice serialized_alts_ctx = grpc_slice_from_copied_string(test_ctx);
+  ASSERT_EQ(
+      tsi_construct_string_peer_property(
+          TSI_ALTS_CONTEXT,
+          reinterpret_cast<char*>(GRPC_SLICE_START_PTR(serialized_alts_ctx)),
+          GRPC_SLICE_LENGTH(serialized_alts_ctx), &peer.properties[4]),
       TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
@@ -207,6 +256,43 @@ TEST(AltsSecurityConnectorTest, AltsPeerToAuthContextSuccess) {
   grpc_slice_unref(serialized_peer_versions);
   grpc_slice_unref(serialized_alts_ctx);
   tsi_peer_destruct(&peer);
+}
+
+TEST(AltsSecurityConnectorTest, ChannelSuccess) {
+  grpc_alts_credentials_options* alts_options =
+      grpc_alts_credentials_client_options_create();
+  grpc_channel_credentials* channel_creds =
+      grpc_alts_credentials_create_customized(alts_options, "test",
+                                              /* enable_untrusted_alts=*/true);
+  grpc_core::ChannelArgs channel_args;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+      channel_security_connector = channel_creds->create_security_connector(
+          /*call_creds=*/nullptr, "target", &channel_args);
+  ASSERT_NE(channel_security_connector, nullptr);
+  grpc_core::HandshakeManager handshake_manager;
+  channel_security_connector->add_handshakers(
+      channel_args, /*interested_parties=*/nullptr, &handshake_manager);
+  grpc_channel_credentials_release(channel_creds);
+  grpc_alts_credentials_options_destroy(alts_options);
+}
+
+TEST(AltsSecurityConnectorTest, ChannelSuccessWithProtocolArg) {
+  grpc_alts_credentials_options* alts_options =
+      grpc_alts_credentials_client_options_create();
+  grpc_channel_credentials* channel_creds =
+      grpc_alts_credentials_create_customized(alts_options, "test",
+                                              /* enable_untrusted_alts=*/true);
+  grpc_core::ChannelArgs channel_args;
+  channel_args = channel_args.Set(GRPC_ARG_TRANSPORT_PROTOCOLS, "foo,bar,baz");
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+      channel_security_connector = channel_creds->create_security_connector(
+          /*call_creds=*/nullptr, "target", &channel_args);
+  ASSERT_NE(channel_security_connector, nullptr);
+  grpc_core::HandshakeManager handshake_manager;
+  channel_security_connector->add_handshakers(
+      channel_args, /*interested_parties=*/nullptr, &handshake_manager);
+  grpc_channel_credentials_release(channel_creds);
+  grpc_alts_credentials_options_destroy(alts_options);
 }
 
 int main(int argc, char** argv) {
