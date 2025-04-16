@@ -291,6 +291,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
+  absl::BitGen bitgen;
 
   // On the client side, when the transport is first created, the
   // endpoint will already have been added to this pollset_set, and it

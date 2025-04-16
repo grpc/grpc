@@ -23,7 +23,6 @@
 #include <algorithm>
 
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/util/shared_bit_gen.h"
 
 namespace grpc_core {
 
@@ -45,9 +44,8 @@ Duration BackOff::NextAttemptDelay() {
                                   options_.max_backoff());
     }
   }
-  SharedBitGen g;
   const double jitter =
-      absl::Uniform(g, 1 - options_.jitter(), 1 + options_.jitter());
+      absl::Uniform(rand_gen_, 1 - options_.jitter(), 1 + options_.jitter());
   return current_backoff_ * jitter;
 }
 

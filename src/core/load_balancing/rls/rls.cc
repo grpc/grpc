@@ -97,7 +97,6 @@
 #include "src/core/util/match.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
@@ -1848,9 +1847,9 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
 
 std::string GenerateUUID() {
   absl::uniform_int_distribution<uint64_t> distribution;
-  SharedBitGen g;
-  uint64_t hi = distribution(g);
-  uint64_t lo = distribution(g);
+  absl::BitGen bitgen;
+  uint64_t hi = distribution(bitgen);
+  uint64_t lo = distribution(bitgen);
   return GenerateUUIDv4(hi, lo);
 }
 

@@ -70,7 +70,6 @@
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
@@ -127,8 +126,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                                           t->ping_callbacks.pings_inflight()),
       [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
         t->ping_rate_policy.SentPing();
-        grpc_core::SharedBitGen g;
-        const uint64_t id = t->ping_callbacks.StartPing(g);
+        const uint64_t id = t->ping_callbacks.StartPing(t->bitgen);
         t->http2_ztrace_collector.Append(
             grpc_core::H2PingTrace<false>{false, id});
         grpc_slice_buffer_add(t->outbuf.c_slice_buffer(),
