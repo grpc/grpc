@@ -41,7 +41,6 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
-#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
@@ -74,6 +73,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
@@ -291,7 +291,6 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
-  absl::BitGen bitgen;
 
   // On the client side, when the transport is first created, the
   // endpoint will already have been added to this pollset_set, and it

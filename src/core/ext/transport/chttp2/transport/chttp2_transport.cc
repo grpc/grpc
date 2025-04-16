@@ -59,7 +59,6 @@
 #include "src/core/call/metadata_info.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
-#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -103,6 +102,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -112,6 +112,7 @@
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
@@ -2352,7 +2353,7 @@ namespace {
 
 Duration TarpitDuration(grpc_chttp2_transport* t) {
   return Duration::Milliseconds(absl::LogUniform<int>(
-      absl::BitGen(), t->min_tarpit_duration_ms, t->max_tarpit_duration_ms));
+      SharedBitGen(), t->min_tarpit_duration_ms, t->max_tarpit_duration_ms));
 }
 
 template <typename F>
