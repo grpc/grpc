@@ -30,6 +30,24 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
+std::vector<Http2ErrorCode> GetCodes() {
+  std::vector<Http2ErrorCode> codes;
+  codes.push_back(kNoError);
+  codes.push_back(kProtocolError);
+  codes.push_back(kInternalError);
+  codes.push_back(kFlowControlError);
+  codes.push_back(kSettingsTimeout);
+  codes.push_back(kStreamClosed);
+  codes.push_back(kFrameSizeError);
+  codes.push_back(kRefusedStream);
+  codes.push_back(kCancel);
+  codes.push_back(kCompressionError);
+  codes.push_back(kConnectError);
+  codes.push_back(kEnhanceYourCalm);
+  codes.push_back(kInadequateSecurity);
+  return codes;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Http2Status Tests
 // These tests first create the specific type of Http2Status object.
@@ -37,14 +55,26 @@ namespace testing {
 // 1. Http2ErrorType
 // 2. Http2ErrorCode
 // 3. message
-// 4. Absl status
+// 4. Return of IsOk() function
+// 5. Absl status
 
 TEST(Http2StatusTest, OkTest) {
   Http2Status status = Http2Status::Ok();
   Http2Status::Http2ErrorType type = status.GetType();
+
+  // 1. Http2ErrorType
   EXPECT_EQ(type, Http2Status::Http2ErrorType::kOk);
+
+  // 2. Http2ErrorCode
   // Trying to extract Http2ErrorCode will cause CHECK(false);
+
+  // 3. message
   EXPECT_GT(status.DebugString().size(), 1);
+
+  // 4. Return of IsOk() function
+  EXPECT_TRUE(status.IsOk());
+
+  // 5. Absl status
   // The Http2Status class intentionally does not have a way to convert an Ok
   // status into absl::Status. Because the code does not look ergonomic.
   //
@@ -62,7 +92,28 @@ TEST(Http2StatusTest, OkTest) {
   // We chose Option 1.
 }
 
-TEST(Http2StatusTest, Http2ConnectionErrorTest) { CHECK(true); }
+TEST(Http2StatusTest, Http2ConnectionErrorTest) {
+  std::vector<Http2ErrorCode> codes GetCodes();
+  for (const Http2ErrorCode& code : codes) {
+    Http2Status status = Http2Status::Http2ConnectionError(code, "Message1");
+
+    // 1. Http2ErrorType
+    EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+
+    // 2. Http2ErrorCode
+    EXPECT_EQ(status.GetConnectionErrorCode(), code);
+
+    // 3. message
+    EXPECT_GT(status.DebugString().size(), 1);
+
+    // 4. Return of IsOk() function
+    EXPECT_FALSE(status.IsOk());
+
+    // 5. Absl status
+    absl::Status absl_status = status.GetAbslConnectionError();
+    EXPECT_FALSE(absl_status.ok())
+  }
+}
 
 TEST(Http2StatusTest, Http2StreamErrorTest) { CHECK(true); }
 
