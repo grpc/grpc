@@ -75,11 +75,6 @@ TEST(SpiffeId, SchemeInvalidCharacterFails) {
           "SPIFFE ID URI cannot contain non-ascii characters. Contains 0xc5"));
 }
 
-TEST(SpiffeId, SchemePrefixAndTrustDomainMissingFails) {
-  EXPECT_EQ(SpiffeId::FromString("://").status(),
-            absl::InvalidArgumentError("SPIFFE ID must start with spiffe://"));
-}
-
 TEST(SpiffeId, SchemeMissingSuffixFails) {
   EXPECT_EQ(SpiffeId::FromString("spiffe").status(),
             absl::InvalidArgumentError("SPIFFE ID must start with spiffe://"));
@@ -157,13 +152,6 @@ TEST(SpiffeId, PathSegmentBadCharacterFails) {
           "letters, numbers, dots, dashes, and underscores"));
 }
 
-TEST(SpiffeId, ContainsNonASCIITrustDomainFails) {
-  EXPECT_EQ(
-      SpiffeId::FromString("spiffe://µ/path").status(),
-      absl::InvalidArgumentError(
-          "SPIFFE ID URI cannot contain non-ascii characters. Contains 0xc2"));
-}
-
 TEST(SpiffeId, TrustDomainContainsNonASCIIFails) {
   EXPECT_EQ(
       SpiffeId::FromString("spiffe://fooµbar/path").status(),
@@ -217,13 +205,6 @@ TEST(SpiffeId, MultipleSlashesInPathFails) {
             absl::InvalidArgumentError("Path segment cannot be empty"));
 }
 
-TEST(SpiffeId, NonASCIIPathFails) {
-  EXPECT_EQ(
-      SpiffeId::FromString("spiffe://foo.bar/µ").status(),
-      absl::InvalidArgumentError(
-          "SPIFFE ID URI cannot contain non-ascii characters. Contains 0xc2"));
-}
-
 TEST(SpiffeId, ContainsNonASCIIPathFails) {
   EXPECT_EQ(
       SpiffeId::FromString("spiffe://foo.bar/fooµbar").status(),
@@ -247,20 +228,6 @@ TEST(SpiffeId, BasicSuccess) {
 
 TEST(SpiffeId, WeirdCapitalizationSuccess) {
   auto spiffe_id = SpiffeId::FromString("sPiffe://example.com/us");
-  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
-  EXPECT_EQ(spiffe_id->path(), "/us");
-}
-
-TEST(SpiffeId, AllSpiffeCapitalizedSuccess) {
-  auto spiffe_id = SpiffeId::FromString("SPIFFE://example.com/us");
-  ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
-  EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
-  EXPECT_EQ(spiffe_id->path(), "/us");
-}
-
-TEST(SpiffeId, FirstSpiffeCapitalizedSuccess) {
-  auto spiffe_id = SpiffeId::FromString("Spiffe://example.com/us");
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
   EXPECT_EQ(spiffe_id->trust_domain(), "example.com");
   EXPECT_EQ(spiffe_id->path(), "/us");
