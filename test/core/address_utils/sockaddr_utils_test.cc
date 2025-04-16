@@ -165,6 +165,12 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
 
   grpc_resolved_address addr4_normalized;
   ASSERT_TRUE(grpc_sockaddr_is_v4mapped(&wild_mapped, &addr4_normalized));
+  auto *tmp_addr = reinterpret_cast<const grpc_sockaddr*>(addr4_normalized.addr);
+  ASSERT_TRUE(tmp_addr->sa_family == GRPC_AF_INET);
+  const grpc_sockaddr_in* tmp_addr4 =
+        reinterpret_cast<const grpc_sockaddr_in*>(tmp_addr);
+  ASSERT_TRUE(tmp_addr4->sin_addr.s_addr != 0);
+
   ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
   ASSERT_EQ(port, 555);
   grpc_sockaddr_in6* wild_mapped_addr =
