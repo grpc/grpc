@@ -351,4 +351,9 @@ setuptools.setup(
     cmdclass={
         "build_ext": BuildExt,
     },
+    entry_points={
+        "console_scripts": [
+            "python-grpc-tools-protoc = grpc_tools.protoc:entrypoint",
+        ],
+    },
 )
