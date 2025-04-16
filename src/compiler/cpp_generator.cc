@@ -1758,9 +1758,8 @@ std::string GetSourceIncludes(grpc_generator::File* file,
         "grpcpp/server_context.h",
         "grpcpp/impl/service_type.h",
         "grpcpp/support/sync_stream.h",
-        // ports_def.inc Must be included at last
-        "grpcpp/ports_def.inc",
-    };
+        // ports_def.inc Must be included as last
+        "grpcpp/ports_def.inc"};
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
