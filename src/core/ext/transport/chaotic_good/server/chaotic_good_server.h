@@ -43,7 +43,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
-#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
@@ -57,9 +56,8 @@ namespace chaotic_good {
 class ChaoticGoodServerListener final : public Server::ListenerInterface {
  public:
   static absl::AnyInvocable<std::string()> DefaultConnectionIDGenerator() {
-    return []() mutable {
-      SharedBitGen g;
-      return absl::StrCat(absl::Hex(absl::Uniform<uint64_t>(g)));
+    return [bitgen = absl::BitGen()]() mutable {
+      return absl::StrCat(absl::Hex(absl::Uniform<uint64_t>(bitgen)));
     };
   }
 
@@ -133,6 +131,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     ActivityPtr receive_settings_activity_ ABSL_GUARDED_BY(mu_);
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
     PromiseEndpoint endpoint_;
+    absl::BitGen bitgen_;
   };
 
   class DataConnectionListener final : public ServerConnectionFactory {

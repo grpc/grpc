@@ -78,7 +78,6 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
@@ -691,7 +690,7 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
           XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
           /*weighted_clusters*/) {
         const uint32_t key = absl::Uniform<uint32_t>(
-            SharedBitGen(), 0, entry->weighted_cluster_state.back().range_end);
+            absl::BitGen(), 0, entry->weighted_cluster_state.back().range_end);
         // Find the index in weighted clusters corresponding to key.
         size_t mid = 0;
         size_t start_index = 0;

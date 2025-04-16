@@ -112,7 +112,6 @@
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted.h"
-#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
@@ -2353,7 +2352,7 @@ namespace {
 
 Duration TarpitDuration(grpc_chttp2_transport* t) {
   return Duration::Milliseconds(absl::LogUniform<int>(
-      SharedBitGen(), t->min_tarpit_duration_ms, t->max_tarpit_duration_ms));
+      absl::BitGen(), t->min_tarpit_duration_ms, t->max_tarpit_duration_ms));
 }
 
 template <typename F>

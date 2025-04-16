@@ -697,6 +697,7 @@ class Server : public ServerInterface,
           channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT)
               .value_or(3000)))};
   const Duration max_time_in_pending_queue_;
+  absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_

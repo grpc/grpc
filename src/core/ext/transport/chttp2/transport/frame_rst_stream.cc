@@ -36,7 +36,6 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 
 using grpc_core::http2::Http2ErrorCode;
@@ -134,9 +133,8 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
           grpc_core::StatusIntProperty::kHttp2Error,
           static_cast<intptr_t>(reason));
     }
-    grpc_core::SharedBitGen g;
     if (!t->is_client &&
-        absl::Bernoulli(g, t->ping_on_rst_stream_percent / 100.0)) {
+        absl::Bernoulli(t->bitgen, t->ping_on_rst_stream_percent / 100.0)) {
       ++t->num_pending_induced_frames;
       t->ping_callbacks.RequestPing();
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);

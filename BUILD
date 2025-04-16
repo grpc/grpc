@@ -58,6 +58,11 @@ config_setting(
 )
 
 config_setting(
+    name = "grpc_no_ztrace_define",
+    values = {"define": "grpc_no_ztrace=true"},
+)
+
+config_setting(
     name = "grpc_experiments_are_final_define",
     values = {"define": "grpc_experiments_are_final=true"},
 )
@@ -121,6 +126,19 @@ selects.config_setting_group(
     match_any = [
         ":grpc_no_xds_define",
         # In addition to disabling XDS support when --define=grpc_no_xds=true is
+        # specified, we also disable it on mobile platforms where it is not
+        # likely to be needed and where reducing the binary size is more
+        # important.
+        ":android",
+        ":ios",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_ztrace",
+    match_any = [
+        ":grpc_no_ztrace_define",
+        # In addition to disabling ztrace support when --define=grpc_no_ztrace=true is
         # specified, we also disable it on mobile platforms where it is not
         # likely to be needed and where reducing the binary size is more
         # important.
@@ -1771,7 +1789,6 @@ grpc_cc_library(
         "//src/core:resolved_address",
         "//src/core:seq",
         "//src/core:server_interface",
-        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:status_helper",
@@ -3378,7 +3395,6 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "//src/core:experiments",
-        "//src/core:shared_bit_gen",
         "//src/core:time",
     ],
 )
@@ -4755,7 +4771,6 @@ grpc_cc_library(
         "//src/core:random_early_detection",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
-        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
