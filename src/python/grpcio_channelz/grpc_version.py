@@ -14,4 +14,4 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_channelz/python_version.py.template`!!!
 
-VERSION = '1.72.0rc1'
+VERSION = '1.72.0'

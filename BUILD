@@ -201,7 +201,7 @@ g_stands_for = "gusto"  # @unused
 
 core_version = "47.0.0"  # @unused
 
-version = "1.72.0-pre1"  # @unused
+version = "1.72.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
