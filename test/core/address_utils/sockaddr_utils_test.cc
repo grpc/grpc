@@ -208,8 +208,8 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
       ASSERT_EQ(1,0);
     }
   }
-
-  ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
+  port = -1;
+  ASSERT_EQ(grpc_sockaddr_is_wildcard(&wild_mapped, &port), 1);
   ASSERT_EQ(port, 555);
   grpc_sockaddr_in6* wild_mapped_addr =
       reinterpret_cast<grpc_sockaddr_in6*>(&wild_mapped.addr);
