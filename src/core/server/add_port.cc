@@ -66,8 +66,9 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
     LOG(ERROR) << "Failed to add port to server: "
                   "Only one preferred transport name is currently supported: "
                   "requested='"
-               << *args.GetOwnedString(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS)
+               << *args.GetString(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS)
                << "'";
+    return 0;
   }
   auto* transport = grpc_core::CoreConfiguration::Get()
                         .endpoint_transport_registry()
