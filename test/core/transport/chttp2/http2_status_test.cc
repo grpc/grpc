@@ -32,19 +32,19 @@ namespace testing {
 
 std::vector<Http2ErrorCode> GetCodes() {
   std::vector<Http2ErrorCode> codes;
-  codes.push_back(kNoError);
-  codes.push_back(kProtocolError);
-  codes.push_back(kInternalError);
-  codes.push_back(kFlowControlError);
-  codes.push_back(kSettingsTimeout);
-  codes.push_back(kStreamClosed);
-  codes.push_back(kFrameSizeError);
-  codes.push_back(kRefusedStream);
-  codes.push_back(kCancel);
-  codes.push_back(kCompressionError);
-  codes.push_back(kConnectError);
-  codes.push_back(kEnhanceYourCalm);
-  codes.push_back(kInadequateSecurity);
+  codes.push_back(Http2ErrorCode::kNoError);
+  codes.push_back(Http2ErrorCode::kProtocolError);
+  codes.push_back(Http2ErrorCode::kInternalError);
+  codes.push_back(Http2ErrorCode::kFlowControlError);
+  codes.push_back(Http2ErrorCode::kSettingsTimeout);
+  codes.push_back(Http2ErrorCode::kStreamClosed);
+  codes.push_back(Http2ErrorCode::kFrameSizeError);
+  codes.push_back(Http2ErrorCode::kRefusedStream);
+  codes.push_back(Http2ErrorCode::kCancel);
+  codes.push_back(Http2ErrorCode::kCompressionError);
+  codes.push_back(Http2ErrorCode::kConnectError);
+  codes.push_back(Http2ErrorCode::kEnhanceYourCalm);
+  codes.push_back(Http2ErrorCode::kInadequateSecurity);
   return codes;
 }
 
@@ -93,8 +93,12 @@ TEST(Http2StatusTest, OkTest) {
 }
 
 TEST(Http2StatusTest, Http2ConnectionErrorTest) {
-  std::vector<Http2ErrorCode> codes GetCodes();
+  std::vector<Http2ErrorCode> codes = GetCodes();
   for (const Http2ErrorCode& code : codes) {
+    if (code == Http2ErrorCode::kNoError) {
+      // Connection error MUST have status non ok.
+      continue;
+    }
     Http2Status status = Http2Status::Http2ConnectionError(code, "Message1");
 
     // 1. Http2ErrorType
@@ -111,7 +115,7 @@ TEST(Http2StatusTest, Http2ConnectionErrorTest) {
 
     // 5. Absl status
     absl::Status absl_status = status.GetAbslConnectionError();
-    EXPECT_FALSE(absl_status.ok())
+    EXPECT_FALSE(absl_status.ok());
   }
 }
 

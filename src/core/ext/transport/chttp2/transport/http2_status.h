@@ -249,10 +249,12 @@ class Http2Status {
     switch (error_type_) {
       case Http2ErrorType::kOk:
         return "Ok";
-      case Http2ErrorType::kStreamError:
-        return "Stream Error";
       case Http2ErrorType::kConnectionError:
         return "Connection Error";
+      case Http2ErrorType::kStreamError:
+        return "Stream Error";
+      default:
+        CHECK(false);
     }
   }
 
