@@ -30,9 +30,9 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
-std::vector<Http2ErrorCode> GetCodes() {
+std::vector<Http2ErrorCode> GetErrorCodes() {
   std::vector<Http2ErrorCode> codes;
-  codes.push_back(Http2ErrorCode::kNoError);
+  // codes.push_back(Http2ErrorCode::kNoError);
   codes.push_back(Http2ErrorCode::kProtocolError);
   codes.push_back(Http2ErrorCode::kInternalError);
   codes.push_back(Http2ErrorCode::kFlowControlError);
@@ -93,12 +93,8 @@ TEST(Http2StatusTest, OkTest) {
 }
 
 TEST(Http2StatusTest, Http2ConnectionErrorTest) {
-  std::vector<Http2ErrorCode> codes = GetCodes();
+  std::vector<Http2ErrorCode> codes = GetErrorCodes();
   for (const Http2ErrorCode& code : codes) {
-    if (code == Http2ErrorCode::kNoError) {
-      // Connection error MUST have status non ok.
-      continue;
-    }
     Http2Status status = Http2Status::Http2ConnectionError(code, "Message1");
 
     // 1. Http2ErrorType
