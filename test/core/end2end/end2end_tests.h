@@ -492,6 +492,7 @@ class CoreEnd2endTest {
   void ShutdownAndDestroyServer() {
     if (server_ == nullptr) return;
     ShutdownServerAndNotify(-1);
+    CancelAllCallsOnServer();
     Expect(-1, AnyStatus{});
     Step();
     DestroyServer();
