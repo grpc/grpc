@@ -4,7 +4,6 @@
 ARG_WITH("grpc", "grpc support", "no");
 
 if (PHP_GRPC != "no") {
-
   EXTENSION("grpc",
     "src\\core\\call\\call_arena_allocator.cc " +
     "src\\core\\call\\call_filters.cc " +
@@ -1405,7 +1404,6 @@ if (PHP_GRPC != "no") {
     "/I"+configure_module_dirname+"\\third_party\\utf8_range "+
     "/I"+configure_module_dirname+"\\third_party\\xxhash "+
     "/I"+configure_module_dirname+"\\third_party\\zlib ");
-
   base_dir = get_define('BUILD_DIR');
   FSO.CreateFolder(base_dir+"\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc");

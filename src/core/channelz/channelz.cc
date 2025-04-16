@@ -76,7 +76,7 @@ class ChildObjectCollector {
         case BaseNode::EntityType::kServer:
         case BaseNode::EntityType::kInternalChannel: {
           LOG(ERROR)
-              << "Nodes of type " << BaseNode::EntityTypeName(type)
+              << "Nodes of type " << BaseNode::EntityTypeString(type)
               << " not supported for child object collection in DataSink";
           continue;
         }
@@ -236,6 +236,7 @@ void BaseNode::RunZTrace(
 //
 
 DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {
+  if (node_ == nullptr) return;
   MutexLock lock(&node_->data_sources_mu_);
   node_->data_sources_.push_back(this);
 }

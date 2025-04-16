@@ -86,16 +86,16 @@
   allow_in_fuzzing_config: false
 - name: event_engine_dns
   description: If set, use EventEngine DNSResolver for client channel resolution
-  expiry: 2025/05/01
-  owner: yijiem@google.com
+  expiry: 2025/07/01
+  owner: hork@google.com
   test_tags:
     ["cancel_ares_query_test", "resolver_component_tests_runner_invoker"]
   allow_in_fuzzing_config: false
   uses_polling: true
 - name: event_engine_dns_non_client_channel
   description: If set, use EventEngine DNSResolver in other places besides client channel.
-  expiry: 2025/05/01
-  owner: yijiem@google.com
+  expiry: 2025/07/01
+  owner: hork@google.com
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: false
   uses_polling: true

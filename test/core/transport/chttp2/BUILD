@@ -510,6 +510,7 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/status",
         "gtest",
     ],
     deps = [
@@ -530,6 +531,26 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "gtest",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//:ref_counted_ptr",
+        "//src/core:message",
+        "//src/core:message_assembler",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "message_assembler_fuzz_test",
+    srcs = ["message_assembler_fuzz_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "fuzztest",
+        "fuzztest_main",
         "gtest",
     ],
     deps = [
@@ -575,6 +596,7 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/status",
         "gtest",
     ],
     deps = [
