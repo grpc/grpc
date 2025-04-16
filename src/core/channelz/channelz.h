@@ -189,7 +189,7 @@ class DataSource {
   // Add any relevant json fragments to the output.
   // This method must not cause the DataSource to be deleted, or else there will
   // be a deadlock.
-  virtual void AddData(DataSink& sink) {}
+  virtual void AddData(DataSink&) {}
 
   // If this data source exports some ztrace, return it here.
   virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
