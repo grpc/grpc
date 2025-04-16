@@ -1961,6 +1961,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/ref_counted_string.cc )
   s.files += %w( src/core/util/ref_counted_string.h )
   s.files += %w( src/core/util/ring_buffer.h )
+  s.files += %w( src/core/util/shared_bit_gen.h )
   s.files += %w( src/core/util/single_set_ptr.h )
   s.files += %w( src/core/util/sorted_pack.h )
   s.files += %w( src/core/util/spinlock.h )
